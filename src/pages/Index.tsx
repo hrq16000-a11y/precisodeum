@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Shield, Users, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import heroImage from '@/assets/hero-image.jpg';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -22,7 +23,8 @@ const Index = () => {
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-hero py-20 md:py-28">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(25_95%_53%/0.1),transparent_60%)]" />
+        <img src={heroImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(25_95%_53%/0.15),transparent_60%)]" />
         <div className="container relative z-10 flex flex-col items-center text-center">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}

@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { providers } from '@/data/mockData';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +15,7 @@ const ProviderProfile = () => {
   const [dbProvider, setDbProvider] = useState<any>(null);
   const [dbServices, setDbServices] = useState<any[]>([]);
   const [dbReviews, setDbReviews] = useState<any[]>([]);
+  const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
   const [leadSent, setLeadSent] = useState(false);
   const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '' });
 
@@ -34,6 +36,16 @@ const ProviderProfile = () => {
           .eq('provider_id', data.id)
           .order('created_at', { ascending: false });
         if (rev) setDbReviews(rev);
+
+        // Load portfolio images
+        const { data: files } = await supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 });
+        if (files) {
+          setPortfolioImages(
+            files
+              .filter(f => f.name !== '.emptyFolderPlaceholder')
+              .map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl)
+          );
+        }
       }
     };
     fetchProvider();
@@ -56,6 +68,7 @@ const ProviderProfile = () => {
 
   const isDb = !!dbProvider;
   const name = isDb ? ((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : provider.name;
+  const avatarUrl = isDb ? ((provider.profiles as any)?.avatar_url || provider.photo_url) : null;
   const category = isDb ? ((provider.categories as any)?.name || '') : provider.category;
   const services = isDb ? dbServices : (mockProvider?.services || []);
   const reviews = isDb ? dbReviews : (mockProvider?.reviews || []);
@@ -89,9 +102,12 @@ const ProviderProfile = () => {
             {/* Profile header */}
             <div className="rounded-xl border border-border bg-card p-6 shadow-card">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
-                  {initials}
-                </div>
+                <Avatar className="h-20 w-20 shrink-0 rounded-2xl">
+                  <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
+                  <AvatarFallback className="rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1">
                   <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
                   {(isDb ? provider.business_name : mockProvider?.businessName) && (
@@ -133,6 +149,20 @@ const ProviderProfile = () => {
               <h2 className="font-display text-lg font-bold text-foreground">Sobre o profissional</h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{provider.description}</p>
             </div>
+
+            {/* Portfolio */}
+            {portfolioImages.length > 0 && (
+              <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
+                <h2 className="font-display text-lg font-bold text-foreground">Portfólio</h2>
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {portfolioImages.map((url, i) => (
+                    <div key={i} className="aspect-square overflow-hidden rounded-lg border border-border">
+                      <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Services */}
             <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
