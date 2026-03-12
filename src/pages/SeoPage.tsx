@@ -1,14 +1,18 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProviderCard from '@/components/ProviderCard';
+import PaginationControls from '@/components/PaginationControls';
 import SearchBar from '@/components/SearchBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight } from 'lucide-react';
+import { useSeoHead } from '@/hooks/useSeoHead';
 
-// Parse slug like "eletricista-curitiba" or "eletricista-curitiba-centro"
+const ITEMS_PER_PAGE = 12;
+
 const parseSeoSlug = async (slug: string) => {
   const { data: categories } = await supabase.from('categories').select('name, slug').order('name');
   if (!categories) return null;
@@ -16,21 +20,17 @@ const parseSeoSlug = async (slug: string) => {
   const categoryMap: Record<string, string> = {};
   categories.forEach((c) => { categoryMap[c.slug] = c.name; });
 
-  // Sort by slug length (longest first) to match correctly
   const categorySlugs = Object.keys(categoryMap).sort((a, b) => b.length - a.length);
 
   for (const catSlug of categorySlugs) {
     if (slug.startsWith(catSlug + '-')) {
       const rest = slug.slice(catSlug.length + 1);
-      // Try to match a city from the DB
       const { data: cities } = await supabase.from('cities').select('name, slug').order('slug');
       
       if (cities) {
-        // Sort by slug length desc to match "sao-jose-dos-campos" before "sao"
         const sortedCities = [...cities].sort((a, b) => b.slug.length - a.slug.length);
         for (const city of sortedCities) {
           if (rest.startsWith(city.slug + '-')) {
-            // Has neighborhood
             const neighborhoodPart = rest.slice(city.slug.length + 1);
             const neighborhood = neighborhoodPart.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
             return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city: city.name, citySlug: city.slug, neighborhood };
@@ -41,7 +41,6 @@ const parseSeoSlug = async (slug: string) => {
         }
       }
 
-      // Fallback: treat rest as city name
       const city = rest.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city, citySlug: rest, neighborhood: '' };
     }
@@ -54,6 +53,7 @@ const parseSeoSlug = async (slug: string) => {
 
 const SeoPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
     queryKey: ['seo-page', slug],
@@ -71,16 +71,11 @@ const SeoPage = () => {
         const { data: cat } = await supabase.from('categories').select('id').eq('slug', parsed.categorySlug).single();
         if (cat) query = query.eq('category_id', cat.id);
       }
-      if (parsed.city) {
-        query = query.ilike('city', `%${parsed.city}%`);
-      }
-      if (parsed.neighborhood) {
-        query = query.ilike('neighborhood', `%${parsed.neighborhood}%`);
-      }
+      if (parsed.city) query = query.ilike('city', `%${parsed.city}%`);
+      if (parsed.neighborhood) query = query.ilike('neighborhood', `%${parsed.neighborhood}%`);
 
       const { data: provs } = await query.order('rating_avg', { ascending: false });
 
-      // Fetch profiles
       const userIds = [...new Set((provs || []).map((p) => p.user_id))];
       let profileMap: Record<string, string> = {};
       if (userIds.length > 0) {
@@ -94,22 +89,14 @@ const SeoPage = () => {
         businessName: p.business_name || undefined,
         category: (p.categories as any)?.name || parsed.categoryName,
         categorySlug: (p.categories as any)?.slug || parsed.categorySlug,
-        city: p.city,
-        state: p.state,
-        neighborhood: p.neighborhood,
-        rating: Number(p.rating_avg) || 0,
-        reviewCount: p.review_count || 0,
-        photo: p.photo_url || '',
-        description: p.description,
-        phone: p.phone,
-        whatsapp: p.whatsapp,
-        yearsExperience: p.years_experience,
-        plan: p.plan,
-        slug: p.slug || p.id,
-        featured: p.featured,
+        city: p.city, state: p.state, neighborhood: p.neighborhood,
+        rating: Number(p.rating_avg) || 0, reviewCount: p.review_count || 0,
+        photo: p.photo_url || '', description: p.description,
+        phone: p.phone, whatsapp: p.whatsapp,
+        yearsExperience: p.years_experience, plan: p.plan,
+        slug: p.slug || p.id, featured: p.featured,
       }));
 
-      // Get related data for internal linking
       const { data: allCategories } = await supabase.from('categories').select('name, slug').order('name');
       const { data: topCities } = await supabase.from('cities').select('name, slug').order('name').limit(10);
 
@@ -117,6 +104,22 @@ const SeoPage = () => {
     },
     enabled: !!slug,
   });
+
+  const parsed = data?.parsed;
+  const providers = data?.providers || [];
+  const locationLabel = parsed?.neighborhood ? `${parsed.neighborhood}, ${parsed.city}` : parsed?.city || '';
+  const seoTitle = locationLabel ? `${parsed?.categoryName} em ${locationLabel}` : parsed?.categoryName || '';
+  const seoDesc = locationLabel
+    ? `Encontre os melhores profissionais de ${parsed?.categoryName} em ${locationLabel}. Veja avaliações e solicite orçamentos.`
+    : `Encontre os melhores profissionais de ${parsed?.categoryName}. Veja avaliações e solicite orçamentos.`;
+
+  useSeoHead({
+    title: seoTitle || 'Buscar',
+    description: seoDesc || 'Encontre profissionais na plataforma.',
+    canonical: slug ? `https://precisodeum.lovable.app/${slug}` : undefined,
+  });
+
+  const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   if (isLoading) {
     return (
@@ -148,48 +151,34 @@ const SeoPage = () => {
     );
   }
 
-  const { parsed, providers, allCategories, topCities } = data;
-
-  const locationLabel = parsed.neighborhood
-    ? `${parsed.neighborhood}, ${parsed.city}`
-    : parsed.city;
-
-  const title = locationLabel
-    ? `${parsed.categoryName} em ${locationLabel}`
-    : parsed.categoryName;
-
-  const description = locationLabel
-    ? `Encontre os melhores profissionais de ${parsed.categoryName} em ${locationLabel}. Veja avaliações, compare preços e entre em contato.`
-    : `Encontre os melhores profissionais de ${parsed.categoryName}. Veja avaliações, compare preços e entre em contato.`;
+  const { allCategories, topCities } = data;
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      {/* Breadcrumb */}
       <nav className="container py-3 text-sm text-muted-foreground">
         <Link to="/" className="hover:text-foreground">Início</Link>
         <ChevronRight className="mx-1 inline h-3 w-3" />
-        <Link to={`/categoria/${parsed.categorySlug}`} className="hover:text-foreground">{parsed.categoryName}</Link>
-        {parsed.city && (
+        <Link to={`/categoria/${parsed!.categorySlug}`} className="hover:text-foreground">{parsed!.categoryName}</Link>
+        {parsed!.city && (
           <>
             <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/cidade/${parsed.citySlug}`} className="hover:text-foreground">{parsed.city}</Link>
+            <Link to={`/cidade/${parsed!.citySlug}`} className="hover:text-foreground">{parsed!.city}</Link>
           </>
         )}
-        {parsed.neighborhood && (
+        {parsed!.neighborhood && (
           <>
             <ChevronRight className="mx-1 inline h-3 w-3" />
-            <span className="text-foreground">{parsed.neighborhood}</span>
+            <span className="text-foreground">{parsed!.neighborhood}</span>
           </>
         )}
       </nav>
 
-      {/* Hero */}
       <section className="bg-hero py-12">
         <div className="container text-center">
-          <h1 className="font-display text-3xl font-bold text-primary-foreground md:text-4xl">{title}</h1>
-          <p className="mx-auto mt-3 max-w-lg text-primary-foreground/70">{description}</p>
+          <h1 className="font-display text-3xl font-bold text-primary-foreground md:text-4xl">{seoTitle}</h1>
+          <p className="mx-auto mt-3 max-w-lg text-primary-foreground/70">{seoDesc}</p>
           <div className="mx-auto mt-6 max-w-2xl">
             <SearchBar variant="compact" />
           </div>
@@ -197,76 +186,55 @@ const SeoPage = () => {
       </section>
 
       <div className="container py-8">
-        <p className="mb-6 text-sm text-muted-foreground">
-          {providers.length} profissional(is) encontrado(s)
-        </p>
+        <p className="mb-6 text-sm text-muted-foreground">{providers.length} profissional(is) encontrado(s)</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {providers.map((p) => <ProviderCard key={p.id} provider={p} />)}
+          {paginatedProviders.map((p) => <ProviderCard key={p.id} provider={p} />)}
         </div>
         {providers.length === 0 && (
           <div className="rounded-xl border border-border bg-card p-12 text-center shadow-card">
             <p className="text-lg font-semibold text-foreground">Nenhum profissional encontrado</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Ainda não temos profissionais cadastrados para esta busca. Seja o primeiro!
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground">Ainda não temos profissionais cadastrados para esta busca.</p>
           </div>
         )}
+        <PaginationControls currentPage={page} totalItems={providers.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
       </div>
 
-      {/* Related Links */}
       <section className="bg-muted/50 py-12">
         <div className="container max-w-4xl">
           <h2 className="font-display text-xl font-bold text-foreground">
-            Encontre {parsed.categoryName}{parsed.city ? ` em ${parsed.city}` : ''}
+            Encontre {parsed!.categoryName}{parsed!.city ? ` em ${parsed!.city}` : ''}
           </h2>
           <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
             <p>
-              Precisa de um {parsed.categoryName?.toLowerCase()}? Nossa plataforma conecta você com profissionais
-              qualificados{parsed.city ? ` em ${parsed.city}` : ' em todo o Brasil'}.
-              Todos os profissionais são avaliados por clientes reais.
-            </p>
-            <p>
-              Compare avaliações, veja os serviços oferecidos e entre em contato diretamente pelo WhatsApp.
-              Solicite um orçamento gratuito e encontre o profissional ideal para o seu projeto.
+              Precisa de um {parsed!.categoryName?.toLowerCase()}? Nossa plataforma conecta você com profissionais
+              qualificados{parsed!.city ? ` em ${parsed!.city}` : ' em todo o Brasil'}.
             </p>
           </div>
 
-          {/* Internal links: same service in other cities */}
           {topCities.length > 0 && (
             <div className="mt-8">
-              <h3 className="text-sm font-semibold text-foreground">{parsed.categoryName} em outras cidades</h3>
+              <h3 className="text-sm font-semibold text-foreground">{parsed!.categoryName} em outras cidades</h3>
               <div className="mt-2 flex flex-wrap gap-2">
-                {topCities
-                  .filter((c) => c.name !== parsed.city)
-                  .map((c) => (
-                    <Link
-                      key={c.slug}
-                      to={`/${parsed.categorySlug}-${c.slug}`}
-                      className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                    >
-                      {parsed.categoryName} em {c.name}
-                    </Link>
-                  ))}
+                {topCities.filter((c) => c.name !== parsed!.city).map((c) => (
+                  <Link key={c.slug} to={`/${parsed!.categorySlug}-${c.slug}`}
+                    className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+                    {parsed!.categoryName} em {c.name}
+                  </Link>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Internal links: other services in same city */}
-          {parsed.city && allCategories.length > 0 && (
+          {parsed!.city && allCategories.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-sm font-semibold text-foreground">Outros serviços em {parsed.city}</h3>
+              <h3 className="text-sm font-semibold text-foreground">Outros serviços em {parsed!.city}</h3>
               <div className="mt-2 flex flex-wrap gap-2">
-                {allCategories
-                  .filter((c) => c.slug !== parsed.categorySlug)
-                  .map((c) => (
-                    <Link
-                      key={c.slug}
-                      to={`/${c.slug}-${parsed.citySlug}`}
-                      className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                    >
-                      {c.name} em {parsed.city}
-                    </Link>
-                  ))}
+                {allCategories.filter((c) => c.slug !== parsed!.categorySlug).map((c) => (
+                  <Link key={c.slug} to={`/${c.slug}-${parsed!.citySlug}`}
+                    className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+                    {c.name} em {parsed!.city}
+                  </Link>
+                ))}
               </div>
             </div>
           )}

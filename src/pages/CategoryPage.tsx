@@ -1,13 +1,32 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProviderCard from '@/components/ProviderCard';
+import PaginationControls from '@/components/PaginationControls';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCategoryProviders } from '@/hooks/useProviders';
+import { useSeoHead } from '@/hooks/useSeoHead';
+
+const ITEMS_PER_PAGE = 12;
 
 const CategoryPage = () => {
   const { slug } = useParams();
   const { data, isLoading } = useCategoryProviders(slug || '');
+  const [page, setPage] = useState(1);
+
+  const category = data?.category;
+  const providers = data?.providers || [];
+
+  useSeoHead({
+    title: category ? `${category.name} - Profissionais` : 'Categoria',
+    description: category
+      ? `Encontre os melhores profissionais de ${category.name}. ${providers.length} cadastrados com avaliações verificadas.`
+      : 'Encontre profissionais por categoria.',
+    canonical: slug ? `https://precisodeum.lovable.app/categoria/${slug}` : undefined,
+  });
+
+  const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   if (isLoading) {
     return (
@@ -31,7 +50,7 @@ const CategoryPage = () => {
     );
   }
 
-  if (!data?.category) {
+  if (!category) {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
@@ -42,8 +61,6 @@ const CategoryPage = () => {
       </div>
     );
   }
-
-  const { category, providers } = data;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -61,13 +78,14 @@ const CategoryPage = () => {
       </section>
       <div className="container py-8">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {providers.map((p) => (
+          {paginatedProviders.map((p) => (
             <ProviderCard key={p.id} provider={p} />
           ))}
         </div>
         {providers.length === 0 && (
           <p className="py-12 text-center text-muted-foreground">Nenhum profissional nesta categoria ainda.</p>
         )}
+        <PaginationControls currentPage={page} totalItems={providers.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
       </div>
       <Footer />
     </div>
