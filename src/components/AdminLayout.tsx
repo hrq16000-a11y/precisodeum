@@ -10,6 +10,7 @@ const menuItems = [
   { label: 'Usuários', icon: Users, path: '/admin/usuarios' },
   { label: 'Avaliações', icon: Star, path: '/admin/avaliacoes' },
   { label: 'Categorias', icon: FolderOpen, path: '/admin/categorias' },
+  { label: 'Cidades', icon: MapPin, path: '/admin/cidades' },
   { label: 'Estatísticas', icon: BarChart3, path: '/admin/estatisticas' },
 ];
 
