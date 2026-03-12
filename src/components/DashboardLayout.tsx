@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 
 const menuItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -14,7 +15,14 @@ const menuItems = [
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -48,8 +56,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           })}
         </nav>
         <div className="absolute bottom-4 left-3 right-3">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground/50" asChild>
-            <Link to="/"><LogOut className="h-4 w-4" /> Sair</Link>
+          <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground/50" onClick={handleSignOut}>
+            <LogOut className="h-4 w-4" /> Sair
           </Button>
         </div>
       </aside>
