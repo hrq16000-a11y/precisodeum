@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -7,6 +7,7 @@ import PaginationControls from '@/components/PaginationControls';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCategoryProviders } from '@/hooks/useProviders';
 import { useSeoHead } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -25,6 +26,17 @@ const CategoryPage = () => {
       : 'Encontre profissionais por categoria.',
     canonical: slug ? `https://precisodeum.lovable.app/categoria/${slug}` : undefined,
   });
+
+  const breadcrumbLd = useMemo(() => category ? ({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Início', item: 'https://precisodeum.lovable.app/' },
+      { '@type': 'ListItem', position: 2, name: category.name },
+    ],
+  }) : null, [category]);
+
+  useJsonLd(breadcrumbLd);
 
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
