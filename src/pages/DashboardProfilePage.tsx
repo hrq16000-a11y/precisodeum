@@ -97,6 +97,13 @@ const DashboardProfilePage = () => {
     toast.success('Perfil salvo com sucesso!');
   };
 
+  const initials = form.full_name.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
+
+  useEffect(() => {
+    if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
+  }, [profile]);
+
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
   return (
@@ -105,6 +112,15 @@ const DashboardProfilePage = () => {
       <p className="mt-1 text-sm text-muted-foreground">Edite suas informações profissionais</p>
 
       <div className="mt-6 max-w-2xl space-y-6">
+        {/* Avatar upload */}
+        <div className="rounded-xl border border-border bg-card p-6 shadow-card flex items-center gap-6">
+          <AvatarUpload userId={user!.id} currentUrl={avatarUrl} initials={initials} onUploaded={setAvatarUrl} />
+          <div>
+            <h2 className="font-display text-lg font-bold text-foreground">Foto de Perfil</h2>
+            <p className="text-sm text-muted-foreground">Clique no ícone da câmera para alterar (max 2MB)</p>
+          </div>
+        </div>
+
         <div className="rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
           <h2 className="font-display text-lg font-bold text-foreground">Dados Pessoais</h2>
           <div className="grid gap-4 sm:grid-cols-2">
