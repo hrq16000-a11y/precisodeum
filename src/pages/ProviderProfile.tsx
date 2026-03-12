@@ -36,6 +36,16 @@ const ProviderProfile = () => {
           .eq('provider_id', data.id)
           .order('created_at', { ascending: false });
         if (rev) setDbReviews(rev);
+
+        // Load portfolio images
+        const { data: files } = await supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 });
+        if (files) {
+          setPortfolioImages(
+            files
+              .filter(f => f.name !== '.emptyFolderPlaceholder')
+              .map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl)
+          );
+        }
       }
     };
     fetchProvider();
