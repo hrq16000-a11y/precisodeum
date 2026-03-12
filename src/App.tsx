@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import SearchPage from "./pages/SearchPage";
@@ -11,7 +12,13 @@ import ProviderProfile from "./pages/ProviderProfile";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import DashboardPage from "./pages/DashboardPage";
+import DashboardProfilePage from "./pages/DashboardProfilePage";
+import DashboardServicesPage from "./pages/DashboardServicesPage";
+import DashboardReviewsPage from "./pages/DashboardReviewsPage";
+import DashboardLeadsPage from "./pages/DashboardLeadsPage";
+import DashboardPlanPage from "./pages/DashboardPlanPage";
 import AdminPage from "./pages/AdminPage";
+import SeoPage from "./pages/SeoPage";
 
 const queryClient = new QueryClient();
 
@@ -21,19 +28,26 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/buscar" element={<SearchPage />} />
-          <Route path="/categoria/:slug" element={<CategoryPage />} />
-          <Route path="/profissional/:slug" element={<ProviderProfile />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/cadastro" element={<SignupPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/dashboard/*" element={<DashboardPage />} />
-          <Route path="/admin" element={<AdminPage />} />
-          <Route path="/admin/*" element={<AdminPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/buscar" element={<SearchPage />} />
+            <Route path="/categoria/:slug" element={<CategoryPage />} />
+            <Route path="/profissional/:slug" element={<ProviderProfile />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/cadastro" element={<SignupPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/dashboard/perfil" element={<DashboardProfilePage />} />
+            <Route path="/dashboard/servicos" element={<DashboardServicesPage />} />
+            <Route path="/dashboard/avaliacoes" element={<DashboardReviewsPage />} />
+            <Route path="/dashboard/leads" element={<DashboardLeadsPage />} />
+            <Route path="/dashboard/plano" element={<DashboardPlanPage />} />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/*" element={<AdminPage />} />
+            <Route path="/:slug" element={<SeoPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
