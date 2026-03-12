@@ -27,6 +27,17 @@ const CategoryPage = () => {
     canonical: slug ? `https://precisodeum.lovable.app/categoria/${slug}` : undefined,
   });
 
+  const breadcrumbLd = useMemo(() => category ? ({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Início', item: 'https://precisodeum.lovable.app/' },
+      { '@type': 'ListItem', position: 2, name: category.name },
+    ],
+  }) : null, [category]);
+
+  useJsonLd(breadcrumbLd);
+
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   if (isLoading) {
