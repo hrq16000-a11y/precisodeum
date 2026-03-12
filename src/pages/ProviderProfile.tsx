@@ -150,6 +150,20 @@ const ProviderProfile = () => {
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{provider.description}</p>
             </div>
 
+            {/* Portfolio */}
+            {portfolioImages.length > 0 && (
+              <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
+                <h2 className="font-display text-lg font-bold text-foreground">Portfólio</h2>
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {portfolioImages.map((url, i) => (
+                    <div key={i} className="aspect-square overflow-hidden rounded-lg border border-border">
+                      <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Services */}
             <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
               <h2 className="font-display text-lg font-bold text-foreground">Serviços oferecidos</h2>
