@@ -8,10 +8,13 @@ import SearchBar from '@/components/SearchBar';
 import CategoryCard from '@/components/CategoryCard';
 import ProviderCard from '@/components/ProviderCard';
 import StarRating from '@/components/StarRating';
-import { categories, providers, testimonials, howItWorks } from '@/data/mockData';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
+import { testimonials, howItWorks } from '@/data/mockData';
 
 const Index = () => {
-  const featuredProviders = providers.filter(p => p.featured);
+  const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
+  const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -65,11 +68,19 @@ const Index = () => {
             <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">Categorias Populares</h2>
             <p className="mt-2 text-muted-foreground">Encontre o profissional ideal para o serviço que você precisa</p>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-            {categories.map((cat) => (
-              <CategoryCard key={cat.id} category={cat} />
-            ))}
-          </div>
+          {catsLoading ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <Skeleton key={i} className="h-28 rounded-xl" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+              {categories.map((cat) => (
+                <CategoryCard key={cat.id} category={cat} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -85,11 +96,21 @@ const Index = () => {
               <Link to="/buscar">Ver todos <ArrowRight className="h-4 w-4" /></Link>
             </Button>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredProviders.map((provider) => (
-              <ProviderCard key={provider.id} provider={provider} />
-            ))}
-          </div>
+          {provsLoading ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-64 rounded-xl" />
+              ))}
+            </div>
+          ) : featuredProviders.length === 0 ? (
+            <p className="py-8 text-center text-muted-foreground">Nenhum profissional em destaque ainda.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredProviders.map((provider) => (
+                <ProviderCard key={provider.id} provider={provider} />
+              ))}
+            </div>
+          )}
           <div className="mt-6 text-center md:hidden">
             <Button variant="outline" asChild>
               <Link to="/buscar">Ver todos os profissionais</Link>

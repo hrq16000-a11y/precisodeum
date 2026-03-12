@@ -1,8 +1,13 @@
 import { Link } from 'react-router-dom';
-import type { Category } from '@/data/mockData';
 
 interface CategoryCardProps {
-  category: Category;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+    icon: string;
+    count: number;
+  };
 }
 
 const CategoryCard = ({ category }: CategoryCardProps) => (
