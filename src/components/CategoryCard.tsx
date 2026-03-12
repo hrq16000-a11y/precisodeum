@@ -1,0 +1,21 @@
+import { Link } from 'react-router-dom';
+import type { Category } from '@/data/mockData';
+
+interface CategoryCardProps {
+  category: Category;
+}
+
+const CategoryCard = ({ category }: CategoryCardProps) => (
+  <Link
+    to={`/categoria/${category.slug}`}
+    className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-5 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 hover:border-accent/30"
+  >
+    <span className="text-3xl">{category.icon}</span>
+    <span className="text-center text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
+      {category.name}
+    </span>
+    <span className="text-xs text-muted-foreground">{category.count.toLocaleString('pt-BR')} profissionais</span>
+  </Link>
+);
+
+export default CategoryCard;
