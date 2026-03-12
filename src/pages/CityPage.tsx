@@ -1,20 +1,25 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProviderCard from '@/components/ProviderCard';
+import PaginationControls from '@/components/PaginationControls';
 import SearchBar from '@/components/SearchBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight } from 'lucide-react';
+import { useSeoHead } from '@/hooks/useSeoHead';
+
+const ITEMS_PER_PAGE = 12;
 
 const CityPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
     queryKey: ['city-page', slug],
     queryFn: async () => {
-      // Get city info
       const { data: city } = await supabase
         .from('cities')
         .select('*')
@@ -23,7 +28,6 @@ const CityPage = () => {
 
       if (!city) return null;
 
-      // Get providers in this city
       const { data: provs } = await supabase
         .from('providers')
         .select('*, categories(name, slug, icon)')
@@ -31,7 +35,6 @@ const CityPage = () => {
         .ilike('city', `%${city.name}%`)
         .order('rating_avg', { ascending: false });
 
-      // Fetch profile names
       const userIds = [...new Set((provs || []).map((p) => p.user_id))];
       let profileMap: Record<string, string> = {};
       if (userIds.length > 0) {
@@ -41,9 +44,6 @@ const CityPage = () => {
           .in('id', userIds);
         (profiles || []).forEach((p) => { profileMap[p.id] = p.full_name; });
       }
-
-      // Get categories with providers in this city
-      const categorySlugs = [...new Set((provs || []).map((p) => (p.categories as any)?.slug).filter(Boolean))];
 
       const providers = (provs || []).map((p) => ({
         id: p.id,
@@ -66,10 +66,31 @@ const CityPage = () => {
         featured: p.featured,
       }));
 
-      return { city, providers, categorySlugs };
+      return { city, providers };
     },
     enabled: !!slug,
   });
+
+  const { data: allCategories = [] } = useQuery({
+    queryKey: ['categories-for-links'],
+    queryFn: async () => {
+      const { data } = await supabase.from('categories').select('name, slug').order('name');
+      return data || [];
+    },
+  });
+
+  const city = data?.city;
+  const providers = data?.providers || [];
+
+  useSeoHead({
+    title: city ? `Profissionais em ${city.name} - ${city.state}` : 'Cidade',
+    description: city
+      ? `Encontre os melhores profissionais em ${city.name}, ${city.state}. ${providers.length} cadastrados com avaliações verificadas.`
+      : 'Encontre profissionais na sua cidade.',
+    canonical: slug ? `https://precisodeum.lovable.app/cidade/${slug}` : undefined,
+  });
+
+  const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   if (isLoading) {
     return (
@@ -101,31 +122,19 @@ const CityPage = () => {
     );
   }
 
-  const { city, providers, categorySlugs } = data;
-  const title = `Profissionais em ${city.name} - ${city.state}`;
-  const description = `Encontre os melhores profissionais em ${city.name}, ${city.state}. Compare avaliações e entre em contato.`;
-
-  // Get all categories for internal linking
-  const { data: allCategories = [] } = useQuery({
-    queryKey: ['categories-for-links'],
-    queryFn: async () => {
-      const { data } = await supabase.from('categories').select('name, slug').order('name');
-      return data || [];
-    },
-  });
+  const title = `Profissionais em ${city!.name} - ${city!.state}`;
+  const description = `Encontre os melhores profissionais em ${city!.name}, ${city!.state}. Compare avaliações e entre em contato.`;
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      {/* Breadcrumb */}
       <nav className="container py-3 text-sm text-muted-foreground">
         <Link to="/" className="hover:text-foreground">Início</Link>
         <ChevronRight className="mx-1 inline h-3 w-3" />
-        <span className="text-foreground">{city.name}</span>
+        <span className="text-foreground">{city!.name}</span>
       </nav>
 
-      {/* Hero */}
       <section className="bg-hero py-12">
         <div className="container text-center">
           <h1 className="font-display text-3xl font-bold text-primary-foreground md:text-4xl">{title}</h1>
@@ -138,47 +147,43 @@ const CityPage = () => {
 
       <div className="container py-8">
         <p className="mb-6 text-sm text-muted-foreground">
-          {providers.length} profissional(is) encontrado(s) em {city.name}
+          {providers.length} profissional(is) encontrado(s) em {city!.name}
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {providers.map((p) => <ProviderCard key={p.id} provider={p} />)}
+          {paginatedProviders.map((p) => <ProviderCard key={p.id} provider={p} />)}
         </div>
         {providers.length === 0 && (
           <div className="rounded-xl border border-border bg-card p-12 text-center shadow-card">
             <p className="text-lg font-semibold text-foreground">Nenhum profissional encontrado</p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Ainda não temos profissionais em {city.name}. Seja o primeiro!
+              Ainda não temos profissionais em {city!.name}. Seja o primeiro!
             </p>
           </div>
         )}
+        <PaginationControls currentPage={page} totalItems={providers.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
       </div>
 
-      {/* SEO Internal Links */}
       <section className="bg-muted/50 py-12">
         <div className="container max-w-4xl">
           <h2 className="font-display text-xl font-bold text-foreground">
-            Serviços em {city.name}
+            Serviços em {city!.name}
           </h2>
           <div className="mt-4 flex flex-wrap gap-2">
             {allCategories.map((cat) => (
               <Link
                 key={cat.slug}
-                to={`/${cat.slug}-${city.slug}`}
+                to={`/${cat.slug}-${city!.slug}`}
                 className="rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
-                {cat.name} em {city.name}
+                {cat.name} em {city!.name}
               </Link>
             ))}
           </div>
-
           <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
             <p>
-              Encontre profissionais qualificados em {city.name}, {city.state}. 
-              Nossa plataforma conecta você com os melhores prestadores de serviço da região, 
+              Encontre profissionais qualificados em {city!.name}, {city!.state}.
+              Nossa plataforma conecta você com os melhores prestadores de serviço da região,
               todos avaliados por clientes reais.
-            </p>
-            <p>
-              Compare avaliações, veja os serviços oferecidos e entre em contato diretamente pelo WhatsApp.
             </p>
           </div>
         </div>
