@@ -54,6 +54,7 @@ const App = () => (
             <Route path="/admin/usuarios" element={<AdminUsersPage />} />
             <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
             <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
+            <Route path="/cidade/:slug" element={<CityPage />} />
             <Route path="/:slug" element={<SeoPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,25 +1,25 @@
-import { useParams } from 'react-router-dom';
-import { MapPin, Phone, Globe, MessageCircle, Clock } from 'lucide-react';
+import { useParams, Link } from 'react-router-dom';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { providers } from '@/data/mockData';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const ProviderProfile = () => {
   const { slug } = useParams();
-  const [dbProvider, setDbProvider] = useState<any>(null);
-  const [dbServices, setDbServices] = useState<any[]>([]);
-  const [dbReviews, setDbReviews] = useState<any[]>([]);
+  const [provider, setProvider] = useState<any>(null);
+  const [services, setServices] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [leadSent, setLeadSent] = useState(false);
   const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '' });
 
-  // Try DB first, fallback to mock
   useEffect(() => {
     const fetchProvider = async () => {
       const { data } = await supabase
@@ -27,17 +27,17 @@ const ProviderProfile = () => {
         .select('*, categories(name, slug, icon), profiles:user_id(full_name, avatar_url)')
         .eq('slug', slug)
         .maybeSingle();
+
       if (data) {
-        setDbProvider(data);
+        setProvider(data);
         const { data: svc } = await supabase.from('services').select('*').eq('provider_id', data.id);
-        if (svc) setDbServices(svc);
+        if (svc) setServices(svc);
         const { data: rev } = await supabase.from('reviews')
           .select('*, profiles:user_id(full_name)')
           .eq('provider_id', data.id)
           .order('created_at', { ascending: false });
-        if (rev) setDbReviews(rev);
+        if (rev) setReviews(rev);
 
-        // Load portfolio images
         const { data: files } = await supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 });
         if (files) {
           setPortfolioImages(
@@ -47,12 +47,23 @@ const ProviderProfile = () => {
           );
         }
       }
+      setLoading(false);
     };
     fetchProvider();
   }, [slug]);
 
-  const mockProvider = providers.find((p) => p.slug === slug);
-  const provider = dbProvider || mockProvider;
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <div className="container py-8">
+          <Skeleton className="mb-4 h-40 rounded-xl" />
+          <Skeleton className="mb-4 h-32 rounded-xl" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!provider) {
     return (
@@ -66,36 +77,55 @@ const ProviderProfile = () => {
     );
   }
 
-  const isDb = !!dbProvider;
-  const name = isDb ? ((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : provider.name;
-  const avatarUrl = isDb ? ((provider.profiles as any)?.avatar_url || provider.photo_url) : null;
-  const category = isDb ? ((provider.categories as any)?.name || '') : provider.category;
-  const services = isDb ? dbServices : (mockProvider?.services || []);
-  const reviews = isDb ? dbReviews : (mockProvider?.reviews || []);
+  const name = (provider.profiles as any)?.full_name || provider.business_name || 'Profissional';
+  const avatarUrl = (provider.profiles as any)?.avatar_url || provider.photo_url;
+  const category = (provider.categories as any)?.name || '';
+  const categorySlug = (provider.categories as any)?.slug || '';
   const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isDb) {
-      const { error } = await supabase.from('leads').insert({
-        provider_id: provider.id,
-        client_name: leadForm.name,
-        phone: leadForm.phone,
-        service_needed: leadForm.service,
-        message: leadForm.message,
-      });
-      if (error) {
-        toast.error('Erro ao enviar solicitação');
-        return;
-      }
+    const { error } = await supabase.from('leads').insert({
+      provider_id: provider.id,
+      client_name: leadForm.name,
+      phone: leadForm.phone,
+      service_needed: leadForm.service,
+      message: leadForm.message,
+    });
+    if (error) {
+      toast.error('Erro ao enviar solicitação');
+      return;
     }
     setLeadSent(true);
     toast.success('Solicitação enviada!');
   };
 
+  // Build city slug for breadcrumb
+  const citySlug = provider.city?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+
+      {/* Breadcrumb */}
+      <nav className="container py-3 text-sm text-muted-foreground">
+        <Link to="/" className="hover:text-foreground">Início</Link>
+        {categorySlug && (
+          <>
+            <ChevronRight className="mx-1 inline h-3 w-3" />
+            <Link to={`/categoria/${categorySlug}`} className="hover:text-foreground">{category}</Link>
+          </>
+        )}
+        {provider.city && (
+          <>
+            <ChevronRight className="mx-1 inline h-3 w-3" />
+            <Link to={`/cidade/${citySlug}`} className="hover:text-foreground">{provider.city}</Link>
+          </>
+        )}
+        <ChevronRight className="mx-1 inline h-3 w-3" />
+        <span className="text-foreground">{name}</span>
+      </nav>
+
       <div className="container py-8">
         <div className="flex flex-col gap-8 lg:flex-row">
           <div className="flex-1">
@@ -110,8 +140,8 @@ const ProviderProfile = () => {
                 </Avatar>
                 <div className="flex-1">
                   <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
-                  {(isDb ? provider.business_name : mockProvider?.businessName) && (
-                    <p className="text-sm text-muted-foreground">{isDb ? provider.business_name : mockProvider?.businessName}</p>
+                  {provider.business_name && (
+                    <p className="text-sm text-muted-foreground">{provider.business_name}</p>
                   )}
                   <p className="mt-1 text-sm font-medium text-accent">{category}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -121,14 +151,11 @@ const ProviderProfile = () => {
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
-                      {isDb ? provider.years_experience : mockProvider?.yearsExperience} anos de experiência
+                      {provider.years_experience} anos de experiência
                     </span>
                   </div>
                   <div className="mt-3">
-                    <StarRating
-                      rating={isDb ? Number(provider.rating_avg) : mockProvider?.rating || 0}
-                      count={isDb ? provider.review_count : mockProvider?.reviewCount}
-                    />
+                    <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
                   </div>
                 </div>
               </div>
@@ -168,14 +195,14 @@ const ProviderProfile = () => {
             <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
               <h2 className="font-display text-lg font-bold text-foreground">Serviços oferecidos</h2>
               <div className="mt-4 space-y-3">
-                {services.map((s: any) => (
+                {services.map((s) => (
                   <div key={s.id} className="rounded-lg border border-border p-4">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-sm font-semibold text-foreground">{isDb ? s.service_name : s.name}</h3>
+                        <h3 className="text-sm font-semibold text-foreground">{s.service_name}</h3>
                         <p className="mt-1 text-xs text-muted-foreground">{s.description}</p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          <MapPin className="mr-1 inline h-3 w-3" />{isDb ? s.service_area : s.area}
+                          <MapPin className="mr-1 inline h-3 w-3" />{s.service_area}
                         </p>
                       </div>
                       {s.price && <span className="shrink-0 text-sm font-semibold text-accent">{s.price}</span>}
@@ -193,14 +220,14 @@ const ProviderProfile = () => {
                 <p className="mt-3 text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
               ) : (
                 <div className="mt-4 space-y-4">
-                  {reviews.map((r: any) => (
+                  {reviews.map((r) => (
                     <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold text-foreground">
-                          {isDb ? ((r.profiles as any)?.full_name || 'Cliente') : r.userName}
+                          {(r.profiles as any)?.full_name || 'Cliente'}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(isDb ? r.created_at : r.date).toLocaleDateString('pt-BR')}
+                          {new Date(r.created_at).toLocaleDateString('pt-BR')}
                         </span>
                       </div>
                       <div className="mt-1">

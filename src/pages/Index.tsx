@@ -11,11 +11,29 @@ import ProviderCard from '@/components/ProviderCard';
 import StarRating from '@/components/StarRating';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { testimonials, howItWorks } from '@/data/mockData';
 
 const Index = () => {
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
+
+  const { data: topCities = [] } = useQuery({
+    queryKey: ['top-cities'],
+    queryFn: async () => {
+      const { data } = await supabase.from('cities').select('name, slug, state').order('name').limit(12);
+      return data || [];
+    },
+  });
+
+  const { data: allCategories = [] } = useQuery({
+    queryKey: ['all-categories-slugs'],
+    queryFn: async () => {
+      const { data } = await supabase.from('categories').select('name, slug').order('name');
+      return data || [];
+    },
+  });
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -144,6 +162,55 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Top Cities */}
+      {topCities.length > 0 && (
+        <section className="bg-muted/50 py-16">
+          <div className="container">
+            <div className="mb-8 text-center">
+              <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">Principais Cidades</h2>
+              <p className="mt-2 text-muted-foreground">Encontre profissionais nas maiores cidades do Brasil</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {topCities.map((city) => (
+                <Link
+                  key={city.slug}
+                  to={`/cidade/${city.slug}`}
+                  className="rounded-xl border border-border bg-card p-4 text-center shadow-card transition-colors hover:border-accent"
+                >
+                  <span className="font-display text-sm font-bold text-foreground">{city.name}</span>
+                  <span className="ml-1 text-xs text-muted-foreground">- {city.state}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Popular Searches */}
+      {allCategories.length > 0 && topCities.length > 0 && (
+        <section className="py-16">
+          <div className="container">
+            <div className="mb-8 text-center">
+              <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">Buscas Populares</h2>
+              <p className="mt-2 text-muted-foreground">As buscas mais realizadas na plataforma</p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+              {allCategories.slice(0, 6).flatMap((cat) =>
+                topCities.slice(0, 4).map((city) => (
+                  <Link
+                    key={`${cat.slug}-${city.slug}`}
+                    to={`/${cat.slug}-${city.slug}`}
+                    className="rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                  >
+                    {cat.name} em {city.name}
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Become a Provider CTA */}
       <section className="bg-hero py-16">
