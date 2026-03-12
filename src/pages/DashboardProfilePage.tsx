@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import AvatarUpload from '@/components/AvatarUpload';
+import PortfolioUpload from '@/components/PortfolioUpload';
 
 const DashboardProfilePage = () => {
   const { user, profile, provider, loading } = useAuth();
