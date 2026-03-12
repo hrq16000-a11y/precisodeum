@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Shield, Users, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import heroImage from '@/assets/hero-image.jpg';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
