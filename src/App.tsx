@@ -18,6 +18,11 @@ import DashboardReviewsPage from "./pages/DashboardReviewsPage";
 import DashboardLeadsPage from "./pages/DashboardLeadsPage";
 import DashboardPlanPage from "./pages/DashboardPlanPage";
 import AdminPage from "./pages/AdminPage";
+import AdminProvidersPage from "./pages/AdminProvidersPage";
+import AdminReviewsPage from "./pages/AdminReviewsPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminCategoriesPage from "./pages/AdminCategoriesPage";
+import AdminStatsPage from "./pages/AdminStatsPage";
 import SeoPage from "./pages/SeoPage";
 
 const queryClient = new QueryClient();
@@ -43,7 +48,11 @@ const App = () => (
             <Route path="/dashboard/leads" element={<DashboardLeadsPage />} />
             <Route path="/dashboard/plano" element={<DashboardPlanPage />} />
             <Route path="/admin" element={<AdminPage />} />
-            <Route path="/admin/*" element={<AdminPage />} />
+            <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
+            <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
+            <Route path="/admin/usuarios" element={<AdminUsersPage />} />
+            <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
+            <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
             <Route path="/:slug" element={<SeoPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
