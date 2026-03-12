@@ -56,8 +56,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           })}
         </nav>
         <div className="absolute bottom-4 left-3 right-3">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground/50" asChild>
-            <Link to="/"><LogOut className="h-4 w-4" /> Sair</Link>
+          <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground/50" onClick={handleSignOut}>
+            <LogOut className="h-4 w-4" /> Sair
           </Button>
         </div>
       </aside>
