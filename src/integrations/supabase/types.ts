@@ -38,6 +38,30 @@ export type Database = {
         }
         Relationships: []
       }
+      cities: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          state: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          state?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          state?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           client_name: string
@@ -78,6 +102,38 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      neighborhoods: {
+        Row: {
+          city_id: string
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          city_id: string
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          city_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "neighborhoods_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
             referencedColumns: ["id"]
           },
         ]
@@ -124,12 +180,16 @@ export type Database = {
           description: string
           featured: boolean
           id: string
+          latitude: number | null
+          longitude: number | null
           neighborhood: string
           phone: string
           photo_url: string | null
           plan: string
           rating_avg: number
+          response_time: string | null
           review_count: number
+          service_radius: string | null
           slug: string | null
           state: string
           status: string
@@ -137,6 +197,7 @@ export type Database = {
           user_id: string
           website: string | null
           whatsapp: string
+          working_hours: string | null
           years_experience: number
         }
         Insert: {
@@ -147,12 +208,16 @@ export type Database = {
           description?: string
           featured?: boolean
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           neighborhood?: string
           phone?: string
           photo_url?: string | null
           plan?: string
           rating_avg?: number
+          response_time?: string | null
           review_count?: number
+          service_radius?: string | null
           slug?: string | null
           state?: string
           status?: string
@@ -160,6 +225,7 @@ export type Database = {
           user_id: string
           website?: string | null
           whatsapp?: string
+          working_hours?: string | null
           years_experience?: number
         }
         Update: {
@@ -170,12 +236,16 @@ export type Database = {
           description?: string
           featured?: boolean
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           neighborhood?: string
           phone?: string
           photo_url?: string | null
           plan?: string
           rating_avg?: number
+          response_time?: string | null
           review_count?: number
+          service_radius?: string | null
           slug?: string | null
           state?: string
           status?: string
@@ -183,6 +253,7 @@ export type Database = {
           user_id?: string
           website?: string | null
           whatsapp?: string
+          working_hours?: string | null
           years_experience?: number
         }
         Relationships: [
