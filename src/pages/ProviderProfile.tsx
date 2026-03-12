@@ -15,6 +15,7 @@ const ProviderProfile = () => {
   const [dbProvider, setDbProvider] = useState<any>(null);
   const [dbServices, setDbServices] = useState<any[]>([]);
   const [dbReviews, setDbReviews] = useState<any[]>([]);
+  const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
   const [leadSent, setLeadSent] = useState(false);
   const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '' });
 
