@@ -23,6 +23,7 @@ import AdminReviewsPage from "./pages/AdminReviewsPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 import AdminStatsPage from "./pages/AdminStatsPage";
+import AdminCitiesPage from "./pages/AdminCitiesPage";
 import SeoPage from "./pages/SeoPage";
 import CityPage from "./pages/CityPage";
 
