@@ -15,7 +15,14 @@ const menuItems = [
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
