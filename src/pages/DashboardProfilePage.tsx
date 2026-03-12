@@ -191,6 +191,11 @@ const DashboardProfilePage = () => {
           </div>
         </div>
 
+        {/* Portfolio */}
+        {provider && user && (
+          <PortfolioUpload userId={user.id} providerId={provider.id} />
+        )}
+
         <Button variant="accent" onClick={handleSave} disabled={saving}>
           {saving ? 'Salvando...' : 'Salvar Perfil'}
         </Button>

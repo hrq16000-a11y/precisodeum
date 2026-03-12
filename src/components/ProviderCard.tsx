@@ -21,9 +21,12 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
       )}
       <div className="p-5">
         <div className="flex gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
-            {initials}
-          </div>
+          <Avatar className="h-14 w-14 shrink-0">
+            <AvatarImage src={provider.photo || undefined} alt={provider.name} />
+            <AvatarFallback className="bg-primary text-lg font-bold text-primary-foreground">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
           <div className="min-w-0 flex-1">
             <Link to={`/profissional/${provider.slug}`}>
               <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
