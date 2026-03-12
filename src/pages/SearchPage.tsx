@@ -4,7 +4,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SearchBar from '@/components/SearchBar';
 import ProviderCard from '@/components/ProviderCard';
-import { providers, categories } from '@/data/mockData';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useSearchProviders, useCategories } from '@/hooks/useProviders';
 
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
@@ -13,13 +14,8 @@ const SearchPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [minRating, setMinRating] = useState(0);
 
-  const filtered = providers.filter((p) => {
-    const matchesQuery = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.category.toLowerCase().includes(query.toLowerCase()) || p.description.toLowerCase().includes(query.toLowerCase());
-    const matchesCity = !city || p.city.toLowerCase().includes(city.toLowerCase());
-    const matchesCategory = !selectedCategory || p.categorySlug === selectedCategory;
-    const matchesRating = p.rating >= minRating;
-    return matchesQuery && matchesCity && matchesCategory && matchesRating;
-  });
+  const { data: categories = [] } = useCategories();
+  const { data: filtered = [], isLoading } = useSearchProviders(query, city, selectedCategory, minRating);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -67,20 +63,30 @@ const SearchPage = () => {
           {/* Results */}
           <div className="flex-1">
             <p className="mb-4 text-sm text-muted-foreground">
-              {filtered.length} profissional(is) encontrado(s)
+              {isLoading ? 'Buscando...' : `${filtered.length} profissional(is) encontrado(s)`}
               {query && <> para "<span className="font-semibold text-foreground">{query}</span>"</>}
               {city && <> em <span className="font-semibold text-foreground">{city}</span></>}
             </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {filtered.map((p) => (
-                <ProviderCard key={p.id} provider={p} />
-              ))}
-            </div>
-            {filtered.length === 0 && (
-              <div className="rounded-xl border border-border bg-card p-12 text-center">
-                <p className="text-lg font-semibold text-foreground">Nenhum profissional encontrado</p>
-                <p className="mt-2 text-sm text-muted-foreground">Tente alterar os filtros ou buscar por outro termo.</p>
+            {isLoading ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-64 rounded-xl" />
+                ))}
               </div>
+            ) : (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {filtered.map((p) => (
+                    <ProviderCard key={p.id} provider={p} />
+                  ))}
+                </div>
+                {filtered.length === 0 && (
+                  <div className="rounded-xl border border-border bg-card p-12 text-center">
+                    <p className="text-lg font-semibold text-foreground">Nenhum profissional encontrado</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Tente alterar os filtros ou buscar por outro termo.</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

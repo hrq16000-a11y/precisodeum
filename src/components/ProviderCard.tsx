@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 import { MapPin, MessageCircle, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
-import type { Provider } from '@/data/mockData';
+import type { DbProvider } from '@/hooks/useProviders';
 
 interface ProviderCardProps {
-  provider: Provider;
+  provider: DbProvider;
 }
 
 const ProviderCard = ({ provider }: ProviderCardProps) => {
