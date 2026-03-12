@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, Star, FolderOpen, BarChart3, LogOut, Menu, X, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, Star, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
