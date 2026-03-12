@@ -6,9 +6,11 @@ import StarRating from '@/components/StarRating';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useSeoHead } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 
 const ProviderProfile = () => {
   const { slug } = useParams();
