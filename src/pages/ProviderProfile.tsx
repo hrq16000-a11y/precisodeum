@@ -54,6 +54,47 @@ const ProviderProfile = () => {
     fetchProvider();
   }, [slug]);
 
+  const name = provider ? ((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : '';
+  const avatarUrl = provider ? ((provider.profiles as any)?.avatar_url || provider.photo_url) : '';
+  const category = provider ? ((provider.categories as any)?.name || '') : '';
+  const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
+  const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
+
+  useSeoHead({
+    title: provider ? `${name} - ${category} em ${provider.city}` : 'Profissional',
+    description: provider
+      ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliações, nota ${Number(provider.rating_avg).toFixed(1)}.`
+      : 'Encontre profissionais na plataforma.',
+    canonical: slug ? `https://precisodeum.lovable.app/profissional/${slug}` : undefined,
+  });
+
+  const breadcrumbLd = useMemo(() => provider ? ({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Início', item: 'https://precisodeum.lovable.app/' },
+      ...(categorySlug ? [{ '@type': 'ListItem', position: 2, name: category, item: `https://precisodeum.lovable.app/categoria/${categorySlug}` }] : []),
+      { '@type': 'ListItem', position: categorySlug ? 3 : 2, name },
+    ],
+  }) : null, [provider, name, category, categorySlug]);
+
+  const localBusinessLd = useMemo(() => provider ? ({
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: provider.business_name || name,
+    description: provider.description,
+    image: avatarUrl || undefined,
+    telephone: provider.phone,
+    address: { '@type': 'PostalAddress', addressLocality: provider.city, addressRegion: provider.state, addressCountry: 'BR' },
+    ...(provider.review_count > 0 ? {
+      aggregateRating: { '@type': 'AggregateRating', ratingValue: Number(provider.rating_avg).toFixed(1), reviewCount: provider.review_count, bestRating: 5 },
+    } : {}),
+    url: `https://precisodeum.lovable.app/profissional/${slug}`,
+  }) : null, [provider, name, avatarUrl, slug]);
+
+  useJsonLd(breadcrumbLd);
+  useJsonLd(localBusinessLd);
+
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col">
@@ -79,44 +120,6 @@ const ProviderProfile = () => {
     );
   }
 
-  const name = (provider.profiles as any)?.full_name || provider.business_name || 'Profissional';
-  const avatarUrl = (provider.profiles as any)?.avatar_url || provider.photo_url;
-  const category = (provider.categories as any)?.name || '';
-  const categorySlug = (provider.categories as any)?.slug || '';
-  const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
-
-  useSeoHead({
-    title: `${name} - ${category} em ${provider.city}`,
-    description: `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliações, nota ${Number(provider.rating_avg).toFixed(1)}.`,
-    canonical: `https://precisodeum.lovable.app/profissional/${slug}`,
-  });
-
-  const breadcrumbLd = useMemo(() => ({
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Início', item: 'https://precisodeum.lovable.app/' },
-      ...(categorySlug ? [{ '@type': 'ListItem', position: 2, name: category, item: `https://precisodeum.lovable.app/categoria/${categorySlug}` }] : []),
-      { '@type': 'ListItem', position: categorySlug ? 3 : 2, name },
-    ],
-  }), [name, category, categorySlug]);
-
-  const localBusinessLd = useMemo(() => ({
-    '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
-    name: provider.business_name || name,
-    description: provider.description,
-    image: avatarUrl || undefined,
-    telephone: provider.phone,
-    address: { '@type': 'PostalAddress', addressLocality: provider.city, addressRegion: provider.state, addressCountry: 'BR' },
-    ...(provider.review_count > 0 ? {
-      aggregateRating: { '@type': 'AggregateRating', ratingValue: Number(provider.rating_avg).toFixed(1), reviewCount: provider.review_count, bestRating: 5 },
-    } : {}),
-    url: `https://precisodeum.lovable.app/profissional/${slug}`,
-  }), [provider, name, avatarUrl, slug]);
-
-  useJsonLd(breadcrumbLd);
-  useJsonLd(localBusinessLd);
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
