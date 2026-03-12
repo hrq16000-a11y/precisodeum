@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -7,6 +7,7 @@ import PaginationControls from '@/components/PaginationControls';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCategoryProviders } from '@/hooks/useProviders';
 import { useSeoHead } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 
 const ITEMS_PER_PAGE = 12;
 
