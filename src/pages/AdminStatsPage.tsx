@@ -15,13 +15,14 @@ const AdminStatsPage = () => {
 
     const fetchData = async () => {
       // Providers by status
-      const { data: allProviders } = await supabase.from('providers').select('status');
+      const { data: allProviders } = await supabase.from('providers').select('status, city, categories(name)');
       const statusCount: Record<string, number> = {};
       allProviders?.forEach(p => { statusCount[p.status] = (statusCount[p.status] || 0) + 1; });
       setProvidersByStatus(statusCount);
 
-      // Providers by city (top 10)
-      const cityCount: Record<string, number> = {};
+      // Providers by city (top 10) - using allProviders which already has city
+      const cities: Record<string, number> = {};
+      const cats: Record<string, number> = {};
       allProviders?.forEach(p => {
         // we only have status from this query, need full data
       });

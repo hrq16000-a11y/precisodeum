@@ -21,11 +21,24 @@ const AdminProvidersPage = () => {
   const fetchProviders = async () => {
     let query = supabase
       .from('providers')
-      .select('*, categories(name), profiles:user_id(full_name, email)')
+      .select('*, categories(name)')
       .order('created_at', { ascending: false });
     if (filter !== 'all') query = query.eq('status', filter);
-    const { data } = await query;
-    setProviders(data || []);
+    const { data: providerData } = await query;
+    if (!providerData || providerData.length === 0) { setProviders([]); return; }
+
+    // Fetch profiles for these providers
+    const userIds = [...new Set(providerData.map(p => p.user_id))];
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .in('id', userIds);
+    const profileMap = new Map((profileData || []).map(p => [p.id, p]));
+    
+    setProviders(providerData.map(p => ({
+      ...p,
+      profiles: profileMap.get(p.user_id) || null,
+    })));
   };
 
   useEffect(() => { if (isAdmin) fetchProviders(); }, [isAdmin, filter]);
