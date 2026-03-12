@@ -24,6 +24,7 @@ import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 import AdminStatsPage from "./pages/AdminStatsPage";
 import SeoPage from "./pages/SeoPage";
+import CityPage from "./pages/CityPage";
 
 const queryClient = new QueryClient();
 
