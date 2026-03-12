@@ -22,10 +22,10 @@ export interface DbProvider {
   featured: boolean;
 }
 
-function mapProvider(p: any): DbProvider {
+function mapProvider(p: any, profileName?: string): DbProvider {
   return {
     id: p.id,
-    name: (p.profiles as any)?.full_name || p.business_name || 'Profissional',
+    name: profileName || p.business_name || 'Profissional',
     businessName: p.business_name || undefined,
     category: (p.categories as any)?.name || '',
     categorySlug: (p.categories as any)?.slug || '',
@@ -45,7 +45,27 @@ function mapProvider(p: any): DbProvider {
   };
 }
 
-const providerSelect = '*, categories(name, slug, icon), profiles:user_id(full_name, avatar_url)';
+const providerSelect = '*, categories(name, slug, icon)';
+
+async function fetchProvidersWithProfiles(query: any) {
+  const { data, error } = await query;
+  if (error) throw error;
+  if (!data || data.length === 0) return [];
+
+  // Fetch profiles for all user_ids
+  const userIds = [...new Set((data as any[]).map((p) => p.user_id))];
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .in('id', userIds);
+
+  const profileMap: Record<string, string> = {};
+  (profiles || []).forEach((p) => {
+    profileMap[p.id] = p.full_name;
+  });
+
+  return (data as any[]).map((p) => mapProvider(p, profileMap[p.user_id]));
+}
 
 export function useCategories() {
   return useQuery({
@@ -95,17 +115,16 @@ export function useCategoriesWithCount() {
 export function useFeaturedProviders() {
   return useQuery({
     queryKey: ['featured-providers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('providers')
-        .select(providerSelect)
-        .eq('status', 'approved')
-        .eq('featured', true)
-        .order('rating_avg', { ascending: false })
-        .limit(6);
-      if (error) throw error;
-      return (data || []).map(mapProvider);
-    },
+    queryFn: () =>
+      fetchProvidersWithProfiles(
+        supabase
+          .from('providers')
+          .select(providerSelect)
+          .eq('status', 'approved')
+          .eq('featured', true)
+          .order('rating_avg', { ascending: false })
+          .limit(6)
+      ),
   });
 }
 
@@ -128,17 +147,12 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
         q = q.gte('rating_avg', minRating);
       }
 
-      const { data, error } = await q.order('rating_avg', { ascending: false });
-      if (error) throw error;
+      let results = await fetchProvidersWithProfiles(q.order('rating_avg', { ascending: false }));
 
-      let results = (data || []).map(mapProvider);
-
-      // Filter by category slug client-side since it's a join field
       if (categorySlug) {
         results = results.filter((p) => p.categorySlug === categorySlug);
       }
 
-      // Also filter by query matching name/category
       if (query) {
         const lq = query.toLowerCase();
         results = results.filter(
@@ -159,7 +173,6 @@ export function useCategoryProviders(categorySlug: string) {
   return useQuery({
     queryKey: ['category-providers', categorySlug],
     queryFn: async () => {
-      // Get category id first
       const { data: cat } = await supabase
         .from('categories')
         .select('id, name, slug, icon')
@@ -168,19 +181,16 @@ export function useCategoryProviders(categorySlug: string) {
 
       if (!cat) return { category: null, providers: [] };
 
-      const { data, error } = await supabase
-        .from('providers')
-        .select(providerSelect)
-        .eq('status', 'approved')
-        .eq('category_id', cat.id)
-        .order('rating_avg', { ascending: false });
+      const providers = await fetchProvidersWithProfiles(
+        supabase
+          .from('providers')
+          .select(providerSelect)
+          .eq('status', 'approved')
+          .eq('category_id', cat.id)
+          .order('rating_avg', { ascending: false })
+      );
 
-      if (error) throw error;
-
-      return {
-        category: cat,
-        providers: (data || []).map(mapProvider),
-      };
+      return { category: cat, providers };
     },
     enabled: !!categorySlug,
   });
