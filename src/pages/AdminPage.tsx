@@ -1,53 +1,83 @@
-import DashboardLayout from '@/components/DashboardLayout';
-import { Users, Briefcase, MessageSquare, BarChart3, FolderOpen, Star } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import AdminLayout from '@/components/AdminLayout';
+import { Users, Briefcase, MessageSquare, FolderOpen, Star, TrendingUp } from 'lucide-react';
+import { useAdmin } from '@/hooks/useAdmin';
+import { supabase } from '@/integrations/supabase/client';
 
-const adminStats = [
-  { label: 'Total Profissionais', value: '10.432', icon: Briefcase },
-  { label: 'Total Usuários', value: '45.678', icon: Users },
-  { label: 'Total Leads', value: '12.890', icon: MessageSquare },
-  { label: 'Categorias', value: '10', icon: FolderOpen },
-];
+interface Stats {
+  totalProviders: number;
+  pendingProviders: number;
+  totalProfiles: number;
+  totalLeads: number;
+  totalReviews: number;
+  totalCategories: number;
+}
 
 const AdminPage = () => {
-  const location = useLocation();
-  const isRoot = location.pathname === '/admin';
+  const { isAdmin, loading } = useAdmin();
+  const [stats, setStats] = useState<Stats>({
+    totalProviders: 0, pendingProviders: 0, totalProfiles: 0,
+    totalLeads: 0, totalReviews: 0, totalCategories: 0,
+  });
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const fetchStats = async () => {
+      const [providers, pending, profiles, leads, reviews, categories] = await Promise.all([
+        supabase.from('providers').select('id', { count: 'exact', head: true }),
+        supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('leads').select('id', { count: 'exact', head: true }),
+        supabase.from('reviews').select('id', { count: 'exact', head: true }),
+        supabase.from('categories').select('id', { count: 'exact', head: true }),
+      ]);
+      setStats({
+        totalProviders: providers.count || 0,
+        pendingProviders: pending.count || 0,
+        totalProfiles: profiles.count || 0,
+        totalLeads: leads.count || 0,
+        totalReviews: reviews.count || 0,
+        totalCategories: categories.count || 0,
+      });
+    };
+    fetchStats();
+  }, [isAdmin]);
+
+  if (loading) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
+
+  const statCards = [
+    { label: 'Total Profissionais', value: stats.totalProviders, icon: Briefcase, color: 'text-blue-500' },
+    { label: 'Aguardando Aprovação', value: stats.pendingProviders, icon: TrendingUp, color: 'text-amber-500' },
+    { label: 'Total Usuários', value: stats.totalProfiles, icon: Users, color: 'text-green-500' },
+    { label: 'Total Leads', value: stats.totalLeads, icon: MessageSquare, color: 'text-purple-500' },
+    { label: 'Total Avaliações', value: stats.totalReviews, icon: Star, color: 'text-orange-500' },
+    { label: 'Categorias', value: stats.totalCategories, icon: FolderOpen, color: 'text-teal-500' },
+  ];
 
   return (
-    <DashboardLayout>
+    <AdminLayout>
       <h1 className="font-display text-2xl font-bold text-foreground">Painel Administrativo</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Gerencie a plataforma</p>
+      <p className="mt-1 text-sm text-muted-foreground">Visão geral da plataforma</p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {adminStats.map((s) => (
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {statCards.map((s) => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-5 shadow-card">
-            <s.icon className="h-5 w-5 text-accent" />
+            <s.icon className={`h-5 w-5 ${s.color}`} />
             <p className="mt-3 font-display text-2xl font-bold text-foreground">{s.value}</p>
             <p className="mt-1 text-xs text-muted-foreground">{s.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[
-          { label: 'Gerenciar Usuários', path: '/admin/usuarios', icon: Users, desc: 'Visualizar e gerenciar contas' },
-          { label: 'Gerenciar Prestadores', path: '/admin/prestadores', icon: Briefcase, desc: 'Aprovar e editar perfis' },
-          { label: 'Categorias', path: '/admin/categorias', icon: FolderOpen, desc: 'Adicionar e editar categorias' },
-          { label: 'Avaliações', path: '/admin/avaliacoes', icon: Star, desc: 'Moderar avaliações' },
-          { label: 'Estatísticas', path: '/admin/estatisticas', icon: BarChart3, desc: 'Métricas da plataforma' },
-        ].map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className="group rounded-xl border border-border bg-card p-5 shadow-card transition-all hover:shadow-card-hover hover:-translate-y-0.5"
-          >
-            <item.icon className="h-6 w-6 text-accent" />
-            <h3 className="mt-3 font-display text-sm font-bold text-foreground group-hover:text-accent transition-colors">{item.label}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">{item.desc}</p>
-          </Link>
-        ))}
-      </div>
-    </DashboardLayout>
+      {stats.pendingProviders > 0 && (
+        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+            ⚠️ {stats.pendingProviders} prestador(es) aguardando aprovação.{' '}
+            <a href="/admin/prestadores" className="underline">Revisar agora →</a>
+          </p>
+        </div>
+      )}
+    </AdminLayout>
   );
 };
 
