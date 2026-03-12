@@ -102,9 +102,12 @@ const ProviderProfile = () => {
             {/* Profile header */}
             <div className="rounded-xl border border-border bg-card p-6 shadow-card">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
-                  {initials}
-                </div>
+                <Avatar className="h-20 w-20 shrink-0 rounded-2xl">
+                  <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
+                  <AvatarFallback className="rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1">
                   <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
                   {(isDb ? provider.business_name : mockProvider?.businessName) && (
