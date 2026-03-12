@@ -20,17 +20,10 @@ const AdminStatsPage = () => {
       allProviders?.forEach(p => { statusCount[p.status] = (statusCount[p.status] || 0) + 1; });
       setProvidersByStatus(statusCount);
 
-      // Providers by city (top 10) - using allProviders which already has city
+      // Providers by city and category - reuse allProviders
       const cities: Record<string, number> = {};
       const cats: Record<string, number> = {};
       allProviders?.forEach(p => {
-        // we only have status from this query, need full data
-      });
-      
-      const { data: providersWithCity } = await supabase.from('providers').select('city, categories(name)');
-      const cities: Record<string, number> = {};
-      const cats: Record<string, number> = {};
-      providersWithCity?.forEach(p => {
         if (p.city) cities[p.city] = (cities[p.city] || 0) + 1;
         const catName = (p.categories as any)?.name;
         if (catName) cats[catName] = (cats[catName] || 0) + 1;
