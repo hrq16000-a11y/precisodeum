@@ -68,6 +68,7 @@ const ProviderProfile = () => {
 
   const isDb = !!dbProvider;
   const name = isDb ? ((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : provider.name;
+  const avatarUrl = isDb ? ((provider.profiles as any)?.avatar_url || provider.photo_url) : null;
   const category = isDb ? ((provider.categories as any)?.name || '') : provider.category;
   const services = isDb ? dbServices : (mockProvider?.services || []);
   const reviews = isDb ? dbReviews : (mockProvider?.reviews || []);
