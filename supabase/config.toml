@@ -1,1 +1,4 @@
 project_id = "qaftogrqeyymewoofexc"
+
+[functions.sitemap]
+verify_jwt = false

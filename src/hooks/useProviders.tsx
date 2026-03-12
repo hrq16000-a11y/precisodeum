@@ -147,7 +147,17 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
         q = q.gte('rating_avg', minRating);
       }
 
-      let results = await fetchProvidersWithProfiles(q.order('rating_avg', { ascending: false }));
+      let results = await fetchProvidersWithProfiles(q.order('rating_avg', { ascending: false }).order('review_count', { ascending: false }));
+
+      // Smart ranking: premium > pro > free, then by rating/reviews
+      const planPriority: Record<string, number> = { premium: 0, pro: 1, free: 2 };
+      results.sort((a, b) => {
+        const pa = planPriority[a.plan] ?? 2;
+        const pb = planPriority[b.plan] ?? 2;
+        if (pa !== pb) return pa - pb;
+        if (b.rating !== a.rating) return b.rating - a.rating;
+        return b.reviewCount - a.reviewCount;
+      });
 
       if (categorySlug) {
         results = results.filter((p) => p.categorySlug === categorySlug);

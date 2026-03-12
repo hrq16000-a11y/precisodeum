@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, Star, FolderOpen, BarChart3, LogOut, Menu, X, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, Star, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -10,6 +10,7 @@ const menuItems = [
   { label: 'Usuários', icon: Users, path: '/admin/usuarios' },
   { label: 'Avaliações', icon: Star, path: '/admin/avaliacoes' },
   { label: 'Categorias', icon: FolderOpen, path: '/admin/categorias' },
+  { label: 'Cidades', icon: MapPin, path: '/admin/cidades' },
   { label: 'Estatísticas', icon: BarChart3, path: '/admin/estatisticas' },
 ];
 
