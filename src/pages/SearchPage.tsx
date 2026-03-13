@@ -8,6 +8,7 @@ import PaginationControls from '@/components/PaginationControls';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchProviders, useCategories } from '@/hooks/useProviders';
 import { useSeoHead } from '@/hooks/useSeoHead';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 
 const ITEMS_PER_PAGE = 12;
 
