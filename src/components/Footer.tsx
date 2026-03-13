@@ -46,7 +46,7 @@ const Footer = () => {
           <div>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Serviços Populares</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
-              {popularServices.map((s) => (
+              {categories.map((s) => (
                 <li key={s.slug}>
                   <Link to={`/categoria/${s.slug}`} className="transition-colors hover:text-primary-foreground">{s.name}</Link>
                 </li>
