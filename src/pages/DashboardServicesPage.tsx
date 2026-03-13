@@ -126,7 +126,8 @@ const DashboardServicesPage = () => {
       service_area: form.service_area,
       address: provider ? [provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') : form.address,
       working_hours: form.working_hours,
-    };
+      website: form.website,
+    } as any;
 
     let serviceId = editId;
 
