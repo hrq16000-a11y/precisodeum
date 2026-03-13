@@ -247,9 +247,11 @@ const ProviderProfile = () => {
                       {provider.years_experience} anos de experiência
                     </span>
                   </div>
-                  <div className="mt-3">
-                    <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
-                  </div>
+                  {reviewsEnabled && (
+                    <div className="mt-3">
+                      <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
