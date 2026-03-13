@@ -1,18 +1,29 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Eye, MousePointerClick, MessageSquare, Star, TrendingUp, Briefcase, User, ArrowRight, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
+import { supabase } from '@/integrations/supabase/client';
 
 const DashboardPage = () => {
   const { user, provider, loading } = useAuth();
   const navigate = useNavigate();
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
+  const [servicesCount, setServicesCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');
   }, [loading, user, navigate]);
+
+  useEffect(() => {
+    if (!provider) return;
+    supabase
+      .from('services')
+      .select('id', { count: 'exact', head: true })
+      .eq('provider_id', provider.id)
+      .then(({ count }) => setServicesCount(count ?? 0));
+  }, [provider]);
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
