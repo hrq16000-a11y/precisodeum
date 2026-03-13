@@ -66,12 +66,17 @@ const DashboardPage = () => {
     },
   ];
 
+  const profileDone = !!provider?.description && !!provider?.city;
+  const servicesDone = servicesCount !== null && servicesCount > 0;
+  const allStepsDone = profileDone && servicesDone;
+
   return (
     <DashboardLayout>
       <h1 className="font-display text-2xl font-bold text-foreground">Dashboard</h1>
       <p className="mt-1 text-sm text-muted-foreground">Bem-vindo de volta!</p>
 
-      {/* Onboarding guide */}
+      {/* Onboarding guide - hides when all steps complete */}
+      {!allStepsDone && (
       <div className="mt-6 rounded-xl border border-accent/30 bg-accent/5 p-6">
         <h2 className="font-display text-lg font-bold text-foreground">🚀 Como funciona a plataforma</h2>
         <p className="mt-1 text-sm text-muted-foreground">
