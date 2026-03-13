@@ -18,11 +18,8 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <span className="text-lg font-bold text-primary-foreground">P</span>
-          </div>
-          <span className="font-display text-lg font-bold text-foreground">Preciso de um</span>
+        <Link to="/" className="flex items-center">
+          <img src={logo} alt="Preciso de um - Profissionais Confiáveis Perto de Você" className="h-10" />
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
