@@ -154,7 +154,7 @@ const DashboardServicesPage = () => {
     }
 
     toast.success(editId ? 'Serviço atualizado!' : 'Serviço adicionado!');
-    setForm({ service_name: '', description: '', whatsapp: '', service_area: '', address: '', working_hours: '' });
+    setForm({ service_name: '', description: '', whatsapp: '', service_area: '', address: '', working_hours: '', website: '' });
     setSelectedCategoryIds([]);
     setShowForm(false);
     setEditId(null);
