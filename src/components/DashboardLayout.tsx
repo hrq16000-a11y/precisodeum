@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const menuItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil' },
   { label: 'Serviços', icon: Briefcase, path: '/dashboard/servicos' },
-  { label: 'Avaliações', icon: Star, path: '/dashboard/avaliacoes' },
   { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads' },
   { label: 'Plano', icon: CreditCard, path: '/dashboard/plano' },
 ];
@@ -16,8 +16,15 @@ const menuItems = [
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' })
+      .then(({ data }) => setIsAdmin(!!data));
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -54,6 +61,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               </Link>
             );
           })}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-colors mt-2 border-t border-sidebar-border pt-3"
+            >
+              <Shield className="h-4 w-4" />
+              Painel Admin
+            </Link>
+          )}
         </nav>
         <div className="absolute bottom-4 left-3 right-3">
           <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground/50" onClick={handleSignOut}>

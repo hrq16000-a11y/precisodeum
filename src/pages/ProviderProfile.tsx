@@ -11,8 +11,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 
 const ProviderProfile = () => {
+  const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const { slug } = useParams();
   const [provider, setProvider] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
@@ -245,9 +247,11 @@ const ProviderProfile = () => {
                       {provider.years_experience} anos de experiência
                     </span>
                   </div>
-                  <div className="mt-3">
-                    <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
-                  </div>
+                  {reviewsEnabled && (
+                    <div className="mt-3">
+                      <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
@@ -326,31 +330,33 @@ const ProviderProfile = () => {
             </div>
 
             {/* Reviews */}
-            <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-              <h2 className="font-display text-lg font-bold text-foreground">Avaliações</h2>
-              {reviews.length === 0 ? (
-                <p className="mt-3 text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
-              ) : (
-                <div className="mt-4 space-y-4">
-                  {reviews.map((r) => (
-                    <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-foreground">
-                          {(r.profiles as any)?.full_name || 'Cliente'}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(r.created_at).toLocaleDateString('pt-BR')}
-                        </span>
+            {reviewsEnabled && (
+              <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
+                <h2 className="font-display text-lg font-bold text-foreground">Avaliações</h2>
+                {reviews.length === 0 ? (
+                  <p className="mt-3 text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
+                ) : (
+                  <div className="mt-4 space-y-4">
+                    {reviews.map((r) => (
+                      <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-foreground">
+                            {(r.profiles as any)?.full_name || 'Cliente'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(r.created_at).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                        <div className="mt-1">
+                          <StarRating rating={r.rating} showValue={false} size={12} />
+                        </div>
+                        <p className="mt-2 text-sm text-muted-foreground">{r.comment}</p>
                       </div>
-                      <div className="mt-1">
-                        <StarRating rating={r.rating} showValue={false} size={12} />
-                      </div>
-                      <p className="mt-2 text-sm text-muted-foreground">{r.comment}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}

@@ -9,6 +9,7 @@ import SearchBar from '@/components/SearchBar';
 import CategoryCard from '@/components/CategoryCard';
 import ProviderCard from '@/components/ProviderCard';
 import StarRating from '@/components/StarRating';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
 import { useQuery } from '@tanstack/react-query';
@@ -16,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { testimonials, howItWorks } from '@/data/mockData';
 
 const Index = () => {
+  const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
 
@@ -261,25 +263,27 @@ const Index = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16">
-        <div className="container">
-          <div className="mb-8 text-center">
-            <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">O que dizem nossos usuários</h2>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            {testimonials.map((t, i) => (
-              <div key={i} className="rounded-xl border border-border bg-card p-6 shadow-card">
-                <StarRating rating={t.rating} showValue={false} size={14} />
-                <p className="mt-3 text-sm text-foreground">"{t.text}"</p>
-                <div className="mt-4 text-sm">
-                  <span className="font-semibold text-foreground">{t.name}</span>
-                  <span className="text-muted-foreground"> — {t.city}</span>
+      {reviewsEnabled && (
+        <section className="py-16">
+          <div className="container">
+            <div className="mb-8 text-center">
+              <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">O que dizem nossos usuários</h2>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {testimonials.map((t, i) => (
+                <div key={i} className="rounded-xl border border-border bg-card p-6 shadow-card">
+                  <StarRating rating={t.rating} showValue={false} size={14} />
+                  <p className="mt-3 text-sm text-foreground">"{t.text}"</p>
+                  <div className="mt-4 text-sm">
+                    <span className="font-semibold text-foreground">{t.name}</span>
+                    <span className="text-muted-foreground"> — {t.city}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* FAQ */}
       <section className="bg-muted/50 py-16">

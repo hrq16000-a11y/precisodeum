@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { DbProvider } from '@/hooks/useProviders';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 
 interface ProviderCardProps {
   provider: DbProvider;
 }
 
 const ProviderCard = ({ provider }: ProviderCardProps) => {
+  const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const initials = provider.name.split(' ').map(n => n[0]).join('').slice(0, 2);
 
   return (
@@ -42,9 +44,11 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
           </div>
         </div>
 
-        <div className="mt-3">
-          <StarRating rating={provider.rating} count={provider.reviewCount} size={14} />
-        </div>
+        {reviewsEnabled && (
+          <div className="mt-3">
+            <StarRating rating={provider.rating} count={provider.reviewCount} size={14} />
+          </div>
+        )}
 
         <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
           {provider.description}
