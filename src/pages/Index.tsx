@@ -9,6 +9,7 @@ import SearchBar from '@/components/SearchBar';
 import CategoryCard from '@/components/CategoryCard';
 import ProviderCard from '@/components/ProviderCard';
 import StarRating from '@/components/StarRating';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
 import { useQuery } from '@tanstack/react-query';
