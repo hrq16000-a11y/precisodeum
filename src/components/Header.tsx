@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Search, LogOut, LayoutDashboard } from 'lucide-react';
+import { Menu, X, Search, LogOut, LayoutDashboard, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import logo from '@/assets/logo.png';
 
 const Header = () => {
