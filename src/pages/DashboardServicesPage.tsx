@@ -225,39 +225,95 @@ const DashboardServicesPage = () => {
             </div>
           </div>
 
-          {/* Multi-select categories */}
+          {/* Autocomplete categories */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-foreground">Categorias</label>
-            {selectedCategoryIds.length > 0 && (
-              <div className="mb-2 flex flex-wrap gap-2">
-                {selectedCategoryIds.map(catId => {
-                  const cat = categories.find(c => c.id === catId);
-                  if (!cat) return null;
-                  return (
-                    <span key={catId} className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">
-                      {cat.icon} {cat.name}
-                      <button onClick={() => toggleCategory(catId)} className="ml-0.5 hover:text-destructive">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  );
-                })}
+            <label className="mb-1 block text-sm font-medium text-foreground">Categorias</label>
+            {/* Selected chips */}
+            <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 min-h-[40px]">
+              {selectedCategoryIds.map(catId => {
+                const cat = categories.find(c => c.id === catId);
+                if (!cat) return null;
+                return (
+                  <span key={catId} className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-medium text-accent">
+                    {cat.icon} {cat.name}
+                    <button onClick={() => toggleCategory(catId)} className="hover:text-destructive">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                );
+              })}
+              <div className="relative flex-1 min-w-[120px]">
+                <input
+                  value={categorySearch}
+                  onChange={(e) => { setCategorySearch(e.target.value); setShowCategoryDropdown(true); }}
+                  onFocus={() => setShowCategoryDropdown(true)}
+                  placeholder={selectedCategoryIds.length === 0 ? 'Digite para buscar categorias...' : 'Adicionar...'}
+                  className="w-full border-0 bg-transparent px-1 py-0.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                />
               </div>
-            )}
-            <div className="flex flex-wrap gap-2">
-              {categories
-                .filter(c => !selectedCategoryIds.includes(c.id))
-                .map(c => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => toggleCategory(c.id)}
-                    className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground hover:border-accent hover:text-accent transition-colors"
-                  >
-                    {c.icon} {c.name}
-                  </button>
-                ))}
             </div>
+            {/* Dropdown */}
+            {showCategoryDropdown && (() => {
+              const filtered = categories.filter(c =>
+                !selectedCategoryIds.includes(c.id) &&
+                (categorySearch === '' || c.name.toLowerCase().includes(categorySearch.toLowerCase()))
+              );
+
+              // Group by segment
+              const groups: Record<string, any[]> = {
+                'Construção e Manutenção': [],
+                'Serviços Profissionais': [],
+                'Outros': [],
+              };
+
+              const constructionSlugs = ['eletricista','encanador','pedreiro','pintor','serralheiro','marceneiro','gesseiro','vidraceiro','construcao-civil','impermeabilizacao','desentupidora','ar-condicionado','antenista','instalador-cameras','instalador-tv','marido-de-aluguel','chaveiro'];
+              const professionalSlugs = ['consultoria-empresarial','consultoria-financeira','consultoria-marketing','consultoria-ti','consultoria-rh','desenvolvimento-software','suporte-tecnico','ciberseguranca','tecnico-informatica','contador','escritorio-contabilidade','advogado','designer-grafico','designer-interiores','designer-moda','fotografo','professor-particular','tutor','instrutor-idiomas'];
+
+              filtered.forEach(c => {
+                if (constructionSlugs.includes(c.slug)) groups['Construção e Manutenção'].push(c);
+                else if (professionalSlugs.includes(c.slug)) groups['Serviços Profissionais'].push(c);
+                else groups['Outros'].push(c);
+              });
+
+              const hasResults = filtered.length > 0;
+
+              return (
+                <div className="relative">
+                  <div className="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto rounded-md border border-border bg-card shadow-lg">
+                    {!hasResults && (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">Nenhuma categoria encontrada</p>
+                    )}
+                    {Object.entries(groups).map(([groupName, items]) => {
+                      if (items.length === 0) return null;
+                      return (
+                        <div key={groupName}>
+                          <p className="sticky top-0 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            {groupName}
+                          </p>
+                          {items.map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => { toggleCategory(c.id); setCategorySearch(''); }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent/10 transition-colors"
+                            >
+                              <span>{c.icon}</span> {c.name}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => setShowCategoryDropdown(false)}
+                      className="w-full border-t border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted text-center"
+                    >
+                      Fechar
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           <div>
@@ -267,11 +323,21 @@ const DashboardServicesPage = () => {
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
           </div>
 
+          {/* Location from profile (read-only display) */}
+          {provider && (provider.city || provider.neighborhood) && (
+            <div className="rounded-lg bg-muted/50 p-3 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">📍 Localização (do seu perfil)</p>
+              <p className="text-sm text-foreground">
+                {[provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ')}
+              </p>
+            </div>
+          )}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Endereço <span className="text-muted-foreground">(opcional)</span></label>
-              <input name="address" value={form.address} onChange={handleChange}
-                placeholder="Ex: Rua das Flores, 123 - Centro"
+              <label className="mb-1 block text-sm font-medium text-foreground">Área de atendimento <span className="text-muted-foreground">(opcional)</span></label>
+              <input name="service_area" value={form.service_area} onChange={handleChange}
+                placeholder="Ex: Zona Sul, Grande São Paulo"
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
             </div>
             <div>
@@ -280,17 +346,11 @@ const DashboardServicesPage = () => {
                 placeholder="Ex: Seg a Sex, 8h às 18h"
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Área de atendimento <span className="text-muted-foreground">(opcional)</span></label>
-              <input name="service_area" value={form.service_area} onChange={handleChange}
-                placeholder="Ex: São Paulo - Zona Sul"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
           </div>
 
           <div className="flex gap-2">
             <Button variant="accent" onClick={handleSave}>Salvar</Button>
-            <Button variant="outline" onClick={() => { setShowForm(false); setEditId(null); }}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setShowForm(false); setEditId(null); setShowCategoryDropdown(false); }}>Cancelar</Button>
           </div>
         </div>
       )}
