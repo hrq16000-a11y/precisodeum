@@ -24,6 +24,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 const Footer = () => {
+  const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const { data: topCities = [] } = useQuery({
     queryKey: ['footer-cities'],
     queryFn: async () => {
