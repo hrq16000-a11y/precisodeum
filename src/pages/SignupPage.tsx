@@ -78,7 +78,7 @@ const SignupPage = () => {
 
     setLoading(false);
     toast.success('Conta criada! Verifique seu e-mail para confirmar o cadastro.');
-    navigate('/login');
+    navigate('/dashboard');
   };
 
   const handleGoogleSignup = async () => {
