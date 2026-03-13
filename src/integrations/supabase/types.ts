@@ -310,6 +310,39 @@ export type Database = {
           },
         ]
       }
+      service_categories: {
+        Row: {
+          category_id: string
+          id: string
+          service_id: string
+        }
+        Insert: {
+          category_id: string
+          id?: string
+          service_id: string
+        }
+        Update: {
+          category_id?: string
+          id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_categories_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_images: {
         Row: {
           created_at: string
@@ -344,6 +377,7 @@ export type Database = {
       }
       services: {
         Row: {
+          address: string
           category_id: string | null
           created_at: string
           description: string
@@ -353,8 +387,10 @@ export type Database = {
           service_area: string
           service_name: string
           whatsapp: string
+          working_hours: string
         }
         Insert: {
+          address?: string
           category_id?: string | null
           created_at?: string
           description?: string
@@ -364,8 +400,10 @@ export type Database = {
           service_area?: string
           service_name: string
           whatsapp?: string
+          working_hours?: string
         }
         Update: {
+          address?: string
           category_id?: string | null
           created_at?: string
           description?: string
@@ -375,6 +413,7 @@ export type Database = {
           service_area?: string
           service_name?: string
           whatsapp?: string
+          working_hours?: string
         }
         Relationships: [
           {
