@@ -211,6 +211,7 @@ const DashboardServicesPage = () => {
             service_area: '',
             address: '',
             working_hours: provider?.working_hours || '',
+            website: provider?.website || '',
           });
         }}>
           <Plus className="mr-1 h-4 w-4" /> Novo Serviço
