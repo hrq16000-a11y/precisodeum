@@ -8,10 +8,10 @@ const menuItems = [
   { label: 'Visão Geral', icon: LayoutDashboard, path: '/admin' },
   { label: 'Prestadores', icon: Briefcase, path: '/admin/prestadores' },
   { label: 'Usuários', icon: Users, path: '/admin/usuarios' },
-  { label: 'Avaliações', icon: Star, path: '/admin/avaliacoes' },
   { label: 'Categorias', icon: FolderOpen, path: '/admin/categorias' },
   { label: 'Cidades', icon: MapPin, path: '/admin/cidades' },
   { label: 'Estatísticas', icon: BarChart3, path: '/admin/estatisticas' },
+  { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
 ];
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {

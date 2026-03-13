@@ -61,6 +61,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               </Link>
             );
           })}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-colors mt-2 border-t border-sidebar-border pt-3"
+            >
+              <Shield className="h-4 w-4" />
+              Painel Admin
+            </Link>
+          )}
         </nav>
         <div className="absolute bottom-4 left-3 right-3">
           <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground/50" onClick={handleSignOut}>
