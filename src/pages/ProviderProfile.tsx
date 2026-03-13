@@ -49,7 +49,39 @@ const ProviderProfile = () => {
           supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 }),
         ]);
 
-        if (svc) setServices(svc);
+        if (svc && svc.length > 0) {
+          // Fetch categories and images for each service
+          const svcIds = svc.map((s: any) => s.id);
+          const [{ data: scData }, { data: siData }] = await Promise.all([
+            supabase.from('service_categories')
+              .select('service_id, category_id, categories(name, icon)')
+              .in('service_id', svcIds),
+            supabase.from('service_images')
+              .select('*')
+              .in('service_id', svcIds)
+              .order('display_order'),
+          ]);
+
+          const catMap: Record<string, any[]> = {};
+          (scData || []).forEach((sc: any) => {
+            if (!catMap[sc.service_id]) catMap[sc.service_id] = [];
+            catMap[sc.service_id].push(sc.categories);
+          });
+
+          const imgMap: Record<string, any[]> = {};
+          (siData || []).forEach((si: any) => {
+            if (!imgMap[si.service_id]) imgMap[si.service_id] = [];
+            imgMap[si.service_id].push(si);
+          });
+
+          setServices(svc.map((s: any) => ({
+            ...s,
+            serviceCategories: catMap[s.id] || [],
+            serviceImages: imgMap[s.id] || [],
+          })));
+        } else {
+          setServices([]);
+        }
 
         if (rev && rev.length > 0) {
           const reviewUserIds = [...new Set(rev.map((r: any) => r.user_id))];
@@ -253,19 +285,40 @@ const ProviderProfile = () => {
             {/* Services */}
             <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
               <h2 className="font-display text-lg font-bold text-foreground">Serviços oferecidos</h2>
-              <div className="mt-4 space-y-3">
-                {services.map((s) => (
+              <div className="mt-4 space-y-4">
+                {services.map((s: any) => (
                   <div key={s.id} className="rounded-lg border border-border p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-sm font-semibold text-foreground">{s.service_name}</h3>
-                        <p className="mt-1 text-xs text-muted-foreground">{s.description}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          <MapPin className="mr-1 inline h-3 w-3" />{s.service_area}
-                        </p>
+                    <h3 className="text-sm font-semibold text-foreground">{s.service_name}</h3>
+                    {s.serviceCategories?.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {s.serviceCategories.map((cat: any, i: number) => (
+                          <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2.5 py-0.5 text-[11px] font-medium text-accent">
+                            {cat.icon} {cat.name}
+                          </span>
+                        ))}
                       </div>
-                      {s.price && <span className="shrink-0 text-sm font-semibold text-accent">{s.price}</span>}
+                    )}
+                    {s.description && <p className="mt-2 text-xs text-muted-foreground">{s.description}</p>}
+                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      {s.whatsapp && (
+                        <a href={`https://wa.me/${s.whatsapp}`} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-accent hover:underline">
+                          <MessageCircle className="h-3 w-3" /> {s.whatsapp}
+                        </a>
+                      )}
+                      {s.address && <span>📍 {s.address}</span>}
+                      {s.working_hours && <span>🕐 {s.working_hours}</span>}
+                      {s.service_area && <span>🗺️ {s.service_area}</span>}
                     </div>
+                    {s.serviceImages?.length > 0 && (
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        {s.serviceImages.map((img: any) => (
+                          <div key={img.id} className="aspect-square overflow-hidden rounded-lg border border-border">
+                            <img src={img.image_url} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {services.length === 0 && <p className="text-sm text-muted-foreground">Nenhum serviço cadastrado.</p>}
