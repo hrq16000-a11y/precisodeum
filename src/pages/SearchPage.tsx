@@ -18,6 +18,7 @@ const SearchPage = () => {
   const city = searchParams.get('cidade') || '';
   const [selectedCategory, setSelectedCategory] = useState('');
   const [minRating, setMinRating] = useState(0);
+  const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const [page, setPage] = useState(1);
 
   const { data: categories = [] } = useCategories();
