@@ -18,6 +18,9 @@ import { testimonials, howItWorks } from '@/data/mockData';
 
 const Index = () => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const featuredEnabled = useFeatureEnabled('featured_providers_enabled');
+  const popularSearchesEnabled = useFeatureEnabled('popular_searches_enabled');
+  const faqEnabled = useFeatureEnabled('faq_enabled');
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
 
