@@ -330,31 +330,33 @@ const ProviderProfile = () => {
             </div>
 
             {/* Reviews */}
-            <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-              <h2 className="font-display text-lg font-bold text-foreground">Avaliações</h2>
-              {reviews.length === 0 ? (
-                <p className="mt-3 text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
-              ) : (
-                <div className="mt-4 space-y-4">
-                  {reviews.map((r) => (
-                    <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-foreground">
-                          {(r.profiles as any)?.full_name || 'Cliente'}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(r.created_at).toLocaleDateString('pt-BR')}
-                        </span>
+            {reviewsEnabled && (
+              <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
+                <h2 className="font-display text-lg font-bold text-foreground">Avaliações</h2>
+                {reviews.length === 0 ? (
+                  <p className="mt-3 text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
+                ) : (
+                  <div className="mt-4 space-y-4">
+                    {reviews.map((r) => (
+                      <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-foreground">
+                            {(r.profiles as any)?.full_name || 'Cliente'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(r.created_at).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                        <div className="mt-1">
+                          <StarRating rating={r.rating} showValue={false} size={12} />
+                        </div>
+                        <p className="mt-2 text-sm text-muted-foreground">{r.comment}</p>
                       </div>
-                      <div className="mt-1">
-                        <StarRating rating={r.rating} showValue={false} size={12} />
-                      </div>
-                      <p className="mt-2 text-sm text-muted-foreground">{r.comment}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}

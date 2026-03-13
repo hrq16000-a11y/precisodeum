@@ -44,9 +44,11 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
           </div>
         </div>
 
-        <div className="mt-3">
-          <StarRating rating={provider.rating} count={provider.reviewCount} size={14} />
-        </div>
+        {reviewsEnabled && (
+          <div className="mt-3">
+            <StarRating rating={provider.rating} count={provider.reviewCount} size={14} />
+          </div>
+        )}
 
         <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
           {provider.description}
