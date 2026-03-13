@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Phone } from 'lucide-react';
+import { Phone, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -45,11 +45,22 @@ const DashboardLeadsPage = () => {
                 {lead.service_needed && <p className="text-xs text-accent font-medium">{lead.service_needed}</p>}
                 {lead.message && <p className="mt-1 text-xs text-muted-foreground">{lead.message}</p>}
               </div>
-              <div className="text-right shrink-0">
+              <div className="text-right shrink-0 flex flex-col items-end gap-1">
                 <p className="text-xs text-muted-foreground">{new Date(lead.created_at).toLocaleDateString('pt-BR')}</p>
-                <a href={`tel:${lead.phone}`} className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline">
-                  <Phone className="h-3 w-3" /> {lead.phone}
-                </a>
+                <div className="flex items-center gap-2">
+                  <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline">
+                    <Phone className="h-3 w-3" /> {lead.phone}
+                  </a>
+                  <a
+                    href={`https://wa.me/55${lead.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${lead.client_name}, recebi sua solicitação${lead.service_needed ? ` sobre "${lead.service_needed}"` : ''}. Como posso ajudar?`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-full bg-[#25D366] p-1.5 text-white hover:bg-[#1da851] transition-colors"
+                    title="Responder pelo WhatsApp"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                  </a>
+                </div>
               </div>
             </div>
             <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${lead.status === 'new' ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
