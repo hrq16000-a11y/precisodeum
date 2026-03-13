@@ -1,15 +1,25 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Phone, Mail, MessageCircle } from 'lucide-react';
-
+import { MessageCircle } from 'lucide-react';
+import { useMemo } from 'react';
 
 const ecosystemLinks = [
   { name: 'Encontre um Técnico', url: 'https://www.encontreumtecnico.com' },
   { name: 'Preciso de um Técnico', url: 'https://www.precisodeumtecnico.com' },
-  { name: 'Encontre um Profissional', url: 'https://www.encontreumprofissional.com' },
+  { name: 'Encontre um Profissional', url: 'https://www.encontreumprofissional.com.br' },
   { name: 'Preciso de um Profissional', url: 'https://www.precisodeumprofissional.com' },
+  { name: 'TamoNaWeb', url: 'https://www.TamoNaWeb.com.br' },
 ];
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 const Footer = () => {
   const { data: topCities = [] } = useQuery({
@@ -24,11 +34,19 @@ const Footer = () => {
   const { data: categories = [] } = useQuery({
     queryKey: ['footer-categories'],
     queryFn: async () => {
-      const { data } = await supabase.from('categories').select('name, slug').order('name').limit(8);
+      const { data } = await supabase.from('categories').select('name, slug').order('name').limit(20);
       return data || [];
     },
     staleTime: 1000 * 60 * 30,
   });
+
+  const randomSeoLinks = useMemo(() => {
+    if (categories.length === 0 || topCities.length === 0) return [];
+    const all = categories.flatMap((cat) =>
+      topCities.map((city) => ({ cat, city }))
+    );
+    return shuffle(all).slice(0, 24);
+  }, [categories, topCities]);
 
   return (
     <footer className="border-t border-border bg-primary text-primary-foreground">
@@ -74,6 +92,7 @@ const Footer = () => {
               <li><Link to="/login" className="transition-colors hover:text-primary-foreground">Login</Link></li>
               <li><Link to="/dashboard" className="transition-colors hover:text-primary-foreground">Dashboard</Link></li>
               <li><Link to="/buscar" className="transition-colors hover:text-primary-foreground">Buscar Profissionais</Link></li>
+              <li><Link to="/sobre" className="transition-colors hover:text-primary-foreground">Sobre</Link></li>
             </ul>
           </div>
 
@@ -95,44 +114,34 @@ const Footer = () => {
           <div>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Contato</h4>
             <ul className="space-y-3 text-sm text-primary-foreground/70">
-              <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4 shrink-0" />
-                <span>contato@precisodeum.com.br</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4 shrink-0" />
-                <span>(41) 3000-0000</span>
-              </li>
               <li>
                 <a
-                  href="https://wa.me/5541900000000"
+                  href="https://wa.me/5541997452053"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-lg bg-primary-foreground/10 px-3 py-2 transition-colors hover:bg-primary-foreground/20"
                 >
                   <MessageCircle className="h-4 w-4" />
-                  WhatsApp
+                  (41) 99745-2053
                 </a>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* SEO Links Grid */}
+        {/* SEO Links Grid - randomized */}
         <div className="mt-10 border-t border-primary-foreground/10 pt-6">
           <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-primary-foreground/40">Buscas populares</h4>
           <div className="flex flex-wrap gap-2">
-            {categories.slice(0, 5).flatMap((cat) =>
-              topCities.slice(0, 4).map((city) => (
-                <Link
-                  key={`${cat.slug}-${city.slug}`}
-                  to={`/${cat.slug}-${city.slug}`}
-                  className="text-xs text-primary-foreground/40 transition-colors hover:text-primary-foreground/70"
-                >
-                  {cat.name} em {city.name}
-                </Link>
-              ))
-            )}
+            {randomSeoLinks.map(({ cat, city }) => (
+              <Link
+                key={`${cat.slug}-${city.slug}`}
+                to={`/${cat.slug}-${city.slug}`}
+                className="text-xs text-primary-foreground/40 transition-colors hover:text-primary-foreground/70"
+              >
+                {cat.name} em {city.name}
+              </Link>
+            ))}
           </div>
         </div>
 

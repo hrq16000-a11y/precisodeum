@@ -27,6 +27,7 @@ const Header = () => {
         <nav className="hidden items-center gap-6 md:flex">
           <Link to="/buscar" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Buscar</Link>
           <Link to="/cadastro" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Seja um Profissional</Link>
+          <Link to="/sobre" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Sobre</Link>
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
@@ -61,6 +62,7 @@ const Header = () => {
           <nav className="flex flex-col gap-3">
             <Link to="/buscar" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Buscar Profissionais</Link>
             <Link to="/cadastro" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Seja um Profissional</Link>
+            <Link to="/sobre" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Sobre</Link>
             <hr className="border-border" />
             {user ? (
               <>

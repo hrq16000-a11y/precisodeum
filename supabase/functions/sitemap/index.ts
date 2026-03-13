@@ -24,6 +24,7 @@ Deno.serve(async (req) => {
 
   let urls = `  <url><loc>${siteUrl}/</loc><priority>1.0</priority></url>\n`;
   urls += `  <url><loc>${siteUrl}/buscar</loc><priority>0.8</priority></url>\n`;
+  urls += `  <url><loc>${siteUrl}/sobre</loc><priority>0.5</priority></url>\n`;
 
   for (const cat of categories || []) {
     urls += `  <url><loc>${siteUrl}/categoria/${cat.slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
