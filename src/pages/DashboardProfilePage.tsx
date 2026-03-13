@@ -9,7 +9,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import PortfolioUpload from '@/components/PortfolioUpload';
 
 const DashboardProfilePage = () => {
-  const { user, profile, provider, loading } = useAuth();
+  const { user, profile, provider, loading, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
