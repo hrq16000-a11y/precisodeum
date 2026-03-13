@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { testimonials, howItWorks } from '@/data/mockData';
 
 const Index = () => {
+  const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
 
