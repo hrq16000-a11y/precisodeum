@@ -57,18 +57,20 @@ const SearchPage = () => {
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Avaliação mínima</label>
-                <select
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                  value={minRating}
-                  onChange={(e) => { setMinRating(Number(e.target.value)); setPage(1); }}
-                >
-                  <option value={0}>Todas</option>
-                  <option value={4}>4+ estrelas</option>
-                  <option value={4.5}>4.5+ estrelas</option>
-                </select>
-              </div>
+              {reviewsEnabled && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Avaliação mínima</label>
+                  <select
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                    value={minRating}
+                    onChange={(e) => { setMinRating(Number(e.target.value)); setPage(1); }}
+                  >
+                    <option value={0}>Todas</option>
+                    <option value={4}>4+ estrelas</option>
+                    <option value={4.5}>4.5+ estrelas</option>
+                  </select>
+                </div>
+              )}
             </div>
           </aside>
 
