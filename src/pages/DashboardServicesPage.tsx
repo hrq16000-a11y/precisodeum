@@ -169,6 +169,7 @@ const DashboardServicesPage = () => {
       service_area: s.service_area || '',
       address: s.address || '',
       working_hours: s.working_hours || '',
+      website: (s as any).website || provider?.website || '',
     });
     setEditId(s.id);
 
