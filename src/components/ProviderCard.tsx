@@ -11,6 +11,7 @@ interface ProviderCardProps {
 }
 
 const ProviderCard = ({ provider }: ProviderCardProps) => {
+  const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const initials = provider.name.split(' ').map(n => n[0]).join('').slice(0, 2);
 
   return (
