@@ -59,10 +59,12 @@ const DashboardProfilePage = () => {
     setSaving(true);
 
     try {
-      const { error: profileError } = await supabase.from('profiles').update({
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: user.id,
         full_name: form.full_name,
         phone: form.phone,
-      }).eq('id', user.id);
+        email: user.email || '',
+      }, { onConflict: 'id' });
 
       if (profileError) {
         toast.error('Erro ao salvar perfil: ' + profileError.message);
