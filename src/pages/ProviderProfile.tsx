@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 
 const ProviderProfile = () => {
   const { slug } = useParams();
