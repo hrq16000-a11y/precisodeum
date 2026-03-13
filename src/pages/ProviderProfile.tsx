@@ -26,21 +26,42 @@ const ProviderProfile = () => {
     const fetchProvider = async () => {
       const { data } = await supabase
         .from('providers')
-        .select('*, categories(name, slug, icon), profiles:user_id(full_name, avatar_url)')
+        .select('*, categories(name, slug, icon)')
         .eq('slug', slug)
         .maybeSingle();
 
       if (data) {
-        setProvider(data);
-        const { data: svc } = await supabase.from('services').select('*').eq('provider_id', data.id);
-        if (svc) setServices(svc);
-        const { data: rev } = await supabase.from('reviews')
-          .select('*, profiles:user_id(full_name)')
-          .eq('provider_id', data.id)
-          .order('created_at', { ascending: false });
-        if (rev) setReviews(rev);
+        // Fetch profile separately (no FK between providers and profiles)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', data.user_id)
+          .maybeSingle();
 
-        const { data: files } = await supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 });
+        setProvider({ ...data, profiles: profile });
+
+        const [{ data: svc }, { data: rev }, { data: files }] = await Promise.all([
+          supabase.from('services').select('*').eq('provider_id', data.id),
+          supabase.from('reviews')
+            .select('*, user_id')
+            .eq('provider_id', data.id)
+            .order('created_at', { ascending: false }),
+          supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 }),
+        ]);
+
+        if (svc) setServices(svc);
+
+        if (rev && rev.length > 0) {
+          const reviewUserIds = [...new Set(rev.map((r: any) => r.user_id))];
+          const { data: reviewProfiles } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', reviewUserIds);
+          const profileMap: Record<string, string> = {};
+          (reviewProfiles || []).forEach((p: any) => { profileMap[p.id] = p.full_name; });
+          setReviews(rev.map((r: any) => ({ ...r, profiles: { full_name: profileMap[r.user_id] || 'Cliente' } })));
+        }
+
         if (files) {
           setPortfolioImages(
             files
