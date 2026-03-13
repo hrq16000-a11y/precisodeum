@@ -18,6 +18,9 @@ import { testimonials, howItWorks } from '@/data/mockData';
 
 const Index = () => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const featuredEnabled = useFeatureEnabled('featured_providers_enabled');
+  const popularSearchesEnabled = useFeatureEnabled('popular_searches_enabled');
+  const faqEnabled = useFeatureEnabled('faq_enabled');
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
 
@@ -140,6 +143,7 @@ const Index = () => {
       </section>
 
       {/* Featured Providers */}
+      {featuredEnabled && (
       <section className="bg-muted/50 py-16">
         <div className="container">
           <div className="mb-8 flex items-end justify-between">
@@ -173,6 +177,7 @@ const Index = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* How It Works */}
       <section className="py-16">
@@ -223,7 +228,7 @@ const Index = () => {
       )}
 
       {/* Popular Searches */}
-      {allCategories.length > 0 && topCities.length > 0 && (
+      {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
         <section className="py-16">
           <div className="container">
             <div className="mb-8 text-center">
@@ -286,6 +291,7 @@ const Index = () => {
       )}
 
       {/* FAQ */}
+      {faqEnabled && (
       <section className="bg-muted/50 py-16">
         <div className="container max-w-2xl">
           <h2 className="mb-8 text-center font-display text-2xl font-bold text-foreground md:text-3xl">Perguntas Frequentes</h2>
@@ -304,6 +310,7 @@ const Index = () => {
           ))}
         </div>
       </section>
+      )}
 
       {/* Final CTA */}
       <section className="py-16">
