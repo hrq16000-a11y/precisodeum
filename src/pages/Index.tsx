@@ -310,6 +310,7 @@ const Index = () => {
           ))}
         </div>
       </section>
+      )}
 
       {/* Final CTA */}
       <section className="py-16">
