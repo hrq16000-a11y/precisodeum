@@ -11,6 +11,9 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,7 +22,7 @@ const LoginPage = () => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error('E-mail ou senha inválidos');
     } else {
       toast.success('Login realizado com sucesso!');
       navigate('/dashboard');
@@ -31,6 +34,25 @@ const LoginPage = () => {
       redirect_uri: window.location.origin,
     });
     if (error) toast.error('Erro ao fazer login com Google');
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      toast.error('Digite seu e-mail');
+      return;
+    }
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotLoading(false);
+    if (error) {
+      toast.error('Erro ao enviar e-mail de recuperação');
+    } else {
+      toast.success('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
+      setShowForgot(false);
+    }
   };
 
   return (
@@ -53,25 +75,51 @@ const LoginPage = () => {
               <div className="h-px flex-1 bg-border" />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">E-mail</label>
-                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Senha</label>
-                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-              </div>
-              <Button type="submit" variant="accent" className="w-full" disabled={loading}>
-                {loading ? 'Entrando...' : 'Entrar'}
-              </Button>
-            </form>
+            {showForgot ? (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <p className="text-sm text-muted-foreground">Digite seu e-mail para receber o link de recuperação de senha.</p>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">E-mail</label>
+                  <input type="email" required value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+                </div>
+                <Button type="submit" variant="accent" className="w-full" disabled={forgotLoading}>
+                  {forgotLoading ? 'Enviando...' : 'Enviar link de recuperação'}
+                </Button>
+                <button type="button" onClick={() => setShowForgot(false)}
+                  className="w-full text-center text-sm text-accent hover:underline">
+                  Voltar ao login
+                </button>
+              </form>
+            ) : (
+              <>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-foreground">E-mail</label>
+                    <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-foreground">Senha</label>
+                    <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+                  </div>
+                  <div className="text-right">
+                    <button type="button" onClick={() => { setShowForgot(true); setForgotEmail(email); }}
+                      className="text-xs text-accent hover:underline">
+                      Esqueci minha senha
+                    </button>
+                  </div>
+                  <Button type="submit" variant="accent" className="w-full" disabled={loading}>
+                    {loading ? 'Entrando...' : 'Entrar'}
+                  </Button>
+                </form>
 
-            <p className="mt-4 text-center text-sm text-muted-foreground">
-              Não tem conta? <Link to="/cadastro" className="font-medium text-accent hover:underline">Cadastre-se</Link>
-            </p>
+                <p className="mt-4 text-center text-sm text-muted-foreground">
+                  Não tem conta? <Link to="/cadastro" className="font-medium text-accent hover:underline">Cadastre-se</Link>
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
