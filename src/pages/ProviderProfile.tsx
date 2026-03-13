@@ -310,6 +310,13 @@ const ProviderProfile = () => {
                           <MessageCircle className="h-3 w-3" /> {s.whatsapp}
                         </a>
                       )}
+                      {s.website && (
+                        <a href={s.website.startsWith('http') ? s.website : `https://${s.website}`} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-accent hover:underline">
+                          <Globe className="h-3 w-3" /> Site
+                        </a>
+                      )}
+                      {s.price && <span>💰 {s.price}</span>}
                       {s.address && <span>📍 {s.address}</span>}
                       {s.working_hours && <span>🕐 {s.working_hours}</span>}
                       {s.service_area && <span>🗺️ {s.service_area}</span>}

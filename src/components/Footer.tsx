@@ -121,21 +121,19 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* SEO Links Grid */}
+        {/* SEO Links Grid - randomized */}
         <div className="mt-10 border-t border-primary-foreground/10 pt-6">
           <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-primary-foreground/40">Buscas populares</h4>
           <div className="flex flex-wrap gap-2">
-            {categories.slice(0, 5).flatMap((cat) =>
-              topCities.slice(0, 4).map((city) => (
-                <Link
-                  key={`${cat.slug}-${city.slug}`}
-                  to={`/${cat.slug}-${city.slug}`}
-                  className="text-xs text-primary-foreground/40 transition-colors hover:text-primary-foreground/70"
-                >
-                  {cat.name} em {city.name}
-                </Link>
-              ))
-            )}
+            {randomSeoLinks.map(({ cat, city }) => (
+              <Link
+                key={`${cat.slug}-${city.slug}`}
+                to={`/${cat.slug}-${city.slug}`}
+                className="text-xs text-primary-foreground/40 transition-colors hover:text-primary-foreground/70"
+              >
+                {cat.name} em {city.name}
+              </Link>
+            ))}
           </div>
         </div>
 

@@ -62,6 +62,7 @@ const Header = () => {
           <nav className="flex flex-col gap-3">
             <Link to="/buscar" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Buscar Profissionais</Link>
             <Link to="/cadastro" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Seja um Profissional</Link>
+            <Link to="/sobre" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Sobre</Link>
             <hr className="border-border" />
             {user ? (
               <>
