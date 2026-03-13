@@ -49,7 +49,39 @@ const ProviderProfile = () => {
           supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 }),
         ]);
 
-        if (svc) setServices(svc);
+        if (svc && svc.length > 0) {
+          // Fetch categories and images for each service
+          const svcIds = svc.map((s: any) => s.id);
+          const [{ data: scData }, { data: siData }] = await Promise.all([
+            supabase.from('service_categories')
+              .select('service_id, category_id, categories(name, icon)')
+              .in('service_id', svcIds),
+            supabase.from('service_images')
+              .select('*')
+              .in('service_id', svcIds)
+              .order('display_order'),
+          ]);
+
+          const catMap: Record<string, any[]> = {};
+          (scData || []).forEach((sc: any) => {
+            if (!catMap[sc.service_id]) catMap[sc.service_id] = [];
+            catMap[sc.service_id].push(sc.categories);
+          });
+
+          const imgMap: Record<string, any[]> = {};
+          (siData || []).forEach((si: any) => {
+            if (!imgMap[si.service_id]) imgMap[si.service_id] = [];
+            imgMap[si.service_id].push(si);
+          });
+
+          setServices(svc.map((s: any) => ({
+            ...s,
+            serviceCategories: catMap[s.id] || [],
+            serviceImages: imgMap[s.id] || [],
+          })));
+        } else {
+          setServices([]);
+        }
 
         if (rev && rev.length > 0) {
           const reviewUserIds = [...new Set(rev.map((r: any) => r.user_id))];
