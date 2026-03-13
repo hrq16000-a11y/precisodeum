@@ -143,6 +143,7 @@ const Index = () => {
       </section>
 
       {/* Featured Providers */}
+      {featuredEnabled && (
       <section className="bg-muted/50 py-16">
         <div className="container">
           <div className="mb-8 flex items-end justify-between">
