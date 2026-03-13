@@ -37,6 +37,7 @@ const DashboardServicesPage = () => {
     service_area: '',
     address: '',
     working_hours: '',
+    website: '',
   });
 
   useEffect(() => {
