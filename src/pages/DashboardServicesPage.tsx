@@ -219,6 +219,14 @@ const DashboardServicesPage = () => {
         </Button>
       </div>
 
+      {/* Explanation banner */}
+      <div className="mt-4 rounded-lg border border-accent/20 bg-accent/5 p-4">
+        <p className="text-sm text-foreground">
+          📌 <strong>Este é o seu espaço de postagens!</strong> Cadastre aqui todos os serviços que você oferece. 
+          Cada serviço cadastrado aparecerá no seu perfil público e nos resultados de busca da plataforma.
+        </p>
+      </div>
+
       {showForm && (
         <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
           <h2 className="font-display text-lg font-bold text-foreground">
