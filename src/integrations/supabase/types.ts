@@ -386,6 +386,7 @@ export type Database = {
           provider_id: string
           service_area: string
           service_name: string
+          website: string | null
           whatsapp: string
           working_hours: string
         }
@@ -399,6 +400,7 @@ export type Database = {
           provider_id: string
           service_area?: string
           service_name: string
+          website?: string | null
           whatsapp?: string
           working_hours?: string
         }
@@ -412,6 +414,7 @@ export type Database = {
           provider_id?: string
           service_area?: string
           service_name?: string
+          website?: string | null
           whatsapp?: string
           working_hours?: string
         }
