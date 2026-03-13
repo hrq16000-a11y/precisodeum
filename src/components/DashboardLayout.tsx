@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const menuItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil' },
   { label: 'Serviços', icon: Briefcase, path: '/dashboard/servicos' },
-  { label: 'Avaliações', icon: Star, path: '/dashboard/avaliacoes' },
   { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads' },
   { label: 'Plano', icon: CreditCard, path: '/dashboard/plano' },
 ];
