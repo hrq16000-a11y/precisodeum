@@ -226,7 +226,7 @@ const DashboardServicesPage = () => {
           </div>
 
           {/* Autocomplete categories */}
-          <div>
+          <div ref={categoryContainerRef}>
             <label className="mb-1 block text-sm font-medium text-foreground">Categorias</label>
             {/* Selected chips */}
             <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 min-h-[40px]">
