@@ -310,8 +310,41 @@ export type Database = {
           },
         ]
       }
+      service_images: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_images_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
+          category_id: string | null
           created_at: string
           description: string
           id: string
@@ -319,8 +352,10 @@ export type Database = {
           provider_id: string
           service_area: string
           service_name: string
+          whatsapp: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           description?: string
           id?: string
@@ -328,8 +363,10 @@ export type Database = {
           provider_id: string
           service_area?: string
           service_name: string
+          whatsapp?: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           description?: string
           id?: string
@@ -337,8 +374,16 @@ export type Database = {
           provider_id?: string
           service_area?: string
           service_name?: string
+          whatsapp?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "services_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "services_provider_id_fkey"
             columns: ["provider_id"]
