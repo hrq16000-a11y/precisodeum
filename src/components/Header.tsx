@@ -3,18 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Search, LogOut, LayoutDashboard, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 import logo from '@/assets/logo.png';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
-  const { data: settings } = useSiteSettings();
-  const whatsappGroupUrl = settings?.whatsapp_group_url ? 'https://chat.whatsapp.com/' : '';
-  const rawUrl = settings?.['whatsapp_group_url'];
-  // whatsapp_group_url is stored as a boolean in useSiteSettings, we need the raw value
-  
+  const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
 
   const handleSignOut = async () => {
     await signOut();
@@ -32,6 +28,17 @@ const Header = () => {
           <Link to="/buscar" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Buscar</Link>
           <Link to="/cadastro" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Seja um Profissional</Link>
           <Link to="/sobre" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Sobre</Link>
+          {whatsappGroupUrl && (
+            <a
+              href={whatsappGroupUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#25D366] transition-colors hover:text-[#128C7E]"
+            >
+              <Users className="h-4 w-4" />
+              Grupo WhatsApp
+            </a>
+          )}
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
@@ -67,6 +74,18 @@ const Header = () => {
             <Link to="/buscar" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Buscar Profissionais</Link>
             <Link to="/cadastro" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Seja um Profissional</Link>
             <Link to="/sobre" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Sobre</Link>
+            {whatsappGroupUrl && (
+              <a
+                href={whatsappGroupUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-[#25D366] hover:bg-muted flex items-center gap-2"
+                onClick={() => setMobileOpen(false)}
+              >
+                <Users className="h-4 w-4" />
+                Grupo WhatsApp
+              </a>
+            )}
             <hr className="border-border" />
             {user ? (
               <>
