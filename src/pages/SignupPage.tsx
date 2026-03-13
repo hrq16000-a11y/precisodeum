@@ -78,12 +78,12 @@ const SignupPage = () => {
 
     setLoading(false);
     toast.success('Conta criada! Verifique seu e-mail para confirmar o cadastro.');
-    navigate('/login');
+    navigate('/dashboard');
   };
 
   const handleGoogleSignup = async () => {
     const { error } = await lovable.auth.signInWithOAuth('google', {
-      redirect_uri: window.location.origin,
+      redirect_uri: window.location.origin + '/dashboard',
     });
     if (error) toast.error('Erro ao cadastrar com Google');
   };

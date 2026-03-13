@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Users } from 'lucide-react';
 import { useMemo } from 'react';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 import logoVertical from '@/assets/logo-vertical.png';
 
 const ecosystemLinks = [
@@ -23,6 +24,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 const Footer = () => {
+  const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const { data: topCities = [] } = useQuery({
     queryKey: ['footer-cities'],
     queryFn: async () => {
@@ -128,6 +130,19 @@ const Footer = () => {
                   (41) 99745-2053
                 </a>
               </li>
+              {whatsappGroupUrl && (
+                <li>
+                  <a
+                    href={whatsappGroupUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#25D366]/20 px-3 py-2 text-[#25D366] transition-colors hover:bg-[#25D366]/30"
+                  >
+                    <Users className="h-4 w-4" />
+                    Grupo WhatsApp
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
         </div>

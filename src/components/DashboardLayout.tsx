@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 const menuItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil' },
-  { label: 'Serviços', icon: Briefcase, path: '/dashboard/servicos' },
+  { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos' },
   { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads' },
   { label: 'Plano', icon: CreditCard, path: '/dashboard/plano' },
 ];

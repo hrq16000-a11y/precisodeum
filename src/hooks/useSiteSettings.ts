@@ -10,16 +10,23 @@ export function useSiteSettings() {
         .select('*')
         .order('key');
       const map: Record<string, boolean> = {};
+      const raw: Record<string, string> = {};
       (data || []).forEach((s: any) => {
         map[s.key] = s.value === 'true';
+        raw[s.key] = s.value;
       });
-      return map;
+      return { flags: map, values: raw };
     },
     staleTime: 60000,
   });
 }
 
 export function useFeatureEnabled(key: string) {
-  const { data: settings } = useSiteSettings();
-  return settings?.[key] ?? false;
+  const { data } = useSiteSettings();
+  return data?.flags?.[key] ?? false;
+}
+
+export function useSettingValue(key: string) {
+  const { data } = useSiteSettings();
+  return data?.values?.[key] ?? '';
 }

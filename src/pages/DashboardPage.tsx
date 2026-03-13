@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Eye, MousePointerClick, MessageSquare, Star, TrendingUp } from 'lucide-react';
+import { Eye, MousePointerClick, MessageSquare, Star, TrendingUp, Briefcase, User, ArrowRight, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 
 const DashboardPage = () => {
   const { user, provider, loading } = useAuth();
   const navigate = useNavigate();
+  const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');
@@ -22,20 +24,77 @@ const DashboardPage = () => {
     { label: 'Ranking na busca', value: '—', icon: TrendingUp, change: '' },
   ];
 
+  const steps = [
+    {
+      number: '1',
+      title: 'Complete seu perfil',
+      description: 'Adicione sua foto, descrição profissional, cidade e contato. Um perfil completo gera mais confiança.',
+      action: () => navigate('/dashboard/perfil'),
+      actionLabel: 'Editar Perfil',
+      icon: User,
+      done: !!provider?.description && !!provider?.city,
+    },
+    {
+      number: '2',
+      title: 'Cadastre seus serviços',
+      description: 'Vá em "Meus Serviços" e adicione os serviços que você oferece. É aqui que você faz suas postagens e divulga seu trabalho!',
+      action: () => navigate('/dashboard/servicos'),
+      actionLabel: 'Meus Serviços',
+      icon: Briefcase,
+      done: false,
+    },
+    {
+      number: '3',
+      title: 'Entre no grupo do WhatsApp',
+      description: 'Participe do nosso grupo exclusivo para profissionais. Receba dicas, oportunidades e conecte-se com outros profissionais.',
+      action: () => whatsappGroupUrl && window.open(whatsappGroupUrl, '_blank'),
+      actionLabel: 'Entrar no Grupo',
+      icon: Users,
+      done: false,
+      hidden: !whatsappGroupUrl,
+    },
+  ];
+
   return (
     <DashboardLayout>
       <h1 className="font-display text-2xl font-bold text-foreground">Dashboard</h1>
       <p className="mt-1 text-sm text-muted-foreground">Bem-vindo de volta!</p>
 
-      {!provider && (
-        <div className="mt-6 rounded-xl border border-accent/30 bg-accent/5 p-6">
-          <h2 className="font-display text-lg font-bold text-foreground">Complete seu perfil profissional</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Para aparecer nos resultados de busca, complete seu perfil.</p>
-          <button onClick={() => navigate('/dashboard/perfil')} className="mt-3 text-sm font-medium text-accent hover:underline">
-            Completar perfil →
-          </button>
+      {/* Onboarding guide */}
+      <div className="mt-6 rounded-xl border border-accent/30 bg-accent/5 p-6">
+        <h2 className="font-display text-lg font-bold text-foreground">🚀 Como funciona a plataforma</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Siga os passos abaixo para começar a receber clientes. Suas postagens e divulgação são feitas na seção <strong>"Meus Serviços"</strong>.
+        </p>
+
+        <div className="mt-4 space-y-3">
+          {steps.filter(s => !s.hidden).map((step) => (
+            <div
+              key={step.number}
+              className={`flex items-start gap-4 rounded-lg border p-4 transition-colors ${
+                step.done ? 'border-accent/30 bg-accent/5' : 'border-border bg-card'
+              }`}
+            >
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                step.done ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'
+              }`}>
+                {step.done ? '✓' : step.number}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-foreground">{step.title}</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">{step.description}</p>
+                <button
+                  onClick={step.action}
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
+                >
+                  {step.actionLabel} <ArrowRight className="h-3 w-3" />
+                </button>
+              </div>
+              <step.icon className="h-5 w-5 shrink-0 text-muted-foreground" />
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {stats.map((s) => (
