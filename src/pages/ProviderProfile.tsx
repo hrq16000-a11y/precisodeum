@@ -14,6 +14,7 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 
 const ProviderProfile = () => {
+  const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const { slug } = useParams();
   const [provider, setProvider] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
