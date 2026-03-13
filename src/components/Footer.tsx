@@ -106,23 +106,15 @@ const Footer = () => {
           <div>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Contato</h4>
             <ul className="space-y-3 text-sm text-primary-foreground/70">
-              <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4 shrink-0" />
-                <span>contato@precisodeum.com.br</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4 shrink-0" />
-                <span>(41) 3000-0000</span>
-              </li>
               <li>
                 <a
-                  href="https://wa.me/5541900000000"
+                  href="https://wa.me/5541997452053"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-lg bg-primary-foreground/10 px-3 py-2 transition-colors hover:bg-primary-foreground/20"
                 >
                   <MessageCircle className="h-4 w-4" />
-                  WhatsApp
+                  (41) 99745-2053
                 </a>
               </li>
             </ul>
