@@ -52,7 +52,7 @@ const DashboardPage = () => {
       action: () => navigate('/dashboard/servicos'),
       actionLabel: 'Meus Serviços',
       icon: Briefcase,
-      done: false,
+      done: servicesCount !== null && servicesCount > 0,
     },
     {
       number: '3',
