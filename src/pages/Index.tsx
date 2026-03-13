@@ -228,7 +228,7 @@ const Index = () => {
       )}
 
       {/* Popular Searches */}
-      {allCategories.length > 0 && topCities.length > 0 && (
+      {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
         <section className="py-16">
           <div className="container">
             <div className="mb-8 text-center">
