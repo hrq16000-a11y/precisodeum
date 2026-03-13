@@ -27,6 +27,7 @@ import AdminCitiesPage from "./pages/AdminCitiesPage";
 import SeoPage from "./pages/SeoPage";
 import CityPage from "./pages/CityPage";
 import AboutPage from "./pages/AboutPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
