@@ -27,6 +27,7 @@ import AdminCitiesPage from "./pages/AdminCitiesPage";
 import SeoPage from "./pages/SeoPage";
 import CityPage from "./pages/CityPage";
 import AboutPage from "./pages/AboutPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/admin/cidades" element={<AdminCitiesPage />} />
             <Route path="/cidade/:slug" element={<CityPage />} />
             <Route path="/sobre" element={<AboutPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/:slug" element={<SeoPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
