@@ -34,25 +34,33 @@ const DashboardPlanPage = () => {
       <p className="mt-1 text-sm text-muted-foreground">Escolha o plano ideal para o seu negócio</p>
 
       <div className="mt-8 grid gap-6 md:grid-cols-3">
-        {plans.map(plan => (
-          <div key={plan.name} className={`rounded-xl border p-6 shadow-card ${plan.highlight ? 'border-accent bg-accent/5 ring-2 ring-accent/20' : 'border-border bg-card'}`}>
-            <h3 className="font-display text-lg font-bold text-foreground">{plan.name}</h3>
-            <div className="mt-2">
-              <span className="font-display text-3xl font-bold text-foreground">{plan.price}</span>
-              <span className="text-sm text-muted-foreground">{plan.period}</span>
+        {plans.map(plan => {
+          const isComingSoon = !plan.current;
+          return (
+            <div key={plan.name} className={`relative rounded-xl border p-6 shadow-card ${plan.highlight ? 'border-accent bg-accent/5 ring-2 ring-accent/20' : 'border-border bg-card'} ${isComingSoon ? 'opacity-60' : ''}`}>
+              {isComingSoon && (
+                <div className="absolute top-3 right-3 rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+                  Em breve
+                </div>
+              )}
+              <h3 className="font-display text-lg font-bold text-foreground">{plan.name}</h3>
+              <div className="mt-2">
+                <span className="font-display text-3xl font-bold text-foreground">{plan.price}</span>
+                <span className="text-sm text-muted-foreground">{plan.period}</span>
+              </div>
+              <ul className="mt-6 space-y-3">
+                {plan.features.map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-foreground">
+                    <Check className="h-4 w-4 text-accent" /> {f}
+                  </li>
+                ))}
+              </ul>
+              <Button variant={plan.current ? 'outline' : 'accent'} className="mt-6 w-full" disabled>
+                {plan.current ? 'Plano Atual' : 'Em breve'}
+              </Button>
             </div>
-            <ul className="mt-6 space-y-3">
-              {plan.features.map(f => (
-                <li key={f} className="flex items-center gap-2 text-sm text-foreground">
-                  <Check className="h-4 w-4 text-accent" /> {f}
-                </li>
-              ))}
-            </ul>
-            <Button variant={plan.current ? 'outline' : 'accent'} className="mt-6 w-full" disabled={plan.current}>
-              {plan.current ? 'Plano Atual' : 'Assinar'}
-            </Button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </DashboardLayout>
   );
