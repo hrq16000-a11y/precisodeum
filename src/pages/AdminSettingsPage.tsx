@@ -3,7 +3,8 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Settings } from 'lucide-react';
+import { Settings, Save } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const AdminSettingsPage = () => {
   const { isAdmin, loading } = useAdmin();
@@ -36,7 +37,23 @@ const AdminSettingsPage = () => {
     }
   };
 
+  const updateTextSetting = async (key: string, newValue: string) => {
+    const { error } = await (supabase
+      .from('site_settings' as any) as any)
+      .update({ value: newValue, updated_at: new Date().toISOString() })
+      .eq('key', key);
+    if (error) {
+      toast.error('Erro ao atualizar: ' + error.message);
+    } else {
+      toast.success('Configuração atualizada!');
+      fetchSettings();
+    }
+  };
+
   if (loading) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
+
+  const booleanSettings = settings.filter((s: any) => s.value === 'true' || s.value === 'false');
+  const textSettings = settings.filter((s: any) => s.value !== 'true' && s.value !== 'false');
 
   return (
     <AdminLayout>
@@ -46,7 +63,7 @@ const AdminSettingsPage = () => {
       <p className="mt-1 text-sm text-muted-foreground">Habilite ou desabilite funcionalidades do site</p>
 
       <div className="mt-6 space-y-3">
-        {settings.map((s: any) => (
+        {booleanSettings.map((s: any) => (
           <div key={s.key} className="flex items-center justify-between rounded-xl border border-border bg-card p-5 shadow-card">
             <div>
               <h3 className="text-sm font-bold text-foreground">{s.label}</h3>
@@ -67,7 +84,44 @@ const AdminSettingsPage = () => {
           </div>
         ))}
       </div>
+
+      {textSettings.length > 0 && (
+        <>
+          <h2 className="mt-8 font-display text-lg font-bold text-foreground">Configurações de texto</h2>
+          <div className="mt-3 space-y-3">
+            {textSettings.map((s: any) => (
+              <TextSettingRow key={s.key} setting={s} onSave={updateTextSetting} />
+            ))}
+          </div>
+        </>
+      )}
     </AdminLayout>
+  );
+};
+
+const TextSettingRow = ({ setting, onSave }: { setting: any; onSave: (key: string, value: string) => Promise<void> }) => {
+  const [value, setValue] = useState(setting.value);
+  const changed = value !== setting.value;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card space-y-2">
+      <div>
+        <h3 className="text-sm font-bold text-foreground">{setting.label}</h3>
+        <p className="text-xs text-muted-foreground">{setting.description}</p>
+      </div>
+      <div className="flex gap-2">
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+        />
+        {changed && (
+          <Button variant="accent" size="sm" onClick={() => onSave(setting.key, value)}>
+            <Save className="mr-1 h-3 w-3" /> Salvar
+          </Button>
+        )}
+      </div>
+    </div>
   );
 };
 
