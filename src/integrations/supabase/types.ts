@@ -435,6 +435,30 @@ export type Database = {
           },
         ]
       }
+      site_settings: {
+        Row: {
+          description: string | null
+          key: string
+          label: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          label?: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          label?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
