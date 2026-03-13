@@ -37,6 +37,7 @@ const DashboardServicesPage = () => {
     service_area: '',
     address: '',
     working_hours: '',
+    website: '',
   });
 
   useEffect(() => {
@@ -125,7 +126,8 @@ const DashboardServicesPage = () => {
       service_area: form.service_area,
       address: provider ? [provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') : form.address,
       working_hours: form.working_hours,
-    };
+      website: form.website,
+    } as any;
 
     let serviceId = editId;
 
@@ -153,7 +155,7 @@ const DashboardServicesPage = () => {
     }
 
     toast.success(editId ? 'Serviço atualizado!' : 'Serviço adicionado!');
-    setForm({ service_name: '', description: '', whatsapp: '', service_area: '', address: '', working_hours: '' });
+    setForm({ service_name: '', description: '', whatsapp: '', service_area: '', address: '', working_hours: '', website: '' });
     setSelectedCategoryIds([]);
     setShowForm(false);
     setEditId(null);
@@ -168,6 +170,7 @@ const DashboardServicesPage = () => {
       service_area: s.service_area || '',
       address: s.address || '',
       working_hours: s.working_hours || '',
+      website: (s as any).website || provider?.website || '',
     });
     setEditId(s.id);
 
@@ -209,6 +212,7 @@ const DashboardServicesPage = () => {
             service_area: '',
             address: '',
             working_hours: provider?.working_hours || '',
+            website: provider?.website || '',
           });
         }}>
           <Plus className="mr-1 h-4 w-4" /> Novo Serviço
@@ -232,6 +236,12 @@ const DashboardServicesPage = () => {
               <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
               <input name="whatsapp" value={form.whatsapp} onChange={handleChange}
                 placeholder="Ex: 11999999999"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-foreground">Site <span className="text-muted-foreground">(opcional)</span></label>
+              <input name="website" value={form.website} onChange={handleChange}
+                placeholder="Ex: https://meusite.com.br"
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
             </div>
           </div>
@@ -275,19 +285,19 @@ const DashboardServicesPage = () => {
 
               const segmentMap: Record<string, string> = {};
               const segments: [string, string[]][] = [
-                ['Construção e Manutenção', ['eletricista','encanador','pedreiro','pintor','serralheiro','marceneiro','gesseiro','vidraceiro','construcao-civil','impermeabilizacao','desentupidora','ar-condicionado','antenista','instalador-cameras','instalador-tv','marido-de-aluguel','chaveiro','azulejista','calceteiro','telhadista','soldador','piscineiro','paisagista','instalador-pisos','instalador-cortinas','instalador-redes-protecao']],
+                ['Construção e Manutenção', ['eletricista','encanador','pedreiro','pintor','serralheiro','marceneiro','gesseiro','vidraceiro','construcao-civil','impermeabilizacao','desentupidora','ar-condicionado','antenista','instalador-cameras','instalador-tv','marido-de-aluguel','chaveiro','azulejista','calceteiro','telhadista','soldador','piscineiro','paisagista','instalador-pisos','instalador-cortinas','instalador-redes-protecao','montador-moveis','limpador-vidros','sapateiro']],
                 ['Técnicos e Assistência', ['assistencia-tecnica','tecnico-celular','tecnico-refrigeracao','tecnico-maquina-lavar','tecnico-eletronica','tecnico-energia-solar','tecnico-informatica','suporte-tecnico']],
-                ['Transporte e Logística', ['motorista','taxista','motoboy','caminhoneiro','fretista','entregador','mudancas','guincheiro']],
+                ['Transporte e Logística', ['motorista','taxista','motoboy','caminhoneiro','fretista','entregador','mudancas','guincheiro','motorista-escolar','bicicleteiro']],
                 ['Segurança', ['seguranca-patrimonial','seguranca-pessoal','vigilante','porteiro']],
-                ['Beleza e Estética', ['cabeleireiro','manicure','maquiador','barbeiro','esteticista']],
-                ['Saúde e Bem-estar', ['medico','psicólogo','dentista','fisioterapeuta','nutricionista','personal-trainer','enfermeiro','cuidador-idosos','fonoaudiologo','terapeuta-ocupacional','massagista','acupunturista','podologo']],
-                ['Alimentação e Eventos', ['cozinheiro','confeiteiro','churrasqueiro','bartender','garcom','padeiro','cozinheira-domestica','dj','decorador-festas','cerimonialista','sonorizacao-iluminacao','buffet']],
+                ['Beleza e Estética', ['cabeleireiro','manicure','maquiador','barbeiro','esteticista','consultor-moda']],
+                ['Saúde e Bem-estar', ['medico','psicólogo','dentista','fisioterapeuta','nutricionista','personal-trainer','enfermeiro','cuidador-idosos','fonoaudiologo','terapeuta-ocupacional','massagista','acupunturista','podologo','radiologista']],
+                ['Alimentação e Eventos', ['cozinheiro','confeiteiro','churrasqueiro','bartender','garcom','padeiro','cozinheira-domestica','dj','decorador-festas','cerimonialista','sonorizacao-iluminacao','buffet','organizador-eventos','recreador-infantil']],
                 ['Limpeza e Conservação', ['diarista','limpeza-residencial','limpeza-comercial','limpeza-pos-obra','lavanderia','dedetizacao','limpeza-piscina','limpeza-estofados','dedetizador']],
-                ['Serviços Domésticos e Pets', ['baba','passadeira','mordomo','dog-walker','pet-sitter','tosador','veterinario']],
+                ['Serviços Domésticos e Pets', ['baba','passadeira','mordomo','dog-walker','pet-sitter','tosador','veterinario','banhista-animais']],
                 ['Consultoria e Negócios', ['consultoria-empresarial','consultoria-financeira','consultoria-marketing','consultoria-ti','consultoria-rh','contador','escritorio-contabilidade','advogado','corretor-imoveis','corretor-seguros','despachante','perito','detetive-particular']],
-                ['Design e Comunicação', ['designer-grafico','designer-interiores','designer-moda','fotografo','videomaker','editor-video','redator','tradutor','locutor','social-media','musico']],
-                ['Educação', ['professor-particular','tutor','instrutor-idiomas']],
-                ['TI e Digital', ['desenvolvimento-software','ciberseguranca']],
+                ['Design e Comunicação', ['designer-grafico','designer-interiores','designer-moda','fotografo','videomaker','editor-video','redator','tradutor','interprete','locutor','social-media','musico','produtor-conteudo','produtor-audiovisual','assessor-imprensa','filmmaker']],
+                ['Educação', ['professor-particular','tutor','instrutor-idiomas','guia-turismo']],
+                ['TI e Digital', ['desenvolvimento-software','ciberseguranca','web-designer','marketing-digital']],
                 ['Automotivo', ['mecanico','eletricista-automotivo','funileiro','borracheiro','tecnico-pneus']],
               ];
 
