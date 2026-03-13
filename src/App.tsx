@@ -26,6 +26,7 @@ import AdminStatsPage from "./pages/AdminStatsPage";
 import AdminCitiesPage from "./pages/AdminCitiesPage";
 import SeoPage from "./pages/SeoPage";
 import CityPage from "./pages/CityPage";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
