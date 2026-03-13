@@ -81,7 +81,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Categories */}
+      {/* Categories by Segment */}
       <section className="py-16">
         <div className="container">
           <div className="mb-8 text-center">
@@ -94,13 +94,46 @@ const Index = () => {
                 <Skeleton key={i} className="h-28 rounded-xl" />
               ))}
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-              {categories.map((cat) => (
-                <CategoryCard key={cat.id} category={cat} />
-              ))}
-            </div>
-          )}
+          ) : (() => {
+            const segmentSlugs: Record<string, string[]> = {
+              'Construção e Manutenção': ['eletricista','encanador','pedreiro','pintor','marceneiro','serralheiro','gesseiro','ar-condicionado','marido-de-aluguel','chaveiro','montador-moveis'],
+              'Serviços para Casa': ['diarista','limpeza-residencial','jardineiro','cuidador-idosos','baba','dog-walker','cozinheira-domestica','passadeira','limpador-vidros','banhista-animais'],
+              'Técnicos e Profissionais': ['assistencia-tecnica','mecanico','eletricista-automotivo','tecnico-celular','tecnico-refrigeracao','suporte-tecnico','motorista','taxista','motoboy','entregador'],
+              'Saúde e Beleza': ['cabeleireiro','manicure','barbeiro','esteticista','maquiador','personal-trainer','fisioterapeuta','nutricionista','massagista','psicólogo'],
+              'Negócios e Criatividade': ['advogado','contador','designer-grafico','fotografo','desenvolvimento-software','web-designer','marketing-digital','produtor-conteudo','consultor-moda','organizador-eventos'],
+            };
+
+            const segmentIcons: Record<string, string> = {
+              'Construção e Manutenção': '🏗️',
+              'Serviços para Casa': '🏠',
+              'Técnicos e Profissionais': '🔧',
+              'Saúde e Beleza': '💆',
+              'Negócios e Criatividade': '💼',
+            };
+
+            return (
+              <div className="space-y-8">
+                {Object.entries(segmentSlugs).map(([segName, slugs]) => {
+                  const segCats = slugs
+                    .map(slug => categories.find(c => c.slug === slug))
+                    .filter(Boolean) as typeof categories;
+                  if (segCats.length === 0) return null;
+                  return (
+                    <div key={segName}>
+                      <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-foreground">
+                        <span className="text-xl">{segmentIcons[segName]}</span> {segName}
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                        {segCats.map((cat) => (
+                          <CategoryCard key={cat.id} category={cat} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </section>
 

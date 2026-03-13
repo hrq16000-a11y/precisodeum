@@ -275,19 +275,19 @@ const DashboardServicesPage = () => {
 
               const segmentMap: Record<string, string> = {};
               const segments: [string, string[]][] = [
-                ['Construção e Manutenção', ['eletricista','encanador','pedreiro','pintor','serralheiro','marceneiro','gesseiro','vidraceiro','construcao-civil','impermeabilizacao','desentupidora','ar-condicionado','antenista','instalador-cameras','instalador-tv','marido-de-aluguel','chaveiro','azulejista','calceteiro','telhadista','soldador','piscineiro','paisagista','instalador-pisos','instalador-cortinas','instalador-redes-protecao']],
+                ['Construção e Manutenção', ['eletricista','encanador','pedreiro','pintor','serralheiro','marceneiro','gesseiro','vidraceiro','construcao-civil','impermeabilizacao','desentupidora','ar-condicionado','antenista','instalador-cameras','instalador-tv','marido-de-aluguel','chaveiro','azulejista','calceteiro','telhadista','soldador','piscineiro','paisagista','instalador-pisos','instalador-cortinas','instalador-redes-protecao','montador-moveis','limpador-vidros','sapateiro']],
                 ['Técnicos e Assistência', ['assistencia-tecnica','tecnico-celular','tecnico-refrigeracao','tecnico-maquina-lavar','tecnico-eletronica','tecnico-energia-solar','tecnico-informatica','suporte-tecnico']],
-                ['Transporte e Logística', ['motorista','taxista','motoboy','caminhoneiro','fretista','entregador','mudancas','guincheiro']],
+                ['Transporte e Logística', ['motorista','taxista','motoboy','caminhoneiro','fretista','entregador','mudancas','guincheiro','motorista-escolar','bicicleteiro']],
                 ['Segurança', ['seguranca-patrimonial','seguranca-pessoal','vigilante','porteiro']],
-                ['Beleza e Estética', ['cabeleireiro','manicure','maquiador','barbeiro','esteticista']],
-                ['Saúde e Bem-estar', ['medico','psicólogo','dentista','fisioterapeuta','nutricionista','personal-trainer','enfermeiro','cuidador-idosos','fonoaudiologo','terapeuta-ocupacional','massagista','acupunturista','podologo']],
-                ['Alimentação e Eventos', ['cozinheiro','confeiteiro','churrasqueiro','bartender','garcom','padeiro','cozinheira-domestica','dj','decorador-festas','cerimonialista','sonorizacao-iluminacao','buffet']],
+                ['Beleza e Estética', ['cabeleireiro','manicure','maquiador','barbeiro','esteticista','consultor-moda']],
+                ['Saúde e Bem-estar', ['medico','psicólogo','dentista','fisioterapeuta','nutricionista','personal-trainer','enfermeiro','cuidador-idosos','fonoaudiologo','terapeuta-ocupacional','massagista','acupunturista','podologo','radiologista']],
+                ['Alimentação e Eventos', ['cozinheiro','confeiteiro','churrasqueiro','bartender','garcom','padeiro','cozinheira-domestica','dj','decorador-festas','cerimonialista','sonorizacao-iluminacao','buffet','organizador-eventos','recreador-infantil']],
                 ['Limpeza e Conservação', ['diarista','limpeza-residencial','limpeza-comercial','limpeza-pos-obra','lavanderia','dedetizacao','limpeza-piscina','limpeza-estofados','dedetizador']],
-                ['Serviços Domésticos e Pets', ['baba','passadeira','mordomo','dog-walker','pet-sitter','tosador','veterinario']],
+                ['Serviços Domésticos e Pets', ['baba','passadeira','mordomo','dog-walker','pet-sitter','tosador','veterinario','banhista-animais']],
                 ['Consultoria e Negócios', ['consultoria-empresarial','consultoria-financeira','consultoria-marketing','consultoria-ti','consultoria-rh','contador','escritorio-contabilidade','advogado','corretor-imoveis','corretor-seguros','despachante','perito','detetive-particular']],
-                ['Design e Comunicação', ['designer-grafico','designer-interiores','designer-moda','fotografo','videomaker','editor-video','redator','tradutor','locutor','social-media','musico']],
-                ['Educação', ['professor-particular','tutor','instrutor-idiomas']],
-                ['TI e Digital', ['desenvolvimento-software','ciberseguranca']],
+                ['Design e Comunicação', ['designer-grafico','designer-interiores','designer-moda','fotografo','videomaker','editor-video','redator','tradutor','interprete','locutor','social-media','musico','produtor-conteudo','produtor-audiovisual','assessor-imprensa','filmmaker']],
+                ['Educação', ['professor-particular','tutor','instrutor-idiomas','guia-turismo']],
+                ['TI e Digital', ['desenvolvimento-software','ciberseguranca','web-designer','marketing-digital']],
                 ['Automotivo', ['mecanico','eletricista-automotivo','funileiro','borracheiro','tecnico-pneus']],
               ];
 
