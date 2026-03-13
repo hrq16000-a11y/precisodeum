@@ -177,6 +177,7 @@ const Index = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* How It Works */}
       <section className="py-16">
