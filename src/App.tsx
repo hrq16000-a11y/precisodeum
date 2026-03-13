@@ -61,6 +61,7 @@ const App = () => (
             <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
             <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
             <Route path="/admin/cidades" element={<AdminCitiesPage />} />
+            <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
             <Route path="/cidade/:slug" element={<CityPage />} />
             <Route path="/sobre" element={<AboutPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
