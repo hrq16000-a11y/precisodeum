@@ -188,15 +188,15 @@ const DashboardServicesPage = () => {
         <Button variant="accent" size="sm" onClick={() => {
           setShowForm(true);
           setEditId(null);
-          // Pre-fill from provider profile data
+          setCategorySearch('');
           const providerCategory = provider?.category_id || '';
           setSelectedCategoryIds(providerCategory ? [providerCategory] : []);
           setForm({
             service_name: '',
             description: '',
             whatsapp: provider?.whatsapp || '',
-            service_area: provider ? `${provider.city}${provider.state ? ' - ' + provider.state : ''}` : '',
-            address: provider?.neighborhood || '',
+            service_area: '',
+            address: '',
             working_hours: provider?.working_hours || '',
           });
         }}>
