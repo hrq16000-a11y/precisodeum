@@ -10,6 +10,11 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
+  const { data: settings } = useSiteSettings();
+  const whatsappGroupUrl = settings?.whatsapp_group_url ? 'https://chat.whatsapp.com/' : '';
+  const rawUrl = settings?.['whatsapp_group_url'];
+  // whatsapp_group_url is stored as a boolean in useSiteSettings, we need the raw value
+  
 
   const handleSignOut = async () => {
     await signOut();
