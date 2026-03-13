@@ -8,7 +8,7 @@ const ecosystemLinks = [
   { name: 'Encontre um Técnico', url: 'https://www.encontreumtecnico.com' },
   { name: 'Preciso de um Técnico', url: 'https://www.precisodeumtecnico.com' },
   { name: 'Encontre um Profissional', url: 'https://www.encontreumprofissional.com.br' },
-  { name: 'Preciso de um Profissional', url: 'https://www.precisodeumprofissional.com' },
+  { name: 'Preciso de um Profissional', url: 'https://www.precisodeumprofissional.com.br' },
   { name: 'TamoNaWeb', url: 'https://www.TamoNaWeb.com.br' },
 ];
 
