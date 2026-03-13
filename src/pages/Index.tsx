@@ -77,7 +77,7 @@ const Index = () => {
             className="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm text-primary-foreground/50"
           >
             <span className="flex items-center gap-1"><Shield className="h-4 w-4" /> Profissionais verificados</span>
-            <span className="flex items-center gap-1"><Users className="h-4 w-4" /> +10.000 cadastrados</span>
+            <span className="flex items-center gap-1"><Users className="h-4 w-4" /> Profissionais em todo o Brasil</span>
             <span className="flex items-center gap-1"><Zap className="h-4 w-4" /> Resposta rápida</span>
           </motion.div>
         </div>
