@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MessageCircle } from 'lucide-react';
 import { useMemo } from 'react';
+import logoVertical from '@/assets/logo-vertical.png';
 
 const ecosystemLinks = [
   { name: 'Encontre um Técnico', url: 'https://www.encontreumtecnico.com' },
@@ -54,7 +55,9 @@ const Footer = () => {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <h3 className="mb-3 font-display text-lg font-bold">PRECISO DE UM</h3>
+            <Link to="/">
+              <img src={logoVertical} alt="Preciso de um" className="mb-4 h-24 brightness-0 invert" />
+            </Link>
             <p className="text-sm leading-relaxed text-primary-foreground/70">
               A maior plataforma de serviços do Brasil. Conectamos você aos melhores profissionais da sua região com avaliações verificadas e contato direto.
             </p>
