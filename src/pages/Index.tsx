@@ -291,6 +291,7 @@ const Index = () => {
       )}
 
       {/* FAQ */}
+      {faqEnabled && (
       <section className="bg-muted/50 py-16">
         <div className="container max-w-2xl">
           <h2 className="mb-8 text-center font-display text-2xl font-bold text-foreground md:text-3xl">Perguntas Frequentes</h2>
