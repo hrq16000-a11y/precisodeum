@@ -1,15 +1,25 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Phone, Mail, MessageCircle } from 'lucide-react';
-
+import { MessageCircle } from 'lucide-react';
+import { useMemo } from 'react';
 
 const ecosystemLinks = [
   { name: 'Encontre um Técnico', url: 'https://www.encontreumtecnico.com' },
   { name: 'Preciso de um Técnico', url: 'https://www.precisodeumtecnico.com' },
-  { name: 'Encontre um Profissional', url: 'https://www.encontreumprofissional.com' },
+  { name: 'Encontre um Profissional', url: 'https://www.encontreumprofissional.com.br' },
   { name: 'Preciso de um Profissional', url: 'https://www.precisodeumprofissional.com' },
+  { name: 'TamoNaWeb', url: 'https://www.TamoNaWeb.com.br' },
 ];
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 const Footer = () => {
   const { data: topCities = [] } = useQuery({
