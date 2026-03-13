@@ -260,19 +260,33 @@ const DashboardServicesPage = () => {
               );
 
               // Group by segment
-              const groups: Record<string, any[]> = {
-                'Construção e Manutenção': [],
-                'Serviços Profissionais': [],
-                'Outros': [],
-              };
+              const groups: Record<string, any[]> = {};
 
-              const constructionSlugs = ['eletricista','encanador','pedreiro','pintor','serralheiro','marceneiro','gesseiro','vidraceiro','construcao-civil','impermeabilizacao','desentupidora','ar-condicionado','antenista','instalador-cameras','instalador-tv','marido-de-aluguel','chaveiro'];
-              const professionalSlugs = ['consultoria-empresarial','consultoria-financeira','consultoria-marketing','consultoria-ti','consultoria-rh','desenvolvimento-software','suporte-tecnico','ciberseguranca','tecnico-informatica','contador','escritorio-contabilidade','advogado','designer-grafico','designer-interiores','designer-moda','fotografo','professor-particular','tutor','instrutor-idiomas'];
+              const segmentMap: Record<string, string> = {};
+              const segments: [string, string[]][] = [
+                ['Construção e Manutenção', ['eletricista','encanador','pedreiro','pintor','serralheiro','marceneiro','gesseiro','vidraceiro','construcao-civil','impermeabilizacao','desentupidora','ar-condicionado','antenista','instalador-cameras','instalador-tv','marido-de-aluguel','chaveiro','azulejista','calceteiro','telhadista','soldador','piscineiro','paisagista','instalador-pisos','instalador-cortinas','instalador-redes-protecao']],
+                ['Técnicos e Assistência', ['assistencia-tecnica','tecnico-celular','tecnico-refrigeracao','tecnico-maquina-lavar','tecnico-eletronica','tecnico-energia-solar','tecnico-informatica','suporte-tecnico']],
+                ['Transporte e Logística', ['motorista','taxista','motoboy','caminhoneiro','fretista','entregador','mudancas','guincheiro']],
+                ['Segurança', ['seguranca-patrimonial','seguranca-pessoal','vigilante','porteiro']],
+                ['Beleza e Estética', ['cabeleireiro','manicure','maquiador','barbeiro','esteticista']],
+                ['Saúde e Bem-estar', ['medico','psicólogo','dentista','fisioterapeuta','nutricionista','personal-trainer','enfermeiro','cuidador-idosos','fonoaudiologo','terapeuta-ocupacional','massagista','acupunturista','podologo']],
+                ['Alimentação e Eventos', ['cozinheiro','confeiteiro','churrasqueiro','bartender','garcom','padeiro','cozinheira-domestica','dj','decorador-festas','cerimonialista','sonorizacao-iluminacao','buffet']],
+                ['Limpeza e Conservação', ['diarista','limpeza-residencial','limpeza-comercial','limpeza-pos-obra','lavanderia','dedetizacao','limpeza-piscina','limpeza-estofados','dedetizador']],
+                ['Serviços Domésticos e Pets', ['baba','passadeira','mordomo','dog-walker','pet-sitter','tosador','veterinario']],
+                ['Consultoria e Negócios', ['consultoria-empresarial','consultoria-financeira','consultoria-marketing','consultoria-ti','consultoria-rh','contador','escritorio-contabilidade','advogado','corretor-imoveis','corretor-seguros','despachante','perito','detetive-particular']],
+                ['Design e Comunicação', ['designer-grafico','designer-interiores','designer-moda','fotografo','videomaker','editor-video','redator','tradutor','locutor','social-media','musico']],
+                ['Educação', ['professor-particular','tutor','instrutor-idiomas']],
+                ['TI e Digital', ['desenvolvimento-software','ciberseguranca']],
+                ['Automotivo', ['mecanico','eletricista-automotivo','funileiro','borracheiro','tecnico-pneus']],
+              ];
+
+              segments.forEach(([name]) => { groups[name] = []; });
+              groups['Outros'] = [];
+              segments.forEach(([name, slugs]) => { slugs.forEach(s => { segmentMap[s] = name; }); });
 
               filtered.forEach(c => {
-                if (constructionSlugs.includes(c.slug)) groups['Construção e Manutenção'].push(c);
-                else if (professionalSlugs.includes(c.slug)) groups['Serviços Profissionais'].push(c);
-                else groups['Outros'].push(c);
+                const group = segmentMap[c.slug] || 'Outros';
+                groups[group].push(c);
               });
 
               const hasResults = filtered.length > 0;
