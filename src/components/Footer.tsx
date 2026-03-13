@@ -3,17 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Phone, Mail, MessageCircle } from 'lucide-react';
 
-const popularServices = [
-  { name: 'Eletricista', slug: 'eletricista' },
-  { name: 'Técnico em Informática', slug: 'tecnico-em-informatica' },
-  { name: 'Encanador', slug: 'encanador' },
-  { name: 'Instalador de Ar Condicionado', slug: 'instalador-de-ar-condicionado' },
-  { name: 'Instalador de Câmeras', slug: 'instalador-de-cameras' },
-  { name: 'Pedreiro', slug: 'pedreiro' },
-  { name: 'Pintor', slug: 'pintor' },
-  { name: 'Chaveiro', slug: 'chaveiro' },
-  { name: 'Marido de Aluguel', slug: 'marido-de-aluguel' },
-];
 
 const ecosystemLinks = [
   { name: 'Encontre um Técnico', url: 'https://www.encontreumtecnico.com' },
@@ -57,7 +46,7 @@ const Footer = () => {
           <div>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Serviços Populares</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
-              {popularServices.map((s) => (
+              {categories.map((s) => (
                 <li key={s.slug}>
                   <Link to={`/categoria/${s.slug}`} className="transition-colors hover:text-primary-foreground">{s.name}</Link>
                 </li>
