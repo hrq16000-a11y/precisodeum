@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { DbProvider } from '@/hooks/useProviders';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 
 interface ProviderCardProps {
   provider: DbProvider;
