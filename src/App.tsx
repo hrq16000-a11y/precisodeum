@@ -62,6 +62,7 @@ const App = () => (
             <Route path="/admin/cidades" element={<AdminCitiesPage />} />
             <Route path="/cidade/:slug" element={<CityPage />} />
             <Route path="/sobre" element={<AboutPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/:slug" element={<SeoPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
