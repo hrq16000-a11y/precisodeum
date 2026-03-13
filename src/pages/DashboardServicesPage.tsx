@@ -237,6 +237,12 @@ const DashboardServicesPage = () => {
                 placeholder="Ex: 11999999999"
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
             </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-foreground">Site <span className="text-muted-foreground">(opcional)</span></label>
+              <input name="website" value={form.website} onChange={handleChange}
+                placeholder="Ex: https://meusite.com.br"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+            </div>
           </div>
 
           {/* Autocomplete categories */}
