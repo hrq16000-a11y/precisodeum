@@ -32,12 +32,16 @@ const DashboardServicesPage = () => {
   };
 
   const handleSave = async () => {
-    if (!provider) { toast.error('Complete seu perfil primeiro'); return; }
+    if (!provider) { toast.error('Complete seu perfil primeiro na aba Perfil'); return; }
+    if (!form.service_name.trim()) { toast.error('Nome do serviço é obrigatório'); return; }
+
     if (editId) {
-      await supabase.from('services').update(form).eq('id', editId);
+      const { error } = await supabase.from('services').update(form).eq('id', editId);
+      if (error) { toast.error('Erro ao atualizar: ' + error.message); return; }
       toast.success('Serviço atualizado!');
     } else {
-      await supabase.from('services').insert({ ...form, provider_id: provider.id });
+      const { error } = await supabase.from('services').insert({ ...form, provider_id: provider.id });
+      if (error) { toast.error('Erro ao adicionar: ' + error.message); return; }
       toast.success('Serviço adicionado!');
     }
     setForm({ service_name: '', description: '', price: '', service_area: '' });

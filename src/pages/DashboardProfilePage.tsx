@@ -9,7 +9,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import PortfolioUpload from '@/components/PortfolioUpload';
 
 const DashboardProfilePage = () => {
-  const { user, profile, provider, loading } = useAuth();
+  const { user, profile, provider, loading, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
@@ -58,43 +58,66 @@ const DashboardProfilePage = () => {
     if (!user) return;
     setSaving(true);
 
-    await supabase.from('profiles').update({
-      full_name: form.full_name,
-      phone: form.phone,
-    }).eq('id', user.id);
-
-    if (provider) {
-      await supabase.from('providers').update({
-        business_name: form.business_name || null,
-        description: form.description,
-        city: form.city,
-        state: form.state,
-        neighborhood: form.neighborhood,
-        whatsapp: form.whatsapp,
-        website: form.website || null,
-        years_experience: form.years_experience,
-        category_id: form.category_id || null,
-      }).eq('id', provider.id);
-    } else {
-      // Create provider profile
-      const slug = `${form.full_name.toLowerCase().replace(/\s+/g, '-')}-${form.city.toLowerCase().replace(/\s+/g, '-')}`;
-      await supabase.from('providers').insert({
-        user_id: user.id,
-        business_name: form.business_name || null,
-        description: form.description,
-        city: form.city,
-        state: form.state,
-        neighborhood: form.neighborhood,
+    try {
+      const { error: profileError } = await supabase.from('profiles').update({
+        full_name: form.full_name,
         phone: form.phone,
-        whatsapp: form.whatsapp,
-        category_id: form.category_id || null,
-        slug,
-        status: 'pending',
-      });
-    }
+      }).eq('id', user.id);
 
-    setSaving(false);
-    toast.success('Perfil salvo com sucesso!');
+      if (profileError) {
+        toast.error('Erro ao salvar perfil: ' + profileError.message);
+        setSaving(false);
+        return;
+      }
+
+      if (provider) {
+        const { error: providerError } = await supabase.from('providers').update({
+          business_name: form.business_name || null,
+          description: form.description,
+          city: form.city,
+          state: form.state,
+          neighborhood: form.neighborhood,
+          whatsapp: form.whatsapp,
+          website: form.website || null,
+          years_experience: form.years_experience,
+          category_id: form.category_id || null,
+        }).eq('id', provider.id);
+
+        if (providerError) {
+          toast.error('Erro ao salvar dados profissionais: ' + providerError.message);
+          setSaving(false);
+          return;
+        }
+      } else {
+        const slug = `${form.full_name.toLowerCase().replace(/\s+/g, '-')}-${form.city.toLowerCase().replace(/\s+/g, '-')}`;
+        const { error: insertError } = await supabase.from('providers').insert({
+          user_id: user.id,
+          business_name: form.business_name || null,
+          description: form.description,
+          city: form.city,
+          state: form.state,
+          neighborhood: form.neighborhood,
+          phone: form.phone,
+          whatsapp: form.whatsapp,
+          category_id: form.category_id || null,
+          slug,
+          status: 'pending',
+        });
+
+        if (insertError) {
+          toast.error('Erro ao criar perfil profissional: ' + insertError.message);
+          setSaving(false);
+          return;
+        }
+      }
+
+      await refetchProfile();
+      toast.success('Perfil salvo com sucesso!');
+    } catch (err: any) {
+      toast.error('Erro inesperado: ' + (err.message || 'Tente novamente.'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const initials = form.full_name.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
