@@ -34,11 +34,19 @@ const Footer = () => {
   const { data: categories = [] } = useQuery({
     queryKey: ['footer-categories'],
     queryFn: async () => {
-      const { data } = await supabase.from('categories').select('name, slug').order('name').limit(8);
+      const { data } = await supabase.from('categories').select('name, slug').order('name').limit(20);
       return data || [];
     },
     staleTime: 1000 * 60 * 30,
   });
+
+  const randomSeoLinks = useMemo(() => {
+    if (categories.length === 0 || topCities.length === 0) return [];
+    const all = categories.flatMap((cat) =>
+      topCities.map((city) => ({ cat, city }))
+    );
+    return shuffle(all).slice(0, 24);
+  }, [categories, topCities]);
 
   return (
     <footer className="border-t border-border bg-primary text-primary-foreground">
