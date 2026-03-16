@@ -120,7 +120,7 @@ const ProviderProfile = () => {
     description: provider
       ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliações, nota ${Number(provider.rating_avg).toFixed(1)}.`
       : 'Encontre profissionais na plataforma.',
-    canonical: slug ? `https://precisodeum.lovable.app/profissional/${slug}` : undefined,
+    canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
   });
 
   const breadcrumbLd = useMemo(() => provider ? ({
