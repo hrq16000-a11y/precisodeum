@@ -31,7 +31,7 @@ const CategoryPage = () => {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Início', item: 'https://precisodeum.lovable.app/' },
+      { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
       { '@type': 'ListItem', position: 2, name: category.name },
     ],
   }) : null, [category]);

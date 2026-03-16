@@ -88,7 +88,7 @@ const CityPage = () => {
     description: city
       ? `Encontre os melhores profissionais em ${city.name}, ${city.state}. ${providers.length} cadastrados com avaliações verificadas.`
       : 'Encontre profissionais na sua cidade.',
-    canonical: slug ? `https://precisodeum.lovable.app/cidade/${slug}` : undefined,
+    canonical: slug ? `${SITE_BASE_URL}/cidade/${slug}` : undefined,
   });
 
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);

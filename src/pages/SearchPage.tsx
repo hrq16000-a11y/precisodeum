@@ -28,7 +28,7 @@ const SearchPage = () => {
   const seoDesc = query
     ? `Encontre profissionais para "${query}"${city ? ` em ${city}` : ''}. Compare avaliações e solicite orçamentos.`
     : 'Busque e encontre profissionais confiáveis perto de você na maior plataforma de serviços do Brasil.';
-  useSeoHead({ title: seoTitle, description: seoDesc, canonical: `https://precisodeum.lovable.app/buscar` });
+  useSeoHead({ title: seoTitle, description: seoDesc, canonical: `https://precisodeum.com.br/buscar` });
 
   const paginatedResults = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 

@@ -117,7 +117,7 @@ const SeoPage = () => {
   useSeoHead({
     title: seoTitle || 'Buscar',
     description: seoDesc || 'Encontre profissionais na plataforma.',
-    canonical: slug ? `https://precisodeum.lovable.app/${slug}` : undefined,
+    canonical: slug ? `${SITE_BASE_URL}/${slug}` : undefined,
   });
 
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);

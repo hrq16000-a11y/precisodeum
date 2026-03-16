@@ -144,7 +144,7 @@ const ProviderProfile = () => {
     ...(provider.review_count > 0 ? {
       aggregateRating: { '@type': 'AggregateRating', ratingValue: Number(provider.rating_avg).toFixed(1), reviewCount: provider.review_count, bestRating: 5 },
     } : {}),
-    url: `https://precisodeum.lovable.app/profissional/${slug}`,
+    url: `${SITE_BASE_URL}/profissional/${slug}`,
   }) : null, [provider, name, avatarUrl, slug]);
 
   useJsonLd(breadcrumbLd);
