@@ -25,6 +25,7 @@ import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 import AdminStatsPage from "./pages/AdminStatsPage";
 import AdminCitiesPage from "./pages/AdminCitiesPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
+import AdminSponsorsPage from "./pages/AdminSponsorsPage";
 import SeoPage from "./pages/SeoPage";
 import CityPage from "./pages/CityPage";
 import AboutPage from "./pages/AboutPage";
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
             <Route path="/admin/cidades" element={<AdminCitiesPage />} />
             <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
+            <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
             <Route path="/cidade/:slug" element={<CityPage />} />
             <Route path="/sobre" element={<AboutPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />

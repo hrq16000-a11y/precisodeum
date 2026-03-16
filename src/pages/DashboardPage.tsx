@@ -28,6 +28,7 @@ const DashboardPage = () => {
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
   const stats = [
+    { label: 'Serviços cadastrados', value: servicesCount !== null ? servicesCount.toString() : '—', icon: Briefcase, change: '' },
     { label: 'Visualizações', value: '—', icon: Eye, change: '' },
     { label: 'Cliques em contato', value: '—', icon: MousePointerClick, change: '' },
     { label: 'Leads recebidos', value: '—', icon: MessageSquare, change: '' },

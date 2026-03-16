@@ -459,6 +459,39 @@ export type Database = {
         }
         Relationships: []
       }
+      sponsors: {
+        Row: {
+          active: boolean
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string | null
+          link_url: string | null
+          position: string
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          link_url?: string | null
+          position?: string
+          title: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          link_url?: string | null
+          position?: string
+          title?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
