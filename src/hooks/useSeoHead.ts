@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 
 const SITE_URL = 'https://precisodeum.com.br';
 const DEFAULT_OG_IMAGE = 'https://storage.googleapis.com/gpt-engineer-file-uploads/El3gITL9bldQ7WZaPszZm8jw8DX2/social-images/social-1773355301217-69324.webp';
@@ -12,6 +13,9 @@ interface SeoHeadProps {
 }
 
 export function useSeoHead({ title, description, canonical, ogImage, noindex }: SeoHeadProps) {
+  const gscId = useSettingValue('google_search_console_id');
+  const gaId = useSettingValue('google_analytics_id');
+
   useEffect(() => {
     const fullTitle = title.includes('Preciso de um') ? title : `${title} | Preciso de um`;
     document.title = fullTitle;
@@ -43,6 +47,11 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex }: 
     setMeta('twitter:description', description);
     setMeta('twitter:image', ogImage || DEFAULT_OG_IMAGE);
 
+    // Google Search Console verification
+    if (gscId) {
+      setMeta('google-site-verification', gscId);
+    }
+
     // Canonical & og:url
     const canonicalUrl = canonical || `${SITE_URL}${window.location.pathname}`;
     setMeta('og:url', canonicalUrl, 'property');
@@ -58,7 +67,7 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex }: 
     return () => {
       document.title = 'Preciso de um | Encontre profissionais confiáveis perto de você';
     };
-  }, [title, description, canonical, ogImage, noindex]);
+  }, [title, description, canonical, ogImage, noindex, gscId, gaId]);
 }
 
 export const SITE_BASE_URL = SITE_URL;

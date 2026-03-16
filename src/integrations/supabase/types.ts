@@ -62,6 +62,36 @@ export type Database = {
         }
         Relationships: []
       }
+      faqs: {
+        Row: {
+          active: boolean
+          answer: string
+          created_at: string
+          display_order: number
+          id: string
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          answer: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          answer?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          question?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           client_name: string
@@ -137,6 +167,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      popular_services: {
+        Row: {
+          active: boolean
+          category_name: string
+          category_slug: string | null
+          created_at: string
+          description: string
+          display_order: number
+          icon: string
+          id: string
+          min_price: number
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category_name?: string
+          category_slug?: string | null
+          created_at?: string
+          description?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          min_price?: number
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category_name?: string
+          category_slug?: string | null
+          created_at?: string
+          description?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          min_price?: number
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
