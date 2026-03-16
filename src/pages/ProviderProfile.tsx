@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useSeoHead } from '@/hooks/useSeoHead';
+import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 
@@ -120,15 +120,15 @@ const ProviderProfile = () => {
     description: provider
       ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliações, nota ${Number(provider.rating_avg).toFixed(1)}.`
       : 'Encontre profissionais na plataforma.',
-    canonical: slug ? `https://precisodeum.lovable.app/profissional/${slug}` : undefined,
+    canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
   });
 
   const breadcrumbLd = useMemo(() => provider ? ({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Início', item: 'https://precisodeum.lovable.app/' },
-      ...(categorySlug ? [{ '@type': 'ListItem', position: 2, name: category, item: `https://precisodeum.lovable.app/categoria/${categorySlug}` }] : []),
+      { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
+      ...(categorySlug ? [{ '@type': 'ListItem', position: 2, name: category, item: `${SITE_BASE_URL}/categoria/${categorySlug}` }] : []),
       { '@type': 'ListItem', position: categorySlug ? 3 : 2, name },
     ],
   }) : null, [provider, name, category, categorySlug]);
@@ -144,7 +144,7 @@ const ProviderProfile = () => {
     ...(provider.review_count > 0 ? {
       aggregateRating: { '@type': 'AggregateRating', ratingValue: Number(provider.rating_avg).toFixed(1), reviewCount: provider.review_count, bestRating: 5 },
     } : {}),
-    url: `https://precisodeum.lovable.app/profissional/${slug}`,
+    url: `${SITE_BASE_URL}/profissional/${slug}`,
   }) : null, [provider, name, avatarUrl, slug]);
 
   useJsonLd(breadcrumbLd);

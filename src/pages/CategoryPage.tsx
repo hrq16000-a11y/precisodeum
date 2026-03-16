@@ -6,7 +6,7 @@ import ProviderCard from '@/components/ProviderCard';
 import PaginationControls from '@/components/PaginationControls';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCategoryProviders } from '@/hooks/useProviders';
-import { useSeoHead } from '@/hooks/useSeoHead';
+import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 
 const ITEMS_PER_PAGE = 12;
@@ -24,14 +24,14 @@ const CategoryPage = () => {
     description: category
       ? `Encontre os melhores profissionais de ${category.name}. ${providers.length} cadastrados com avaliações verificadas.`
       : 'Encontre profissionais por categoria.',
-    canonical: slug ? `https://precisodeum.lovable.app/categoria/${slug}` : undefined,
+    canonical: slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined,
   });
 
   const breadcrumbLd = useMemo(() => category ? ({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Início', item: 'https://precisodeum.lovable.app/' },
+      { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
       { '@type': 'ListItem', position: 2, name: category.name },
     ],
   }) : null, [category]);

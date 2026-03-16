@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { toast } from 'sonner';
+import { useSeoHead } from '@/hooks/useSeoHead';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -15,6 +16,8 @@ const LoginPage = () => {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   const navigate = useNavigate();
+
+  useSeoHead({ title: 'Entrar', description: 'Faça login na plataforma Preciso de um.', noindex: true });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

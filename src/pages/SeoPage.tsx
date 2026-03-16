@@ -9,7 +9,7 @@ import SearchBar from '@/components/SearchBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight } from 'lucide-react';
-import { useSeoHead } from '@/hooks/useSeoHead';
+import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -117,7 +117,7 @@ const SeoPage = () => {
   useSeoHead({
     title: seoTitle || 'Buscar',
     description: seoDesc || 'Encontre profissionais na plataforma.',
-    canonical: slug ? `https://precisodeum.lovable.app/${slug}` : undefined,
+    canonical: slug ? `${SITE_BASE_URL}/${slug}` : undefined,
   });
 
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);

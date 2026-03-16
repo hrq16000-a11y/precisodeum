@@ -14,34 +14,50 @@ Deno.serve(async (req) => {
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const siteUrl = 'https://precisodeum.lovable.app';
+  const siteUrl = 'https://precisodeum.com.br';
+  const today = new Date().toISOString().split('T')[0];
 
-  const [{ data: categories }, { data: cities }, { data: providers }] = await Promise.all([
-    supabase.from('categories').select('slug'),
-    supabase.from('cities').select('slug'),
-    supabase.from('providers').select('slug').eq('status', 'approved').not('slug', 'is', null),
+  const [
+    { data: categories },
+    { data: cities },
+    { data: providers },
+    { data: services },
+  ] = await Promise.all([
+    supabase.from('categories').select('slug, created_at'),
+    supabase.from('cities').select('slug, created_at'),
+    supabase.from('providers').select('slug, updated_at').eq('status', 'approved').not('slug', 'is', null),
+    supabase.from('services').select('id, created_at, provider_id'),
   ]);
 
-  let urls = `  <url><loc>${siteUrl}/</loc><priority>1.0</priority></url>\n`;
-  urls += `  <url><loc>${siteUrl}/buscar</loc><priority>0.8</priority></url>\n`;
-  urls += `  <url><loc>${siteUrl}/sobre</loc><priority>0.5</priority></url>\n`;
+  let urls = '';
 
+  // 1. Homepage - priority 1.0
+  urls += url(siteUrl, '/', today, 'daily', '1.0');
+
+  // 2. Static pages
+  urls += url(siteUrl, '/buscar', today, 'daily', '0.8');
+  urls += url(siteUrl, '/sobre', today, 'monthly', '0.3');
+
+  // 3. Categories - priority 0.9
   for (const cat of categories || []) {
-    urls += `  <url><loc>${siteUrl}/categoria/${cat.slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
+    urls += url(siteUrl, `/categoria/${cat.slug}`, lastmod(cat.created_at), 'daily', '0.9');
   }
 
+  // 4. Providers - priority 0.7
+  for (const p of providers || []) {
+    urls += url(siteUrl, `/profissional/${p.slug}`, lastmod(p.updated_at), 'weekly', '0.7');
+  }
+
+  // 5. Cities - priority 0.8
   for (const city of cities || []) {
-    urls += `  <url><loc>${siteUrl}/cidade/${city.slug}</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+    urls += url(siteUrl, `/cidade/${city.slug}`, lastmod(city.created_at), 'weekly', '0.8');
   }
 
+  // 6. SEO programmatic pages: category + city
   for (const cat of categories || []) {
     for (const city of cities || []) {
-      urls += `  <url><loc>${siteUrl}/${cat.slug}-${city.slug}</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
+      urls += url(siteUrl, `/${cat.slug}-${city.slug}`, today, 'weekly', '0.6');
     }
-  }
-
-  for (const p of providers || []) {
-    urls += `  <url><loc>${siteUrl}/profissional/${p.slug}</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -49,6 +65,27 @@ Deno.serve(async (req) => {
 ${urls}</urlset>`;
 
   return new Response(xml, {
-    headers: { ...corsHeaders, 'Content-Type': 'application/xml' },
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/xml',
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+    },
   });
 });
+
+function lastmod(date: string): string {
+  try {
+    return new Date(date).toISOString().split('T')[0];
+  } catch {
+    return new Date().toISOString().split('T')[0];
+  }
+}
+
+function url(base: string, path: string, lastmod: string, changefreq: string, priority: string): string {
+  return `  <url>
+    <loc>${base}${path}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+  </url>\n`;
+}
