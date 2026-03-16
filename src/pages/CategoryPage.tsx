@@ -6,7 +6,7 @@ import ProviderCard from '@/components/ProviderCard';
 import PaginationControls from '@/components/PaginationControls';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCategoryProviders } from '@/hooks/useProviders';
-import { useSeoHead } from '@/hooks/useSeoHead';
+import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 
 const ITEMS_PER_PAGE = 12;
