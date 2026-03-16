@@ -14,6 +14,8 @@ import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProvide
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { testimonials, howItWorks } from '@/data/mockData';
+import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 import heroImage from '@/assets/hero-image.jpg';
 
 import HeroBanner from '@/components/home/HeroBanner';
