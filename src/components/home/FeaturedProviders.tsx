@@ -50,6 +50,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {randomized.map((p) => {
               const displayName = p.businessName || p.category || 'Profissional';
+              const displayPhoto = p.photo || p.serviceImage || '';
               const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2);
 
               return (
@@ -60,7 +61,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
                   <div className="p-5">
                     <div className="flex gap-4">
                       <Avatar className="h-14 w-14 shrink-0">
-                        <AvatarImage src={p.photo || undefined} alt={displayName} />
+                        <AvatarImage src={displayPhoto || undefined} alt={displayName} />
                         <AvatarFallback className="bg-primary text-lg font-bold text-primary-foreground">
                           {initials}
                         </AvatarFallback>

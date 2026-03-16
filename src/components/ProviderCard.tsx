@@ -12,7 +12,8 @@ interface ProviderCardProps {
 
 const ProviderCard = ({ provider }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
-  const initials = provider.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+  const displayPhoto = provider.photo || provider.serviceImage || '';
+  const initials = (provider.businessName || provider.name).split(' ').map(n => n[0]).join('').slice(0, 2);
 
   return (
     <div className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
@@ -24,7 +25,7 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
       <div className="p-5">
         <div className="flex gap-4">
           <Avatar className="h-14 w-14 shrink-0">
-            <AvatarImage src={provider.photo || undefined} alt={provider.name} />
+            <AvatarImage src={displayPhoto || undefined} alt={provider.businessName || provider.name} />
             <AvatarFallback className="bg-primary text-lg font-bold text-primary-foreground">
               {initials}
             </AvatarFallback>
