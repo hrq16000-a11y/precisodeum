@@ -19,4 +19,4 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-Sitemap: https://precisodeum.com.br/sitemap.xml
+Sitemap: https://qaftogrqeyymewoofexc.supabase.co/functions/v1/sitemap
