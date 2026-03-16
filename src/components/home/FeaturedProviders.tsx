@@ -61,7 +61,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
                   <div className="p-5">
                     <div className="flex gap-4">
                       <Avatar className="h-14 w-14 shrink-0">
-                        <AvatarImage src={p.photo || undefined} alt={displayName} />
+                        <AvatarImage src={displayPhoto || undefined} alt={displayName} />
                         <AvatarFallback className="bg-primary text-lg font-bold text-primary-foreground">
                           {initials}
                         </AvatarFallback>
