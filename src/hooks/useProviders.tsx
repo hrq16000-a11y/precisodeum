@@ -7,6 +7,7 @@ export interface DbProvider {
   businessName?: string;
   category: string;
   categorySlug: string;
+  categoryIcon: string;
   city: string;
   state: string;
   neighborhood: string;
@@ -30,6 +31,7 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string): DbPro
     businessName: p.business_name || undefined,
     category: (p.categories as any)?.name || '',
     categorySlug: (p.categories as any)?.slug || '',
+    categoryIcon: (p.categories as any)?.icon || '🔧',
     city: p.city,
     state: p.state,
     neighborhood: p.neighborhood,

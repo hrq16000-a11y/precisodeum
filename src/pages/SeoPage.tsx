@@ -89,6 +89,7 @@ const SeoPage = () => {
         businessName: p.business_name || undefined,
         category: (p.categories as any)?.name || parsed.categoryName,
         categorySlug: (p.categories as any)?.slug || parsed.categorySlug,
+        categoryIcon: (p.categories as any)?.icon || '🔧',
         city: p.city, state: p.state, neighborhood: p.neighborhood,
         rating: Number(p.rating_avg) || 0, reviewCount: p.review_count || 0,
         photo: p.photo_url || '', description: p.description,

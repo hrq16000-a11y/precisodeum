@@ -62,8 +62,8 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
                     <div className="flex gap-4">
                       <Avatar className="h-14 w-14 shrink-0">
                         <AvatarImage src={displayPhoto || undefined} alt={displayName} />
-                        <AvatarFallback className="bg-primary text-lg font-bold text-primary-foreground">
-                          {initials}
+                        <AvatarFallback className="bg-primary/10 text-2xl">
+                          {p.categoryIcon || '🔧'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
