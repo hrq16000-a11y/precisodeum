@@ -121,6 +121,7 @@ export function useFeaturedProviders() {
           .from('providers')
           .select(providerSelect)
           .eq('status', 'approved')
+          .eq('featured', true)
           .order('rating_avg', { ascending: false })
           .limit(6)
       ),
