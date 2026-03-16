@@ -13,6 +13,7 @@ export interface DbProvider {
   rating: number;
   reviewCount: number;
   photo: string;
+  serviceImage?: string;
   description: string;
   phone: string;
   whatsapp: string;
