@@ -76,6 +76,7 @@ const App = () => (
             <Route path="/cidade/:slug" element={<CityPage />} />
             <Route path="/sobre" element={<AboutPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/sitemap" element={<SitemapRedirect />} />
             <Route path="/sitemap.xml" element={<SitemapRedirect />} />
             <Route path="/:slug" element={<SeoPage />} />
             <Route path="*" element={<NotFound />} />
