@@ -127,8 +127,8 @@ const ProviderProfile = () => {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Início', item: 'https://precisodeum.lovable.app/' },
-      ...(categorySlug ? [{ '@type': 'ListItem', position: 2, name: category, item: `https://precisodeum.lovable.app/categoria/${categorySlug}` }] : []),
+      { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
+      ...(categorySlug ? [{ '@type': 'ListItem', position: 2, name: category, item: `${SITE_BASE_URL}/categoria/${categorySlug}` }] : []),
       { '@type': 'ListItem', position: categorySlug ? 3 : 2, name },
     ],
   }) : null, [provider, name, category, categorySlug]);
