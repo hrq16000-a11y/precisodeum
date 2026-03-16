@@ -50,6 +50,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {randomized.map((p) => {
               const displayName = p.businessName || p.category || 'Profissional';
+              const displayPhoto = p.photo || p.serviceImage || '';
               const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2);
 
               return (
