@@ -11,6 +11,7 @@ const menuItems = [
   { label: 'Categorias', icon: FolderOpen, path: '/admin/categorias' },
   { label: 'Cidades', icon: MapPin, path: '/admin/cidades' },
   { label: 'Estatísticas', icon: BarChart3, path: '/admin/estatisticas' },
+  { label: 'Patrocinadores', icon: Megaphone, path: '/admin/patrocinadores' },
   { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
 ];
 
