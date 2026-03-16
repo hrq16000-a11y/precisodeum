@@ -9,7 +9,7 @@ import SearchBar from '@/components/SearchBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight } from 'lucide-react';
-import { useSeoHead } from '@/hooks/useSeoHead';
+import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 const ITEMS_PER_PAGE = 12;
 
