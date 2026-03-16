@@ -23,7 +23,7 @@ export interface DbProvider {
   featured: boolean;
 }
 
-function mapProvider(p: any, profileName?: string): DbProvider {
+function mapProvider(p: any, profileName?: string, serviceImage?: string): DbProvider {
   return {
     id: p.id,
     name: profileName || p.business_name || 'Profissional',
@@ -36,6 +36,7 @@ function mapProvider(p: any, profileName?: string): DbProvider {
     rating: Number(p.rating_avg) || 0,
     reviewCount: p.review_count || 0,
     photo: p.photo_url || '',
+    serviceImage: serviceImage || undefined,
     description: p.description,
     phone: p.phone,
     whatsapp: p.whatsapp,
