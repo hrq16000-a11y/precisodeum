@@ -32,6 +32,24 @@ import FaqSection from '@/components/home/FaqSection';
 import PopularSearches from '@/components/home/PopularSearches';
 
 const Index = () => {
+  useSeoHead({
+    title: 'Preciso de um | Encontre profissionais confiáveis perto de você',
+    description: 'Marketplace de serviços profissionais. Encontre eletricistas, encanadores, técnicos e muito mais na sua cidade. Cadastre-se gratuitamente.',
+    canonical: SITE_BASE_URL,
+  });
+
+  useJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Preciso de um',
+    url: SITE_BASE_URL,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${SITE_BASE_URL}/buscar?q={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  });
+
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const featuredEnabled = useFeatureEnabled('featured_providers_enabled');
   const popularSearchesEnabled = useFeatureEnabled('popular_searches_enabled');
