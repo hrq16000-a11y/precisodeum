@@ -34,6 +34,7 @@ import SeoPage from "./pages/SeoPage";
 import CityPage from "./pages/CityPage";
 import AboutPage from "./pages/AboutPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import SitemapRedirect from "./pages/SitemapRedirect";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/cidade/:slug" element={<CityPage />} />
             <Route path="/sobre" element={<AboutPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/sitemap.xml" element={<SitemapRedirect />} />
             <Route path="/:slug" element={<SeoPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
