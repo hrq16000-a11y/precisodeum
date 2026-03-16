@@ -17,6 +17,8 @@ const LoginPage = () => {
   const [forgotLoading, setForgotLoading] = useState(false);
   const navigate = useNavigate();
 
+  useSeoHead({ title: 'Entrar', description: 'Faça login na plataforma Preciso de um.', noindex: true });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
