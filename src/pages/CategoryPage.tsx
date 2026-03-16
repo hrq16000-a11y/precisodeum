@@ -24,7 +24,7 @@ const CategoryPage = () => {
     description: category
       ? `Encontre os melhores profissionais de ${category.name}. ${providers.length} cadastrados com avaliações verificadas.`
       : 'Encontre profissionais por categoria.',
-    canonical: slug ? `https://precisodeum.lovable.app/categoria/${slug}` : undefined,
+    canonical: slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined,
   });
 
   const breadcrumbLd = useMemo(() => category ? ({
