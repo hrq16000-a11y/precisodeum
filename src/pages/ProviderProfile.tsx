@@ -232,7 +232,14 @@ const ProviderProfile = () => {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
+                  <div className="flex items-center gap-2">
+                    <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
+                    {provider.plan === 'premium' && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
+                        <Crown className="h-3 w-3" /> PREMIUM
+                      </span>
+                    )}
+                  </div>
                   {provider.business_name && (
                     <p className="text-sm text-muted-foreground">{provider.business_name}</p>
                   )}
