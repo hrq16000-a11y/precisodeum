@@ -21,7 +21,7 @@ const HighlightsCarousel = () => {
         .select('*')
         .eq('active', true)
         .order('display_order');
-      return (data || []) as Highlight[];
+      return (data || []) as unknown as Highlight[];
     },
     staleTime: 1000 * 60 * 5,
   });
