@@ -37,8 +37,8 @@ const RecentServices = ({ services }: Props) => (
                 <MapPin className="h-4 w-4 text-primary" />
               </div>
               <div className="min-w-0 flex-1 overflow-hidden">
-                <p className="truncate text-sm font-semibold text-foreground leading-tight">{s.service_name}</p>
-                <p className="truncate text-xs text-muted-foreground">{location}</p>
+                <p className="text-sm font-semibold text-foreground leading-tight break-words">{s.service_name}</p>
+                <p className="text-xs text-muted-foreground break-words">{location}</p>
               </div>
             </div>
           );
