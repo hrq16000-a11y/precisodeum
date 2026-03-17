@@ -25,7 +25,7 @@ const ServiceDetailPage = () => {
 
       const [{ data: provider }, { data: profile }, { data: images }, { data: scats }] = await Promise.all([
         supabase.from('providers').select('*, categories(name, slug, icon)').eq('id', svc.provider_id).maybeSingle(),
-        supabase.from('public_profiles' as any).select('full_name, avatar_url').eq('id', (await supabase.from('providers').select('user_id').eq('id', svc.provider_id).maybeSingle()).data?.user_id || '').maybeSingle(),
+        supabase.from('public_profiles' as any).select('full_name, avatar_url').eq('id', (await supabase.from('providers').select('user_id').eq('id', svc.provider_id).maybeSingle()).data?.user_id || '').maybeSingle() as any,
         supabase.from('service_images').select('*').eq('service_id', svc.id).order('display_order'),
         supabase.from('service_categories').select('category_id, categories(name, icon)').eq('service_id', svc.id),
       ]);
