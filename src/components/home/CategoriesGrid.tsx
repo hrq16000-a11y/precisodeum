@@ -64,12 +64,12 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
               {visible.map((cat) => (
                 <Link
                   key={cat.id}
                   to={`/categoria/${cat.slug}`}
-                  className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30"
+                  className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30"
                 >
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-2xl text-primary">
                     {cat.icon}
