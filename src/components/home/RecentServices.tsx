@@ -12,7 +12,7 @@ interface Props {
 }
 
 const RecentServices = ({ services }: Props) => (
-  <section className="bg-muted/50 py-14">
+  <section className="bg-muted/50 py-10">
     <div className="container">
       <div className="mb-8 text-center">
         <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">

@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Share2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';
@@ -232,7 +232,14 @@ const ProviderProfile = () => {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
+                  <div className="flex items-center gap-2">
+                    <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
+                    {provider.plan === 'premium' && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
+                        <Crown className="h-3 w-3" /> PREMIUM
+                      </span>
+                    )}
+                  </div>
                   {provider.business_name && (
                     <p className="text-sm text-muted-foreground">{provider.business_name}</p>
                   )}
@@ -262,6 +269,16 @@ const ProviderProfile = () => {
                 </Button>
                 <Button variant="outline" size="lg">
                   <Phone className="h-5 w-5" /> Ligar
+                </Button>
+                <Button variant="outline" size="lg" onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({ title: name, url: window.location.href });
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success('Link copiado!');
+                  }
+                }}>
+                  <Share2 className="h-5 w-5" /> Compartilhar
                 </Button>
               </div>
             </div>
@@ -396,6 +413,16 @@ const ProviderProfile = () => {
           </aside>
         </div>
       </div>
+      {/* Floating WhatsApp Button */}
+      <a
+        href={`https://wa.me/${provider.whatsapp}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 lg:hidden"
+        aria-label="WhatsApp"
+      >
+        <MessageCircle className="h-7 w-7" />
+      </a>
       <Footer />
     </div>
   );

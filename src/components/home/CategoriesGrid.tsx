@@ -45,7 +45,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
   const hasMore = visibleCount < shuffled.length;
 
   return (
-    <section className="py-14">
+    <section className="py-10">
       <div className="container">
         <div className="mb-8 text-center">
           <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
@@ -57,25 +57,25 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 12 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 rounded-xl" />
+              <Skeleton key={i} className="h-16 rounded-xl" />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
               {visible.map((cat) => (
                 <Link
                   key={cat.id}
                   to={`/categoria/${cat.slug}`}
-                  className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30"
+                  className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30"
                 >
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-2xl text-primary">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xl text-primary">
                     {cat.icon}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                    <span className="block truncate text-xs font-semibold text-foreground group-hover:text-primary transition-colors sm:text-sm">
                       {cat.name}
                     </span>
                   </div>

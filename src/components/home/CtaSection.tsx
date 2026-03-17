@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 const CtaSection = () => (
   <>
     {/* Mid CTA */}
-    <section className="py-14">
+    <section className="py-10">
       <div className="container">
         <div className="rounded-2xl bg-primary/5 border border-primary/20 p-8 md:p-12 text-center">
           <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
@@ -22,7 +22,7 @@ const CtaSection = () => (
     </section>
 
     {/* Final CTA */}
-    <section className="py-14">
+    <section className="py-10">
       <div className="container text-center">
         <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
           Pronto para encontrar o profissional ideal?
