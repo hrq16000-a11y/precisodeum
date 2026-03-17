@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MessageCircle, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-import logoVertical from '@/assets/logo-vertical.png';
+import defaultLogoVertical from '@/assets/logo-vertical.png';
 import SponsorAd from '@/components/SponsorAd';
 
 const ecosystemLinks = [
@@ -26,6 +26,8 @@ function shuffle<T>(arr: T[]): T[] {
 
 const Footer = () => {
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
+  const logoFooterUrl = useSettingValue('logo_footer_url');
+  const logoVertical = logoFooterUrl || defaultLogoVertical;
   const { data: topCities = [] } = useQuery({
     queryKey: ['footer-cities'],
     queryFn: async () => {

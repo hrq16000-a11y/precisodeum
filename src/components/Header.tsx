@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, Search, LogOut, LayoutDashboard, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-import logo from '@/assets/logo.png';
+import defaultLogo from '@/assets/logo.png';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
+  const logoUrl = useSettingValue('logo_url');
+  const logo = logoUrl || defaultLogo;
 
   const handleSignOut = async () => {
     await signOut();
