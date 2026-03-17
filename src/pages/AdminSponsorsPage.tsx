@@ -108,7 +108,7 @@ const AdminSponsorsPage = () => {
     setDialogOpen(true);
   };
 
-  const positionLabels: Record<string, string> = { banner: 'Banner', card: 'Card', featured: 'Destaque' };
+  const positionLabels: Record<string, string> = { banner: 'Banner', card: 'Card', featured: 'Destaque', sidebar: 'Sidebar', 'between-sections': 'Entre Seções', footer: 'Rodapé' };
 
   return (
     <AdminLayout>
