@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MessageCircle, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-import logoVertical from '@/assets/logo-vertical.png';
+import defaultLogoVertical from '@/assets/logo-vertical.png';
 import SponsorAd from '@/components/SponsorAd';
 
 const ecosystemLinks = [
