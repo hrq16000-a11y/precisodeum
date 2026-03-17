@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Share2, Copy, X } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';

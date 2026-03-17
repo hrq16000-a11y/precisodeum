@@ -54,10 +54,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
               const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2);
 
               return (
-                <div key={p.id} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
-                  <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground">
-                    <Crown className="h-3 w-3" /> Destaque
-                  </div>
+                <div key={p.id} className="group overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
                   <div className="p-5">
                     <div className="flex gap-4">
                       <Avatar className="h-14 w-14 shrink-0">
