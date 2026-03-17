@@ -87,7 +87,8 @@ const AdminSettingsPage = () => {
 
       {textSettings.length > 0 && (
         <>
-          <h2 className="mt-8 font-display text-lg font-bold text-foreground">Configurações de texto</h2>
+          <h2 className="mt-8 font-display text-lg font-bold text-foreground">Configurações de texto e imagens</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Para logos, insira a URL da imagem (pode usar o upload de patrocinadores ou serviço externo de hospedagem de imagens).</p>
           <div className="mt-3 space-y-3">
             {textSettings.map((s: any) => (
               <TextSettingRow key={s.key} setting={s} onSave={updateTextSetting} />
