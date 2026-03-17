@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, Star, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, Star, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -15,6 +15,7 @@ const menuItems = [
   { label: 'Serviços Populares', icon: Wrench, path: '/admin/servicos-populares' },
   { label: 'FAQ', icon: HelpCircle, path: '/admin/faq' },
   { label: 'Meta Tags & SEO', icon: Globe, path: '/admin/metatags' },
+  { label: 'Destaques', icon: Sparkles, path: '/admin/destaques' },
   { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
 ];
 

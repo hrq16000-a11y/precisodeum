@@ -92,6 +92,42 @@ export type Database = {
         }
         Relationships: []
       }
+      highlights: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          display_order: number
+          id: string
+          image_url: string | null
+          link_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          link_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          link_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           client_name: string

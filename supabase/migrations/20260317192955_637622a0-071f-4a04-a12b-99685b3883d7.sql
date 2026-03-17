@@ -1,0 +1,18 @@
+-- Add more FAQ entries
+INSERT INTO public.faqs (question, answer, display_order, active) VALUES
+('Como encontrar um profissional na plataforma?', 'Basta digitar o serviço que precisa na barra de busca ou navegar pelas categorias. Você verá uma lista de profissionais disponíveis na sua região, com avaliações e contato direto via WhatsApp.', 1, true),
+('O cadastro é gratuito para profissionais?', 'Sim! O cadastro é totalmente gratuito. Profissionais podem criar seu perfil, listar seus serviços e receber contatos de clientes sem nenhum custo.', 2, true),
+('Como funciona o plano Premium?', 'O plano Premium oferece destaque nas buscas, selo de profissional verificado, mais imagens no portfólio e melhor posicionamento nos resultados. Profissionais cadastrados até junho de 2027 recebem Premium vitalício gratuitamente.', 3, true),
+('Posso avaliar um profissional?', 'Sim! Após contratar um serviço, você pode deixar sua avaliação com nota e comentário. As avaliações ajudam outros clientes a escolherem os melhores profissionais.', 4, true),
+('Como entro em contato com um profissional?', 'Cada perfil possui um botão de WhatsApp para contato direto e instantâneo. Você também pode enviar uma solicitação de orçamento pelo formulário do perfil.', 5, true),
+('A plataforma garante os serviços prestados?', 'A plataforma conecta clientes e profissionais, mas não é responsável diretamente pela execução dos serviços. Recomendamos sempre verificar as avaliações e combinar todos os detalhes antes de contratar.', 6, true),
+('Como cadastro meus serviços?', 'Após criar sua conta e perfil de profissional, acesse o Dashboard e vá até "Meus Serviços". Lá você pode adicionar quantos serviços quiser, incluindo descrição, preço, fotos e área de atendimento.', 7, true),
+('Posso atender em mais de uma cidade?', 'Sim! Ao cadastrar cada serviço, você pode definir a área de atendimento. Isso permite que clientes de diferentes regiões encontrem você nas buscas.', 8, true),
+('Como funciona o portfólio de fotos?', 'No Dashboard, você pode fazer upload de fotos dos seus trabalhos realizados. Essas imagens aparecem no seu perfil público e ajudam a demonstrar a qualidade do seu trabalho.', 9, true),
+('Quantos profissionais posso contatar?', 'Não há limite! Você pode contatar quantos profissionais quiser para comparar preços e serviços antes de tomar sua decisão.', 10, true),
+('A plataforma está disponível em quais cidades?', 'A plataforma atende todo o Brasil. Novos profissionais e cidades são adicionados diariamente, expandindo nossa cobertura nacional.', 11, true),
+('Como faço para destacar meu perfil?', 'Profissionais com plano Premium aparecem em destaque nas buscas e na página inicial. Complete seu perfil com fotos de qualidade, descrição detalhada e mantenha suas avaliações positivas para melhorar seu posicionamento.', 12, true),
+('É seguro usar a plataforma?', 'Sim! Todos os dados são protegidos e o contato entre cliente e profissional é feito de forma direta via WhatsApp. Recomendamos sempre combinar detalhes e valores antes de iniciar qualquer serviço.', 13, true),
+('Como altero meus dados cadastrais?', 'Acesse o Dashboard, vá até "Meu Perfil" e edite suas informações como nome, telefone, endereço, foto e descrição. As alterações são salvas automaticamente.', 14, true),
+('Posso cancelar minha conta?', 'Sim, você pode solicitar o cancelamento a qualquer momento entrando em contato conosco via WhatsApp. Seus dados serão removidos conforme nossa política de privacidade.', 15, true)
+ON CONFLICT DO NOTHING;

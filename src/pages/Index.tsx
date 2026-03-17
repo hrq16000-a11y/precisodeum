@@ -31,6 +31,7 @@ import TestimonialsSection from '@/components/home/TestimonialsSection';
 import FaqSection from '@/components/home/FaqSection';
 import PopularSearches from '@/components/home/PopularSearches';
 import SponsorAd from '@/components/SponsorAd';
+import HighlightsCarousel from '@/components/home/HighlightsCarousel';
 
 const Index = () => {
   useSeoHead({
@@ -128,6 +129,7 @@ const Index = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <HeroBanner totalServices={totalServicesCount} />
+      <HighlightsCarousel />
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
       <SponsorAd position="between-sections" />
       {featuredEnabled && (
