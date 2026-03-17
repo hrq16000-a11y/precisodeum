@@ -411,6 +411,7 @@ const ProviderProfile = () => {
                 </form>
               )}
             </div>
+            <SponsorAd position="sidebar" layout="vertical" className="mt-4" />
           </aside>
         </div>
       </div>
