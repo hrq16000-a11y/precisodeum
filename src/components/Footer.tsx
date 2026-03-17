@@ -27,7 +27,7 @@ function shuffle<T>(arr: T[]): T[] {
 const Footer = () => {
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoFooterUrl = useSettingValue('logo_footer_url');
-  const logoVertical = (logoFooterUrl && logoFooterUrl.startsWith('http')) ? logoFooterUrl : defaultLogoVertical;
+  const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : defaultLogo;
   const { data: topCities = [] } = useQuery({
     queryKey: ['footer-cities'],
     queryFn: async () => {
