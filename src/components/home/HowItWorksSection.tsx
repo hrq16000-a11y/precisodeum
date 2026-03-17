@@ -1,7 +1,7 @@
 import { howItWorks } from '@/data/mockData';
 
 const HowItWorksSection = () => (
-  <section className="py-14">
+  <section className="py-10">
     <div className="container">
       <div className="mb-10 text-center">
         <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">Como Funciona</h2>

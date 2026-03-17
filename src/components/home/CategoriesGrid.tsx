@@ -71,11 +71,11 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                   to={`/categoria/${cat.slug}`}
                   className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30"
                 >
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-2xl text-primary">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xl text-primary">
                     {cat.icon}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                    <span className="block truncate text-xs font-semibold text-foreground group-hover:text-primary transition-colors sm:text-sm">
                       {cat.name}
                     </span>
                   </div>

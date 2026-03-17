@@ -19,7 +19,7 @@ const PopularServices = () => {
 
   if (isLoading) {
     return (
-      <section className="py-14">
+      <section className="py-10">
         <div className="container">
           <div className="mb-8 text-center">
             <Skeleton className="mx-auto h-8 w-48" />

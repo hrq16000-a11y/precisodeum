@@ -24,7 +24,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
   }, [providers]);
 
   return (
-    <section className="bg-muted/50 py-14">
+    <section className="bg-muted/50 py-10">
       <div className="container">
         <div className="mb-8 flex items-end justify-between">
           <div>
