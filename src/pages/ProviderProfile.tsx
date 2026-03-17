@@ -278,14 +278,14 @@ const ProviderProfile = () => {
                   <Phone className="h-5 w-5" /> Ligar
                 </Button>
                 <Button variant="outline" size="lg" onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({ title: name, url: window.location.href });
-                  } else {
-                    navigator.clipboard.writeText(window.location.href);
+                  navigator.clipboard.writeText(window.location.href).then(() => {
                     toast.success('Link copiado!');
-                  }
+                  }).catch(() => {
+                    // fallback: prompt
+                    window.prompt('Copie o link:', window.location.href);
+                  });
                 }}>
-                  <Share2 className="h-5 w-5" /> Compartilhar
+                  <Copy className="h-4 w-4" /> Copiar Link
                 </Button>
               </div>
             </div>
