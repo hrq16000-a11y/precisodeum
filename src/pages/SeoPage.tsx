@@ -79,7 +79,7 @@ const SeoPage = () => {
       const userIds = [...new Set((provs || []).map((p) => p.user_id))];
       let profileMap: Record<string, string> = {};
       if (userIds.length > 0) {
-        const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
+        const { data: profiles } = await supabase.from('public_profiles' as any).select('id, full_name').in('id', userIds);
         (profiles || []).forEach((p) => { profileMap[p.id] = p.full_name; });
       }
 

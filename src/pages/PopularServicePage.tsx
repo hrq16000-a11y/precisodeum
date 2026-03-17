@@ -43,7 +43,7 @@ const PopularServicePage = () => {
         .limit(12);
       if (!data) return [];
       const userIds = [...new Set(data.map((p: any) => p.user_id))];
-      const { data: profiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', userIds);
+      const { data: profiles } = await supabase.from('public_profiles' as any).select('id, full_name, avatar_url').in('id', userIds);
       const profileMap: Record<string, any> = {};
       (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
       return data.map((p: any) => {

@@ -61,7 +61,7 @@ async function fetchProvidersWithProfiles(query: any) {
   // Fetch profiles for all user_ids
   const userIds = [...new Set((data as any[]).map((p) => p.user_id))];
   const { data: profiles } = await supabase
-    .from('profiles')
+    .from('public_profiles' as any)
     .select('id, full_name, avatar_url')
     .in('id', userIds);
 
