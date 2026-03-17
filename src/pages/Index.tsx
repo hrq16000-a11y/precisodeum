@@ -30,6 +30,7 @@ import HowItWorksSection from '@/components/home/HowItWorksSection';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
 import FaqSection from '@/components/home/FaqSection';
 import PopularSearches from '@/components/home/PopularSearches';
+import SponsorAd from '@/components/SponsorAd';
 
 const Index = () => {
   useSeoHead({
@@ -128,11 +129,13 @@ const Index = () => {
       <Header />
       <HeroBanner totalServices={totalServicesCount} />
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
+      <SponsorAd position="between-sections" />
       {featuredEnabled && (
         <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
       )}
       <PopularServices />
       {recentServices.length > 0 && <RecentServices services={recentServices} />}
+      <SponsorAd position="between-sections" />
       {topCities.length > 0 && <CitiesSection cities={topCities} />}
       <CtaSection />
       <SponsorsSection sponsors={sponsors} />

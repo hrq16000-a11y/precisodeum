@@ -108,7 +108,7 @@ const AdminSponsorsPage = () => {
     setDialogOpen(true);
   };
 
-  const positionLabels: Record<string, string> = { banner: 'Banner', card: 'Card', featured: 'Destaque' };
+  const positionLabels: Record<string, string> = { banner: 'Banner', card: 'Card', featured: 'Destaque', sidebar: 'Sidebar', 'between-sections': 'Entre Seções', footer: 'Rodapé' };
 
   return (
     <AdminLayout>
@@ -145,9 +145,12 @@ const AdminSponsorsPage = () => {
                 <Select value={form.position} onValueChange={(v) => setForm({ ...form, position: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="banner">Banner</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="banner">Banner (entre seções)</SelectItem>
+                    <SelectItem value="card">Card (grid)</SelectItem>
                     <SelectItem value="featured">Destaque</SelectItem>
+                    <SelectItem value="sidebar">Sidebar (perfil profissional)</SelectItem>
+                    <SelectItem value="between-sections">Entre Seções (home)</SelectItem>
+                    <SelectItem value="footer">Rodapé</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

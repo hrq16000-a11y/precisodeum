@@ -5,6 +5,7 @@ import { MessageCircle, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import logoVertical from '@/assets/logo-vertical.png';
+import SponsorAd from '@/components/SponsorAd';
 
 const ecosystemLinks = [
   { name: 'Encontre um Técnico', url: 'https://www.encontreumtecnico.com' },
@@ -162,6 +163,8 @@ const Footer = () => {
             ))}
           </div>
         </div>
+
+        <SponsorAd position="footer" layout="inline" className="mt-6 border-t border-primary-foreground/10 pt-6" />
 
         <div className="mt-6 border-t border-primary-foreground/10 pt-6 text-center text-xs text-primary-foreground/40">
           © 2026 Preciso de um. Todos os direitos reservados.

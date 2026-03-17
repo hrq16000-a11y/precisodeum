@@ -3,6 +3,7 @@ import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Share2
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';
+import SponsorAd from '@/components/SponsorAd';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -410,6 +411,7 @@ const ProviderProfile = () => {
                 </form>
               )}
             </div>
+            <SponsorAd position="sidebar" layout="vertical" className="mt-4" />
           </aside>
         </div>
       </div>
