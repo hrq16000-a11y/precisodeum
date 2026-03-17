@@ -270,6 +270,16 @@ const ProviderProfile = () => {
                 <Button variant="outline" size="lg">
                   <Phone className="h-5 w-5" /> Ligar
                 </Button>
+                <Button variant="outline" size="lg" onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({ title: name, url: window.location.href });
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success('Link copiado!');
+                  }
+                }}>
+                  <Share2 className="h-5 w-5" /> Compartilhar
+                </Button>
               </div>
             </div>
 
