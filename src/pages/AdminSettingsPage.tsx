@@ -104,16 +104,25 @@ const TextSettingRow = ({ setting, onSave }: { setting: any; onSave: (key: strin
   const [value, setValue] = useState(setting.value);
   const changed = value !== setting.value;
 
+  const isImageSetting = setting.key.includes('logo') || setting.key.includes('image');
+
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card space-y-2">
       <div>
         <h3 className="text-sm font-bold text-foreground">{setting.label}</h3>
         <p className="text-xs text-muted-foreground">{setting.description}</p>
       </div>
+      {isImageSetting && value && (
+        <div className="flex items-center gap-3">
+          <img src={value} alt={setting.label} className="h-12 rounded border border-border object-contain bg-muted p-1" />
+          <span className="text-xs text-muted-foreground truncate flex-1">{value}</span>
+        </div>
+      )}
       <div className="flex gap-2">
         <input
           value={value}
           onChange={(e) => setValue(e.target.value)}
+          placeholder={isImageSetting ? 'https://exemplo.com/logo.png' : ''}
           className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
         />
         {changed && (

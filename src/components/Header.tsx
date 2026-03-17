@@ -11,6 +11,8 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
+  const logoUrl = useSettingValue('logo_url');
+  const logo = logoUrl || defaultLogo;
 
   const handleSignOut = async () => {
     await signOut();
