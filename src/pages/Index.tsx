@@ -126,7 +126,7 @@ const Index = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <HeroBanner />
+      <HeroBanner totalServices={totalServicesCount} />
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
       {featuredEnabled && (
         <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
