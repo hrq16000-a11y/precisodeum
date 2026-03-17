@@ -48,7 +48,7 @@ const SignupPage = () => {
 
       // Create provider profile if provider
       if (accountType === 'provider') {
-        const slug = `${form.fullName.toLowerCase().replace(/\s+/g, '-')}-${form.city.toLowerCase().replace(/\s+/g, '-')}`;
+        const slug = `${form.fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${form.city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
         
         // Get category id
         let categoryId = null;

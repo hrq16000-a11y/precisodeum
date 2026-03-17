@@ -81,11 +81,15 @@ function lastmod(date: string): string {
   }
 }
 
+function escapeXml(s: string): string {
+  return s.replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c]!));
+}
+
 function url(base: string, path: string, lastmod: string, changefreq: string, priority: string): string {
   return `  <url>
-    <loc>${base}${path}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>${changefreq}</changefreq>
-    <priority>${priority}</priority>
+    <loc>${escapeXml(base)}${escapeXml(path)}</loc>
+    <lastmod>${escapeXml(lastmod)}</lastmod>
+    <changefreq>${escapeXml(changefreq)}</changefreq>
+    <priority>${escapeXml(priority)}</priority>
   </url>\n`;
 }
