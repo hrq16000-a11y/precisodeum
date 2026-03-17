@@ -61,12 +61,12 @@ async function fetchProvidersWithProfiles(query: any) {
   // Fetch profiles for all user_ids
   const userIds = [...new Set((data as any[]).map((p) => p.user_id))];
   const { data: profiles } = await supabase
-    .from('profiles')
+    .from('public_profiles' as any)
     .select('id, full_name, avatar_url')
-    .in('id', userIds);
+    .in('id', userIds) as { data: { id: string; full_name: string; avatar_url: string | null }[] | null };
 
   const profileMap: Record<string, { name: string; avatar?: string }> = {};
-  (profiles || []).forEach((p) => {
+  (profiles || []).forEach((p: any) => {
     profileMap[p.id] = { name: p.full_name, avatar: p.avatar_url || undefined };
   });
 

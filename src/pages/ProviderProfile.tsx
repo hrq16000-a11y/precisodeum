@@ -42,7 +42,7 @@ const ProviderProfile = () => {
       if (data) {
         // Fetch profile separately (no FK between providers and profiles)
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('public_profiles' as any)
           .select('full_name, avatar_url')
           .eq('id', data.user_id)
           .maybeSingle();
@@ -95,7 +95,7 @@ const ProviderProfile = () => {
         if (rev && rev.length > 0) {
           const reviewUserIds = [...new Set(rev.map((r: any) => r.user_id))];
           const { data: reviewProfiles } = await supabase
-            .from('profiles')
+            .from('public_profiles' as any)
             .select('id, full_name')
             .in('id', reviewUserIds);
           const profileMap: Record<string, string> = {};

@@ -39,10 +39,10 @@ const CityPage = () => {
       let profileMap: Record<string, string> = {};
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('public_profiles' as any)
           .select('id, full_name')
-          .in('id', userIds);
-        (profiles || []).forEach((p) => { profileMap[p.id] = p.full_name; });
+          .in('id', userIds) as { data: { id: string; full_name: string }[] | null };
+        (profiles || []).forEach((p: any) => { profileMap[p.id] = p.full_name; });
       }
 
       const providers = (provs || []).map((p) => ({
