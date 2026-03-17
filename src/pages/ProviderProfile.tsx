@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Share2, Copy, X } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';
@@ -342,7 +342,7 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity }: { serv
                     <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
                     {provider.plan === 'premium' && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
-                        <Crown className="h-3 w-3" /> PREMIUM
+                        <Crown className="h-3 w-3" /> DESTAQUE
                       </span>
                     )}
                   </div>

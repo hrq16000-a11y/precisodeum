@@ -16,12 +16,7 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
   const initials = (provider.businessName || provider.name).split(' ').map(n => n[0]).join('').slice(0, 2);
 
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
-      {provider.plan === 'premium' && (
-        <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground">
-          <Crown className="h-3 w-3" /> Premium
-        </div>
-      )}
+    <div className="group overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
       <div className="p-5">
         <div className="flex gap-4">
            <Avatar className="h-14 w-14 shrink-0">
@@ -31,10 +26,13 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <Link to={`/profissional/${provider.slug}`}>
-              <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
-                {provider.name}
-              </h3>
+            <Link to={`/profissional/${provider.slug}`} className="block">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
+                  {provider.name}
+                </h3>
+                {provider.plan === 'premium' && <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />}
+              </div>
             </Link>
             {provider.businessName && (
               <p className="truncate text-xs text-muted-foreground">{provider.businessName}</p>

@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MessageCircle, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-import defaultLogoVertical from '@/assets/logo-vertical.png';
+import defaultLogo from '@/assets/logo.png';
 import SponsorAd from '@/components/SponsorAd';
 
 const ecosystemLinks = [
@@ -27,7 +27,7 @@ function shuffle<T>(arr: T[]): T[] {
 const Footer = () => {
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoFooterUrl = useSettingValue('logo_footer_url');
-  const logoVertical = (logoFooterUrl && logoFooterUrl.startsWith('http')) ? logoFooterUrl : defaultLogoVertical;
+  const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : defaultLogo;
   const { data: topCities = [] } = useQuery({
     queryKey: ['footer-cities'],
     queryFn: async () => {
@@ -61,7 +61,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <Link to="/">
-              <img src={logoVertical} alt="Preciso de um" className="mb-4 h-20 max-w-[200px] object-contain brightness-0 invert" />
+              <img src={logoVertical} alt="Preciso de um" className="mb-4 h-12 w-auto max-w-[220px] object-contain" />
             </Link>
             <p className="text-sm leading-relaxed text-primary-foreground/70">
               A maior plataforma de serviços do Brasil. Conectamos você aos melhores profissionais da sua região com avaliações verificadas e contato direto.
