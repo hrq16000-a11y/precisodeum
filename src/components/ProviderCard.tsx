@@ -26,10 +26,13 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <Link to={`/profissional/${provider.slug}`}>
-              <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
-                {provider.name}
-              </h3>
+            <Link to={`/profissional/${provider.slug}`} className="block">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
+                  {provider.name}
+                </h3>
+                {provider.plan === 'premium' && <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />}
+              </div>
             </Link>
             {provider.businessName && (
               <p className="truncate text-xs text-muted-foreground">{provider.businessName}</p>
