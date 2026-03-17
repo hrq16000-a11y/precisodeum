@@ -129,6 +129,7 @@ const Index = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <HeroBanner totalServices={totalServicesCount} />
+      <HighlightsCarousel />
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
       <SponsorAd position="between-sections" />
       {featuredEnabled && (
