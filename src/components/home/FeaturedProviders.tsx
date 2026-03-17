@@ -64,10 +64,13 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <Link to={`/profissional/${p.slug}`}>
-                          <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-primary transition-colors">
-                            {displayName}
-                          </h3>
+                        <Link to={`/profissional/${p.slug}`} className="block">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-primary transition-colors">
+                              {displayName}
+                            </h3>
+                            <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />
+                          </div>
                         </Link>
                         <p className="mt-0.5 text-sm font-medium text-accent">{p.category}</p>
                         <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">

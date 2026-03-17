@@ -342,7 +342,7 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity }: { serv
                     <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
                     {provider.plan === 'premium' && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
-                        <Crown className="h-3 w-3" /> PREMIUM
+                        <Crown className="h-3 w-3" /> DESTAQUE
                       </span>
                     )}
                   </div>
