@@ -4,7 +4,11 @@ import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
 import heroImage from '@/assets/hero-image.jpg';
 
-const HeroBanner = () => (
+interface HeroBannerProps {
+  totalServices?: number;
+}
+
+const HeroBanner = ({ totalServices }: HeroBannerProps) => (
   <section className="relative overflow-hidden py-16 md:py-24">
     {/* Background image */}
     <div
@@ -45,7 +49,12 @@ const HeroBanner = () => (
         transition={{ delay: 0.45 }}
         className="mt-6 flex flex-wrap items-center justify-center gap-5 text-xs text-primary-foreground/80"
       >
-        <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-secondary" /> Profissionais verificados</span>
+        <span className="flex items-center gap-1.5">
+          <Shield className="h-3.5 w-3.5 text-secondary" />
+          {totalServices && totalServices > 0
+            ? `${totalServices.toLocaleString('pt-BR')} serviços publicados`
+            : 'Serviços verificados'}
+        </span>
         <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-secondary" /> Em todo o Brasil</span>
         <span className="flex items-center gap-1.5"><Zap className="h-3.5 w-3.5 text-secondary" /> Resposta rápida</span>
       </motion.div>

@@ -78,9 +78,6 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                     <span className="block truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                       {cat.name}
                     </span>
-                    {cat.count > 0 && (
-                      <span className="text-xs text-muted-foreground">{cat.count} profissionais</span>
-                    )}
                   </div>
                 </Link>
               ))}

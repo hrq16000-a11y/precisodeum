@@ -57,6 +57,16 @@ const Index = () => {
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
 
+  const { data: totalServicesCount = 0 } = useQuery({
+    queryKey: ['total-services-count'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('services')
+        .select('*', { count: 'exact', head: true });
+      return count || 0;
+    },
+  });
+
   const { data: topCities = [] } = useQuery({
     queryKey: ['top-cities'],
     queryFn: async () => {
@@ -116,7 +126,7 @@ const Index = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <HeroBanner />
+      <HeroBanner totalServices={totalServicesCount} />
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
       {featuredEnabled && (
         <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
