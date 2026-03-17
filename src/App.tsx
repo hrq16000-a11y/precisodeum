@@ -36,6 +36,8 @@ import AboutPage from "./pages/AboutPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SitemapRedirect from "./pages/SitemapRedirect";
 import ServiceDetailPage from "./pages/ServiceDetailPage";
+import FaqPage from "./pages/FaqPage";
+import AdminHighlightsPage from "./pages/AdminHighlightsPage";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
