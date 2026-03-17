@@ -129,11 +129,13 @@ const Index = () => {
       <Header />
       <HeroBanner totalServices={totalServicesCount} />
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
+      <SponsorAd position="between-sections" />
       {featuredEnabled && (
         <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
       )}
       <PopularServices />
       {recentServices.length > 0 && <RecentServices services={recentServices} />}
+      <SponsorAd position="between-sections" />
       {topCities.length > 0 && <CitiesSection cities={topCities} />}
       <CtaSection />
       <SponsorsSection sponsors={sponsors} />
