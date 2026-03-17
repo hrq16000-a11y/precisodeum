@@ -35,6 +35,7 @@ import CityPage from "./pages/CityPage";
 import AboutPage from "./pages/AboutPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SitemapRedirect from "./pages/SitemapRedirect";
+import ServiceDetailPage from "./pages/ServiceDetailPage";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
