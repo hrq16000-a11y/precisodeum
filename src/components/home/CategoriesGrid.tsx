@@ -45,7 +45,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
   const hasMore = visibleCount < shuffled.length;
 
   return (
-    <section className="py-14">
+    <section className="py-10">
       <div className="container">
         <div className="mb-8 text-center">
           <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
