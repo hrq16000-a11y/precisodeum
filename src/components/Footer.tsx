@@ -27,7 +27,7 @@ function shuffle<T>(arr: T[]): T[] {
 const Footer = () => {
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoFooterUrl = useSettingValue('logo_footer_url');
-  const logoVertical = logoFooterUrl || defaultLogoVertical;
+  const logoVertical = (logoFooterUrl && logoFooterUrl.startsWith('http')) ? logoFooterUrl : defaultLogoVertical;
   const { data: topCities = [] } = useQuery({
     queryKey: ['footer-cities'],
     queryFn: async () => {
@@ -61,7 +61,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <Link to="/">
-              <img src={logoVertical} alt="Preciso de um" className="mb-4 h-24 brightness-0 invert" />
+              <img src={logoVertical} alt="Preciso de um" className="mb-4 h-20 max-w-[200px] object-contain brightness-0 invert" />
             </Link>
             <p className="text-sm leading-relaxed text-primary-foreground/70">
               A maior plataforma de serviços do Brasil. Conectamos você aos melhores profissionais da sua região com avaliações verificadas e contato direto.
