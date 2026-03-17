@@ -30,6 +30,7 @@ import HowItWorksSection from '@/components/home/HowItWorksSection';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
 import FaqSection from '@/components/home/FaqSection';
 import PopularSearches from '@/components/home/PopularSearches';
+import SponsorAd from '@/components/SponsorAd';
 
 const Index = () => {
   useSeoHead({
