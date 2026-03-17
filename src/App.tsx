@@ -35,6 +35,7 @@ import CityPage from "./pages/CityPage";
 import AboutPage from "./pages/AboutPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SitemapRedirect from "./pages/SitemapRedirect";
+import ServiceDetailPage from "./pages/ServiceDetailPage";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/admin/faq" element={<AdminFaqPage />} />
             <Route path="/admin/metatags" element={<AdminMetaTagsPage />} />
             <Route path="/servico/:slug" element={<PopularServicePage />} />
+            <Route path="/servico-detalhe/:id" element={<ServiceDetailPage />} />
             <Route path="/cidade/:slug" element={<CityPage />} />
             <Route path="/sobre" element={<AboutPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />

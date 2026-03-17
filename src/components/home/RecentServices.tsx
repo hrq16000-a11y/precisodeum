@@ -31,14 +31,14 @@ const RecentServices = ({ services }: Props) => (
           return (
             <div
               key={s.id}
-              className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-card"
+              className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-card"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <MapPin className="h-5 w-5 text-primary" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <MapPin className="h-4 w-4 text-primary" />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-foreground">{s.service_name}</p>
-                <p className="text-xs text-muted-foreground">{location}</p>
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <p className="truncate text-sm font-semibold text-foreground leading-tight">{s.service_name}</p>
+                <p className="truncate text-xs text-muted-foreground">{location}</p>
               </div>
             </div>
           );
