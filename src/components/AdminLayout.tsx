@@ -15,6 +15,7 @@ const menuItems = [
   { label: 'Serviços Populares', icon: Wrench, path: '/admin/servicos-populares' },
   { label: 'FAQ', icon: HelpCircle, path: '/admin/faq' },
   { label: 'Meta Tags & SEO', icon: Globe, path: '/admin/metatags' },
+  { label: 'Destaques', icon: Sparkles, path: '/admin/destaques' },
   { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
 ];
 
