@@ -182,6 +182,105 @@ const ProviderProfile = () => {
     );
   }
 
+/* ── Service Detail Dialog ── */
+const ServiceDetailDialog = ({ service, open, onClose, whatsapp }: { service: any; open: boolean; onClose: () => void; whatsapp: string }) => (
+  <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle className="text-lg font-bold">{service.service_name}</DialogTitle>
+      </DialogHeader>
+
+      {service.serviceImages?.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {service.serviceImages.map((img: any) => (
+            <div key={img.id} className="aspect-video overflow-hidden rounded-lg border border-border">
+              <img src={img.image_url} alt="Foto do serviço" className="h-full w-full object-cover" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {service.serviceCategories?.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {service.serviceCategories.map((cat: any, i: number) => (
+            <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">
+              {cat.icon} {cat.name}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {service.description && <p className="text-sm text-muted-foreground leading-relaxed">{service.description}</p>}
+
+      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+        {service.price && <span className="font-semibold text-foreground">💰 {service.price}</span>}
+        {service.service_area && <span>📍 {service.service_area}</span>}
+        {service.working_hours && <span>🕐 {service.working_hours}</span>}
+      </div>
+
+      <Button variant="accent" className="w-full" asChild>
+        <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">
+          <MessageCircle className="h-4 w-4" /> Chamar no WhatsApp
+        </a>
+      </Button>
+    </DialogContent>
+  </Dialog>
+);
+
+/* ── Services List with popup ── */
+const ServicesList = ({ services, whatsapp, providerName, providerCity }: { services: any[]; whatsapp: string; providerName: string; providerCity: string }) => {
+  const [selected, setSelected] = useState<any | null>(null);
+
+  return (
+    <>
+      <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
+        <h2 className="font-display text-lg font-bold text-foreground">Serviços oferecidos</h2>
+        <div className="mt-4 space-y-3">
+          {services.map((s: any) => (
+            <button
+              key={s.id}
+              onClick={() => setSelected(s)}
+              className="w-full text-left rounded-lg border border-border p-4 transition-all hover:border-primary/30 hover:shadow-sm"
+            >
+              <h3 className="text-sm font-semibold text-foreground">{s.service_name}</h3>
+              {s.serviceCategories?.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {s.serviceCategories.map((cat: any, i: number) => (
+                    <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2.5 py-0.5 text-[11px] font-medium text-accent">
+                      {cat.icon} {cat.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {s.description && <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{s.description}</p>}
+              <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                {s.price && <span>💰 {s.price}</span>}
+                {s.service_area && <span>📍 {s.service_area}</span>}
+              </div>
+              {s.serviceImages?.length > 0 && (
+                <div className="mt-3 flex gap-2 overflow-hidden">
+                  {s.serviceImages.slice(0, 3).map((img: any) => (
+                    <div key={img.id} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border">
+                      <img src={img.image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    </div>
+                  ))}
+                  {s.serviceImages.length > 3 && (
+                    <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted text-xs text-muted-foreground">+{s.serviceImages.length - 3}</span>
+                  )}
+                </div>
+              )}
+            </button>
+          ))}
+          {services.length === 0 && <p className="text-sm text-muted-foreground">Nenhum serviço cadastrado.</p>}
+        </div>
+      </div>
+      {selected && (
+        <ServiceDetailDialog service={selected} open={!!selected} onClose={() => setSelected(null)} whatsapp={whatsapp} />
+      )}
+    </>
+  );
+};
+
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
