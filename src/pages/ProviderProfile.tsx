@@ -311,54 +311,7 @@ const ProviderProfile = () => {
             )}
 
             {/* Services */}
-            <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-              <h2 className="font-display text-lg font-bold text-foreground">Serviços oferecidos</h2>
-              <div className="mt-4 space-y-4">
-                {services.map((s: any) => (
-                  <div key={s.id} className="rounded-lg border border-border p-4">
-                    <h3 className="text-sm font-semibold text-foreground">{s.service_name}</h3>
-                    {s.serviceCategories?.length > 0 && (
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {s.serviceCategories.map((cat: any, i: number) => (
-                          <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2.5 py-0.5 text-[11px] font-medium text-accent">
-                            {cat.icon} {cat.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {s.description && <p className="mt-2 text-xs text-muted-foreground">{s.description}</p>}
-                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                      {s.whatsapp && (
-                        <a href={`https://wa.me/${s.whatsapp}`} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-accent hover:underline">
-                          <MessageCircle className="h-3 w-3" /> {s.whatsapp}
-                        </a>
-                      )}
-                      {s.website && (
-                        <a href={s.website.startsWith('http') ? s.website : `https://${s.website}`} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-accent hover:underline">
-                          <Globe className="h-3 w-3" /> Site
-                        </a>
-                      )}
-                      {s.price && <span>💰 {s.price}</span>}
-                      {s.address && <span>📍 {s.address}</span>}
-                      {s.working_hours && <span>🕐 {s.working_hours}</span>}
-                      {s.service_area && <span>🗺️ {s.service_area}</span>}
-                    </div>
-                    {s.serviceImages?.length > 0 && (
-                      <div className="mt-3 grid grid-cols-3 gap-2">
-                        {s.serviceImages.map((img: any) => (
-                          <div key={img.id} className="aspect-square overflow-hidden rounded-lg border border-border">
-                            <img src={img.image_url} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {services.length === 0 && <p className="text-sm text-muted-foreground">Nenhum serviço cadastrado.</p>}
-              </div>
-            </div>
+            <ServicesList services={services} whatsapp={provider.whatsapp} providerName={name} providerCity={provider.city} />
 
             {/* Reviews */}
             {reviewsEnabled && (
