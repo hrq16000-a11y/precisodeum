@@ -57,9 +57,9 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 12 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 rounded-xl" />
+              <Skeleton key={i} className="h-16 rounded-xl" />
             ))}
           </div>
         ) : (
