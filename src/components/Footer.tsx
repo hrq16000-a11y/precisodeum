@@ -5,6 +5,7 @@ import { MessageCircle, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import logoVertical from '@/assets/logo-vertical.png';
+import SponsorAd from '@/components/SponsorAd';
 
 const ecosystemLinks = [
   { name: 'Encontre um Técnico', url: 'https://www.encontreumtecnico.com' },
