@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { ArrowUp, ArrowDown, ExternalLink, Upload, X, Instagram, Facebook, Youtube, Palette } from 'lucide-react';
+import { ArrowUp, ArrowDown, ExternalLink, Upload, X, Instagram, Facebook, Youtube, Palette, Eye } from 'lucide-react';
+import ThemePreview from '@/components/dashboard/ThemePreview';
 
 const THEMES = [
   {
