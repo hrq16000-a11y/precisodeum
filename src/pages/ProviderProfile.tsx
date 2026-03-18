@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';
@@ -20,6 +20,36 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 
+interface PageSettings {
+  sections_order: string[];
+  hidden_sections: string[];
+  headline: string;
+  tagline: string;
+  cta_text: string;
+  cta_whatsapp_text: string;
+  accent_color: string;
+  cover_image_url: string;
+  instagram_url: string;
+  facebook_url: string;
+  youtube_url: string;
+  tiktok_url: string;
+}
+
+const DEFAULT_SETTINGS: PageSettings = {
+  sections_order: ['about', 'portfolio', 'services', 'reviews', 'lead_form'],
+  hidden_sections: [],
+  headline: '',
+  tagline: '',
+  cta_text: 'Solicitar Orçamento',
+  cta_whatsapp_text: 'Chamar no WhatsApp',
+  accent_color: '',
+  cover_image_url: '',
+  instagram_url: '',
+  facebook_url: '',
+  youtube_url: '',
+  tiktok_url: '',
+};
+
 const ProviderProfile = () => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const { slug } = useParams();
@@ -30,6 +60,7 @@ const ProviderProfile = () => {
   const [loading, setLoading] = useState(true);
   const [leadSent, setLeadSent] = useState(false);
   const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '' });
+  const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
     const fetchProvider = async () => {
@@ -40,7 +71,6 @@ const ProviderProfile = () => {
         .maybeSingle();
 
       if (data) {
-        // Fetch profile separately (no FK between providers and profiles)
         const { data: profile } = await supabase
           .from('public_profiles' as any)
           .select('full_name, avatar_url')
@@ -49,17 +79,34 @@ const ProviderProfile = () => {
 
         setProvider({ ...data, profiles: profile });
 
-        const [{ data: svc }, { data: rev }, { data: files }] = await Promise.all([
+        const [{ data: svc }, { data: rev }, { data: files }, { data: ps }] = await Promise.all([
           supabase.from('services').select('*').eq('provider_id', data.id),
           supabase.from('reviews')
             .select('*, user_id')
             .eq('provider_id', data.id)
             .order('created_at', { ascending: false }),
           supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 }),
+          supabase.from('provider_page_settings').select('*').eq('provider_id', data.id).maybeSingle(),
         ]);
 
+        if (ps) {
+          setPageSettings({
+            sections_order: (ps.sections_order as string[]) || DEFAULT_SETTINGS.sections_order,
+            hidden_sections: (ps.hidden_sections as string[]) || [],
+            headline: ps.headline || '',
+            tagline: ps.tagline || '',
+            cta_text: ps.cta_text || DEFAULT_SETTINGS.cta_text,
+            cta_whatsapp_text: ps.cta_whatsapp_text || DEFAULT_SETTINGS.cta_whatsapp_text,
+            accent_color: ps.accent_color || '',
+            cover_image_url: ps.cover_image_url || '',
+            instagram_url: ps.instagram_url || '',
+            facebook_url: ps.facebook_url || '',
+            youtube_url: ps.youtube_url || '',
+            tiktok_url: ps.tiktok_url || '',
+          });
+        }
+
         if (svc && svc.length > 0) {
-          // Fetch categories and images for each service
           const svcIds = svc.map((s: any) => s.id);
           const [{ data: scData }, { data: siData }] = await Promise.all([
             supabase.from('service_categories')
@@ -122,6 +169,8 @@ const ProviderProfile = () => {
   const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
 
+  const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
+
   useSeoHead({
     title: provider ? `${name} - ${category} em ${provider.city}` : 'Profissional',
     description: provider
@@ -182,14 +231,331 @@ const ProviderProfile = () => {
     );
   }
 
+  const accentStyle = pageSettings.accent_color
+    ? { '--provider-accent': pageSettings.accent_color } as React.CSSProperties
+    : {};
+
+  const accentBg = pageSettings.accent_color ? `hsl(${pageSettings.accent_color})` : undefined;
+
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { error } = await supabase.from('leads').insert({
+      provider_id: provider.id,
+      client_name: leadForm.name,
+      phone: leadForm.phone,
+      service_needed: leadForm.service,
+      message: leadForm.message,
+    });
+    if (error) {
+      toast.error('Erro ao enviar solicitação');
+      return;
+    }
+    setLeadSent(true);
+    toast.success('Solicitação enviada!');
+  };
+
+  const citySlug = provider.city?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
+
+  const visibleSections = pageSettings.sections_order.filter(s => !pageSettings.hidden_sections.includes(s));
+
+  // Section renderers
+  const renderAbout = () => (
+    <div key="about" className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
+      <h2 className="font-display text-lg font-bold text-foreground">Sobre o profissional</h2>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{provider.description}</p>
+    </div>
+  );
+
+  const renderPortfolio = () => {
+    if (portfolioImages.length === 0) return null;
+    return (
+      <div key="portfolio" className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
+        <h2 className="font-display text-lg font-bold text-foreground">Portfólio</h2>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {portfolioImages.map((url, i) => (
+            <div key={i} className="aspect-square overflow-hidden rounded-lg border border-border">
+              <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderServices = () => (
+    <ServicesList key="services" services={services} whatsapp={provider.whatsapp} providerName={name} providerCity={provider.city} ctaWhatsappText={pageSettings.cta_whatsapp_text} accentBg={accentBg} />
+  );
+
+  const renderReviews = () => {
+    if (!reviewsEnabled) return null;
+    return (
+      <div key="reviews" className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
+        <h2 className="font-display text-lg font-bold text-foreground">Avaliações</h2>
+        {reviews.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
+        ) : (
+          <div className="mt-4 space-y-4">
+            {reviews.map((r) => (
+              <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-foreground">
+                    {(r.profiles as any)?.full_name || 'Cliente'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(r.created_at).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+                <div className="mt-1">
+                  <StarRating rating={r.rating} showValue={false} size={12} />
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">{r.comment}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderLeadForm = () => (
+    <div key="lead_form" className="mt-6 w-full lg:hidden rounded-xl border border-border bg-card p-6 shadow-card">
+      <h3 className="font-display text-lg font-bold text-foreground">{pageSettings.cta_text}</h3>
+      {leadSent ? (
+        <div className="mt-4 rounded-lg bg-success/10 p-4 text-center">
+          <p className="text-sm font-semibold text-foreground">Solicitação enviada!</p>
+          <p className="mt-1 text-xs text-muted-foreground">O profissional entrará em contato em breve.</p>
+        </div>
+      ) : (
+        <form onSubmit={handleLeadSubmit} className="mt-4 space-y-3">
+          <input type="text" placeholder="Seu nome" required value={leadForm.name}
+            onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+          <input type="tel" placeholder="Seu telefone" required value={leadForm.phone}
+            onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+          <input type="text" placeholder="Serviço necessário" required value={leadForm.service}
+            onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+          <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
+            onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+          <Button type="submit" variant="accent" className="w-full" style={accentBg ? { backgroundColor: accentBg } : undefined}>
+            Enviar Solicitação
+          </Button>
+        </form>
+      )}
+    </div>
+  );
+
+  const sectionMap: Record<string, () => React.ReactNode> = {
+    about: renderAbout,
+    portfolio: renderPortfolio,
+    services: renderServices,
+    reviews: renderReviews,
+    lead_form: renderLeadForm,
+  };
+
+  return (
+    <div className="flex min-h-screen flex-col" style={accentStyle}>
+      <Header />
+
+      {/* Cover Image Hero */}
+      {pageSettings.cover_image_url && (
+        <div className="relative w-full aspect-[16/5] sm:aspect-[16/5] overflow-hidden">
+          <img src={pageSettings.cover_image_url} alt="Capa" className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 container pb-6 text-white">
+            {pageSettings.headline && (
+              <h2 className="font-display text-xl sm:text-3xl font-bold drop-shadow-lg">{pageSettings.headline}</h2>
+            )}
+            {pageSettings.tagline && (
+              <p className="mt-1 text-sm sm:text-lg opacity-90 drop-shadow">{pageSettings.tagline}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Headline without cover */}
+      {!pageSettings.cover_image_url && (pageSettings.headline || pageSettings.tagline) && (
+        <div className="container pt-6">
+          {pageSettings.headline && (
+            <h2 className="font-display text-xl font-bold text-foreground">{pageSettings.headline}</h2>
+          )}
+          {pageSettings.tagline && (
+            <p className="mt-1 text-sm text-muted-foreground">{pageSettings.tagline}</p>
+          )}
+        </div>
+      )}
+
+      {/* Breadcrumb */}
+      <nav className="container py-3 text-sm text-muted-foreground">
+        <Link to="/" className="hover:text-foreground">Início</Link>
+        {categorySlug && (
+          <>
+            <ChevronRight className="mx-1 inline h-3 w-3" />
+            <Link to={`/categoria/${categorySlug}`} className="hover:text-foreground">{category}</Link>
+          </>
+        )}
+        {provider.city && (
+          <>
+            <ChevronRight className="mx-1 inline h-3 w-3" />
+            <Link to={`/cidade/${citySlug}`} className="hover:text-foreground">{provider.city}</Link>
+          </>
+        )}
+        <ChevronRight className="mx-1 inline h-3 w-3" />
+        <span className="text-foreground">{name}</span>
+      </nav>
+
+      <div className="container py-8">
+        <div className="flex flex-col gap-8 lg:flex-row">
+          <div className="flex-1">
+            {/* Profile header */}
+            <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <Avatar className="h-20 w-20 shrink-0 rounded-2xl">
+                  <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
+                  <AvatarFallback className="rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
+                    {provider.plan === 'premium' && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground" style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                        <Crown className="h-3 w-3" /> DESTAQUE
+                      </span>
+                    )}
+                  </div>
+                  {provider.business_name && (
+                    <p className="text-sm text-muted-foreground">{provider.business_name}</p>
+                  )}
+                  <p className="mt-1 text-sm font-medium" style={accentBg ? { color: accentBg } : undefined}>{category}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4" />
+                      {provider.neighborhood ? `${provider.neighborhood}, ` : ''}{provider.city} - {provider.state}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {provider.years_experience} anos de experiência
+                    </span>
+                  </div>
+                  {reviewsEnabled && (
+                    <div className="mt-3">
+                      <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
+                    </div>
+                  )}
+                  {/* Social links */}
+                  {hasSocial && (
+                    <div className="mt-3 flex gap-2">
+                      {pageSettings.instagram_url && (
+                        <a href={pageSettings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                          <Instagram className="h-5 w-5" />
+                        </a>
+                      )}
+                      {pageSettings.facebook_url && (
+                        <a href={pageSettings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                          <Facebook className="h-5 w-5" />
+                        </a>
+                      )}
+                      {pageSettings.youtube_url && (
+                        <a href={pageSettings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                          <Youtube className="h-5 w-5" />
+                        </a>
+                      )}
+                      {pageSettings.tiktok_url && (
+                        <a href={pageSettings.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors text-sm font-bold">
+                          🎵
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button variant="accent" size="lg" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                  <a href={`https://wa.me/${provider.whatsapp}`} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-5 w-5" /> {pageSettings.cta_whatsapp_text}
+                  </a>
+                </Button>
+                <Button variant="outline" size="lg">
+                  <Phone className="h-5 w-5" /> Ligar
+                </Button>
+                <Button variant="outline" size="lg" onClick={() => {
+                  navigator.clipboard.writeText(window.location.href).then(() => {
+                    toast.success('Link copiado!');
+                  }).catch(() => {
+                    window.prompt('Copie o link:', window.location.href);
+                  });
+                }}>
+                  <Copy className="h-4 w-4" /> Copiar Link
+                </Button>
+              </div>
+            </div>
+
+            {/* Dynamic sections */}
+            {visibleSections.map(sectionId => {
+              const render = sectionMap[sectionId];
+              return render ? render() : null;
+            })}
+          </div>
+
+          {/* Sidebar */}
+          <aside className="hidden lg:block w-80">
+            <div className="sticky top-20 rounded-xl border border-border bg-card p-6 shadow-card">
+              <h3 className="font-display text-lg font-bold text-foreground">{pageSettings.cta_text}</h3>
+              {leadSent ? (
+                <div className="mt-4 rounded-lg bg-success/10 p-4 text-center">
+                  <p className="text-sm font-semibold text-foreground">Solicitação enviada!</p>
+                  <p className="mt-1 text-xs text-muted-foreground">O profissional entrará em contato em breve.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleLeadSubmit} className="mt-4 space-y-3">
+                  <input type="text" placeholder="Seu nome" required value={leadForm.name}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+                  <input type="tel" placeholder="Seu telefone" required value={leadForm.phone}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+                  <input type="text" placeholder="Serviço necessário" required value={leadForm.service}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+                  <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+                  <Button type="submit" variant="accent" className="w-full" style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                    Enviar Solicitação
+                  </Button>
+                </form>
+              )}
+            </div>
+            <SponsorAd position="sidebar" layout="vertical" className="mt-4" />
+          </aside>
+        </div>
+      </div>
+      {/* Floating WhatsApp Button */}
+      <a
+        href={`https://wa.me/${provider.whatsapp}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 lg:hidden animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"
+        aria-label="WhatsApp"
+      >
+        <MessageCircle className="h-7 w-7" />
+      </a>
+      <Footer />
+    </div>
+  );
+};
+
 /* ── Service Detail Dialog ── */
-const ServiceDetailDialog = ({ service, open, onClose, whatsapp }: { service: any; open: boolean; onClose: () => void; whatsapp: string }) => (
+const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText, accentBg }: { service: any; open: boolean; onClose: () => void; whatsapp: string; ctaWhatsappText?: string; accentBg?: string }) => (
   <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
       <DialogHeader>
         <DialogTitle className="text-lg font-bold">{service.service_name}</DialogTitle>
       </DialogHeader>
-
       {service.serviceImages?.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
           {service.serviceImages.map((img: any) => (
@@ -199,7 +565,6 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp }: { service: an
           ))}
         </div>
       )}
-
       {service.serviceCategories?.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {service.serviceCategories.map((cat: any, i: number) => (
@@ -209,18 +574,15 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp }: { service: an
           ))}
         </div>
       )}
-
       {service.description && <p className="text-sm text-muted-foreground leading-relaxed">{service.description}</p>}
-
       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
         {service.price && <span className="font-semibold text-foreground">💰 {service.price}</span>}
         {service.service_area && <span>📍 {service.service_area}</span>}
         {service.working_hours && <span>🕐 {service.working_hours}</span>}
       </div>
-
-      <Button variant="accent" className="w-full" asChild>
+      <Button variant="accent" className="w-full" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
         <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">
-          <MessageCircle className="h-4 w-4" /> Chamar no WhatsApp
+          <MessageCircle className="h-4 w-4" /> {ctaWhatsappText || 'Chamar no WhatsApp'}
         </a>
       </Button>
     </DialogContent>
@@ -228,7 +590,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp }: { service: an
 );
 
 /* ── Services List with popup ── */
-const ServicesList = ({ services, whatsapp, providerName, providerCity }: { services: any[]; whatsapp: string; providerName: string; providerCity: string }) => {
+const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string }) => {
   const [selected, setSelected] = useState<any | null>(null);
 
   return (
@@ -275,216 +637,9 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity }: { serv
         </div>
       </div>
       {selected && (
-        <ServiceDetailDialog service={selected} open={!!selected} onClose={() => setSelected(null)} whatsapp={whatsapp} />
+        <ServiceDetailDialog service={selected} open={!!selected} onClose={() => setSelected(null)} whatsapp={whatsapp} ctaWhatsappText={ctaWhatsappText} accentBg={accentBg} />
       )}
     </>
-  );
-};
-
-
-  const handleLeadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await supabase.from('leads').insert({
-      provider_id: provider.id,
-      client_name: leadForm.name,
-      phone: leadForm.phone,
-      service_needed: leadForm.service,
-      message: leadForm.message,
-    });
-    if (error) {
-      toast.error('Erro ao enviar solicitação');
-      return;
-    }
-    setLeadSent(true);
-    toast.success('Solicitação enviada!');
-  };
-
-  // Build city slug for breadcrumb
-  const citySlug = provider.city?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
-
-  return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-
-      {/* Breadcrumb */}
-      <nav className="container py-3 text-sm text-muted-foreground">
-        <Link to="/" className="hover:text-foreground">Início</Link>
-        {categorySlug && (
-          <>
-            <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/categoria/${categorySlug}`} className="hover:text-foreground">{category}</Link>
-          </>
-        )}
-        {provider.city && (
-          <>
-            <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/cidade/${citySlug}`} className="hover:text-foreground">{provider.city}</Link>
-          </>
-        )}
-        <ChevronRight className="mx-1 inline h-3 w-3" />
-        <span className="text-foreground">{name}</span>
-      </nav>
-
-      <div className="container py-8">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          <div className="flex-1">
-            {/* Profile header */}
-            <div className="rounded-xl border border-border bg-card p-6 shadow-card">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                <Avatar className="h-20 w-20 shrink-0 rounded-2xl">
-                  <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
-                  <AvatarFallback className="rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
-                    {provider.plan === 'premium' && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
-                        <Crown className="h-3 w-3" /> DESTAQUE
-                      </span>
-                    )}
-                  </div>
-                  {provider.business_name && (
-                    <p className="text-sm text-muted-foreground">{provider.business_name}</p>
-                  )}
-                  <p className="mt-1 text-sm font-medium text-accent">{category}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {provider.neighborhood ? `${provider.neighborhood}, ` : ''}{provider.city} - {provider.state}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {provider.years_experience} anos de experiência
-                    </span>
-                  </div>
-                  {reviewsEnabled && (
-                    <div className="mt-3">
-                      <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button variant="accent" size="lg" asChild>
-                  <a href={`https://wa.me/${provider.whatsapp}`} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-5 w-5" /> Chamar no WhatsApp
-                  </a>
-                </Button>
-                <Button variant="outline" size="lg">
-                  <Phone className="h-5 w-5" /> Ligar
-                </Button>
-                <Button variant="outline" size="lg" onClick={() => {
-                  navigator.clipboard.writeText(window.location.href).then(() => {
-                    toast.success('Link copiado!');
-                  }).catch(() => {
-                    // fallback: prompt
-                    window.prompt('Copie o link:', window.location.href);
-                  });
-                }}>
-                  <Copy className="h-4 w-4" /> Copiar Link
-                </Button>
-              </div>
-            </div>
-
-            {/* About */}
-            <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-              <h2 className="font-display text-lg font-bold text-foreground">Sobre o profissional</h2>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{provider.description}</p>
-            </div>
-
-            {/* Portfolio */}
-            {portfolioImages.length > 0 && (
-              <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-                <h2 className="font-display text-lg font-bold text-foreground">Portfólio</h2>
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {portfolioImages.map((url, i) => (
-                    <div key={i} className="aspect-square overflow-hidden rounded-lg border border-border">
-                      <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Services */}
-            <ServicesList services={services} whatsapp={provider.whatsapp} providerName={name} providerCity={provider.city} />
-
-            {/* Reviews */}
-            {reviewsEnabled && (
-              <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-                <h2 className="font-display text-lg font-bold text-foreground">Avaliações</h2>
-                {reviews.length === 0 ? (
-                  <p className="mt-3 text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
-                ) : (
-                  <div className="mt-4 space-y-4">
-                    {reviews.map((r) => (
-                      <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold text-foreground">
-                            {(r.profiles as any)?.full_name || 'Cliente'}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(r.created_at).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
-                        <div className="mt-1">
-                          <StarRating rating={r.rating} showValue={false} size={12} />
-                        </div>
-                        <p className="mt-2 text-sm text-muted-foreground">{r.comment}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <aside className="w-full lg:w-80">
-            <div className="sticky top-20 rounded-xl border border-border bg-card p-6 shadow-card">
-              <h3 className="font-display text-lg font-bold text-foreground">Solicitar Orçamento</h3>
-              {leadSent ? (
-                <div className="mt-4 rounded-lg bg-success/10 p-4 text-center">
-                  <p className="text-sm font-semibold text-foreground">Solicitação enviada!</p>
-                  <p className="mt-1 text-xs text-muted-foreground">O profissional entrará em contato em breve.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleLeadSubmit} className="mt-4 space-y-3">
-                  <input type="text" placeholder="Seu nome" required value={leadForm.name}
-                    onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
-                  <input type="tel" placeholder="Seu telefone" required value={leadForm.phone}
-                    onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
-                  <input type="text" placeholder="Serviço necessário" required value={leadForm.service}
-                    onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
-                  <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
-                    onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
-                  <Button type="submit" variant="accent" className="w-full">Enviar Solicitação</Button>
-                </form>
-              )}
-            </div>
-            <SponsorAd position="sidebar" layout="vertical" className="mt-4" />
-          </aside>
-        </div>
-      </div>
-      {/* Floating WhatsApp Button */}
-      <a
-        href={`https://wa.me/${provider.whatsapp}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 lg:hidden animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"
-        aria-label="WhatsApp"
-      >
-        <MessageCircle className="h-7 w-7" />
-      </a>
-      <Footer />
-    </div>
   );
 };
 
