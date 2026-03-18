@@ -17,6 +17,7 @@ import DashboardServicesPage from "./pages/DashboardServicesPage";
 import DashboardReviewsPage from "./pages/DashboardReviewsPage";
 import DashboardLeadsPage from "./pages/DashboardLeadsPage";
 import DashboardPlanPage from "./pages/DashboardPlanPage";
+import DashboardMyPagePage from "./pages/DashboardMyPagePage";
 import AdminPage from "./pages/AdminPage";
 import AdminProvidersPage from "./pages/AdminProvidersPage";
 import AdminReviewsPage from "./pages/AdminReviewsPage";
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/dashboard/avaliacoes" element={<DashboardReviewsPage />} />
             <Route path="/dashboard/leads" element={<DashboardLeadsPage />} />
             <Route path="/dashboard/plano" element={<DashboardPlanPage />} />
+            <Route path="/dashboard/minha-pagina" element={<DashboardMyPagePage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
             <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
