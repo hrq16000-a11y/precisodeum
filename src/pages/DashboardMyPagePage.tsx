@@ -124,6 +124,7 @@ const DashboardMyPagePage = () => {
       facebook_url: facebookUrl,
       youtube_url: youtubeUrl,
       tiktok_url: tiktokUrl,
+      theme,
       updated_at: new Date().toISOString(),
     };
 
