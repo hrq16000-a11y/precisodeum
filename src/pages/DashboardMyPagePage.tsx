@@ -75,6 +75,7 @@ const DashboardMyPagePage = () => {
   const [facebookUrl, setFacebookUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [tiktokUrl, setTiktokUrl] = useState('');
+  const [theme, setTheme] = useState('default');
   const [existsInDb, setExistsInDb] = useState(false);
 
   useEffect(() => {
