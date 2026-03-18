@@ -282,6 +282,71 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_page_settings: {
+        Row: {
+          accent_color: string | null
+          cover_image_url: string | null
+          created_at: string
+          cta_text: string | null
+          cta_whatsapp_text: string | null
+          facebook_url: string | null
+          headline: string | null
+          hidden_sections: Json
+          id: string
+          instagram_url: string | null
+          provider_id: string
+          sections_order: Json
+          tagline: string | null
+          tiktok_url: string | null
+          updated_at: string
+          youtube_url: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          cta_text?: string | null
+          cta_whatsapp_text?: string | null
+          facebook_url?: string | null
+          headline?: string | null
+          hidden_sections?: Json
+          id?: string
+          instagram_url?: string | null
+          provider_id: string
+          sections_order?: Json
+          tagline?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          youtube_url?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          cta_text?: string | null
+          cta_whatsapp_text?: string | null
+          facebook_url?: string | null
+          headline?: string | null
+          hidden_sections?: Json
+          id?: string
+          instagram_url?: string | null
+          provider_id?: string
+          sections_order?: Json
+          tagline?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          youtube_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_page_settings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       providers: {
         Row: {
           business_name: string | null
