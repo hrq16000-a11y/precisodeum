@@ -168,17 +168,47 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
         .select(providerSelect)
         .eq('status', 'approved');
 
-      if (query) {
-        q = q.or(`description.ilike.%${query}%,business_name.ilike.%${query}%`);
-      }
-      if (city) {
-        q = q.ilike('city', `%${city}%`);
-      }
+      // Only apply DB-level filters that don't depend on joined data
       if (minRating > 0) {
         q = q.gte('rating_avg', minRating);
       }
 
-      let results = await fetchProvidersWithProfiles(q.order('rating_avg', { ascending: false }).order('review_count', { ascending: false }));
+      let results = await fetchProvidersWithProfiles(
+        q.order('rating_avg', { ascending: false }).order('review_count', { ascending: false })
+      );
+
+      // Filter by category slug
+      if (categorySlug) {
+        results = results.filter((p) => p.categorySlug === categorySlug);
+      }
+
+      // Filter by city/location (searches city, state, neighborhood)
+      if (city) {
+        const lc = city.toLowerCase();
+        results = results.filter(
+          (p) =>
+            p.city.toLowerCase().includes(lc) ||
+            p.state.toLowerCase().includes(lc) ||
+            p.neighborhood.toLowerCase().includes(lc)
+        );
+      }
+
+      // Text search across all relevant fields
+      if (query) {
+        const lq = query.toLowerCase();
+        const terms = lq.split(/\s+/).filter(Boolean);
+        results = results.filter((p) =>
+          terms.every((term) =>
+            p.name.toLowerCase().includes(term) ||
+            p.category.toLowerCase().includes(term) ||
+            p.description.toLowerCase().includes(term) ||
+            (p.businessName?.toLowerCase().includes(term) ?? false) ||
+            p.city.toLowerCase().includes(term) ||
+            p.neighborhood.toLowerCase().includes(term) ||
+            p.state.toLowerCase().includes(term)
+          )
+        );
+      }
 
       // Smart ranking: premium > pro > free, then by rating/reviews
       const planPriority: Record<string, number> = { premium: 0, pro: 1, free: 2 };
@@ -190,23 +220,27 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
         return b.reviewCount - a.reviewCount;
       });
 
-      if (categorySlug) {
-        results = results.filter((p) => p.categorySlug === categorySlug);
-      }
-
-      if (query) {
-        const lq = query.toLowerCase();
-        results = results.filter(
-          (p) =>
-            p.name.toLowerCase().includes(lq) ||
-            p.category.toLowerCase().includes(lq) ||
-            p.description.toLowerCase().includes(lq) ||
-            (p.businessName?.toLowerCase().includes(lq) ?? false)
-        );
-      }
-
       return results;
     },
+  });
+}
+
+export function useSearchSuggestions() {
+  return useQuery({
+    queryKey: ['search-suggestions'],
+    queryFn: async () => {
+      const [catRes, cityRes, serviceRes] = await Promise.all([
+        supabase.from('categories').select('name, slug, icon').order('name'),
+        supabase.from('cities').select('name, slug, state').order('name').limit(50),
+        supabase.from('popular_services').select('name, slug, category_name').eq('active', true).order('display_order').limit(30),
+      ]);
+      return {
+        categories: catRes.data || [],
+        cities: cityRes.data || [],
+        services: serviceRes.data || [],
+      };
+    },
+    staleTime: 1000 * 60 * 10,
   });
 }
 
