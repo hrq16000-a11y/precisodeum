@@ -320,8 +320,8 @@ const ProviderProfile = () => {
   const renderReviews = () => {
     if (!reviewsEnabled) return null;
     return (
-      <div key="reviews" className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-        <h2 className="font-display text-lg font-bold text-foreground">Avaliações</h2>
+      <div key="reviews" className={`mt-6 p-6 ${tc.section}`}>
+        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Avaliações</h2>
         {reviews.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
         ) : (
