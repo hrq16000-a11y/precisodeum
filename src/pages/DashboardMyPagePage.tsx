@@ -8,7 +8,34 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { ArrowUp, ArrowDown, ExternalLink, Upload, X, Instagram, Facebook, Youtube } from 'lucide-react';
+import { ArrowUp, ArrowDown, ExternalLink, Upload, X, Instagram, Facebook, Youtube, Palette } from 'lucide-react';
+
+const THEMES = [
+  {
+    id: 'default',
+    label: 'Padrão',
+    description: 'Layout padrão da plataforma',
+    preview: 'bg-card border-border',
+  },
+  {
+    id: 'moderno',
+    label: 'Moderno',
+    description: 'Gradientes suaves, cantos arredondados e sombras elegantes',
+    preview: 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200',
+  },
+  {
+    id: 'classico',
+    label: 'Clássico',
+    description: 'Visual tradicional com bordas definidas e tipografia formal',
+    preview: 'bg-amber-50/50 border-amber-300',
+  },
+  {
+    id: 'minimalista',
+    label: 'Minimalista',
+    description: 'Ultra-limpo, sem bordas, muito espaço em branco',
+    preview: 'bg-white border-gray-100',
+  },
+];
 
 const ACCENT_COLORS = [
   { label: 'Padrão', value: '' },
@@ -48,6 +75,7 @@ const DashboardMyPagePage = () => {
   const [facebookUrl, setFacebookUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [tiktokUrl, setTiktokUrl] = useState('');
+  const [theme, setTheme] = useState('default');
   const [existsInDb, setExistsInDb] = useState(false);
 
   useEffect(() => {
@@ -72,6 +100,7 @@ const DashboardMyPagePage = () => {
         setFacebookUrl(data.facebook_url || '');
         setYoutubeUrl(data.youtube_url || '');
         setTiktokUrl(data.tiktok_url || '');
+        setTheme((data as any).theme || 'default');
       }
       setLoading(false);
     };
@@ -95,6 +124,7 @@ const DashboardMyPagePage = () => {
       facebook_url: facebookUrl,
       youtube_url: youtubeUrl,
       tiktok_url: tiktokUrl,
+      theme,
       updated_at: new Date().toISOString(),
     };
 
@@ -194,6 +224,25 @@ const DashboardMyPagePage = () => {
             </Button>
           </div>
         </div>
+
+        {/* Theme Selector */}
+        <section className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h2 className="font-semibold text-foreground flex items-center gap-2"><Palette className="h-4 w-4" /> Tema da Página</h2>
+          <p className="text-xs text-muted-foreground">Escolha um tema como base visual. Você pode personalizar cores e detalhes depois.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {THEMES.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTheme(t.id)}
+                className={`text-left rounded-xl border-2 p-4 transition-all ${theme === t.id ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/30'}`}
+              >
+                <div className={`h-12 rounded-lg border ${t.preview} mb-2`} />
+                <span className="text-sm font-semibold text-foreground">{t.label}</span>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{t.description}</p>
+              </button>
+            ))}
+          </div>
+        </section>
 
         {/* Cover Image */}
         <section className="rounded-xl border border-border bg-card p-5 space-y-3">

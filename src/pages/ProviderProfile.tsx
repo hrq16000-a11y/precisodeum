@@ -33,6 +33,7 @@ interface PageSettings {
   facebook_url: string;
   youtube_url: string;
   tiktok_url: string;
+  theme: string;
 }
 
 const DEFAULT_SETTINGS: PageSettings = {
@@ -48,6 +49,34 @@ const DEFAULT_SETTINGS: PageSettings = {
   facebook_url: '',
   youtube_url: '',
   tiktok_url: '',
+  theme: 'default',
+};
+
+const THEME_CLASSES: Record<string, { card: string; section: string; page: string; heading: string }> = {
+  default: {
+    card: 'rounded-xl border border-border bg-card shadow-card',
+    section: 'rounded-xl border border-border bg-card p-6 shadow-card',
+    page: '',
+    heading: 'font-display',
+  },
+  moderno: {
+    card: 'rounded-2xl border-0 bg-gradient-to-br from-card to-accent/5 shadow-lg',
+    section: 'rounded-2xl border-0 bg-gradient-to-br from-card to-accent/5 p-6 shadow-lg',
+    page: 'bg-gradient-to-b from-background to-accent/5',
+    heading: 'font-display tracking-tight',
+  },
+  classico: {
+    card: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 shadow-sm',
+    section: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 p-6 shadow-sm',
+    page: 'bg-amber-50/20',
+    heading: 'font-serif',
+  },
+  minimalista: {
+    card: 'rounded-none border-0 border-b border-border/30 bg-transparent shadow-none',
+    section: 'rounded-none border-0 border-b border-border/30 bg-transparent p-6 shadow-none',
+    page: 'bg-background',
+    heading: 'font-sans font-light tracking-wide uppercase text-sm',
+  },
 };
 
 const ProviderProfile = () => {
@@ -103,6 +132,7 @@ const ProviderProfile = () => {
             facebook_url: ps.facebook_url || '',
             youtube_url: ps.youtube_url || '',
             tiktok_url: ps.tiktok_url || '',
+            theme: (ps as any).theme || 'default',
           });
         }
 
@@ -257,11 +287,12 @@ const ProviderProfile = () => {
   const citySlug = provider.city?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
 
   const visibleSections = pageSettings.sections_order.filter(s => !pageSettings.hidden_sections.includes(s));
+  const tc = THEME_CLASSES[pageSettings.theme] || THEME_CLASSES.default;
 
   // Section renderers
   const renderAbout = () => (
-    <div key="about" className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-      <h2 className="font-display text-lg font-bold text-foreground">Sobre o profissional</h2>
+    <div key="about" className={`mt-6 p-6 ${tc.section}`}>
+      <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Sobre o profissional</h2>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{provider.description}</p>
     </div>
   );
@@ -269,8 +300,8 @@ const ProviderProfile = () => {
   const renderPortfolio = () => {
     if (portfolioImages.length === 0) return null;
     return (
-      <div key="portfolio" className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-        <h2 className="font-display text-lg font-bold text-foreground">Portfólio</h2>
+      <div key="portfolio" className={`mt-6 p-6 ${tc.section}`}>
+        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Portfólio</h2>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {portfolioImages.map((url, i) => (
             <div key={i} className="aspect-square overflow-hidden rounded-lg border border-border">
@@ -283,14 +314,14 @@ const ProviderProfile = () => {
   };
 
   const renderServices = () => (
-    <ServicesList key="services" services={services} whatsapp={provider.whatsapp} providerName={name} providerCity={provider.city} ctaWhatsappText={pageSettings.cta_whatsapp_text} accentBg={accentBg} />
+    <ServicesList key="services" services={services} whatsapp={provider.whatsapp} providerName={name} providerCity={provider.city} ctaWhatsappText={pageSettings.cta_whatsapp_text} accentBg={accentBg} themeClasses={tc} />
   );
 
   const renderReviews = () => {
     if (!reviewsEnabled) return null;
     return (
-      <div key="reviews" className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-        <h2 className="font-display text-lg font-bold text-foreground">Avaliações</h2>
+      <div key="reviews" className={`mt-6 p-6 ${tc.section}`}>
+        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Avaliações</h2>
         {reviews.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
         ) : (
@@ -318,8 +349,8 @@ const ProviderProfile = () => {
   };
 
   const renderLeadForm = () => (
-    <div key="lead_form" className="mt-6 w-full lg:hidden rounded-xl border border-border bg-card p-6 shadow-card">
-      <h3 className="font-display text-lg font-bold text-foreground">{pageSettings.cta_text}</h3>
+    <div key="lead_form" className={`mt-6 w-full lg:hidden p-6 ${tc.section}`}>
+      <h3 className={`${tc.heading} text-lg font-bold text-foreground`}>{pageSettings.cta_text}</h3>
       {leadSent ? (
         <div className="mt-4 rounded-lg bg-success/10 p-4 text-center">
           <p className="text-sm font-semibold text-foreground">Solicitação enviada!</p>
@@ -356,7 +387,7 @@ const ProviderProfile = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col" style={accentStyle}>
+    <div className={`flex min-h-screen flex-col ${tc.page}`} style={accentStyle}>
       <Header />
 
       {/* Cover Image Hero */}
@@ -410,7 +441,7 @@ const ProviderProfile = () => {
         <div className="flex flex-col gap-8 lg:flex-row">
           <div className="flex-1">
             {/* Profile header */}
-            <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+            <div className={`p-6 ${tc.card}`}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                 <Avatar className="h-20 w-20 shrink-0 rounded-2xl">
                   <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
@@ -503,8 +534,8 @@ const ProviderProfile = () => {
 
           {/* Sidebar */}
           <aside className="hidden lg:block w-80">
-            <div className="sticky top-20 rounded-xl border border-border bg-card p-6 shadow-card">
-              <h3 className="font-display text-lg font-bold text-foreground">{pageSettings.cta_text}</h3>
+            <div className={`sticky top-20 p-6 ${tc.card}`}>
+              <h3 className={`${tc.heading} text-lg font-bold text-foreground`}>{pageSettings.cta_text}</h3>
               {leadSent ? (
                 <div className="mt-4 rounded-lg bg-success/10 p-4 text-center">
                   <p className="text-sm font-semibold text-foreground">Solicitação enviada!</p>
@@ -590,13 +621,14 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
 );
 
 /* ── Services List with popup ── */
-const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string }) => {
+const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg, themeClasses }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string; themeClasses?: { card: string; section: string; page: string; heading: string } }) => {
   const [selected, setSelected] = useState<any | null>(null);
+  const tc = themeClasses || THEME_CLASSES.default;
 
   return (
     <>
-      <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-        <h2 className="font-display text-lg font-bold text-foreground">Serviços oferecidos</h2>
+      <div className={`mt-6 p-6 ${tc.section}`}>
+        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Serviços oferecidos</h2>
         <div className="mt-4 space-y-3">
           {services.map((s: any) => (
             <button

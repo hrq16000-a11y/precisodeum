@@ -1,0 +1,1 @@
+ALTER TABLE public.provider_page_settings ADD COLUMN theme text DEFAULT 'default';
