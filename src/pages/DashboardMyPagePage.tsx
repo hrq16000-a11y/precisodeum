@@ -230,10 +230,25 @@ const DashboardMyPagePage = () => {
           </div>
         </div>
 
+        {/* Live Preview */}
+        <section className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h2 className="font-semibold text-foreground flex items-center gap-2"><Eye className="h-4 w-4" /> Pré-visualização</h2>
+          <p className="text-xs text-muted-foreground">Veja como sua página ficará em tempo real.</p>
+          <ThemePreview
+            theme={theme}
+            accentColor={accentColor}
+            headline={headline}
+            tagline={tagline}
+            ctaText={ctaText}
+            ctaWhatsappText={ctaWhatsappText}
+            coverImageUrl={coverImageUrl}
+          />
+        </section>
+
         {/* Theme Selector */}
         <section className="rounded-xl border border-border bg-card p-5 space-y-3">
           <h2 className="font-semibold text-foreground flex items-center gap-2"><Palette className="h-4 w-4" /> Tema da Página</h2>
-          <p className="text-xs text-muted-foreground">Escolha um tema como base visual. Você pode personalizar cores e detalhes depois.</p>
+          <p className="text-xs text-muted-foreground">Cada tema inclui fontes, estilos de botões e layouts únicos.</p>
           <div className="grid gap-3 sm:grid-cols-2">
             {THEMES.map(t => (
               <button
@@ -241,7 +256,9 @@ const DashboardMyPagePage = () => {
                 onClick={() => setTheme(t.id)}
                 className={`text-left rounded-xl border-2 p-4 transition-all ${theme === t.id ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/30'}`}
               >
-                <div className={`h-12 rounded-lg border ${t.preview} mb-2`} />
+                <div className={`h-12 rounded-lg border ${t.preview} mb-2 flex items-center justify-center`}>
+                  <span className="text-[10px] text-muted-foreground" style={{ fontFamily: t.font }}>{t.font}</span>
+                </div>
                 <span className="text-sm font-semibold text-foreground">{t.label}</span>
                 <p className="text-[11px] text-muted-foreground mt-0.5">{t.description}</p>
               </button>
