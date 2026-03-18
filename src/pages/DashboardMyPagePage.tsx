@@ -225,6 +225,25 @@ const DashboardMyPagePage = () => {
           </div>
         </div>
 
+        {/* Theme Selector */}
+        <section className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h2 className="font-semibold text-foreground flex items-center gap-2"><Palette className="h-4 w-4" /> Tema da Página</h2>
+          <p className="text-xs text-muted-foreground">Escolha um tema como base visual. Você pode personalizar cores e detalhes depois.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {THEMES.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTheme(t.id)}
+                className={`text-left rounded-xl border-2 p-4 transition-all ${theme === t.id ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/30'}`}
+              >
+                <div className={`h-12 rounded-lg border ${t.preview} mb-2`} />
+                <span className="text-sm font-semibold text-foreground">{t.label}</span>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{t.description}</p>
+              </button>
+            ))}
+          </div>
+        </section>
+
         {/* Cover Image */}
         <section className="rounded-xl border border-border bg-card p-5 space-y-3">
           <h2 className="font-semibold text-foreground">Imagem de Capa</h2>
