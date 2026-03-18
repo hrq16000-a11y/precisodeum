@@ -648,7 +648,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
         {service.service_area && <span>📍 {service.service_area}</span>}
         {service.working_hours && <span>🕐 {service.working_hours}</span>}
       </div>
-      <Button variant="accent" className="w-full" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
+      <Button variant="accent" className={`w-full ${(THEME_CLASSES[pageSettings?.theme || 'default'] || THEME_CLASSES.default).button}`} asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
         <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">
           <MessageCircle className="h-4 w-4" /> {ctaWhatsappText || 'Chamar no WhatsApp'}
         </a>
