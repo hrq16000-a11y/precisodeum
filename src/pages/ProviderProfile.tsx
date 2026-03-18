@@ -349,8 +349,8 @@ const ProviderProfile = () => {
   };
 
   const renderLeadForm = () => (
-    <div key="lead_form" className="mt-6 w-full lg:hidden rounded-xl border border-border bg-card p-6 shadow-card">
-      <h3 className="font-display text-lg font-bold text-foreground">{pageSettings.cta_text}</h3>
+    <div key="lead_form" className={`mt-6 w-full lg:hidden p-6 ${tc.section}`}>
+      <h3 className={`${tc.heading} text-lg font-bold text-foreground`}>{pageSettings.cta_text}</h3>
       {leadSent ? (
         <div className="mt-4 rounded-lg bg-success/10 p-4 text-center">
           <p className="text-sm font-semibold text-foreground">Solicitação enviada!</p>
