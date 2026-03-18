@@ -9,6 +9,7 @@ const menuItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil' },
   { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos' },
+  { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina' },
   { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads' },
   { label: 'Plano', icon: CreditCard, path: '/dashboard/plano' },
 ];
