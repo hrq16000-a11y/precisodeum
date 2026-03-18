@@ -441,7 +441,7 @@ const ProviderProfile = () => {
         <div className="flex flex-col gap-8 lg:flex-row">
           <div className="flex-1">
             {/* Profile header */}
-            <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+            <div className={`p-6 ${tc.card}`}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                 <Avatar className="h-20 w-20 shrink-0 rounded-2xl">
                   <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
