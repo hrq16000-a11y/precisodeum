@@ -17,6 +17,7 @@ import DashboardServicesPage from "./pages/DashboardServicesPage";
 import DashboardReviewsPage from "./pages/DashboardReviewsPage";
 import DashboardLeadsPage from "./pages/DashboardLeadsPage";
 import DashboardPlanPage from "./pages/DashboardPlanPage";
+import DashboardMyPagePage from "./pages/DashboardMyPagePage";
 import AdminPage from "./pages/AdminPage";
 import AdminProvidersPage from "./pages/AdminProvidersPage";
 import AdminReviewsPage from "./pages/AdminReviewsPage";
