@@ -300,8 +300,8 @@ const ProviderProfile = () => {
   const renderPortfolio = () => {
     if (portfolioImages.length === 0) return null;
     return (
-      <div key="portfolio" className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-        <h2 className="font-display text-lg font-bold text-foreground">Portfólio</h2>
+      <div key="portfolio" className={`mt-6 p-6 ${tc.section}`}>
+        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Portfólio</h2>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {portfolioImages.map((url, i) => (
             <div key={i} className="aspect-square overflow-hidden rounded-lg border border-border">
