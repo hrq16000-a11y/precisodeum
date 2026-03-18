@@ -397,17 +397,17 @@ const ProviderProfile = () => {
         <form onSubmit={handleLeadSubmit} className="mt-4 space-y-3">
           <input type="text" placeholder="Seu nome" required value={leadForm.name}
             onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
           <input type="tel" placeholder="Seu telefone" required value={leadForm.phone}
             onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
           <input type="text" placeholder="Serviço necessário" required value={leadForm.service}
             onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
           <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
             onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
-          <Button type="submit" variant="accent" className="w-full" style={accentBg ? { backgroundColor: accentBg } : undefined}>
+            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
+          <Button type="submit" variant="accent" className={`w-full ${tc.button}`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
             Enviar Solicitação
           </Button>
         </form>
