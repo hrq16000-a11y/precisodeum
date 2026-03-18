@@ -15,26 +15,30 @@ const THEMES = [
   {
     id: 'default',
     label: 'Padrão',
-    description: 'Layout padrão da plataforma',
+    description: 'Layout padrão com Plus Jakarta Sans',
     preview: 'bg-card border-border',
+    font: 'Plus Jakarta Sans',
   },
   {
     id: 'moderno',
     label: 'Moderno',
-    description: 'Gradientes suaves, cantos arredondados e sombras elegantes',
+    description: 'Space Grotesk + DM Sans, gradientes suaves e sombras',
     preview: 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200',
+    font: 'Space Grotesk',
   },
   {
     id: 'classico',
     label: 'Clássico',
-    description: 'Visual tradicional com bordas definidas e tipografia formal',
+    description: 'Playfair Display + DM Sans, visual elegante e formal',
     preview: 'bg-amber-50/50 border-amber-300',
+    font: 'Playfair Display',
   },
   {
     id: 'minimalista',
     label: 'Minimalista',
-    description: 'Ultra-limpo, sem bordas, muito espaço em branco',
+    description: 'Space Grotesk light, sem bordas, ultra-limpo',
     preview: 'bg-white border-gray-100',
+    font: 'Space Grotesk',
   },
 ];
 
