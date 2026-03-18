@@ -132,6 +132,7 @@ const ProviderProfile = () => {
             facebook_url: ps.facebook_url || '',
             youtube_url: ps.youtube_url || '',
             tiktok_url: ps.tiktok_url || '',
+            theme: (ps as any).theme || 'default',
           });
         }
 
