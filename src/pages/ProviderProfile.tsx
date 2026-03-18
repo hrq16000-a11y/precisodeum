@@ -287,11 +287,12 @@ const ProviderProfile = () => {
   const citySlug = provider.city?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
 
   const visibleSections = pageSettings.sections_order.filter(s => !pageSettings.hidden_sections.includes(s));
+  const tc = THEME_CLASSES[pageSettings.theme] || THEME_CLASSES.default;
 
   // Section renderers
   const renderAbout = () => (
-    <div key="about" className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-      <h2 className="font-display text-lg font-bold text-foreground">Sobre o profissional</h2>
+    <div key="about" className={`mt-6 p-6 ${tc.section}`}>
+      <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Sobre o profissional</h2>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{provider.description}</p>
     </div>
   );
