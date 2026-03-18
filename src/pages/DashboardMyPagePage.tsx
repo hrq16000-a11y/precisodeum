@@ -100,6 +100,7 @@ const DashboardMyPagePage = () => {
         setFacebookUrl(data.facebook_url || '');
         setYoutubeUrl(data.youtube_url || '');
         setTiktokUrl(data.tiktok_url || '');
+        setTheme((data as any).theme || 'default');
       }
       setLoading(false);
     };
