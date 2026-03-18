@@ -297,6 +297,7 @@ export type Database = {
           provider_id: string
           sections_order: Json
           tagline: string | null
+          theme: string | null
           tiktok_url: string | null
           updated_at: string
           youtube_url: string | null
@@ -315,6 +316,7 @@ export type Database = {
           provider_id: string
           sections_order?: Json
           tagline?: string | null
+          theme?: string | null
           tiktok_url?: string | null
           updated_at?: string
           youtube_url?: string | null
@@ -333,6 +335,7 @@ export type Database = {
           provider_id?: string
           sections_order?: Json
           tagline?: string | null
+          theme?: string | null
           tiktok_url?: string | null
           updated_at?: string
           youtube_url?: string | null
