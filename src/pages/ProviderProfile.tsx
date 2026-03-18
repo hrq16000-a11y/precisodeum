@@ -621,13 +621,14 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
 );
 
 /* ── Services List with popup ── */
-const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string }) => {
+const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg, themeClasses }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string; themeClasses?: { card: string; section: string; page: string; heading: string } }) => {
   const [selected, setSelected] = useState<any | null>(null);
+  const tc = themeClasses || THEME_CLASSES.default;
 
   return (
     <>
-      <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
-        <h2 className="font-display text-lg font-bold text-foreground">Serviços oferecidos</h2>
+      <div className={`mt-6 p-6 ${tc.section}`}>
+        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Serviços oferecidos</h2>
         <div className="mt-4 space-y-3">
           {services.map((s: any) => (
             <button
