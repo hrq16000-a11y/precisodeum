@@ -33,6 +33,7 @@ interface PageSettings {
   facebook_url: string;
   youtube_url: string;
   tiktok_url: string;
+  theme: string;
 }
 
 const DEFAULT_SETTINGS: PageSettings = {
@@ -48,6 +49,34 @@ const DEFAULT_SETTINGS: PageSettings = {
   facebook_url: '',
   youtube_url: '',
   tiktok_url: '',
+  theme: 'default',
+};
+
+const THEME_CLASSES: Record<string, { card: string; section: string; page: string; heading: string }> = {
+  default: {
+    card: 'rounded-xl border border-border bg-card shadow-card',
+    section: 'rounded-xl border border-border bg-card p-6 shadow-card',
+    page: '',
+    heading: 'font-display',
+  },
+  moderno: {
+    card: 'rounded-2xl border-0 bg-gradient-to-br from-card to-accent/5 shadow-lg',
+    section: 'rounded-2xl border-0 bg-gradient-to-br from-card to-accent/5 p-6 shadow-lg',
+    page: 'bg-gradient-to-b from-background to-accent/5',
+    heading: 'font-display tracking-tight',
+  },
+  classico: {
+    card: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 shadow-sm',
+    section: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 p-6 shadow-sm',
+    page: 'bg-amber-50/20',
+    heading: 'font-serif',
+  },
+  minimalista: {
+    card: 'rounded-none border-0 border-b border-border/30 bg-transparent shadow-none',
+    section: 'rounded-none border-0 border-b border-border/30 bg-transparent p-6 shadow-none',
+    page: 'bg-background',
+    heading: 'font-sans font-light tracking-wide uppercase text-sm',
+  },
 };
 
 const ProviderProfile = () => {
