@@ -387,7 +387,7 @@ const ProviderProfile = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col" style={accentStyle}>
+    <div className={`flex min-h-screen flex-col ${tc.page}`} style={accentStyle}>
       <Header />
 
       {/* Cover Image Hero */}
