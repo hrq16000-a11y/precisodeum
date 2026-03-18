@@ -8,7 +8,34 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { ArrowUp, ArrowDown, ExternalLink, Upload, X, Instagram, Facebook, Youtube } from 'lucide-react';
+import { ArrowUp, ArrowDown, ExternalLink, Upload, X, Instagram, Facebook, Youtube, Palette } from 'lucide-react';
+
+const THEMES = [
+  {
+    id: 'default',
+    label: 'Padrão',
+    description: 'Layout padrão da plataforma',
+    preview: 'bg-card border-border',
+  },
+  {
+    id: 'moderno',
+    label: 'Moderno',
+    description: 'Gradientes suaves, cantos arredondados e sombras elegantes',
+    preview: 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200',
+  },
+  {
+    id: 'classico',
+    label: 'Clássico',
+    description: 'Visual tradicional com bordas definidas e tipografia formal',
+    preview: 'bg-amber-50/50 border-amber-300',
+  },
+  {
+    id: 'minimalista',
+    label: 'Minimalista',
+    description: 'Ultra-limpo, sem bordas, muito espaço em branco',
+    preview: 'bg-white border-gray-100',
+  },
+];
 
 const ACCENT_COLORS = [
   { label: 'Padrão', value: '' },
