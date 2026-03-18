@@ -52,30 +52,67 @@ const DEFAULT_SETTINGS: PageSettings = {
   theme: 'default',
 };
 
-const THEME_CLASSES: Record<string, { card: string; section: string; page: string; heading: string }> = {
+interface ThemeConfig {
+  card: string;
+  section: string;
+  page: string;
+  heading: string;
+  button: string;
+  buttonOutline: string;
+  fontBody: string;
+  fontHeading: string;
+  badge: string;
+  input: string;
+}
+
+const THEME_CLASSES: Record<string, ThemeConfig> = {
   default: {
     card: 'rounded-xl border border-border bg-card shadow-card',
     section: 'rounded-xl border border-border bg-card p-6 shadow-card',
     page: '',
     heading: 'font-display',
+    button: 'rounded-md',
+    buttonOutline: 'rounded-md border border-input',
+    fontBody: 'font-sans',
+    fontHeading: "font-['Plus_Jakarta_Sans']",
+    badge: 'rounded-full',
+    input: 'rounded-md border border-input',
   },
   moderno: {
     card: 'rounded-2xl border-0 bg-gradient-to-br from-card to-accent/5 shadow-lg',
     section: 'rounded-2xl border-0 bg-gradient-to-br from-card to-accent/5 p-6 shadow-lg',
     page: 'bg-gradient-to-b from-background to-accent/5',
-    heading: 'font-display tracking-tight',
+    heading: "font-['Space_Grotesk'] tracking-tight",
+    button: 'rounded-xl shadow-lg',
+    buttonOutline: 'rounded-xl border-2 border-primary/20',
+    fontBody: "font-['DM_Sans']",
+    fontHeading: "font-['Space_Grotesk']",
+    badge: 'rounded-xl',
+    input: 'rounded-xl border-0 bg-muted/50 shadow-inner',
   },
   classico: {
     card: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 shadow-sm',
     section: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 p-6 shadow-sm',
     page: 'bg-amber-50/20',
-    heading: 'font-serif',
+    heading: "font-['Playfair_Display'] italic",
+    button: 'rounded-lg border-2',
+    buttonOutline: 'rounded-lg border-2 border-amber-300/60',
+    fontBody: "font-['DM_Sans']",
+    fontHeading: "font-['Playfair_Display']",
+    badge: 'rounded-lg border border-amber-200/60',
+    input: 'rounded-lg border-2 border-amber-200/40',
   },
   minimalista: {
     card: 'rounded-none border-0 border-b border-border/30 bg-transparent shadow-none',
     section: 'rounded-none border-0 border-b border-border/30 bg-transparent p-6 shadow-none',
     page: 'bg-background',
-    heading: 'font-sans font-light tracking-wide uppercase text-sm',
+    heading: "font-['Space_Grotesk'] font-light tracking-[0.2em] uppercase text-sm",
+    button: 'rounded-none border-b-2 border-foreground bg-transparent text-foreground shadow-none hover:bg-foreground hover:text-background',
+    buttonOutline: 'rounded-none border-b border-border/50',
+    fontBody: "font-['DM_Sans'] font-light",
+    fontHeading: "font-['Space_Grotesk']",
+    badge: 'rounded-none border-b border-border/30',
+    input: 'rounded-none border-0 border-b border-border/50 bg-transparent',
   },
 };
 
@@ -360,17 +397,17 @@ const ProviderProfile = () => {
         <form onSubmit={handleLeadSubmit} className="mt-4 space-y-3">
           <input type="text" placeholder="Seu nome" required value={leadForm.name}
             onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
           <input type="tel" placeholder="Seu telefone" required value={leadForm.phone}
             onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
           <input type="text" placeholder="Serviço necessário" required value={leadForm.service}
             onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
           <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
             onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
-          <Button type="submit" variant="accent" className="w-full" style={accentBg ? { backgroundColor: accentBg } : undefined}>
+            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
+          <Button type="submit" variant="accent" className={`w-full ${tc.button}`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
             Enviar Solicitação
           </Button>
         </form>
@@ -387,7 +424,7 @@ const ProviderProfile = () => {
   };
 
   return (
-    <div className={`flex min-h-screen flex-col ${tc.page}`} style={accentStyle}>
+    <div className={`flex min-h-screen flex-col ${tc.page} ${tc.fontBody}`} style={accentStyle}>
       <Header />
 
       {/* Cover Image Hero */}
@@ -453,7 +490,7 @@ const ProviderProfile = () => {
                   <div className="flex items-center gap-2">
                     <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
                     {provider.plan === 'premium' && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground" style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                      <span className={`inline-flex items-center gap-1 ${tc.badge} bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
                         <Crown className="h-3 w-3" /> DESTAQUE
                       </span>
                     )}
@@ -505,12 +542,12 @@ const ProviderProfile = () => {
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button variant="accent" size="lg" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                <Button variant="accent" size="lg" className={tc.button} asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
                   <a href={`https://wa.me/${provider.whatsapp}`} target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="h-5 w-5" /> {pageSettings.cta_whatsapp_text}
                   </a>
                 </Button>
-                <Button variant="outline" size="lg">
+                <Button variant="outline" size="lg" className={tc.buttonOutline}>
                   <Phone className="h-5 w-5" /> Ligar
                 </Button>
                 <Button variant="outline" size="lg" onClick={() => {
@@ -545,17 +582,17 @@ const ProviderProfile = () => {
                 <form onSubmit={handleLeadSubmit} className="mt-4 space-y-3">
                   <input type="text" placeholder="Seu nome" required value={leadForm.name}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+                    className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
                   <input type="tel" placeholder="Seu telefone" required value={leadForm.phone}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+                    className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
                   <input type="text" placeholder="Serviço necessário" required value={leadForm.service}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
+                    className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
                   <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" />
-                  <Button type="submit" variant="accent" className="w-full" style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                    className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
+                  <Button type="submit" variant="accent" className={`w-full ${tc.button}`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
                     Enviar Solicitação
                   </Button>
                 </form>
@@ -621,7 +658,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
 );
 
 /* ── Services List with popup ── */
-const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg, themeClasses }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string; themeClasses?: { card: string; section: string; page: string; heading: string } }) => {
+const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg, themeClasses }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string; themeClasses?: ThemeConfig }) => {
   const [selected, setSelected] = useState<any | null>(null);
   const tc = themeClasses || THEME_CLASSES.default;
 
