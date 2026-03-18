@@ -314,7 +314,7 @@ const ProviderProfile = () => {
   };
 
   const renderServices = () => (
-    <ServicesList key="services" services={services} whatsapp={provider.whatsapp} providerName={name} providerCity={provider.city} ctaWhatsappText={pageSettings.cta_whatsapp_text} accentBg={accentBg} />
+    <ServicesList key="services" services={services} whatsapp={provider.whatsapp} providerName={name} providerCity={provider.city} ctaWhatsappText={pageSettings.cta_whatsapp_text} accentBg={accentBg} themeClasses={tc} />
   );
 
   const renderReviews = () => {
