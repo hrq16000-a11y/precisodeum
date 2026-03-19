@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 
 const SignupPage = () => {
   const [accountType, setAccountType] = useState<'client' | 'provider'>('client');
@@ -16,12 +17,24 @@ const SignupPage = () => {
   });
   const navigate = useNavigate();
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ['signup-categories'],
+    queryFn: async () => {
+      const { data } = await supabase.from('categories').select('id, name').order('name');
+      return data || [];
+    },
+  });
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (form.password.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
     setLoading(true);
 
     const { data, error } = await supabase.auth.signUp({
@@ -34,7 +47,11 @@ const SignupPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      if (error.message.includes('already registered')) {
+        toast.error('Este e-mail já está cadastrado. Tente fazer login.');
+      } else {
+        toast.error(error.message);
+      }
       setLoading(false);
       return;
     }
@@ -50,15 +67,9 @@ const SignupPage = () => {
       if (accountType === 'provider') {
         const slug = `${form.fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${form.city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
         
-        // Get category id
         let categoryId = null;
         if (form.category) {
-          const { data: cat } = await supabase
-            .from('categories')
-            .select('id')
-            .eq('name', form.category)
-            .single();
-          categoryId = cat?.id;
+          categoryId = form.category; // Now we store the ID directly
         }
 
         await supabase.from('providers').insert({
@@ -77,7 +88,7 @@ const SignupPage = () => {
     }
 
     setLoading(false);
-    toast.success('Conta criada! Verifique seu e-mail para confirmar o cadastro.');
+    toast.success('Conta criada com sucesso! Bem-vindo!');
     navigate('/dashboard');
   };
 
@@ -95,7 +106,7 @@ const SignupPage = () => {
         <div className="w-full max-w-md">
           <div className="rounded-xl border border-border bg-card p-8 shadow-card">
             <h1 className="text-center font-display text-2xl font-bold text-foreground">Criar Conta</h1>
-            <p className="mt-2 text-center text-sm text-muted-foreground">Junte-se à plataforma</p>
+            <p className="mt-2 text-center text-sm text-muted-foreground">Junte-se à plataforma — é rápido e gratuito</p>
 
             <div className="mt-6 flex rounded-lg bg-muted p-1">
               <button
@@ -140,7 +151,7 @@ const SignupPage = () => {
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Senha</label>
+                <label className="mb-1 block text-sm font-medium text-foreground">Senha (mínimo 6 caracteres)</label>
                 <input type="password" name="password" required minLength={6} value={form.password} onChange={handleChange}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
               </div>
@@ -158,16 +169,9 @@ const SignupPage = () => {
                     <select name="category" value={form.category} onChange={handleChange}
                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
                       <option value="">Selecione...</option>
-                      <option>Eletricista</option>
-                      <option>Encanador</option>
-                      <option>Pedreiro</option>
-                      <option>Técnico em Informática</option>
-                      <option>Ar-condicionado</option>
-                      <option>Marido de Aluguel</option>
-                      <option>Antenista</option>
-                      <option>Instalador de Câmeras</option>
-                      <option>Instalador de TV</option>
-                      <option>Mudanças</option>
+                      {categories.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -178,14 +182,14 @@ const SignupPage = () => {
                     </div>
                     <div>
                       <label className="mb-1 block text-sm font-medium text-foreground">Estado</label>
-                      <input type="text" name="state" required value={form.state} onChange={handleChange}
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+                      <input type="text" name="state" required value={form.state} onChange={handleChange} maxLength={2}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" placeholder="SP" />
                     </div>
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
                     <input type="tel" name="whatsapp" value={form.whatsapp} onChange={handleChange}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" placeholder="11999999999" />
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">Descrição profissional</label>
