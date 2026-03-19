@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Eye, MousePointerClick, MessageSquare, Star, TrendingUp, Briefcase, User, ArrowRight, Users } from 'lucide-react';
+import { Eye, MousePointerClick, MessageSquare, Star, TrendingUp, Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { Card } from '@/components/ui/card';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 
