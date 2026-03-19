@@ -77,6 +77,72 @@ const DashboardPage = () => {
       <h1 className="font-display text-2xl font-bold text-foreground">Dashboard</h1>
       <p className="mt-1 text-sm text-muted-foreground">Bem-vindo de volta!</p>
 
+      {/* Quick Access */}
+      <div className="mt-6">
+        <h2 className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Acesso Rápido</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Card
+            className="group cursor-pointer p-5 transition-all hover:shadow-md hover:border-accent/40 hover:scale-[1.01]"
+            onClick={() => navigate('/dashboard/servicos')}
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+                <Settings className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-foreground">Meus Serviços</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Gerencie seus serviços cadastrados</p>
+                {servicesCount !== null && servicesCount > 0 && (
+                  <span className="inline-block mt-1.5 text-xs font-medium text-accent">{servicesCount} ativo{servicesCount !== 1 ? 's' : ''}</span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate('/dashboard/servicos'); }}
+              className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
+            >
+              <PlusCircle className="h-3.5 w-3.5" /> Adicionar novo serviço
+            </button>
+          </Card>
+
+          <Card
+            className="group cursor-pointer p-5 transition-all hover:shadow-md hover:border-accent/40 hover:scale-[1.01]"
+            onClick={() => navigate('/dashboard/vagas')}
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+                <Megaphone className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-foreground">Vagas</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Visualize e publique oportunidades</p>
+              </div>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate('/dashboard/vagas'); }}
+              className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
+            >
+              <PlusCircle className="h-3.5 w-3.5" /> Publicar vaga
+            </button>
+          </Card>
+
+          <Card
+            className="group cursor-pointer p-5 transition-all hover:shadow-md hover:border-primary/40 hover:scale-[1.01] border-dashed"
+            onClick={() => navigate('/dashboard/servicos')}
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <PlusCircle className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-foreground">Postar Serviço</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Divulgue um novo serviço agora</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+
       {/* Onboarding guide - hides when all steps complete */}
       {!allStepsDone && (
       <div className="mt-6 rounded-xl border border-accent/30 bg-accent/5 p-6">
