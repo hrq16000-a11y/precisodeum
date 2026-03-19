@@ -128,6 +128,77 @@ export type Database = {
         }
         Relationships: []
       }
+      jobs: {
+        Row: {
+          category_id: string | null
+          city: string
+          contact_name: string
+          contact_phone: string
+          cover_image_url: string | null
+          created_at: string
+          deadline: string | null
+          description: string
+          id: string
+          neighborhood: string
+          opportunity_type: string
+          slug: string | null
+          state: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          whatsapp: string
+        }
+        Insert: {
+          category_id?: string | null
+          city?: string
+          contact_name?: string
+          contact_phone?: string
+          cover_image_url?: string | null
+          created_at?: string
+          deadline?: string | null
+          description?: string
+          id?: string
+          neighborhood?: string
+          opportunity_type?: string
+          slug?: string | null
+          state?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          whatsapp?: string
+        }
+        Update: {
+          category_id?: string | null
+          city?: string
+          contact_name?: string
+          contact_phone?: string
+          cover_image_url?: string | null
+          created_at?: string
+          deadline?: string | null
+          description?: string
+          id?: string
+          neighborhood?: string
+          opportunity_type?: string
+          slug?: string | null
+          state?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           client_name: string
