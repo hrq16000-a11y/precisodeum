@@ -18,6 +18,7 @@ import DashboardReviewsPage from "./pages/DashboardReviewsPage";
 import DashboardLeadsPage from "./pages/DashboardLeadsPage";
 import DashboardPlanPage from "./pages/DashboardPlanPage";
 import DashboardMyPagePage from "./pages/DashboardMyPagePage";
+import DashboardJobsPage from "./pages/DashboardJobsPage";
 import AdminPage from "./pages/AdminPage";
 import AdminProvidersPage from "./pages/AdminProvidersPage";
 import AdminReviewsPage from "./pages/AdminReviewsPage";
@@ -30,6 +31,7 @@ import AdminSponsorsPage from "./pages/AdminSponsorsPage";
 import AdminPopularServicesPage from "./pages/AdminPopularServicesPage";
 import AdminFaqPage from "./pages/AdminFaqPage";
 import AdminMetaTagsPage from "./pages/AdminMetaTagsPage";
+import AdminJobsPage from "./pages/AdminJobsPage";
 import PopularServicePage from "./pages/PopularServicePage";
 import SeoPage from "./pages/SeoPage";
 import CityPage from "./pages/CityPage";
@@ -39,6 +41,8 @@ import SitemapRedirect from "./pages/SitemapRedirect";
 import ServiceDetailPage from "./pages/ServiceDetailPage";
 import FaqPage from "./pages/FaqPage";
 import AdminHighlightsPage from "./pages/AdminHighlightsPage";
+import JobsPage from "./pages/JobsPage";
+import JobDetailPage from "./pages/JobDetailPage";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -58,6 +62,8 @@ const App = () => (
             <Route path="/profissional/:slug" element={<ProviderProfile />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/cadastro" element={<SignupPage />} />
+            <Route path="/vagas" element={<JobsPage />} />
+            <Route path="/vaga/:slug" element={<JobDetailPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/dashboard/perfil" element={<DashboardProfilePage />} />
             <Route path="/dashboard/servicos" element={<DashboardServicesPage />} />
@@ -65,6 +71,7 @@ const App = () => (
             <Route path="/dashboard/leads" element={<DashboardLeadsPage />} />
             <Route path="/dashboard/plano" element={<DashboardPlanPage />} />
             <Route path="/dashboard/minha-pagina" element={<DashboardMyPagePage />} />
+            <Route path="/dashboard/vagas" element={<DashboardJobsPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
             <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
@@ -78,6 +85,7 @@ const App = () => (
             <Route path="/admin/faq" element={<AdminFaqPage />} />
             <Route path="/admin/metatags" element={<AdminMetaTagsPage />} />
             <Route path="/admin/destaques" element={<AdminHighlightsPage />} />
+            <Route path="/admin/vagas" element={<AdminJobsPage />} />
             <Route path="/servico/:slug" element={<PopularServicePage />} />
             <Route path="/servico-detalhe/:id" element={<ServiceDetailPage />} />
             <Route path="/cidade/:slug" element={<CityPage />} />
