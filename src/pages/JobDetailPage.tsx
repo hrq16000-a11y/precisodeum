@@ -17,8 +17,7 @@ const JobDetailPage = () => {
     queryKey: ['job-detail', slug],
     queryFn: async () => {
       // Try by slug first, then by id
-      let query = supabase.from('jobs' as any).select('*, categories(name, slug, icon)');
-      const { data: bySlug } = await query.eq('slug', slug).maybeSingle();
+      const { data: bySlug } = await (supabase.from('jobs' as any).select('*, categories(name, slug, icon)') as any).eq('slug', slug).maybeSingle();
       if (bySlug) return bySlug;
       const { data: byId } = await supabase.from('jobs' as any).select('*, categories(name, slug, icon)').eq('id', slug).maybeSingle();
       return byId;
