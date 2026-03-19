@@ -20,7 +20,7 @@ const JobDetailPage = () => {
       const { data: bySlug } = await (supabase.from('jobs' as any).select('*, categories(name, slug, icon)') as any).eq('slug', slug).maybeSingle();
       if (bySlug) return bySlug as any;
       const { data: byId } = await (supabase.from('jobs' as any).select('*, categories(name, slug, icon)') as any).eq('id', slug).maybeSingle();
-      return byId;
+      return byId as any;
     },
   });
 
