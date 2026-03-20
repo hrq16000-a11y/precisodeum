@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import AvatarUpload from '@/components/AvatarUpload';
 import PortfolioUpload from '@/components/PortfolioUpload';
+import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp } from '@/lib/whatsapp';
 
 const DashboardProfilePage = () => {
   const { user, profile, provider, loading, refetchProfile } = useAuth();
@@ -51,11 +52,28 @@ const DashboardProfilePage = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: name === 'years_experience' ? Number(value) : value }));
+    if (name === 'phone' || name === 'whatsapp') {
+      setForm(prev => ({ ...prev, [name]: sanitizePhone(value) }));
+    } else {
+      setForm(prev => ({ ...prev, [name]: name === 'years_experience' ? Number(value) : value }));
+    }
   };
 
   const handleSave = async () => {
     if (!user) return;
+
+    // Auto-fill + validate WhatsApp
+    const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.phone);
+    if (finalWhatsapp && !isValidWhatsApp(finalWhatsapp)) {
+      toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)');
+      return;
+    }
+    const finalPhone = sanitizePhone(form.phone);
+    if (finalPhone && !isValidWhatsApp(finalPhone)) {
+      toast.error('Número de telefone inválido (deve ter 10 ou 11 dígitos)');
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -79,7 +97,7 @@ const DashboardProfilePage = () => {
           city: form.city,
           state: form.state,
           neighborhood: form.neighborhood,
-          whatsapp: form.whatsapp,
+          whatsapp: finalWhatsapp,
           website: form.website || null,
           years_experience: form.years_experience,
           category_id: form.category_id || null,
@@ -99,8 +117,8 @@ const DashboardProfilePage = () => {
           city: form.city,
           state: form.state,
           neighborhood: form.neighborhood,
-          phone: form.phone,
-          whatsapp: form.whatsapp,
+          phone: finalPhone,
+          whatsapp: finalWhatsapp,
           category_id: form.category_id || null,
           slug,
           status: 'pending',

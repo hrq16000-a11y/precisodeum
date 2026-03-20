@@ -92,8 +92,9 @@ const JobDetailPage = () => {
     );
   }
 
-  const whatsappUrl = job.whatsapp
-    ? `https://wa.me/55${job.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá! Vi a vaga "${job.title}" no Preciso de um e gostaria de mais informações.`)}`
+  const cleanWa = job.whatsapp ? job.whatsapp.replace(/\D/g, '') : '';
+  const whatsappUrl = cleanWa
+    ? `https://wa.me/${cleanWa}?text=${encodeURIComponent(`Olá! Vi a vaga "${job.title}" no Preciso de um e gostaria de mais informações.`)}`
     : null;
 
   return (

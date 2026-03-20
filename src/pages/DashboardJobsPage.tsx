@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, ExternalLink, Copy, CopyPlus, Upload } from 'lucide-react';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp } from '@/lib/whatsapp';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
@@ -36,7 +37,7 @@ const WORK_MODELS = [
   { value: 'hibrido', label: 'Híbrido' },
 ];
 
-const sanitizeWhatsapp = (val: string) => val.replace(/\D/g, '').replace(/^0+/, '');
+const sanitizeWhatsapp = sanitizePhone;
 
 const emptyForm = {
   title: '', subtitle: '', category_id: '', opportunity_type: 'servico',
@@ -132,7 +133,12 @@ const DashboardJobsPage = () => {
   const handleSave = async () => {
     if (!user) return;
     if (!form.title.trim()) { toast.error('Título é obrigatório'); return; }
-    if (!form.whatsapp.trim()) { toast.error('WhatsApp é obrigatório'); return; }
+
+    // Auto-fill WhatsApp from phone if empty
+    const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.contact_phone);
+    if (!finalWhatsapp) { toast.error('WhatsApp é obrigatório'); return; }
+    if (!isValidWhatsApp(finalWhatsapp)) { toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)'); return; }
+    setForm(prev => ({ ...prev, whatsapp: finalWhatsapp }));
 
     setSaving(true);
     const slug = generateSlug(form.title, form.city);
