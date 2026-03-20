@@ -35,7 +35,7 @@ interface Sponsor {
   clicks: number;
 }
 
-const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0, start_date: '' as string, end_date: '' as string };
+const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0, start_date: '' as string, end_date: '' as string, tier: 'basic' };
 
 const AdminSponsorsPage = () => {
   const { user, loading: authLoading } = useAuth();
