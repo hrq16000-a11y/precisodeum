@@ -152,6 +152,24 @@ const DashboardJobsPage = () => {
     setDialogOpen(true);
   };
 
+  const handleDuplicate = (job: any) => {
+    setForm({
+      title: `${job.title} (cópia)`, subtitle: job.subtitle || '',
+      category_id: job.category_id || '', opportunity_type: job.opportunity_type || 'servico',
+      description: job.description || '', activities: job.activities || '',
+      requirements: job.requirements || '', schedule: job.schedule || '',
+      salary: job.salary || '', benefits: job.benefits || '',
+      city: job.city || '', state: job.state || '', neighborhood: job.neighborhood || '',
+      contact_name: job.contact_name || '', contact_phone: job.contact_phone || '',
+      whatsapp: job.whatsapp || '', deadline: '', cover_image_url: job.cover_image_url || '',
+      status: 'active',
+    });
+    setEditingId(null);
+    setMode('structured');
+    setDialogOpen(true);
+    toast.info('Vaga duplicada — edite e publique');
+  };
+
   const copyUrl = (job: any) => {
     const url = `${SITE_BASE_URL}/vaga/${job.slug || job.id}`;
     navigator.clipboard.writeText(url);
