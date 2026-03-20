@@ -130,7 +130,18 @@ const AdminSponsorsPage = () => {
     setDialogOpen(true);
   };
 
-  const positionLabels: Record<string, string> = { banner: 'Banner', card: 'Card', featured: 'Destaque', sidebar: 'Sidebar', 'between-sections': 'Entre Seções', footer: 'Rodapé' };
+  const positionLabels: Record<string, string> = {
+    'hero-top': 'Topo (970×90)',
+    'between-sections': 'Entre Seções (728×90)',
+    'mid-content': 'Meio Conteúdo (728×90)',
+    sidebar: 'Lateral (300×250)',
+    native: 'Nativo (cards)',
+    showcase: 'Vitrine (250×250)',
+    banner: 'Banner',
+    card: 'Card',
+    featured: 'Destaque',
+    footer: 'Rodapé',
+  };
 
   return (
     <AdminLayout>
