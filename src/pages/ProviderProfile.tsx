@@ -543,7 +543,7 @@ const ProviderProfile = () => {
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button variant="accent" size="lg" className={tc.button} asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-                  <a href={`https://wa.me/${provider.whatsapp}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`https://wa.me/${(provider.whatsapp || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="h-5 w-5" /> {pageSettings.cta_whatsapp_text}
                   </a>
                 </Button>
