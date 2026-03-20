@@ -14,12 +14,58 @@ export type Database = {
   }
   public: {
     Tables: {
+      blog_posts: {
+        Row: {
+          author_name: string
+          content: string
+          cover_image_url: string | null
+          created_at: string
+          excerpt: string
+          featured: boolean
+          id: string
+          published: boolean
+          slug: string
+          source_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string
+          featured?: boolean
+          id?: string
+          published?: boolean
+          slug: string
+          source_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string
+          featured?: boolean
+          id?: string
+          published?: boolean
+          slug?: string
+          source_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
           icon: string
           id: string
           name: string
+          parent_id: string | null
           slug: string
         }
         Insert: {
@@ -27,6 +73,7 @@ export type Database = {
           icon?: string
           id?: string
           name: string
+          parent_id?: string | null
           slug: string
         }
         Update: {
@@ -34,9 +81,18 @@ export type Database = {
           icon?: string
           id?: string
           name?: string
+          parent_id?: string | null
           slug?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cities: {
         Row: {

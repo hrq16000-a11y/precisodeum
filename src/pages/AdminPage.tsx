@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '@/components/AdminLayout';
-import { Users, Briefcase, MessageSquare, FolderOpen, Star, TrendingUp, ClipboardList, Megaphone, Eye, MousePointerClick } from 'lucide-react';
+import { Users, Briefcase, MessageSquare, FolderOpen, Star, TrendingUp, ClipboardList, Megaphone, Eye, MousePointerClick, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface Stats {
   totalProviders: number;
@@ -29,10 +30,11 @@ const AdminPage = () => {
     totalImpressions: 0, totalClicks: 0,
   });
   const [pendingJobsList, setPendingJobsList] = useState<any[]>([]);
+  const [pendingProvidersList, setPendingProvidersList] = useState<any[]>([]);
 
   useEffect(() => {
     if (!isAdmin) return;
-    const fetchStats = async () => {
+    const fetchAll = async () => {
       const [providers, pending, profiles, leads, reviews, categories, jobs, pendingJ, sponsors] = await Promise.all([
         supabase.from('providers').select('id', { count: 'exact', head: true }),
         supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
@@ -63,40 +65,57 @@ const AdminPage = () => {
         totalClicks,
       });
 
-      // Fetch pending jobs for approval queue
-      const { data: pJobs } = await (supabase
-        .from('jobs')
-        .select('id, title, city, created_at') as any)
-        .eq('approval_status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const { data: pJobs } = await (supabase.from('jobs').select('id, title, city, created_at, user_id') as any)
+        .eq('approval_status', 'pending').order('created_at', { ascending: false }).limit(10);
       setPendingJobsList(pJobs || []);
+
+      const { data: pProviders } = await supabase.from('providers').select('id, business_name, city, created_at, user_id')
+        .eq('status', 'pending').order('created_at', { ascending: false }).limit(10);
+      setPendingProvidersList(pProviders || []);
     };
-    fetchStats();
+    fetchAll();
   }, [isAdmin]);
 
   if (loading) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
 
   const handleApproveJob = async (id: string) => {
     await supabase.from('jobs').update({ approval_status: 'approved' } as any).eq('id', id);
-    setPendingJobsList((prev) => prev.filter((j) => j.id !== id));
-    setStats((prev) => ({ ...prev, pendingJobs: prev.pendingJobs - 1 }));
+    setPendingJobsList(prev => prev.filter(j => j.id !== id));
+    setStats(prev => ({ ...prev, pendingJobs: prev.pendingJobs - 1 }));
+    toast.success('Vaga aprovada');
   };
 
   const handleRejectJob = async (id: string) => {
     await supabase.from('jobs').update({ approval_status: 'rejected', status: 'inactive' } as any).eq('id', id);
-    setPendingJobsList((prev) => prev.filter((j) => j.id !== id));
-    setStats((prev) => ({ ...prev, pendingJobs: prev.pendingJobs - 1 }));
+    setPendingJobsList(prev => prev.filter(j => j.id !== id));
+    setStats(prev => ({ ...prev, pendingJobs: prev.pendingJobs - 1 }));
+    toast.success('Vaga rejeitada');
   };
 
+  const handleApproveProvider = async (id: string) => {
+    await supabase.from('providers').update({ status: 'approved' }).eq('id', id);
+    setPendingProvidersList(prev => prev.filter(p => p.id !== id));
+    setStats(prev => ({ ...prev, pendingProviders: prev.pendingProviders - 1 }));
+    toast.success('Prestador aprovado');
+  };
+
+  const handleRejectProvider = async (id: string) => {
+    await supabase.from('providers').update({ status: 'rejected' }).eq('id', id);
+    setPendingProvidersList(prev => prev.filter(p => p.id !== id));
+    setStats(prev => ({ ...prev, pendingProviders: prev.pendingProviders - 1 }));
+    toast.success('Prestador rejeitado');
+  };
+
+  const hasPending = pendingJobsList.length > 0 || pendingProvidersList.length > 0;
+
   const statCards = [
-    { label: 'Total Profissionais', value: stats.totalProviders, icon: Briefcase, color: 'text-blue-500' },
-    { label: 'Aguardando Aprovação', value: stats.pendingProviders, icon: TrendingUp, color: 'text-amber-500' },
-    { label: 'Total Usuários', value: stats.totalProfiles, icon: Users, color: 'text-green-500' },
-    { label: 'Total Leads', value: stats.totalLeads, icon: MessageSquare, color: 'text-purple-500' },
-    { label: 'Total Avaliações', value: stats.totalReviews, icon: Star, color: 'text-orange-500' },
+    { label: 'Profissionais', value: stats.totalProviders, icon: Briefcase, color: 'text-blue-500' },
+    { label: 'Pendentes', value: stats.pendingProviders, icon: TrendingUp, color: 'text-amber-500', alert: stats.pendingProviders > 0 },
+    { label: 'Usuários', value: stats.totalProfiles, icon: Users, color: 'text-green-500' },
+    { label: 'Leads', value: stats.totalLeads, icon: MessageSquare, color: 'text-purple-500' },
+    { label: 'Avaliações', value: stats.totalReviews, icon: Star, color: 'text-orange-500' },
     { label: 'Categorias', value: stats.totalCategories, icon: FolderOpen, color: 'text-teal-500' },
-    { label: 'Total Vagas', value: stats.totalJobs, icon: ClipboardList, color: 'text-indigo-500' },
+    { label: 'Vagas', value: stats.totalJobs, icon: ClipboardList, color: 'text-indigo-500' },
     { label: 'Patrocinadores', value: stats.totalSponsors, icon: Megaphone, color: 'text-pink-500' },
   ];
 
@@ -105,28 +124,96 @@ const AdminPage = () => {
       <h1 className="font-display text-2xl font-bold text-foreground">Painel Administrativo</h1>
       <p className="mt-1 text-sm text-muted-foreground">Visão geral da plataforma</p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-5 shadow-card">
-            <s.icon className={`h-5 w-5 ${s.color}`} />
-            <p className="mt-3 font-display text-2xl font-bold text-foreground">{s.value}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{s.label}</p>
+      {/* Pending queues — top priority */}
+      {hasPending && (
+        <div className="mt-6 space-y-4">
+          {pendingJobsList.length > 0 && (
+            <div className="rounded-xl border-2 border-amber-300 bg-amber-50/50 p-5 dark:border-amber-700 dark:bg-amber-900/20">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-display text-lg font-bold text-amber-800 dark:text-amber-200">
+                  📋 Vagas Aguardando ({stats.pendingJobs})
+                </h2>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/admin/vagas" className="text-amber-700">Ver todas <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {pendingJobsList.map(job => (
+                  <div key={job.id} className="flex items-center justify-between rounded-lg border border-amber-200 bg-background p-3 dark:border-amber-800">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-medium text-foreground truncate">{job.title}</h3>
+                      <p className="text-xs text-muted-foreground">{job.city} · {new Date(job.created_at).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div className="flex gap-1 ml-2 shrink-0">
+                      <Button size="sm" variant="accent" onClick={() => handleApproveJob(job.id)}>
+                        <CheckCircle className="mr-1 h-3 w-3" /> Aprovar
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleRejectJob(job.id)}>
+                        <XCircle className="mr-1 h-3 w-3" /> Rejeitar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {pendingProvidersList.length > 0 && (
+            <div className="rounded-xl border-2 border-blue-300 bg-blue-50/50 p-5 dark:border-blue-700 dark:bg-blue-900/20">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-display text-lg font-bold text-blue-800 dark:text-blue-200">
+                  👤 Prestadores Aguardando ({stats.pendingProviders})
+                </h2>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/admin/prestadores" className="text-blue-700">Ver todos <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {pendingProvidersList.map(p => (
+                  <div key={p.id} className="flex items-center justify-between rounded-lg border border-blue-200 bg-background p-3 dark:border-blue-800">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-medium text-foreground truncate">{p.business_name || 'Sem nome'}</h3>
+                      <p className="text-xs text-muted-foreground">{p.city} · {new Date(p.created_at).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div className="flex gap-1 ml-2 shrink-0">
+                      <Button size="sm" variant="accent" onClick={() => handleApproveProvider(p.id)}>
+                        <CheckCircle className="mr-1 h-3 w-3" /> Aprovar
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleRejectProvider(p.id)}>
+                        <XCircle className="mr-1 h-3 w-3" /> Rejeitar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Stats grid */}
+      <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-4">
+        {statCards.map(s => (
+          <div key={s.label} className={`rounded-xl border bg-card p-4 shadow-card ${s.alert ? 'border-amber-300 dark:border-amber-700' : 'border-border'}`}>
+            <s.icon className={`h-4 w-4 ${s.color}`} />
+            <p className="mt-2 font-display text-2xl font-bold text-foreground">{s.value}</p>
+            <p className="text-[11px] text-muted-foreground">{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Sponsor Metrics */}
       <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
-        <h2 className="font-display text-lg font-bold text-foreground">📊 Métricas de Patrocinadores</h2>
-        <div className="mt-3 flex gap-6">
+        <h2 className="font-display text-base font-bold text-foreground mb-3">📊 Métricas de Patrocinadores</h2>
+        <div className="flex flex-wrap gap-6">
           <div className="flex items-center gap-2">
             <Eye className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Impressões totais:</span>
+            <span className="text-sm text-muted-foreground">Impressões:</span>
             <span className="font-bold text-foreground">{stats.totalImpressions.toLocaleString('pt-BR')}</span>
           </div>
           <div className="flex items-center gap-2">
             <MousePointerClick className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Cliques totais:</span>
+            <span className="text-sm text-muted-foreground">Cliques:</span>
             <span className="font-bold text-foreground">{stats.totalClicks.toLocaleString('pt-BR')}</span>
           </div>
           {stats.totalImpressions > 0 && (
@@ -138,38 +225,20 @@ const AdminPage = () => {
         </div>
       </div>
 
-      {/* Alerts */}
-      {stats.pendingProviders > 0 && (
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
-          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-            ⚠️ {stats.pendingProviders} prestador(es) aguardando aprovação.{' '}
-            <Link to="/admin/prestadores" className="underline">Revisar agora →</Link>
-          </p>
-        </div>
-      )}
-
-      {/* Pending Jobs Approval Queue */}
-      {pendingJobsList.length > 0 && (
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-900/20">
-          <h2 className="font-display text-lg font-bold text-amber-800 dark:text-amber-200">
-            📋 Vagas Aguardando Aprovação ({stats.pendingJobs})
-          </h2>
-          <div className="mt-3 space-y-2">
-            {pendingJobsList.map((job) => (
-              <div key={job.id} className="flex items-center justify-between rounded-lg border border-amber-300 bg-white p-3 dark:border-amber-700 dark:bg-amber-950/30">
-                <div>
-                  <h3 className="text-sm font-medium text-foreground">{job.title}</h3>
-                  <p className="text-xs text-muted-foreground">{job.city} · {new Date(job.created_at).toLocaleDateString('pt-BR')}</p>
-                </div>
-                <div className="flex gap-1">
-                  <Button size="sm" variant="accent" onClick={() => handleApproveJob(job.id)}>Aprovar</Button>
-                  <Button size="sm" variant="outline" onClick={() => handleRejectJob(job.id)}>Rejeitar</Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Quick links */}
+      <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-4">
+        {[
+          { label: 'Gerenciar Vagas', path: '/admin/vagas', icon: ClipboardList },
+          { label: 'Patrocinadores', path: '/admin/patrocinadores', icon: Megaphone },
+          { label: 'Blog / Notícias', path: '/admin/blog', icon: FolderOpen },
+          { label: 'Configurações', path: '/admin/configuracoes', icon: TrendingUp },
+        ].map(q => (
+          <Link key={q.path} to={q.path} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-card transition-all hover:shadow-lg hover:border-accent/30">
+            <q.icon className="h-5 w-5 text-accent" />
+            <span className="text-sm font-medium text-foreground">{q.label}</span>
+          </Link>
+        ))}
+      </div>
     </AdminLayout>
   );
 };

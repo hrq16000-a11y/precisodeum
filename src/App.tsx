@@ -45,6 +45,9 @@ import AdminCommunityPage from "./pages/AdminCommunityPage";
 import JobsPage from "./pages/JobsPage";
 import JobDetailPage from "./pages/JobDetailPage";
 import DashboardCommunityPage from "./pages/DashboardCommunityPage";
+import AdminBlogPage from "./pages/AdminBlogPage";
+import BlogPage from "./pages/BlogPage";
+import BlogPostPage from "./pages/BlogPostPage";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -90,6 +93,9 @@ const App = () => (
             <Route path="/admin/destaques" element={<AdminHighlightsPage />} />
             <Route path="/admin/comunidade" element={<AdminCommunityPage />} />
             <Route path="/admin/vagas" element={<AdminJobsPage />} />
+            <Route path="/admin/blog" element={<AdminBlogPage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/blog/:slug" element={<BlogPostPage />} />
             <Route path="/servico/:slug" element={<PopularServicePage />} />
             <Route path="/servico-detalhe/:id" element={<ServiceDetailPage />} />
             <Route path="/cidade/:slug" element={<CityPage />} />

@@ -22,6 +22,7 @@ import FaqSection from '@/components/home/FaqSection';
 import PopularSearches from '@/components/home/PopularSearches';
 import HighlightsCarousel from '@/components/home/HighlightsCarousel';
 import FeaturedJobs from '@/components/home/FeaturedJobs';
+import BlogHighlight from '@/components/home/BlogHighlight';
 import FloatingWhatsApp from '@/components/FloatingWhatsApp';
 
 import AdBanner from '@/components/ads/AdBanner';
@@ -141,6 +142,7 @@ const Index = () => {
       <AdBanner position="mid-content" className="container mx-auto px-4" aspectRatio="728/90" />
 
       <FeaturedJobs />
+      <BlogHighlight />
 
       {topCities.length > 0 && <CitiesSection cities={topCities} />}
       <CtaSection />
