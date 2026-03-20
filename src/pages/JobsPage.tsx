@@ -43,11 +43,11 @@ const JobsPage = () => {
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['jobs-list', search, cityFilter, jobTypeFilter, workModelFilter],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase
         .from('jobs')
         .select('*, categories(name, slug, icon)')
-        .eq('status', 'active')
-        .eq('approval_status' as any, 'approved')
+        .eq('status', 'active') as any)
+        .eq('approval_status', 'approved')
         .order('created_at', { ascending: false });
 
       if (search) query = query.ilike('title', `%${search}%`);
