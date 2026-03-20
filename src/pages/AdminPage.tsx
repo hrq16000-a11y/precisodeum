@@ -64,10 +64,10 @@ const AdminPage = () => {
       });
 
       // Fetch pending jobs for approval queue
-      const { data: pJobs } = await supabase
+      const { data: pJobs } = await (supabase
         .from('jobs')
-        .select('id, title, city, created_at')
-        .eq('approval_status' as any, 'pending')
+        .select('id, title, city, created_at') as any)
+        .eq('approval_status', 'pending')
         .order('created_at', { ascending: false })
         .limit(10);
       setPendingJobsList(pJobs || []);
