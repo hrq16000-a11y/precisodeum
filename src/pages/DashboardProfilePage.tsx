@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import AvatarUpload from '@/components/AvatarUpload';
 import PortfolioUpload from '@/components/PortfolioUpload';
+import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp } from '@/lib/whatsapp';
 
 const DashboardProfilePage = () => {
@@ -52,11 +53,11 @@ const DashboardProfilePage = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (name === 'phone' || name === 'whatsapp') {
-      setForm(prev => ({ ...prev, [name]: sanitizePhone(value) }));
-    } else {
-      setForm(prev => ({ ...prev, [name]: name === 'years_experience' ? Number(value) : value }));
-    }
+    setForm(prev => ({ ...prev, [name]: name === 'years_experience' ? Number(value) : value }));
+  };
+
+  const handlePhoneChange = (name: string, rawValue: string) => {
+    setForm(prev => ({ ...prev, [name]: rawValue }));
   };
 
   const handleSave = async () => {
@@ -174,7 +175,7 @@ const DashboardProfilePage = () => {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">Telefone</label>
-              <input name="phone" value={form.phone} onChange={handleChange}
+              <PhoneMaskedInput name="phone" value={form.phone} onChange={handlePhoneChange}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
             </div>
           </div>
@@ -213,7 +214,7 @@ const DashboardProfilePage = () => {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
-              <input name="whatsapp" value={form.whatsapp} onChange={handleChange}
+              <PhoneMaskedInput name="whatsapp" value={form.whatsapp} onChange={handlePhoneChange}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
             </div>
             <div>
