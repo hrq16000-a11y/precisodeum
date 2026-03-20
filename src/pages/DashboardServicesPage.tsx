@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import ServiceImageUpload from '@/components/ServiceImageUpload';
 
 const DashboardServicesPage = () => {
-  const { user, provider, loading, refetchProfile } = useAuth();
+  const { user, provider, profile, loading, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const [services, setServices] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
