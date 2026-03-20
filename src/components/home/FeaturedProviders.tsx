@@ -82,7 +82,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
 
                     <div className="mt-4 flex gap-2">
                       <Button variant="accent" size="sm" className="flex-1" asChild>
-                        <a href={`https://wa.me/${p.whatsapp}`} target="_blank" rel="noopener noreferrer">
+                        <a href={`https://wa.me/${(p.whatsapp || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
                           <MessageCircle className="h-4 w-4" /> WhatsApp
                         </a>
                       </Button>

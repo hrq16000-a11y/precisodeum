@@ -133,7 +133,12 @@ const DashboardJobsPage = () => {
   const handleSave = async () => {
     if (!user) return;
     if (!form.title.trim()) { toast.error('Título é obrigatório'); return; }
-    if (!form.whatsapp.trim()) { toast.error('WhatsApp é obrigatório'); return; }
+
+    // Auto-fill WhatsApp from phone if empty
+    const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.contact_phone);
+    if (!finalWhatsapp) { toast.error('WhatsApp é obrigatório'); return; }
+    if (!isValidWhatsApp(finalWhatsapp)) { toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)'); return; }
+    setForm(prev => ({ ...prev, whatsapp: finalWhatsapp }));
 
     setSaving(true);
     const slug = generateSlug(form.title, form.city);
