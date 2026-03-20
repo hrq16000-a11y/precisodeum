@@ -191,6 +191,7 @@ const AdminSponsorsPage = () => {
                     <SelectItem value="premium">Premium (topo + fixo)</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Data Início</Label>
