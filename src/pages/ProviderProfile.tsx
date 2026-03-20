@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube } from 'lucide-react';
+import { whatsappLink } from '@/lib/whatsapp';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';
@@ -543,7 +544,7 @@ const ProviderProfile = () => {
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button variant="accent" size="lg" className={tc.button} asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-                  <a href={`https://wa.me/${(provider.whatsapp || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                  <a href={whatsappLink(provider.whatsapp || '', `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)} target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="h-5 w-5" /> {pageSettings.cta_whatsapp_text}
                   </a>
                 </Button>
@@ -604,7 +605,7 @@ const ProviderProfile = () => {
       </div>
       {/* Floating WhatsApp Button */}
       <a
-        href={`https://wa.me/${(provider.whatsapp || '').replace(/\D/g, '')}`}
+        href={whatsappLink(provider.whatsapp || '', `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 lg:hidden animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"
@@ -649,7 +650,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
         {service.working_hours && <span>🕐 {service.working_hours}</span>}
       </div>
       <Button variant="accent" className="w-full" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-        <a href={`https://wa.me/${(whatsapp || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+        <a href={whatsappLink(whatsapp || '', `Olá! Vi seu serviço no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
           <MessageCircle className="h-4 w-4" /> {ctaWhatsappText || 'Chamar no WhatsApp'}
         </a>
       </Button>

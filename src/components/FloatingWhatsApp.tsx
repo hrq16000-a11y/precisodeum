@@ -1,5 +1,5 @@
 import { MessageCircle } from 'lucide-react';
-import { useSettingValue } from '@/hooks/useSiteSettings';
+import { whatsappLink } from '@/lib/whatsapp';
 
 interface Props {
   jobTitle?: string;
@@ -10,7 +10,7 @@ const FloatingWhatsApp = ({ jobTitle }: Props) => {
   const message = jobTitle
     ? `Olá! Vi a vaga "${jobTitle}" no Preciso de um e gostaria de mais informações.`
     : 'Olá! Preciso de ajuda no Preciso de um.';
-  const url = `https://wa.me/${supportPhone}?text=${encodeURIComponent(message)}`;
+  const url = whatsappLink(supportPhone, message);
 
   return (
     <a
