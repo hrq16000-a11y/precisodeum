@@ -170,6 +170,7 @@ const Index = () => {
       {reviewsEnabled && <TestimonialsSection />}
       {faqEnabled && <FaqSection />}
       <Footer />
+      <FloatingWhatsApp />
     </div>
   );
 };
