@@ -41,8 +41,10 @@ import SitemapRedirect from "./pages/SitemapRedirect";
 import ServiceDetailPage from "./pages/ServiceDetailPage";
 import FaqPage from "./pages/FaqPage";
 import AdminHighlightsPage from "./pages/AdminHighlightsPage";
+import AdminCommunityPage from "./pages/AdminCommunityPage";
 import JobsPage from "./pages/JobsPage";
 import JobDetailPage from "./pages/JobDetailPage";
+import DashboardCommunityPage from "./pages/DashboardCommunityPage";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
