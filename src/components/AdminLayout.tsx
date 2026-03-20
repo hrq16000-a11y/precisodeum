@@ -14,6 +14,7 @@ const menuItems = [
   { label: 'Estatísticas', icon: BarChart3, path: '/admin/estatisticas' },
   { label: 'Patrocinadores', icon: Megaphone, path: '/admin/patrocinadores' },
   { label: 'Comunidade', icon: Users2, path: '/admin/comunidade' },
+  { label: 'Blog / Notícias', icon: Newspaper, path: '/admin/blog' },
   { label: 'Serviços Populares', icon: Wrench, path: '/admin/servicos-populares' },
   { label: 'FAQ', icon: HelpCircle, path: '/admin/faq' },
   { label: 'Meta Tags & SEO', icon: Globe, path: '/admin/metatags' },
