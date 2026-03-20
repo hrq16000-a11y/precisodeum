@@ -215,6 +215,9 @@ const DashboardJobsPage = () => {
                 <Button variant="ghost" size="icon" onClick={() => copyUrl(job)} title="Copiar link">
                   <Copy className="h-4 w-4" />
                 </Button>
+                <Button variant="ghost" size="icon" onClick={() => handleDuplicate(job)} title="Duplicar vaga">
+                  <CopyPlus className="h-4 w-4" />
+                </Button>
                 <Button variant="ghost" size="icon" onClick={() => window.open(`/vaga/${job.slug || job.id}`, '_blank')}>
                   <ExternalLink className="h-4 w-4" />
                 </Button>
