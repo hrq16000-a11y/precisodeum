@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, ExternalLink, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Copy, CopyPlus } from 'lucide-react';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -152,6 +152,24 @@ const DashboardJobsPage = () => {
     setDialogOpen(true);
   };
 
+  const handleDuplicate = (job: any) => {
+    setForm({
+      title: `${job.title} (cópia)`, subtitle: job.subtitle || '',
+      category_id: job.category_id || '', opportunity_type: job.opportunity_type || 'servico',
+      description: job.description || '', activities: job.activities || '',
+      requirements: job.requirements || '', schedule: job.schedule || '',
+      salary: job.salary || '', benefits: job.benefits || '',
+      city: job.city || '', state: job.state || '', neighborhood: job.neighborhood || '',
+      contact_name: job.contact_name || '', contact_phone: job.contact_phone || '',
+      whatsapp: job.whatsapp || '', deadline: '', cover_image_url: job.cover_image_url || '',
+      status: 'active',
+    });
+    setEditingId(null);
+    setMode('structured');
+    setDialogOpen(true);
+    toast.info('Vaga duplicada — edite e publique');
+  };
+
   const copyUrl = (job: any) => {
     const url = `${SITE_BASE_URL}/vaga/${job.slug || job.id}`;
     navigator.clipboard.writeText(url);
@@ -196,6 +214,9 @@ const DashboardJobsPage = () => {
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" onClick={() => copyUrl(job)} title="Copiar link">
                   <Copy className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => handleDuplicate(job)} title="Duplicar vaga">
+                  <CopyPlus className="h-4 w-4" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => window.open(`/vaga/${job.slug || job.id}`, '_blank')}>
                   <ExternalLink className="h-4 w-4" />

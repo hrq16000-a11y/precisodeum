@@ -35,7 +35,7 @@ interface Sponsor {
   clicks: number;
 }
 
-const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0, start_date: '' as string, end_date: '' as string };
+const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0, start_date: '' as string, end_date: '' as string, tier: 'basic' };
 
 const AdminSponsorsPage = () => {
   const { user, loading: authLoading } = useAuth();
@@ -77,6 +77,7 @@ const AdminSponsorsPage = () => {
         display_order: form.display_order,
         start_date: form.start_date || null,
         end_date: form.end_date || null,
+        tier: form.tier,
       };
       if (editingId) {
         const { error } = await supabase.from('sponsors').update(payload).eq('id', editingId);
@@ -124,6 +125,7 @@ const AdminSponsorsPage = () => {
       display_order: s.display_order,
       start_date: s.start_date || '',
       end_date: s.end_date || '',
+      tier: (s as any).tier || 'basic',
     });
     setDialogOpen(true);
   };
@@ -176,6 +178,17 @@ const AdminSponsorsPage = () => {
                     <SelectItem value="sidebar">Sidebar (perfil profissional)</SelectItem>
                     <SelectItem value="between-sections">Entre Seções (home)</SelectItem>
                     <SelectItem value="footer">Rodapé</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Nível</Label>
+                <Select value={form.tier} onValueChange={(v) => setForm({ ...form, tier: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic">Básico (rotativo)</SelectItem>
+                    <SelectItem value="destaque">Destaque (mais frequência)</SelectItem>
+                    <SelectItem value="premium">Premium (topo + fixo)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
