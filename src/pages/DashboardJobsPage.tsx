@@ -339,10 +339,13 @@ const DashboardJobsPage = () => {
                   <input name="deadline" type="date" value={form.deadline} onChange={handleChange} className={inputClass} />
                 </div>
               </div>
-              <div>
-                <label className={labelClass}>URL da imagem de capa</label>
-                <input name="cover_image_url" value={form.cover_image_url} onChange={handleChange} className={inputClass} placeholder="https://..." />
-              </div>
+              <ImageUploadField
+                value={form.cover_image_url}
+                onChange={(url) => setForm(prev => ({ ...prev, cover_image_url: url }))}
+                bucket="service-images"
+                folder="jobs"
+                label="Imagem de capa"
+              />
               {editingId && (
                 <div>
                   <label className={labelClass}>Status</label>
