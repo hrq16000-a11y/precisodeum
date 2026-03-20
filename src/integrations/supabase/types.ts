@@ -167,6 +167,7 @@ export type Database = {
       jobs: {
         Row: {
           activities: string | null
+          approval_status: string
           benefits: string | null
           category_id: string | null
           city: string
@@ -193,6 +194,7 @@ export type Database = {
         }
         Insert: {
           activities?: string | null
+          approval_status?: string
           benefits?: string | null
           category_id?: string | null
           city?: string
@@ -219,6 +221,7 @@ export type Database = {
         }
         Update: {
           activities?: string | null
+          approval_status?: string
           benefits?: string | null
           category_id?: string | null
           city?: string
@@ -776,6 +779,7 @@ export type Database = {
           link_url: string | null
           position: string
           start_date: string | null
+          tier: string
           title: string
         }
         Insert: {
@@ -790,6 +794,7 @@ export type Database = {
           link_url?: string | null
           position?: string
           start_date?: string | null
+          tier?: string
           title: string
         }
         Update: {
@@ -804,6 +809,7 @@ export type Database = {
           link_url?: string | null
           position?: string
           start_date?: string | null
+          tier?: string
           title?: string
         }
         Relationships: []
@@ -892,6 +898,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_sponsor_click: {
+        Args: { sponsor_id: string }
+        Returns: undefined
+      }
+      increment_sponsor_impression: {
+        Args: { sponsor_id: string }
+        Returns: undefined
       }
     }
     Enums: {
