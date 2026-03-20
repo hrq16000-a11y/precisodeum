@@ -1,5 +1,5 @@
 import { useSponsorsByPosition } from '@/components/SponsorAd';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -7,7 +7,7 @@ interface AdBannerProps {
   position: string;
   className?: string;
   maxWidth?: number;
-  aspectRatio?: string; // e.g. "970/90"
+  aspectRatio?: string;
   sticky?: boolean;
 }
 
@@ -24,14 +24,12 @@ const AdBanner = ({ position, className = '', maxWidth, aspectRatio, sticky = fa
   const tracked = useRef(new Set<string>());
   const isMobile = useIsMobile();
 
-  // Rotate
   useEffect(() => {
     if (sponsors.length <= 1) return;
     const iv = setInterval(() => setIdx(i => (i + 1) % sponsors.length), 8000);
     return () => clearInterval(iv);
   }, [sponsors.length]);
 
-  // Track impression
   useEffect(() => {
     const s = sponsors[idx];
     if (s && !tracked.current.has(s.id)) {
@@ -47,29 +45,29 @@ const AdBanner = ({ position, className = '', maxWidth, aspectRatio, sticky = fa
 
   return (
     <div className={`${wrapperClass} ${className}`} style={{ maxWidth: maxWidth ? `${maxWidth}px` : undefined }}>
-      <div className="relative overflow-hidden rounded-xl border border-border bg-muted/20">
-        <span className="absolute left-2 top-1.5 z-10 rounded bg-background/80 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur-sm">
-          Patrocinado
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/10 shadow-card">
+        <span className="absolute left-2 top-1.5 z-10 rounded-md bg-background/70 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-muted-foreground/60 backdrop-blur-sm">
+          Anúncio
         </span>
         <a
           href={current.link_url || '#'}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackClick(current.id)}
-          className="block transition-opacity hover:opacity-90"
+          className="block transition-opacity hover:opacity-95"
         >
           {current.image_url ? (
             <img
               src={current.image_url}
               alt={current.title}
-              className="w-full object-cover"
-              style={{ aspectRatio: aspectRatio || 'auto' }}
+              className="w-full object-cover object-center"
+              style={{ aspectRatio: isMobile ? '16/5' : (aspectRatio || 'auto'), minHeight: isMobile ? '60px' : undefined }}
               loading="lazy"
             />
           ) : (
             <div
-              className="flex items-center justify-center bg-muted/30 p-4"
-              style={{ aspectRatio: aspectRatio || '728/90' }}
+              className="flex items-center justify-center bg-muted/20 p-4"
+              style={{ aspectRatio: isMobile ? '16/5' : (aspectRatio || '728/90') }}
             >
               <span className="text-sm font-medium text-muted-foreground">{current.title}</span>
             </div>
@@ -78,7 +76,7 @@ const AdBanner = ({ position, className = '', maxWidth, aspectRatio, sticky = fa
         {sponsors.length > 1 && (
           <div className="absolute bottom-1.5 right-2 flex gap-0.5">
             {sponsors.map((_, i) => (
-              <div key={i} className={`h-1 w-3 rounded-full transition-colors ${i === idx ? 'bg-accent' : 'bg-muted-foreground/20'}`} />
+              <div key={i} className={`h-1 w-3 rounded-full transition-colors ${i === idx ? 'bg-accent' : 'bg-muted-foreground/15'}`} />
             ))}
           </div>
         )}
