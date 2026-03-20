@@ -6,11 +6,24 @@ import { toast } from 'sonner';
 import { Edit2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const PROFILE_TYPE_OPTIONS = [
+  { value: 'client', label: 'Cliente' },
+  { value: 'provider', label: 'Profissional' },
+  { value: 'rh', label: 'Agência / RH' },
+];
+
+const profileTypeLabel = (t: string) => PROFILE_TYPE_OPTIONS.find(o => o.value === t)?.label || t;
+const profileTypeBadge = (t: string) => {
+  if (t === 'rh') return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
+  if (t === 'provider') return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+  return 'bg-muted text-muted-foreground';
+};
+
 const AdminUsersPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [profiles, setProfiles] = useState<any[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ full_name: '', email: '', phone: '', role: '' });
+  const [editForm, setEditForm] = useState({ full_name: '', email: '', phone: '', role: '', profile_type: '' });
 
   const fetchProfiles = () => {
     supabase.from('profiles')
@@ -26,7 +39,7 @@ const AdminUsersPage = () => {
 
   const startEdit = (p: any) => {
     setEditId(p.id);
-    setEditForm({ full_name: p.full_name || '', email: p.email || '', phone: p.phone || '', role: p.role || 'client' });
+    setEditForm({ full_name: p.full_name || '', email: p.email || '', phone: p.phone || '', role: p.role || 'client', profile_type: (p as any).profile_type || p.role || 'client' });
   };
 
   const handleSave = async () => {
@@ -34,8 +47,9 @@ const AdminUsersPage = () => {
     const { error } = await supabase.from('profiles').update({
       full_name: editForm.full_name,
       phone: editForm.phone,
-      role: editForm.role,
-    }).eq('id', editId);
+      role: editForm.profile_type === 'rh' ? 'client' : editForm.profile_type,
+      profile_type: editForm.profile_type,
+    } as any).eq('id', editId);
 
     if (error) {
       toast.error('Erro ao atualizar: ' + error.message);
@@ -80,10 +94,11 @@ const AdminUsersPage = () => {
                         className="w-full rounded border border-input bg-background px-2 py-1 text-sm text-foreground" />
                     </td>
                     <td className="px-4 py-3">
-                      <select value={editForm.role} onChange={e => setEditForm(prev => ({ ...prev, role: e.target.value }))}
+                      <select value={editForm.profile_type} onChange={e => setEditForm(prev => ({ ...prev, profile_type: e.target.value }))}
                         className="rounded border border-input bg-background px-2 py-1 text-sm text-foreground">
-                        <option value="client">Cliente</option>
-                        <option value="provider">Profissional</option>
+                        {PROFILE_TYPE_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
                       </select>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(p.created_at).toLocaleDateString('pt-BR')}</td>
@@ -100,8 +115,8 @@ const AdminUsersPage = () => {
                     <td className="px-4 py-3 text-muted-foreground">{p.email || '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{p.phone || '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.role === 'provider' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-muted text-muted-foreground'}`}>
-                        {p.role === 'provider' ? 'Profissional' : 'Cliente'}
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${profileTypeBadge((p as any).profile_type || p.role)}`}>
+                        {profileTypeLabel((p as any).profile_type || p.role)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{new Date(p.created_at).toLocaleDateString('pt-BR')}</td>

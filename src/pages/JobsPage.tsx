@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Clock, Briefcase, Search, MessageCircle } from 'lucide-react';
+import { MapPin, Clock, Briefcase, Search, MessageCircle, Filter } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,30 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
+const JOB_TYPES = [
+  { value: '', label: 'Todos os tipos' },
+  { value: 'clt', label: 'CLT' },
+  { value: 'pj', label: 'PJ / Autônomo' },
+  { value: 'estagio', label: 'Estágio' },
+  { value: 'temporario', label: 'Temporário' },
+  { value: 'aprendiz', label: 'Aprendiz' },
+  { value: 'freelance', label: 'Freelance' },
+  { value: 'meio-periodo', label: 'Meio período' },
+];
+
+const WORK_MODELS = [
+  { value: '', label: 'Todos os modelos' },
+  { value: 'presencial', label: 'Presencial' },
+  { value: 'remoto', label: 'Remoto' },
+  { value: 'hibrido', label: 'Híbrido' },
+];
+
 const JobsPage = () => {
   const [search, setSearch] = useState('');
   const [cityFilter, setCityFilter] = useState('');
+  const [jobTypeFilter, setJobTypeFilter] = useState('');
+  const [workModelFilter, setWorkModelFilter] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   useSeoHead({
     title: 'Vagas e Oportunidades de Serviço | Preciso de um',
@@ -20,16 +41,19 @@ const JobsPage = () => {
   });
 
   const { data: jobs = [], isLoading } = useQuery({
-    queryKey: ['jobs-list', search, cityFilter],
+    queryKey: ['jobs-list', search, cityFilter, jobTypeFilter, workModelFilter],
     queryFn: async () => {
       let query = supabase
-        .from('jobs' as any)
+        .from('jobs')
         .select('*, categories(name, slug, icon)')
         .eq('status', 'active')
+        .eq('approval_status' as any, 'approved')
         .order('created_at', { ascending: false });
 
       if (search) query = query.ilike('title', `%${search}%`);
       if (cityFilter) query = query.ilike('city', `%${cityFilter}%`);
+      if (jobTypeFilter) query = query.eq('job_type' as any, jobTypeFilter);
+      if (workModelFilter) query = query.eq('work_model' as any, workModelFilter);
 
       const { data } = await query.limit(50);
       return data || [];
@@ -43,6 +67,9 @@ const JobsPage = () => {
       return (data || []).map((c: any) => c.name);
     },
   });
+
+  const jobTypeLabel = (v: string) => JOB_TYPES.find(t => t.value === v)?.label || v;
+  const workModelLabel = (v: string) => WORK_MODELS.find(t => t.value === v)?.label || v;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -72,10 +99,41 @@ const JobsPage = () => {
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
+          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+            <Filter className="mr-1 h-4 w-4" /> Filtros
+          </Button>
           <Button variant="accent" asChild>
             <Link to="/dashboard/vagas">Publicar Vaga</Link>
           </Button>
         </div>
+
+        {showFilters && (
+          <div className="mt-3 flex flex-wrap gap-3 rounded-lg border border-border bg-card p-4">
+            <select
+              value={jobTypeFilter}
+              onChange={(e) => setJobTypeFilter(e.target.value)}
+              className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+            >
+              {JOB_TYPES.map(t => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+            <select
+              value={workModelFilter}
+              onChange={(e) => setWorkModelFilter(e.target.value)}
+              className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+            >
+              {WORK_MODELS.map(t => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+            {(jobTypeFilter || workModelFilter) && (
+              <Button variant="ghost" size="sm" onClick={() => { setJobTypeFilter(''); setWorkModelFilter(''); }}>
+                Limpar filtros
+              </Button>
+            )}
+          </div>
+        )}
 
         {isLoading ? (
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -106,6 +164,14 @@ const JobsPage = () => {
                   <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
                     {job.opportunity_type === 'emprego' ? 'Emprego' : job.opportunity_type === 'freelance' ? 'Freelance' : 'Serviço'}
                   </span>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {(job as any).job_type && (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{jobTypeLabel((job as any).job_type)}</span>
+                  )}
+                  {(job as any).work_model && (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{workModelLabel((job as any).work_model)}</span>
+                  )}
                 </div>
                 {(job.categories as any)?.name && (
                   <p className="mt-1 text-xs text-muted-foreground">
