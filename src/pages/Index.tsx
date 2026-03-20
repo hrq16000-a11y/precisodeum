@@ -138,6 +138,7 @@ const Index = () => {
       )}
       <PopularServices />
       {recentServices.length > 0 && <RecentServices services={recentServices} />}
+      <FeaturedJobs />
       <SponsorAd position="between-sections" />
       {topCities.length > 0 && <CitiesSection cities={topCities} />}
       <CtaSection />

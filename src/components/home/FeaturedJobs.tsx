@@ -66,7 +66,7 @@ const FeaturedJobs = () => {
                 </p>
               )}
               {job.whatsapp && (
-                <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-green-600">
+                <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-accent">
                   <MessageCircle className="h-3 w-3" /> WhatsApp
                 </p>
               )}

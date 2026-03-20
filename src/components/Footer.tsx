@@ -169,7 +169,8 @@ const Footer = () => {
         <SponsorAd position="footer" layout="inline" className="mt-6 border-t border-primary-foreground/10 pt-6" />
 
         <div className="mt-6 border-t border-primary-foreground/10 pt-6 text-center text-xs text-primary-foreground/40">
-          © 2026 Preciso de um. Todos os direitos reservados.
+          <p>© 2026 Preciso de um. Todos os direitos reservados.</p>
+          <p className="mt-1">CNPJ: 41.723.708/0001-58 — Ping Soluções · <a href="https://mestredosservicos.com.br" target="_blank" rel="noopener noreferrer" className="hover:text-primary-foreground/70">mestredosservicos.com.br</a></p>
         </div>
       </div>
     </footer>
