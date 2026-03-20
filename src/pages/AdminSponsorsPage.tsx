@@ -77,6 +77,7 @@ const AdminSponsorsPage = () => {
         display_order: form.display_order,
         start_date: form.start_date || null,
         end_date: form.end_date || null,
+        tier: form.tier,
       };
       if (editingId) {
         const { error } = await supabase.from('sponsors').update(payload).eq('id', editingId);
