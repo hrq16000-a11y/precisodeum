@@ -52,7 +52,11 @@ const DashboardProfilePage = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: name === 'years_experience' ? Number(value) : value }));
+    if (name === 'phone' || name === 'whatsapp') {
+      setForm(prev => ({ ...prev, [name]: sanitizePhone(value) }));
+    } else {
+      setForm(prev => ({ ...prev, [name]: name === 'years_experience' ? Number(value) : value }));
+    }
   };
 
   const handleSave = async () => {
