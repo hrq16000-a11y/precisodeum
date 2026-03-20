@@ -61,6 +61,19 @@ const DashboardProfilePage = () => {
 
   const handleSave = async () => {
     if (!user) return;
+
+    // Auto-fill + validate WhatsApp
+    const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.phone);
+    if (finalWhatsapp && !isValidWhatsApp(finalWhatsapp)) {
+      toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)');
+      return;
+    }
+    const finalPhone = sanitizePhone(form.phone);
+    if (finalPhone && !isValidWhatsApp(finalPhone)) {
+      toast.error('Número de telefone inválido (deve ter 10 ou 11 dígitos)');
+      return;
+    }
+
     setSaving(true);
 
     try {
