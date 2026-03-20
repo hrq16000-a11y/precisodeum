@@ -3,8 +3,9 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Sparkles, Plus, Trash2, Save } from 'lucide-react';
+import { Sparkles, Trash2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ImageUploadField from '@/components/ImageUploadField';
 
 const AdminHighlightsPage = () => {
   const { isAdmin, loading } = useAdmin();
@@ -63,19 +64,22 @@ const AdminHighlightsPage = () => {
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">Gerencie os banners de destaque da página inicial</p>
 
-      {/* Form */}
       <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card space-y-3">
         <h3 className="text-sm font-bold text-foreground">{editing ? 'Editar Destaque' : 'Novo Destaque'}</h3>
         <input placeholder="Título" value={form.title} onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
         <textarea placeholder="Descrição" rows={2} value={form.description} onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-        <div className="grid grid-cols-2 gap-3">
-          <input placeholder="URL da imagem (opcional)" value={form.image_url} onChange={(e) => setForm(p => ({ ...p, image_url: e.target.value }))}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-          <input placeholder="Link de destino (ex: /cadastro)" value={form.link_url} onChange={(e) => setForm(p => ({ ...p, link_url: e.target.value }))}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-        </div>
+        <ImageUploadField
+          value={form.image_url}
+          onChange={(url) => setForm(p => ({ ...p, image_url: url }))}
+          bucket="service-images"
+          folder="highlights"
+          label="Imagem do destaque"
+          placeholder="https://..."
+        />
+        <input placeholder="Link de destino (ex: /cadastro)" value={form.link_url} onChange={(e) => setForm(p => ({ ...p, link_url: e.target.value }))}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
         <input type="number" placeholder="Ordem" value={form.display_order} onChange={(e) => setForm(p => ({ ...p, display_order: Number(e.target.value) }))}
           className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
         <div className="flex gap-2">
@@ -84,17 +88,19 @@ const AdminHighlightsPage = () => {
         </div>
       </div>
 
-      {/* List */}
       <div className="mt-6 space-y-3">
         {highlights.map((h: any) => (
           <div key={h.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-card">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className={`h-2 w-2 rounded-full ${h.active ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
-                <h3 className="text-sm font-bold text-foreground truncate">{h.title}</h3>
-                <span className="text-xs text-muted-foreground">#{h.display_order}</span>
+            <div className="min-w-0 flex-1 flex items-center gap-3">
+              {h.image_url && <img src={h.image_url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />}
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full ${h.active ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
+                  <h3 className="text-sm font-bold text-foreground truncate">{h.title}</h3>
+                  <span className="text-xs text-muted-foreground">#{h.display_order}</span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground truncate">{h.description}</p>
               </div>
-              <p className="mt-0.5 text-xs text-muted-foreground truncate">{h.description}</p>
             </div>
             <div className="flex gap-2 shrink-0">
               <Button variant="outline" size="sm" onClick={() => startEdit(h)}>Editar</Button>

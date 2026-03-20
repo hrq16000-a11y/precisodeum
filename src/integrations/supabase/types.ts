@@ -178,6 +178,7 @@ export type Database = {
           deadline: string | null
           description: string
           id: string
+          job_type: string
           neighborhood: string
           opportunity_type: string
           requirements: string | null
@@ -191,6 +192,7 @@ export type Database = {
           updated_at: string
           user_id: string
           whatsapp: string
+          work_model: string
         }
         Insert: {
           activities?: string | null
@@ -205,6 +207,7 @@ export type Database = {
           deadline?: string | null
           description?: string
           id?: string
+          job_type?: string
           neighborhood?: string
           opportunity_type?: string
           requirements?: string | null
@@ -218,6 +221,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           whatsapp?: string
+          work_model?: string
         }
         Update: {
           activities?: string | null
@@ -232,6 +236,7 @@ export type Database = {
           deadline?: string | null
           description?: string
           id?: string
+          job_type?: string
           neighborhood?: string
           opportunity_type?: string
           requirements?: string | null
@@ -245,6 +250,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           whatsapp?: string
+          work_model?: string
         }
         Relationships: [
           {
@@ -385,6 +391,7 @@ export type Database = {
           full_name: string
           id: string
           phone: string | null
+          profile_type: string
           role: string
           updated_at: string
         }
@@ -395,6 +402,7 @@ export type Database = {
           full_name?: string
           id: string
           phone?: string | null
+          profile_type?: string
           role?: string
           updated_at?: string
         }
@@ -405,6 +413,7 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string | null
+          profile_type?: string
           role?: string
           updated_at?: string
         }

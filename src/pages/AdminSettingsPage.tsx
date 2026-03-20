@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Settings, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ImageUploadField from '@/components/ImageUploadField';
 
 const AdminSettingsPage = () => {
   const { isAdmin, loading } = useAdmin();
@@ -88,7 +89,6 @@ const AdminSettingsPage = () => {
       {textSettings.length > 0 && (
         <>
           <h2 className="mt-8 font-display text-lg font-bold text-foreground">Configurações de texto e imagens</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Para logos, insira a URL da imagem (pode usar o upload de patrocinadores ou serviço externo de hospedagem de imagens).</p>
           <div className="mt-3 space-y-3">
             {textSettings.map((s: any) => (
               <TextSettingRow key={s.key} setting={s} onSave={updateTextSetting} />
@@ -103,8 +103,7 @@ const AdminSettingsPage = () => {
 const TextSettingRow = ({ setting, onSave }: { setting: any; onSave: (key: string, value: string) => Promise<void> }) => {
   const [value, setValue] = useState(setting.value);
   const changed = value !== setting.value;
-
-  const isImageSetting = setting.key.includes('logo') || setting.key.includes('image');
+  const isImageSetting = setting.key.includes('logo') || setting.key.includes('image') || setting.key.includes('banner') || setting.key.includes('icon');
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card space-y-2">
@@ -112,25 +111,29 @@ const TextSettingRow = ({ setting, onSave }: { setting: any; onSave: (key: strin
         <h3 className="text-sm font-bold text-foreground">{setting.label}</h3>
         <p className="text-xs text-muted-foreground">{setting.description}</p>
       </div>
-      {isImageSetting && value && (
-        <div className="flex items-center gap-3">
-          <img src={value} alt={setting.label} className="h-12 rounded border border-border object-contain bg-muted p-1" />
-          <span className="text-xs text-muted-foreground truncate flex-1">{value}</span>
+      {isImageSetting ? (
+        <ImageUploadField
+          value={value}
+          onChange={(url) => { setValue(url); onSave(setting.key, url); }}
+          bucket="service-images"
+          folder="settings"
+          label=""
+          placeholder="https://exemplo.com/logo.png"
+        />
+      ) : (
+        <div className="flex gap-2">
+          <input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+          />
+          {changed && (
+            <Button variant="accent" size="sm" onClick={() => onSave(setting.key, value)}>
+              <Save className="mr-1 h-3 w-3" /> Salvar
+            </Button>
+          )}
         </div>
       )}
-      <div className="flex gap-2">
-        <input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={isImageSetting ? 'https://exemplo.com/logo.png' : ''}
-          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-        />
-        {changed && (
-          <Button variant="accent" size="sm" onClick={() => onSave(setting.key, value)}>
-            <Save className="mr-1 h-3 w-3" /> Salvar
-          </Button>
-        )}
-      </div>
     </div>
   );
 };
