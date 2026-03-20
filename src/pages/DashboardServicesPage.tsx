@@ -110,7 +110,14 @@ const DashboardServicesPage = () => {
     return data.id;
   };
 
+  const profileType = (profile as any)?.profile_type || (profile as any)?.role || 'client';
+  const isRH = profileType === 'rh';
+
   const handleSave = async () => {
+    if (isRH) {
+      toast.error('Agências RH não podem cadastrar serviços. Use a área de Vagas.');
+      return;
+    }
     if (!form.service_name.trim()) {
       toast.error('Nome do serviço é obrigatório');
       return;
