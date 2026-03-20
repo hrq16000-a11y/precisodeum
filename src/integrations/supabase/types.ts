@@ -130,6 +130,8 @@ export type Database = {
       }
       jobs: {
         Row: {
+          activities: string | null
+          benefits: string | null
           category_id: string | null
           city: string
           contact_name: string
@@ -141,15 +143,21 @@ export type Database = {
           id: string
           neighborhood: string
           opportunity_type: string
+          requirements: string | null
+          salary: string | null
+          schedule: string | null
           slug: string | null
           state: string
           status: string
+          subtitle: string | null
           title: string
           updated_at: string
           user_id: string
           whatsapp: string
         }
         Insert: {
+          activities?: string | null
+          benefits?: string | null
           category_id?: string | null
           city?: string
           contact_name?: string
@@ -161,15 +169,21 @@ export type Database = {
           id?: string
           neighborhood?: string
           opportunity_type?: string
+          requirements?: string | null
+          salary?: string | null
+          schedule?: string | null
           slug?: string | null
           state?: string
           status?: string
+          subtitle?: string | null
           title: string
           updated_at?: string
           user_id: string
           whatsapp?: string
         }
         Update: {
+          activities?: string | null
+          benefits?: string | null
           category_id?: string | null
           city?: string
           contact_name?: string
@@ -181,9 +195,13 @@ export type Database = {
           id?: string
           neighborhood?: string
           opportunity_type?: string
+          requirements?: string | null
+          salary?: string | null
+          schedule?: string | null
           slug?: string | null
           state?: string
           status?: string
+          subtitle?: string | null
           title?: string
           updated_at?: string
           user_id?: string
