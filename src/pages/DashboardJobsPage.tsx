@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, ExternalLink, Copy, CopyPlus, Upload } from 'lucide-react';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp } from '@/lib/whatsapp';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
