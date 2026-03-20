@@ -125,6 +125,7 @@ const AdminSponsorsPage = () => {
       display_order: s.display_order,
       start_date: s.start_date || '',
       end_date: s.end_date || '',
+      tier: (s as any).tier || 'basic',
     });
     setDialogOpen(true);
   };
