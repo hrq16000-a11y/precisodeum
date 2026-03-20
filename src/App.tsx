@@ -45,6 +45,9 @@ import AdminCommunityPage from "./pages/AdminCommunityPage";
 import JobsPage from "./pages/JobsPage";
 import JobDetailPage from "./pages/JobDetailPage";
 import DashboardCommunityPage from "./pages/DashboardCommunityPage";
+import AdminBlogPage from "./pages/AdminBlogPage";
+import BlogPage from "./pages/BlogPage";
+import BlogPostPage from "./pages/BlogPostPage";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
