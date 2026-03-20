@@ -37,7 +37,7 @@ const WORK_MODELS = [
   { value: 'hibrido', label: 'Híbrido' },
 ];
 
-const sanitizeWhatsapp = (val: string) => val.replace(/\D/g, '').replace(/^0+/, '');
+const sanitizeWhatsapp = sanitizePhone;
 
 const emptyForm = {
   title: '', subtitle: '', category_id: '', opportunity_type: 'servico',
