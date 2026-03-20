@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { DbProvider } from '@/hooks/useProviders';
+import { whatsappLink } from '@/lib/whatsapp';
 
 interface Props {
   providers: DbProvider[];
@@ -82,7 +83,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
 
                     <div className="mt-4 flex gap-2">
                       <Button variant="accent" size="sm" className="flex-1" asChild>
-                        <a href={`https://wa.me/${(p.whatsapp || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                        <a href={whatsappLink(p.whatsapp || '', `Olá! Vi seu perfil "${displayName}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
                           <MessageCircle className="h-4 w-4" /> WhatsApp
                         </a>
                       </Button>

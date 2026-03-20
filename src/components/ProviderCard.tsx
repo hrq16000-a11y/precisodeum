@@ -5,6 +5,7 @@ import StarRating from '@/components/StarRating';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { DbProvider } from '@/hooks/useProviders';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { whatsappLink } from '@/lib/whatsapp';
 
 interface ProviderCardProps {
   provider: DbProvider;
@@ -57,7 +58,7 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
 
         <div className="mt-4 flex gap-2">
           <Button variant="accent" size="sm" className="flex-1" asChild>
-            <a href={`https://wa.me/${(provider.whatsapp || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+            <a href={whatsappLink(provider.whatsapp || '', `Olá! Vi seu perfil "${provider.businessName || provider.name}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="h-4 w-4" /> WhatsApp
             </a>
           </Button>

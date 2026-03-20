@@ -10,6 +10,7 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { whatsappLink } from '@/lib/whatsapp';
 
 const renderList = (text: string) => {
   if (!text) return null;
@@ -92,9 +93,8 @@ const JobDetailPage = () => {
     );
   }
 
-  const cleanWa = job.whatsapp ? job.whatsapp.replace(/\D/g, '') : '';
-  const whatsappUrl = cleanWa
-    ? `https://wa.me/${cleanWa}?text=${encodeURIComponent(`Olá! Vi a vaga "${job.title}" no Preciso de um e gostaria de mais informações.`)}`
+  const whatsappUrl = job.whatsapp
+    ? whatsappLink(job.whatsapp, `Olá! Vi a vaga "${job.title}" no Preciso de um e gostaria de mais informações.`)
     : null;
 
   return (
