@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Users, Zap } from 'lucide-react';
+import { Shield, Users, Zap, Briefcase } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
 import heroImage from '@/assets/hero-image.jpg';
 
 interface HeroBannerProps {
   totalServices?: number;
+  totalJobs?: number;
 }
 
 function useCountUp(target: number, duration = 1500) {
@@ -22,7 +23,6 @@ function useCountUp(target: number, duration = 1500) {
     const tick = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setCount(Math.round(start + (target - start) * eased));
       if (progress < 1) requestAnimationFrame(tick);
@@ -34,8 +34,17 @@ function useCountUp(target: number, duration = 1500) {
   return count;
 }
 
-const HeroBanner = ({ totalServices }: HeroBannerProps) => {
-  const animatedCount = useCountUp(totalServices || 0);
+const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
+  const animatedServices = useCountUp(totalServices || 0);
+  const animatedJobs = useCountUp(totalJobs || 0);
+  const [showJobs, setShowJobs] = useState(false);
+
+  // Alternate between services and jobs every 5s
+  useEffect(() => {
+    if (!totalJobs || totalJobs <= 0) return;
+    const interval = setInterval(() => setShowJobs((v) => !v), 5000);
+    return () => clearInterval(interval);
+  }, [totalJobs]);
 
   return (
     <section className="relative overflow-hidden py-16 md:py-24">
@@ -62,26 +71,44 @@ const HeroBanner = ({ totalServices }: HeroBannerProps) => {
         >
           <SearchBar />
         </motion.div>
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="mt-5 text-sm text-primary-foreground/80"
+          className="mt-5 flex flex-col items-center gap-2 sm:flex-row sm:gap-4"
         >
-          Cadastre seus serviços gratuitamente e receba clientes.{' '}
-          <Link to="/cadastro" className="font-semibold text-secondary hover:underline">Cadastrar agora →</Link>
-        </motion.p>
+          <p className="text-sm text-primary-foreground/80">
+            Cadastre seus serviços gratuitamente.{' '}
+            <Link to="/cadastro" className="font-semibold text-secondary hover:underline">Cadastrar agora →</Link>
+          </p>
+          <span className="hidden sm:inline text-primary-foreground/40">|</span>
+          <p className="text-sm text-primary-foreground/80">
+            <Link to="/dashboard/vagas" className="font-semibold text-secondary hover:underline">Cadastre uma vaga / oportunidade →</Link>
+          </p>
+        </motion.div>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.45 }}
           className="mt-6 flex flex-wrap items-center justify-center gap-5 text-xs text-primary-foreground/80"
         >
-          <span className="flex items-center gap-1.5">
-            <Shield className="h-3.5 w-3.5 text-secondary" />
-            {totalServices && totalServices > 0
-              ? <><span className="font-semibold tabular-nums">{animatedCount.toLocaleString('pt-BR')}</span> serviços publicados</>
-              : 'Serviços verificados'}
+          <span className="flex items-center gap-1.5 transition-opacity">
+            {showJobs && totalJobs && totalJobs > 0 ? (
+              <>
+                <Briefcase className="h-3.5 w-3.5 text-secondary" />
+                <span className="font-semibold tabular-nums">{animatedJobs.toLocaleString('pt-BR')}</span> vagas disponíveis
+              </>
+            ) : totalServices && totalServices > 0 ? (
+              <>
+                <Shield className="h-3.5 w-3.5 text-secondary" />
+                <span className="font-semibold tabular-nums">{animatedServices.toLocaleString('pt-BR')}</span> serviços publicados
+              </>
+            ) : (
+              <>
+                <Shield className="h-3.5 w-3.5 text-secondary" />
+                Serviços verificados
+              </>
+            )}
           </span>
           <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-secondary" /> Em todo o Brasil</span>
           <span className="flex items-center gap-1.5"><Zap className="h-3.5 w-3.5 text-secondary" /> Resposta rápida</span>
