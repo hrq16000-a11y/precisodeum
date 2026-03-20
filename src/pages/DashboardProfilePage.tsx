@@ -97,7 +97,7 @@ const DashboardProfilePage = () => {
           city: form.city,
           state: form.state,
           neighborhood: form.neighborhood,
-          whatsapp: form.whatsapp,
+          whatsapp: finalWhatsapp,
           website: form.website || null,
           years_experience: form.years_experience,
           category_id: form.category_id || null,
