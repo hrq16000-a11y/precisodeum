@@ -2,3 +2,6 @@ project_id = "qaftogrqeyymewoofexc"
 
 [functions.sitemap]
 verify_jwt = false
+
+[functions.import-rss]
+verify_jwt = false

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, ExternalLink, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Rss, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +18,6 @@ import { useAuth } from '@/hooks/useAuth';
 import ImageUploadField from '@/components/ImageUploadField';
 
 const emptyForm = { title: '', slug: '', content: '', excerpt: '', cover_image_url: '', author_name: 'Equipe Preciso de um', published: false, featured: false, source_url: '' };
-
 const autoSlug = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 const AdminBlogPage = () => {
@@ -30,6 +29,8 @@ const AdminBlogPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [rssUrl, setRssUrl] = useState('');
+  const [rssLoading, setRssLoading] = useState(false);
 
   if (!authLoading && !adminLoading && (!user || !isAdmin)) { navigate('/'); return null; }
 
@@ -93,12 +94,30 @@ const AdminBlogPage = () => {
     setDialogOpen(true);
   };
 
+  const handleRssImport = async () => {
+    if (!rssUrl.trim()) return;
+    setRssLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('import-rss', {
+        body: { feed_url: rssUrl.trim(), max_items: 10 },
+      });
+      if (error) throw error;
+      toast({ title: `RSS importado: ${data.imported} novos, ${data.skipped} já existentes` });
+      queryClient.invalidateQueries({ queryKey: ['admin-blog-posts'] });
+      setRssUrl('');
+    } catch (err: any) {
+      toast({ title: 'Erro ao importar RSS: ' + (err.message || ''), variant: 'destructive' });
+    } finally {
+      setRssLoading(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Blog / Notícias</h1>
-          <p className="text-sm text-muted-foreground">Gerencie posts e conteúdos do blog</p>
+          <p className="text-sm text-muted-foreground">{posts.length} post(s)</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(v) => { if (!v) closeDialog(); else setDialogOpen(true); }}>
           <DialogTrigger asChild>
@@ -160,7 +179,31 @@ const AdminBlogPage = () => {
         </Dialog>
       </div>
 
-      <div className="mt-6 rounded-xl border border-border bg-card">
+      {/* RSS Import Section */}
+      <div className="mt-4 rounded-xl border border-border bg-card p-4 shadow-card">
+        <div className="flex items-center gap-2 mb-3">
+          <Rss className="h-4 w-4 text-accent" />
+          <h2 className="text-sm font-bold text-foreground">Importar via RSS / Feed</h2>
+        </div>
+        <div className="flex gap-2">
+          <Input
+            placeholder="https://news.google.com/rss/search?q=emprego+brasil&hl=pt-BR"
+            value={rssUrl}
+            onChange={e => setRssUrl(e.target.value)}
+            className="flex-1"
+          />
+          <Button variant="accent" onClick={handleRssImport} disabled={rssLoading || !rssUrl.trim()}>
+            {rssLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rss className="h-4 w-4" />}
+            Importar
+          </Button>
+        </div>
+        <p className="mt-1.5 text-[10px] text-muted-foreground">
+          Cole a URL de qualquer feed RSS/Atom. Posts duplicados (mesmo slug) serão ignorados.
+        </p>
+      </div>
+
+      {/* Posts Table */}
+      <div className="mt-4 rounded-xl border border-border bg-card">
         {isLoading ? (
           <p className="p-6 text-muted-foreground">Carregando...</p>
         ) : posts.length === 0 ? (
@@ -171,8 +214,8 @@ const AdminBlogPage = () => {
               <TableRow>
                 <TableHead>Título</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Destaque</TableHead>
-                <TableHead>Data</TableHead>
+                <TableHead className="hidden sm:table-cell">Fonte</TableHead>
+                <TableHead className="hidden sm:table-cell">Data</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -182,19 +225,24 @@ const AdminBlogPage = () => {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {p.cover_image_url && <img src={p.cover_image_url} alt="" className="h-8 w-8 rounded object-cover" />}
-                      <div>
-                        <span className="font-medium text-foreground">{p.title}</span>
+                      <div className="min-w-0">
+                        <span className="font-medium text-foreground line-clamp-1">{p.title}</span>
                         <p className="text-[10px] text-muted-foreground">/{p.slug}</p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.published ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
-                      {p.published ? 'Publicado' : 'Rascunho'}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.published ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
+                        {p.published ? 'Publicado' : 'Rascunho'}
+                      </span>
+                      {p.featured && <span title="Destaque">⭐</span>}
+                    </div>
                   </TableCell>
-                  <TableCell>{p.featured ? '⭐' : '—'}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString('pt-BR')}</TableCell>
+                  <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
+                    {p.source_url ? <span title={p.source_url}>Externa</span> : 'Original'}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString('pt-BR')}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="sm" asChild><Link to={`/blog/${p.slug}`} target="_blank"><Eye className="h-4 w-4" /></Link></Button>
