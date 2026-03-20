@@ -181,6 +181,16 @@ const AdminSponsorsPage = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>Nível</Label>
+                <Select value={form.tier} onValueChange={(v) => setForm({ ...form, tier: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic">Básico (rotativo)</SelectItem>
+                    <SelectItem value="destaque">Destaque (mais frequência)</SelectItem>
+                    <SelectItem value="premium">Premium (topo + fixo)</SelectItem>
+                  </SelectContent>
+                </Select>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Data Início</Label>
