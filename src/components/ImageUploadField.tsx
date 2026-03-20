@@ -36,6 +36,14 @@ const ImageUploadField = ({
 
     setUploading(true);
     try {
+      // Get current session for auth
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Você precisa estar logado para enviar imagens');
+        setUploading(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('bucket', bucket);
@@ -49,6 +57,7 @@ const ImageUploadField = ({
           body: formData,
           headers: {
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${session.access_token}`,
           },
         }
       );
