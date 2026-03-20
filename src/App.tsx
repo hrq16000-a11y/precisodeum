@@ -41,8 +41,10 @@ import SitemapRedirect from "./pages/SitemapRedirect";
 import ServiceDetailPage from "./pages/ServiceDetailPage";
 import FaqPage from "./pages/FaqPage";
 import AdminHighlightsPage from "./pages/AdminHighlightsPage";
+import AdminCommunityPage from "./pages/AdminCommunityPage";
 import JobsPage from "./pages/JobsPage";
 import JobDetailPage from "./pages/JobDetailPage";
+import DashboardCommunityPage from "./pages/DashboardCommunityPage";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -72,6 +74,7 @@ const App = () => (
             <Route path="/dashboard/plano" element={<DashboardPlanPage />} />
             <Route path="/dashboard/minha-pagina" element={<DashboardMyPagePage />} />
             <Route path="/dashboard/vagas" element={<DashboardJobsPage />} />
+            <Route path="/dashboard/comunidade" element={<DashboardCommunityPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
             <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
@@ -85,6 +88,7 @@ const App = () => (
             <Route path="/admin/faq" element={<AdminFaqPage />} />
             <Route path="/admin/metatags" element={<AdminMetaTagsPage />} />
             <Route path="/admin/destaques" element={<AdminHighlightsPage />} />
+            <Route path="/admin/comunidade" element={<AdminCommunityPage />} />
             <Route path="/admin/vagas" element={<AdminJobsPage />} />
             <Route path="/servico/:slug" element={<PopularServicePage />} />
             <Route path="/servico-detalhe/:id" element={<ServiceDetailPage />} />

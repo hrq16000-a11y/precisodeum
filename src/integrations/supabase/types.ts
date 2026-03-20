@@ -62,6 +62,42 @@ export type Database = {
         }
         Relationships: []
       }
+      community_links: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          display_order: number
+          icon: string
+          id: string
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           active: boolean
@@ -730,32 +766,44 @@ export type Database = {
       sponsors: {
         Row: {
           active: boolean
+          clicks: number
           created_at: string
           display_order: number
+          end_date: string | null
           id: string
           image_url: string | null
+          impressions: number
           link_url: string | null
           position: string
+          start_date: string | null
           title: string
         }
         Insert: {
           active?: boolean
+          clicks?: number
           created_at?: string
           display_order?: number
+          end_date?: string | null
           id?: string
           image_url?: string | null
+          impressions?: number
           link_url?: string | null
           position?: string
+          start_date?: string | null
           title: string
         }
         Update: {
           active?: boolean
+          clicks?: number
           created_at?: string
           display_order?: number
+          end_date?: string | null
           id?: string
           image_url?: string | null
+          impressions?: number
           link_url?: string | null
           position?: string
+          start_date?: string | null
           title?: string
         }
         Relationships: []

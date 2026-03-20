@@ -70,11 +70,31 @@ const Index = () => {
     },
   });
 
-  const { data: topCities = [] } = useQuery({
-    queryKey: ['top-cities'],
+  const { data: totalJobsCount = 0 } = useQuery({
+    queryKey: ['total-jobs-count'],
     queryFn: async () => {
-      const { data } = await supabase.from('cities').select('name, slug, state').order('name').limit(12);
-      return data || [];
+      const { count } = await supabase
+        .from('jobs')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
+      return count || 0;
+    },
+  });
+
+  // Cities with active services only
+  const { data: topCities = [] } = useQuery({
+    queryKey: ['top-cities-with-services'],
+    queryFn: async () => {
+      const { data: services } = await supabase.from('services').select('provider_id');
+      if (!services || services.length === 0) return [];
+      const providerIds = [...new Set(services.map((s: any) => s.provider_id))];
+      const { data: providers } = await supabase.from('providers').select('city').in('id', providerIds);
+      if (!providers) return [];
+      const cityNames = [...new Set(providers.map((p: any) => p.city).filter(Boolean))];
+      const { data: cities } = await supabase.from('cities').select('name, slug, state').in('name', cityNames);
+      // Shuffle and return 4-6
+      const shuffled = [...(cities || [])].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 6);
     },
   });
 
@@ -129,7 +149,7 @@ const Index = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <HeroBanner totalServices={totalServicesCount} />
+      <HeroBanner totalServices={totalServicesCount} totalJobs={totalJobsCount} />
       <HighlightsCarousel />
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
       <SponsorAd position="between-sections" />

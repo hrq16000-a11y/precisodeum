@@ -2,12 +2,14 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MessageCircle, Users } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import defaultLogo from '@/assets/logo.png';
 import SponsorAd from '@/components/SponsorAd';
+import { Button } from '@/components/ui/button';
 
 const ecosystemLinks = [
+  { name: 'Mestre dos Serviços', url: 'https://mestredosservicos.com.br' },
   { name: 'Encontre um Técnico', url: 'https://www.encontreumtecnico.com' },
   { name: 'Preciso de um Técnico', url: 'https://www.precisodeumtecnico.com' },
   { name: 'Encontre um Profissional', url: 'https://www.encontreumprofissional.com.br' },
@@ -28,11 +30,21 @@ const Footer = () => {
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoFooterUrl = useSettingValue('logo_footer_url');
   const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : defaultLogo;
+  const [showAllSearches, setShowAllSearches] = useState(false);
+  const [showAllServices, setShowAllServices] = useState(false);
+
+  // Cities with active services only, random 3
   const { data: topCities = [] } = useQuery({
-    queryKey: ['footer-cities'],
+    queryKey: ['footer-cities-with-services'],
     queryFn: async () => {
-      const { data } = await supabase.from('cities').select('name, slug').order('name').limit(12);
-      return data || [];
+      const { data: services } = await supabase.from('services').select('provider_id');
+      if (!services || services.length === 0) return [];
+      const providerIds = [...new Set(services.map((s: any) => s.provider_id))];
+      const { data: providers } = await supabase.from('providers').select('city').in('id', providerIds);
+      if (!providers) return [];
+      const cityNames = [...new Set(providers.map((p: any) => p.city).filter(Boolean))];
+      const { data: cities } = await supabase.from('cities').select('name, slug').in('name', cityNames);
+      return shuffle(cities || []).slice(0, 3);
     },
     staleTime: 1000 * 60 * 30,
   });
@@ -51,8 +63,11 @@ const Footer = () => {
     const all = categories.flatMap((cat) =>
       topCities.map((city) => ({ cat, city }))
     );
-    return shuffle(all).slice(0, 24);
+    return shuffle(all);
   }, [categories, topCities]);
+
+  const visibleSeoLinks = showAllSearches ? randomSeoLinks : randomSeoLinks.slice(0, 4);
+  const visibleServices = showAllServices ? categories : categories.slice(0, 4);
 
   return (
     <footer className="border-t border-border bg-primary text-primary-foreground">
@@ -72,12 +87,17 @@ const Footer = () => {
           <div>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Serviços Populares</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
-              {categories.map((s) => (
+              {visibleServices.map((s) => (
                 <li key={s.slug}>
                   <Link to={`/categoria/${s.slug}`} className="transition-colors hover:text-primary-foreground">{s.name}</Link>
                 </li>
               ))}
             </ul>
+            {!showAllServices && categories.length > 4 && (
+              <button onClick={() => setShowAllServices(true)} className="mt-2 text-xs font-medium text-secondary hover:underline">
+                Ver mais serviços
+              </button>
+            )}
           </div>
 
           {/* Cidades */}
@@ -90,6 +110,9 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
+            <Link to="/buscar" className="mt-2 inline-block text-xs font-medium text-secondary hover:underline">
+              Ver mais cidades
+            </Link>
           </div>
 
           {/* Profissionais */}
@@ -100,6 +123,7 @@ const Footer = () => {
               <li><Link to="/login" className="transition-colors hover:text-primary-foreground">Login</Link></li>
               <li><Link to="/dashboard" className="transition-colors hover:text-primary-foreground">Dashboard</Link></li>
               <li><Link to="/buscar" className="transition-colors hover:text-primary-foreground">Buscar Profissionais</Link></li>
+              <li><Link to="/vagas" className="transition-colors hover:text-primary-foreground">Vagas</Link></li>
               <li><Link to="/sobre" className="transition-colors hover:text-primary-foreground">Sobre</Link></li>
             </ul>
           </div>
@@ -150,21 +174,28 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* SEO Links Grid - randomized */}
-        <div className="mt-10 border-t border-primary-foreground/10 pt-6">
-          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-primary-foreground/40">Buscas populares</h4>
-          <div className="flex flex-wrap gap-2">
-            {randomSeoLinks.map(({ cat, city }) => (
-              <Link
-                key={`${cat.slug}-${city.slug}`}
-                to={`/${cat.slug}-${city.slug}`}
-                className="text-xs text-primary-foreground/40 transition-colors hover:text-primary-foreground/70"
-              >
-                {cat.name} em {city.name}
-              </Link>
-            ))}
+        {/* SEO Links Grid - limited to 4, expandable */}
+        {randomSeoLinks.length > 0 && (
+          <div className="mt-10 border-t border-primary-foreground/10 pt-6">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-primary-foreground/40">Buscas populares</h4>
+            <div className="flex flex-wrap gap-2">
+              {visibleSeoLinks.map(({ cat, city }) => (
+                <Link
+                  key={`${cat.slug}-${city.slug}`}
+                  to={`/${cat.slug}-${city.slug}`}
+                  className="text-xs text-primary-foreground/40 transition-colors hover:text-primary-foreground/70"
+                >
+                  {cat.name} em {city.name}
+                </Link>
+              ))}
+            </div>
+            {!showAllSearches && randomSeoLinks.length > 4 && (
+              <button onClick={() => setShowAllSearches(true)} className="mt-2 text-xs font-medium text-secondary hover:underline">
+                Ver mais buscas
+              </button>
+            )}
           </div>
-        </div>
+        )}
 
         <SponsorAd position="footer" layout="inline" className="mt-6 border-t border-primary-foreground/10 pt-6" />
 
