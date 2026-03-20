@@ -88,6 +88,7 @@ const App = () => (
             <Route path="/admin/faq" element={<AdminFaqPage />} />
             <Route path="/admin/metatags" element={<AdminMetaTagsPage />} />
             <Route path="/admin/destaques" element={<AdminHighlightsPage />} />
+            <Route path="/admin/comunidade" element={<AdminCommunityPage />} />
             <Route path="/admin/vagas" element={<AdminJobsPage />} />
             <Route path="/servico/:slug" element={<PopularServicePage />} />
             <Route path="/servico-detalhe/:id" element={<ServiceDetailPage />} />

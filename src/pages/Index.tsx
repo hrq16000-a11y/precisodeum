@@ -149,7 +149,7 @@ const Index = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <HeroBanner totalServices={totalServicesCount} />
+      <HeroBanner totalServices={totalServicesCount} totalJobs={totalJobsCount} />
       <HighlightsCarousel />
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
       <SponsorAd position="between-sections" />
