@@ -6,8 +6,10 @@
  * - Remove leading zeros
  * - Valid: 10-11 digits (DDD + number)
  * - Auto-fill: if WhatsApp is empty, copy from phone
- * - Links always use wa.me/{number}
+ * - Links always use wa.me/55{number}
  */
+
+const DEFAULT_MESSAGE = 'Olá, vim pelo site Preciso de Um.';
 
 /** Remove all non-digit characters and leading zeros */
 export const sanitizePhone = (raw: string): string =>
@@ -17,11 +19,22 @@ export const sanitizePhone = (raw: string): string =>
 export const isValidWhatsApp = (sanitized: string): boolean =>
   /^\d{10,11}$/.test(sanitized);
 
-/** Generate wa.me link with optional message */
+/** Format number for WhatsApp: ensure country code 55 */
+export const formatToWhatsApp = (phone: string): string => {
+  let cleaned = sanitizePhone(phone);
+  if (!cleaned) return '';
+  // If already starts with 55 and has 12-13 digits total, keep as-is
+  if (cleaned.startsWith('55') && cleaned.length >= 12) return cleaned;
+  // Add country code
+  return '55' + cleaned;
+};
+
+/** Generate wa.me link with optional message (message is ALWAYS preserved) */
 export const whatsappLink = (number: string, message?: string): string => {
-  const clean = sanitizePhone(number);
-  const base = `https://wa.me/${clean}`;
-  return message ? `${base}?text=${encodeURIComponent(message)}` : base;
+  const formatted = formatToWhatsApp(number);
+  if (!formatted) return '#';
+  const text = message || DEFAULT_MESSAGE;
+  return `https://wa.me/${formatted}?text=${encodeURIComponent(text)}`;
 };
 
 /** Format for display: (XX) XXXXX-XXXX or (XX) XXXX-XXXX */
