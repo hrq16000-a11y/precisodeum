@@ -41,7 +41,7 @@ const AdminPage = () => {
         supabase.from('reviews').select('id', { count: 'exact', head: true }),
         supabase.from('categories').select('id', { count: 'exact', head: true }),
         supabase.from('jobs').select('id', { count: 'exact', head: true }),
-        supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('approval_status', 'pending' as any),
+        (supabase.from('jobs').select('id', { count: 'exact', head: true }) as any).eq('approval_status', 'pending'),
         supabase.from('sponsors').select('impressions, clicks'),
       ]);
 
