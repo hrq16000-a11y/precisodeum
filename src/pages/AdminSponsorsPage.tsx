@@ -183,11 +183,15 @@ const AdminSponsorsPage = () => {
                 <Select value={form.position} onValueChange={(v) => setForm({ ...form, position: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="banner">Banner (entre seções)</SelectItem>
-                    <SelectItem value="card">Card (grid)</SelectItem>
+                    <SelectItem value="hero-top">Topo Premium (970×90)</SelectItem>
+                    <SelectItem value="between-sections">Entre Seções (728×90)</SelectItem>
+                    <SelectItem value="mid-content">Meio Conteúdo (728×90)</SelectItem>
+                    <SelectItem value="sidebar">Lateral Sticky (300×250)</SelectItem>
+                    <SelectItem value="native">Nativo em Listagens</SelectItem>
+                    <SelectItem value="showcase">Vitrine Empresas (250×250)</SelectItem>
+                    <SelectItem value="banner">Banner Geral</SelectItem>
+                    <SelectItem value="card">Card Grid</SelectItem>
                     <SelectItem value="featured">Destaque</SelectItem>
-                    <SelectItem value="sidebar">Sidebar (perfil profissional)</SelectItem>
-                    <SelectItem value="between-sections">Entre Seções (home)</SelectItem>
                     <SelectItem value="footer">Rodapé</SelectItem>
                   </SelectContent>
                 </Select>
