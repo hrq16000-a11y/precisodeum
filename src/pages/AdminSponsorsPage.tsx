@@ -9,11 +9,16 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Pencil, Trash2, ExternalLink } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Plus, Pencil, Trash2, ExternalLink, CalendarIcon, Eye, MousePointerClick } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import ImageUploadField from '@/components/ImageUploadField';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Sponsor {
   id: string;
@@ -24,9 +29,13 @@ interface Sponsor {
   active: boolean;
   display_order: number;
   created_at: string;
+  start_date: string | null;
+  end_date: string | null;
+  impressions: number;
+  clicks: number;
 }
 
-const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0 };
+const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0, start_date: '' as string, end_date: '' as string };
 
 const AdminSponsorsPage = () => {
   const { user, loading: authLoading } = useAuth();
@@ -59,13 +68,15 @@ const AdminSponsorsPage = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const payload: any = {
         title: form.title,
         image_url: form.image_url || null,
         link_url: form.link_url || null,
         position: form.position,
         active: form.active,
         display_order: form.display_order,
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
       };
       if (editingId) {
         const { error } = await supabase.from('sponsors').update(payload).eq('id', editingId);
@@ -104,7 +115,16 @@ const AdminSponsorsPage = () => {
 
   const openEdit = (s: Sponsor) => {
     setEditingId(s.id);
-    setForm({ title: s.title, image_url: s.image_url || '', link_url: s.link_url || '', position: s.position, active: s.active, display_order: s.display_order });
+    setForm({
+      title: s.title,
+      image_url: s.image_url || '',
+      link_url: s.link_url || '',
+      position: s.position,
+      active: s.active,
+      display_order: s.display_order,
+      start_date: s.start_date || '',
+      end_date: s.end_date || '',
+    });
     setDialogOpen(true);
   };
 
@@ -123,7 +143,7 @@ const AdminSponsorsPage = () => {
               <Plus className="h-4 w-4" /> Novo Patrocinador
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Editar Patrocinador' : 'Novo Patrocinador'}</DialogTitle>
             </DialogHeader>
@@ -133,8 +153,13 @@ const AdminSponsorsPage = () => {
                 <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
               </div>
               <div>
-                <Label>URL da Imagem</Label>
-                <Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." />
+                <Label>Imagem</Label>
+                <ImageUploadField
+                  value={form.image_url}
+                  onChange={(url) => setForm({ ...form, image_url: url })}
+                  bucket="service-images"
+                  folder="sponsors"
+                />
               </div>
               <div>
                 <Label>URL do Link</Label>
@@ -153,6 +178,46 @@ const AdminSponsorsPage = () => {
                     <SelectItem value="footer">Rodapé</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Data Início</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !form.start_date && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {form.start_date ? format(new Date(form.start_date), 'dd/MM/yyyy') : 'Selecionar'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={form.start_date ? new Date(form.start_date) : undefined}
+                        onSelect={(d) => setForm({ ...form, start_date: d ? format(d, 'yyyy-MM-dd') : '' })}
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <Label>Data Término</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !form.end_date && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {form.end_date ? format(new Date(form.end_date), 'dd/MM/yyyy') : 'Selecionar'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={form.end_date ? new Date(form.end_date) : undefined}
+                        onSelect={(d) => setForm({ ...form, end_date: d ? format(d, 'yyyy-MM-dd') : '' })}
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
               <div>
                 <Label>Ordem de exibição</Label>
@@ -182,36 +247,51 @@ const AdminSponsorsPage = () => {
               <TableRow>
                 <TableHead>Título</TableHead>
                 <TableHead>Posição</TableHead>
-                <TableHead>Ordem</TableHead>
+                <TableHead>Período</TableHead>
+                <TableHead>Métricas</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sponsors.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {s.image_url && <img src={s.image_url} alt="" className="h-8 w-8 rounded object-cover" />}
-                      <span className="font-medium text-foreground">{s.title}</span>
-                      {s.link_url && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{positionLabels[s.position] || s.position}</TableCell>
-                  <TableCell className="text-muted-foreground">{s.display_order}</TableCell>
-                  <TableCell>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.active ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
-                      {s.active ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {sponsors.map((s) => {
+                const expired = s.end_date && new Date(s.end_date) < new Date();
+                return (
+                  <TableRow key={s.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {s.image_url && <img src={s.image_url} alt="" className="h-8 w-8 rounded object-cover" />}
+                        <span className="font-medium text-foreground">{s.title}</span>
+                        {s.link_url && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{positionLabels[s.position] || s.position}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {s.start_date ? format(new Date(s.start_date), 'dd/MM/yy') : '—'}
+                      {' → '}
+                      {s.end_date ? format(new Date(s.end_date), 'dd/MM/yy') : '∞'}
+                      {expired && <span className="ml-1 text-destructive font-medium">(expirado)</span>}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> {s.impressions}</span>
+                        <span className="flex items-center gap-1"><MousePointerClick className="h-3 w-3" /> {s.clicks}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.active && !expired ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
+                        {expired ? 'Expirado' : s.active ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}
