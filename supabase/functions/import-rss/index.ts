@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,7 +31,6 @@ function parseRSSItems(xml: string): Array<{ title: string; link: string; descri
   return items;
 }
 
-// Also handle Atom feeds
 function parseAtomItems(xml: string): Array<{ title: string; link: string; description: string; pubDate?: string }> {
   const items: Array<{ title: string; link: string; description: string; pubDate?: string }> = [];
   const entryRegex = /<entry>([\s\S]*?)<\/entry>/gi;
@@ -53,18 +53,74 @@ function parseAtomItems(xml: string): Array<{ title: string; link: string; descr
   return items;
 }
 
+/** Reject private/internal IPs and non-HTTPS URLs */
+function isUrlSafe(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    if (parsed.protocol !== 'https:') return false;
+    const hostname = parsed.hostname;
+    // Block private/internal ranges
+    if (
+      hostname === 'localhost' ||
+      hostname.startsWith('127.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('169.254.') ||
+      hostname.endsWith('.internal') ||
+      hostname.endsWith('.local') ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+    ) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    // --- Auth: require admin ---
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: caller } } = await callerClient.auth.getUser();
+    if (!caller) {
+      return new Response(JSON.stringify({ error: 'Unauthenticated' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { data: isAdmin } = await callerClient.rpc('has_role', { _user_id: caller.id, _role: 'admin' });
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { feed_url, max_items = 10 } = await req.json();
     
     if (!feed_url) {
       return new Response(JSON.stringify({ error: 'feed_url is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // --- SSRF protection ---
+    if (!isUrlSafe(feed_url)) {
+      return new Response(JSON.stringify({ error: 'URL not allowed. Only HTTPS public URLs are permitted.' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -74,8 +130,7 @@ serve(async (req) => {
 
     if (!resp.ok) {
       return new Response(JSON.stringify({ error: `Failed to fetch feed: ${resp.status}` }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -86,11 +141,7 @@ serve(async (req) => {
       items = parseAtomItems(xml);
     }
 
-    const limited = items.slice(0, max_items);
-
-    // Import into blog_posts
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const limited = items.slice(0, Math.min(max_items, 50));
 
     let imported = 0;
     let skipped = 0;
@@ -98,7 +149,6 @@ serve(async (req) => {
     for (const item of limited) {
       const slug = autoSlug(item.title).slice(0, 100);
       
-      // Check if slug already exists
       const checkResp = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?slug=eq.${encodeURIComponent(slug)}&select=id`, {
         headers: {
           'apikey': SUPABASE_SERVICE_ROLE_KEY,
@@ -111,7 +161,6 @@ serve(async (req) => {
         continue;
       }
 
-      // Strip HTML from description
       const cleanDesc = item.description.replace(/<[^>]*>/g, '').slice(0, 300);
 
       const insertResp = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts`, {
@@ -149,7 +198,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+    return new Response(JSON.stringify({ error: 'Internal error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
