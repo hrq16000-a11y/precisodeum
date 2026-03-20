@@ -235,7 +235,7 @@ const AdminUsersPage = () => {
 
       {totalPages > 1 && (
         <div className="mt-4">
-          <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
         </div>
       )}
     </AdminLayout>
