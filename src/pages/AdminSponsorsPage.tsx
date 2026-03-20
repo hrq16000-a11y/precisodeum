@@ -130,7 +130,18 @@ const AdminSponsorsPage = () => {
     setDialogOpen(true);
   };
 
-  const positionLabels: Record<string, string> = { banner: 'Banner', card: 'Card', featured: 'Destaque', sidebar: 'Sidebar', 'between-sections': 'Entre Seções', footer: 'Rodapé' };
+  const positionLabels: Record<string, string> = {
+    'hero-top': 'Topo (970×90)',
+    'between-sections': 'Entre Seções (728×90)',
+    'mid-content': 'Meio Conteúdo (728×90)',
+    sidebar: 'Lateral (300×250)',
+    native: 'Nativo (cards)',
+    showcase: 'Vitrine (250×250)',
+    banner: 'Banner',
+    card: 'Card',
+    featured: 'Destaque',
+    footer: 'Rodapé',
+  };
 
   return (
     <AdminLayout>
@@ -172,11 +183,15 @@ const AdminSponsorsPage = () => {
                 <Select value={form.position} onValueChange={(v) => setForm({ ...form, position: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="banner">Banner (entre seções)</SelectItem>
-                    <SelectItem value="card">Card (grid)</SelectItem>
+                    <SelectItem value="hero-top">Topo Premium (970×90)</SelectItem>
+                    <SelectItem value="between-sections">Entre Seções (728×90)</SelectItem>
+                    <SelectItem value="mid-content">Meio Conteúdo (728×90)</SelectItem>
+                    <SelectItem value="sidebar">Lateral Sticky (300×250)</SelectItem>
+                    <SelectItem value="native">Nativo em Listagens</SelectItem>
+                    <SelectItem value="showcase">Vitrine Empresas (250×250)</SelectItem>
+                    <SelectItem value="banner">Banner Geral</SelectItem>
+                    <SelectItem value="card">Card Grid</SelectItem>
                     <SelectItem value="featured">Destaque</SelectItem>
-                    <SelectItem value="sidebar">Sidebar (perfil profissional)</SelectItem>
-                    <SelectItem value="between-sections">Entre Seções (home)</SelectItem>
                     <SelectItem value="footer">Rodapé</SelectItem>
                   </SelectContent>
                 </Select>

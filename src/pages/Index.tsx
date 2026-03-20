@@ -1,23 +1,13 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight, Shield, Users, Zap, ChevronDown, Clock, MapPin, Tag, DollarSign } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import SearchBar from '@/components/SearchBar';
-import ProviderCard from '@/components/ProviderCard';
-import StarRating from '@/components/StarRating';
-import { useFeatureEnabled } from '@/hooks/useSiteSettings';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { testimonials, howItWorks } from '@/data/mockData';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import heroImage from '@/assets/hero-image.jpg';
 
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import HeroBanner from '@/components/home/HeroBanner';
 import CategoriesGrid from '@/components/home/CategoriesGrid';
 import FeaturedProviders from '@/components/home/FeaturedProviders';
@@ -30,10 +20,12 @@ import HowItWorksSection from '@/components/home/HowItWorksSection';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
 import FaqSection from '@/components/home/FaqSection';
 import PopularSearches from '@/components/home/PopularSearches';
-import SponsorAd from '@/components/SponsorAd';
 import HighlightsCarousel from '@/components/home/HighlightsCarousel';
 import FeaturedJobs from '@/components/home/FeaturedJobs';
 import FloatingWhatsApp from '@/components/FloatingWhatsApp';
+
+import AdBanner from '@/components/ads/AdBanner';
+import AdShowcase from '@/components/ads/AdShowcase';
 
 const Index = () => {
   useSeoHead({
@@ -64,9 +56,7 @@ const Index = () => {
   const { data: totalServicesCount = 0 } = useQuery({
     queryKey: ['total-services-count'],
     queryFn: async () => {
-      const { count } = await supabase
-        .from('services')
-        .select('*', { count: 'exact', head: true });
+      const { count } = await supabase.from('services').select('*', { count: 'exact', head: true });
       return count || 0;
     },
   });
@@ -74,15 +64,11 @@ const Index = () => {
   const { data: totalJobsCount = 0 } = useQuery({
     queryKey: ['total-jobs-count'],
     queryFn: async () => {
-      const { count } = await supabase
-        .from('jobs')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
+      const { count } = await supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'active');
       return count || 0;
     },
   });
 
-  // Cities with active services only
   const { data: topCities = [] } = useQuery({
     queryKey: ['top-cities-with-services'],
     queryFn: async () => {
@@ -93,7 +79,6 @@ const Index = () => {
       if (!providers) return [];
       const cityNames = [...new Set(providers.map((p: any) => p.city).filter(Boolean))];
       const { data: cities } = await supabase.from('cities').select('name, slug, state').in('name', cityNames);
-      // Shuffle and return 4-6
       const shuffled = [...(cities || [])].sort(() => Math.random() - 0.5);
       return shuffled.slice(0, 6);
     },
@@ -116,33 +101,18 @@ const Index = () => {
         .order('created_at', { ascending: false })
         .limit(6);
       if (!data || data.length === 0) return [];
-
       const providerIds = [...new Set(data.map((s: any) => s.provider_id))];
-      const { data: providers } = await supabase
-        .from('providers')
-        .select('id, city, state')
-        .in('id', providerIds);
-
+      const { data: providers } = await supabase.from('providers').select('id, city, state').in('id', providerIds);
       const providerMap: Record<string, any> = {};
-      (providers || []).forEach((p: any) => {
-        providerMap[p.id] = p;
-      });
-
-      return data.map((s: any) => ({
-        ...s,
-        provider: providerMap[s.provider_id] || null,
-      }));
+      (providers || []).forEach((p: any) => { providerMap[p.id] = p; });
+      return data.map((s: any) => ({ ...s, provider: providerMap[s.provider_id] || null }));
     },
   });
 
   const { data: sponsors = [] } = useQuery({
     queryKey: ['sponsors-home'],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('sponsors')
-        .select('*')
-        .eq('active', true)
-        .order('display_order');
+      const { data } = await supabase.from('sponsors').select('*').eq('active', true).order('display_order');
       return data || [];
     },
   });
@@ -151,18 +121,33 @@ const Index = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <HeroBanner totalServices={totalServicesCount} totalJobs={totalJobsCount} />
+
+      {/* TOPO: 970x90 premium banner below hero */}
+      <AdBanner position="hero-top" className="container mx-auto mt-4 px-4" aspectRatio="970/90" />
+
       <HighlightsCarousel />
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
-      <SponsorAd position="between-sections" />
+
+      {/* 728x90 between categories and featured */}
+      <AdBanner position="between-sections" className="container mx-auto px-4" aspectRatio="728/90" />
+
       {featuredEnabled && (
         <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
       )}
       <PopularServices />
       {recentServices.length > 0 && <RecentServices services={recentServices} />}
+
+      {/* 728x90 between services and jobs */}
+      <AdBanner position="mid-content" className="container mx-auto px-4" aspectRatio="728/90" />
+
       <FeaturedJobs />
-      <SponsorAd position="between-sections" />
+
       {topCities.length > 0 && <CitiesSection cities={topCities} />}
       <CtaSection />
+
+      {/* Showcase grid: "Empresas em Destaque" — 250x250 cards */}
+      <AdShowcase />
+
       <SponsorsSection sponsors={sponsors} />
       <HowItWorksSection />
       {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
