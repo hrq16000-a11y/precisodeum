@@ -149,7 +149,7 @@ const ServiceDetailPage = () => {
 
                 <div className="mt-4 space-y-2">
                   <Button variant="accent" className="w-full" asChild>
-                    <a href={`https://wa.me/${svc.provider?.whatsapp || svc.whatsapp}`} target="_blank" rel="noopener noreferrer">
+                    <a href={`https://wa.me/${(svc.provider?.whatsapp || svc.whatsapp || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="h-4 w-4" /> WhatsApp
                     </a>
                   </Button>
