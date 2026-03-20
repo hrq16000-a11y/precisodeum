@@ -118,9 +118,9 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Contato */}
+          {/* Suporte */}
           <div>
-            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Contato</h4>
+            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Suporte</h4>
             <ul className="space-y-3 text-sm text-primary-foreground/70">
               <li>
                 <a

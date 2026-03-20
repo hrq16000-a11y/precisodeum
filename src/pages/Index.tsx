@@ -32,6 +32,7 @@ import FaqSection from '@/components/home/FaqSection';
 import PopularSearches from '@/components/home/PopularSearches';
 import SponsorAd from '@/components/SponsorAd';
 import HighlightsCarousel from '@/components/home/HighlightsCarousel';
+import FeaturedJobs from '@/components/home/FeaturedJobs';
 
 const Index = () => {
   useSeoHead({

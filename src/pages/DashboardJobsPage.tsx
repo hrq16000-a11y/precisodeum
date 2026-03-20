@@ -5,14 +5,11 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Eye, ExternalLink } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Copy } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 const OPPORTUNITY_TYPES = [
   { value: 'servico', label: 'Serviço' },
@@ -20,8 +17,11 @@ const OPPORTUNITY_TYPES = [
   { value: 'emprego', label: 'Emprego' },
 ];
 
+const sanitizeWhatsapp = (val: string) => val.replace(/\D/g, '').replace(/^0+/, '');
+
 const emptyForm = {
-  title: '', category_id: '', opportunity_type: 'servico', description: '',
+  title: '', subtitle: '', category_id: '', opportunity_type: 'servico',
+  description: '', activities: '', requirements: '', schedule: '', salary: '', benefits: '',
   city: '', state: '', neighborhood: '', contact_name: '', contact_phone: '',
   whatsapp: '', deadline: '', cover_image_url: '', status: 'active',
 };
@@ -34,6 +34,8 @@ const DashboardJobsPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [mode, setMode] = useState<'structured' | 'simple'>('structured');
+  const [simpleText, setSimpleText] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/login');
@@ -44,7 +46,7 @@ const DashboardJobsPage = () => {
     queryFn: async () => {
       if (!user) return [];
       const { data } = await supabase
-        .from('jobs' as any)
+        .from('jobs')
         .select('*, categories(name, icon)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -62,7 +64,8 @@ const DashboardJobsPage = () => {
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: name === 'whatsapp' ? sanitizeWhatsapp(value) : value }));
   };
 
   const generateSlug = (title: string, city: string) => {
@@ -72,31 +75,43 @@ const DashboardJobsPage = () => {
     return `${base}-${Date.now().toString(36)}`;
   };
 
+  const parseSimpleText = (text: string) => {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const title = lines[0] || '';
+    const cityMatch = text.match(/(?:local|cidade|localização)[:\s]*([^\n]+)/i);
+    const salaryMatch = text.match(/(?:salário|salario|remuneração)[:\s]*([^\n]+)/i);
+    const whatsappMatch = text.match(/(?:whatsapp|zap|wpp|contato)[:\s]*([\d\s()+-]+)/i);
+    setForm(prev => ({
+      ...prev,
+      title: title.replace(/^vaga[:\s]*/i, ''),
+      description: text,
+      city: cityMatch?.[1]?.trim() || prev.city,
+      salary: salaryMatch?.[1]?.trim() || prev.salary,
+      whatsapp: whatsappMatch ? sanitizeWhatsapp(whatsappMatch[1]) : prev.whatsapp,
+    }));
+  };
+
   const handleSave = async () => {
     if (!user) return;
     if (!form.title.trim()) { toast.error('Título é obrigatório'); return; }
-    if (!form.description.trim()) { toast.error('Descrição é obrigatória'); return; }
+    if (!form.whatsapp.trim()) { toast.error('WhatsApp é obrigatório'); return; }
 
     setSaving(true);
     const slug = generateSlug(form.title, form.city);
-    const payload = {
+    const payload: any = {
       ...form,
       user_id: user.id,
       category_id: form.category_id || null,
       slug: editingId ? undefined : slug,
     };
-    if (editingId) delete (payload as any).slug;
+    if (editingId) { delete payload.slug; delete payload.user_id; }
 
-    if (editingId) {
-      const { user_id, ...updatePayload } = payload;
-      const { error } = await supabase.from('jobs' as any).update(updatePayload).eq('id', editingId);
-      if (error) toast.error('Erro ao atualizar vaga');
-      else toast.success('Vaga atualizada!');
-    } else {
-      const { error } = await supabase.from('jobs' as any).insert(payload);
-      if (error) toast.error('Erro ao criar vaga');
-      else toast.success('Vaga publicada!');
-    }
+    const { error } = editingId
+      ? await supabase.from('jobs').update(payload).eq('id', editingId)
+      : await supabase.from('jobs').insert(payload);
+
+    if (error) toast.error('Erro ao salvar vaga');
+    else toast.success(editingId ? 'Vaga atualizada!' : 'Vaga publicada!');
 
     setSaving(false);
     setDialogOpen(false);
@@ -107,27 +122,24 @@ const DashboardJobsPage = () => {
 
   const handleEdit = (job: any) => {
     setForm({
-      title: job.title || '',
-      category_id: job.category_id || '',
-      opportunity_type: job.opportunity_type || 'servico',
-      description: job.description || '',
-      city: job.city || '',
-      state: job.state || '',
-      neighborhood: job.neighborhood || '',
-      contact_name: job.contact_name || '',
-      contact_phone: job.contact_phone || '',
-      whatsapp: job.whatsapp || '',
-      deadline: job.deadline || '',
-      cover_image_url: job.cover_image_url || '',
-      status: job.status || 'active',
+      title: job.title || '', subtitle: job.subtitle || '',
+      category_id: job.category_id || '', opportunity_type: job.opportunity_type || 'servico',
+      description: job.description || '', activities: job.activities || '',
+      requirements: job.requirements || '', schedule: job.schedule || '',
+      salary: job.salary || '', benefits: job.benefits || '',
+      city: job.city || '', state: job.state || '', neighborhood: job.neighborhood || '',
+      contact_name: job.contact_name || '', contact_phone: job.contact_phone || '',
+      whatsapp: job.whatsapp || '', deadline: job.deadline || '',
+      cover_image_url: job.cover_image_url || '', status: job.status || 'active',
     });
     setEditingId(job.id);
+    setMode('structured');
     setDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Deseja excluir esta vaga?')) return;
-    await supabase.from('jobs' as any).delete().eq('id', id);
+    await supabase.from('jobs').delete().eq('id', id);
     toast.success('Vaga excluída');
     queryClient.invalidateQueries({ queryKey: ['my-jobs'] });
   };
@@ -135,8 +147,18 @@ const DashboardJobsPage = () => {
   const openNew = () => {
     setForm(emptyForm);
     setEditingId(null);
+    setSimpleText('');
     setDialogOpen(true);
   };
+
+  const copyUrl = (job: any) => {
+    const url = `${SITE_BASE_URL}/vaga/${job.slug || job.id}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Link copiado!');
+  };
+
+  const inputClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground";
+  const labelClass = "mb-1 block text-sm font-medium text-foreground";
 
   return (
     <DashboardLayout>
@@ -171,6 +193,9 @@ const DashboardJobsPage = () => {
                 </p>
               </div>
               <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={() => copyUrl(job)} title="Copiar link">
+                  <Copy className="h-4 w-4" />
+                </Button>
                 <Button variant="ghost" size="icon" onClick={() => window.open(`/vaga/${job.slug || job.id}`, '_blank')}>
                   <ExternalLink className="h-4 w-4" />
                 </Button>
@@ -187,98 +212,150 @@ const DashboardJobsPage = () => {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editingId ? 'Editar Vaga' : 'Nova Vaga'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Título *</label>
-              <input name="title" value={form.title} onChange={handleChange} required
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" placeholder="Ex: Preciso de eletricista para instalação" />
+
+          {!editingId && (
+            <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="mt-2">
+              <TabsList className="w-full">
+                <TabsTrigger value="structured" className="flex-1">Modo Estruturado</TabsTrigger>
+                <TabsTrigger value="simple" className="flex-1">Modo Simples (colar texto)</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="simple" className="mt-4 space-y-4">
+                <div>
+                  <label className={labelClass}>Cole aqui o texto completo da vaga</label>
+                  <textarea
+                    value={simpleText}
+                    onChange={(e) => setSimpleText(e.target.value)}
+                    rows={10}
+                    className={inputClass}
+                    placeholder={"VAGA: Eletricista Residencial\nLocal: Curitiba - PR\nSalário: R$ 2.500\nWhatsApp: 41 99745-2053\n\nDescrição completa da vaga aqui..."}
+                  />
+                </div>
+                <Button variant="outline" onClick={() => { parseSimpleText(simpleText); setMode('structured'); }}>
+                  Extrair dados e revisar →
+                </Button>
+              </TabsContent>
+
+              <TabsContent value="structured" className="mt-0" />
+            </Tabs>
+          )}
+
+          {(mode === 'structured' || editingId) && (
+            <div className="space-y-4 mt-4">
+              <div>
+                <label className={labelClass}>Título *</label>
+                <input name="title" value={form.title} onChange={handleChange} required className={inputClass}
+                  placeholder="Ex: Preciso de eletricista para instalação" />
+              </div>
+              <div>
+                <label className={labelClass}>Subtítulo</label>
+                <input name="subtitle" value={form.subtitle} onChange={handleChange} className={inputClass}
+                  placeholder="Ex: Empresa de engenharia contrata" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Categoria</label>
+                  <select name="category_id" value={form.category_id} onChange={handleChange} className={inputClass}>
+                    <option value="">Selecione...</option>
+                    {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Tipo</label>
+                  <select name="opportunity_type" value={form.opportunity_type} onChange={handleChange} className={inputClass}>
+                    {OPPORTUNITY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Descrição geral</label>
+                <textarea name="description" value={form.description} onChange={handleChange} rows={3} className={inputClass}
+                  placeholder="Descreva a oportunidade..." />
+              </div>
+              <div>
+                <label className={labelClass}>🔧 Atividades</label>
+                <textarea name="activities" value={form.activities} onChange={handleChange} rows={3} className={inputClass}
+                  placeholder="Uma atividade por linha&#10;- Instalação elétrica residencial&#10;- Manutenção preventiva" />
+              </div>
+              <div>
+                <label className={labelClass}>✅ Requisitos</label>
+                <textarea name="requirements" value={form.requirements} onChange={handleChange} rows={3} className={inputClass}
+                  placeholder="Um requisito por linha&#10;- Experiência mínima de 2 anos&#10;- NR-10" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>🕘 Horário</label>
+                  <input name="schedule" value={form.schedule} onChange={handleChange} className={inputClass}
+                    placeholder="Ex: Segunda a sexta, 8h-17h" />
+                </div>
+                <div>
+                  <label className={labelClass}>💰 Salário</label>
+                  <input name="salary" value={form.salary} onChange={handleChange} className={inputClass}
+                    placeholder="Ex: R$ 2.500 ou A combinar" />
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>🎁 Benefícios</label>
+                <textarea name="benefits" value={form.benefits} onChange={handleChange} rows={2} className={inputClass}
+                  placeholder="Um benefício por linha&#10;- Vale transporte&#10;- Alimentação" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className={labelClass}>Cidade</label>
+                  <input name="city" value={form.city} onChange={handleChange} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Estado</label>
+                  <input name="state" value={form.state} onChange={handleChange} maxLength={2} className={inputClass} placeholder="PR" />
+                </div>
+                <div>
+                  <label className={labelClass}>Bairro</label>
+                  <input name="neighborhood" value={form.neighborhood} onChange={handleChange} className={inputClass} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Nome de contato</label>
+                  <input name="contact_name" value={form.contact_name} onChange={handleChange} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Telefone</label>
+                  <input name="contact_phone" value={form.contact_phone} onChange={handleChange} className={inputClass} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>WhatsApp *</label>
+                  <input name="whatsapp" value={form.whatsapp} onChange={handleChange} className={inputClass}
+                    placeholder="41999999999" />
+                </div>
+                <div>
+                  <label className={labelClass}>Prazo (expiração)</label>
+                  <input name="deadline" type="date" value={form.deadline} onChange={handleChange} className={inputClass} />
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>URL da imagem de capa</label>
+                <input name="cover_image_url" value={form.cover_image_url} onChange={handleChange} className={inputClass} placeholder="https://..." />
+              </div>
+              {editingId && (
+                <div>
+                  <label className={labelClass}>Status</label>
+                  <select name="status" value={form.status} onChange={handleChange} className={inputClass}>
+                    <option value="active">Ativa</option>
+                    <option value="inactive">Inativa</option>
+                  </select>
+                </div>
+              )}
+              <Button variant="accent" className="w-full" onClick={handleSave} disabled={saving}>
+                {saving ? 'Salvando...' : editingId ? 'Atualizar Vaga' : 'Publicar Vaga'}
+              </Button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Categoria</label>
-                <select name="category_id" value={form.category_id} onChange={handleChange}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
-                  <option value="">Selecione...</option>
-                  {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Tipo</label>
-                <select name="opportunity_type" value={form.opportunity_type} onChange={handleChange}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
-                  {OPPORTUNITY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Descrição *</label>
-              <textarea name="description" value={form.description} onChange={handleChange} rows={4}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" placeholder="Descreva a oportunidade com detalhes..." />
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Cidade</label>
-                <input name="city" value={form.city} onChange={handleChange}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Estado</label>
-                <input name="state" value={form.state} onChange={handleChange} maxLength={2}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" placeholder="SP" />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Bairro</label>
-                <input name="neighborhood" value={form.neighborhood} onChange={handleChange}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Nome de contato</label>
-                <input name="contact_name" value={form.contact_name} onChange={handleChange}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Telefone</label>
-                <input name="contact_phone" value={form.contact_phone} onChange={handleChange}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
-                <input name="whatsapp" value={form.whatsapp} onChange={handleChange}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" placeholder="11999999999" />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Prazo</label>
-                <input name="deadline" value={form.deadline} onChange={handleChange}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" placeholder="Ex: 30/04/2026" />
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">URL da imagem de capa</label>
-              <input name="cover_image_url" value={form.cover_image_url} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" placeholder="https://..." />
-            </div>
-            {editingId && (
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Status</label>
-                <select name="status" value={form.status} onChange={handleChange}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
-                  <option value="active">Ativa</option>
-                  <option value="inactive">Inativa</option>
-                </select>
-              </div>
-            )}
-            <Button variant="accent" className="w-full" onClick={handleSave} disabled={saving}>
-              {saving ? 'Salvando...' : editingId ? 'Atualizar Vaga' : 'Publicar Vaga'}
-            </Button>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </DashboardLayout>
