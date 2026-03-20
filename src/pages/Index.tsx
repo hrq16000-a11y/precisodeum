@@ -142,6 +142,7 @@ const Index = () => {
       <AdBanner position="mid-content" className="container mx-auto px-4" aspectRatio="728/90" />
 
       <FeaturedJobs />
+      <BlogHighlight />
 
       {topCities.length > 0 && <CitiesSection cities={topCities} />}
       <CtaSection />
