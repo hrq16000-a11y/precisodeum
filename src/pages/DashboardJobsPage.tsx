@@ -67,7 +67,7 @@ const DashboardJobsPage = () => {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const profileType = (profile as any)?.profile_type || profile?.role || 'client';
-  const canPostJobs = profileType !== 'client';
+  const canPostJobs = profileType === 'provider' || profileType === 'rh';
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/login');

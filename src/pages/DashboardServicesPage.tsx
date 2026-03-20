@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import ServiceImageUpload from '@/components/ServiceImageUpload';
 
 const DashboardServicesPage = () => {
-  const { user, provider, loading, refetchProfile } = useAuth();
+  const { user, provider, profile, loading, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const [services, setServices] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -110,7 +110,14 @@ const DashboardServicesPage = () => {
     return data.id;
   };
 
+  const profileType = (profile as any)?.profile_type || (profile as any)?.role || 'client';
+  const isRH = profileType === 'rh';
+
   const handleSave = async () => {
+    if (isRH) {
+      toast.error('Agências RH não podem cadastrar serviços. Use a área de Vagas.');
+      return;
+    }
     if (!form.service_name.trim()) {
       toast.error('Nome do serviço é obrigatório');
       return;
