@@ -17,8 +17,22 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import ImageUploadField from '@/components/ImageUploadField';
+import SponsorImage from '@/components/SponsorImage';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+
+const sizeHints: Record<string, string> = {
+  'hero-top': 'Recomendado: 970×90 px (horizontal)',
+  'between-sections': 'Recomendado: 728×90 px (leaderboard)',
+  'mid-content': 'Recomendado: 728×90 px (leaderboard)',
+  sidebar: 'Recomendado: 300×250 px (quadrado)',
+  native: 'Recomendado: 600×400 px (card)',
+  showcase: 'Recomendado: 600×450 px (4:3)',
+  banner: 'Recomendado: 1200×300 px (horizontal)',
+  card: 'Recomendado: 600×400 px (3:2)',
+  featured: 'Recomendado: 800×450 px (16:9)',
+  footer: 'Recomendado: 728×90 px (leaderboard)',
+};
 
 interface Sponsor {
   id: string;
