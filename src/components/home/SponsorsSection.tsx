@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import SponsorImage from '@/components/SponsorImage';
 
 interface Sponsor {
   id: string;
@@ -43,12 +44,11 @@ const SponsorsSection = ({ sponsors }: Props) => {
               className="group overflow-hidden rounded-2xl border border-border shadow-card transition-all hover:shadow-lg hover:scale-[1.02]"
             >
               {sponsor.image_url ? (
-                <img
+                <SponsorImage
                   src={sponsor.image_url}
                   alt={sponsor.title}
-                  className="w-full object-cover object-center transition-transform group-hover:scale-105"
-                  style={{ aspectRatio: '16/9', minHeight: '120px' }}
-                  loading="lazy"
+                  forceAspectRatio="16/9"
+                  containerClassName="rounded-2xl"
                 />
               ) : (
                 <div className="flex items-center justify-center bg-muted/20 p-6" style={{ aspectRatio: '16/9' }}>
