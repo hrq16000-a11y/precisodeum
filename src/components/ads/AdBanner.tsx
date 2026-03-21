@@ -2,6 +2,7 @@ import { useSponsorsByPosition } from '@/components/SponsorAd';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
+import SponsorImage from '@/components/SponsorImage';
 
 interface AdBannerProps {
   position: string;
@@ -46,7 +47,7 @@ const AdBanner = ({ position, className = '', maxWidth, aspectRatio, sticky = fa
   return (
     <div className={`${wrapperClass} ${className}`} style={{ maxWidth: maxWidth ? `${maxWidth}px` : undefined }}>
       <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/10 shadow-card">
-        <span className="absolute left-2 top-1.5 z-10 rounded-md bg-background/70 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-muted-foreground/60 backdrop-blur-sm">
+        <span className="absolute left-2 top-1.5 z-20 rounded-md bg-background/70 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-muted-foreground/60 backdrop-blur-sm">
           Anúncio
         </span>
         <a
@@ -57,12 +58,10 @@ const AdBanner = ({ position, className = '', maxWidth, aspectRatio, sticky = fa
           className="block transition-opacity hover:opacity-95"
         >
           {current.image_url ? (
-            <img
+            <SponsorImage
               src={current.image_url}
               alt={current.title}
-              className="w-full object-cover object-center"
-              style={{ aspectRatio: isMobile ? '16/5' : (aspectRatio || 'auto'), minHeight: isMobile ? '60px' : undefined }}
-              loading="lazy"
+              forceAspectRatio={isMobile ? '16/5' : (aspectRatio || undefined)}
             />
           ) : (
             <div
@@ -74,7 +73,7 @@ const AdBanner = ({ position, className = '', maxWidth, aspectRatio, sticky = fa
           )}
         </a>
         {sponsors.length > 1 && (
-          <div className="absolute bottom-1.5 right-2 flex gap-0.5">
+          <div className="absolute bottom-1.5 right-2 z-20 flex gap-0.5">
             {sponsors.map((_, i) => (
               <div key={i} className={`h-1 w-3 rounded-full transition-colors ${i === idx ? 'bg-accent' : 'bg-muted-foreground/15'}`} />
             ))}

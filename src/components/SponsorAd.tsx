@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useRef, useState, useMemo } from 'react';
+import SponsorImage from '@/components/SponsorImage';
 
 interface Sponsor {
   id: string;
@@ -118,7 +119,7 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
           >
             <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
             {s.image_url && (
-              <img src={s.image_url} alt={s.title} className="mt-2 w-full rounded-lg object-cover" loading="lazy" />
+              <SponsorImage src={s.image_url} alt={s.title} containerClassName="mt-2 rounded-lg" />
             )}
             <p className="mt-2 text-xs font-medium text-foreground">{s.title}</p>
           </a>
@@ -167,7 +168,7 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
             title={current.title}
           >
             {current.image_url ? (
-              <img src={current.image_url} alt={current.title} className="mx-auto h-16 max-w-[300px] rounded-lg object-contain" loading="lazy" />
+              <SponsorImage src={current.image_url} alt={current.title} containerClassName="mx-auto max-w-[300px] rounded-lg" />
             ) : (
               <span className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground">{current.title}</span>
             )}
