@@ -187,6 +187,13 @@ const AdminSponsorsPage = () => {
                   bucket="service-images"
                   folder="sponsors"
                 />
+                <p className="mt-1 text-xs text-muted-foreground">{sizeHints[form.position] || 'Envie a imagem do banner'}</p>
+                {form.image_url && (
+                  <div className="mt-2 rounded-lg border border-border overflow-hidden">
+                    <p className="px-2 py-1 text-[10px] font-medium text-muted-foreground bg-muted/30">Pré-visualização</p>
+                    <SponsorImage src={form.image_url} alt="Preview" containerClassName="max-h-48" />
+                  </div>
+                )}
               </div>
               <div>
                 <Label>URL do Link</Label>
