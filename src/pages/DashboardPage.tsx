@@ -300,14 +300,27 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Onboarding guide - always visible until completed */}
-      {!allStepsDone && (
-        <div className="mt-6 rounded-xl border border-accent/30 bg-accent/5 p-4 sm:p-6">
-          <h2 className="font-display text-lg font-bold text-foreground">🚀 Como funciona a plataforma</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Siga os passos abaixo para começar a receber clientes. As instruções permanecem visíveis até que tudo esteja concluído.
-          </p>
+      {/* Onboarding guide - always visible, collapsible */}
+      <div className="mt-6 rounded-xl border border-accent/30 bg-accent/5 p-4 sm:p-6">
+        <button
+          onClick={() => setGuideOpen(!guideOpen)}
+          className="flex w-full items-center justify-between text-left"
+        >
+          <div>
+            <h2 className="font-display text-lg font-bold text-foreground">
+              🚀 Como funciona a plataforma
+              {allStepsDone && <span className="ml-2 text-xs font-normal text-accent">✓ Tudo concluído</span>}
+            </h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {allStepsDone
+                ? 'Parabéns! Seu perfil está completo. Consulte os passos sempre que precisar.'
+                : 'Siga os passos abaixo para começar a receber clientes.'}
+            </p>
+          </div>
+          {guideOpen ? <ChevronUp className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />}
+        </button>
 
+        {guideOpen && (
           <div className="mt-4 space-y-3">
             {providerSteps.filter(s => !s.hidden).map((step) => (
               <div
@@ -335,8 +348,8 @@ const DashboardPage = () => {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </DashboardLayout>
   );
 };
