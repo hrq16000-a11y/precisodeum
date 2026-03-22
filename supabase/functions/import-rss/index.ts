@@ -105,13 +105,16 @@ async function fetchOgData(url: string): Promise<{ image: string | null; descrip
     const reader = resp.body?.getReader();
     if (!reader) return { image: null, description: null, finalUrl: resp.url || url };
 
+    const isGoogleNewsPage = (resp.url || url).includes("news.google.com/");
+    const maxRead = isGoogleNewsPage ? 650000 : 120000;
+
     let html = "";
     const decoder = new TextDecoder();
-    while (html.length < 80000) {
+    while (html.length < maxRead) {
       const { done, value } = await reader.read();
       if (done) break;
       html += decoder.decode(value, { stream: true });
-      if (html.includes("</head>")) break;
+      if (!isGoogleNewsPage && html.includes("</head>")) break;
     }
     reader.cancel();
 
@@ -120,6 +123,20 @@ async function fetchOgData(url: string): Promise<{ image: string | null; descrip
       html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
       html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
 
+    const googleImageCandidates = Array.from(
+      html.matchAll(/https:\/\/lh3\.googleusercontent\.com[^"'\s<>]+/gi),
+      (m) => m[0],
+    );
+
+    const biggestGoogleImage = googleImageCandidates
+      .map((candidate) => {
+        const w = candidate.match(/(?:=|-)w(\d+)/i);
+        const s = candidate.match(/=s0-w(\d+)/i);
+        const width = Number(s?.[1] || w?.[1] || 0);
+        return { candidate, width };
+      })
+      .sort((a, b) => b.width - a.width)[0]?.candidate;
+
     const ogDescMatch =
       html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) ||
       html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i) ||
@@ -127,7 +144,7 @@ async function fetchOgData(url: string): Promise<{ image: string | null; descrip
       html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i);
 
     return {
-      image: ogImageMatch?.[1] || null,
+      image: ogImageMatch?.[1] || biggestGoogleImage || null,
       description: ogDescMatch ? stripHtml(ogDescMatch[1]) : null,
       finalUrl: resp.url || url,
     };
