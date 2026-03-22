@@ -66,7 +66,7 @@ async function fetchProvidersWithProfiles(query: any) {
     supabase
       .from('public_profiles' as any)
       .select('id, full_name, avatar_url')
-      .in('id', userIds) as Promise<{ data: { id: string; full_name: string; avatar_url: string | null }[] | null }>,
+      .in('id', userIds) as unknown as Promise<{ data: { id: string; full_name: string; avatar_url: string | null }[] | null }>,
     supabase
       .from('services')
       .select('id, provider_id')
