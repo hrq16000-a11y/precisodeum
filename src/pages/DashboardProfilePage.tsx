@@ -63,6 +63,24 @@ const DashboardProfilePage = () => {
   const handleSave = async () => {
     if (!user) return;
 
+    // Validate required fields
+    if (!form.full_name.trim()) {
+      toast.error('Nome completo é obrigatório');
+      return;
+    }
+    if (!form.city.trim()) {
+      toast.error('Cidade é obrigatória');
+      return;
+    }
+    if (!form.state.trim()) {
+      toast.error('Estado é obrigatório');
+      return;
+    }
+    if (!form.phone.trim() && !form.whatsapp.trim()) {
+      toast.error('Informe pelo menos um telefone ou WhatsApp');
+      return;
+    }
+
     // Auto-fill + validate WhatsApp
     const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.phone);
     if (finalWhatsapp && !isValidWhatsApp(finalWhatsapp)) {
