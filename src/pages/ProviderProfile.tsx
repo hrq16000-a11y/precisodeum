@@ -236,6 +236,8 @@ const ProviderProfile = () => {
   const category = provider ? ((provider.categories as any)?.name || '') : '';
   const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
+  // Auto-fill WhatsApp from phone if empty
+  const effectiveWhatsApp = provider ? (provider.whatsapp?.replace(/\D/g, '') || provider.phone?.replace(/\D/g, '') || '') : '';
 
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
