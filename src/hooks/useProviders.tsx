@@ -237,12 +237,12 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
         );
       }
 
-      // Smart ranking: providers with service images first, then premium > pro > free, then by rating/reviews
+      // Smart ranking: providers with images (service or portfolio) first, then premium > pro > free, then by rating/reviews
       const planPriority: Record<string, number> = { premium: 0, pro: 1, free: 2 };
       results.sort((a, b) => {
-        // Providers with service images come first
-        const aImg = a.serviceImage ? 0 : 1;
-        const bImg = b.serviceImage ? 0 : 1;
+        // Providers with service images or portfolio come first
+        const aImg = (a.serviceImage || a.hasPortfolio) ? 0 : 1;
+        const bImg = (b.serviceImage || b.hasPortfolio) ? 0 : 1;
         if (aImg !== bImg) return aImg - bImg;
         const pa = planPriority[a.plan] ?? 2;
         const pb = planPriority[b.plan] ?? 2;
