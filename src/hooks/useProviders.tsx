@@ -181,7 +181,7 @@ export function useFeaturedProviders() {
           .select(providerSelect)
           .eq('status', 'approved')
           .eq('featured', true)
-          .limit(12)
+          .limit(80)
       ),
   });
 }
