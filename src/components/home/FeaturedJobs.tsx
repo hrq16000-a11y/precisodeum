@@ -23,8 +23,8 @@ const FeaturedJobs = () => {
         .eq('status', 'active')
         .eq('approval_status', 'approved')
         .order('created_at', { ascending: false })
-        .limit(12);
-      return shuffle(data || []).slice(0, 4);
+        .limit(18);
+      return shuffle(data || []).slice(0, 6);
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -33,22 +33,22 @@ const FeaturedJobs = () => {
 
   return (
     <section className="py-10">
-      <div className="container">
+      <div className="container px-4">
         <div className="mb-6 flex items-center justify-between">
-          <div>
+          <div className="min-w-0">
             <h2 className="font-display text-2xl font-bold text-foreground">Oportunidades em Destaque</h2>
             <p className="mt-1 text-sm text-muted-foreground">Vagas e oportunidades recentes</p>
           </div>
-          <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
+          <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex shrink-0">
             <Link to="/vagas">Ver todas <ArrowRight className="ml-1 h-3 w-3" /></Link>
           </Button>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {jobs.map((job: any) => (
             <Link
               key={job.id}
               to={`/vaga/${job.slug || job.id}`}
-              className="group flex flex-col rounded-2xl border border-border bg-card p-5 shadow-card transition-all hover:shadow-lg hover:border-accent/30"
+              className="group flex flex-col min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-card transition-all hover:shadow-lg hover:border-accent/30 sm:p-5"
             >
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-semibold text-accent">
@@ -61,16 +61,16 @@ const FeaturedJobs = () => {
                   <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">{job.work_model}</span>
                 )}
               </div>
-              <h3 className="mt-3 font-display text-sm font-bold text-foreground group-hover:text-accent transition-colors line-clamp-2">
+              <h3 className="mt-3 font-display text-sm font-bold text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words">
                 {job.title}
               </h3>
               {job.description && (
-                <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">{job.description}</p>
+                <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2 break-words">{job.description}</p>
               )}
-              <div className="mt-auto pt-3 flex items-center justify-between">
+              <div className="mt-auto pt-3 flex flex-wrap items-center justify-between gap-2">
                 {job.city && (
                   <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <MapPin className="h-3 w-3" />{job.city}{job.state ? `, ${job.state}` : ''}
+                    <MapPin className="h-3 w-3 shrink-0" /><span className="truncate">{job.city}{job.state ? `, ${job.state}` : ''}</span>
                   </p>
                 )}
                 {job.whatsapp && (
