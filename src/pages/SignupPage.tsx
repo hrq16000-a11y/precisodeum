@@ -178,7 +178,7 @@ const SignupPage = () => {
         <div className="w-full max-w-lg">
 
           {/* STEP 1: Choose account type */}
-          {step === STEPS.TYPE && (
+          {step === STEP_TYPE && (
             <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-card">
               <h1 className="text-center font-display text-2xl font-bold text-foreground">Criar Conta</h1>
               <p className="mt-2 text-center text-sm text-muted-foreground">
@@ -240,7 +240,7 @@ const SignupPage = () => {
                 variant="accent"
                 className="mt-6 w-full"
                 disabled={!accountType}
-                onClick={() => setStep(STEPS.DATA)}
+                onClick={() => setStep(STEP_DATA)}
               >
                 Continuar <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
@@ -252,10 +252,10 @@ const SignupPage = () => {
           )}
 
           {/* STEP 2: Form fields */}
-          {step === STEPS.DATA && (
+          {step === STEP_DATA && (
             <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-card">
               <button
-                onClick={() => setStep(STEPS.TYPE)}
+                onClick={() => setStep(STEP_TYPE)}
                 className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" /> Voltar
