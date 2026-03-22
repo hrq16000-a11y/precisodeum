@@ -144,7 +144,7 @@ const AdminPage = () => {
                       <h3 className="text-sm font-medium text-foreground truncate">{job.title}</h3>
                       <p className="text-xs text-muted-foreground">{job.city} · {new Date(job.created_at).toLocaleDateString('pt-BR')}</p>
                     </div>
-                    <div className="flex gap-1 ml-2 shrink-0">
+                    <div className="flex flex-col gap-1 ml-2 shrink-0 sm:flex-row">
                       <Button size="sm" variant="accent" onClick={() => handleApproveJob(job.id)}>
                         <CheckCircle className="mr-1 h-3 w-3" /> Aprovar
                       </Button>
@@ -175,7 +175,7 @@ const AdminPage = () => {
                       <h3 className="text-sm font-medium text-foreground truncate">{p.business_name || 'Sem nome'}</h3>
                       <p className="text-xs text-muted-foreground">{p.city} · {new Date(p.created_at).toLocaleDateString('pt-BR')}</p>
                     </div>
-                    <div className="flex gap-1 ml-2 shrink-0">
+                    <div className="flex flex-col gap-1 ml-2 shrink-0 sm:flex-row">
                       <Button size="sm" variant="accent" onClick={() => handleApproveProvider(p.id)}>
                         <CheckCircle className="mr-1 h-3 w-3" /> Aprovar
                       </Button>

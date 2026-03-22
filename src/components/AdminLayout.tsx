@@ -50,7 +50,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           <Shield className="h-4 w-4 text-destructive" />
           <span className="font-display text-sm font-bold text-sidebar-foreground">Admin Panel</span>
         </div>
-        <nav className="mt-4 space-y-1 px-3">
+        <nav className="mt-4 space-y-1 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 56px - 80px)' }}>
           {menuItems.map((item) => {
             const active = location.pathname === item.path;
             return (
