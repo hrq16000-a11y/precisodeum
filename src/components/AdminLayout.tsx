@@ -1,25 +1,50 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, Star, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
-const menuItems = [
-  { label: 'Visão Geral', icon: LayoutDashboard, path: '/admin' },
-  { label: 'Prestadores', icon: Briefcase, path: '/admin/prestadores' },
-  { label: 'Usuários', icon: Users, path: '/admin/usuarios' },
-  { label: 'Categorias', icon: FolderOpen, path: '/admin/categorias' },
-  { label: 'Vagas', icon: ClipboardList, path: '/admin/vagas' },
-  { label: 'Cidades', icon: MapPin, path: '/admin/cidades' },
-  { label: 'Estatísticas', icon: BarChart3, path: '/admin/estatisticas' },
-  { label: 'Patrocinadores', icon: Megaphone, path: '/admin/patrocinadores' },
-  { label: 'Comunidade', icon: Users2, path: '/admin/comunidade' },
-  { label: 'Blog / Notícias', icon: Newspaper, path: '/admin/blog' },
-  { label: 'Serviços Populares', icon: Wrench, path: '/admin/servicos-populares' },
-  { label: 'FAQ', icon: HelpCircle, path: '/admin/faq' },
-  { label: 'Meta Tags & SEO', icon: Globe, path: '/admin/metatags' },
-  { label: 'Destaques', icon: Sparkles, path: '/admin/destaques' },
-  { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
+const menuGroups = [
+  {
+    label: 'Geral',
+    items: [
+      { label: 'Visão Geral', icon: LayoutDashboard, path: '/admin' },
+    ],
+  },
+  {
+    label: 'Gestão',
+    items: [
+      { label: 'Prestadores', icon: Briefcase, path: '/admin/prestadores' },
+      { label: 'Usuários', icon: Users, path: '/admin/usuarios' },
+      { label: 'Comunidade', icon: Users2, path: '/admin/comunidade' },
+    ],
+  },
+  {
+    label: 'Conteúdo',
+    items: [
+      { label: 'Categorias', icon: FolderOpen, path: '/admin/categorias' },
+      { label: 'Vagas', icon: ClipboardList, path: '/admin/vagas' },
+      { label: 'Blog / Notícias', icon: Newspaper, path: '/admin/blog' },
+      { label: 'Serv. Populares', icon: Wrench, path: '/admin/servicos-populares' },
+      { label: 'FAQ', icon: HelpCircle, path: '/admin/faq' },
+      { label: 'Destaques', icon: Sparkles, path: '/admin/destaques' },
+    ],
+  },
+  {
+    label: 'Comercial',
+    items: [
+      { label: 'Patrocinadores', icon: Megaphone, path: '/admin/patrocinadores' },
+      { label: 'Cidades', icon: MapPin, path: '/admin/cidades' },
+      { label: 'Estatísticas', icon: BarChart3, path: '/admin/estatisticas' },
+    ],
+  },
+  {
+    label: 'Sistema',
+    items: [
+      { label: 'Meta Tags & SEO', icon: Globe, path: '/admin/metatags' },
+      { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
+    ],
+  },
 ];
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
@@ -50,21 +75,28 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           <Shield className="h-4 w-4 text-destructive" />
           <span className="font-display text-sm font-bold text-sidebar-foreground">Admin Panel</span>
         </div>
-        <nav className="mt-4 space-y-1 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 56px - 80px)' }}>
-          {menuItems.map((item) => {
-            const active = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'}`}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
+        <nav className="mt-2 space-y-4 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 56px - 80px)' }}>
+          {menuGroups.map((group) => (
+            <div key={group.label}>
+              <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{group.label}</p>
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const active = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'}`}
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
         <div className="absolute bottom-4 left-3 right-3 space-y-1">
           <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-sidebar-foreground/70" asChild>
@@ -79,7 +111,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       {sidebarOpen && <div className="fixed inset-0 z-30 bg-foreground/20 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
       <main className="flex-1 pt-14 lg:ml-60 lg:pt-0">
-        <div className="p-6">{children}</div>
+        <div className="p-4 sm:p-6">{children}</div>
       </main>
     </div>
   );
