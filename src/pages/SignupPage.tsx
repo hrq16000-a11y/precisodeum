@@ -63,10 +63,11 @@ const ACCOUNT_TYPES = [
   },
 ];
 
-const STEPS = { TYPE: 0, DATA: 1 } as const;
+const STEP_TYPE = 'type';
+const STEP_DATA = 'data';
 
 const SignupPage = () => {
-  const [step, setStep] = useState(STEPS.TYPE);
+  const [step, setStep] = useState(STEP_TYPE);
   const [accountType, setAccountType] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
