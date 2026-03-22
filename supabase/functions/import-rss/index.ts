@@ -63,6 +63,7 @@ function stripHtml(rawHtml: string): string {
     .replace(/<\/p>/gi, "\n\n")
     .replace(/<\s*\/\s*(div|li|h1|h2|h3|h4|h5|h6)\s*>/gi, "\n")
     .replace(/<[^>]*>/g, "")
+    .replace(/<a\s+href=[^\n]+/gi, "")
     .replace(/[ \t]{2,}/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
