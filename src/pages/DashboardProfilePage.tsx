@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import AvatarUpload from '@/components/AvatarUpload';
 import PortfolioUpload from '@/components/PortfolioUpload';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
-import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp } from '@/lib/whatsapp';
+import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
 
 const DashboardProfilePage = () => {
   const { user, profile, provider, loading, refetchProfile } = useAuth();
@@ -81,14 +81,14 @@ const DashboardProfilePage = () => {
       return;
     }
 
-    // Auto-fill + validate WhatsApp
+    // Sanitize to canonical format (55DDDNUMBER)
     const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.phone);
     if (finalWhatsapp && !isValidWhatsApp(finalWhatsapp)) {
       toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)');
       return;
     }
-    const finalPhone = sanitizePhone(form.phone);
-    if (finalPhone && !isValidWhatsApp(finalPhone)) {
+    const finalPhone = toCanonical(form.phone);
+    if (form.phone.trim() && !finalPhone) {
       toast.error('Número de telefone inválido (deve ter 10 ou 11 dígitos)');
       return;
     }
@@ -261,6 +261,15 @@ const DashboardProfilePage = () => {
               <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
               <PhoneMaskedInput name="whatsapp" value={form.whatsapp} onChange={handlePhoneChange}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+              {!form.whatsapp && form.phone && (
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, whatsapp: prev.phone }))}
+                  className="mt-1 text-xs text-accent hover:underline"
+                >
+                  Copiar do telefone
+                </button>
+              )}
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">Website</label>

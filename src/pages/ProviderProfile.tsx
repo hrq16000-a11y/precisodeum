@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube } from 'lucide-react';
-import { whatsappLink } from '@/lib/whatsapp';
+import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
+import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';
@@ -118,6 +119,7 @@ const THEME_CLASSES: Record<string, ThemeConfig> = {
 };
 
 const ProviderProfile = () => {
+  const isMobile = useIsMobile();
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const { slug } = useParams();
   const [provider, setProvider] = useState<any>(null);
@@ -237,7 +239,7 @@ const ProviderProfile = () => {
   const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
   // Auto-fill WhatsApp from phone if empty
-  const effectiveWhatsApp = provider ? (provider.whatsapp?.replace(/\D/g, '') || provider.phone?.replace(/\D/g, '') || '') : '';
+  const effectiveWhatsApp = provider ? toCanonical(provider.whatsapp || provider.phone || '') : '';
 
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
@@ -560,9 +562,9 @@ const ProviderProfile = () => {
                     </a>
                   </Button>
                 )}
-                {provider.phone && (
+                {isMobile && provider.phone && telLink(provider.phone) && (
                   <Button variant="outline" size="lg" className={tc.buttonOutline} asChild>
-                    <a href={`tel:${provider.phone.replace(/\D/g, '')}`}>
+                    <a href={telLink(provider.phone)}>
                       <Phone className="h-5 w-5" /> Ligar
                     </a>
                   </Button>
