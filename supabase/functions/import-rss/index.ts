@@ -3,14 +3,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 function autoSlug(t: string) {
   return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-/** Strip all HTML tags, decode entities, and normalize whitespace */
+/** Strip all HTML tags, decode entities, normalize whitespace */
 function stripHtml(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, '\n')
@@ -27,19 +27,75 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-/** Try to extract an image URL from HTML description */
-function extractImage(html: string): string | null {
-  const match = html.match(/<img[^>]+src="([^"]+)"/i);
-  if (match?.[1]) {
-    const url = match[1];
-    if (url.startsWith('http') && !url.includes('feedburner') && !url.includes('pixel')) {
-      return url;
+/** Try to extract og:image and og:description from a webpage */
+async function fetchOgData(url: string): Promise<{ image: string | null; description: string | null }> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    const resp = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; PrecisodeumBot/1.0)',
+        'Accept': 'text/html',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!resp.ok) return { image: null, description: null };
+
+    // Only read the first 50KB to find meta tags
+    const reader = resp.body?.getReader();
+    if (!reader) return { image: null, description: null };
+
+    let html = '';
+    const decoder = new TextDecoder();
+    while (html.length < 50000) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      html += decoder.decode(value, { stream: true });
+      // Stop once we've passed </head>
+      if (html.includes('</head>')) break;
     }
+    reader.cancel();
+
+    // Extract og:image
+    const ogImageMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+                          html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+    const image = ogImageMatch?.[1] || null;
+
+    // Extract og:description or meta description
+    const ogDescMatch = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) ||
+                         html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i) ||
+                         html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) ||
+                         html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i);
+    const description = ogDescMatch?.[1] || null;
+
+    return { image, description };
+  } catch {
+    return { image: null, description: null };
   }
-  // Try media:content or enclosure
-  const mediaMatch = html.match(/<media:content[^>]+url="([^"]+)"/i) ||
-                     html.match(/<enclosure[^>]+url="([^"]+)"/i);
-  return mediaMatch?.[1] || null;
+}
+
+/** Try to resolve Google News redirect to get the real article URL */
+async function resolveGoogleNewsUrl(gnUrl: string): Promise<string> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+
+    const resp = await fetch(gnUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PrecisodeumBot/1.0)' },
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    // The final URL after redirects is the real article
+    return resp.url || gnUrl;
+  } catch {
+    return gnUrl;
+  }
 }
 
 function parseRSSItems(xml: string): Array<{ title: string; link: string; description: string; pubDate?: string; imageUrl?: string }> {
@@ -57,14 +113,11 @@ function parseRSSItems(xml: string): Array<{ title: string; link: string; descri
     const description = get('description');
     const pubDate = get('pubDate');
 
-    // Try to extract image from various RSS fields
-    let imageUrl = extractImage(block);
-    if (!imageUrl) {
-      const mediaMatch = block.match(/<media:content[^>]+url="([^"]+)"/i) ||
-                          block.match(/<media:thumbnail[^>]+url="([^"]+)"/i) ||
-                          block.match(/<enclosure[^>]+url="([^"]+)"[^>]+type="image/i);
-      imageUrl = mediaMatch?.[1] || null;
-    }
+    // Try to extract image from RSS fields
+    const mediaMatch = block.match(/<media:content[^>]+url="([^"]+)"/i) ||
+                        block.match(/<media:thumbnail[^>]+url="([^"]+)"/i) ||
+                        block.match(/<enclosure[^>]+url="([^"]+)"[^>]+type="image/i);
+    const imageUrl = mediaMatch?.[1] || null;
 
     if (title && link) {
       items.push({ title, link, description, pubDate, imageUrl: imageUrl || undefined });
@@ -88,7 +141,9 @@ function parseAtomItems(xml: string): Array<{ title: string; link: string; descr
     const link = linkMatch?.[1] || linkMatch?.[2] || '';
     const description = get('summary') || get('content');
     const pubDate = get('published') || get('updated');
-    const imageUrl = extractImage(block);
+    const mediaMatch = block.match(/<media:content[^>]+url="([^"]+)"/i) ||
+                        block.match(/<media:thumbnail[^>]+url="([^"]+)"/i);
+    const imageUrl = mediaMatch?.[1] || null;
     if (title && link) {
       items.push({ title, link, description, pubDate, imageUrl: imageUrl || undefined });
     }
@@ -159,7 +214,6 @@ serve(async (req) => {
       });
     }
 
-    // --- SSRF protection ---
     if (!isUrlSafe(feed_url)) {
       return new Response(JSON.stringify({ error: 'URL not allowed. Only HTTPS public URLs are permitted.' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -187,10 +241,12 @@ serve(async (req) => {
 
     let imported = 0;
     let skipped = 0;
+    const errors: string[] = [];
 
     for (const item of limited) {
       const slug = autoSlug(item.title).slice(0, 100);
       
+      // Check for duplicates
       const checkResp = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?slug=eq.${encodeURIComponent(slug)}&select=id`, {
         headers: {
           'apikey': SUPABASE_SERVICE_ROLE_KEY,
@@ -203,9 +259,36 @@ serve(async (req) => {
         continue;
       }
 
-      // Clean HTML from content and excerpt
-      const cleanContent = stripHtml(item.description);
-      const cleanExcerpt = cleanContent.slice(0, 300);
+      // Resolve real article URL (important for Google News links)
+      let realUrl = item.link;
+      if (item.link.includes('news.google.com')) {
+        realUrl = await resolveGoogleNewsUrl(item.link);
+      }
+
+      // Fetch og:image and og:description from the real article page
+      let coverImage = item.imageUrl || null;
+      let articleDescription: string | null = null;
+
+      if (realUrl && isUrlSafe(realUrl)) {
+        const ogData = await fetchOgData(realUrl);
+        if (!coverImage && ogData.image) {
+          coverImage = ogData.image;
+        }
+        if (ogData.description) {
+          articleDescription = ogData.description;
+        }
+      }
+
+      // Clean HTML from RSS description
+      const cleanRssDesc = stripHtml(item.description);
+      
+      // Use og:description if RSS description is too short or empty
+      const bestDescription = (articleDescription && articleDescription.length > cleanRssDesc.length) 
+        ? articleDescription 
+        : cleanRssDesc;
+
+      const excerpt = bestDescription.slice(0, 300);
+      const content = bestDescription || `Leia a matéria completa na fonte original.`;
 
       const insertResp = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts`, {
         method: 'POST',
@@ -218,10 +301,10 @@ serve(async (req) => {
         body: JSON.stringify({
           title: item.title,
           slug,
-          excerpt: cleanExcerpt,
-          content: cleanContent,
-          source_url: item.link,
-          cover_image_url: item.imageUrl || null,
+          excerpt,
+          content,
+          source_url: realUrl !== item.link ? realUrl : item.link,
+          cover_image_url: coverImage,
           published: true,
           featured: false,
           author_name: 'Fonte Externa',
@@ -230,6 +313,9 @@ serve(async (req) => {
 
       if (insertResp.ok) {
         imported++;
+      } else {
+        const errText = await insertResp.text();
+        errors.push(`${slug}: ${errText}`);
       }
     }
 
@@ -238,12 +324,13 @@ serve(async (req) => {
       total_found: items.length,
       imported, 
       skipped,
+      errors: errors.length > 0 ? errors : undefined,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Internal error' }), {
+    return new Response(JSON.stringify({ error: 'Internal error', details: String(error) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
