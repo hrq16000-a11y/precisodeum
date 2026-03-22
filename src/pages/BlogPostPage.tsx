@@ -9,18 +9,28 @@ import { CalendarDays, ArrowLeft, ExternalLink, User, Newspaper } from 'lucide-r
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 /** Strip HTML tags and decode common entities */
-function stripHtmlTags(html: string): string {
+function stripHtmlTags(rawHtml: string): string {
+  let html = rawHtml || '';
+
+  for (let i = 0; i < 2; i++) {
+    html = html
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      .replace(/&apos;/gi, "'")
+      .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+      .replace(/&#([0-9]+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)));
+  }
+
   return html
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\s*\/\s*(div|li|h1|h2|h3|h4|h5|h6)\s*>/gi, '\n')
     .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    .replace(/&apos;/gi, "'")
+    .replace(/[ \t]{2,}/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
@@ -95,7 +105,7 @@ const BlogPostPage = () => {
         ) : (
           <article className="space-y-6">
             {/* Title */}
-            <h1 className="font-display text-2xl font-bold leading-tight text-foreground sm:text-3xl lg:text-4xl">
+            <h1 className="font-display text-2xl font-bold leading-tight text-foreground sm:text-3xl lg:text-4xl break-words">
               {post.title}
             </h1>
 
@@ -142,18 +152,18 @@ const BlogPostPage = () => {
 
             {/* Excerpt as lead paragraph */}
             {post.excerpt && (
-              <p className="text-base font-medium leading-relaxed text-muted-foreground italic border-l-4 border-accent/40 pl-4">
+              <p className="text-base font-medium leading-relaxed text-muted-foreground italic border-l-4 border-accent/40 pl-4 break-words">
                 {post.excerpt}
               </p>
             )}
 
             {/* Content body */}
-            <div className="prose prose-sm sm:prose-base max-w-none text-foreground dark:prose-invert prose-headings:text-foreground prose-p:leading-relaxed prose-a:text-accent">
+            <div className="prose prose-sm sm:prose-base max-w-none text-foreground dark:prose-invert prose-headings:text-foreground prose-p:leading-relaxed prose-a:text-accent break-words">
               {stripHtmlTags(post.content).split('\n').map((paragraph: string, i: number) => {
                 const trimmed = paragraph.trim();
                 if (!trimmed) return null;
                 return (
-                  <p key={i} className="mb-4 last:mb-0">
+                  <p key={i} className="mb-4 last:mb-0 break-words">
                     {trimmed}
                   </p>
                 );
