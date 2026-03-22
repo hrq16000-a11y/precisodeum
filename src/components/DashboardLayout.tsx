@@ -5,21 +5,10 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
-const menuItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil' },
-  { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos' },
-  { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina' },
-  { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas' },
-  { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade' },
-  { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads' },
-  { label: 'Plano', icon: CreditCard, path: '/dashboard/plano' },
-];
-
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -33,6 +22,22 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     await signOut();
     navigate('/');
   };
+
+  const profileType = profile?.profile_type || 'client';
+  const isClient = profileType === 'client';
+  const isRH = profileType === 'rh';
+
+  // Build menu items based on account type
+  const menuItems = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: true },
+    { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil', show: true },
+    { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos', show: !isClient && !isRH },
+    { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina', show: !isClient && !isRH },
+    { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas', show: !isClient },
+    { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade', show: true },
+    { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads', show: !isClient && !isRH },
+    { label: 'Plano', icon: CreditCard, path: '/dashboard/plano', show: !isClient && !isRH },
+  ].filter(item => item.show);
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -49,7 +54,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="flex h-14 items-center px-5 border-b border-sidebar-border">
           <Link to="/" className="font-display text-sm font-bold text-sidebar-foreground">Preciso de um</Link>
         </div>
-        <nav className="mt-4 space-y-1 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 56px - 60px)' }}>
+
+        {/* Account type badge */}
+        <div className="mx-3 mt-3 mb-1 rounded-lg bg-muted/50 px-3 py-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {isClient ? '👤 Conta Cliente' : isRH ? '🏢 Conta RH' : '🔧 Conta Profissional'}
+          </p>
+        </div>
+
+        <nav className="mt-2 space-y-1 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 56px - 100px)' }}>
           {menuItems.map((item) => {
             const active = location.pathname === item.path;
             return (
@@ -87,7 +100,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main content */}
       <main className="flex-1 pt-14 lg:ml-60 lg:pt-0">
-        <div className="p-6">{children}</div>
+        <div className="p-4 sm:p-6">{children}</div>
       </main>
     </div>
   );
