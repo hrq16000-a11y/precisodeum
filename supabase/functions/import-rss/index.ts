@@ -10,8 +10,40 @@ function autoSlug(t: string) {
   return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-function parseRSSItems(xml: string): Array<{ title: string; link: string; description: string; pubDate?: string }> {
-  const items: Array<{ title: string; link: string; description: string; pubDate?: string }> = [];
+/** Strip all HTML tags, decode entities, and normalize whitespace */
+function stripHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/** Try to extract an image URL from HTML description */
+function extractImage(html: string): string | null {
+  const match = html.match(/<img[^>]+src="([^"]+)"/i);
+  if (match?.[1]) {
+    const url = match[1];
+    if (url.startsWith('http') && !url.includes('feedburner') && !url.includes('pixel')) {
+      return url;
+    }
+  }
+  // Try media:content or enclosure
+  const mediaMatch = html.match(/<media:content[^>]+url="([^"]+)"/i) ||
+                     html.match(/<enclosure[^>]+url="([^"]+)"/i);
+  return mediaMatch?.[1] || null;
+}
+
+function parseRSSItems(xml: string): Array<{ title: string; link: string; description: string; pubDate?: string; imageUrl?: string }> {
+  const items: Array<{ title: string; link: string; description: string; pubDate?: string; imageUrl?: string }> = [];
   const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
   let match;
   while ((match = itemRegex.exec(xml)) !== null) {
@@ -24,15 +56,25 @@ function parseRSSItems(xml: string): Array<{ title: string; link: string; descri
     const link = get('link');
     const description = get('description');
     const pubDate = get('pubDate');
+
+    // Try to extract image from various RSS fields
+    let imageUrl = extractImage(block);
+    if (!imageUrl) {
+      const mediaMatch = block.match(/<media:content[^>]+url="([^"]+)"/i) ||
+                          block.match(/<media:thumbnail[^>]+url="([^"]+)"/i) ||
+                          block.match(/<enclosure[^>]+url="([^"]+)"[^>]+type="image/i);
+      imageUrl = mediaMatch?.[1] || null;
+    }
+
     if (title && link) {
-      items.push({ title, link, description, pubDate });
+      items.push({ title, link, description, pubDate, imageUrl: imageUrl || undefined });
     }
   }
   return items;
 }
 
-function parseAtomItems(xml: string): Array<{ title: string; link: string; description: string; pubDate?: string }> {
-  const items: Array<{ title: string; link: string; description: string; pubDate?: string }> = [];
+function parseAtomItems(xml: string): Array<{ title: string; link: string; description: string; pubDate?: string; imageUrl?: string }> {
+  const items: Array<{ title: string; link: string; description: string; pubDate?: string; imageUrl?: string }> = [];
   const entryRegex = /<entry>([\s\S]*?)<\/entry>/gi;
   let match;
   while ((match = entryRegex.exec(xml)) !== null) {
@@ -46,8 +88,9 @@ function parseAtomItems(xml: string): Array<{ title: string; link: string; descr
     const link = linkMatch?.[1] || linkMatch?.[2] || '';
     const description = get('summary') || get('content');
     const pubDate = get('published') || get('updated');
+    const imageUrl = extractImage(block);
     if (title && link) {
-      items.push({ title, link, description, pubDate });
+      items.push({ title, link, description, pubDate, imageUrl: imageUrl || undefined });
     }
   }
   return items;
@@ -59,7 +102,6 @@ function isUrlSafe(urlStr: string): boolean {
     const parsed = new URL(urlStr);
     if (parsed.protocol !== 'https:') return false;
     const hostname = parsed.hostname;
-    // Block private/internal ranges
     if (
       hostname === 'localhost' ||
       hostname.startsWith('127.') ||
@@ -161,7 +203,9 @@ serve(async (req) => {
         continue;
       }
 
-      const cleanDesc = item.description.replace(/<[^>]*>/g, '').slice(0, 300);
+      // Clean HTML from content and excerpt
+      const cleanContent = stripHtml(item.description);
+      const cleanExcerpt = cleanContent.slice(0, 300);
 
       const insertResp = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts`, {
         method: 'POST',
@@ -174,9 +218,10 @@ serve(async (req) => {
         body: JSON.stringify({
           title: item.title,
           slug,
-          excerpt: cleanDesc,
-          content: item.description || cleanDesc,
+          excerpt: cleanExcerpt,
+          content: cleanContent,
           source_url: item.link,
+          cover_image_url: item.imageUrl || null,
           published: true,
           featured: false,
           author_name: 'Fonte Externa',

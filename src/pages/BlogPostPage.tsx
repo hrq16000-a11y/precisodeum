@@ -8,6 +8,23 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, ArrowLeft, ExternalLink, User, Newspaper } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
+/** Strip HTML tags and decode common entities */
+function stripHtmlTags(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
 
@@ -132,7 +149,7 @@ const BlogPostPage = () => {
 
             {/* Content body */}
             <div className="prose prose-sm sm:prose-base max-w-none text-foreground dark:prose-invert prose-headings:text-foreground prose-p:leading-relaxed prose-a:text-accent">
-              {post.content.split('\n').map((paragraph: string, i: number) => {
+              {stripHtmlTags(post.content).split('\n').map((paragraph: string, i: number) => {
                 const trimmed = paragraph.trim();
                 if (!trimmed) return null;
                 return (
