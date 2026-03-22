@@ -10,11 +10,11 @@ const corsHeaders = {
 const BOT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 const ALLOWED_AUTO_FEEDS = [
-  "https://news.google.com/rss/search?q=emprego+brasil&hl=pt-BR&gl=BR&ceid=BR:pt-419",
-  "https://news.google.com/rss/search?q=freelancer+trabalho+autonomo&hl=pt-BR&gl=BR&ceid=BR:pt-419",
-  "https://news.google.com/rss/search?q=vagas+emprego+oportunidades&hl=pt-BR&gl=BR&ceid=BR:pt-419",
-  "https://news.google.com/rss/search?q=mercado+trabalho+brasil&hl=pt-BR&gl=BR&ceid=BR:pt-419",
-  "https://news.google.com/rss/search?q=servicos+profissionais&hl=pt-BR&gl=BR&ceid=BR:pt-419",
+  "https://www.infomoney.com.br/feed/",
+  "https://g1.globo.com/rss/g1/economia/",
+  "https://exame.com/feed/",
+  "https://canaltech.com.br/rss/",
+  "https://olhardigital.com.br/feed/",
 ] as const;
 
 type ParsedItem = {
