@@ -110,25 +110,52 @@ const DashboardProfilePage = () => {
           return;
         }
       } else {
-        const slug = `${form.full_name.toLowerCase().replace(/\s+/g, '-')}-${form.city.toLowerCase().replace(/\s+/g, '-')}`;
-        const { error: insertError } = await supabase.from('providers').insert({
-          user_id: user.id,
-          business_name: form.business_name || null,
-          description: form.description,
-          city: form.city,
-          state: form.state,
-          neighborhood: form.neighborhood,
-          phone: finalPhone,
-          whatsapp: finalWhatsapp,
-          category_id: form.category_id || null,
-          slug,
-          status: 'pending',
-        });
+        // Check if a provider already exists (may have been missed by initial load)
+        const { data: existingProviders } = await supabase
+          .from('providers')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
 
-        if (insertError) {
-          toast.error('Erro ao criar perfil profissional: ' + insertError.message);
-          setSaving(false);
-          return;
+        if (existingProviders && existingProviders.length > 0) {
+          // Update existing instead of creating duplicate
+          const { error: updateError } = await supabase.from('providers').update({
+            business_name: form.business_name || null,
+            description: form.description,
+            city: form.city,
+            state: form.state,
+            neighborhood: form.neighborhood,
+            phone: finalPhone,
+            whatsapp: finalWhatsapp,
+            category_id: form.category_id || null,
+          }).eq('id', existingProviders[0].id);
+
+          if (updateError) {
+            toast.error('Erro ao atualizar perfil profissional: ' + updateError.message);
+            setSaving(false);
+            return;
+          }
+        } else {
+          const slug = `${form.full_name.toLowerCase().replace(/\s+/g, '-')}-${form.city.toLowerCase().replace(/\s+/g, '-')}`;
+          const { error: insertError } = await supabase.from('providers').insert({
+            user_id: user.id,
+            business_name: form.business_name || null,
+            description: form.description,
+            city: form.city,
+            state: form.state,
+            neighborhood: form.neighborhood,
+            phone: finalPhone,
+            whatsapp: finalWhatsapp,
+            category_id: form.category_id || null,
+            slug,
+            status: 'pending',
+          });
+
+          if (insertError) {
+            toast.error('Erro ao criar perfil profissional: ' + insertError.message);
+            setSaving(false);
+            return;
+          }
         }
       }
 
