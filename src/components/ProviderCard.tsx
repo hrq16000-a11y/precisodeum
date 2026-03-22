@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, MessageCircle, Crown } from 'lucide-react';
+import { MapPin, MessageCircle, Crown, BadgeCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -44,6 +44,11 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
               <MapPin className="h-3 w-3" />
               {provider.neighborhood}, {provider.city} - {provider.state}
             </div>
+            {hasImages && (
+              <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
+                <BadgeCheck className="h-3 w-3" /> Perfil Completo
+              </span>
+            )}
           </div>
         </div>
 
