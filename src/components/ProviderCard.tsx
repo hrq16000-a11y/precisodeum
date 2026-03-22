@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, MessageCircle, Crown } from 'lucide-react';
+import { MapPin, MessageCircle, Crown, BadgeCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
