@@ -132,7 +132,7 @@ const BlogPostPage = () => {
 
             {/* Content body */}
             <div className="prose prose-sm sm:prose-base max-w-none text-foreground dark:prose-invert prose-headings:text-foreground prose-p:leading-relaxed prose-a:text-accent">
-              {post.content.split('\n').map((paragraph: string, i: number) => {
+              {stripHtmlTags(post.content).split('\n').map((paragraph: string, i: number) => {
                 const trimmed = paragraph.trim();
                 if (!trimmed) return null;
                 return (
