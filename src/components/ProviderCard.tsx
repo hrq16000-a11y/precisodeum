@@ -15,7 +15,7 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const displayPhoto = provider.photo || provider.serviceImage || '';
   const initials = (provider.businessName || provider.name).split(' ').map(n => n[0]).join('').slice(0, 2);
-  const hasImages = !!provider.serviceImage;
+  const hasImages = !!provider.serviceImage || !!provider.hasPortfolio;
 
   return (
     <div className={`group overflow-hidden rounded-xl border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`}>
