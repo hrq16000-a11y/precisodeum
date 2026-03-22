@@ -333,7 +333,9 @@ const ProviderProfile = () => {
   const renderAbout = () => (
     <div key="about" className={`mt-6 p-6 ${tc.section}`}>
       <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Sobre o profissional</h2>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{provider.description}</p>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        {provider.description || 'Este profissional ainda não adicionou uma descrição.'}
+      </p>
     </div>
   );
 
@@ -354,7 +356,7 @@ const ProviderProfile = () => {
   };
 
   const renderServices = () => (
-    <ServicesList key="services" services={services} whatsapp={provider.whatsapp} providerName={name} providerCity={provider.city} ctaWhatsappText={pageSettings.cta_whatsapp_text} accentBg={accentBg} themeClasses={tc} />
+    <ServicesList key="services" services={services} whatsapp={effectiveWhatsApp} providerName={name} providerCity={provider.city} ctaWhatsappText={pageSettings.cta_whatsapp_text} accentBg={accentBg} themeClasses={tc} />
   );
 
   const renderReviews = () => {
@@ -501,16 +503,22 @@ const ProviderProfile = () => {
                   {provider.business_name && (
                     <p className="text-sm text-muted-foreground">{provider.business_name}</p>
                   )}
-                  <p className="mt-1 text-sm font-medium" style={accentBg ? { color: accentBg } : undefined}>{category}</p>
+                  <p className="mt-1 text-sm font-medium" style={accentBg ? { color: accentBg } : undefined}>
+                    {category || 'Categoria não informada'}
+                  </p>
                   <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
-                      {provider.neighborhood ? `${provider.neighborhood}, ` : ''}{provider.city} - {provider.state}
+                      {provider.city
+                        ? `${provider.neighborhood ? `${provider.neighborhood}, ` : ''}${provider.city} - ${provider.state}`
+                        : 'Localização não informada'}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {provider.years_experience} anos de experiência
-                    </span>
+                    {provider.years_experience > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {provider.years_experience} anos de experiência
+                      </span>
+                    )}
                   </div>
                   {reviewsEnabled && (
                     <div className="mt-3">
@@ -546,7 +554,7 @@ const ProviderProfile = () => {
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button variant="accent" size="lg" className={tc.button} asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-                  <a href={whatsappLink(provider.whatsapp || '', `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)} target="_blank" rel="noopener noreferrer">
+                  <a href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)} target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="h-5 w-5" /> {pageSettings.cta_whatsapp_text}
                   </a>
                 </Button>
@@ -607,7 +615,7 @@ const ProviderProfile = () => {
       </div>
       {/* Floating WhatsApp Button */}
       <a
-        href={whatsappLink(provider.whatsapp || '', `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)}
+        href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 lg:hidden animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"
