@@ -32,9 +32,9 @@ const AdNativeCard = ({ sponsorIndex = 0, className = '' }: AdNativeCardProps) =
       onClick={() => {
         supabase.rpc('increment_sponsor_click', { sponsor_id: sponsor.id } as any).then(() => {});
       }}
-      className={`group relative rounded-xl border border-accent/20 bg-accent/5 p-4 shadow-card transition-all hover:shadow-lg hover:border-accent/40 ${className}`}
+      className={`group min-w-0 overflow-hidden rounded-xl border border-accent/20 bg-accent/5 p-4 shadow-card transition-all hover:shadow-lg hover:border-accent/40 ${className}`}
     >
-      <span className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+      <span className="mb-2 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
         <Megaphone className="h-3 w-3" /> Patrocinado
       </span>
       {sponsor.image_url && (
@@ -44,7 +44,7 @@ const AdNativeCard = ({ sponsorIndex = 0, className = '' }: AdNativeCardProps) =
           containerClassName="mb-3 rounded-lg"
         />
       )}
-      <h3 className="mt-1 font-display text-sm font-bold text-foreground group-hover:text-accent transition-colors line-clamp-2 pr-20">
+      <h3 className="font-display text-sm font-bold text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words">
         {sponsor.title}
       </h3>
     </a>

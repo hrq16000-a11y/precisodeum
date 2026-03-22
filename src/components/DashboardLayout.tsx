@@ -49,7 +49,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="flex h-14 items-center px-5 border-b border-sidebar-border">
           <Link to="/" className="font-display text-sm font-bold text-sidebar-foreground">Preciso de um</Link>
         </div>
-        <nav className="mt-4 space-y-1 px-3">
+        <nav className="mt-4 space-y-1 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 56px - 60px)' }}>
           {menuItems.map((item) => {
             const active = location.pathname === item.path;
             return (
