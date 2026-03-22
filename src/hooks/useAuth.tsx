@@ -37,12 +37,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .single();
     setProfile(data);
 
-    const { data: providerData } = await supabase
+    // Fetch the most complete provider (prefer one with description/city filled)
+    const { data: providerRows } = await supabase
       .from('providers')
       .select('*, categories(name, slug, icon)')
       .eq('user_id', userId)
-      .maybeSingle();
-    setProvider(providerData);
+      .order('created_at', { ascending: true });
+    
+    if (providerRows && providerRows.length > 0) {
+      // Pick the best record: one with city and description filled, else the first
+      const best = providerRows.find(p => p.city && p.description) || providerRows[0];
+      setProvider(best);
+    } else {
+      setProvider(null);
+    }
   }, []);
 
   const refetchProfile = useCallback(async () => {
