@@ -553,14 +553,20 @@ const ProviderProfile = () => {
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button variant="accent" size="lg" className={tc.button} asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-                  <a href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-5 w-5" /> {pageSettings.cta_whatsapp_text}
-                  </a>
-                </Button>
-                <Button variant="outline" size="lg" className={tc.buttonOutline}>
-                  <Phone className="h-5 w-5" /> Ligar
-                </Button>
+                {effectiveWhatsApp && (
+                  <Button variant="accent" size="lg" className={tc.button} asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                    <a href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)} target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="h-5 w-5" /> {pageSettings.cta_whatsapp_text}
+                    </a>
+                  </Button>
+                )}
+                {provider.phone && (
+                  <Button variant="outline" size="lg" className={tc.buttonOutline} asChild>
+                    <a href={`tel:${provider.phone.replace(/\D/g, '')}`}>
+                      <Phone className="h-5 w-5" /> Ligar
+                    </a>
+                  </Button>
+                )}
                 <Button variant="outline" size="lg" onClick={() => {
                   navigator.clipboard.writeText(window.location.href).then(() => {
                     toast.success('Link copiado!');
