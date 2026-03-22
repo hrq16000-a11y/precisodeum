@@ -14,6 +14,7 @@ const DashboardPage = () => {
   const [servicesCount, setServicesCount] = useState<number | null>(null);
   const [leadsCount, setLeadsCount] = useState<number>(0);
   const [jobsCount, setJobsCount] = useState<number>(0);
+  const [guideOpen, setGuideOpen] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');
