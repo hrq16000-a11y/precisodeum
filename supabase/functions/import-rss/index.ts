@@ -331,8 +331,13 @@ async function importFeed(feedUrl: string, maxItems: number, supabaseUrl: string
     }
 
     const cleanRssDesc = stripHtml(item.description);
-    const bestDescription =
+    const candidateDescription =
       articleDescription && articleDescription.length > cleanRssDesc.length ? articleDescription : cleanRssDesc;
+
+    const bestDescription =
+      candidateDescription && !/(^|\s)<a\s+href=|&lt;a\s+href=|news\.google\.com\/rss\/articles\//i.test(candidateDescription)
+        ? candidateDescription
+        : "";
 
     const excerpt = (bestDescription || "").slice(0, 300);
     const content = bestDescription || "Leia a matéria completa na fonte original.";
