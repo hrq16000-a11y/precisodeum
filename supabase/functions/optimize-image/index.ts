@@ -60,8 +60,8 @@ serve(async (req) => {
       });
     }
 
-    if (file.size > 1024 * 1024) {
-      return new Response(JSON.stringify({ error: 'File too large. Max 1MB.' }), {
+    if (file.size > 5 * 1024 * 1024) {
+      return new Response(JSON.stringify({ error: 'File too large. Max 5MB.' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
