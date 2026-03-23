@@ -15,7 +15,8 @@ interface Props {
 const FeaturedProviders = ({ providers, isLoading }: Props) => {
   // Randomize featured providers
   const randomized = useMemo(() => {
-    const featured = providers.filter(p => p.featured);
+    // Only show featured providers that have a service image AND portfolio
+    const featured = providers.filter(p => p.featured && !!p.serviceImage && !!p.hasPortfolio);
     const arr = [...featured];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
