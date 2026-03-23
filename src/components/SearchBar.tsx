@@ -205,7 +205,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
               type="text"
               placeholder="Preciso de um..."
               value={service}
-              onChange={(e) => setService(e.target.value)}
+              onChange={(e) => { setService(e.target.value); setSearchError(''); }}
               onFocus={() => setActiveField('service')}
               onKeyDown={handleKeyDown}
               className="w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
@@ -224,7 +224,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
               type="text"
               placeholder="Cidade ou região"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={(e) => { setLocation(e.target.value); setSearchError(''); }}
               onFocus={() => setActiveField('location')}
               onKeyDown={handleKeyDown}
               className="w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
@@ -240,6 +240,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
           </Button>
         </div>
       </form>
+      {searchError && <p className="mt-2 text-center text-xs text-destructive">{searchError}</p>}
       <SuggestionsDropdown />
     </div>
   );
