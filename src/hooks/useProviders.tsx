@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
 
 export interface DbProvider {
   id: string;
@@ -171,11 +172,11 @@ async function fetchProvidersLightweight(query: any) {
 
   return (data as any[]).map((p) => {
     const profile = profileMap[p.user_id];
-    const photo = p.photo_url || profile?.avatar || '';
+    const rawPhoto = p.photo_url || profile?.avatar || '';
     return mapProvider(
-      { ...p, photo_url: photo },
+      { ...p, photo_url: avatarThumb(rawPhoto) },
       profile?.name,
-      serviceImageMap[p.id],
+      serviceImageThumb(serviceImageMap[p.id]),
       portfolioSet.has(p.user_id),
       serviceFallbackMap[p.id]
     );

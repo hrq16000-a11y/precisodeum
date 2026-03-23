@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { avatarLarge, portfolioThumb, coverImage, serviceImageThumb } from '@/lib/imageOptimizer';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube } from 'lucide-react';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -244,7 +245,7 @@ const ProviderProfile = () => {
           setPortfolioImages(
             files
               .filter(f => f.name !== '.emptyFolderPlaceholder')
-              .map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl)
+              .map(f => portfolioThumb(supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl))
           );
         }
       }
@@ -254,7 +255,7 @@ const ProviderProfile = () => {
   }, [slug]);
 
   const name = provider ? ((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : '';
-  const avatarUrl = provider ? ((provider.profiles as any)?.avatar_url || provider.photo_url) : '';
+  const avatarUrl = provider ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : '';
   const category = provider ? ((provider.categories as any)?.name || '') : '';
   const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
@@ -457,7 +458,7 @@ const ProviderProfile = () => {
       {/* Cover Image Hero */}
       {pageSettings.cover_image_url && (
         <div className="relative w-full aspect-[16/5] sm:aspect-[16/5] overflow-hidden">
-          <img src={pageSettings.cover_image_url} alt="Capa" className="h-full w-full object-cover" />
+          <img src={coverImage(pageSettings.cover_image_url)} alt="Capa" className="h-full w-full object-cover" loading="eager" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 container pb-6 text-white">
             {pageSettings.headline && (
@@ -669,7 +670,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
         <div className="grid grid-cols-2 gap-2">
           {service.serviceImages.map((img: any) => (
             <div key={img.id} className="aspect-video overflow-hidden rounded-lg border border-border">
-              <img src={img.image_url} alt="Foto do serviço" className="h-full w-full object-cover" />
+              <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" />
             </div>
           ))}
         </div>
@@ -733,7 +734,7 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
                 <div className="mt-3 flex gap-2 overflow-hidden">
                   {s.serviceImages.slice(0, 3).map((img: any) => (
                     <div key={img.id} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border">
-                      <img src={img.image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-cover" loading="lazy" />
                     </div>
                   ))}
                   {s.serviceImages.length > 3 && (

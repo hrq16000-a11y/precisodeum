@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { sponsorImage } from '@/lib/imageOptimizer';
 
 type BannerShape = 'horizontal' | 'square' | 'vertical' | 'leaderboard';
 
@@ -35,6 +36,7 @@ const SponsorImage = ({
   className = '',
   containerClassName = '',
 }: SponsorImageProps) => {
+  const optimizedSrc = sponsorImage(src);
   const [shape, setShape] = useState<BannerShape>('horizontal');
   const [loaded, setLoaded] = useState(false);
   const isMobile = useIsMobile();
@@ -62,7 +64,7 @@ const SponsorImage = ({
         <div
           className="absolute inset-0 scale-[1.3]"
           style={{
-            backgroundImage: `url(${src})`,
+            backgroundImage: `url(${optimizedSrc})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'blur(24px)',
@@ -73,7 +75,7 @@ const SponsorImage = ({
       )}
       {/* Sharp foreground image — always fully visible */}
       <img
-        src={src}
+        src={optimizedSrc}
         alt={alt}
         onLoad={onLoad}
         loading="lazy"
