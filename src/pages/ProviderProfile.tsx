@@ -739,7 +739,9 @@ const ProviderProfile = () => {
             </div>
             <SponsorAd position="sidebar" layout="vertical" className="mt-4" />
           </aside>
-        </div>
+      </div>
+      {/* Profile footer ad slot */}
+      <Suspense fallback={null}><AdSlot slotSlug="profile-footer" category={category} city={provider.city} state={provider.state} /></Suspense>
       </div>
       {/* Floating WhatsApp Button */}
       {effectiveWhatsApp && (

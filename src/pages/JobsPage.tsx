@@ -11,6 +11,8 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import AdBanner from '@/components/ads/AdBanner';
 import AdSidebar from '@/components/ads/AdSidebar';
 import AdNativeCard from '@/components/ads/AdNativeCard';
+import { lazy, Suspense } from 'react';
+const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
 
 const JOB_TYPES = [
   { value: '', label: 'Todos os tipos' },
