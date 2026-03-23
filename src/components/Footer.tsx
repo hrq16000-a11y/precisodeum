@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MessageCircle, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-import defaultLogo from '@/assets/logo.png';
+import defaultLogo from '@/assets/logo.webp';
 import SponsorAd from '@/components/SponsorAd';
 import { Button } from '@/components/ui/button';
 
