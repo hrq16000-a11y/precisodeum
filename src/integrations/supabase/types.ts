@@ -116,12 +116,43 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          resource_id: string | null
+          resource_type: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          resource_id?: string | null
+          resource_type: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          resource_id?: string | null
+          resource_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_name: string
           content: string
           cover_image_url: string | null
           created_at: string
+          deleted_at: string | null
           excerpt: string
           featured: boolean
           id: string
@@ -136,6 +167,7 @@ export type Database = {
           content?: string
           cover_image_url?: string | null
           created_at?: string
+          deleted_at?: string | null
           excerpt?: string
           featured?: boolean
           id?: string
@@ -150,6 +182,7 @@ export type Database = {
           content?: string
           cover_image_url?: string | null
           created_at?: string
+          deleted_at?: string | null
           excerpt?: string
           featured?: boolean
           id?: string
@@ -164,6 +197,7 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          deleted_at: string | null
           icon: string
           id: string
           name: string
@@ -172,6 +206,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           icon?: string
           id?: string
           name: string
@@ -180,6 +215,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           icon?: string
           id?: string
           name?: string
@@ -334,6 +370,7 @@ export type Database = {
           cover_image_url: string | null
           created_at: string
           deadline: string | null
+          deleted_at: string | null
           description: string
           id: string
           job_type: string
@@ -363,6 +400,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           deadline?: string | null
+          deleted_at?: string | null
           description?: string
           id?: string
           job_type?: string
@@ -392,6 +430,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           deadline?: string | null
+          deleted_at?: string | null
           description?: string
           id?: string
           job_type?: string
@@ -657,6 +696,7 @@ export type Database = {
           category_id: string | null
           city: string
           created_at: string
+          deleted_at: string | null
           description: string
           featured: boolean
           id: string
@@ -685,6 +725,7 @@ export type Database = {
           category_id?: string | null
           city?: string
           created_at?: string
+          deleted_at?: string | null
           description?: string
           featured?: boolean
           id?: string
@@ -713,6 +754,7 @@ export type Database = {
           category_id?: string | null
           city?: string
           created_at?: string
+          deleted_at?: string | null
           description?: string
           featured?: boolean
           id?: string
@@ -860,6 +902,7 @@ export type Database = {
           address: string
           category_id: string | null
           created_at: string
+          deleted_at: string | null
           description: string
           id: string
           price: string | null
@@ -874,6 +917,7 @@ export type Database = {
           address?: string
           category_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           description?: string
           id?: string
           price?: string | null
@@ -888,6 +932,7 @@ export type Database = {
           address?: string
           category_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           description?: string
           id?: string
           price?: string | null
@@ -1199,6 +1244,7 @@ export type Database = {
           active: boolean
           clicks: number
           created_at: string
+          deleted_at: string | null
           display_order: number
           end_date: string | null
           id: string
@@ -1214,6 +1260,7 @@ export type Database = {
           active?: boolean
           clicks?: number
           created_at?: string
+          deleted_at?: string | null
           display_order?: number
           end_date?: string | null
           id?: string
@@ -1229,6 +1276,7 @@ export type Database = {
           active?: boolean
           clicks?: number
           created_at?: string
+          deleted_at?: string | null
           display_order?: number
           end_date?: string | null
           id?: string

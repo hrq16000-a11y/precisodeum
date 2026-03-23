@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -45,6 +45,8 @@ const menuGroups = [
     items: [
       { label: 'Meta Tags & SEO', icon: Globe, path: '/admin/metatags' },
       { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
+      { label: 'Trilha de Auditoria', icon: ScrollText, path: '/admin/auditoria' },
+      { label: 'Lixeira', icon: Trash2, path: '/admin/lixeira' },
     ],
   },
 ];
