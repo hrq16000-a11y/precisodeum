@@ -123,6 +123,7 @@ const ProviderProfile = () => {
   const isMobile = useIsMobile();
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [provider, setProvider] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
