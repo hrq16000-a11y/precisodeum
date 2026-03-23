@@ -21,8 +21,13 @@ const SearchPage = () => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const [page, setPage] = useState(1);
 
-  const { data: categories = [] } = useCategories();
-  const { data: filtered = [], isLoading } = useSearchProviders(query, city, selectedCategory, minRating);
+  const { data: categories = [], isError: categoriesError } = useCategories();
+  const {
+    data: filtered = [],
+    isLoading,
+    isError: searchError,
+    refetch,
+  } = useSearchProviders(query, city, selectedCategory, minRating);
 
   const seoTitle = query ? `Resultados para "${query}"` : 'Buscar Profissionais';
   const seoDesc = query
@@ -75,6 +80,18 @@ const SearchPage = () => {
           </aside>
 
           <div className="flex-1">
+            {(categoriesError || searchError) && (
+              <div className="mb-4 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+                Falha temporária ao carregar dados.{' '}
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  className="font-semibold text-primary underline-offset-2 hover:underline"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            )}
             <p className="mb-4 text-sm text-muted-foreground">
               {isLoading ? 'Buscando...' : `${filtered.length} profissional(is) encontrado(s)`}
               {query && <> para "<span className="font-semibold text-foreground">{query}</span>"</>}
