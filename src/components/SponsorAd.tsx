@@ -115,7 +115,7 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => handleClick(s)}
-            className="block rounded-xl border border-border bg-card p-3 shadow-card transition-all hover:shadow-card-hover"
+            className="block rounded-xl bg-card p-3 shadow-card transition-all hover:shadow-card-hover"
           >
             <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
             {s.image_url && (
@@ -157,7 +157,7 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
   return (
     <section className={`py-6 ${className}`}>
       <div className="container">
-        <div className="rounded-xl border border-border bg-muted/30 p-4">
+        <div className="rounded-xl bg-muted/30 p-4">
           <span className="mb-2 block text-center text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
           <a
             href={current.link_url || '#'}

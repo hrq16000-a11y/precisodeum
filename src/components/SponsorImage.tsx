@@ -47,39 +47,48 @@ const SponsorImage = ({
 }: SponsorImageProps) => {
   const optimizedSrc = sponsorImage(src);
   const [loaded, setLoaded] = useState(false);
+  const [shape, setShape] = useState<BannerShape>('horizontal');
+  const [aspectRatio, setAspectRatio] = useState(shapeAspectRatio.horizontal);
 
   const onLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
     const w = img.naturalWidth;
     const h = img.naturalHeight;
+    const detectedShape = classifyRatio(w, h);
+    setShape(detectedShape);
+    setAspectRatio(`${w}/${h}`);
     setLoaded(true);
-    onDimensionsDetected?.(w, h, classifyRatio(w, h));
+    onDimensionsDetected?.(w, h, detectedShape);
   }, [onDimensionsDetected]);
 
   return (
     <div
       className={cn(
-        'relative w-full bg-muted/10',
+        'relative w-full',
         containerClassName
       )}
+      data-shape={shape}
     >
-      {/* Image at natural aspect ratio — NEVER cropped */}
-      <img
-        src={optimizedSrc}
-        alt={alt}
-        onLoad={onLoad}
-        loading="lazy"
-       className={cn(
-          'block w-full h-auto rounded-2xl transition-opacity duration-300',
-          loaded ? 'opacity-100' : 'opacity-0',
-          className
+      <div
+        className={cn('relative w-full', `sponsor-shape-${shape}`)}
+        style={{ aspectRatio }}
+      >
+        <img
+          src={optimizedSrc}
+          alt={alt}
+          onLoad={onLoad}
+          loading="lazy"
+          className={cn(
+            'absolute inset-0 block h-full w-full rounded-2xl object-contain object-center transition-opacity duration-300',
+            loaded ? 'opacity-100' : 'opacity-0',
+            className
+          )}
+          style={{ maxWidth: '100%', height: '100%' }}
+        />
+        {!loaded && (
+          <div className="h-full w-full animate-pulse rounded-2xl bg-muted/30" />
         )}
-        style={{ objectFit: 'contain', objectPosition: 'center', maxWidth: '100%' }}
-      />
-      {/* Skeleton placeholder while loading */}
-      {!loaded && (
-        <div className="aspect-video w-full animate-pulse bg-muted/30 rounded" />
-      )}
+      </div>
     </div>
   );
 };
