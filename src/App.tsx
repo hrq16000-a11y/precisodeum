@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { importWithRetry, prefetchImportWithRetry } from "@/lib/lazyWithRetry";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ModuleBoundary from "./components/ModuleBoundary";
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
@@ -70,6 +71,15 @@ const FaqPage = lazy(() => import("./pages/FaqPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+
+// Sponsor Panel (CRM) — isolated module
+const SponsorDashboardPage = lazy(() => import("./pages/sponsor/SponsorDashboardPage"));
+const SponsorBannersPage = lazy(() => import("./pages/sponsor/SponsorBannersPage"));
+const SponsorCampaignsPage = lazy(() => import("./pages/sponsor/SponsorCampaignsPage"));
+const SponsorMetricsPage = lazy(() => import("./pages/sponsor/SponsorMetricsPage"));
+const SponsorContractsPage = lazy(() => import("./pages/sponsor/SponsorContractsPage"));
+const SponsorNotificationsPage = lazy(() => import("./pages/sponsor/SponsorNotificationsPage"));
+const SponsorDataPage = lazy(() => import("./pages/sponsor/SponsorDataPage"));
 
 // Minimal loading fallback (skeleton-style)
 const PageFallback = () => (
@@ -166,6 +176,14 @@ const App = () => {
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/sitemap" element={<SitemapRedirect />} />
                 <Route path="/sitemap.xml" element={<SitemapRedirect />} />
+                {/* Sponsor Panel — CRM Module (isolated) */}
+                <Route path="/sponsor-panel" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorDashboardPage /></ModuleBoundary>} />
+                <Route path="/sponsor-panel/banners" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorBannersPage /></ModuleBoundary>} />
+                <Route path="/sponsor-panel/campanhas" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorCampaignsPage /></ModuleBoundary>} />
+                <Route path="/sponsor-panel/metricas" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorMetricsPage /></ModuleBoundary>} />
+                <Route path="/sponsor-panel/contratos" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorContractsPage /></ModuleBoundary>} />
+                <Route path="/sponsor-panel/notificacoes" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorNotificationsPage /></ModuleBoundary>} />
+                <Route path="/sponsor-panel/dados" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorDataPage /></ModuleBoundary>} />
                 <Route path="/:slug" element={<SeoPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

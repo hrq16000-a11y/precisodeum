@@ -837,6 +837,220 @@ export type Database = {
         }
         Relationships: []
       }
+      sponsor_campaigns: {
+        Row: {
+          budget: number | null
+          created_at: string
+          description: string
+          end_date: string | null
+          id: string
+          name: string
+          sponsor_id: string
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          budget?: number | null
+          created_at?: string
+          description?: string
+          end_date?: string | null
+          id?: string
+          name: string
+          sponsor_id: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          budget?: number | null
+          created_at?: string
+          description?: string
+          end_date?: string | null
+          id?: string
+          name?: string
+          sponsor_id?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_campaigns_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsor_contacts: {
+        Row: {
+          company_name: string
+          contact_name: string
+          created_at: string
+          email: string | null
+          id: string
+          phone: string | null
+          role: string
+          sponsor_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name?: string
+          contact_name?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          phone?: string | null
+          role?: string
+          sponsor_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          contact_name?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          phone?: string | null
+          role?: string
+          sponsor_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_contacts_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsor_contracts: {
+        Row: {
+          contract_number: string
+          created_at: string
+          end_date: string | null
+          id: string
+          notes: string
+          sponsor_id: string
+          start_date: string | null
+          status: string
+          updated_at: string
+          value: number | null
+        }
+        Insert: {
+          contract_number?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string
+          sponsor_id: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          value?: number | null
+        }
+        Update: {
+          contract_number?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string
+          sponsor_id?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_contracts_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsor_notes: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          sponsor_id: string
+        }
+        Insert: {
+          author_id: string
+          content?: string
+          created_at?: string
+          id?: string
+          sponsor_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          sponsor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_notes_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsor_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          sponsor_id: string
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          sponsor_id: string
+          title: string
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          sponsor_id?: string
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_notifications_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsors: {
         Row: {
           active: boolean
@@ -963,6 +1177,7 @@ export type Database = {
       }
     }
     Functions: {
+      get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -978,6 +1193,7 @@ export type Database = {
         Args: { sponsor_id: string }
         Returns: undefined
       }
+      is_sponsor: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
