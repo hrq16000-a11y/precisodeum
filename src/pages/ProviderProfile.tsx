@@ -670,7 +670,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
         <div className="grid grid-cols-2 gap-2">
           {service.serviceImages.map((img: any) => (
             <div key={img.id} className="aspect-video overflow-hidden rounded-lg border border-border">
-              <img src={img.image_url} alt="Foto do serviço" className="h-full w-full object-cover" />
+              <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" />
             </div>
           ))}
         </div>
@@ -734,7 +734,7 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
                 <div className="mt-3 flex gap-2 overflow-hidden">
                   {s.serviceImages.slice(0, 3).map((img: any) => (
                     <div key={img.id} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border">
-                      <img src={img.image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-cover" loading="lazy" />
                     </div>
                   ))}
                   {s.serviceImages.length > 3 && (
