@@ -74,21 +74,27 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
                             <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />
                           </div>
                         </Link>
-                        <p className="mt-0.5 text-sm font-medium text-accent">{p.category}</p>
-                        <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          {p.city} - {p.state}
-                        </div>
+                        {p.category && (
+                          <p className="mt-0.5 text-sm font-medium text-accent">{p.category}</p>
+                        )}
+                        {(p.city || p.state) && (
+                          <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            {[p.city, p.state].filter(Boolean).join(' - ')}
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     <div className="mt-4 flex gap-2">
-                      <Button variant="accent" size="sm" className="flex-1" asChild>
-                        <a href={whatsappLink(p.whatsapp || '', `Olá! Vi seu perfil "${displayName}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
-                          <MessageCircle className="h-4 w-4" /> WhatsApp
-                        </a>
-                      </Button>
-                      <Button variant="outline" size="sm" asChild>
+                      {p.whatsapp && (
+                        <Button variant="accent" size="sm" className="flex-1" asChild>
+                          <a href={whatsappLink(p.whatsapp, `Olá! Vi seu perfil "${displayName}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
+                            <MessageCircle className="h-4 w-4" /> WhatsApp
+                          </a>
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" className={p.whatsapp ? '' : 'flex-1'} asChild>
                         <Link to={`/profissional/${p.slug}`}>Ver Perfil</Link>
                       </Button>
                     </div>
