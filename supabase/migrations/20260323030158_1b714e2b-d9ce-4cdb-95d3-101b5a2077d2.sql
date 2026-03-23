@@ -1,0 +1,21 @@
+
+CREATE INDEX IF NOT EXISTS idx_providers_status ON public.providers (status);
+CREATE INDEX IF NOT EXISTS idx_providers_category_id ON public.providers (category_id);
+CREATE INDEX IF NOT EXISTS idx_providers_slug ON public.providers (slug);
+CREATE INDEX IF NOT EXISTS idx_providers_featured ON public.providers (featured) WHERE featured = true;
+CREATE INDEX IF NOT EXISTS idx_providers_user_id ON public.providers (user_id);
+CREATE INDEX IF NOT EXISTS idx_jobs_status ON public.jobs (status);
+CREATE INDEX IF NOT EXISTS idx_jobs_slug ON public.jobs (slug);
+CREATE INDEX IF NOT EXISTS idx_jobs_user_id ON public.jobs (user_id);
+CREATE INDEX IF NOT EXISTS idx_jobs_approval_status ON public.jobs (approval_status);
+CREATE INDEX IF NOT EXISTS idx_services_provider_id ON public.services (provider_id);
+CREATE INDEX IF NOT EXISTS idx_services_category_id ON public.services (category_id);
+CREATE INDEX IF NOT EXISTS idx_service_images_service_id ON public.service_images (service_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_provider_id ON public.reviews (provider_id);
+CREATE INDEX IF NOT EXISTS idx_leads_provider_id ON public.leads (provider_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_profile_type ON public.profiles (profile_type);
+CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles (email);
+CREATE INDEX IF NOT EXISTS idx_blog_posts_slug ON public.blog_posts (slug);
+CREATE INDEX IF NOT EXISTS idx_blog_posts_published ON public.blog_posts (published) WHERE published = true;
+CREATE INDEX IF NOT EXISTS idx_categories_slug ON public.categories (slug);
+CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON public.user_roles (user_id);
