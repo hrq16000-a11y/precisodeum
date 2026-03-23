@@ -244,7 +244,7 @@ export function useFeaturedProviders() {
   return useQuery({
     queryKey: ['featured-providers'],
     queryFn: () =>
-      fetchProvidersLightweight(
+      fetchProvidersWithProfiles(
         supabase
           .from('providers')
           .select(providerSelect)
