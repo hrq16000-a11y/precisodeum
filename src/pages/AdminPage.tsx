@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '@/components/AdminLayout';
-import { Users, Briefcase, MessageSquare, FolderOpen, Star, TrendingUp, ClipboardList, Megaphone, Eye, MousePointerClick, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
+import { Users, Briefcase, MessageSquare, FolderOpen, Star, TrendingUp, ClipboardList, Megaphone, Eye, MousePointerClick, CheckCircle, XCircle, ArrowRight, Activity } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,15 @@ interface Stats {
   totalClicks: number;
 }
 
+interface FeaturedDiag {
+  approvedFeatured: number;
+  withService: number;
+  withServiceImage: number;
+  withPortfolio: number;
+  withImageOrPortfolio: number;
+  withBoth: number;
+}
+
 const AdminPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [stats, setStats] = useState<Stats>({
@@ -31,6 +40,7 @@ const AdminPage = () => {
   });
   const [pendingJobsList, setPendingJobsList] = useState<any[]>([]);
   const [pendingProvidersList, setPendingProvidersList] = useState<any[]>([]);
+  const [featuredDiag, setFeaturedDiag] = useState<FeaturedDiag | null>(null);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -72,6 +82,55 @@ const AdminPage = () => {
       const { data: pProviders } = await supabase.from('providers').select('id, business_name, city, created_at, user_id')
         .eq('status', 'pending').order('created_at', { ascending: false }).limit(10);
       setPendingProvidersList(pProviders || []);
+
+      // Featured diagnostics
+      const [featuredRes, servicesAllRes] = await Promise.all([
+        supabase.from('providers').select('id, user_id').eq('status', 'approved').eq('featured', true),
+        supabase.from('services').select('id, provider_id, service_images(id)'),
+      ]);
+      const featuredProvs = featuredRes.data || [];
+      const allSvcs = servicesAllRes.data || [];
+      const provsWithService = new Set<string>();
+      const provsWithServiceImage = new Set<string>();
+      allSvcs.forEach((s: any) => {
+        provsWithService.add(s.provider_id);
+        const imgs = Array.isArray(s.service_images) ? s.service_images : [];
+        if (imgs.length > 0) provsWithServiceImage.add(s.provider_id);
+      });
+      const featuredIds = new Set(featuredProvs.map((p: any) => p.id));
+      const featuredUserIds = featuredProvs.map((p: any) => p.user_id);
+      const portfolioChecks = await Promise.all(
+        featuredUserIds.map(async (uid: string) => {
+          try {
+            const { data: files } = await supabase.storage.from('portfolio').list(uid, { limit: 1 });
+            return files && files.some((f: any) => f.name !== '.emptyFolderPlaceholder') ? uid : null;
+          } catch { return null; }
+        })
+      );
+      const portfolioUserSet = new Set(portfolioChecks.filter(Boolean));
+      const portfolioProviderSet = new Set(
+        featuredProvs.filter((p: any) => portfolioUserSet.has(p.user_id)).map((p: any) => p.id)
+      );
+
+      let withSvc = 0, withSvcImg = 0, withPort = 0, withImgOrPort = 0, withBoth = 0;
+      featuredProvs.forEach((p: any) => {
+        const hasSvc = provsWithService.has(p.id);
+        const hasImg = provsWithServiceImage.has(p.id);
+        const hasPort = portfolioProviderSet.has(p.id);
+        if (hasSvc) withSvc++;
+        if (hasImg) withSvcImg++;
+        if (hasPort) withPort++;
+        if (hasImg || hasPort) withImgOrPort++;
+        if (hasImg && hasPort) withBoth++;
+      });
+      setFeaturedDiag({
+        approvedFeatured: featuredProvs.length,
+        withService: withSvc,
+        withServiceImage: withSvcImg,
+        withPortfolio: withPort,
+        withImageOrPortfolio: withImgOrPort,
+        withBoth,
+      });
     };
     fetchAll();
   }, [isAdmin]);
@@ -224,6 +283,39 @@ const AdminPage = () => {
           )}
         </div>
       </div>
+
+      {/* Featured Diagnostics */}
+      {featuredDiag && (
+        <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity className="h-5 w-5 text-accent" />
+            <h2 className="font-display text-base font-bold text-foreground">Diagnóstico dos Destaques</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Regra atual: profissionais com <strong>imagem de serviço OU portfólio</strong> aparecem na home (3–5 aleatórios por carregamento).
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {[
+              { label: 'Aprovados + Featured', value: featuredDiag.approvedFeatured, color: 'text-foreground' },
+              { label: 'Com serviço', value: featuredDiag.withService, color: 'text-blue-500' },
+              { label: 'Com imagem no serviço', value: featuredDiag.withServiceImage, color: 'text-green-500' },
+              { label: 'Com portfólio', value: featuredDiag.withPortfolio, color: 'text-purple-500' },
+              { label: '✅ Elegíveis (img OU port)', value: featuredDiag.withImageOrPortfolio, color: 'text-accent' },
+              { label: 'Com ambos (img + port)', value: featuredDiag.withBoth, color: 'text-orange-500' },
+            ].map(item => (
+              <div key={item.label} className="rounded-lg border border-border bg-muted/30 p-3">
+                <p className={`font-display text-xl font-bold ${item.color}`}>{item.value}</p>
+                <p className="text-[11px] text-muted-foreground leading-tight mt-1">{item.label}</p>
+              </div>
+            ))}
+          </div>
+          {featuredDiag.withImageOrPortfolio < 5 && (
+            <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+              ⚠️ Apenas {featuredDiag.withImageOrPortfolio} perfis elegíveis — para melhorar a rotação, incentive profissionais a adicionarem imagens nos serviços ou portfólio.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Quick links */}
       <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-4">
