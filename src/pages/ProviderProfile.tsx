@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube } from 'lucide-react';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeSlug } from '@/lib/slugify';
 import { toast } from 'sonner';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
@@ -122,6 +123,7 @@ const ProviderProfile = () => {
   const isMobile = useIsMobile();
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [provider, setProvider] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -133,11 +135,29 @@ const ProviderProfile = () => {
 
   useEffect(() => {
     const fetchProvider = async () => {
-      const { data } = await supabase
+      // Try exact match first
+      let { data } = await supabase
         .from('providers')
         .select('*, categories(name, slug, icon)')
         .eq('slug', slug)
         .maybeSingle();
+
+      // If not found, try sanitized version of the URL slug
+      if (!data && slug) {
+        const sanitized = sanitizeSlug(slug);
+        if (sanitized !== slug) {
+          const { data: fallback } = await supabase
+            .from('providers')
+            .select('*, categories(name, slug, icon)')
+            .eq('slug', sanitized)
+            .maybeSingle();
+          if (fallback) {
+            // Redirect to the canonical URL (301-style client redirect)
+            navigate(`/profissional/${fallback.slug}`, { replace: true });
+            return;
+          }
+        }
+      }
 
       if (data) {
         const { data: profile } = await supabase
