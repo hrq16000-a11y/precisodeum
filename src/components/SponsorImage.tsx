@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { sponsorImage } from '@/lib/imageOptimizer';
 
@@ -7,11 +7,8 @@ type BannerShape = 'horizontal' | 'square' | 'vertical' | 'leaderboard';
 interface SponsorImageProps {
   src: string;
   alt: string;
-  /** Optional aspect ratio hint for desktop — ignored on mobile */
-  forceAspectRatio?: string;
   className?: string;
   containerClassName?: string;
-  /** Callback with detected dimensions */
   onDimensionsDetected?: (width: number, height: number, shape: BannerShape) => void;
 }
 
@@ -22,13 +19,6 @@ function classifyRatio(w: number, h: number): BannerShape {
   if (ratio <= 0.85) return 'vertical';
   return 'square';
 }
-
-const shapeDefaults: Record<BannerShape, { aspectRatio: string; maxHeight: string }> = {
-  leaderboard: { aspectRatio: '728/90', maxHeight: '120px' },
-  horizontal: { aspectRatio: '16/5', maxHeight: '280px' },
-  square: { aspectRatio: '1/1', maxHeight: '400px' },
-  vertical: { aspectRatio: '3/4', maxHeight: '480px' },
-};
 
 const shapeAspectRatio: Record<BannerShape, string> = {
   leaderboard: '728/90',
@@ -44,79 +34,56 @@ const shapeLabelPt: Record<BannerShape, string> = {
   vertical: 'Vertical',
 };
 
+/**
+ * Displays a sponsor image at its FULL natural proportions — NEVER cropped.
+ * The image drives the container height via width:100% + height:auto.
+ */
 const SponsorImage = ({
   src,
   alt,
-  forceAspectRatio,
   className = '',
   containerClassName = '',
   onDimensionsDetected,
 }: SponsorImageProps) => {
   const optimizedSrc = sponsorImage(src);
-  const [shape, setShape] = useState<BannerShape>('horizontal');
   const [loaded, setLoaded] = useState(false);
-  const [naturalDims, setNaturalDims] = useState<{ w: number; h: number } | null>(null);
 
   const onLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
     const w = img.naturalWidth;
     const h = img.naturalHeight;
-    const detected = classifyRatio(w, h);
-    setShape(detected);
-    setNaturalDims({ w, h });
     setLoaded(true);
-    onDimensionsDetected?.(w, h, detected);
-  }, []);
-
-  const defaults = shapeDefaults[shape];
+    onDimensionsDetected?.(w, h, classifyRatio(w, h));
+  }, [onDimensionsDetected]);
 
   return (
     <div
       className={cn(
-        'relative overflow-hidden bg-muted/20 w-full',
+        'relative w-full bg-muted/10',
         containerClassName
       )}
-      style={{
-        // On all screens: use aspect-ratio from detected shape or forced ratio
-        // but cap max-height so vertical images don't dominate
-        aspectRatio: forceAspectRatio || defaults.aspectRatio,
-        maxHeight: forceAspectRatio ? undefined : defaults.maxHeight,
-      }}
     >
-      {/* Blurred background fill */}
-      {loaded && (
-        <div
-          className="absolute inset-0 scale-[1.3]"
-          style={{
-            backgroundImage: `url(${optimizedSrc})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(24px)',
-            opacity: 0.5,
-          }}
-          aria-hidden="true"
-        />
-      )}
-      {/* Sharp foreground image — always fully visible */}
+      {/* Image at natural aspect ratio — NEVER cropped */}
       <img
         src={optimizedSrc}
         alt={alt}
         onLoad={onLoad}
         loading="lazy"
         className={cn(
-          'relative z-10 h-full w-full object-contain object-center transition-opacity duration-300',
+          'block w-full h-auto transition-opacity duration-300',
           loaded ? 'opacity-100' : 'opacity-0',
           className
         )}
+        style={{ objectFit: 'contain', objectPosition: 'center' }}
       />
       {/* Skeleton placeholder while loading */}
       {!loaded && (
-        <div className="absolute inset-0 z-10 animate-pulse bg-muted/30" />
+        <div className="aspect-video w-full animate-pulse bg-muted/30 rounded" />
       )}
     </div>
   );
 };
 
-export { SponsorImage, classifyRatio, shapeAspectRatio, shapeDefaults, shapeLabelPt };
+export { SponsorImage, classifyRatio, shapeAspectRatio, shapeLabelPt };
 export type { BannerShape };
 export default SponsorImage;
