@@ -135,11 +135,29 @@ const ProviderProfile = () => {
 
   useEffect(() => {
     const fetchProvider = async () => {
-      const { data } = await supabase
+      // Try exact match first
+      let { data } = await supabase
         .from('providers')
         .select('*, categories(name, slug, icon)')
         .eq('slug', slug)
         .maybeSingle();
+
+      // If not found, try sanitized version of the URL slug
+      if (!data && slug) {
+        const sanitized = sanitizeSlug(slug);
+        if (sanitized !== slug) {
+          const { data: fallback } = await supabase
+            .from('providers')
+            .select('*, categories(name, slug, icon)')
+            .eq('slug', sanitized)
+            .maybeSingle();
+          if (fallback) {
+            // Redirect to the canonical URL (301-style client redirect)
+            navigate(`/profissional/${fallback.slug}`, { replace: true });
+            return;
+          }
+        }
+      }
 
       if (data) {
         const { data: profile } = await supabase
