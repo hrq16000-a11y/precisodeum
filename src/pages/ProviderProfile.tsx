@@ -395,7 +395,7 @@ const ProviderProfile = () => {
   };
 
   const renderServices = () => (
-    <ServicesList key="services" services={services} whatsapp={effectiveWhatsApp} providerName={name} providerCity={provider.city} ctaWhatsappText={pageSettings.cta_whatsapp_text} accentBg={accentBg} themeClasses={tc} />
+    <ServicesList key="services" services={services} whatsapp={effectiveWhatsApp} providerName={name} providerCity={provider.city} ctaWhatsappText={pageSettings.cta_whatsapp_text} accentBg={accentBg} themeClasses={tc} onImageClick={openServiceLightbox} />
   );
 
   const renderReviews = () => {
