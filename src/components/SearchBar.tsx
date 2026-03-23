@@ -167,7 +167,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   if (variant === 'compact') {
     return (
       <div ref={wrapperRef} className="relative">
-        <form onSubmit={handleSearch} className="flex items-center gap-2 rounded-lg border border-border bg-card p-1.5">
+        <form onSubmit={handleSearch} className={`flex items-center gap-2 rounded-lg border bg-card p-1.5 ${searchError ? 'border-destructive' : 'border-border'}`}>
           <div className="flex flex-1 items-center gap-2 px-2">
             <Search className="h-4 w-4 text-muted-foreground" />
             <input
@@ -175,7 +175,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
               type="text"
               placeholder="Preciso de um..."
               value={service}
-              onChange={(e) => setService(e.target.value)}
+              onChange={(e) => { setService(e.target.value); setSearchError(''); }}
               onFocus={() => setActiveField('service')}
               onKeyDown={handleKeyDown}
               className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
@@ -188,6 +188,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
           </div>
           <Button type="submit" variant="accent" size="sm">Buscar</Button>
         </form>
+        {searchError && <p className="mt-1 text-xs text-destructive">{searchError}</p>}
         <SuggestionsDropdown />
       </div>
     );
