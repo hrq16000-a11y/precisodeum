@@ -68,9 +68,17 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
 
   const activeSuggestions = activeField === 'service' ? serviceSuggestions : activeField === 'location' ? locationSuggestions : [];
 
+  const [searchError, setSearchError] = useState('');
+
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
     setActiveField(null);
+    if (!service.trim() && !location.trim()) {
+      setSearchError('Digite o que você precisa ou uma cidade');
+      serviceRef.current?.focus();
+      return;
+    }
+    setSearchError('');
     const params = new URLSearchParams();
     if (service) params.set('q', service);
     if (location) params.set('cidade', location);

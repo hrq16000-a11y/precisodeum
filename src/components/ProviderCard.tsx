@@ -20,12 +20,15 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
   const locationParts = [provider.neighborhood, provider.city, provider.state].filter(Boolean);
   const locationText = locationParts.join(', ');
 
+  // Safe display name - never show empty
+  const displayName = provider.name || provider.businessName || 'Profissional';
+
   return (
-    <div className={`group overflow-hidden rounded-xl border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`}>
-      <div className="p-5">
+    <div className={`group flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`}>
+      <div className="flex flex-1 flex-col p-5">
         <div className="flex gap-4">
            <Avatar className="h-14 w-14 shrink-0">
-            <AvatarImage src={displayPhoto || undefined} alt={provider.businessName || provider.name} />
+            <AvatarImage src={displayPhoto || undefined} alt={displayName} />
             <AvatarFallback className="bg-primary/10 text-2xl">
               {provider.categoryIcon || '🔧'}
             </AvatarFallback>
@@ -34,12 +37,12 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
             <Link to={`/profissional/${provider.slug}`} className="block">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
-                  {provider.name}
+                  {displayName}
                 </h3>
                 {provider.plan === 'premium' && <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />}
               </div>
             </Link>
-            {provider.businessName && (
+            {provider.businessName && provider.businessName !== displayName && (
               <p className="truncate text-xs text-muted-foreground">{provider.businessName}</p>
             )}
             {provider.category && (
@@ -71,10 +74,13 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
           </p>
         )}
 
+        {/* Spacer to push CTAs to bottom for consistent card height */}
+        <div className="flex-1" />
+
         <div className="mt-4 flex gap-2">
           {provider.whatsapp && (
             <Button variant="accent" size="sm" className="flex-1" asChild>
-              <a href={whatsappLink(provider.whatsapp, `Olá! Vi seu perfil "${provider.businessName || provider.name}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
+              <a href={whatsappLink(provider.whatsapp, `Olá! Vi seu perfil "${displayName}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
                 <MessageCircle className="h-4 w-4" /> WhatsApp
               </a>
             </Button>
