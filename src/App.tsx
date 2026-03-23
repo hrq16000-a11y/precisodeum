@@ -98,12 +98,12 @@ const App = () => (
               <Route path="/vaga/:slug" element={<JobDetailPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/dashboard/perfil" element={<DashboardProfilePage />} />
-              <Route path="/dashboard/servicos" element={<DashboardServicesPage />} />
-              <Route path="/dashboard/avaliacoes" element={<DashboardReviewsPage />} />
-              <Route path="/dashboard/leads" element={<DashboardLeadsPage />} />
-              <Route path="/dashboard/plano" element={<DashboardPlanPage />} />
-              <Route path="/dashboard/minha-pagina" element={<DashboardMyPagePage />} />
-              <Route path="/dashboard/vagas" element={<DashboardJobsPage />} />
+              <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><DashboardServicesPage /></ProtectedRoute>} />
+              <Route path="/dashboard/avaliacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReviewsPage /></ProtectedRoute>} />
+              <Route path="/dashboard/leads" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLeadsPage /></ProtectedRoute>} />
+              <Route path="/dashboard/plano" element={<ProtectedRoute allowedTypes={['provider']}><DashboardPlanPage /></ProtectedRoute>} />
+              <Route path="/dashboard/minha-pagina" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMyPagePage /></ProtectedRoute>} />
+              <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
               <Route path="/dashboard/comunidade" element={<DashboardCommunityPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
