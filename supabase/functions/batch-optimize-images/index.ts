@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MAX_SIZE = 200 * 1024; // 200KB threshold - anything bigger gets reprocessed
+const MAX_SIZE = 200 * 1024; // 200KB
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,75 +14,65 @@ serve(async (req) => {
   }
 
   try {
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const buckets = ['avatars', 'service-images'];
-    const results: { bucket: string; file: string; originalSize: number; newSize: number; action: string }[] = [];
+    const results: { bucket: string; file: string; sizeKB: number }[] = [];
 
-    for (const bucket of buckets) {
-      // List top-level items
-      const { data: items } = await supabase.storage.from(bucket).list('', { limit: 500 });
-      if (!items) continue;
-
-      for (const item of items) {
-        // It's a folder (user ID folder for avatars)
-        if (item.id === null) {
-          const { data: subItems } = await supabase.storage.from(bucket).list(item.name, { limit: 100 });
-          if (!subItems) continue;
-
-          for (const subItem of subItems) {
-            if (!subItem.name || subItem.name === '.emptyFolderPlaceholder') continue;
-            const filePath = `${item.name}/${subItem.name}`;
-            const size = (subItem.metadata as any)?.size || 0;
-
-            if (size > MAX_SIZE) {
-              // Download, check if it's an image we can optimize
-              const ext = subItem.name.split('.').pop()?.toLowerCase() || '';
-              if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext)) continue;
-
-              const { data: fileData } = await supabase.storage.from(bucket).download(filePath);
-              if (!fileData) continue;
-
-              const arrayBuffer = await fileData.arrayBuffer();
-              const originalSize = arrayBuffer.byteLength;
-
-              // Re-upload with content type to trigger CDN optimization
-              // For truly large images, we strip and re-upload
-              if (originalSize > MAX_SIZE) {
-                results.push({
-                  bucket,
-                  file: filePath,
-                  originalSize,
-                  newSize: originalSize,
-                  action: `flagged_for_manual_resize (${Math.round(originalSize / 1024)}KB)`,
-                });
-              }
-            }
-          }
-        } else {
-          // Direct file in bucket root
-          if (!item.name || item.name === '.emptyFolderPlaceholder') continue;
-          const size = (item.metadata as any)?.size || 0;
+    // Scan avatars bucket (folders = user IDs)
+    const { data: avatarFolders } = await supabase.storage.from('avatars').list('', { limit: 200 });
+    if (avatarFolders) {
+      for (const folder of avatarFolders) {
+        if (folder.id !== null) continue; // skip files, we want folders
+        const { data: files } = await supabase.storage.from('avatars').list(folder.name, { limit: 10 });
+        if (!files) continue;
+        for (const f of files) {
+          if (!f.name || f.name === '.emptyFolderPlaceholder') continue;
+          const meta = f.metadata as any;
+          const size = meta?.size || 0;
           if (size > MAX_SIZE) {
-            results.push({
-              bucket,
-              file: item.name,
-              originalSize: size,
-              newSize: size,
-              action: `flagged_for_manual_resize (${Math.round(size / 1024)}KB)`,
-            });
+            results.push({ bucket: 'avatars', file: `${folder.name}/${f.name}`, sizeKB: Math.round(size / 1024) });
           }
         }
       }
     }
 
+    // Scan service-images bucket (top-level only)
+    const { data: serviceFiles } = await supabase.storage.from('service-images').list('', { limit: 200 });
+    if (serviceFiles) {
+      for (const f of serviceFiles) {
+        if (!f.name || f.name === '.emptyFolderPlaceholder' || f.id === null) continue;
+        const meta = f.metadata as any;
+        const size = meta?.size || 0;
+        if (size > MAX_SIZE) {
+          results.push({ bucket: 'service-images', file: f.name, sizeKB: Math.round(size / 1024) });
+        }
+      }
+      // Also check sponsors subfolder
+      const { data: sponsorFiles } = await supabase.storage.from('service-images').list('sponsors', { limit: 50 });
+      if (sponsorFiles) {
+        for (const f of sponsorFiles) {
+          if (!f.name || f.name === '.emptyFolderPlaceholder') continue;
+          const meta = f.metadata as any;
+          const size = meta?.size || 0;
+          if (size > MAX_SIZE) {
+            results.push({ bucket: 'service-images', file: `sponsors/${f.name}`, sizeKB: Math.round(size / 1024) });
+          }
+        }
+      }
+    }
+
+    // Sort by size descending
+    results.sort((a, b) => b.sizeKB - a.sizeKB);
+
+    const totalWastedKB = results.reduce((sum, r) => sum + r.sizeKB, 0);
+
     return new Response(JSON.stringify({
-      processed: results.length,
-      results,
-      message: results.length === 0 ? 'All images are within size limits' : `Found ${results.length} oversized images`,
+      oversized_count: results.length,
+      total_wasted_kb: totalWastedKB,
+      threshold_kb: Math.round(MAX_SIZE / 1024),
+      files: results,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
