@@ -34,7 +34,7 @@ const AdminSponsorCrmPage = () => {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  if (!adminLoading && !isAdmin) { navigate('/'); return null; }
+  // Auth check moved after all hooks (below)
 
   // ─── Data Queries ─────────────────────────────────────────────────
   const { data: sponsors = [] } = useQuery({
