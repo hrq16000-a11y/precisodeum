@@ -133,7 +133,7 @@ describe('Layout components stability', () => {
 describe('Data hooks stability', () => {
   it('useProviders exports correctly', async () => {
     const mod = await import('@/hooks/useProviders');
-    expect(mod.DbProvider || mod.useFilteredProviders || Object.keys(mod).length > 0).toBeTruthy();
+    expect(mod.useFeaturedProviders).toBeDefined();
   });
 
   it('useSiteSettings exports correctly', async () => {
