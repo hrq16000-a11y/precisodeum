@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCategoryProviders } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
+
+const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
 
 const ITEMS_PER_PAGE = 12;
 
@@ -88,10 +90,11 @@ const CategoryPage = () => {
           </p>
         </div>
       </section>
+      <Suspense fallback={null}><AdSlot slotSlug="category-top" category={slug} /></Suspense>
       <div className="container py-8">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {paginatedProviders.map((p) => (
-            <ProviderCard key={p.id} provider={p} />
+          {paginatedProviders.map((p, i) => (
+            <>{i === 6 && <Suspense key="cat-ad" fallback={null}><AdSlot slotSlug="category-between" layout="native" category={slug} /></Suspense>}<ProviderCard key={p.id} provider={p} /></>
           ))}
         </div>
         {providers.length === 0 && (

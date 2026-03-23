@@ -8,6 +8,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';
 import SponsorAd from '@/components/SponsorAd';
+import { lazy, Suspense } from 'react';
+const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
