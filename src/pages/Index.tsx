@@ -1,20 +1,25 @@
-import { lazy, Suspense, memo, Component, ReactNode } from 'react';
+import { lazy as reactLazy, Suspense, memo, Component, ReactNode, type ComponentType } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
+import { importWithRetry } from '@/lib/lazyWithRetry';
 
 import Header from '@/components/Header';
 import HeroBanner from '@/components/home/HeroBanner';
 import CategoriesGrid from '@/components/home/CategoriesGrid';
 import HighlightsCarousel from '@/components/home/HighlightsCarousel';
+import FeaturedProviders from '@/components/home/FeaturedProviders';
+import RecentServices from '@/components/home/RecentServices';
+
+type LazyModule<T extends ComponentType<any>> = { default: T };
+const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
+  reactLazy(() => importWithRetry(importer));
 
 // Lazy load below-the-fold sections
-const FeaturedProviders = lazy(() => import('@/components/home/FeaturedProviders'));
 const PopularServices = lazy(() => import('@/components/home/PopularServices'));
-const RecentServices = lazy(() => import('@/components/home/RecentServices'));
 const FeaturedJobs = lazy(() => import('@/components/home/FeaturedJobs'));
 const BlogHighlight = lazy(() => import('@/components/home/BlogHighlight'));
 const CitiesSection = lazy(() => import('@/components/home/CitiesSection'));
