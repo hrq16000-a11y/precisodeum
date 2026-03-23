@@ -1,6 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { sponsorImage } from '@/lib/imageOptimizer';
 
 type BannerShape = 'horizontal' | 'square' | 'vertical' | 'leaderboard';
@@ -8,10 +7,12 @@ type BannerShape = 'horizontal' | 'square' | 'vertical' | 'leaderboard';
 interface SponsorImageProps {
   src: string;
   alt: string;
-  /** Force a specific aspect ratio string like "16/4" */
+  /** Optional aspect ratio hint for desktop — ignored on mobile */
   forceAspectRatio?: string;
   className?: string;
   containerClassName?: string;
+  /** Callback with detected dimensions */
+  onDimensionsDetected?: (width: number, height: number, shape: BannerShape) => void;
 }
 
 function classifyRatio(w: number, h: number): BannerShape {
@@ -22,11 +23,25 @@ function classifyRatio(w: number, h: number): BannerShape {
   return 'square';
 }
 
+const shapeDefaults: Record<BannerShape, { aspectRatio: string; maxHeight: string }> = {
+  leaderboard: { aspectRatio: '728/90', maxHeight: '120px' },
+  horizontal: { aspectRatio: '16/5', maxHeight: '280px' },
+  square: { aspectRatio: '1/1', maxHeight: '400px' },
+  vertical: { aspectRatio: '3/4', maxHeight: '480px' },
+};
+
 const shapeAspectRatio: Record<BannerShape, string> = {
   leaderboard: '728/90',
   horizontal: '16/5',
   square: '1/1',
   vertical: '3/4',
+};
+
+const shapeLabelPt: Record<BannerShape, string> = {
+  leaderboard: 'Leaderboard (horizontal longo)',
+  horizontal: 'Horizontal',
+  square: 'Quadrado',
+  vertical: 'Vertical',
 };
 
 const SponsorImage = ({
@@ -35,28 +50,37 @@ const SponsorImage = ({
   forceAspectRatio,
   className = '',
   containerClassName = '',
+  onDimensionsDetected,
 }: SponsorImageProps) => {
   const optimizedSrc = sponsorImage(src);
   const [shape, setShape] = useState<BannerShape>('horizontal');
   const [loaded, setLoaded] = useState(false);
-  const isMobile = useIsMobile();
+  const [naturalDims, setNaturalDims] = useState<{ w: number; h: number } | null>(null);
 
   const onLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    setShape(classifyRatio(img.naturalWidth, img.naturalHeight));
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const detected = classifyRatio(w, h);
+    setShape(detected);
+    setNaturalDims({ w, h });
     setLoaded(true);
+    onDimensionsDetected?.(w, h, detected);
   }, []);
 
-  const aspectRatio = forceAspectRatio || shapeAspectRatio[shape];
+  const defaults = shapeDefaults[shape];
 
   return (
     <div
       className={cn(
-        'relative overflow-hidden bg-muted/20',
+        'relative overflow-hidden bg-muted/20 w-full',
         containerClassName
       )}
       style={{
-        aspectRatio: isMobile ? undefined : aspectRatio,
+        // On all screens: use aspect-ratio from detected shape or forced ratio
+        // but cap max-height so vertical images don't dominate
+        aspectRatio: forceAspectRatio || defaults.aspectRatio,
+        maxHeight: forceAspectRatio ? undefined : defaults.maxHeight,
       }}
     >
       {/* Blurred background fill */}
@@ -80,14 +104,19 @@ const SponsorImage = ({
         onLoad={onLoad}
         loading="lazy"
         className={cn(
-          'relative z-10 h-full w-full object-contain object-center',
+          'relative z-10 h-full w-full object-contain object-center transition-opacity duration-300',
+          loaded ? 'opacity-100' : 'opacity-0',
           className
         )}
       />
+      {/* Skeleton placeholder while loading */}
+      {!loaded && (
+        <div className="absolute inset-0 z-10 animate-pulse bg-muted/30" />
+      )}
     </div>
   );
 };
 
-export { SponsorImage, classifyRatio, shapeAspectRatio };
+export { SponsorImage, classifyRatio, shapeAspectRatio, shapeDefaults, shapeLabelPt };
 export type { BannerShape };
 export default SponsorImage;

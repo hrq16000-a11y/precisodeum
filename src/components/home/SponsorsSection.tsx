@@ -47,11 +47,10 @@ const SponsorsSection = ({ sponsors }: Props) => {
                 <SponsorImage
                   src={sponsor.image_url}
                   alt={sponsor.title}
-                  forceAspectRatio="16/9"
                   containerClassName="rounded-2xl"
                 />
               ) : (
-                <div className="flex items-center justify-center bg-muted/20 p-6" style={{ aspectRatio: '16/9' }}>
+                <div className="flex items-center justify-center bg-muted/20 p-6 min-h-[100px]">
                   <span className="text-sm font-bold text-muted-foreground">{sponsor.title}</span>
                 </div>
               )}

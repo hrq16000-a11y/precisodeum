@@ -17,7 +17,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import ImageUploadField from '@/components/ImageUploadField';
-import SponsorImage from '@/components/SponsorImage';
+import SponsorImage, { shapeLabelPt, type BannerShape } from '@/components/SponsorImage';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -51,6 +51,19 @@ interface Sponsor {
 
 const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0, start_date: '' as string, end_date: '' as string, tier: 'basic' };
 
+const idealSizes: Record<string, { width: number; height: number; label: string }> = {
+  'hero-top': { width: 970, height: 90, label: '970×90 px (Leaderboard)' },
+  'between-sections': { width: 728, height: 90, label: '728×90 px (Leaderboard)' },
+  'mid-content': { width: 728, height: 90, label: '728×90 px (Leaderboard)' },
+  sidebar: { width: 300, height: 250, label: '300×250 px (Retângulo)' },
+  native: { width: 600, height: 400, label: '600×400 px (Card)' },
+  showcase: { width: 600, height: 450, label: '600×450 px (Vitrine)' },
+  banner: { width: 1200, height: 300, label: '1200×300 px (Banner)' },
+  card: { width: 600, height: 400, label: '600×400 px (Card)' },
+  featured: { width: 800, height: 450, label: '800×450 px (Destaque)' },
+  footer: { width: 728, height: 90, label: '728×90 px (Rodapé)' },
+};
+
 const AdminSponsorsPage = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
@@ -60,6 +73,7 @@ const AdminSponsorsPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [detectedShape, setDetectedShape] = useState<{ width: number; height: number; shape: BannerShape } | null>(null);
 
   const loading = authLoading || adminLoading;
 
@@ -126,6 +140,7 @@ const AdminSponsorsPage = () => {
     setDialogOpen(false);
     setEditingId(null);
     setForm(emptyForm);
+    setDetectedShape(null);
   };
 
   const openEdit = (s: Sponsor) => {
@@ -187,11 +202,47 @@ const AdminSponsorsPage = () => {
                   bucket="service-images"
                   folder="sponsors"
                 />
-                <p className="mt-1 text-xs text-muted-foreground">{sizeHints[form.position] || 'Envie a imagem do banner'}</p>
+                {/* Size recommendation */}
+                <div className="mt-1.5 rounded-md bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  <p className="font-medium">📐 Tamanho ideal: {idealSizes[form.position]?.label || 'Envie a imagem do banner'}</p>
+                  <p className="mt-0.5">A imagem será exibida completa (sem cortes) em qualquer dispositivo.</p>
+                </div>
                 {form.image_url && (
-                  <div className="mt-2 rounded-lg border border-border overflow-hidden">
-                    <p className="px-2 py-1 text-[10px] font-medium text-muted-foreground bg-muted/30">Pré-visualização</p>
-                    <SponsorImage src={form.image_url} alt="Preview" containerClassName="max-h-48" />
+                  <div className="mt-3 space-y-2">
+                    <div className="rounded-lg border border-border overflow-hidden">
+                      <div className="flex items-center justify-between px-3 py-1.5 bg-muted/30">
+                        <p className="text-[10px] font-medium text-muted-foreground">Pré-visualização</p>
+                        {detectedShape && (
+                          <p className="text-[10px] text-muted-foreground">
+                            {detectedShape.width}×{detectedShape.height}px • {shapeLabelPt[detectedShape.shape]}
+                          </p>
+                        )}
+                      </div>
+                      <SponsorImage
+                        src={form.image_url}
+                        alt="Preview"
+                        onDimensionsDetected={(w, h, shape) => setDetectedShape({ width: w, height: h, shape })}
+                      />
+                    </div>
+                    {detectedShape && idealSizes[form.position] && (
+                      (() => {
+                        const ideal = idealSizes[form.position];
+                        const wRatio = detectedShape.width / ideal.width;
+                        const hRatio = detectedShape.height / ideal.height;
+                        const isGoodFit = wRatio >= 0.8 && wRatio <= 1.5 && hRatio >= 0.5 && hRatio <= 2;
+                        return (
+                          <div className={cn(
+                            'rounded-md px-3 py-2 text-xs',
+                            isGoodFit ? 'bg-accent/10 text-accent' : 'bg-orange-500/10 text-orange-600'
+                          )}>
+                            {isGoodFit
+                              ? '✅ Proporção compatível com a posição selecionada'
+                              : `⚠️ Imagem ${detectedShape.width}×${detectedShape.height} pode não ser ideal para "${positionLabels[form.position]}". Recomendado: ${ideal.label}`
+                            }
+                          </div>
+                        );
+                      })()
+                    )}
                   </div>
                 )}
               </div>

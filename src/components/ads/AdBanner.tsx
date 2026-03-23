@@ -1,13 +1,13 @@
 import { useSponsorsByPosition } from '@/components/SponsorAd';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useIsMobile } from '@/hooks/use-mobile';
 import SponsorImage from '@/components/SponsorImage';
 
 interface AdBannerProps {
   position: string;
   className?: string;
   maxWidth?: number;
+  /** Optional aspect ratio hint — SponsorImage auto-detects if omitted */
   aspectRatio?: string;
   sticky?: boolean;
 }
@@ -19,11 +19,10 @@ function trackClick(id: string) {
   supabase.rpc('increment_sponsor_click', { sponsor_id: id } as any).then(() => {});
 }
 
-const AdBanner = ({ position, className = '', maxWidth, aspectRatio, sticky = false }: AdBannerProps) => {
+const AdBanner = ({ position, className = '', maxWidth, aspectRatio: _hint, sticky = false }: AdBannerProps) => {
   const { data: sponsors = [] } = useSponsorsByPosition(position);
   const [idx, setIdx] = useState(0);
   const tracked = useRef(new Set<string>());
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (sponsors.length <= 1) return;
@@ -42,7 +41,7 @@ const AdBanner = ({ position, className = '', maxWidth, aspectRatio, sticky = fa
   if (sponsors.length === 0) return null;
   const current = sponsors[idx] || sponsors[0];
 
-  const wrapperClass = sticky && !isMobile ? 'sticky top-4' : '';
+  const wrapperClass = sticky ? 'lg:sticky lg:top-4' : '';
 
   return (
     <div className={`${wrapperClass} ${className}`} style={{ maxWidth: maxWidth ? `${maxWidth}px` : undefined }}>
@@ -61,12 +60,10 @@ const AdBanner = ({ position, className = '', maxWidth, aspectRatio, sticky = fa
             <SponsorImage
               src={current.image_url}
               alt={current.title}
-              forceAspectRatio={isMobile ? '16/5' : (aspectRatio || undefined)}
             />
           ) : (
             <div
-              className="flex items-center justify-center bg-muted/20 p-4"
-              style={{ aspectRatio: isMobile ? '16/5' : (aspectRatio || '728/90') }}
+              className="flex items-center justify-center bg-muted/20 p-4 min-h-[60px]"
             >
               <span className="text-sm font-medium text-muted-foreground">{current.title}</span>
             </div>
