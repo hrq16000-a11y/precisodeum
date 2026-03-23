@@ -51,9 +51,13 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
   };
 }
 
-const providerSelect = '*, categories(name, slug, icon)';
+const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, categories(name, slug, icon)';
 
-async function fetchProvidersWithProfiles(query: any) {
+/**
+ * Lightweight fetch: skips portfolio storage checks entirely.
+ * Used for home page listings where speed is critical.
+ */
+async function fetchProvidersLightweight(query: any) {
   const { data, error } = await query;
   if (error) throw error;
   if (!data || data.length === 0) return [];
@@ -61,7 +65,7 @@ async function fetchProvidersWithProfiles(query: any) {
   const providerIds = (data as any[]).map((p) => p.id);
   const userIds = [...new Set((data as any[]).map((p) => p.user_id))];
 
-  // Parallel fetches: profiles, services (for images), portfolio check
+  // Parallel fetches: profiles + service images only (NO portfolio storage calls)
   const [profilesRes, servicesRes] = await Promise.all([
     supabase
       .from('public_profiles' as any)
@@ -78,7 +82,6 @@ async function fetchProvidersWithProfiles(query: any) {
     profileMap[p.id] = { name: p.full_name, avatar: p.avatar_url || undefined };
   });
 
-  // Step 2: fetch service images using actual service IDs
   const serviceRows = servicesRes.data || [];
   const serviceIds = serviceRows.map((s: any) => s.id);
   const serviceToProvider: Record<string, string> = {};
@@ -101,17 +104,85 @@ async function fetchProvidersWithProfiles(query: any) {
     });
   }
 
-  // Check portfolio images in storage for each user (batch)
-  const portfolioMap: Record<string, boolean> = {};
-  const portfolioChecks = userIds.map(async (uid) => {
-    try {
-      const { data: files } = await supabase.storage.from('portfolio').list(uid, { limit: 1 });
-      if (files && files.filter(f => f.name !== '.emptyFolderPlaceholder').length > 0) {
-        portfolioMap[uid] = true;
-      }
-    } catch { /* ignore */ }
+  // Mark hasPortfolio = true if provider has service images (fast heuristic, no storage calls)
+  return (data as any[]).map((p) => {
+    const profile = profileMap[p.user_id];
+    const photo = p.photo_url || profile?.avatar || '';
+    const hasServiceImage = !!serviceImageMap[p.id];
+    const mapped = mapProvider(
+      { ...p, photo_url: photo },
+      profile?.name,
+      serviceImageMap[p.id],
+      hasServiceImage // use service images as portfolio indicator
+    );
+    return mapped;
   });
-  await Promise.all(portfolioChecks);
+}
+
+/**
+ * Full fetch with portfolio storage checks.
+ * Used only for detail pages (search, category, profile).
+ */
+async function fetchProvidersWithProfiles(query: any) {
+  const { data, error } = await query;
+  if (error) throw error;
+  if (!data || data.length === 0) return [];
+
+  const providerIds = (data as any[]).map((p) => p.id);
+  const userIds = [...new Set((data as any[]).map((p) => p.user_id))];
+
+  const [profilesRes, servicesRes] = await Promise.all([
+    supabase
+      .from('public_profiles' as any)
+      .select('id, full_name, avatar_url')
+      .in('id', userIds) as unknown as Promise<{ data: { id: string; full_name: string; avatar_url: string | null }[] | null }>,
+    supabase
+      .from('services')
+      .select('id, provider_id')
+      .in('provider_id', providerIds),
+  ]);
+
+  const profileMap: Record<string, { name: string; avatar?: string }> = {};
+  (profilesRes.data || []).forEach((p: any) => {
+    profileMap[p.id] = { name: p.full_name, avatar: p.avatar_url || undefined };
+  });
+
+  const serviceRows = servicesRes.data || [];
+  const serviceIds = serviceRows.map((s: any) => s.id);
+  const serviceToProvider: Record<string, string> = {};
+  serviceRows.forEach((s: any) => { serviceToProvider[s.id] = s.provider_id; });
+
+  const serviceImageMap: Record<string, string> = {};
+  if (serviceIds.length > 0) {
+    const { data: serviceImages } = await supabase
+      .from('service_images')
+      .select('service_id, image_url')
+      .in('service_id', serviceIds)
+      .order('display_order')
+      .limit(200);
+
+    (serviceImages || []).forEach((si: any) => {
+      const pid = serviceToProvider[si.service_id];
+      if (pid && !serviceImageMap[pid]) {
+        serviceImageMap[pid] = si.image_url;
+      }
+    });
+  }
+
+  // Portfolio checks - batch with concurrency limit of 5
+  const portfolioMap: Record<string, boolean> = {};
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+    const batch = userIds.slice(i, i + BATCH_SIZE);
+    await Promise.all(batch.map(async (uid) => {
+      try {
+        const { data: files } = await supabase.storage.from('portfolio').list(uid, { limit: 1 });
+        if (files && files.filter(f => f.name !== '.emptyFolderPlaceholder').length > 0) {
+          portfolioMap[uid] = true;
+        }
+      } catch { /* ignore */ }
+    }));
+  }
 
   return (data as any[]).map((p) => {
     const profile = profileMap[p.user_id];
@@ -132,11 +203,12 @@ export function useCategories() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categories')
-        .select('*')
+        .select('id, name, slug, icon')
         .order('name');
       if (error) throw error;
       return data;
     },
+    staleTime: 1000 * 60 * 10,
   });
 }
 
@@ -144,23 +216,19 @@ export function useCategoriesWithCount() {
   return useQuery({
     queryKey: ['categories-with-count'],
     queryFn: async () => {
-      const { data: cats, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-      if (error) throw error;
+      const [catsRes, provsRes] = await Promise.all([
+        supabase.from('categories').select('id, name, slug, icon').order('name'),
+        supabase.from('providers').select('category_id').eq('status', 'approved'),
+      ]);
 
-      const { data: providers } = await supabase
-        .from('providers')
-        .select('category_id')
-        .eq('status', 'approved');
+      if (catsRes.error) throw catsRes.error;
 
       const countMap: Record<string, number> = {};
-      (providers || []).forEach((p) => {
+      (provsRes.data || []).forEach((p) => {
         if (p.category_id) countMap[p.category_id] = (countMap[p.category_id] || 0) + 1;
       });
 
-      return (cats || []).map((c) => ({
+      return (catsRes.data || []).map((c) => ({
         id: c.id,
         name: c.name,
         slug: c.slug,
@@ -168,6 +236,7 @@ export function useCategoriesWithCount() {
         count: countMap[c.id] || 0,
       }));
     },
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -175,14 +244,15 @@ export function useFeaturedProviders() {
   return useQuery({
     queryKey: ['featured-providers'],
     queryFn: () =>
-      fetchProvidersWithProfiles(
+      fetchProvidersLightweight(
         supabase
           .from('providers')
           .select(providerSelect)
           .eq('status', 'approved')
           .eq('featured', true)
-          .limit(80)
+          .limit(30)
       ),
+    staleTime: 1000 * 60 * 3,
   });
 }
 
@@ -195,7 +265,6 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
         .select(providerSelect)
         .eq('status', 'approved');
 
-      // Only apply DB-level filters that don't depend on joined data
       if (minRating > 0) {
         q = q.gte('rating_avg', minRating);
       }
@@ -204,12 +273,10 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
         q.order('rating_avg', { ascending: false }).order('review_count', { ascending: false })
       );
 
-      // Filter by category slug
       if (categorySlug) {
         results = results.filter((p) => p.categorySlug === categorySlug);
       }
 
-      // Filter by city/location (searches city, state, neighborhood)
       if (city) {
         const lc = city.toLowerCase();
         results = results.filter(
@@ -220,7 +287,6 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
         );
       }
 
-      // Text search across all relevant fields
       if (query) {
         const lq = query.toLowerCase();
         const terms = lq.split(/\s+/).filter(Boolean);
@@ -237,10 +303,8 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
         );
       }
 
-      // Smart ranking: providers with images (service or portfolio) first, then premium > pro > free, then by rating/reviews
       const planPriority: Record<string, number> = { premium: 0, pro: 1, free: 2 };
       results.sort((a, b) => {
-        // Providers with service images or portfolio come first
         const aImg = (a.serviceImage || a.hasPortfolio) ? 0 : 1;
         const bImg = (b.serviceImage || b.hasPortfolio) ? 0 : 1;
         if (aImg !== bImg) return aImg - bImg;

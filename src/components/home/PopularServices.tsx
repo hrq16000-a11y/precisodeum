@@ -10,11 +10,12 @@ const PopularServices = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('popular_services' as any)
-        .select('*')
+        .select('id, name, slug, icon, category_name, min_price')
         .eq('active', true)
         .order('display_order');
       return (data || []) as any[];
     },
+    staleTime: 1000 * 60 * 5,
   });
 
   if (isLoading) {
