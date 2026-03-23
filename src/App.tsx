@@ -71,6 +71,15 @@ const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+// Sponsor Panel (CRM) — isolated module
+const SponsorDashboardPage = lazy(() => import("./pages/sponsor/SponsorDashboardPage"));
+const SponsorBannersPage = lazy(() => import("./pages/sponsor/SponsorBannersPage"));
+const SponsorCampaignsPage = lazy(() => import("./pages/sponsor/SponsorCampaignsPage"));
+const SponsorMetricsPage = lazy(() => import("./pages/sponsor/SponsorMetricsPage"));
+const SponsorContractsPage = lazy(() => import("./pages/sponsor/SponsorContractsPage"));
+const SponsorNotificationsPage = lazy(() => import("./pages/sponsor/SponsorNotificationsPage"));
+const SponsorDataPage = lazy(() => import("./pages/sponsor/SponsorDataPage"));
+
 // Minimal loading fallback (skeleton-style)
 const PageFallback = () => (
   <div className="flex min-h-screen items-center justify-center">
