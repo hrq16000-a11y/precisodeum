@@ -244,15 +244,16 @@ export function useFeaturedProviders() {
   return useQuery({
     queryKey: ['featured-providers'],
     queryFn: () =>
-      fetchProvidersWithProfiles(
+      fetchProvidersLightweight(
         supabase
           .from('providers')
           .select(providerSelect)
           .eq('status', 'approved')
           .eq('featured', true)
-          .limit(30)
+          .limit(50)
       ),
-    staleTime: 1000 * 60 * 3,
+    staleTime: 0, // no cache — ensures randomness on each page load
+    gcTime: 1000 * 60 * 2,
   });
 }
 
