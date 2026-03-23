@@ -66,7 +66,7 @@ const PostCard = ({ post, highlight = false }: { post: any; highlight?: boolean 
 
 const BlogPage = () => {
   useSeoHead({
-    title: 'Blog e Notícias | Preciso de um',
+    title: 'Notícias | Preciso de um',
     description: 'Dicas, novidades e conteúdos sobre serviços profissionais.',
     canonical: `${SITE_BASE_URL}/blog`,
   });
@@ -82,6 +82,7 @@ const BlogPage = () => {
         .limit(50);
       return data || [];
     },
+    staleTime: 1000 * 60 * 3,
   });
 
   const highlights = useMemo(() => shuffle(posts).slice(0, Math.min(6, posts.length)), [posts]);
@@ -96,7 +97,7 @@ const BlogPage = () => {
       <div className="bg-hero py-8 sm:py-12">
         <div className="container px-4 text-center">
           <h1 className="font-display text-2xl font-bold text-primary-foreground sm:text-3xl lg:text-4xl">
-            📰 Blog & Notícias
+            📰 Notícias
           </h1>
           <p className="mx-auto mt-2 max-w-lg text-sm text-primary-foreground/80 sm:text-base">
             Dicas, novidades e conteúdos sobre serviços profissionais
@@ -121,12 +122,11 @@ const BlogPage = () => {
         ) : posts.length === 0 ? (
           <div className="py-16 text-center">
             <Newspaper className="mx-auto h-12 w-12 text-muted-foreground/40" />
-            <p className="mt-4 text-lg font-medium text-foreground">Nenhum post publicado ainda</p>
+            <p className="mt-4 text-lg font-medium text-foreground">Nenhuma notícia publicada ainda</p>
             <p className="mt-1 text-sm text-muted-foreground">Em breve teremos novidades!</p>
           </div>
         ) : (
           <>
-            {/* Highlights */}
             {highlights.length > 0 && (
               <section>
                 <div className="mb-4 flex items-center gap-2">
@@ -141,7 +141,6 @@ const BlogPage = () => {
               </section>
             )}
 
-            {/* All posts */}
             {rest.length > 0 && (
               <section className="mt-8 sm:mt-10">
                 <h2 className="mb-4 font-display text-lg font-bold text-foreground">

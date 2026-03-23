@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { lazy, Suspense, memo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
@@ -7,26 +7,29 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 
 import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import HeroBanner from '@/components/home/HeroBanner';
 import CategoriesGrid from '@/components/home/CategoriesGrid';
-import FeaturedProviders from '@/components/home/FeaturedProviders';
-import PopularServices from '@/components/home/PopularServices';
-import RecentServices from '@/components/home/RecentServices';
-import CitiesSection from '@/components/home/CitiesSection';
-import CtaSection from '@/components/home/CtaSection';
-import SponsorsSection from '@/components/home/SponsorsSection';
-import HowItWorksSection from '@/components/home/HowItWorksSection';
-import TestimonialsSection from '@/components/home/TestimonialsSection';
-import FaqSection from '@/components/home/FaqSection';
-import PopularSearches from '@/components/home/PopularSearches';
-import HighlightsCarousel from '@/components/home/HighlightsCarousel';
-import FeaturedJobs from '@/components/home/FeaturedJobs';
-import BlogHighlight from '@/components/home/BlogHighlight';
-import FloatingWhatsApp from '@/components/FloatingWhatsApp';
 
-import AdBanner from '@/components/ads/AdBanner';
-import AdShowcase from '@/components/ads/AdShowcase';
+// Lazy load below-the-fold sections
+const FeaturedProviders = lazy(() => import('@/components/home/FeaturedProviders'));
+const PopularServices = lazy(() => import('@/components/home/PopularServices'));
+const RecentServices = lazy(() => import('@/components/home/RecentServices'));
+const FeaturedJobs = lazy(() => import('@/components/home/FeaturedJobs'));
+const BlogHighlight = lazy(() => import('@/components/home/BlogHighlight'));
+const CitiesSection = lazy(() => import('@/components/home/CitiesSection'));
+const CtaSection = lazy(() => import('@/components/home/CtaSection'));
+const SponsorsSection = lazy(() => import('@/components/home/SponsorsSection'));
+const HowItWorksSection = lazy(() => import('@/components/home/HowItWorksSection'));
+const TestimonialsSection = lazy(() => import('@/components/home/TestimonialsSection'));
+const FaqSection = lazy(() => import('@/components/home/FaqSection'));
+const PopularSearches = lazy(() => import('@/components/home/PopularSearches'));
+const HighlightsCarousel = lazy(() => import('@/components/home/HighlightsCarousel'));
+const AdBanner = lazy(() => import('@/components/ads/AdBanner'));
+const AdShowcase = lazy(() => import('@/components/ads/AdShowcase'));
+const Footer = lazy(() => import('@/components/Footer'));
+const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
+
+const SectionFallback = () => null; // Invisible fallback for lazy sections
 
 const Index = () => {
   useSeoHead({
@@ -54,117 +57,111 @@ const Index = () => {
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
 
-  const { data: totalServicesCount = 0 } = useQuery({
-    queryKey: ['total-services-count'],
+  // Consolidated counts query (single request instead of two)
+  const { data: counts } = useQuery({
+    queryKey: ['home-counts'],
     queryFn: async () => {
-      const { count } = await supabase.from('services').select('id', { count: 'exact', head: true });
-      return count || 0;
+      const [servicesRes, jobsRes] = await Promise.all([
+        supabase.from('services').select('id', { count: 'exact', head: true }),
+        supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+      ]);
+      return {
+        services: servicesRes.count || 0,
+        jobs: jobsRes.count || 0,
+      };
     },
     staleTime: 1000 * 60 * 5,
   });
 
-  const { data: totalJobsCount = 0 } = useQuery({
-    queryKey: ['total-jobs-count'],
+  // Consolidated secondary data (cities + categories for SEO + recent services + sponsors)
+  const { data: secondaryData } = useQuery({
+    queryKey: ['home-secondary-data'],
     queryFn: async () => {
-      const { count } = await supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'active');
-      return count || 0;
+      const [citiesRes, allCatsRes, recentRes, sponsorsRes] = await Promise.all([
+        // Cities with services
+        (async () => {
+          const { data: services } = await supabase.from('services').select('provider_id');
+          if (!services || services.length === 0) return [];
+          const providerIds = [...new Set(services.map((s: any) => s.provider_id))];
+          const { data: providers } = await supabase.from('providers').select('city').in('id', providerIds);
+          if (!providers) return [];
+          const cityNames = [...new Set(providers.map((p: any) => p.city).filter(Boolean))];
+          const { data: cities } = await supabase.from('cities').select('name, slug, state').in('name', cityNames);
+          const shuffled = [...(cities || [])].sort(() => Math.random() - 0.5);
+          return shuffled.slice(0, 6);
+        })(),
+        // All categories slugs
+        supabase.from('categories').select('name, slug').order('name').then(r => r.data || []),
+        // Recent services
+        (async () => {
+          const { data } = await supabase
+            .from('services')
+            .select('id, service_name, service_area, created_at, provider_id, category_id, categories(name, slug, icon)')
+            .order('created_at', { ascending: false })
+            .limit(6);
+          if (!data || data.length === 0) return [];
+          const providerIds = [...new Set(data.map((s: any) => s.provider_id))];
+          const { data: providers } = await supabase.from('providers').select('id, city, state').in('id', providerIds);
+          const providerMap: Record<string, any> = {};
+          (providers || []).forEach((p: any) => { providerMap[p.id] = p; });
+          return data.map((s: any) => ({ ...s, provider: providerMap[s.provider_id] || null }));
+        })(),
+        // Sponsors
+        supabase.from('sponsors').select('id, title, image_url, link_url, tier, position, active, display_order').eq('active', true).order('display_order').then(r => r.data || []),
+      ]);
+      return {
+        topCities: citiesRes,
+        allCategories: allCatsRes,
+        recentServices: recentRes,
+        sponsors: sponsorsRes,
+      };
     },
     staleTime: 1000 * 60 * 5,
   });
 
-  const { data: topCities = [] } = useQuery({
-    queryKey: ['top-cities-with-services'],
-    queryFn: async () => {
-      const { data: services } = await supabase.from('services').select('provider_id');
-      if (!services || services.length === 0) return [];
-      const providerIds = [...new Set(services.map((s: any) => s.provider_id))];
-      const { data: providers } = await supabase.from('providers').select('city').in('id', providerIds);
-      if (!providers) return [];
-      const cityNames = [...new Set(providers.map((p: any) => p.city).filter(Boolean))];
-      const { data: cities } = await supabase.from('cities').select('name, slug, state').in('name', cityNames);
-      const shuffled = [...(cities || [])].sort(() => Math.random() - 0.5);
-      return shuffled.slice(0, 6);
-    },
-    staleTime: 1000 * 60 * 10,
-  });
-
-  const { data: allCategories = [] } = useQuery({
-    queryKey: ['all-categories-slugs'],
-    queryFn: async () => {
-      const { data } = await supabase.from('categories').select('name, slug').order('name');
-      return data || [];
-    },
-    staleTime: 1000 * 60 * 10,
-  });
-
-  const { data: recentServices = [] } = useQuery({
-    queryKey: ['recent-services-home'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('services')
-        .select('id, service_name, service_area, created_at, provider_id, category_id, categories(name, slug, icon)')
-        .order('created_at', { ascending: false })
-        .limit(6);
-      if (!data || data.length === 0) return [];
-      const providerIds = [...new Set(data.map((s: any) => s.provider_id))];
-      const { data: providers } = await supabase.from('providers').select('id, city, state').in('id', providerIds);
-      const providerMap: Record<string, any> = {};
-      (providers || []).forEach((p: any) => { providerMap[p.id] = p; });
-      return data.map((s: any) => ({ ...s, provider: providerMap[s.provider_id] || null }));
-    },
-    staleTime: 1000 * 60 * 3,
-  });
-
-  const { data: sponsors = [] } = useQuery({
-    queryKey: ['sponsors-home'],
-    queryFn: async () => {
-      const { data } = await supabase.from('sponsors').select('*').eq('active', true).order('display_order');
-      return data || [];
-    },
-    staleTime: 1000 * 60 * 5,
-  });
+  const topCities = secondaryData?.topCities || [];
+  const allCategories = secondaryData?.allCategories || [];
+  const recentServices = secondaryData?.recentServices || [];
+  const sponsors = secondaryData?.sponsors || [];
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <HeroBanner totalServices={totalServicesCount} totalJobs={totalJobsCount} />
+      <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
 
-      {/* TOPO: 970x90 premium banner below hero */}
-      <AdBanner position="hero-top" className="container mx-auto mt-4 px-4" aspectRatio="970/90" />
+      <Suspense fallback={<SectionFallback />}>
+        <HighlightsCarousel />
+      </Suspense>
 
-      <HighlightsCarousel />
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
 
-      {/* 728x90 between categories and featured */}
-      <AdBanner position="between-sections" className="container mx-auto px-4" aspectRatio="728/90" />
+      <Suspense fallback={<SectionFallback />}>
+        <AdBanner position="between-sections" className="container mx-auto px-4" aspectRatio="728/90" />
 
-      {featuredEnabled && (
-        <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
-      )}
-      <PopularServices />
-      {recentServices.length > 0 && <RecentServices services={recentServices} />}
+        {featuredEnabled && (
+          <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
+        )}
+        <PopularServices />
+        {recentServices.length > 0 && <RecentServices services={recentServices} />}
 
-      {/* 728x90 between services and jobs */}
-      <AdBanner position="mid-content" className="container mx-auto px-4" aspectRatio="728/90" />
+        <AdBanner position="mid-content" className="container mx-auto px-4" aspectRatio="728/90" />
 
-      <FeaturedJobs />
-      <BlogHighlight />
+        <FeaturedJobs />
+        <BlogHighlight />
 
-      {topCities.length > 0 && <CitiesSection cities={topCities} />}
-      <CtaSection />
-
-      {/* Showcase grid: "Empresas em Destaque" — 250x250 cards */}
-      <AdShowcase />
-
-      <SponsorsSection sponsors={sponsors} />
-      <HowItWorksSection />
-      {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
-        <PopularSearches categories={allCategories} cities={topCities} />
-      )}
-      {reviewsEnabled && <TestimonialsSection />}
-      {faqEnabled && <FaqSection />}
-      <Footer />
-      <FloatingWhatsApp />
+        {topCities.length > 0 && <CitiesSection cities={topCities} />}
+        <CtaSection />
+        <AdShowcase />
+        <SponsorsSection sponsors={sponsors} />
+        <HowItWorksSection />
+        {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
+          <PopularSearches categories={allCategories} cities={topCities} />
+        )}
+        {reviewsEnabled && <TestimonialsSection />}
+        {faqEnabled && <FaqSection />}
+        <Footer />
+        <FloatingWhatsApp />
+      </Suspense>
     </div>
   );
 };
