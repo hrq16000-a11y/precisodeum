@@ -170,7 +170,7 @@ async function fetchProvidersWithProfiles(query: any) {
       .in('id', userIds) as unknown as Promise<{ data: { id: string; full_name: string; avatar_url: string | null }[] | null }>,
     supabase
       .from('services')
-      .select('id, provider_id')
+      .select('id, provider_id, service_name, description, whatsapp, service_area')
       .in('provider_id', providerIds),
   ]);
 
@@ -183,6 +183,18 @@ async function fetchProvidersWithProfiles(query: any) {
   const serviceIds = serviceRows.map((s: any) => s.id);
   const serviceToProvider: Record<string, string> = {};
   serviceRows.forEach((s: any) => { serviceToProvider[s.id] = s.provider_id; });
+
+  const serviceFallbackMap: Record<string, ServiceFallback> = {};
+  serviceRows.forEach((s: any) => {
+    if (!serviceFallbackMap[s.provider_id]) {
+      serviceFallbackMap[s.provider_id] = {
+        serviceName: s.service_name || undefined,
+        serviceDescription: s.description || undefined,
+        serviceWhatsapp: s.whatsapp || undefined,
+        serviceArea: s.service_area || undefined,
+      };
+    }
+  });
 
   const serviceImageMap: Record<string, string> = {};
   if (serviceIds.length > 0) {
@@ -223,7 +235,8 @@ async function fetchProvidersWithProfiles(query: any) {
       { ...p, photo_url: photo },
       profile?.name,
       serviceImageMap[p.id],
-      portfolioMap[p.user_id] || false
+      portfolioMap[p.user_id] || false,
+      serviceFallbackMap[p.id]
     );
     return mapped;
   });
