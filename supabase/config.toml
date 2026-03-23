@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.import-rss]
 verify_jwt = false
+
+[functions.batch-optimize-images]
+verify_jwt = false

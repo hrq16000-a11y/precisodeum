@@ -19,28 +19,49 @@ const AvatarUpload = ({ userId, currentUrl, initials, onUploaded }: AvatarUpload
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Imagem deve ter no máximo 2MB');
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Imagem deve ter no máximo 5MB');
       return;
     }
 
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `${userId}/avatar.${ext}`;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Você precisa estar logado');
+        setUploading(false);
+        return;
+      }
 
-    const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-    if (error) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucket', 'avatars');
+      formData.append('folder', userId);
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/optimize-image`,
+        {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      const publicUrl = data.url;
+      await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId);
+
+      onUploaded(publicUrl);
+      toast.success('Foto atualizada!');
+    } catch {
       toast.error('Erro ao enviar imagem');
-      setUploading(false);
-      return;
     }
-
-    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
-
-    await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId);
-
-    onUploaded(publicUrl);
-    toast.success('Foto atualizada!');
     setUploading(false);
   };
 
