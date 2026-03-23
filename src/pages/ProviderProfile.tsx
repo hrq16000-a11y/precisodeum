@@ -671,12 +671,18 @@ const ProviderProfile = () => {
         </a>
       )}
       <Footer />
+      <ImageLightbox
+        images={lightboxImages}
+        initialIndex={lightboxIndex}
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+      />
     </div>
   );
 };
 
 /* ── Service Detail Dialog ── */
-const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText, accentBg }: { service: any; open: boolean; onClose: () => void; whatsapp: string; ctaWhatsappText?: string; accentBg?: string }) => (
+const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText, accentBg, onImageClick }: { service: any; open: boolean; onClose: () => void; whatsapp: string; ctaWhatsappText?: string; accentBg?: string; onImageClick?: (images: string[], index: number) => void }) => (
   <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
       <DialogHeader>
@@ -684,8 +690,12 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
       </DialogHeader>
       {service.serviceImages?.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
-          {service.serviceImages.map((img: any) => (
-            <div key={img.id} className="aspect-video overflow-hidden rounded-lg border border-border">
+          {service.serviceImages.map((img: any, idx: number) => (
+            <div
+              key={img.id}
+              className="aspect-video cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]"
+              onClick={() => onImageClick?.(service.serviceImages.map((i: any) => i.image_url), idx)}
+            >
               <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" />
             </div>
           ))}
