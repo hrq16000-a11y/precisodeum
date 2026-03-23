@@ -60,6 +60,7 @@ const AdminJobsPage = lazy(() => import("./pages/AdminJobsPage"));
 const AdminHighlightsPage = lazy(() => import("./pages/AdminHighlightsPage"));
 const AdminCommunityPage = lazy(() => import("./pages/AdminCommunityPage"));
 const AdminBlogPage = lazy(() => import("./pages/AdminBlogPage"));
+const AdminSponsorCrmPage = lazy(() => import("./pages/AdminSponsorCrmPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
 const CityPage = lazy(() => import("./pages/CityPage"));
