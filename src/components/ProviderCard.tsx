@@ -14,8 +14,11 @@ interface ProviderCardProps {
 const ProviderCard = ({ provider }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const displayPhoto = provider.photo || provider.serviceImage || '';
-  const initials = (provider.businessName || provider.name).split(' ').map(n => n[0]).join('').slice(0, 2);
   const hasImages = !!provider.serviceImage || !!provider.hasPortfolio;
+
+  const hasLocation = !!(provider.city || provider.neighborhood);
+  const locationParts = [provider.neighborhood, provider.city, provider.state].filter(Boolean);
+  const locationText = locationParts.join(', ');
 
   return (
     <div className={`group overflow-hidden rounded-xl border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`}>
@@ -39,11 +42,15 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
             {provider.businessName && (
               <p className="truncate text-xs text-muted-foreground">{provider.businessName}</p>
             )}
-            <p className="mt-0.5 text-sm font-medium text-accent">{provider.category}</p>
-            <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3" />
-              {provider.neighborhood}, {provider.city} - {provider.state}
-            </div>
+            {provider.category && (
+              <p className="mt-0.5 text-sm font-medium text-accent">{provider.category}</p>
+            )}
+            {hasLocation && (
+              <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3" />
+                {locationText}
+              </div>
+            )}
             {hasImages && (
               <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
                 <BadgeCheck className="h-3 w-3" /> Perfil Completo
@@ -52,23 +59,27 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
           </div>
         </div>
 
-        {reviewsEnabled && (
+        {reviewsEnabled && provider.reviewCount > 0 && (
           <div className="mt-3">
             <StarRating rating={provider.rating} count={provider.reviewCount} size={14} />
           </div>
         )}
 
-        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
-          {provider.description}
-        </p>
+        {provider.description && (
+          <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
+            {provider.description}
+          </p>
+        )}
 
         <div className="mt-4 flex gap-2">
-          <Button variant="accent" size="sm" className="flex-1" asChild>
-            <a href={whatsappLink(provider.whatsapp || '', `Olá! Vi seu perfil "${provider.businessName || provider.name}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="h-4 w-4" /> WhatsApp
-            </a>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
+          {provider.whatsapp && (
+            <Button variant="accent" size="sm" className="flex-1" asChild>
+              <a href={whatsappLink(provider.whatsapp, `Olá! Vi seu perfil "${provider.businessName || provider.name}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="h-4 w-4" /> WhatsApp
+              </a>
+            </Button>
+          )}
+          <Button variant="outline" size="sm" className={provider.whatsapp ? '' : 'flex-1'} asChild>
             <Link to={`/profissional/${provider.slug}`}>Ver Perfil</Link>
           </Button>
         </div>
