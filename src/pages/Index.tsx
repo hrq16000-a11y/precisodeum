@@ -150,7 +150,7 @@ const Index = () => {
 
       <LazyErrorBoundary>
         <Suspense fallback={<SectionFallback />}>
-          <AdBanner position="between-sections" className="container mx-auto px-4" aspectRatio="728/90" />
+          <AdBanner position="between-sections" className="container mx-auto px-4" />
 
           {featuredEnabled && (
             <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
@@ -158,7 +158,7 @@ const Index = () => {
           <PopularServices />
           {recentServices.length > 0 && <RecentServices services={recentServices} />}
 
-          <AdBanner position="mid-content" className="container mx-auto px-4" aspectRatio="728/90" />
+          <AdBanner position="mid-content" className="container mx-auto px-4" />
 
           <FeaturedJobs />
           <BlogHighlight />

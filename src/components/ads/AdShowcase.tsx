@@ -1,13 +1,14 @@
 import { useSponsorsByPosition } from '@/components/SponsorAd';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import SponsorImage from '@/components/SponsorImage';
 
-/** Full-width carousel showcase — no labels, big visuals */
+/** Full-width carousel showcase with touch swipe */
 const AdShowcase = ({ className = '' }: { className?: string }) => {
   const { data: sponsors = [] } = useSponsorsByPosition('showcase');
   const tracked = useRef(new Set<string>());
   const [idx, setIdx] = useState(0);
+  const touchStart = useRef<number | null>(null);
 
   useEffect(() => {
     sponsors.forEach(s => {
@@ -24,12 +25,25 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
     return () => clearInterval(iv);
   }, [sponsors.length]);
 
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStart.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStart.current === null || sponsors.length <= 1) return;
+    const diff = touchStart.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      setIdx(i => diff > 0 ? (i + 1) % sponsors.length : (i - 1 + sponsors.length) % sponsors.length);
+    }
+    touchStart.current = null;
+  }, [sponsors.length]);
+
   if (sponsors.length === 0) return null;
 
   return (
     <section className={`py-10 ${className}`}>
       <div className="container">
-        {/* Mobile: carousel; Desktop: grid */}
+        {/* Desktop: grid */}
         <div className="hidden sm:grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {sponsors.slice(0, 8).map((s) => (
             <a
@@ -41,11 +55,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
               className="group overflow-hidden rounded-2xl border border-border shadow-card transition-all hover:shadow-lg hover:scale-[1.02]"
             >
               {s.image_url ? (
-                <SponsorImage
-                  src={s.image_url}
-                  alt={s.title}
-                  containerClassName="transition-transform group-hover:scale-105"
-                />
+                <SponsorImage src={s.image_url} alt={s.title} />
               ) : (
                 <div className="flex items-center justify-center bg-muted/20 p-6 min-h-[120px]">
                   <span className="text-xl font-bold text-muted-foreground">{s.title}</span>
@@ -55,8 +65,12 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
           ))}
         </div>
 
-        {/* Mobile carousel */}
-        <div className="sm:hidden">
+        {/* Mobile: touch swipe carousel */}
+        <div
+          className="sm:hidden"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {(() => {
             const current = sponsors[idx] || sponsors[0];
             return (
@@ -69,7 +83,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
                   className="block overflow-hidden rounded-2xl border border-border shadow-card"
                 >
                   {current.image_url ? (
-                    <SponsorImage src={current.image_url} alt={current.title} containerClassName="rounded-2xl" />
+                    <SponsorImage src={current.image_url} alt={current.title} />
                   ) : (
                     <div className="flex items-center justify-center bg-muted/30 p-8 min-h-[120px]">
                       <span className="text-lg font-bold text-muted-foreground">{current.title}</span>

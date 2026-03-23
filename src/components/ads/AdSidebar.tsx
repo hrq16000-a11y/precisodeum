@@ -13,7 +13,7 @@ const AdSidebar = ({ position = 'sidebar', className = '' }: AdSidebarProps) => 
 
   return (
     <div className={`hidden lg:block w-[300px] shrink-0 ${className}`}>
-      <AdBanner position={position} sticky aspectRatio="300/250" maxWidth={300} />
+      <AdBanner position={position} sticky maxWidth={300} />
     </div>
   );
 };
