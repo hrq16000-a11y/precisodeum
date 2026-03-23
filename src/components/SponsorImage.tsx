@@ -69,12 +69,12 @@ const SponsorImage = ({
         alt={alt}
         onLoad={onLoad}
         loading="lazy"
-        className={cn(
-          'block w-full h-auto transition-opacity duration-300',
+       className={cn(
+          'block w-full h-auto rounded-2xl transition-opacity duration-300',
           loaded ? 'opacity-100' : 'opacity-0',
           className
         )}
-        style={{ objectFit: 'contain', objectPosition: 'center' }}
+        style={{ objectFit: 'contain', objectPosition: 'center', maxWidth: '100%' }}
       />
       {/* Skeleton placeholder while loading */}
       {!loaded && (
