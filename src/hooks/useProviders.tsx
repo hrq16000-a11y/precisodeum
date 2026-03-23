@@ -32,6 +32,22 @@ interface ServiceFallback {
   serviceArea?: string;
 }
 
+function shuffleArray<T>(items: T[]): T[] {
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function pickFeaturedCount(total: number): number {
+  if (total <= 3) return total;
+  const min = 3;
+  const max = Math.min(5, total);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPortfolio?: boolean, serviceFallback?: ServiceFallback): DbProvider {
   const catName = (p.categories as any)?.name || '';
   const provCity = p.city?.trim() || '';
@@ -92,7 +108,7 @@ async function fetchProvidersLightweight(query: any) {
       .in('id', userIds) as unknown as Promise<{ data: { id: string; full_name: string; avatar_url: string | null }[] | null }>,
     supabase
       .from('services')
-      .select('id, provider_id, service_name, description, whatsapp, service_area')
+      .select('id, provider_id, service_name, description, whatsapp, service_area, service_images(image_url, display_order)')
       .in('provider_id', providerIds),
   ]);
 
@@ -102,12 +118,10 @@ async function fetchProvidersLightweight(query: any) {
   });
 
   const serviceRows = servicesRes.data || [];
-  const serviceIds = serviceRows.map((s: any) => s.id);
-  const serviceToProvider: Record<string, string> = {};
-  serviceRows.forEach((s: any) => { serviceToProvider[s.id] = s.provider_id; });
 
   // Build service fallback map (first service per provider)
   const serviceFallbackMap: Record<string, ServiceFallback> = {};
+  const serviceImageMap: Record<string, string> = {};
   serviceRows.forEach((s: any) => {
     if (!serviceFallbackMap[s.provider_id]) {
       serviceFallbackMap[s.provider_id] = {
@@ -117,34 +131,27 @@ async function fetchProvidersLightweight(query: any) {
         serviceArea: s.service_area || undefined,
       };
     }
-  });
 
-  const serviceImageMap: Record<string, string> = {};
-  if (serviceIds.length > 0) {
-    const { data: serviceImages } = await supabase
-      .from('service_images')
-      .select('service_id, image_url')
-      .in('service_id', serviceIds)
-      .order('display_order')
-      .limit(200);
+    if (!serviceImageMap[s.provider_id]) {
+      const images = Array.isArray(s.service_images) ? s.service_images : [];
+      const firstImage = images
+        .slice()
+        .sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0))[0]?.image_url;
 
-    (serviceImages || []).forEach((si: any) => {
-      const pid = serviceToProvider[si.service_id];
-      if (pid && !serviceImageMap[pid]) {
-        serviceImageMap[pid] = si.image_url;
+      if (firstImage) {
+        serviceImageMap[s.provider_id] = firstImage;
       }
-    });
-  }
+    }
+  });
 
   return (data as any[]).map((p) => {
     const profile = profileMap[p.user_id];
     const photo = p.photo_url || profile?.avatar || '';
-    const hasServiceImage = !!serviceImageMap[p.id];
     const mapped = mapProvider(
       { ...p, photo_url: photo },
       profile?.name,
       serviceImageMap[p.id],
-      hasServiceImage,
+      false,
       serviceFallbackMap[p.id]
     );
     return mapped;
@@ -170,7 +177,7 @@ async function fetchProvidersWithProfiles(query: any) {
       .in('id', userIds) as unknown as Promise<{ data: { id: string; full_name: string; avatar_url: string | null }[] | null }>,
     supabase
       .from('services')
-      .select('id, provider_id, service_name, description, whatsapp, service_area')
+      .select('id, provider_id, service_name, description, whatsapp, service_area, service_images(image_url, display_order)')
       .in('provider_id', providerIds),
   ]);
 
@@ -180,11 +187,8 @@ async function fetchProvidersWithProfiles(query: any) {
   });
 
   const serviceRows = servicesRes.data || [];
-  const serviceIds = serviceRows.map((s: any) => s.id);
-  const serviceToProvider: Record<string, string> = {};
-  serviceRows.forEach((s: any) => { serviceToProvider[s.id] = s.provider_id; });
-
   const serviceFallbackMap: Record<string, ServiceFallback> = {};
+  const serviceImageMap: Record<string, string> = {};
   serviceRows.forEach((s: any) => {
     if (!serviceFallbackMap[s.provider_id]) {
       serviceFallbackMap[s.provider_id] = {
@@ -194,24 +198,18 @@ async function fetchProvidersWithProfiles(query: any) {
         serviceArea: s.service_area || undefined,
       };
     }
-  });
 
-  const serviceImageMap: Record<string, string> = {};
-  if (serviceIds.length > 0) {
-    const { data: serviceImages } = await supabase
-      .from('service_images')
-      .select('service_id, image_url')
-      .in('service_id', serviceIds)
-      .order('display_order')
-      .limit(200);
+    if (!serviceImageMap[s.provider_id]) {
+      const images = Array.isArray(s.service_images) ? s.service_images : [];
+      const firstImage = images
+        .slice()
+        .sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0))[0]?.image_url;
 
-    (serviceImages || []).forEach((si: any) => {
-      const pid = serviceToProvider[si.service_id];
-      if (pid && !serviceImageMap[pid]) {
-        serviceImageMap[pid] = si.image_url;
+      if (firstImage) {
+        serviceImageMap[s.provider_id] = firstImage;
       }
-    });
-  }
+    }
+  });
 
   // Portfolio checks - batch with concurrency limit of 5
   const portfolioMap: Record<string, boolean> = {};
@@ -288,17 +286,26 @@ export function useCategoriesWithCount() {
 export function useFeaturedProviders() {
   return useQuery({
     queryKey: ['featured-providers'],
-    queryFn: () =>
-      fetchProvidersLightweight(
+    queryFn: async () => {
+      const providers = await fetchProvidersWithProfiles(
         supabase
           .from('providers')
           .select(providerSelect)
           .eq('status', 'approved')
           .eq('featured', true)
-          .limit(50)
-      ),
-    staleTime: 0, // no cache — ensures randomness on each page load
+          .limit(200)
+      );
+
+      const valid = providers.filter((p) => !!p.serviceImage && !!p.hasPortfolio);
+      if (valid.length === 0) return [];
+
+      const shuffled = shuffleArray(valid);
+      const count = pickFeaturedCount(shuffled.length);
+      return shuffled.slice(0, count);
+    },
+    staleTime: 0,
     gcTime: 1000 * 60 * 2,
+    refetchOnMount: 'always',
   });
 }
 
