@@ -22,13 +22,14 @@ const LoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
       toast.error('E-mail ou senha inválidos');
-    } else {
+    } else if (data.session) {
       toast.success('Login realizado com sucesso!');
-      navigate('/dashboard');
+      // Small delay to allow auth state to propagate before navigating
+      setTimeout(() => navigate('/dashboard', { replace: true }), 100);
     }
   };
 
