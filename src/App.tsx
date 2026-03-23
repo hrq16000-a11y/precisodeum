@@ -1,12 +1,17 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy as reactLazy, Suspense, useEffect, type ComponentType } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
+import { importWithRetry, prefetchImportWithRetry } from "@/lib/lazyWithRetry";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
+
+type LazyModule<T extends ComponentType<any>> = { default: T };
+const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
+  reactLazy(() => importWithRetry(importer));
 
 const isTransientNetworkError = (error: unknown) => {
   if (!(error instanceof Error)) return false;
@@ -97,9 +102,11 @@ const queryClient = new QueryClient({
 const App = () => {
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      void import("./pages/SearchPage");
-      void import("./pages/ProviderProfile");
-      void import("./pages/CategoryPage");
+      void Promise.allSettled([
+        prefetchImportWithRetry("route-search-page", () => import("./pages/SearchPage")),
+        prefetchImportWithRetry("route-provider-profile", () => import("./pages/ProviderProfile")),
+        prefetchImportWithRetry("route-category-page", () => import("./pages/CategoryPage")),
+      ]);
     }, 900);
 
     return () => window.clearTimeout(timeoutId);
