@@ -263,6 +263,7 @@ const AdminSponsorCrmPage = () => {
   const getSponsorTitle = (id: string) => sponsors.find(s => s.id === id)?.title || id;
 
   if (adminLoading) return <AdminLayout><div className="h-8 w-1/3 animate-pulse rounded-lg bg-muted" /></AdminLayout>;
+  if (!isAdmin) { navigate('/'); return null; }
 
   // ─── Render ───────────────────────────────────────────────────────
   return (
