@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { sponsorImage } from '@/lib/imageOptimizer';
 
 type BannerShape = 'horizontal' | 'square' | 'vertical' | 'leaderboard';
 
@@ -35,6 +36,7 @@ const SponsorImage = ({
   className = '',
   containerClassName = '',
 }: SponsorImageProps) => {
+  const optimizedSrc = sponsorImage(src);
   const [shape, setShape] = useState<BannerShape>('horizontal');
   const [loaded, setLoaded] = useState(false);
   const isMobile = useIsMobile();
