@@ -1,4 +1,4 @@
-import { lazy, Suspense, memo } from 'react';
+import { lazy, Suspense, memo, Component, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
@@ -9,6 +9,7 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import Header from '@/components/Header';
 import HeroBanner from '@/components/home/HeroBanner';
 import CategoriesGrid from '@/components/home/CategoriesGrid';
+import HighlightsCarousel from '@/components/home/HighlightsCarousel';
 
 // Lazy load below-the-fold sections
 const FeaturedProviders = lazy(() => import('@/components/home/FeaturedProviders'));
@@ -23,13 +24,22 @@ const HowItWorksSection = lazy(() => import('@/components/home/HowItWorksSection
 const TestimonialsSection = lazy(() => import('@/components/home/TestimonialsSection'));
 const FaqSection = lazy(() => import('@/components/home/FaqSection'));
 const PopularSearches = lazy(() => import('@/components/home/PopularSearches'));
-const HighlightsCarousel = lazy(() => import('@/components/home/HighlightsCarousel'));
 const AdBanner = lazy(() => import('@/components/ads/AdBanner'));
 const AdShowcase = lazy(() => import('@/components/ads/AdShowcase'));
 const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
 
-const SectionFallback = () => null; // Invisible fallback for lazy sections
+// Error boundary to prevent lazy load failures from crashing the page
+class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() { return this.state.hasError ? null : this.props.children; }
+}
+
+const SectionFallback = () => null;
 
 const Index = () => {
   useSeoHead({
@@ -129,39 +139,39 @@ const Index = () => {
       <Header />
       <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
 
-      <Suspense fallback={<SectionFallback />}>
-        <HighlightsCarousel />
-      </Suspense>
+      <HighlightsCarousel />
 
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
 
-      <Suspense fallback={<SectionFallback />}>
-        <AdBanner position="between-sections" className="container mx-auto px-4" aspectRatio="728/90" />
+      <LazyErrorBoundary>
+        <Suspense fallback={<SectionFallback />}>
+          <AdBanner position="between-sections" className="container mx-auto px-4" aspectRatio="728/90" />
 
-        {featuredEnabled && (
-          <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
-        )}
-        <PopularServices />
-        {recentServices.length > 0 && <RecentServices services={recentServices} />}
+          {featuredEnabled && (
+            <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
+          )}
+          <PopularServices />
+          {recentServices.length > 0 && <RecentServices services={recentServices} />}
 
-        <AdBanner position="mid-content" className="container mx-auto px-4" aspectRatio="728/90" />
+          <AdBanner position="mid-content" className="container mx-auto px-4" aspectRatio="728/90" />
 
-        <FeaturedJobs />
-        <BlogHighlight />
+          <FeaturedJobs />
+          <BlogHighlight />
 
-        {topCities.length > 0 && <CitiesSection cities={topCities} />}
-        <CtaSection />
-        <AdShowcase />
-        <SponsorsSection sponsors={sponsors} />
-        <HowItWorksSection />
-        {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
-          <PopularSearches categories={allCategories} cities={topCities} />
-        )}
-        {reviewsEnabled && <TestimonialsSection />}
-        {faqEnabled && <FaqSection />}
-        <Footer />
-        <FloatingWhatsApp />
-      </Suspense>
+          {topCities.length > 0 && <CitiesSection cities={topCities} />}
+          <CtaSection />
+          <AdShowcase />
+          <SponsorsSection sponsors={sponsors} />
+          <HowItWorksSection />
+          {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
+            <PopularSearches categories={allCategories} cities={topCities} />
+          )}
+          {reviewsEnabled && <TestimonialsSection />}
+          {faqEnabled && <FaqSection />}
+          <Footer />
+          <FloatingWhatsApp />
+        </Suspense>
+      </LazyErrorBoundary>
     </div>
   );
 };
