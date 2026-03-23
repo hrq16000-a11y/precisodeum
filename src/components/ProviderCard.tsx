@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { MapPin, MessageCircle, Crown, BadgeCheck } from 'lucide-react';
+import { usePrefetchProvider, usePrefetchHandlers } from '@/hooks/usePrefetch';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -13,6 +14,8 @@ interface ProviderCardProps {
 
 const ProviderCard = ({ provider }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const prefetch = usePrefetchProvider();
+  const handlers = usePrefetchHandlers(prefetch, provider.slug);
   const displayPhoto = provider.photo || provider.serviceImage || '';
   const hasImages = !!provider.serviceImage || !!provider.hasPortfolio;
 
@@ -24,7 +27,7 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
   const displayName = provider.name || provider.businessName || 'Profissional';
 
   return (
-    <div className={`group flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`}>
+    <div className={`group flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`} {...handlers}>
       <div className="flex flex-1 flex-col p-5">
         <div className="flex gap-4">
            <Avatar className="h-14 w-14 shrink-0">
@@ -34,7 +37,7 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <Link to={`/profissional/${provider.slug}`} className="block">
+            <Link to={`/profissional/${provider.slug}`} className="block" {...handlers}>
               <div className="flex items-start justify-between gap-2">
                 <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
                   {displayName}
@@ -86,7 +89,7 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
             </Button>
           )}
           <Button variant="outline" size="sm" className={provider.whatsapp ? '' : 'flex-1'} asChild>
-            <Link to={`/profissional/${provider.slug}`}>Ver Perfil</Link>
+            <Link to={`/profissional/${provider.slug}`} {...handlers}>Ver Perfil</Link>
           </Button>
         </div>
       </div>
