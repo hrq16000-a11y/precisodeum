@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
@@ -57,17 +57,19 @@ const Index = () => {
   const { data: totalServicesCount = 0 } = useQuery({
     queryKey: ['total-services-count'],
     queryFn: async () => {
-      const { count } = await supabase.from('services').select('*', { count: 'exact', head: true });
+      const { count } = await supabase.from('services').select('id', { count: 'exact', head: true });
       return count || 0;
     },
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: totalJobsCount = 0 } = useQuery({
     queryKey: ['total-jobs-count'],
     queryFn: async () => {
-      const { count } = await supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'active');
+      const { count } = await supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'active');
       return count || 0;
     },
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: topCities = [] } = useQuery({
@@ -83,6 +85,7 @@ const Index = () => {
       const shuffled = [...(cities || [])].sort(() => Math.random() - 0.5);
       return shuffled.slice(0, 6);
     },
+    staleTime: 1000 * 60 * 10,
   });
 
   const { data: allCategories = [] } = useQuery({
@@ -91,6 +94,7 @@ const Index = () => {
       const { data } = await supabase.from('categories').select('name, slug').order('name');
       return data || [];
     },
+    staleTime: 1000 * 60 * 10,
   });
 
   const { data: recentServices = [] } = useQuery({
@@ -108,6 +112,7 @@ const Index = () => {
       (providers || []).forEach((p: any) => { providerMap[p.id] = p; });
       return data.map((s: any) => ({ ...s, provider: providerMap[s.provider_id] || null }));
     },
+    staleTime: 1000 * 60 * 3,
   });
 
   const { data: sponsors = [] } = useQuery({
@@ -116,6 +121,7 @@ const Index = () => {
       const { data } = await supabase.from('sponsors').select('*').eq('active', true).order('display_order');
       return data || [];
     },
+    staleTime: 1000 * 60 * 5,
   });
 
   return (
