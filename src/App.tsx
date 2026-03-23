@@ -176,6 +176,14 @@ const App = () => {
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/sitemap" element={<SitemapRedirect />} />
                 <Route path="/sitemap.xml" element={<SitemapRedirect />} />
+                {/* Sponsor Panel — CRM Module (isolated) */}
+                <Route path="/sponsor-panel" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorDashboardPage /></ModuleBoundary>} />
+                <Route path="/sponsor-panel/banners" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorBannersPage /></ModuleBoundary>} />
+                <Route path="/sponsor-panel/campanhas" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorCampaignsPage /></ModuleBoundary>} />
+                <Route path="/sponsor-panel/metricas" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorMetricsPage /></ModuleBoundary>} />
+                <Route path="/sponsor-panel/contratos" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorContractsPage /></ModuleBoundary>} />
+                <Route path="/sponsor-panel/notificacoes" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorNotificationsPage /></ModuleBoundary>} />
+                <Route path="/sponsor-panel/dados" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorDataPage /></ModuleBoundary>} />
                 <Route path="/:slug" element={<SeoPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
