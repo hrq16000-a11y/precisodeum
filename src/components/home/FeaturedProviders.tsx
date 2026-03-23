@@ -40,13 +40,12 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {featuredList.map((p) => {
-              const displayName = p.businessName || p.category || 'Profissional';
+              const displayName = p.name || p.businessName || p.category || 'Profissional';
               const displayPhoto = p.photo || p.serviceImage || '';
-              const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2);
 
               return (
-                <div key={p.id} className="group overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
-                  <div className="p-5">
+                <div key={p.id} className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
+                  <div className="flex flex-1 flex-col p-5">
                     <div className="flex gap-4">
                       <Avatar className="h-14 w-14 shrink-0">
                         <AvatarImage src={displayPhoto || undefined} alt={displayName} />
@@ -74,6 +73,8 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
                         )}
                       </div>
                     </div>
+
+                    <div className="flex-1" />
 
                     <div className="mt-4 flex gap-2">
                       {p.whatsapp && (

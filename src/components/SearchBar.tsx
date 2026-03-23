@@ -68,9 +68,17 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
 
   const activeSuggestions = activeField === 'service' ? serviceSuggestions : activeField === 'location' ? locationSuggestions : [];
 
+  const [searchError, setSearchError] = useState('');
+
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
     setActiveField(null);
+    if (!service.trim() && !location.trim()) {
+      setSearchError('Digite o que você precisa ou uma cidade');
+      serviceRef.current?.focus();
+      return;
+    }
+    setSearchError('');
     const params = new URLSearchParams();
     if (service) params.set('q', service);
     if (location) params.set('cidade', location);
@@ -159,7 +167,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   if (variant === 'compact') {
     return (
       <div ref={wrapperRef} className="relative">
-        <form onSubmit={handleSearch} className="flex items-center gap-2 rounded-lg border border-border bg-card p-1.5">
+        <form onSubmit={handleSearch} className={`flex items-center gap-2 rounded-lg border bg-card p-1.5 ${searchError ? 'border-destructive' : 'border-border'}`}>
           <div className="flex flex-1 items-center gap-2 px-2">
             <Search className="h-4 w-4 text-muted-foreground" />
             <input
@@ -167,7 +175,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
               type="text"
               placeholder="Preciso de um..."
               value={service}
-              onChange={(e) => setService(e.target.value)}
+              onChange={(e) => { setService(e.target.value); setSearchError(''); }}
               onFocus={() => setActiveField('service')}
               onKeyDown={handleKeyDown}
               className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
@@ -180,6 +188,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
           </div>
           <Button type="submit" variant="accent" size="sm">Buscar</Button>
         </form>
+        {searchError && <p className="mt-1 text-xs text-destructive">{searchError}</p>}
         <SuggestionsDropdown />
       </div>
     );
@@ -196,7 +205,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
               type="text"
               placeholder="Preciso de um..."
               value={service}
-              onChange={(e) => setService(e.target.value)}
+              onChange={(e) => { setService(e.target.value); setSearchError(''); }}
               onFocus={() => setActiveField('service')}
               onKeyDown={handleKeyDown}
               className="w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
@@ -215,7 +224,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
               type="text"
               placeholder="Cidade ou região"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={(e) => { setLocation(e.target.value); setSearchError(''); }}
               onFocus={() => setActiveField('location')}
               onKeyDown={handleKeyDown}
               className="w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
@@ -231,6 +240,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
           </Button>
         </div>
       </form>
+      {searchError && <p className="mt-2 text-center text-xs text-destructive">{searchError}</p>}
       <SuggestionsDropdown />
     </div>
   );
