@@ -57,9 +57,10 @@ const Index = () => {
   const { data: totalServicesCount = 0 } = useQuery({
     queryKey: ['total-services-count'],
     queryFn: async () => {
-      const { count } = await supabase.from('services').select('*', { count: 'exact', head: true });
+      const { count } = await supabase.from('services').select('id', { count: 'exact', head: true });
       return count || 0;
     },
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: totalJobsCount = 0 } = useQuery({
