@@ -64,7 +64,7 @@ const SponsorImage = ({
         <div
           className="absolute inset-0 scale-[1.3]"
           style={{
-            backgroundImage: `url(${src})`,
+            backgroundImage: `url(${optimizedSrc})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'blur(24px)',
@@ -75,7 +75,7 @@ const SponsorImage = ({
       )}
       {/* Sharp foreground image — always fully visible */}
       <img
-        src={src}
+        src={optimizedSrc}
         alt={alt}
         onLoad={onLoad}
         loading="lazy"
