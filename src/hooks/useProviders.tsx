@@ -101,7 +101,7 @@ async function fetchProvidersLightweight(query: any) {
   const userIds = [...new Set((data as any[]).map((p) => p.user_id))];
 
   // Parallel fetches: profiles + service images only (NO portfolio storage calls)
-  const [profilesRes, servicesRes] = await Promise.all([
+  const [profilesRes, servicesRes, portfolioRes] = await Promise.all([
     supabase
       .from('public_profiles' as any)
       .select('id, full_name, avatar_url')
@@ -110,7 +110,20 @@ async function fetchProvidersLightweight(query: any) {
       .from('services')
       .select('id, provider_id, service_name, description, whatsapp, service_area, service_images(image_url, display_order)')
       .in('provider_id', providerIds),
+    // Quick portfolio check: list first file per user folder
+    Promise.all(userIds.map(async (uid) => {
+      try {
+        const { data: files } = await supabase.storage.from('portfolio').list(uid, { limit: 1 });
+        const hasFiles = files && files.filter(f => f.name !== '.emptyFolderPlaceholder').length > 0;
+        return { uid, hasPortfolio: !!hasFiles };
+      } catch {
+        return { uid, hasPortfolio: false };
+      }
+    })),
   ]);
+
+  const portfolioSet = new Set<string>();
+  (portfolioRes || []).forEach((r) => { if (r.hasPortfolio) portfolioSet.add(r.uid); });
 
   const profileMap: Record<string, { name: string; avatar?: string }> = {};
   (profilesRes.data || []).forEach((p: any) => {
@@ -151,7 +164,7 @@ async function fetchProvidersLightweight(query: any) {
       { ...p, photo_url: photo },
       profile?.name,
       serviceImageMap[p.id],
-      false,
+      portfolioSet.has(p.user_id),
       serviceFallbackMap[p.id]
     );
     return mapped;
