@@ -88,6 +88,7 @@ const JobsPage = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      <Suspense fallback={null}><AdSlot slotSlug="jobs-top" city={cityFilter} /></Suspense>
       <div className="container px-4 py-6 sm:py-8">
         <h1 className="font-display text-2xl font-bold text-foreground sm:text-3xl">Vagas e Oportunidades</h1>
         <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">Encontre oportunidades de serviço e trabalho na sua região</p>
