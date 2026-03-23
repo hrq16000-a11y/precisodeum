@@ -94,6 +94,7 @@ const Index = () => {
       const { data } = await supabase.from('categories').select('name, slug').order('name');
       return data || [];
     },
+    staleTime: 1000 * 60 * 10,
   });
 
   const { data: recentServices = [] } = useQuery({
@@ -111,6 +112,7 @@ const Index = () => {
       (providers || []).forEach((p: any) => { providerMap[p.id] = p; });
       return data.map((s: any) => ({ ...s, provider: providerMap[s.provider_id] || null }));
     },
+    staleTime: 1000 * 60 * 3,
   });
 
   const { data: sponsors = [] } = useQuery({
@@ -119,6 +121,7 @@ const Index = () => {
       const { data } = await supabase.from('sponsors').select('*').eq('active', true).order('display_order');
       return data || [];
     },
+    staleTime: 1000 * 60 * 5,
   });
 
   return (
