@@ -75,5 +75,5 @@ export function coverImage(url: string | null | undefined): string {
 
 /** Preset: sponsor image */
 export function sponsorImage(url: string | null | undefined): string {
-  return optimizedImageUrl(url, { width: 600, quality: 70 });
+  return optimizedImageUrl(url, { width: 600, quality: 70, resize: 'contain' });
 }
