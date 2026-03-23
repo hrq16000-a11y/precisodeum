@@ -139,39 +139,39 @@ const Index = () => {
       <Header />
       <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
 
-      <Suspense fallback={<SectionFallback />}>
-        <HighlightsCarousel />
-      </Suspense>
+      <HighlightsCarousel />
 
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
 
-      <Suspense fallback={<SectionFallback />}>
-        <AdBanner position="between-sections" className="container mx-auto px-4" aspectRatio="728/90" />
+      <LazyErrorBoundary>
+        <Suspense fallback={<SectionFallback />}>
+          <AdBanner position="between-sections" className="container mx-auto px-4" aspectRatio="728/90" />
 
-        {featuredEnabled && (
-          <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
-        )}
-        <PopularServices />
-        {recentServices.length > 0 && <RecentServices services={recentServices} />}
+          {featuredEnabled && (
+            <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
+          )}
+          <PopularServices />
+          {recentServices.length > 0 && <RecentServices services={recentServices} />}
 
-        <AdBanner position="mid-content" className="container mx-auto px-4" aspectRatio="728/90" />
+          <AdBanner position="mid-content" className="container mx-auto px-4" aspectRatio="728/90" />
 
-        <FeaturedJobs />
-        <BlogHighlight />
+          <FeaturedJobs />
+          <BlogHighlight />
 
-        {topCities.length > 0 && <CitiesSection cities={topCities} />}
-        <CtaSection />
-        <AdShowcase />
-        <SponsorsSection sponsors={sponsors} />
-        <HowItWorksSection />
-        {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
-          <PopularSearches categories={allCategories} cities={topCities} />
-        )}
-        {reviewsEnabled && <TestimonialsSection />}
-        {faqEnabled && <FaqSection />}
-        <Footer />
-        <FloatingWhatsApp />
-      </Suspense>
+          {topCities.length > 0 && <CitiesSection cities={topCities} />}
+          <CtaSection />
+          <AdShowcase />
+          <SponsorsSection sponsors={sponsors} />
+          <HowItWorksSection />
+          {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
+            <PopularSearches categories={allCategories} cities={topCities} />
+          )}
+          {reviewsEnabled && <TestimonialsSection />}
+          {faqEnabled && <FaqSection />}
+          <Footer />
+          <FloatingWhatsApp />
+        </Suspense>
+      </LazyErrorBoundary>
     </div>
   );
 };
