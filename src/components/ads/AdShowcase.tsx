@@ -52,7 +52,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => supabase.rpc('increment_sponsor_click', { sponsor_id: s.id } as any)}
-              className="group overflow-hidden rounded-2xl border border-border shadow-card transition-all hover:shadow-lg hover:scale-[1.02]"
+              className="group rounded-2xl border border-border shadow-card transition-all hover:shadow-lg hover:scale-[1.02]"
             >
               {s.image_url ? (
                 <SponsorImage src={s.image_url} alt={s.title} />
@@ -80,7 +80,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => supabase.rpc('increment_sponsor_click', { sponsor_id: current.id } as any)}
-                  className="block overflow-hidden rounded-2xl border border-border shadow-card"
+                  className="block rounded-2xl border border-border shadow-card"
                 >
                   {current.image_url ? (
                     <SponsorImage src={current.image_url} alt={current.title} />

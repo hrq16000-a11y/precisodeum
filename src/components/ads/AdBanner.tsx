@@ -62,7 +62,7 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/10 shadow-card">
+      <div className="relative rounded-2xl border border-border bg-muted/10 shadow-card">
         <span className="absolute left-2 top-1.5 z-20 rounded-md bg-background/70 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-muted-foreground/60 backdrop-blur-sm">
           Anúncio
         </span>

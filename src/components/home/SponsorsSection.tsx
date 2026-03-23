@@ -41,7 +41,7 @@ const SponsorsSection = ({ sponsors }: Props) => {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => supabase.rpc('increment_sponsor_click', { sponsor_id: sponsor.id } as any)}
-              className="group overflow-hidden rounded-2xl border border-border shadow-card transition-all hover:shadow-lg hover:scale-[1.02]"
+              className="group rounded-2xl border border-border shadow-card transition-all hover:shadow-lg hover:scale-[1.02]"
             >
               {sponsor.image_url ? (
                 <SponsorImage
