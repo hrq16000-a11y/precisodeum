@@ -17,7 +17,11 @@ const DashboardPage = () => {
   const [guideOpen, setGuideOpen] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) navigate('/login');
+    if (!loading && !user) {
+      // Small delay to avoid redirect race with auth state propagation
+      const timer = setTimeout(() => navigate('/login', { replace: true }), 200);
+      return () => clearTimeout(timer);
+    }
   }, [loading, user, navigate]);
 
   useEffect(() => {
