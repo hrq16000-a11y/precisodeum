@@ -276,9 +276,9 @@ const AdminSponsorCrmPage = () => {
 
         {/* Alerts */}
         {alerts.length > 0 && (
-          <Card className="border-orange-500/30 bg-orange-500/5">
+          <Card className="border-destructive/30 bg-destructive/5">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2 text-orange-600">
+              <CardTitle className="text-sm flex items-center gap-2 text-destructive">
                 <AlertTriangle className="h-4 w-4" /> Alertas ({alerts.length})
               </CardTitle>
             </CardHeader>
