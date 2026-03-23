@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import { serviceImageThumb } from '@/lib/imageOptimizer';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
@@ -123,7 +124,7 @@ const ServiceDetailPage = () => {
                 <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {svc.images.map((img: any) => (
                     <div key={img.id} className="aspect-video overflow-hidden rounded-xl border border-border">
-                      <img src={img.image_url} alt={svc.service_name} className="h-full w-full object-cover" loading="lazy" />
+                      <img src={serviceImageThumb(img.image_url)} alt={svc.service_name} className="h-full w-full object-cover" loading="lazy" />
                     </div>
                   ))}
                 </div>
