@@ -1,4 +1,4 @@
-import { lazy, Suspense, memo } from 'react';
+import { lazy, Suspense, memo, Component, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
@@ -9,6 +9,7 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import Header from '@/components/Header';
 import HeroBanner from '@/components/home/HeroBanner';
 import CategoriesGrid from '@/components/home/CategoriesGrid';
+import HighlightsCarousel from '@/components/home/HighlightsCarousel';
 
 // Lazy load below-the-fold sections
 const FeaturedProviders = lazy(() => import('@/components/home/FeaturedProviders'));
@@ -23,13 +24,22 @@ const HowItWorksSection = lazy(() => import('@/components/home/HowItWorksSection
 const TestimonialsSection = lazy(() => import('@/components/home/TestimonialsSection'));
 const FaqSection = lazy(() => import('@/components/home/FaqSection'));
 const PopularSearches = lazy(() => import('@/components/home/PopularSearches'));
-const HighlightsCarousel = lazy(() => import('@/components/home/HighlightsCarousel'));
 const AdBanner = lazy(() => import('@/components/ads/AdBanner'));
 const AdShowcase = lazy(() => import('@/components/ads/AdShowcase'));
 const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
 
-const SectionFallback = () => null; // Invisible fallback for lazy sections
+// Error boundary to prevent lazy load failures from crashing the page
+class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() { return this.state.hasError ? null : this.props.children; }
+}
+
+const SectionFallback = () => null;
 
 const Index = () => {
   useSeoHead({
