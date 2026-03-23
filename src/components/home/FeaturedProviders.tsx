@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, MessageCircle, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,17 +12,7 @@ interface Props {
 }
 
 const FeaturedProviders = ({ providers, isLoading }: Props) => {
-  // Randomize featured providers
-  const randomized = useMemo(() => {
-    // Only show featured providers that have a service with image (proves service + image + portfolio content)
-    const featured = providers.filter(p => p.featured && (!!p.serviceImage || !!p.hasPortfolio));
-    const arr = [...featured];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr.slice(0, 5);
-  }, [providers]);
+  const featuredList = providers;
 
   return (
     <section className="bg-muted/50 py-10">
@@ -46,11 +35,11 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
               <Skeleton key={i} className="h-64 rounded-xl" />
             ))}
           </div>
-        ) : randomized.length === 0 ? (
+        ) : featuredList.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground">Nenhum profissional em destaque ainda.</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {randomized.map((p) => {
+            {featuredList.map((p) => {
               const displayName = p.businessName || p.category || 'Profissional';
               const displayPhoto = p.photo || p.serviceImage || '';
               const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2);
