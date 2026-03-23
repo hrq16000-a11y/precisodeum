@@ -48,9 +48,12 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
 
   return (
     <section className="relative overflow-hidden py-16 md:py-24">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${heroImage})` }}
+      <img
+        src={heroImage}
+        alt=""
+        fetchPriority="high"
+        decoding="async"
+        className="absolute inset-0 h-full w-full object-cover object-center"
       />
       <div className="absolute inset-0 bg-primary/80" />
       <div className="container relative z-10 flex flex-col items-center text-center">

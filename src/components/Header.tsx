@@ -23,7 +23,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center">
-          <img src={logo} alt="Preciso de um - Profissionais Confiáveis Perto de Você" className="h-10" />
+          <img src={logo} alt="Preciso de um - Profissionais Confiáveis Perto de Você" className="h-10" width="111" height="40" />
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
