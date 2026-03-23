@@ -167,6 +167,7 @@ const App = () => {
                 <Route path="/admin/comunidade" element={<AdminCommunityPage />} />
                 <Route path="/admin/vagas" element={<AdminJobsPage />} />
                 <Route path="/admin/blog" element={<AdminBlogPage />} />
+                <Route path="/admin/crm-patrocinadores" element={<AdminSponsorCrmPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
