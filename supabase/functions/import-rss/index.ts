@@ -390,7 +390,7 @@ serve(async (req) => {
       });
     }
 
-    // Auth: require admin except safe automated mode
+    // Auth: require admin JWT or valid cron secret for automated calls
     let isAdmin = false;
     const authHeader = req.headers.get("Authorization");
     if (authHeader) {
@@ -404,7 +404,17 @@ serve(async (req) => {
       }
     }
 
-    if (!isAdmin && !isAutomated) {
+    // Validate automated mode via shared secret header instead of trusting body flag
+    let isAutomatedValid = false;
+    if (isAutomated) {
+      const cronSecret = Deno.env.get("CRON_SECRET");
+      const providedSecret = req.headers.get("x-cron-secret");
+      if (cronSecret && providedSecret === cronSecret) {
+        isAutomatedValid = true;
+      }
+    }
+
+    if (!isAdmin && !isAutomatedValid) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
