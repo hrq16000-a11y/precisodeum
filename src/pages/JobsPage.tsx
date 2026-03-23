@@ -11,6 +11,8 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import AdBanner from '@/components/ads/AdBanner';
 import AdSidebar from '@/components/ads/AdSidebar';
 import AdNativeCard from '@/components/ads/AdNativeCard';
+import { lazy, Suspense } from 'react';
+const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
 
 const JOB_TYPES = [
   { value: '', label: 'Todos os tipos' },
@@ -86,6 +88,7 @@ const JobsPage = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      <Suspense fallback={null}><AdSlot slotSlug="jobs-top" city={cityFilter} /></Suspense>
       <div className="container px-4 py-6 sm:py-8">
         <h1 className="font-display text-2xl font-bold text-foreground sm:text-3xl">Vagas e Oportunidades</h1>
         <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">Encontre oportunidades de serviço e trabalho na sua região</p>

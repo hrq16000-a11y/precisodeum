@@ -14,6 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_slot_assignments: {
+        Row: {
+          active: boolean
+          created_at: string
+          end_date: string | null
+          id: string
+          priority: number
+          slot_id: string
+          sponsor_id: string
+          start_date: string | null
+          target_category: string | null
+          target_city: string | null
+          target_keywords: string | null
+          target_state: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          priority?: number
+          slot_id: string
+          sponsor_id: string
+          start_date?: string | null
+          target_category?: string | null
+          target_city?: string | null
+          target_keywords?: string | null
+          target_state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          priority?: number
+          slot_id?: string
+          sponsor_id?: string
+          start_date?: string | null
+          target_category?: string | null
+          target_city?: string | null
+          target_keywords?: string | null
+          target_state?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_slot_assignments_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "ad_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_slot_assignments_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_slots: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          display_order: number
+          id: string
+          max_ads: number
+          name: string
+          page_type: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          display_order?: number
+          id?: string
+          max_ads?: number
+          name: string
+          page_type?: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          display_order?: number
+          id?: string
+          max_ads?: number
+          name?: string
+          page_type?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_name: string
@@ -978,6 +1080,47 @@ export type Database = {
           },
         ]
       }
+      sponsor_metrics: {
+        Row: {
+          count: number
+          created_at: string
+          event_date: string
+          event_type: string
+          id: string
+          page_path: string | null
+          slot_slug: string
+          sponsor_id: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          page_path?: string | null
+          slot_slug?: string
+          sponsor_id: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          page_path?: string | null
+          slot_slug?: string
+          sponsor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_metrics_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsor_notes: {
         Row: {
           author_id: string
@@ -1194,6 +1337,15 @@ export type Database = {
         Returns: undefined
       }
       is_sponsor: { Args: { _user_id: string }; Returns: boolean }
+      track_sponsor_metric: {
+        Args: {
+          _event_type: string
+          _page_path?: string
+          _slot_slug: string
+          _sponsor_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

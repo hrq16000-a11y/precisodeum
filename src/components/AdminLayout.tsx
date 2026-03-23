@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -35,6 +35,7 @@ const menuGroups = [
     items: [
       { label: 'Patrocinadores', icon: Megaphone, path: '/admin/patrocinadores' },
       { label: 'CRM Comercial', icon: HandshakeIcon, path: '/admin/crm-patrocinadores' },
+      { label: 'Slots de Anúncios', icon: LayoutGrid, path: '/admin/slots-anuncios' },
       { label: 'Cidades', icon: MapPin, path: '/admin/cidades' },
       { label: 'Estatísticas', icon: BarChart3, path: '/admin/estatisticas' },
     ],

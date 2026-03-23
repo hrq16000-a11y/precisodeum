@@ -31,6 +31,7 @@ const FaqSection = lazy(() => import('@/components/home/FaqSection'));
 const PopularSearches = lazy(() => import('@/components/home/PopularSearches'));
 const AdBanner = lazy(() => import('@/components/ads/AdBanner'));
 const AdShowcase = lazy(() => import('@/components/ads/AdShowcase'));
+const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
 const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
 
@@ -151,6 +152,7 @@ const Index = () => {
       <LazyErrorBoundary>
         <Suspense fallback={<SectionFallback />}>
           <AdBanner position="between-sections" className="container mx-auto px-4" />
+          <AdSlot slotSlug="home-between" />
 
           {featuredEnabled && (
             <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
@@ -159,6 +161,7 @@ const Index = () => {
           {recentServices.length > 0 && <RecentServices services={recentServices} />}
 
           <AdBanner position="mid-content" className="container mx-auto px-4" />
+          <AdSlot slotSlug="home-mid" />
 
           <FeaturedJobs />
           <BlogHighlight />
