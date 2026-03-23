@@ -85,6 +85,7 @@ const Index = () => {
       const shuffled = [...(cities || [])].sort(() => Math.random() - 0.5);
       return shuffled.slice(0, 6);
     },
+    staleTime: 1000 * 60 * 10,
   });
 
   const { data: allCategories = [] } = useQuery({
