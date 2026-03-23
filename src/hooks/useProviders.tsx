@@ -25,25 +25,44 @@ export interface DbProvider {
   featured: boolean;
 }
 
-function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPortfolio?: boolean): DbProvider {
+interface ServiceFallback {
+  serviceName?: string;
+  serviceDescription?: string;
+  serviceWhatsapp?: string;
+  serviceArea?: string;
+}
+
+function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPortfolio?: boolean, serviceFallback?: ServiceFallback): DbProvider {
+  const catName = (p.categories as any)?.name || '';
+  const provCity = p.city?.trim() || '';
+  const provState = p.state?.trim() || '';
+  const provNeighborhood = p.neighborhood?.trim() || '';
+  const provDescription = p.description?.trim() || '';
+  const provWhatsapp = p.whatsapp?.trim() || '';
+  const provPhone = p.phone?.trim() || '';
+
+  // Fallback: whatsapp ↔ phone
+  const effectiveWhatsapp = provWhatsapp || provPhone || serviceFallback?.serviceWhatsapp || '';
+  const effectivePhone = provPhone || provWhatsapp || serviceFallback?.serviceWhatsapp || '';
+
   return {
     id: p.id,
-    name: profileName || p.business_name || 'Profissional',
+    name: profileName || p.business_name || serviceFallback?.serviceName || 'Profissional',
     businessName: p.business_name || undefined,
-    category: (p.categories as any)?.name || '',
+    category: catName || serviceFallback?.serviceName || '',
     categorySlug: (p.categories as any)?.slug || '',
     categoryIcon: (p.categories as any)?.icon || '🔧',
-    city: p.city,
-    state: p.state,
-    neighborhood: p.neighborhood,
+    city: provCity,
+    state: provState,
+    neighborhood: provNeighborhood,
     rating: Number(p.rating_avg) || 0,
     reviewCount: p.review_count || 0,
     photo: p.photo_url || '',
     serviceImage: serviceImage || undefined,
     hasPortfolio: hasPortfolio || false,
-    description: p.description,
-    phone: p.phone,
-    whatsapp: p.whatsapp,
+    description: provDescription || serviceFallback?.serviceDescription || '',
+    phone: effectivePhone,
+    whatsapp: effectiveWhatsapp,
     yearsExperience: p.years_experience,
     plan: p.plan,
     slug: p.slug || p.id,
@@ -73,7 +92,7 @@ async function fetchProvidersLightweight(query: any) {
       .in('id', userIds) as unknown as Promise<{ data: { id: string; full_name: string; avatar_url: string | null }[] | null }>,
     supabase
       .from('services')
-      .select('id, provider_id')
+      .select('id, provider_id, service_name, description, whatsapp, service_area')
       .in('provider_id', providerIds),
   ]);
 
@@ -86,6 +105,19 @@ async function fetchProvidersLightweight(query: any) {
   const serviceIds = serviceRows.map((s: any) => s.id);
   const serviceToProvider: Record<string, string> = {};
   serviceRows.forEach((s: any) => { serviceToProvider[s.id] = s.provider_id; });
+
+  // Build service fallback map (first service per provider)
+  const serviceFallbackMap: Record<string, ServiceFallback> = {};
+  serviceRows.forEach((s: any) => {
+    if (!serviceFallbackMap[s.provider_id]) {
+      serviceFallbackMap[s.provider_id] = {
+        serviceName: s.service_name || undefined,
+        serviceDescription: s.description || undefined,
+        serviceWhatsapp: s.whatsapp || undefined,
+        serviceArea: s.service_area || undefined,
+      };
+    }
+  });
 
   const serviceImageMap: Record<string, string> = {};
   if (serviceIds.length > 0) {
@@ -104,7 +136,6 @@ async function fetchProvidersLightweight(query: any) {
     });
   }
 
-  // Mark hasPortfolio = true if provider has service images (fast heuristic, no storage calls)
   return (data as any[]).map((p) => {
     const profile = profileMap[p.user_id];
     const photo = p.photo_url || profile?.avatar || '';
@@ -113,7 +144,8 @@ async function fetchProvidersLightweight(query: any) {
       { ...p, photo_url: photo },
       profile?.name,
       serviceImageMap[p.id],
-      hasServiceImage // use service images as portfolio indicator
+      hasServiceImage,
+      serviceFallbackMap[p.id]
     );
     return mapped;
   });
