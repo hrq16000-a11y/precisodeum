@@ -147,7 +147,6 @@ async function fetchProvidersLightweight(query: any) {
   return (data as any[]).map((p) => {
     const profile = profileMap[p.user_id];
     const photo = p.photo_url || profile?.avatar || '';
-    const hasServiceImage = !!serviceImageMap[p.id];
     const mapped = mapProvider(
       { ...p, photo_url: photo },
       profile?.name,
