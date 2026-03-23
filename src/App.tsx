@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -70,75 +70,89 @@ const PageFallback = () => (
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 2, // 2 minutes
-      gcTime: 1000 * 60 * 5, // 5 minutes (was cacheTime)
+      staleTime: 1000 * 60 * 10,
+      gcTime: 1000 * 60 * 30,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      refetchOnMount: false,
       retry: 1,
     },
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <AuthProvider>
-          <Suspense fallback={<PageFallback />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/buscar" element={<SearchPage />} />
-              <Route path="/categoria/:slug" element={<CategoryPage />} />
-              <Route path="/profissional/:slug" element={<ProviderProfile />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/cadastro" element={<SignupPage />} />
-              <Route path="/vagas" element={<JobsPage />} />
-              <Route path="/vaga/:slug" element={<JobDetailPage />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/dashboard/perfil" element={<DashboardProfilePage />} />
-              <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><DashboardServicesPage /></ProtectedRoute>} />
-              <Route path="/dashboard/avaliacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReviewsPage /></ProtectedRoute>} />
-              <Route path="/dashboard/leads" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLeadsPage /></ProtectedRoute>} />
-              <Route path="/dashboard/plano" element={<ProtectedRoute allowedTypes={['provider']}><DashboardPlanPage /></ProtectedRoute>} />
-              <Route path="/dashboard/minha-pagina" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMyPagePage /></ProtectedRoute>} />
-              <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
-              <Route path="/dashboard/comunidade" element={<DashboardCommunityPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
-              <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
-              <Route path="/admin/usuarios" element={<AdminUsersPage />} />
-              <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
-              <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
-              <Route path="/admin/cidades" element={<AdminCitiesPage />} />
-              <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
-              <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
-              <Route path="/admin/servicos-populares" element={<AdminPopularServicesPage />} />
-              <Route path="/admin/faq" element={<AdminFaqPage />} />
-              <Route path="/admin/metatags" element={<AdminMetaTagsPage />} />
-              <Route path="/admin/destaques" element={<AdminHighlightsPage />} />
-              <Route path="/admin/comunidade" element={<AdminCommunityPage />} />
-              <Route path="/admin/vagas" element={<AdminJobsPage />} />
-              <Route path="/admin/blog" element={<AdminBlogPage />} />
-              <Route path="/blog" element={<BlogPage />} />
-              <Route path="/blog/:slug" element={<BlogPostPage />} />
-              <Route path="/servico/:slug" element={<PopularServicePage />} />
-              <Route path="/servico-detalhe/:id" element={<ServiceDetailPage />} />
-              <Route path="/cidade/:slug" element={<CityPage />} />
-              <Route path="/faq" element={<FaqPage />} />
-              <Route path="/sobre" element={<AboutPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/sitemap" element={<SitemapRedirect />} />
-              <Route path="/sitemap.xml" element={<SitemapRedirect />} />
-              <Route path="/:slug" element={<SeoPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void import("./pages/SearchPage");
+      void import("./pages/ProviderProfile");
+      void import("./pages/CategoryPage");
+    }, 900);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <AuthProvider>
+            <Suspense fallback={<PageFallback />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/buscar" element={<SearchPage />} />
+                <Route path="/categoria/:slug" element={<CategoryPage />} />
+                <Route path="/profissional/:slug" element={<ProviderProfile />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/cadastro" element={<SignupPage />} />
+                <Route path="/vagas" element={<JobsPage />} />
+                <Route path="/vaga/:slug" element={<JobDetailPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/dashboard/perfil" element={<DashboardProfilePage />} />
+                <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><DashboardServicesPage /></ProtectedRoute>} />
+                <Route path="/dashboard/avaliacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReviewsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/leads" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLeadsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/plano" element={<ProtectedRoute allowedTypes={['provider']}><DashboardPlanPage /></ProtectedRoute>} />
+                <Route path="/dashboard/minha-pagina" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMyPagePage /></ProtectedRoute>} />
+                <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/comunidade" element={<DashboardCommunityPage />} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
+                <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
+                <Route path="/admin/usuarios" element={<AdminUsersPage />} />
+                <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
+                <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
+                <Route path="/admin/cidades" element={<AdminCitiesPage />} />
+                <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
+                <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
+                <Route path="/admin/servicos-populares" element={<AdminPopularServicesPage />} />
+                <Route path="/admin/faq" element={<AdminFaqPage />} />
+                <Route path="/admin/metatags" element={<AdminMetaTagsPage />} />
+                <Route path="/admin/destaques" element={<AdminHighlightsPage />} />
+                <Route path="/admin/comunidade" element={<AdminCommunityPage />} />
+                <Route path="/admin/vagas" element={<AdminJobsPage />} />
+                <Route path="/admin/blog" element={<AdminBlogPage />} />
+                <Route path="/blog" element={<BlogPage />} />
+                <Route path="/blog/:slug" element={<BlogPostPage />} />
+                <Route path="/servico/:slug" element={<PopularServicePage />} />
+                <Route path="/servico-detalhe/:id" element={<ServiceDetailPage />} />
+                <Route path="/cidade/:slug" element={<CityPage />} />
+                <Route path="/faq" element={<FaqPage />} />
+                <Route path="/sobre" element={<AboutPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/sitemap" element={<SitemapRedirect />} />
+                <Route path="/sitemap.xml" element={<SitemapRedirect />} />
+                <Route path="/:slug" element={<SeoPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

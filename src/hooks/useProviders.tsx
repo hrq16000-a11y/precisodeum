@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
@@ -92,7 +93,7 @@ const providerSelect = 'id, user_id, business_name, description, photo_url, city
 // Cache portfolio folder list (single storage call, reused across hooks)
 let _portfolioCachePromise: Promise<Set<string>> | null = null;
 let _portfolioCacheTime = 0;
-const PORTFOLIO_CACHE_TTL = 60_000; // 1 min
+const PORTFOLIO_CACHE_TTL = 10 * 60_000; // 10 min
 
 async function getPortfolioSet(): Promise<Set<string>> {
   const now = Date.now();
@@ -250,74 +251,98 @@ export function useFeaturedProviders() {
       const count = pickFeaturedCount(shuffled.length);
       return shuffled.slice(0, count);
     },
-    staleTime: 0,
-    gcTime: 1000 * 60 * 2,
-    refetchOnMount: 'always',
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+    refetchOnMount: false,
   });
 }
 
+function filterAndRankProviders(
+  providers: DbProvider[],
+  query: string,
+  city: string,
+  categorySlug: string,
+  minRating: number
+) {
+  let results = [...providers];
+
+  if (minRating > 0) {
+    results = results.filter((p) => p.rating >= minRating);
+  }
+
+  if (categorySlug) {
+    results = results.filter((p) => p.categorySlug === categorySlug);
+  }
+
+  if (city) {
+    const lc = city.toLowerCase();
+    results = results.filter(
+      (p) =>
+        p.city.toLowerCase().includes(lc) ||
+        p.state.toLowerCase().includes(lc) ||
+        p.neighborhood.toLowerCase().includes(lc)
+    );
+  }
+
+  if (query) {
+    const lq = query.toLowerCase();
+    const terms = lq.split(/\s+/).filter(Boolean);
+    results = results.filter((p) =>
+      terms.every((term) =>
+        p.name.toLowerCase().includes(term) ||
+        p.category.toLowerCase().includes(term) ||
+        p.description.toLowerCase().includes(term) ||
+        (p.businessName?.toLowerCase().includes(term) ?? false) ||
+        p.city.toLowerCase().includes(term) ||
+        p.neighborhood.toLowerCase().includes(term) ||
+        p.state.toLowerCase().includes(term)
+      )
+    );
+  }
+
+  const planPriority: Record<string, number> = { premium: 0, pro: 1, free: 2 };
+  results.sort((a, b) => {
+    const aImg = a.serviceImage || a.hasPortfolio ? 0 : 1;
+    const bImg = b.serviceImage || b.hasPortfolio ? 0 : 1;
+    if (aImg !== bImg) return aImg - bImg;
+    const pa = planPriority[a.plan] ?? 2;
+    const pb = planPriority[b.plan] ?? 2;
+    if (pa !== pb) return pa - pb;
+    if (b.rating !== a.rating) return b.rating - a.rating;
+    return b.reviewCount - a.reviewCount;
+  });
+
+  return results;
+}
+
 export function useSearchProviders(query: string, city: string, categorySlug: string, minRating: number) {
-  return useQuery({
-    queryKey: ['search-providers', query, city, categorySlug, minRating],
+  const baseQuery = useQuery({
+    queryKey: ['search-providers-base'],
     queryFn: async () => {
-      let q = supabase
+      return fetchProvidersWithProfiles(
+        supabase
         .from('providers')
         .select(providerSelect)
-        .eq('status', 'approved');
-
-      if (minRating > 0) {
-        q = q.gte('rating_avg', minRating);
-      }
-
-      let results = await fetchProvidersWithProfiles(
-        q.order('rating_avg', { ascending: false }).order('review_count', { ascending: false })
+        .eq('status', 'approved')
+        .order('rating_avg', { ascending: false })
+        .order('review_count', { ascending: false })
       );
-
-      if (categorySlug) {
-        results = results.filter((p) => p.categorySlug === categorySlug);
-      }
-
-      if (city) {
-        const lc = city.toLowerCase();
-        results = results.filter(
-          (p) =>
-            p.city.toLowerCase().includes(lc) ||
-            p.state.toLowerCase().includes(lc) ||
-            p.neighborhood.toLowerCase().includes(lc)
-        );
-      }
-
-      if (query) {
-        const lq = query.toLowerCase();
-        const terms = lq.split(/\s+/).filter(Boolean);
-        results = results.filter((p) =>
-          terms.every((term) =>
-            p.name.toLowerCase().includes(term) ||
-            p.category.toLowerCase().includes(term) ||
-            p.description.toLowerCase().includes(term) ||
-            (p.businessName?.toLowerCase().includes(term) ?? false) ||
-            p.city.toLowerCase().includes(term) ||
-            p.neighborhood.toLowerCase().includes(term) ||
-            p.state.toLowerCase().includes(term)
-          )
-        );
-      }
-
-      const planPriority: Record<string, number> = { premium: 0, pro: 1, free: 2 };
-      results.sort((a, b) => {
-        const aImg = (a.serviceImage || a.hasPortfolio) ? 0 : 1;
-        const bImg = (b.serviceImage || b.hasPortfolio) ? 0 : 1;
-        if (aImg !== bImg) return aImg - bImg;
-        const pa = planPriority[a.plan] ?? 2;
-        const pb = planPriority[b.plan] ?? 2;
-        if (pa !== pb) return pa - pb;
-        if (b.rating !== a.rating) return b.rating - a.rating;
-        return b.reviewCount - a.reviewCount;
-      });
-
-      return results;
     },
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
+
+  const filteredData = useMemo(
+    () => filterAndRankProviders(baseQuery.data || [], query, city, categorySlug, minRating),
+    [baseQuery.data, query, city, categorySlug, minRating]
+  );
+
+  return {
+    ...baseQuery,
+    data: filteredData,
+  };
 }
 
 export function useSearchSuggestions() {
