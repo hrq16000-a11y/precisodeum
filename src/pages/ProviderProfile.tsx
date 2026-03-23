@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube } from 'lucide-react';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import { useIsMobile } from '@/hooks/use-mobile';

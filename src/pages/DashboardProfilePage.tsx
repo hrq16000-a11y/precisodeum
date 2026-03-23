@@ -9,6 +9,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import PortfolioUpload from '@/components/PortfolioUpload';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
+import { generateProviderSlug } from '@/lib/slugify';
 
 const DashboardProfilePage = () => {
   const { user, profile, provider, loading, refetchProfile } = useAuth();
@@ -154,7 +155,7 @@ const DashboardProfilePage = () => {
             return;
           }
         } else {
-          const slug = `${form.full_name.toLowerCase().replace(/\s+/g, '-')}-${form.city.toLowerCase().replace(/\s+/g, '-')}`;
+          const slug = generateProviderSlug(form.full_name, form.city);
           const { error: insertError } = await supabase.from('providers').insert({
             user_id: user.id,
             business_name: form.business_name || null,
