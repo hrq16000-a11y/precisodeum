@@ -588,6 +588,9 @@ const ProviderProfile = () => {
         <span className="text-foreground">{name}</span>
       </nav>
 
+      {/* Profile Top Ad Slot */}
+      <Suspense fallback={null}><AdSlot slotSlug="profile-top" category={category} city={provider.city} state={provider.state} /></Suspense>
+
       <div className="container py-8">
         <div className="flex flex-col gap-8 lg:flex-row">
           <div className="flex-1">
@@ -688,10 +691,20 @@ const ProviderProfile = () => {
               </div>
             </div>
 
-            {/* Dynamic sections */}
-            {visibleSections.map(sectionId => {
+            {/* Dynamic sections with ad slots interspersed */}
+            {visibleSections.map((sectionId, idx) => {
               const render = sectionMap[sectionId];
-              return render ? render() : null;
+              return (
+                <div key={sectionId}>
+                  {render ? render() : null}
+                  {sectionId === 'about' && (
+                    <Suspense fallback={null}><AdSlot slotSlug="profile-after-desc" category={category} city={provider.city} state={provider.state} /></Suspense>
+                  )}
+                  {sectionId === 'services' && (
+                    <Suspense fallback={null}><AdSlot slotSlug="profile-between-services" category={category} city={provider.city} state={provider.state} /></Suspense>
+                  )}
+                </div>
+              );
             })}
           </div>
 
