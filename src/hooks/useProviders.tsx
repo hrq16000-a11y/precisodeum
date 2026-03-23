@@ -182,87 +182,8 @@ async function fetchProvidersLightweight(query: any) {
   });
 }
 
-/**
- * Full fetch with portfolio storage checks.
- * Used only for detail pages (search, category, profile).
- */
-async function fetchProvidersWithProfiles(query: any) {
-  const { data, error } = await query;
-  if (error) throw error;
-  if (!data || data.length === 0) return [];
-
-  const providerIds = (data as any[]).map((p) => p.id);
-  const userIds = [...new Set((data as any[]).map((p) => p.user_id))];
-
-  const [profilesRes, servicesRes] = await Promise.all([
-    supabase
-      .from('public_profiles' as any)
-      .select('id, full_name, avatar_url')
-      .in('id', userIds) as unknown as Promise<{ data: { id: string; full_name: string; avatar_url: string | null }[] | null }>,
-    supabase
-      .from('services')
-      .select('id, provider_id, service_name, description, whatsapp, service_area, service_images(image_url, display_order)')
-      .in('provider_id', providerIds),
-  ]);
-
-  const profileMap: Record<string, { name: string; avatar?: string }> = {};
-  (profilesRes.data || []).forEach((p: any) => {
-    profileMap[p.id] = { name: p.full_name, avatar: p.avatar_url || undefined };
-  });
-
-  const serviceRows = servicesRes.data || [];
-  const serviceFallbackMap: Record<string, ServiceFallback> = {};
-  const serviceImageMap: Record<string, string> = {};
-  serviceRows.forEach((s: any) => {
-    if (!serviceFallbackMap[s.provider_id]) {
-      serviceFallbackMap[s.provider_id] = {
-        serviceName: s.service_name || undefined,
-        serviceDescription: s.description || undefined,
-        serviceWhatsapp: s.whatsapp || undefined,
-        serviceArea: s.service_area || undefined,
-      };
-    }
-
-    if (!serviceImageMap[s.provider_id]) {
-      const images = Array.isArray(s.service_images) ? s.service_images : [];
-      const firstImage = images
-        .slice()
-        .sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0))[0]?.image_url;
-
-      if (firstImage) {
-        serviceImageMap[s.provider_id] = firstImage;
-      }
-    }
-  });
-
-  // Portfolio checks - batch with concurrency limit of 5
-  const portfolioMap: Record<string, boolean> = {};
-  const BATCH_SIZE = 5;
-  for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
-    const batch = userIds.slice(i, i + BATCH_SIZE);
-    await Promise.all(batch.map(async (uid) => {
-      try {
-        const { data: files } = await supabase.storage.from('portfolio').list(uid, { limit: 1 });
-        if (files && files.filter(f => f.name !== '.emptyFolderPlaceholder').length > 0) {
-          portfolioMap[uid] = true;
-        }
-      } catch { /* ignore */ }
-    }));
-  }
-
-  return (data as any[]).map((p) => {
-    const profile = profileMap[p.user_id];
-    const photo = p.photo_url || profile?.avatar || '';
-    const mapped = mapProvider(
-      { ...p, photo_url: photo },
-      profile?.name,
-      serviceImageMap[p.id],
-      portfolioMap[p.user_id] || false,
-      serviceFallbackMap[p.id]
-    );
-    return mapped;
-  });
-}
+// fetchProvidersWithProfiles now uses the same fast path
+const fetchProvidersWithProfiles = fetchProvidersLightweight;
 
 export function useCategories() {
   return useQuery({
