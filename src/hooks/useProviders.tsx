@@ -287,7 +287,7 @@ export function useFeaturedProviders() {
   return useQuery({
     queryKey: ['featured-providers'],
     queryFn: async () => {
-      const providers = await fetchProvidersWithProfiles(
+      const providers = await fetchProvidersLightweight(
         supabase
           .from('providers')
           .select(providerSelect)
@@ -296,7 +296,8 @@ export function useFeaturedProviders() {
           .limit(200)
       );
 
-      const valid = providers.filter((p) => !!p.serviceImage && !!p.hasPortfolio);
+      // Regra: imagem de serviço OU portfólio (conteúdo visual)
+      const valid = providers.filter((p) => !!p.serviceImage || !!p.hasPortfolio);
       if (valid.length === 0) return [];
 
       const shuffled = shuffleArray(valid);
