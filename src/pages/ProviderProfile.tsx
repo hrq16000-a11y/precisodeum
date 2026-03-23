@@ -70,6 +70,18 @@ interface ThemeConfig {
   input: string;
 }
 
+interface ProviderProfileSnapshot {
+  provider: any;
+  services: any[];
+  reviews: any[];
+  portfolioImages: string[];
+  portfolioRawUrls: string[];
+  pageSettings: PageSettings;
+}
+
+const PROVIDER_PROFILE_CACHE_TTL = 1000 * 60 * 15;
+const providerProfileCache = new Map<string, { ts: number; snapshot: ProviderProfileSnapshot }>();
+
 const THEME_CLASSES: Record<string, ThemeConfig> = {
   default: {
     card: 'rounded-xl border border-border bg-card shadow-card',
@@ -140,7 +152,33 @@ const ProviderProfile = () => {
   const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
+    let active = true;
+
+    const applySnapshot = (snapshot: ProviderProfileSnapshot) => {
+      if (!active) return;
+      setProvider(snapshot.provider);
+      setServices(snapshot.services);
+      setReviews(snapshot.reviews);
+      setPortfolioRawUrls(snapshot.portfolioRawUrls);
+      setPortfolioImages(snapshot.portfolioImages);
+      setPageSettings(snapshot.pageSettings);
+      setLoading(false);
+    };
+
     const fetchProvider = async () => {
+      if (!slug) {
+        if (active) setLoading(false);
+        return;
+      }
+
+      const cached = providerProfileCache.get(slug);
+      if (cached && Date.now() - cached.ts < PROVIDER_PROFILE_CACHE_TTL) {
+        applySnapshot(cached.snapshot);
+        return;
+      }
+
+      if (active) setLoading(true);
+
       // Try exact match first
       let { data } = await supabase
         .from('providers')
@@ -166,13 +204,19 @@ const ProviderProfile = () => {
       }
 
       if (data) {
+        let preparedPageSettings: PageSettings = DEFAULT_SETTINGS;
+        let preparedServices: any[] = [];
+        let preparedReviews: any[] = [];
+        let preparedPortfolioRawUrls: string[] = [];
+        let preparedPortfolioImages: string[] = [];
+
         const { data: profile } = await supabase
           .from('public_profiles' as any)
           .select('full_name, avatar_url')
           .eq('id', data.user_id)
           .maybeSingle();
 
-        setProvider({ ...data, profiles: profile });
+        const providerWithProfile = { ...data, profiles: profile };
 
         const [{ data: svc }, { data: rev }, { data: files }, { data: ps }] = await Promise.all([
           supabase.from('services').select('*').eq('provider_id', data.id),
@@ -185,7 +229,7 @@ const ProviderProfile = () => {
         ]);
 
         if (ps) {
-          setPageSettings({
+          preparedPageSettings = {
             sections_order: (ps.sections_order as string[]) || DEFAULT_SETTINGS.sections_order,
             hidden_sections: (ps.hidden_sections as string[]) || [],
             headline: ps.headline || '',
@@ -199,7 +243,7 @@ const ProviderProfile = () => {
             youtube_url: ps.youtube_url || '',
             tiktok_url: ps.tiktok_url || '',
             theme: (ps as any).theme || 'default',
-          });
+          };
         }
 
         if (svc && svc.length > 0) {
@@ -226,13 +270,11 @@ const ProviderProfile = () => {
             imgMap[si.service_id].push(si);
           });
 
-          setServices(svc.map((s: any) => ({
+          preparedServices = svc.map((s: any) => ({
             ...s,
             serviceCategories: catMap[s.id] || [],
             serviceImages: imgMap[s.id] || [],
-          })));
-        } else {
-          setServices([]);
+          }));
         }
 
         if (rev && rev.length > 0) {
@@ -243,20 +285,46 @@ const ProviderProfile = () => {
             .in('id', reviewUserIds);
           const profileMap: Record<string, string> = {};
           (reviewProfiles || []).forEach((p: any) => { profileMap[p.id] = p.full_name; });
-          setReviews(rev.map((r: any) => ({ ...r, profiles: { full_name: profileMap[r.user_id] || 'Cliente' } })));
+          preparedReviews = rev.map((r: any) => ({ ...r, profiles: { full_name: profileMap[r.user_id] || 'Cliente' } }));
         }
 
         if (files) {
           const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
-          const rawUrls = filtered.map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl);
-          setPortfolioRawUrls(rawUrls);
-          setPortfolioImages(rawUrls.map(u => portfolioThumb(u)));
+          preparedPortfolioRawUrls = filtered.map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl);
+          preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
         }
+
+        const snapshot: ProviderProfileSnapshot = {
+          provider: providerWithProfile,
+          services: preparedServices,
+          reviews: preparedReviews,
+          portfolioImages: preparedPortfolioImages,
+          portfolioRawUrls: preparedPortfolioRawUrls,
+          pageSettings: preparedPageSettings,
+        };
+
+        providerProfileCache.set(slug, { ts: Date.now(), snapshot });
+        applySnapshot(snapshot);
+        return;
       }
-      setLoading(false);
+
+      if (active) {
+        setProvider(null);
+        setServices([]);
+        setReviews([]);
+        setPortfolioImages([]);
+        setPortfolioRawUrls([]);
+        setPageSettings(DEFAULT_SETTINGS);
+        setLoading(false);
+      }
     };
+
     fetchProvider();
-  }, [slug]);
+
+    return () => {
+      active = false;
+    };
+  }, [slug, navigate]);
 
   const name = provider ? ((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : '';
   const avatarUrl = provider ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : '';
