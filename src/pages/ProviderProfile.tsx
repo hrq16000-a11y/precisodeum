@@ -1,7 +1,8 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { avatarLarge, portfolioThumb, coverImage, serviceImageThumb } from '@/lib/imageOptimizer';
+import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb } from '@/lib/imageOptimizer';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube } from 'lucide-react';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
+import ImageLightbox from '@/components/ImageLightbox';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -129,6 +130,10 @@ const ProviderProfile = () => {
   const [services, setServices] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
+  const [portfolioRawUrls, setPortfolioRawUrls] = useState<string[]>([]);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [leadSent, setLeadSent] = useState(false);
   const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '' });
@@ -242,11 +247,10 @@ const ProviderProfile = () => {
         }
 
         if (files) {
-          setPortfolioImages(
-            files
-              .filter(f => f.name !== '.emptyFolderPlaceholder')
-              .map(f => portfolioThumb(supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl))
-          );
+          const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
+          const rawUrls = filtered.map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl);
+          setPortfolioRawUrls(rawUrls);
+          setPortfolioImages(rawUrls.map(u => portfolioThumb(u)));
         }
       }
       setLoading(false);
@@ -362,6 +366,18 @@ const ProviderProfile = () => {
     </div>
   );
 
+  const openPortfolioLightbox = (index: number) => {
+    setLightboxImages(portfolioRawUrls);
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const openServiceLightbox = (images: string[], index: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
   const renderPortfolio = () => {
     if (portfolioImages.length === 0) return null;
     return (
@@ -369,7 +385,7 @@ const ProviderProfile = () => {
         <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Portfólio</h2>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {portfolioImages.map((url, i) => (
-            <div key={i} className="aspect-square overflow-hidden rounded-lg border border-border">
+            <div key={i} className="aspect-square cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]" onClick={() => openPortfolioLightbox(i)}>
               <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
             </div>
           ))}
