@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Plus, Pencil, Trash2, ExternalLink, CalendarIcon, Eye, MousePointerClick } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, CalendarIcon, Eye, MousePointerClick, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +20,13 @@ import ImageUploadField from '@/components/ImageUploadField';
 import SponsorImage, { shapeLabelPt, type BannerShape } from '@/components/SponsorImage';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
+import BulkActionsBar from '@/components/admin/BulkActionsBar';
+import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
+import { logAuditAction } from '@/hooks/useAuditLog';
+import PaginationControls from '@/components/PaginationControls';
+
+const PAGE_SIZE = 20;
 
 const sizeHints: Record<string, string> = {
   'hero-top': 'Recomendado: 970×90 px (horizontal)',
@@ -82,17 +89,39 @@ const AdminSponsorsPage = () => {
     return null;
   }
 
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
   const { data: sponsors = [], isLoading } = useQuery({
     queryKey: ['admin-sponsors'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sponsors')
         .select('*')
+        .is('deleted_at', null)
         .order('display_order');
       if (error) throw error;
       return (data || []) as Sponsor[];
     },
   });
+
+  const bulk = useAdminBulkActions({
+    table: 'sponsors',
+    resourceType: 'sponsor',
+    onComplete: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-sponsors'] });
+      queryClient.invalidateQueries({ queryKey: ['sponsors-home'] });
+    },
+  });
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return sponsors;
+    const q = search.toLowerCase();
+    return sponsors.filter(s => (s.title || '').toLowerCase().includes(q));
+  }, [sponsors, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -124,17 +153,14 @@ const AdminSponsorsPage = () => {
     onError: () => toast({ title: 'Erro ao salvar', variant: 'destructive' }),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('sponsors').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-sponsors'] });
-      queryClient.invalidateQueries({ queryKey: ['sponsors-home'] });
-      toast({ title: 'Patrocinador removido' });
-    },
-  });
+  const handleSoftDelete = async (id: string) => {
+    if (!confirm('Mover para lixeira?')) return;
+    await supabase.from('sponsors').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
+    await logAuditAction({ action: 'soft_delete', resource_type: 'sponsor', resource_id: id });
+    queryClient.invalidateQueries({ queryKey: ['admin-sponsors'] });
+    queryClient.invalidateQueries({ queryKey: ['sponsors-home'] });
+    toast({ title: 'Patrocinador movido para lixeira' });
+  };
 
   const closeDialog = () => {
     setDialogOpen(false);
@@ -336,15 +362,42 @@ const AdminSponsorsPage = () => {
         </Dialog>
       </div>
 
-      <div className="mt-6 rounded-xl border border-border bg-card">
+      <div className="mt-4 flex items-center gap-2">
+        <div className="relative flex-1 sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Buscar patrocinadores..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
+        </div>
+      </div>
+
+      {bulk.hasSelection && (
+        <div className="mt-3">
+          <BulkActionsBar
+            count={bulk.selectionCount}
+            onClear={bulk.clearSelection}
+            onDelete={bulk.bulkSoftDelete}
+            onExport={() => bulk.exportSelected(filtered, 'patrocinadores')}
+            loading={bulk.bulkLoading}
+          >
+            <Button size="sm" variant="outline" onClick={() => bulk.bulkUpdate({ active: true })} disabled={bulk.bulkLoading} className="text-green-600 border-green-200">
+              Ativar
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => bulk.bulkUpdate({ active: false })} disabled={bulk.bulkLoading} className="text-amber-600 border-amber-200">
+              Desativar
+            </Button>
+          </BulkActionsBar>
+        </div>
+      )}
+
+      <div className="mt-4 rounded-xl border border-border bg-card">
         {isLoading ? (
           <p className="p-6 text-muted-foreground">Carregando...</p>
-        ) : sponsors.length === 0 ? (
-          <p className="p-6 text-center text-muted-foreground">Nenhum patrocinador cadastrado.</p>
+        ) : paginated.length === 0 ? (
+          <p className="p-6 text-center text-muted-foreground">Nenhum patrocinador encontrado.</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10"></TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead>Posição</TableHead>
                 <TableHead>Período</TableHead>
@@ -354,10 +407,13 @@ const AdminSponsorsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sponsors.map((s) => {
+              {paginated.map((s) => {
                 const expired = s.end_date && new Date(s.end_date) < new Date();
                 return (
                   <TableRow key={s.id}>
+                    <TableCell>
+                      <SelectionCheckbox checked={bulk.selectedIds.has(s.id)} onCheckedChange={() => bulk.toggleSelection(s.id)} />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {s.image_url && <img src={s.image_url} alt="" className="h-8 w-8 rounded object-cover" />}
@@ -386,7 +442,7 @@ const AdminSponsorsPage = () => {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="sm" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleSoftDelete(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -396,6 +452,12 @@ const AdminSponsorsPage = () => {
           </Table>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4">
+          <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
+        </div>
+      )}
     </AdminLayout>
   );
 };
