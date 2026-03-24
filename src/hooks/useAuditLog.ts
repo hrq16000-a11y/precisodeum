@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-type AuditAction = 'create' | 'update' | 'delete' | 'soft_delete' | 'restore' | 'approve' | 'reject' | 'block' | 'unblock' | 'bulk_delete' | 'bulk_update' | 'export';
+type AuditAction = 'create' | 'update' | 'delete' | 'soft_delete' | 'restore' | 'approve' | 'reject' | 'block' | 'unblock' | 'bulk_delete' | 'bulk_update' | 'export' | 'export_backup' | 'export_backup_full';
 
 interface AuditEntry {
   action: AuditAction;
