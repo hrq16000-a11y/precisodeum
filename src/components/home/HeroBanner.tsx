@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Shield, Users, Zap, Briefcase } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
-import heroImage from '@/assets/hero-image.webp';
+const heroImage = '/hero-image.webp';
 
 interface HeroBannerProps {
   totalServices?: number;
