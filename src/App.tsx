@@ -117,6 +117,13 @@ const queryClient = new QueryClient({
   },
 });
 
+/** Shows profile type chooser overlay for social login users who haven't picked a type */
+const TypeSelectionGate = () => {
+  const { needsTypeSelection, loading } = useAuth();
+  if (loading || !needsTypeSelection) return null;
+  return <ProfileTypeChooser />;
+};
+
 const App = () => {
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
