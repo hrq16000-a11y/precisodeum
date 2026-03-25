@@ -100,7 +100,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main content */}
       <main className="flex-1 pt-14 lg:ml-60 lg:pt-0">
-        <div className="p-4 sm:p-6">{children}</div>
+        <div className="p-4 pb-20 sm:p-6 sm:pb-6">{children}</div>
       </main>
     </div>
   );

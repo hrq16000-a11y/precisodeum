@@ -33,7 +33,7 @@ const MobileBottomNav = () => {
   };
 
   const items = [
-    { icon: Home, label: 'Início', path: '/', active: location.pathname === '/' },
+    { icon: Home, label: 'Início', path: '/', active: location.pathname === '/' || location.pathname === '/index' },
     { icon: Search, label: 'Buscar', path: '/buscar', active: location.pathname === '/buscar' },
     { icon: Plus, label: 'Criar', action: handleCreate, isCreate: true },
     { icon: User, label: 'Perfil', path: user ? '/dashboard' : '/login', active: location.pathname.startsWith('/dashboard') },
@@ -43,10 +43,12 @@ const MobileBottomNav = () => {
   return (
     <>
       {/* Spacer to prevent content from being hidden behind the nav */}
-      <div className="h-16 md:hidden" />
-      
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 md:hidden safe-bottom">
-        <div className="flex items-center justify-around px-1 py-1.5">
+      <div className="h-14 md:hidden" />
+
+      <nav className="fixed bottom-0 left-0 right-0 z-[60] border-t border-border/60 bg-card/95 backdrop-blur-lg supports-[backdrop-filter]:bg-card/85 md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        <div className="flex items-center justify-around px-1 py-1">
           {items.map((item, i) => {
             const Icon = item.icon;
             const isActive = item.active;
@@ -56,12 +58,12 @@ const MobileBottomNav = () => {
                 <button
                   key={i}
                   onClick={item.action}
-                  className="flex flex-col items-center justify-center -mt-4"
+                  className="flex flex-col items-center justify-center -mt-3.5"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg">
-                    <Plus className="h-6 w-6" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md">
+                    <Plus className="h-5 w-5" />
                   </div>
-                  <span className="mt-0.5 text-[10px] font-medium text-accent">Criar</span>
+                  <span className="mt-0.5 text-[9px] font-semibold text-accent">Criar</span>
                 </button>
               );
             }
@@ -76,12 +78,12 @@ const MobileBottomNav = () => {
                     navigate(item.path);
                   }
                 }}
-                className={`flex flex-col items-center justify-center px-2 py-1 ${
+                className={`flex flex-col items-center justify-center px-2 py-0.5 transition-colors ${
                   isActive ? 'text-accent' : 'text-muted-foreground'
                 }`}
               >
-                <Icon className="h-5 w-5" />
-                <span className="mt-0.5 text-[10px] font-medium">{item.label}</span>
+                <Icon className="h-[18px] w-[18px]" />
+                <span className="mt-0.5 text-[9px] font-medium">{item.label}</span>
               </button>
             );
           })}
