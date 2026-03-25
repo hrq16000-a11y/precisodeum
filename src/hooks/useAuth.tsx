@@ -47,13 +47,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // We use a simpler heuristic: profile_type is still 'client' AND
     // user metadata has no explicit profile_type_chosen flag
     const session = (await supabase.auth.getSession()).data.session;
-    const hasExplicitChoice = data?.profile_type !== 'client' ||
-      session?.user?.user_metadata?.profile_type_chosen === true;
-    
-    // Also consider users who signed up via email (they chose type during signup)
+    const metaChosen = session?.user?.user_metadata?.profile_type_chosen === true;
     const isEmailUser = session?.user?.app_metadata?.provider === 'email';
+    // User already chose if: metadata flag is set, signed up via email, or type isn't the default 'client'
+    const hasExplicitChoice = metaChosen || isEmailUser || data?.profile_type !== 'client';
     
-    setNeedsTypeSelection(!hasExplicitChoice && !isEmailUser && !!data);
+    setNeedsTypeSelection(!hasExplicitChoice && !!data);
 
     // Fetch the most complete provider
     const { data: providerRows } = await supabase
