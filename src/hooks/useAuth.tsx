@@ -8,6 +8,8 @@ interface AuthContextType {
   profile: any | null;
   provider: any | null;
   loading: boolean;
+  /** True when the user exists but has never explicitly chosen a profile type (social login default) */
+  needsTypeSelection: boolean;
   signOut: () => Promise<void>;
   refetchProfile: () => Promise<void>;
 }
@@ -18,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   provider: null,
   loading: true,
+  needsTypeSelection: false,
   signOut: async () => {},
   refetchProfile: async () => {},
 });
@@ -28,6 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<any | null>(null);
   const [provider, setProvider] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [needsTypeSelection, setNeedsTypeSelection] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
@@ -37,7 +41,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .single();
     setProfile(data);
 
-    // Fetch the most complete provider (prefer one with description/city filled)
+    // Check if user needs to pick a profile type
+    // A social-login user who never chose will have profile_type='client' and
+    // a very recent created_at (within 60s of now) OR has the provider 'google'/'apple' in auth
+    // We use a simpler heuristic: profile_type is still 'client' AND
+    // user metadata has no explicit profile_type_chosen flag
+    const session = (await supabase.auth.getSession()).data.session;
+    const hasExplicitChoice = data?.profile_type !== 'client' ||
+      session?.user?.user_metadata?.profile_type_chosen === true;
+    
+    // Also consider users who signed up via email (they chose type during signup)
+    const isEmailUser = session?.user?.app_metadata?.provider === 'email';
+    
+    setNeedsTypeSelection(!hasExplicitChoice && !isEmailUser && !!data);
+
+    // Fetch the most complete provider
     const { data: providerRows } = await supabase
       .from('providers')
       .select('*, categories(name, slug, icon)')
@@ -45,7 +63,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .order('created_at', { ascending: true });
     
     if (providerRows && providerRows.length > 0) {
-      // Pick the best record: one with city and description filled, else the first
       const best = providerRows.find(p => p.city && p.description) || providerRows[0];
       setProvider(best);
     } else {
@@ -54,7 +71,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const refetchProfile = useCallback(async () => {
-    if (user) await fetchProfile(user.id);
+    if (user) {
+      await fetchProfile(user.id);
+      // After an explicit refetch (e.g. after choosing type), mark as chosen
+      setNeedsTypeSelection(false);
+    }
   }, [user, fetchProfile]);
 
   useEffect(() => {
@@ -67,6 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           setProfile(null);
           setProvider(null);
+          setNeedsTypeSelection(false);
         }
         setLoading(false);
       }
@@ -90,10 +112,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setProfile(null);
     setProvider(null);
+    setNeedsTypeSelection(false);
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, provider, loading, signOut, refetchProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile }}>
       {children}
     </AuthContext.Provider>
   );

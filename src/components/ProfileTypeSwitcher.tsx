@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Briefcase, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,19 +14,50 @@ const TYPES = [
 const ProfileTypeSwitcher = () => {
   const { user, profile, refetchProfile } = useAuth();
   const [switching, setSwitching] = useState(false);
+  const navigate = useNavigate();
   const currentType = profile?.profile_type || 'client';
 
   const handleSwitch = async (newType: string) => {
     if (!user || newType === currentType || switching) return;
     setSwitching(true);
     try {
+      const profileRole = newType === 'rh' ? 'client' : newType;
       const { error } = await supabase
         .from('profiles')
-        .update({ profile_type: newType, role: newType === 'rh' ? 'client' : newType } as any)
+        .update({ profile_type: newType, role: profileRole } as any)
         .eq('id', user.id);
       if (error) throw error;
+
+      // If switching to provider, ensure provider record exists
+      if (newType === 'provider') {
+        const { data: existing } = await supabase
+          .from('providers')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+        if (!existing || existing.length === 0) {
+          const name = profile?.full_name || user.email?.split('@')[0] || 'profissional';
+          const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          await supabase.from('providers').insert({
+            user_id: user.id,
+            slug,
+            status: 'pending',
+          });
+        }
+      }
+
       await refetchProfile();
-      toast.success(`Conta alterada para ${TYPES.find(t => t.value === newType)?.label}`);
+      const label = TYPES.find(t => t.value === newType)?.label;
+      toast.success(`Conta alterada para ${label}`);
+
+      // Redirect to the correct area immediately
+      if (newType === 'client') {
+        navigate('/dashboard', { replace: true });
+      } else if (newType === 'rh') {
+        navigate('/dashboard/vagas', { replace: true });
+      } else {
+        navigate('/dashboard/servicos', { replace: true });
+      }
     } catch {
       toast.error('Erro ao alterar tipo de conta');
     } finally {
