@@ -49,11 +49,17 @@ const ProfileTypeChooser = () => {
     setSaving(true);
     try {
       const profileRole = selected === 'rh' ? 'client' : selected;
-      const { error } = await supabase
-        .from('profiles')
-        .update({ profile_type: selected, role: profileRole } as any)
-        .eq('id', user.id);
-      if (error) throw error;
+      const [profileRes, metaRes] = await Promise.all([
+        supabase
+          .from('profiles')
+          .update({ profile_type: selected, role: profileRole } as any)
+          .eq('id', user.id),
+        supabase.auth.updateUser({
+          data: { profile_type_chosen: true },
+        }),
+      ]);
+      if (profileRes.error) throw profileRes.error;
+      if (metaRes.error) throw metaRes.error;
 
       // If provider, create provider record
       if (selected === 'provider') {
