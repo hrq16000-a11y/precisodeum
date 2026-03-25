@@ -231,6 +231,22 @@ const DashboardPage = () => {
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">Seu painel profissional</p>
 
+      {/* Dominant CTA when no services */}
+      {servicesCount !== null && servicesCount === 0 && (
+        <div className="mt-4 rounded-xl border-2 border-accent bg-accent/10 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
+            <PlusCircle className="h-6 w-6" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base font-bold text-foreground">Crie seu primeiro serviço!</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Publique seus serviços para que clientes possam encontrá-lo na plataforma.</p>
+          </div>
+          <Button variant="accent" size="sm" onClick={() => navigate('/dashboard/servicos')} className="shrink-0">
+            <PlusCircle className="mr-1 h-4 w-4" /> Criar Serviço
+          </Button>
+        </div>
+      )}
+
       {/* Stats row */}
       <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-4">
         <div className="rounded-xl border border-border bg-card p-4 shadow-card">
