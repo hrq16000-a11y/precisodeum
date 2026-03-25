@@ -47,7 +47,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
   }, [totalJobs]);
 
   return (
-    <section className="relative overflow-hidden py-16 md:py-24">
+    <section className="relative overflow-hidden py-10 md:py-24">
       <img
         src={heroImage}
         alt=""
@@ -61,7 +61,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="font-display text-3xl font-extrabold tracking-tight text-primary-foreground md:text-5xl lg:text-6xl"
+          className="font-display text-2xl font-extrabold tracking-tight text-primary-foreground sm:text-3xl md:text-5xl lg:text-6xl"
         >
           Encontre profissionais para{' '}
           <span className="text-secondary">qualquer serviço</span>
@@ -70,7 +70,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="mt-8 w-full max-w-2xl"
+          className="mt-5 md:mt-8 w-full max-w-2xl"
         >
           <SearchBar />
         </motion.div>
