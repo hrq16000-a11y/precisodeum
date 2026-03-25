@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -101,8 +102,14 @@ const DashboardPage = () => {
         <div className="mt-6 rounded-lg border border-accent/20 bg-accent/5 p-4">
           <p className="text-sm text-foreground font-medium">Quer oferecer serviços?</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Se você é profissional, fale com o administrador para migrar sua conta para o tipo Profissional e começar a divulgar seus serviços.
+            Altere o tipo da sua conta para "Profissional" na página de perfil e comece a divulgar seus serviços.
           </p>
+          <button
+            onClick={() => navigate('/dashboard/perfil')}
+            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
+          >
+            Alterar tipo de conta <ArrowRight className="h-3 w-3" />
+          </button>
         </div>
       </DashboardLayout>
     );
@@ -224,6 +231,22 @@ const DashboardPage = () => {
         Olá, {profile?.full_name?.split(' ')[0] || 'Profissional'}!
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">Seu painel profissional</p>
+
+      {/* Dominant CTA when no services */}
+      {servicesCount !== null && servicesCount === 0 && (
+        <div className="mt-4 rounded-xl border-2 border-accent bg-accent/10 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
+            <PlusCircle className="h-6 w-6" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base font-bold text-foreground">Crie seu primeiro serviço!</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Publique seus serviços para que clientes possam encontrá-lo na plataforma.</p>
+          </div>
+          <Button variant="accent" size="sm" onClick={() => navigate('/dashboard/servicos')} className="shrink-0">
+            <PlusCircle className="mr-1 h-4 w-4" /> Criar Serviço
+          </Button>
+        </div>
+      )}
 
       {/* Stats row */}
       <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-4">

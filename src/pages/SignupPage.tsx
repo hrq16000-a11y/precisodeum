@@ -158,7 +158,14 @@ const SignupPage = () => {
 
     setLoading(false);
     toast.success('Conta criada com sucesso! Bem-vindo!');
-    navigate('/dashboard');
+    // Smart redirect based on account type
+    if (accountType === 'client') {
+      navigate('/');
+    } else if (accountType === 'rh') {
+      navigate('/dashboard/vagas');
+    } else {
+      navigate('/dashboard/servicos');
+    }
   };
 
   const handleGoogleSignup = async () => {
