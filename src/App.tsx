@@ -10,6 +10,8 @@ import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ModuleBoundary from "./components/ModuleBoundary";
 import MobileBottomNav from "./components/MobileBottomNav";
+import ProfileTypeChooser from "./components/ProfileTypeChooser";
+import { useAuth } from "@/hooks/useAuth";
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
@@ -199,6 +201,7 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <MobileBottomNav />
+              <TypeSelectionGate />
             </Suspense>
           </AuthProvider>
         </BrowserRouter>
