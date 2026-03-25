@@ -10,6 +10,8 @@ import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ModuleBoundary from "./components/ModuleBoundary";
 import MobileBottomNav from "./components/MobileBottomNav";
+import ProfileTypeChooser from "./components/ProfileTypeChooser";
+import { useAuth } from "@/hooks/useAuth";
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
@@ -115,6 +117,13 @@ const queryClient = new QueryClient({
   },
 });
 
+/** Shows profile type chooser overlay for social login users who haven't picked a type */
+const TypeSelectionGate = () => {
+  const { needsTypeSelection, loading } = useAuth();
+  if (loading || !needsTypeSelection) return null;
+  return <ProfileTypeChooser />;
+};
+
 const App = () => {
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -199,6 +208,7 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <MobileBottomNav />
+              <TypeSelectionGate />
             </Suspense>
           </AuthProvider>
         </BrowserRouter>

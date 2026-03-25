@@ -116,7 +116,7 @@ const SignupPage = () => {
       email: form.email,
       password: form.password,
       options: {
-        data: { full_name: form.fullName },
+        data: { full_name: form.fullName, profile_type_chosen: true },
         emailRedirectTo: window.location.origin,
       },
     });
