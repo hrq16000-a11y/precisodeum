@@ -28,8 +28,26 @@ const LoginPage = () => {
       toast.error('E-mail ou senha inválidos');
     } else if (data.session) {
       toast.success('Login realizado com sucesso!');
-      // Small delay to allow auth state to propagate before navigating
-      setTimeout(() => navigate('/dashboard', { replace: true }), 100);
+      // Smart redirect based on profile type
+      setTimeout(async () => {
+        try {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('profile_type')
+            .eq('id', data.session!.user.id)
+            .single();
+          const type = prof?.profile_type || 'client';
+          if (type === 'client') {
+            navigate('/', { replace: true });
+          } else if (type === 'rh') {
+            navigate('/dashboard/vagas', { replace: true });
+          } else {
+            navigate('/dashboard/servicos', { replace: true });
+          }
+        } catch {
+          navigate('/dashboard', { replace: true });
+        }
+      }, 100);
     }
   };
 
