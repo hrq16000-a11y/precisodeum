@@ -101,8 +101,14 @@ const DashboardPage = () => {
         <div className="mt-6 rounded-lg border border-accent/20 bg-accent/5 p-4">
           <p className="text-sm text-foreground font-medium">Quer oferecer serviços?</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Se você é profissional, fale com o administrador para migrar sua conta para o tipo Profissional e começar a divulgar seus serviços.
+            Altere o tipo da sua conta para "Profissional" na página de perfil e comece a divulgar seus serviços.
           </p>
+          <button
+            onClick={() => navigate('/dashboard/perfil')}
+            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
+          >
+            Alterar tipo de conta <ArrowRight className="h-3 w-3" />
+          </button>
         </div>
       </DashboardLayout>
     );

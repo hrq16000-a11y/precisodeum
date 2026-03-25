@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import AvatarUpload from '@/components/AvatarUpload';
 import PortfolioUpload from '@/components/PortfolioUpload';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
+import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
 import { generateProviderSlug } from '@/lib/slugify';
 
@@ -294,6 +295,9 @@ const DashboardProfilePage = () => {
         {provider && user && (
           <PortfolioUpload userId={user.id} providerId={provider.id} />
         )}
+
+        {/* Account type switcher */}
+        <ProfileTypeSwitcher />
 
         <Button variant="accent" onClick={handleSave} disabled={saving}>
           {saving ? 'Salvando...' : 'Salvar Perfil'}
