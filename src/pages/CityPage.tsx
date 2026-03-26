@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/Header';
@@ -154,12 +155,10 @@ const CityPage = () => {
           {paginatedProviders.map((p) => <ProviderCard key={p.id} provider={p} />)}
         </div>
         {providers.length === 0 && (
-          <div className="rounded-xl border border-border bg-card p-12 text-center shadow-card">
-            <p className="text-lg font-semibold text-foreground">Nenhum profissional encontrado</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Ainda não temos profissionais em {city!.name}. Seja o primeiro!
-            </p>
-          </div>
+          <EmptyStateFallback
+            title="Nenhum profissional encontrado"
+            message={`Ainda não temos profissionais em ${city!.name}. Seja o primeiro!`}
+          />
         )}
         <PaginationControls currentPage={page} totalItems={providers.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
       </div>
