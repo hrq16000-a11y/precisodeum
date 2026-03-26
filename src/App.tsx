@@ -81,6 +81,12 @@ const FaqPage = lazy(() => import("./pages/FaqPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const CookiesPage = lazy(() => import("./pages/CookiesPage"));
+
+import CookieConsent from "./components/CookieConsent";
+import PwaInstallBanner from "./components/PwaInstallBanner";
 
 // Sponsor Panel (CRM) — isolated module
 const SponsorDashboardPage = lazy(() => import("./pages/sponsor/SponsorDashboardPage"));
@@ -196,6 +202,9 @@ const App = () => {
                 <Route path="/cidades" element={<CitiesListPage />} />
                 <Route path="/categorias" element={<CategoriesListPage />} />
                 <Route path="/faq" element={<FaqPage />} />
+                <Route path="/privacidade" element={<PrivacyPage />} />
+                <Route path="/termos" element={<TermsPage />} />
+                <Route path="/cookies" element={<CookiesPage />} />
                 <Route path="/sobre" element={<AboutPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/sitemap" element={<SitemapRedirect />} />
@@ -212,6 +221,8 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <MobileBottomNav />
+              <CookieConsent />
+              <PwaInstallBanner />
               <TypeSelectionGate />
             </Suspense>
           </AuthProvider>

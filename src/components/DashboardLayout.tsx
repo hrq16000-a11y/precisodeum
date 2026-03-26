@@ -4,6 +4,8 @@ import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogO
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useSettingValue } from '@/hooks/useSiteSettings';
+import defaultLogo from '@/assets/logo.webp';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
@@ -11,6 +13,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const logoUrl = useSettingValue('logo_url');
+  const logo = logoUrl || defaultLogo;
 
   useEffect(() => {
     if (!user) return;
@@ -43,7 +47,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="flex min-h-screen bg-background">
       {/* Mobile header */}
       <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border bg-card px-4 lg:hidden">
-        <Link to="/" className="font-display text-sm font-bold text-foreground">Preciso de um</Link>
+        <Link to="/" className="flex items-center"><img src={logo} alt="Preciso de um" className="h-7" /></Link>
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-foreground">
           {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -52,7 +56,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-60 transform border-r border-sidebar-border bg-sidebar transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
         <div className="flex h-14 items-center px-5 border-b border-sidebar-border">
-          <Link to="/" className="font-display text-sm font-bold text-sidebar-foreground">Preciso de um</Link>
+          <Link to="/" className="flex items-center"><img src={logo} alt="Preciso de um" className="h-7 brightness-0 invert" /></Link>
         </div>
 
         {/* Account type badge */}
