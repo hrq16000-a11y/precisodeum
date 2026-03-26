@@ -14,7 +14,6 @@ const FloatingWhatsApp = ({ jobTitle }: Props) => {
   const url = whatsappLink(supportPhone, message);
 
   const location = useLocation();
-  // Hide on paths where bottom nav is hidden (admin, login, dashboard, etc.)
   const hiddenPaths = ['/admin', '/login', '/cadastro', '/reset-password', '/dashboard', '/sponsor-panel'];
   const hasBottomNav = !hiddenPaths.some(p => location.pathname.startsWith(p));
 
@@ -23,13 +22,13 @@ const FloatingWhatsApp = ({ jobTitle }: Props) => {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`fixed right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 active:scale-95 ${
-        hasBottomNav ? 'bottom-[4.5rem] md:bottom-5' : 'bottom-5'
+      className={`fixed right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 active:scale-95 ${
+        hasBottomNav ? 'bottom-[4.25rem] md:bottom-5' : 'bottom-5'
       }`}
       style={hasBottomNav ? { marginBottom: 'env(safe-area-inset-bottom, 0px)' } : undefined}
       aria-label="WhatsApp"
     >
-      <MessageCircle className="h-6 w-6" />
+      <MessageCircle className="h-5 w-5" />
     </a>
   );
 };
