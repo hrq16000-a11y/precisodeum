@@ -110,7 +110,7 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-            <Link to="/buscar" className="mt-2 inline-block text-xs font-medium text-secondary hover:underline">
+            <Link to="/cidades" className="mt-2 inline-block text-xs font-medium text-secondary hover:underline">
               Ver mais cidades
             </Link>
           </div>

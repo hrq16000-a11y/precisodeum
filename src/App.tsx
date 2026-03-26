@@ -71,6 +71,8 @@ const AdminBackupPage = lazy(() => import("./pages/AdminBackupPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
 const CityPage = lazy(() => import("./pages/CityPage"));
+const CitiesListPage = lazy(() => import("./pages/CitiesListPage"));
+const CategoriesListPage = lazy(() => import("./pages/CategoriesListPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const SitemapRedirect = lazy(() => import("./pages/SitemapRedirect"));
@@ -191,6 +193,8 @@ const App = () => {
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
                 <Route path="/servico-detalhe/:id" element={<ServiceDetailPage />} />
                 <Route path="/cidade/:slug" element={<CityPage />} />
+                <Route path="/cidades" element={<CitiesListPage />} />
+                <Route path="/categorias" element={<CategoriesListPage />} />
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/sobre" element={<AboutPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
