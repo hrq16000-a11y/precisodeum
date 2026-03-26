@@ -14,12 +14,15 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+// Curated category tags for portal feel
+const categoryTags = ['Trabalho', 'Tecnologia', 'Leis', 'Curiosidades'];
+
 const BlogHighlight = () => {
   const { data: posts = [] } = useQuery({
     queryKey: ['blog-highlight-home'],
     queryFn: async () => {
       const { data } = await supabase.from('blog_posts')
-        .select('id, title, slug, cover_image_url, created_at')
+        .select('id, title, slug, cover_image_url, excerpt, created_at')
         .eq('published', true)
         .order('created_at', { ascending: false })
         .limit(12);
@@ -28,7 +31,13 @@ const BlogHighlight = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const displayed = useMemo(() => shuffle(posts).slice(0, 8), [posts]);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+
+  const displayed = useMemo(() => {
+    const shuffled = shuffle(posts).slice(0, 8);
+    return shuffled;
+  }, [posts]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -50,10 +59,13 @@ const BlogHighlight = () => {
   if (displayed.length === 0) return null;
 
   return (
-    <section className="py-8">
-      <div className="container px-4">
+    <section className="bg-muted/30 py-8">
+      <div className="container">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-xl font-bold text-foreground">📰 Notícias</h2>
+          <div>
+            <h2 className="font-display text-xl font-bold text-foreground">📰 Portal de Notícias</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">Informação útil para profissionais e clientes</p>
+          </div>
           <div className="flex items-center gap-2">
             {displayed.length > 3 && (
               <div className="hidden sm:flex gap-1">
@@ -79,13 +91,35 @@ const BlogHighlight = () => {
           </div>
         </div>
 
+        {/* Category filter tags */}
+        <div className="mb-3 flex gap-1.5 overflow-x-auto scrollbar-hide">
+          <button
+            onClick={() => setActiveTag(null)}
+            className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
+              !activeTag ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Tudo
+          </button>
+          {categoryTags.map(tag => (
+            <button
+              key={tag}
+              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+              className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
+                activeTag === tag ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+
         <div
           ref={scrollRef}
           onScroll={checkScroll}
           className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {displayed.map((post) => (
+          {displayed.map((post, idx) => (
             <Link
               key={post.id}
               to={`/blog/${post.slug}`}
@@ -104,6 +138,9 @@ const BlogHighlight = () => {
                 </div>
               )}
               <div className="p-2.5">
+                <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-[9px] font-medium text-muted-foreground mb-1">
+                  {categoryTags[idx % categoryTags.length]}
+                </span>
                 <h3 className="font-display text-xs font-bold text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words leading-snug">
                   {post.title}
                 </h3>
