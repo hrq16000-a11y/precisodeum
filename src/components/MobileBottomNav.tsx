@@ -41,11 +41,11 @@ const MobileBottomNav = () => {
   return (
     <>
       {/* Spacer */}
-      <div className="h-[52px] md:hidden" />
+      <div className="h-16 md:hidden" />
 
       <nav
-        className="fixed bottom-0 left-0 right-0 z-[60] border-t border-border/60 bg-card/95 backdrop-blur-lg supports-[backdrop-filter]:bg-card/85 md:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        className="fixed bottom-0 left-0 right-0 border-t border-border/60 bg-card/95 backdrop-blur-lg supports-[backdrop-filter]:bg-card/85 md:hidden"
+        style={{ zIndex: 1000, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="flex items-center justify-around px-1 py-0.5">
           {items.map((item, i) => {
