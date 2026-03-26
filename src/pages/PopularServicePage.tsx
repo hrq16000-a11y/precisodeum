@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
@@ -7,11 +8,13 @@ import ProviderCard from '@/components/ProviderCard';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowRight, DollarSign, MapPin } from 'lucide-react';
+import { ArrowRight, DollarSign, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const PopularServicePage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [aiContent, setAiContent] = useState<{ title?: string; description?: string; tips?: string[] } | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const { data: service, isLoading: serviceLoading } = useQuery({
     queryKey: ['popular-service', slug],
@@ -25,6 +28,30 @@ const PopularServicePage = () => {
       return data as any;
     },
     enabled: !!slug,
+  });
+
+  // Fetch AI content
+  useQuery({
+    queryKey: ['service-ai-content', slug],
+    queryFn: async () => {
+      if (!service) return null;
+      setAiLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-service-content', {
+          body: { serviceName: service.name, categoryName: service.category_name },
+        });
+        if (!error && data) {
+          setAiContent(data);
+        }
+      } catch {
+        // Silently fail - AI content is supplementary
+      } finally {
+        setAiLoading(false);
+      }
+      return null;
+    },
+    enabled: !!service,
+    staleTime: 1000 * 60 * 30,
   });
 
   const { data: providers = [], isLoading: provsLoading } = useQuery({
@@ -116,8 +143,8 @@ const PopularServicePage = () => {
             <div className="flex items-center gap-4">
               <span className="text-5xl">{service.icon}</span>
               <div>
-                <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">{service.name}</h1>
-                <p className="mt-2 text-muted-foreground max-w-xl">{service.description}</p>
+                <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">{aiContent?.title || service.name}</h1>
+                <p className="mt-2 text-muted-foreground max-w-xl">{aiContent?.description || service.description}</p>
                 <div className="mt-3 flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-accent" />
                   <span className="text-lg font-bold text-accent">
@@ -128,6 +155,30 @@ const PopularServicePage = () => {
             </div>
           </div>
         </section>
+
+        {/* AI Tips */}
+        {(aiContent?.tips?.length ?? 0) > 0 && (
+          <section className="py-8 bg-accent/5">
+            <div className="container">
+              <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-accent" /> Dicas importantes
+              </h2>
+              <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                {aiContent!.tips!.map((tip, i) => (
+                  <li key={i} className="flex items-start gap-2 rounded-lg border border-border bg-card p-3 text-sm text-muted-foreground">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">{i + 1}</span>
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+        {aiLoading && (
+          <section className="py-6">
+            <div className="container"><Skeleton className="h-24 rounded-xl" /></div>
+          </section>
+        )}
 
         {/* Providers */}
         <section className="py-12">
