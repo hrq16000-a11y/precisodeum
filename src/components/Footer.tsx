@@ -200,9 +200,18 @@ const Footer = () => {
 
         <SponsorAd position="footer" layout="inline" className="mt-6 border-t border-primary-foreground/10 pt-6" />
 
-        <div className="mt-6 border-t border-primary-foreground/10 pt-6 text-center text-xs text-primary-foreground/40">
-          <p>© 2026 Preciso de um. Todos os direitos reservados.</p>
-          <p className="mt-1">CNPJ: 41.723.708/0001-58 — Ping Soluções · <a href="https://mestredosservicos.com.br" target="_blank" rel="noopener noreferrer" className="hover:text-primary-foreground/70">mestredosservicos.com.br</a></p>
+        <div className="mt-6 border-t border-primary-foreground/10 pt-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-primary-foreground/50 mb-4">
+            <Link to="/privacidade" className="hover:text-primary-foreground/80 transition-colors">Política de Privacidade</Link>
+            <span>•</span>
+            <Link to="/termos" className="hover:text-primary-foreground/80 transition-colors">Termos de Uso</Link>
+            <span>•</span>
+            <Link to="/cookies" className="hover:text-primary-foreground/80 transition-colors">Política de Cookies</Link>
+          </div>
+          <div className="text-center text-xs text-primary-foreground/40">
+            <p>© 2026 Preciso de um. Todos os direitos reservados.</p>
+            <p className="mt-1">CNPJ: 41.723.708/0001-58 — Ping Soluções · <a href="https://mestredosservicos.com.br" target="_blank" rel="noopener noreferrer" className="hover:text-primary-foreground/70">mestredosservicos.com.br</a></p>
+          </div>
         </div>
       </div>
     </footer>
