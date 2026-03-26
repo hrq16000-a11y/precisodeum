@@ -22,10 +22,13 @@ const FloatingWhatsApp = ({ jobTitle }: Props) => {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`fixed right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 active:scale-95 ${
-        hasBottomNav ? 'bottom-[4.25rem] md:bottom-5' : 'bottom-5'
-      }`}
-      style={hasBottomNav ? { marginBottom: 'env(safe-area-inset-bottom, 0px)' } : undefined}
+      className="fixed right-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
+      style={{
+        zIndex: 9999,
+        bottom: hasBottomNav
+          ? 'calc(env(safe-area-inset-bottom, 0px) + 80px)'
+          : 'calc(env(safe-area-inset-bottom, 0px) + 20px)',
+      }}
       aria-label="WhatsApp"
     >
       <MessageCircle className="h-5 w-5" />
