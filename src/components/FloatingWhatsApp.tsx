@@ -26,7 +26,7 @@ const FloatingWhatsApp = ({ jobTitle }: Props) => {
       style={{
         zIndex: 9999,
         bottom: hasBottomNav
-          ? 'calc(env(safe-area-inset-bottom, 0px) + 80px)'
+          ? 'calc(env(safe-area-inset-bottom, 0px) + 90px)'
           : 'calc(env(safe-area-inset-bottom, 0px) + 20px)',
       }}
       aria-label="WhatsApp"

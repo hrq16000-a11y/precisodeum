@@ -38,6 +38,15 @@ const Header = () => {
     setMobileOpen(false);
   }, [location.pathname]);
 
+  // Close mobile menu on ESC
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileOpen) setMobileOpen(false);
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [mobileOpen]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
