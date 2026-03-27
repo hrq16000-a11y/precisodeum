@@ -19,6 +19,7 @@ const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T
   reactLazy(() => importWithRetry(importer));
 
 // Lazy load below-the-fold sections
+const PwaInstallSection = lazy(() => import('@/components/home/PwaInstallSection'));
 const PopularServices = lazy(() => import('@/components/home/PopularServices'));
 const FeaturedJobs = lazy(() => import('@/components/home/FeaturedJobs'));
 const BlogHighlight = lazy(() => import('@/components/home/BlogHighlight'));
