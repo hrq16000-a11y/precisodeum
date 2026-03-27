@@ -46,6 +46,7 @@ const MobileBottomNav = () => {
     { icon: Search, label: 'Buscar', path: '/buscar', active: location.pathname === '/buscar' },
     { icon: Plus, label: 'Criar', action: handleCreate, isCreate: true },
     { icon: User, label: 'Perfil', path: user ? '/dashboard' : '/login', active: location.pathname.startsWith('/dashboard') },
+    { icon: Bell, label: 'Alertas', action: () => setShowMenu(!showMenu), badge: unreadCount },
     { icon: Menu, label: 'Menu', action: () => setShowMenu(!showMenu) },
   ];
 
