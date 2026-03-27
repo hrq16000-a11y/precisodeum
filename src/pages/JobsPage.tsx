@@ -1,4 +1,4 @@
-import { useState, Fragment } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Briefcase, Search, MessageCircle, Filter } from 'lucide-react';
 import Header from '@/components/Header';
@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useGeoCity } from '@/hooks/useGeoCity';
 import AdBanner from '@/components/ads/AdBanner';
 import AdSidebar from '@/components/ads/AdSidebar';
 import AdNativeCard from '@/components/ads/AdNativeCard';
@@ -35,15 +36,28 @@ const WORK_MODELS = [
 const NATIVE_AD_INTERVAL = 5;
 
 const JobsPage = () => {
+  const { city: geoCity } = useGeoCity();
   const [search, setSearch] = useState('');
   const [cityFilter, setCityFilter] = useState('');
   const [jobTypeFilter, setJobTypeFilter] = useState('');
   const [workModelFilter, setWorkModelFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [geoApplied, setGeoApplied] = useState(false);
 
+  // Auto-fill city filter from geo on first load
+  useEffect(() => {
+    if (geoCity && !geoApplied && !cityFilter) {
+      setCityFilter(geoCity);
+      setGeoApplied(true);
+    }
+  }, [geoCity, geoApplied, cityFilter]);
+
+  const seoCity = cityFilter || geoCity || '';
   useSeoHead({
-    title: 'Vagas e Oportunidades de Serviço | Preciso de um',
-    description: 'Encontre vagas de trabalho e oportunidades de serviço na sua cidade.',
+    title: seoCity ? `Vagas em ${seoCity} | Preciso de um` : 'Vagas e Oportunidades de Serviço | Preciso de um',
+    description: seoCity
+      ? `Encontre vagas de trabalho e oportunidades de serviço em ${seoCity}.`
+      : 'Encontre vagas de trabalho e oportunidades de serviço na sua cidade.',
     canonical: `${SITE_BASE_URL}/vagas`,
   });
 
@@ -90,8 +104,14 @@ const JobsPage = () => {
       <Header />
       <Suspense fallback={null}><AdSlot slotSlug="jobs-top" city={cityFilter} /></Suspense>
       <div className="container px-4 py-6 sm:py-8">
-        <h1 className="font-display text-2xl font-bold text-foreground sm:text-3xl">Vagas e Oportunidades</h1>
-        <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">Encontre oportunidades de serviço e trabalho na sua região</p>
+        <h1 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
+          {seoCity ? `Vagas em ${seoCity}` : 'Vagas e Oportunidades'}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">
+          {seoCity
+            ? `Encontre oportunidades de serviço e trabalho em ${seoCity}`
+            : 'Encontre oportunidades de serviço e trabalho na sua região'}
+        </p>
 
         {/* Filters — stacked on mobile */}
         <div className="mt-5 space-y-3">

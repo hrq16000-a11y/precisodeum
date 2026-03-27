@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSearchSuggestions } from '@/hooks/useProviders';
+import { useGeoCity } from '@/hooks/useGeoCity';
 
 interface SearchBarProps {
   variant?: 'hero' | 'compact';
@@ -17,6 +18,7 @@ interface Suggestion {
 }
 
 const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
+  const { city: geoCity } = useGeoCity();
   const [service, setService] = useState('');
   const [location, setLocation] = useState('');
   const [activeField, setActiveField] = useState<'service' | 'location' | null>(null);
@@ -27,6 +29,9 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { data: suggestions } = useSearchSuggestions();
+
+  const servicePlaceholder = geoCity ? `Preciso de um... em ${geoCity}` : 'Preciso de um...';
+  const locationPlaceholder = geoCity ? geoCity : 'Cidade ou região';
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -81,7 +86,9 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
     setSearchError('');
     const params = new URLSearchParams();
     if (service) params.set('q', service);
-    if (location) params.set('cidade', location);
+    // Use typed location, or fallback to geo city
+    const finalLocation = location.trim() || geoCity || '';
+    if (finalLocation) params.set('cidade', finalLocation);
     navigate(`/buscar?${params.toString()}`);
   };
 
@@ -173,7 +180,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
             <input
               ref={serviceRef}
               type="text"
-              placeholder="Preciso de um..."
+              placeholder={servicePlaceholder}
               value={service}
               onChange={(e) => { setService(e.target.value); setSearchError(''); }}
               onFocus={() => setActiveField('service')}
@@ -203,7 +210,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
             <input
               ref={serviceRef}
               type="text"
-              placeholder="Preciso de um..."
+              placeholder={servicePlaceholder}
               value={service}
               onChange={(e) => { setService(e.target.value); setSearchError(''); }}
               onFocus={() => setActiveField('service')}
@@ -222,7 +229,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
             <input
               ref={locationRef}
               type="text"
-              placeholder="Cidade ou região"
+              placeholder={locationPlaceholder}
               value={location}
               onChange={(e) => { setLocation(e.target.value); setSearchError(''); }}
               onFocus={() => setActiveField('location')}
