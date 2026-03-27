@@ -22,6 +22,9 @@ const MODULES = [
   { table: 'highlights', label: 'Destaques', icon: '✨' },
   { table: 'popular_services', label: 'Serv. Populares', icon: '🔥' },
   { table: 'audit_log', label: 'Trilha de Auditoria', icon: '📜' },
+  { table: 'pwa_install_settings', label: 'PWA Configurações', icon: '📱' },
+  { table: 'pwa_install_events', label: 'PWA Eventos', icon: '📊' },
+  { table: 'push_subscriptions', label: 'Push Inscrições', icon: '🔔' },
 ] as const;
 
 type Format = 'csv' | 'json';
