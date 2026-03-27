@@ -1,28 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin } from 'lucide-react';
+import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
+import { useGeoCity } from '@/hooks/useGeoCity';
 
-const DEFAULT_LOGO_URL = '/lovable-uploads/8a22c45f-f2c2-4ac8-a925-92aecd2b313b.png';
-
-/** Detect user city via free IP geolocation */
-function useGeoCity() {
-  const [city, setCity] = useState<string | null>(null);
-  useEffect(() => {
-    const cached = sessionStorage.getItem('geo_city');
-    if (cached) { setCity(cached); return; }
-    fetch('https://ipapi.co/json/')
-      .then(r => r.json())
-      .then(d => {
-        const c = d?.city || null;
-        if (c) { setCity(c); sessionStorage.setItem('geo_city', c); }
-      })
-      .catch(() => {});
-  }, []);
-  return city;
-}
+const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -32,14 +16,10 @@ const Header = () => {
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoUrl = useSettingValue('logo_url');
   const logo = logoUrl || DEFAULT_LOGO_URL;
-  const geoCity = useGeoCity();
+  const { city: geoCity, temp: geoTemp } = useGeoCity();
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [location.pathname]);
+  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
-  // Close mobile menu on ESC
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && mobileOpen) setMobileOpen(false);
@@ -53,6 +33,23 @@ const Header = () => {
     navigate('/');
   };
 
+  const GeoBadge = ({ className = '' }: { className?: string }) => {
+    if (!geoCity) return null;
+    return (
+      <span className={`inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground ${className}`}>
+        <MapPin className="h-3 w-3 text-accent" />
+        {geoCity}
+        {geoTemp !== null && (
+          <>
+            <span className="mx-0.5 text-border">·</span>
+            <Thermometer className="h-3 w-3 text-accent" />
+            {Math.round(geoTemp)}°C
+          </>
+        )}
+      </span>
+    );
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <div className="container flex h-14 items-center justify-between md:h-16">
@@ -60,12 +57,7 @@ const Header = () => {
           <Link to="/" className="flex items-center">
             <img src={logo} alt="Preciso de um - Profissionais Confiáveis Perto de Você" className="h-10 md:h-12 drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] object-contain" width="166" height="48" />
           </Link>
-          {geoCity && (
-            <span className="hidden items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">
-              <MapPin className="h-3 w-3 text-accent" />
-              {geoCity}
-            </span>
-          )}
+          <GeoBadge className="hidden sm:inline-flex" />
         </div>
 
         <nav className="hidden items-center gap-5 md:flex">
@@ -75,12 +67,7 @@ const Header = () => {
           <Link to="/sobre" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Como Funciona</Link>
           <Link to="/cadastro" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Seja Profissional</Link>
           {whatsappGroupUrl && (
-            <a
-              href={whatsappGroupUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#25D366] transition-colors hover:text-[#128C7E]"
-            >
+            <a href={whatsappGroupUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-[#25D366] transition-colors hover:text-[#128C7E]">
               <Users className="h-4 w-4" />
               Grupo
             </a>
@@ -110,13 +97,8 @@ const Header = () => {
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
-          {geoCity && (
-            <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
-              <MapPin className="h-3 w-3 text-accent" />
-              {geoCity}
-            </span>
-          )}
-          <button className="text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
+          <GeoBadge className="text-[10px] px-1.5 py-0.5" />
+          <button className="text-foreground" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Menu" aria-expanded={mobileOpen}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
@@ -124,8 +106,8 @@ const Header = () => {
 
       {mobileOpen && (
         <>
-          <div className="fixed inset-0 z-40 bg-foreground/20 md:hidden" onClick={() => setMobileOpen(false)} />
-          <div className="relative z-50 border-t border-border bg-card p-4 md:hidden">
+          <div className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm md:hidden" onClick={() => setMobileOpen(false)} />
+          <div className="relative z-50 border-t border-border bg-card p-4 md:hidden animate-in slide-in-from-top-2 duration-200">
             <nav className="flex flex-col gap-2">
               <Link to="/buscar" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Buscar Profissionais</Link>
               <Link to="/vagas" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Vagas</Link>
@@ -135,13 +117,7 @@ const Header = () => {
               <Link to="/cidades" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Cidades</Link>
               <Link to="/cadastro" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Seja Profissional</Link>
               {whatsappGroupUrl && (
-                <a
-                  href={whatsappGroupUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-[#25D366] hover:bg-muted flex items-center gap-2"
-                  onClick={() => setMobileOpen(false)}
-                >
+                <a href={whatsappGroupUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg px-3 py-2 text-sm font-medium text-[#25D366] hover:bg-muted flex items-center gap-2" onClick={() => setMobileOpen(false)}>
                   <Users className="h-4 w-4" />
                   Grupo WhatsApp
                 </a>
