@@ -116,9 +116,24 @@ export function trackPwaEvent(eventType: string, source: string) {
  */
 export function usePwaInstallPrompt() {
   const [canInstall, setCanInstall] = useState(false);
-  const isStandalone = useIsStandalone();
-  const isIos = useIsIos();
+  const [standalone, setStandalone] = useState(false);
+  const [iosDevice, setIosDevice] = useState(false);
   const promptRef = useRef<any>(null);
+
+  // Inline standalone detection (stable hook order)
+  useEffect(() => {
+    const mq = window.matchMedia('(display-mode: standalone)');
+    setStandalone(mq.matches || (navigator as any).standalone === true);
+    const handler = (e: MediaQueryListEvent) => setStandalone(e.matches);
+    mq.addEventListener?.('change', handler);
+    return () => mq.removeEventListener?.('change', handler);
+  }, []);
+
+  // Inline iOS detection (stable hook order)
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    setIosDevice(/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+  }, []);
 
   useEffect(() => {
     if (isStandalone) return;
