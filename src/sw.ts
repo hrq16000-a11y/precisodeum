@@ -49,7 +49,7 @@ self.addEventListener('push', (event) => {
   if (!event.data) return;
   const payload = event.data.json();
   const title = payload.title || 'Atualizacao';
-  const options: NotificationOptions & { image?: string } = {
+  const options: any = {
     body: payload.body,
     icon: payload.icon || '/icons/icon-192.png',
     badge: payload.badge || '/icons/icon-96.png',
