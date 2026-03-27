@@ -5,7 +5,7 @@ import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin } from 'lucide-
 import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 
-const DEFAULT_LOGO_URL = '/lovable-uploads/9f8aeff5-703f-4b78-b322-404e698edf7a.png';
+const DEFAULT_LOGO_URL = '/lovable-uploads/logo.png';
 
 /** Detect user city via free IP geolocation */
 function useGeoCity() {
