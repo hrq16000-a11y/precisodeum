@@ -18,6 +18,7 @@ const Header = () => {
   const logoUrl = useSettingValue('logo_url');
   const logo = logoUrl || DEFAULT_LOGO_URL;
   const { city: geoCity, temp: geoTemp } = useGeoCity();
+  const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
@@ -27,6 +28,18 @@ const Header = () => {
     };
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
+  }, [mobileOpen]);
+
+  // Close mobile menu on click outside
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setMobileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, [mobileOpen]);
 
   const handleSignOut = async () => {
