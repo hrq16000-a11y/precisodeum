@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -22,6 +22,7 @@ const menuGroups = [
   {
     label: 'Conteúdo',
     items: [
+      { label: 'Hero / Banners', icon: ImageIcon, path: '/admin/hero-banners' },
       { label: 'Categorias', icon: FolderOpen, path: '/admin/categorias' },
       { label: 'Vagas', icon: ClipboardList, path: '/admin/vagas' },
       { label: 'Blog / Notícias', icon: Newspaper, path: '/admin/blog' },
