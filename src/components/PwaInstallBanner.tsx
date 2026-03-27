@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,9 +8,6 @@ import {
   PWA_OPEN_INSTALL_MODAL_EVENT,
 } from '@/hooks/usePwaInstall';
 
-const DISMISS_KEY_BANNER = 'pwa_banner_dismissed_v3';
-const COOLDOWN_MS = 3 * 86400000; // 3 days
-
 type OpenModalDetail = {
   source?: string;
 };
@@ -18,21 +15,11 @@ type OpenModalDetail = {
 const PwaInstallBanner = () => {
   const [show, setShow] = useState(false);
   const [source, setSource] = useState<'banner' | 'homepage' | 'footer'>('banner');
-  const { canInstall, isStandalone, install } = usePwaInstallPrompt();
+  const { isStandalone, install } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
 
-  const isDismissedLocally = useCallback(() => {
-    try {
-      const ts = localStorage.getItem(DISMISS_KEY_BANNER);
-      if (!ts) return false;
-      return Date.now() - Number(ts) < COOLDOWN_MS;
-    } catch {
-      return false;
-    }
-  }, []);
-
   useEffect(() => {
-    if (isStandalone || !canInstall || isDismissedLocally()) return;
+    if (isStandalone) return;
 
     const timer = setTimeout(() => {
       setSource('banner');
@@ -41,17 +28,19 @@ const PwaInstallBanner = () => {
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [isStandalone, canInstall, isDismissedLocally]);
+  }, [isStandalone]);
 
   useEffect(() => {
     const onManualOpen = (evt: Event) => {
       const customEvent = evt as CustomEvent<OpenModalDetail>;
       const incomingSource = customEvent.detail?.source;
+
       if (incomingSource === 'homepage' || incomingSource === 'footer' || incomingSource === 'banner') {
         setSource(incomingSource);
       } else {
         setSource('banner');
       }
+
       setShow(true);
     };
 
@@ -69,11 +58,6 @@ const PwaInstallBanner = () => {
   };
 
   const handleDismiss = () => {
-    try {
-      localStorage.setItem(DISMISS_KEY_BANNER, String(Date.now()));
-    } catch {
-      // no-op
-    }
     trackPwaEvent('dismissed', source);
     closeModal();
   };
