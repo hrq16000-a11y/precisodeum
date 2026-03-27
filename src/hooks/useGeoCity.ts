@@ -3,37 +3,42 @@ import { useState, useEffect } from 'react';
 interface GeoData {
   city: string | null;
   temp: number | null;
+  loading: boolean;
 }
 
 export function useGeoCity(): GeoData {
-  const [data, setData] = useState<GeoData>({ city: null, temp: null });
+  const [data, setData] = useState<GeoData>({ city: null, temp: null, loading: true });
 
   useEffect(() => {
     let active = true;
 
-    const normalizeCity = (value: string | null | undefined): string | null => {
+    const normalizeCity = (value: string | null | undefined) => {
       if (!value) return null;
       const trimmed = value.trim().replace(/\s+/g, ' ');
       if (!trimmed) return null;
-      // Remove duplicated city names like "São Paulo, São Paulo"
-      const commaParts = trimmed.split(',').map(p => p.trim()).filter(Boolean);
+      const commaParts = trimmed.split(',').map(part => part.trim()).filter(Boolean);
       if (commaParts.length === 2 && commaParts[0].toLowerCase() === commaParts[1].toLowerCase()) {
         return commaParts[0];
       }
-      const dashParts = trimmed.split(' - ').map(p => p.trim()).filter(Boolean);
+      const dashParts = trimmed.split(' - ').map(part => part.trim()).filter(Boolean);
       if (dashParts.length === 2 && dashParts[0].toLowerCase() === dashParts[1].toLowerCase()) {
         return dashParts[0];
       }
-      // Take only the first part if there's a comma (city, state)
-      if (commaParts.length >= 2) return commaParts[0];
       return trimmed;
     };
 
     const getStored = (key: string) => {
-      try { return sessionStorage.getItem(key); } catch { return null; }
+      try {
+        return sessionStorage.getItem(key);
+      } catch {
+        return null;
+      }
     };
+
     const setStored = (key: string, value: string) => {
-      try { sessionStorage.setItem(key, value); } catch {}
+      try {
+        sessionStorage.setItem(key, value);
+      } catch {}
     };
 
     const cachedCity = normalizeCity(getStored('geo_city'));
@@ -41,7 +46,7 @@ export function useGeoCity(): GeoData {
     const cachedTemp = cachedTempRaw ? Number(cachedTempRaw) : null;
 
     if (cachedCity) {
-      setData({ city: cachedCity, temp: Number.isFinite(cachedTemp) ? cachedTemp : null });
+      setData({ city: cachedCity, temp: Number.isFinite(cachedTemp) ? cachedTemp : null, loading: true });
     }
 
     const setSafeData = (city: string | null, temp: number | null) => {
@@ -49,49 +54,85 @@ export function useGeoCity(): GeoData {
       const normalized = normalizeCity(city);
       if (!normalized) return;
       setStored('geo_city', normalized);
-      if (temp !== null && Number.isFinite(temp)) setStored('geo_temp', String(temp));
-      setData({ city: normalized, temp: Number.isFinite(temp) ? temp : null });
+      if (temp !== null && Number.isFinite(temp)) {
+        setStored('geo_temp', String(temp));
+      }
+      setData({ city: normalized, temp: temp !== null && Number.isFinite(temp) ? temp : null, loading: false });
     };
 
-    const fetchWeather = async (lat: number, lon: number): Promise<number | null> => {
+    const setLoadingDone = () => {
+      if (!active) return;
+      setData(prev => ({ ...prev, loading: false }));
+    };
+
+    const fetchJson = async (url: string, timeoutMs = 5000) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        const res = await fetch(
+        const res = await fetch(url, { signal: controller.signal });
+        return await res.json();
+      } finally {
+        clearTimeout(timer);
+      }
+    };
+
+    const fetchWeather = async (lat: number, lon: number) => {
+      try {
+        const weatherRes = await fetch(
           `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
         );
-        const json = await res.json();
-        const t = json?.current_weather?.temperature;
-        return typeof t === 'number' ? t : null;
-      } catch { return null; }
+        const weather = await weatherRes.json();
+        const temp = weather?.current_weather?.temperature ?? null;
+        return typeof temp === 'number' ? temp : null;
+      } catch {
+        return null;
+      }
     };
 
-    const reverseGeocode = async (lat: number, lon: number): Promise<string | null> => {
+    const reverseGeocode = async (lat: number, lon: number) => {
       try {
-        // Use Nominatim (OpenStreetMap) for reverse geocoding - reliable and free
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=pt&zoom=10`,
-          { headers: { 'User-Agent': 'PrecisodeumApp/1.0' } }
+        const data = await fetchJson(
+          `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=pt&count=1`
         );
-        const json = await res.json();
-        const addr = json?.address;
-        return normalizeCity(addr?.city || addr?.town || addr?.municipality || addr?.village || addr?.state || null);
-      } catch { return null; }
+        const result = data?.results?.[0];
+        return normalizeCity(result?.city || result?.name || result?.admin1 || result?.administrative_area || null);
+      } catch {
+        return null;
+      }
+    };
+
+    const geocodeCity = async (city: string) => {
+      try {
+        const data = await fetchJson(
+          `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=pt`
+        );
+        const result = data?.results?.[0];
+        if (!result?.latitude || !result?.longitude) return null;
+        return { lat: Number(result.latitude), lon: Number(result.longitude) };
+      } catch {
+        return null;
+      }
     };
 
     const getPosition = () => new Promise<GeolocationPosition>((resolve, reject) => {
-      if (!navigator.geolocation) { reject(new Error('no_geo')); return; }
+      if (!navigator.geolocation) {
+        reject(new Error('geolocation_unavailable'));
+        return;
+      }
       navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: false, timeout: 8000, maximumAge: 600000,
+        enableHighAccuracy: false,
+        timeout: 8000,
+        maximumAge: 600000,
       });
     });
 
     const run = async () => {
       let city = cachedCity || null;
-      let temp = cachedTemp !== null && Number.isFinite(cachedTemp) ? cachedTemp : null;
+      let temp = Number.isFinite(cachedTemp) ? cachedTemp : null;
 
-      // 1. Try browser geolocation
       try {
-        const pos = await getPosition();
-        const { latitude, longitude } = pos.coords;
+        const position = await getPosition();
+        const { latitude, longitude } = position.coords;
         const [geoCity, geoTemp] = await Promise.all([
           reverseGeocode(latitude, longitude),
           fetchWeather(latitude, longitude),
@@ -102,23 +143,51 @@ export function useGeoCity(): GeoData {
         if (city && temp !== null) return;
       } catch {}
 
-      // 2. Fallback to IP-based geolocation
       try {
-        const response = await fetch('https://ipapi.co/json/');
-        const ipData = await response.json();
+        const ipData = await fetchJson('https://ipapi.co/json/');
         const ipCity = normalizeCity(ipData?.city);
         const lat = ipData?.latitude ?? ipData?.lat;
         const lon = ipData?.longitude ?? ipData?.lon;
-        if (ipCity && !city) city = ipCity;
+        if (ipCity) city = ipCity;
         if (temp === null && lat && lon) {
           const ipTemp = await fetchWeather(Number(lat), Number(lon));
           if (ipTemp !== null) temp = ipTemp;
         }
         if (city) setSafeData(city, temp);
+        if (city && temp !== null) return;
       } catch {}
+
+      try {
+        const ipWho = await fetchJson('https://ipwho.is/');
+        if (ipWho?.success === false) throw new Error('ipwho_failed');
+        const ipCity = normalizeCity(ipWho?.city);
+        const lat = ipWho?.latitude;
+        const lon = ipWho?.longitude;
+        if (ipCity) city = ipCity;
+        if (temp === null && lat && lon) {
+          const ipTemp = await fetchWeather(Number(lat), Number(lon));
+          if (ipTemp !== null) temp = ipTemp;
+        }
+        if (city) setSafeData(city, temp);
+        if (city && temp !== null) return;
+      } catch {}
+
+      if (city && temp === null) {
+        try {
+          const coords = await geocodeCity(city);
+          if (coords) {
+            const geoTemp = await fetchWeather(coords.lat, coords.lon);
+            if (geoTemp !== null) temp = geoTemp;
+            setSafeData(city, temp);
+          }
+        } catch {}
+      }
+
+      setLoadingDone();
     };
 
     run();
+
     return () => { active = false; };
   }, []);
 
