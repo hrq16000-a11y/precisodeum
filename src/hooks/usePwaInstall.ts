@@ -27,7 +27,7 @@
  * ║                                                         ║
  * ║  REGRAS OBRIGATÓRIAS:                                   ║
  * ║  1. ZERO restrição por dispositivo (sem userAgent)      ║
- * ║  2. ZERO mensagem técnica ("abra no celular" etc.)      ║
+ * ║  2. ZERO mensagem técnica restritiva                    ║
  * ║  3. Popup FECHA SEM travar interface (try/finally)      ║
  * ║  4. Botões SEMPRE visíveis (seção home + footer)        ║
  * ║  5. Popup automático + reabrível via CustomEvent        ║
