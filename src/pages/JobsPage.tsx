@@ -250,6 +250,7 @@ const JobsPage = () => {
                   );
                 })}
               </div>
+              </>
             )}
           </div>
 
