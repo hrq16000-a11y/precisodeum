@@ -7,7 +7,7 @@ const PwaInstallSection = () => {
   const { data: settings } = usePwaSettings();
 
   if (isStandalone) return null;
-  if (!settings?.enabled || !settings?.show_homepage_section) return null;
+  if (settings?.enabled === false) return null;
 
   const handleInstall = async () => {
     trackPwaEvent('cta_click', 'homepage');

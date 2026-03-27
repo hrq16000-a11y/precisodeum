@@ -6,7 +6,7 @@ const PwaFooterInstall = () => {
   const { data: settings } = usePwaSettings();
 
   if (isStandalone) return null;
-  if (!settings?.enabled || !settings?.show_in_footer) return null;
+  if (settings?.enabled === false) return null;
 
   const handleClick = async () => {
     if (isIos) return;
@@ -17,7 +17,7 @@ const PwaFooterInstall = () => {
   return (
     <div className="mt-4 border-t border-primary-foreground/10 pt-4">
       {isIos ? (
-        <div className="flex items-center justify-center gap-2 text-xs text-primary-foreground/60">
+        <div className="flex items-center justify-center gap-2 rounded-lg bg-primary-foreground/10 px-3 py-2 text-xs text-primary-foreground/70">
           <Download className="h-4 w-4 text-accent" />
           <span>
             Instale o app: toque em <Share className="inline h-3 w-3" /> → <Plus className="inline h-3 w-3" /> "Tela de Início"
@@ -26,15 +26,15 @@ const PwaFooterInstall = () => {
       ) : canInstall ? (
         <button
           onClick={handleClick}
-          className="mx-auto flex items-center gap-2 rounded-lg bg-accent/15 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/25"
+          className="mx-auto flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-accent-foreground shadow-md transition-colors hover:bg-accent/90"
         >
           <Download className="h-4 w-4" />
-          {settings.footer_cta_text}
+          {settings?.footer_cta_text || 'Instalar App'}
         </button>
       ) : (
-        <div className="flex items-center justify-center gap-2 text-xs text-primary-foreground/60">
+        <div className="flex items-center justify-center gap-2 rounded-lg bg-primary-foreground/10 px-3 py-2 text-xs text-primary-foreground/70">
           <Download className="h-4 w-4 text-accent" />
-          <span>Abra no navegador do celular para instalar o app</span>
+          <span>Abra no celular para instalar o app</span>
         </div>
       )}
     </div>

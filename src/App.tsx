@@ -224,11 +224,11 @@ const App = () => {
                 <Route path="/:slug" element={<SeoPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              <MobileBottomNav />
-              <CookieConsent />
-              <PwaInstallBanner />
-              <TypeSelectionGate />
             </Suspense>
+            <MobileBottomNav />
+            <CookieConsent />
+            <PwaInstallBanner />
+            <TypeSelectionGate />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
