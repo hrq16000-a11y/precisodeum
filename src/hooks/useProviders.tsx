@@ -256,7 +256,7 @@ export function useFeaturedProviders() {
   });
 }
 
-function filterAndRankProviders(
+export function filterAndRankProviders(
   providers: DbProvider[],
   query: string,
   city: string,
