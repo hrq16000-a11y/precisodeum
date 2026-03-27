@@ -28,8 +28,7 @@ const PwaInstallBanner = () => {
     // Max impressions
     if (settings.max_impressions > 0 && getImpressionCount() >= settings.max_impressions) return;
 
-    // Need either canInstall (Android/desktop) or isIos
-    if (!canInstall && !isIos) return;
+    // Show for all users - the CTA will adapt based on capability
 
     const visits = getVisitCount();
     if (visits < settings.min_visits) return;
@@ -44,9 +43,11 @@ const PwaInstallBanner = () => {
   }, [canInstall, isIos, isStandalone, settings, user, isMobile]);
 
   const handleInstall = async () => {
-    if (isIos) return; // iOS shows instructions
-    const result = await install('banner');
-    if (result) setShow(false);
+    if (isIos) return;
+    if (canInstall) {
+      const result = await install('banner');
+      if (result) setShow(false);
+    }
   };
 
   const handleDismiss = () => {
@@ -97,7 +98,7 @@ const PwaInstallBanner = () => {
         </div>
       ) : (
         <div className="mt-3 flex gap-2">
-          <Button variant="accent" size="sm" className="flex-1" onClick={handleInstall}>
+          <Button size="sm" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleInstall}>
             {settings.cta_text}
           </Button>
           <Button variant="ghost" size="sm" onClick={handleDismiss}>
