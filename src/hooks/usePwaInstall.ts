@@ -70,7 +70,6 @@ export function usePwaSettings() {
         .select('*')
         .limit(1)
         .single();
-
       if (error) return defaultSettings;
       return (data as unknown as PwaSettings) || defaultSettings;
     },
@@ -100,13 +99,15 @@ export function trackPwaEvent(eventType: string, source: string) {
 
 /**
  * Central PWA install hook.
- * NO device restrictions — works on any device that supports beforeinstallprompt.
- * NO iOS-specific instructions — silent fallback only.
+ * - No device restrictions
+ * - beforeinstallprompt is captured and re-capturable after dismiss
+ * - install() always cleans up to prevent UI freeze
  */
 export function usePwaInstallPrompt() {
   const [canInstall, setCanInstall] = useState(false);
   const isStandalone = useIsStandalone();
   const promptRef = useRef<any>(null);
+  const handlerRef = useRef<((e: Event) => void) | null>(null);
 
   useEffect(() => {
     if (isStandalone) return;
@@ -117,6 +118,7 @@ export function usePwaInstallPrompt() {
       setCanInstall(true);
     };
 
+    handlerRef.current = handler;
     window.addEventListener('beforeinstallprompt', handler);
 
     const installed = () => {
@@ -139,19 +141,18 @@ export function usePwaInstallPrompt() {
       trackPwaEvent('cta_click', source);
       prompt.prompt();
       const { outcome } = await prompt.userChoice;
-
       if (outcome === 'accepted') {
         trackPwaEvent('installed', source);
       }
     } catch {
-      // silently handle any prompt errors
+      // silent
     } finally {
-      // CRITICAL: Always clean up regardless of outcome
-      // This prevents interface blocking
+      // CRITICAL: always clean up to prevent UI freeze
       promptRef.current = null;
       setCanInstall(false);
+      // The browser may fire beforeinstallprompt again on next navigation/interaction
+      // so we don't need to do anything else — the listener will re-capture it
     }
-
     return true;
   }, []);
 

@@ -11,7 +11,6 @@ const PwaInstallSection = () => {
   const sectionCta = settings?.homepage_section_cta || 'Instalar Agora';
 
   const handleInstall = async () => {
-    if (isStandalone) return;
     await install('homepage');
   };
 
@@ -44,21 +43,23 @@ const PwaInstallSection = () => {
           </div>
 
           <div className="flex items-start md:items-center">
-            <Button
-              onClick={handleInstall}
-              size="sm"
-              className="gap-2"
-              variant={isStandalone ? 'secondary' : 'default'}
-              disabled={isStandalone}
-            >
-              {isStandalone ? <Check className="h-4 w-4" /> : <Download className="h-4 w-4" />}
-              {isStandalone ? 'App instalado' : sectionCta}
-            </Button>
+            {isStandalone ? (
+              <Button size="sm" variant="secondary" disabled className="gap-2">
+                <Check className="h-4 w-4" />
+                App instalado
+              </Button>
+            ) : (
+              <Button
+                onClick={handleInstall}
+                size="sm"
+                className="gap-2"
+                disabled={!canInstall}
+              >
+                <Download className="h-4 w-4" />
+                {sectionCta}
+              </Button>
+            )}
           </div>
-
-          {!canInstall && !isStandalone && (
-            <span className="sr-only">Instalação ficará disponível automaticamente quando suportada pelo navegador.</span>
-          )}
         </div>
       </div>
     </section>
