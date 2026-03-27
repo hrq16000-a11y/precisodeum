@@ -218,4 +218,4 @@ const NotificationDropdown = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-export default NotificationCenter;
+export default NotificationDropdown;
