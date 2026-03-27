@@ -132,9 +132,12 @@ const BlogPage = () => {
           <>
             {highlights.length > 0 && (
               <section>
-                <div className="mb-4 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-accent" />
-                  <h2 className="font-display text-lg font-bold text-foreground">Destaques</h2>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-accent" />
+                    <h2 className="font-display text-lg font-bold text-foreground">Destaques</h2>
+                  </div>
+                  <Link to="/blog" className="text-xs font-medium text-accent hover:underline">Ver todos</Link>
                 </div>
                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {highlights.map((p) => (

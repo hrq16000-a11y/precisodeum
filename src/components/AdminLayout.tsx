@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,14 +9,6 @@ const menuGroups = [
     label: 'Geral',
     items: [
       { label: 'Visão Geral', icon: LayoutDashboard, path: '/admin' },
-    ],
-  },
-  {
-    label: 'Gestão',
-    items: [
-      { label: 'Prestadores', icon: Briefcase, path: '/admin/prestadores' },
-      { label: 'Usuários', icon: Users, path: '/admin/usuarios' },
-      { label: 'Comunidade', icon: Users2, path: '/admin/comunidade' },
     ],
   },
   {
@@ -32,12 +24,19 @@ const menuGroups = [
     ],
   },
   {
+    label: 'Gestão',
+    items: [
+      { label: 'Prestadores', icon: Briefcase, path: '/admin/prestadores' },
+      { label: 'Usuários', icon: Users, path: '/admin/usuarios' },
+      { label: 'Comunidade', icon: Users2, path: '/admin/comunidade' },
+    ],
+  },
+  {
     label: 'Comercial',
     items: [
       { label: 'Patrocinadores', icon: Megaphone, path: '/admin/patrocinadores' },
       { label: 'CRM Comercial', icon: HandshakeIcon, path: '/admin/crm-patrocinadores' },
       { label: 'Slots de Anúncios', icon: LayoutGrid, path: '/admin/slots-anuncios' },
-      { label: 'Cidades', icon: MapPin, path: '/admin/cidades' },
       { label: 'Estatísticas', icon: BarChart3, path: '/admin/estatisticas' },
     ],
   },
@@ -48,13 +47,14 @@ const menuGroups = [
       { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
       { label: 'Trilha de Auditoria', icon: ScrollText, path: '/admin/auditoria' },
       { label: 'Instalar App (PWA)', icon: Smartphone, path: '/admin/pwa' },
+      { label: 'Cidades', icon: MapPin, path: '/admin/cidades' },
       { label: 'Backup & Export', icon: Database, path: '/admin/backup' },
       { label: 'Lixeira', icon: Trash2, path: '/admin/lixeira' },
     ],
   },
 ];
 
-const AdminLayout = ({ children }: { children: React.ReactNode }) => {
+const AdminLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
