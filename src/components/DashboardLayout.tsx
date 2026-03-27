@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 
-const DEFAULT_LOGO_URL = '/lovable-uploads/2263c0b9-a662-4d7f-894c-a24f0784ef3e.png';
+const DEFAULT_LOGO_URL = '/lovable-uploads/8a22c45f-f2c2-4ac8-a925-92aecd2b313b.png';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
