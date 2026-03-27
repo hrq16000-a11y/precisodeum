@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SearchBar from '@/components/SearchBar';
 import ProviderCard from '@/components/ProviderCard';
+import GeoLocationChip from '@/components/GeoLocationChip';
 import PaginationControls from '@/components/PaginationControls';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
@@ -81,8 +82,9 @@ const SearchPage = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <div className="container py-6">
-        <div className="mb-6">
-          <SearchBar variant="compact" />
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex-1"><SearchBar variant="compact" /></div>
+          <GeoLocationChip />
         </div>
 
         <div className="flex flex-col gap-6 lg:flex-row">
@@ -157,7 +159,7 @@ const SearchPage = () => {
               <>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {paginatedResults.map((p) => (
-                    <ProviderCard key={p.id} provider={p} />
+                    <ProviderCard key={p.id} provider={p} isFallback={isFallback} />
                   ))}
                 </div>
                 {displayResults.length === 0 && (
