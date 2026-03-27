@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { MessageCircle, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-import defaultLogo from '@/assets/logo.webp';
+
+const DEFAULT_LOGO_URL = '/lovable-uploads/35e6f114-86d5-4170-b73d-b5aab4556029.png';
 import SponsorAd from '@/components/SponsorAd';
 import { Button } from '@/components/ui/button';
 import PwaFooterInstall from '@/components/PwaFooterInstall';
@@ -30,7 +31,7 @@ function shuffle<T>(arr: T[]): T[] {
 const Footer = () => {
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoFooterUrl = useSettingValue('logo_footer_url');
-  const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : defaultLogo;
+  const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : DEFAULT_LOGO_URL;
   const [showAllSearches, setShowAllSearches] = useState(false);
   const [showAllServices, setShowAllServices] = useState(false);
 

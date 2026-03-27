@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-import defaultLogo from '@/assets/logo.webp';
+
+const DEFAULT_LOGO_URL = '/lovable-uploads/35e6f114-86d5-4170-b73d-b5aab4556029.png';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
@@ -14,7 +15,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const logoUrl = useSettingValue('logo_url');
-  const logo = logoUrl || defaultLogo;
+  const logo = logoUrl || DEFAULT_LOGO_URL;
 
   useEffect(() => {
     if (!user) return;

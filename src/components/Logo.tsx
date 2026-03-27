@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-import defaultLogo from '@/assets/logo.webp';
+
+const DEFAULT_LOGO_URL = '/lovable-uploads/35e6f114-86d5-4170-b73d-b5aab4556029.png';
 
 interface LogoProps {
   variant?: 'default' | 'white' | 'dark';
@@ -11,7 +12,7 @@ interface LogoProps {
 
 const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-9 md:h-10' }: LogoProps) => {
   const logoUrl = useSettingValue('logo_url');
-  const logo = logoUrl || defaultLogo;
+  const logo = logoUrl || DEFAULT_LOGO_URL;
 
   const filterClass = variant === 'white'
     ? 'brightness-0 invert'

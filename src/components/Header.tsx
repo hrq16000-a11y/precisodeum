@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-import defaultLogo from '@/assets/logo.webp';
+
+const DEFAULT_LOGO_URL = '/lovable-uploads/35e6f114-86d5-4170-b73d-b5aab4556029.png';
 
 /** Detect user city via free IP geolocation */
 function useGeoCity() {
@@ -30,7 +31,7 @@ const Header = () => {
   const { user, profile, signOut, loading } = useAuth();
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoUrl = useSettingValue('logo_url');
-  const logo = logoUrl || defaultLogo;
+  const logo = logoUrl || DEFAULT_LOGO_URL;
   const geoCity = useGeoCity();
 
   // Close mobile menu on route change
