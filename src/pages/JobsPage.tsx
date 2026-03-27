@@ -61,23 +61,36 @@ const JobsPage = () => {
     canonical: `${SITE_BASE_URL}/vagas`,
   });
 
+  const buildJobsQuery = (withCity: boolean) => async () => {
+    let query = (supabase
+      .from('jobs')
+      .select('*, categories(name, slug, icon)')
+      .eq('status', 'active') as any)
+      .eq('approval_status', 'approved')
+      .order('created_at', { ascending: false });
+    if (search) query = query.ilike('title', `%${search}%`);
+    if (withCity && cityFilter) query = query.ilike('city', `%${cityFilter}%`);
+    if (jobTypeFilter) query = query.eq('job_type' as any, jobTypeFilter);
+    if (workModelFilter) query = query.eq('work_model' as any, workModelFilter);
+    const { data } = await query.limit(50);
+    return data || [];
+  };
+
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['jobs-list', search, cityFilter, jobTypeFilter, workModelFilter],
-    queryFn: async () => {
-      let query = (supabase
-        .from('jobs')
-        .select('*, categories(name, slug, icon)')
-        .eq('status', 'active') as any)
-        .eq('approval_status', 'approved')
-        .order('created_at', { ascending: false });
-      if (search) query = query.ilike('title', `%${search}%`);
-      if (cityFilter) query = query.ilike('city', `%${cityFilter}%`);
-      if (jobTypeFilter) query = query.eq('job_type' as any, jobTypeFilter);
-      if (workModelFilter) query = query.eq('work_model' as any, workModelFilter);
-      const { data } = await query.limit(50);
-      return data || [];
-    },
+    queryFn: buildJobsQuery(true),
   });
+
+  // Fallback query without city filter (only runs when city is set)
+  const { data: jobsNoCityFilter = [] } = useQuery({
+    queryKey: ['jobs-list-noCity', search, jobTypeFilter, workModelFilter],
+    queryFn: buildJobsQuery(false),
+    enabled: !!cityFilter,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const jobsFallback = jobs.length === 0 && cityFilter && jobsNoCityFilter.length > 0;
+  const displayJobs = jobsFallback ? jobsNoCityFilter : jobs;
 
   const { data: cities = [] } = useQuery({
     queryKey: ['jobs-cities'],
