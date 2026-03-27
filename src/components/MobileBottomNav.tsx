@@ -46,7 +46,6 @@ const MobileBottomNav = () => {
     { icon: Search, label: 'Buscar', path: '/buscar', active: location.pathname === '/buscar' },
     { icon: Plus, label: 'Criar', action: handleCreate, isCreate: true },
     { icon: User, label: 'Perfil', path: user ? '/dashboard' : '/login', active: location.pathname.startsWith('/dashboard') },
-    { icon: Bell, label: 'Alertas', action: () => setShowMenu(!showMenu), badge: unreadCount },
     { icon: Menu, label: 'Menu', action: () => setShowMenu(!showMenu) },
   ];
 
@@ -79,6 +78,9 @@ const MobileBottomNav = () => {
               );
             }
 
+            // Show badge on Menu icon for unread notifications
+            const showBadge = item.label === 'Menu' && unreadCount > 0;
+
             return (
               <button
                 key={i}
@@ -86,11 +88,16 @@ const MobileBottomNav = () => {
                   if (item.action) { item.action(); }
                   else if (item.path) { navigate(item.path); }
                 }}
-                className={`flex flex-col items-center justify-center px-2 py-0.5 transition-colors ${
+                className={`relative flex flex-col items-center justify-center px-2 py-0.5 transition-colors ${
                   isActive ? 'text-accent' : 'text-muted-foreground'
                 }`}
               >
                 <Icon className="h-[17px] w-[17px]" />
+                {showBadge && (
+                  <span className="absolute -right-0.5 top-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-destructive px-0.5 text-[8px] font-bold text-destructive-foreground">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
                 <span className="mt-0.5 text-[9px] font-medium">{item.label}</span>
               </button>
             );
