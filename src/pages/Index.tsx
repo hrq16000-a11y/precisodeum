@@ -6,6 +6,7 @@ import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProvide
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { importWithRetry } from '@/lib/lazyWithRetry';
+import { useGeoCity } from '@/hooks/useGeoCity';
 
 import Header from '@/components/Header';
 import HeroBanner from '@/components/home/HeroBanner';
@@ -50,9 +51,16 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
 const SectionFallback = () => null;
 
 const Index = () => {
+  const { city: geoCity } = useGeoCity();
+  const seoSuffix = geoCity ? ` em ${geoCity}` : '';
+
   useSeoHead({
-    title: 'Preciso de um | Encontre profissionais confiáveis perto de você',
-    description: 'Marketplace de serviços profissionais. Encontre eletricistas, encanadores, técnicos e muito mais na sua cidade. Cadastre-se gratuitamente.',
+    title: geoCity
+      ? `Profissionais confiáveis em ${geoCity} | Preciso de um`
+      : 'Preciso de um | Encontre profissionais confiáveis perto de você',
+    description: geoCity
+      ? `Encontre eletricistas, encanadores, técnicos e mais em ${geoCity}. Compare avaliações e solicite orçamentos gratuitamente.`
+      : 'Marketplace de serviços profissionais. Encontre eletricistas, encanadores, técnicos e muito mais na sua cidade. Cadastre-se gratuitamente.',
     canonical: SITE_BASE_URL,
   });
 
