@@ -5,6 +5,10 @@ import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer } 
 import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { NotificationBell } from '@/components/NotificationCenter';
+import { useAuth } from '@/hooks/useAuth';
+import { useSettingValue } from '@/hooks/useSiteSettings';
+import { useGeoCity } from '@/hooks/useGeoCity';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
 
@@ -78,6 +82,7 @@ const Header = () => {
           <Button variant="ghost" size="sm" onClick={() => navigate('/buscar')}>
             <Search className="h-4 w-4" />
           </Button>
+          <NotificationBell />
           {!loading && user ? (
             <>
               <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
@@ -96,8 +101,9 @@ const Header = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-1.5 md:hidden">
           <GeoBadge className="text-[10px] px-1.5 py-0.5" />
+          <NotificationBell />
           <button className="text-foreground" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Menu" aria-expanded={mobileOpen}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
