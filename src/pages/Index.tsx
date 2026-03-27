@@ -151,7 +151,7 @@ const Index = () => {
 
       <HighlightsCarousel />
 
-      <CategoriesGrid categories={categories} isLoading={catsLoading} />
+      <LazyErrorBoundary>
         <Suspense fallback={<SectionFallback />}>
           <AdBanner position="between-sections" className="container mx-auto px-4" />
           <AdSlot slotSlug="home-between" />
@@ -173,7 +173,6 @@ const Index = () => {
           <AdShowcase />
           <SponsorsSection sponsors={sponsors} />
           <HowItWorksSection />
-          <LazyErrorBoundary>
           {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
             <PopularSearches categories={allCategories} cities={topCities} />
           )}
