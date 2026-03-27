@@ -32,6 +32,7 @@ const PopularSearches = lazy(() => import('@/components/home/PopularSearches'));
 const AdBanner = lazy(() => import('@/components/ads/AdBanner'));
 const AdShowcase = lazy(() => import('@/components/ads/AdShowcase'));
 const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+const PwaInstallSection = lazy(() => import('@/components/home/PwaInstallSection'));
 const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
 
@@ -171,6 +172,7 @@ const Index = () => {
           <AdShowcase />
           <SponsorsSection sponsors={sponsors} />
           <HowItWorksSection />
+          <PwaInstallSection />
           {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
             <PopularSearches categories={allCategories} cities={topCities} />
           )}

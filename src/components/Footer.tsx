@@ -7,6 +7,7 @@ import { useSettingValue } from '@/hooks/useSiteSettings';
 import defaultLogo from '@/assets/logo.webp';
 import SponsorAd from '@/components/SponsorAd';
 import { Button } from '@/components/ui/button';
+import PwaFooterInstall from '@/components/PwaFooterInstall';
 
 const ecosystemLinks = [
   { name: 'Mestre dos Serviços', url: 'https://mestredosservicos.com.br' },
@@ -197,6 +198,8 @@ const Footer = () => {
             )}
           </div>
         )}
+
+        <PwaFooterInstall />
 
         <SponsorAd position="footer" layout="inline" className="mt-6 border-t border-primary-foreground/10 pt-6" />
 
