@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const PwaInstallBanner = () => {
   const [show, setShow] = useState(false);
-  const { canInstall, isStandalone, isIos, install, dismiss, isDismissed, getVisitCount, getImpressionCount, incrementImpressions } = usePwaInstallPrompt();
+  const { canInstall, isStandalone, isIos, install, dismiss, isDismissed, getImpressionCount, incrementImpressions } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
   const { user } = useAuth();
   const isMobile = useIsMobileDevice();
@@ -36,10 +36,6 @@ const PwaInstallBanner = () => {
     if (settings.max_impressions > 0 && getImpressionCount() >= settings.max_impressions) return;
 
     // Show for all users - the CTA will adapt based on capability
-
-    // Força primeira exibição logo na entrada para garantir visibilidade.
-    const visits = getVisitCount();
-    if (visits < 1) return;
 
     const effectiveDelaySeconds = Math.min(settings.show_delay_seconds, 1);
 

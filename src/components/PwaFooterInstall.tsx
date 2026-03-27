@@ -4,6 +4,7 @@ import { usePwaInstallPrompt, usePwaSettings, trackPwaEvent } from '@/hooks/useP
 const PwaFooterInstall = () => {
   const { canInstall, isStandalone, isIos, install } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
+  const footerCta = settings?.footer_cta_text || 'Instalar App';
 
   if (isStandalone) return null;
   if (settings?.enabled === false) return null;
@@ -29,7 +30,7 @@ const PwaFooterInstall = () => {
           className="mx-auto flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-accent-foreground shadow-md transition-colors hover:bg-accent/90"
         >
           <Download className="h-4 w-4" />
-          {settings?.footer_cta_text || 'Instalar App'}
+          {footerCta}
         </button>
       ) : (
         <div className="flex items-center justify-center gap-2 rounded-lg bg-primary-foreground/10 px-3 py-2 text-xs text-primary-foreground/70">
