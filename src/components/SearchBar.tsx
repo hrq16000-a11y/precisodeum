@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSearchSuggestions } from '@/hooks/useProviders';
+import { useGeoCity } from '@/hooks/useGeoCity';
 
 interface SearchBarProps {
   variant?: 'hero' | 'compact';
@@ -25,8 +26,17 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   const serviceRef = useRef<HTMLInputElement>(null);
   const locationRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const hasTouchedLocation = useRef(false);
+
+  const { city: geoCity } = useGeoCity();
 
   const { data: suggestions } = useSearchSuggestions();
+
+  useEffect(() => {
+    if (geoCity && !location && !hasTouchedLocation.current) {
+      setLocation(geoCity);
+    }
+  }, [geoCity, location]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -224,7 +234,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
               type="text"
               placeholder="Cidade ou região"
               value={location}
-              onChange={(e) => { setLocation(e.target.value); setSearchError(''); }}
+              onChange={(e) => { hasTouchedLocation.current = true; setLocation(e.target.value); setSearchError(''); }}
               onFocus={() => setActiveField('location')}
               onKeyDown={handleKeyDown}
               className="w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Download, Share, Plus, MoreVertical } from 'lucide-react';
+import { X, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePwaInstallPrompt, usePwaSettings, trackPwaEvent } from '@/hooks/usePwaInstall';
 
@@ -8,7 +8,7 @@ const COOLDOWN_MS = 3 * 86400000; // 3 days
 
 const PwaInstallBanner = () => {
   const [show, setShow] = useState(false);
-  const { canInstall, isStandalone, isIos, install } = usePwaInstallPrompt();
+  const { canInstall, isStandalone, install } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
 
   const isDismissedLocally = useCallback(() => {
@@ -20,7 +20,7 @@ const PwaInstallBanner = () => {
   }, []);
 
   useEffect(() => {
-    if (isStandalone) return;
+    if (isStandalone || !canInstall) return;
     if (isDismissedLocally()) return;
 
     const timer = setTimeout(() => {
@@ -32,10 +32,8 @@ const PwaInstallBanner = () => {
   }, [isStandalone, isDismissedLocally]);
 
   const handleInstall = async () => {
-    if (canInstall) {
-      const result = await install('banner');
-      if (result) setShow(false);
-    }
+    const result = await install('banner');
+    if (result) setShow(false);
   };
 
   const handleDismiss = () => {
@@ -44,7 +42,7 @@ const PwaInstallBanner = () => {
     setShow(false);
   };
 
-  if (!show) return null;
+  if (!show || !canInstall) return null;
 
   const titleText = settings?.title || 'Instale o App';
   const subtitleText = settings?.subtitle || 'Mais rápido';
@@ -81,46 +79,14 @@ const PwaInstallBanner = () => {
         </div>
 
         <div className="mt-5 space-y-3">
-          {isIos ? (
-            /* iOS Safari: no beforeinstallprompt, show manual instructions */
-            <div className="rounded-xl border border-border bg-muted/60 p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Share className="h-4 w-4 text-accent" />
-                Instalação no iPhone/iPad
-              </div>
-              <ol className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">1</span>
-                  Toque em <Share className="mx-0.5 inline h-3.5 w-3.5" /> compartilhar
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">2</span>
-                  Escolha <Plus className="mx-0.5 inline h-3.5 w-3.5" /> Tela de Início
-                </li>
-              </ol>
-            </div>
-          ) : canInstall ? (
-            /* Native install prompt available (Chrome/Edge on Android & Desktop) */
-            <Button
-              size="lg"
-              className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-base font-bold shadow-lg"
-              onClick={handleInstall}
-            >
-              <Download className="mr-2 h-5 w-5" />
-              {ctaText}
-            </Button>
-          ) : (
-            /* Fallback: browser supports PWA but prompt not yet fired or not available */
-            <div className="rounded-xl border border-border bg-muted/60 p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
-                <MoreVertical className="h-4 w-4 text-accent" />
-                Como instalar
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Use o menu do navegador (<MoreVertical className="inline h-3.5 w-3.5" />) e toque em <strong>"Instalar app"</strong> ou <strong>"Adicionar à tela inicial"</strong>.
-              </p>
-            </div>
-          )}
+          <Button
+            size="lg"
+            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-base font-bold shadow-lg"
+            onClick={handleInstall}
+          >
+            <Download className="mr-2 h-5 w-5" />
+            {ctaText}
+          </Button>
         </div>
 
         <button
