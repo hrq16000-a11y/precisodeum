@@ -13,6 +13,7 @@ import CategoriesGrid from '@/components/home/CategoriesGrid';
 import HighlightsCarousel from '@/components/home/HighlightsCarousel';
 import FeaturedProviders from '@/components/home/FeaturedProviders';
 import RecentServices from '@/components/home/RecentServices';
+import PwaInstallSection from '@/components/home/PwaInstallSection';
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
@@ -32,7 +33,7 @@ const PopularSearches = lazy(() => import('@/components/home/PopularSearches'));
 const AdBanner = lazy(() => import('@/components/ads/AdBanner'));
 const AdShowcase = lazy(() => import('@/components/ads/AdShowcase'));
 const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
-const PwaInstallSection = lazy(() => import('@/components/home/PwaInstallSection'));
+
 const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
 
@@ -146,9 +147,9 @@ const Index = () => {
       <Header />
       <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
 
-      <HighlightsCarousel />
+      <PwaInstallSection />
 
-      <CategoriesGrid categories={categories} isLoading={catsLoading} />
+      <HighlightsCarousel />
 
       <LazyErrorBoundary>
         <Suspense fallback={<SectionFallback />}>
@@ -172,7 +173,6 @@ const Index = () => {
           <AdShowcase />
           <SponsorsSection sponsors={sponsors} />
           <HowItWorksSection />
-          <PwaInstallSection />
           {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
             <PopularSearches categories={allCategories} cities={topCities} />
           )}
