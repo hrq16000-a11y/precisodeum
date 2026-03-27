@@ -390,17 +390,24 @@ serve(async (req) => {
       });
     }
 
-    // Auth: require admin JWT or valid cron secret for automated calls
+    // Auth: require admin JWT, service_role JWT, or valid cron secret for automated calls
     let isAdmin = false;
+    let isServiceRole = false;
     const authHeader = req.headers.get("Authorization");
     if (authHeader) {
-      const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user: caller } } = await callerClient.auth.getUser();
-      if (caller) {
-        const { data: adminResult } = await callerClient.rpc("has_role", { _user_id: caller.id, _role: "admin" });
-        isAdmin = !!adminResult;
+      const token = authHeader.replace("Bearer ", "");
+      // Check if it's the service_role key (used by pg_cron)
+      if (token === SUPABASE_SERVICE_ROLE_KEY) {
+        isServiceRole = true;
+      } else {
+        const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data: { user: caller } } = await callerClient.auth.getUser();
+        if (caller) {
+          const { data: adminResult } = await callerClient.rpc("has_role", { _user_id: caller.id, _role: "admin" });
+          isAdmin = !!adminResult;
+        }
       }
     }
 
@@ -414,7 +421,7 @@ serve(async (req) => {
       }
     }
 
-    if (!isAdmin && !isAutomatedValid) {
+    if (!isAdmin && !isServiceRole && !isAutomatedValid) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
