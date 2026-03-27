@@ -1,6 +1,6 @@
-import { Download, Smartphone, Zap } from 'lucide-react';
+import { Download, Smartphone, Zap, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePwaInstallPrompt, usePwaSettings, trackPwaEvent } from '@/hooks/usePwaInstall';
+import { usePwaInstallPrompt, usePwaSettings } from '@/hooks/usePwaInstall';
 
 const PwaInstallSection = () => {
   const { canInstall, isStandalone, install } = usePwaInstallPrompt();
@@ -10,11 +10,8 @@ const PwaInstallSection = () => {
   const sectionSubtitle = settings?.homepage_section_subtitle || 'Instale gratuitamente e acesse profissionais, serviços e vagas com um toque.';
   const sectionCta = settings?.homepage_section_cta || 'Instalar Agora';
 
-  // Hide completely if already installed or if install prompt is not available
-  if (isStandalone || !canInstall) return null;
-
   const handleInstall = async () => {
-    trackPwaEvent('cta_click', 'homepage');
+    if (isStandalone) return;
     await install('homepage');
   };
 
@@ -27,12 +24,8 @@ const PwaInstallSection = () => {
               <Smartphone className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-foreground">
-                {sectionTitle}
-              </h2>
-              <p className="mt-1 max-w-md text-xs text-muted-foreground">
-                {sectionSubtitle}
-              </p>
+              <h2 className="text-sm font-semibold text-foreground">{sectionTitle}</h2>
+              <p className="mt-1 max-w-md text-xs text-muted-foreground">{sectionSubtitle}</p>
               <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
                   <Zap className="h-3.5 w-3.5" />
@@ -44,18 +37,28 @@ const PwaInstallSection = () => {
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Smartphone className="h-3.5 w-3.5" />
-                  Sem ocupar espaço
+                  Instalação simples
                 </span>
               </div>
             </div>
           </div>
 
           <div className="flex items-start md:items-center">
-            <Button onClick={handleInstall} size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              {sectionCta}
+            <Button
+              onClick={handleInstall}
+              size="sm"
+              className="gap-2"
+              variant={isStandalone ? 'secondary' : 'default'}
+              disabled={isStandalone}
+            >
+              {isStandalone ? <Check className="h-4 w-4" /> : <Download className="h-4 w-4" />}
+              {isStandalone ? 'App instalado' : sectionCta}
             </Button>
           </div>
+
+          {!canInstall && !isStandalone && (
+            <span className="sr-only">Instalação ficará disponível automaticamente quando suportada pelo navegador.</span>
+          )}
         </div>
       </div>
     </section>
