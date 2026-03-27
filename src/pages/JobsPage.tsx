@@ -185,7 +185,7 @@ const JobsPage = () => {
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
               </div>
-            ) : jobs.length === 0 ? (
+            ) : displayJobs.length === 0 ? (
               <div className="mt-12 text-center sm:mt-16">
                 <Briefcase className="mx-auto h-12 w-12 text-muted-foreground/50" />
                 <p className="mt-4 text-lg font-medium text-foreground">Nenhuma vaga encontrada</p>
@@ -195,6 +195,15 @@ const JobsPage = () => {
                 </Button>
               </div>
             ) : (
+              <>
+              {jobsFallback && (
+                <GeoFallbackBanner
+                  originalCity={cityFilter}
+                  expansionLevel="all"
+                  resultCount={displayJobs.length}
+                  onClearCity={() => setCityFilter('')}
+                />
+              )}
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {itemsWithAds.map((item, i) => {
                   if (item.type === 'ad') {
