@@ -1,4 +1,4 @@
-import { Download, Share, Plus } from 'lucide-react';
+import { Download, Share, Plus, MoreVertical } from 'lucide-react';
 import { usePwaInstallPrompt, usePwaSettings, trackPwaEvent } from '@/hooks/usePwaInstall';
 
 const PwaFooterInstall = () => {
@@ -6,7 +6,6 @@ const PwaFooterInstall = () => {
   const { data: settings } = usePwaSettings();
   const footerCta = settings?.footer_cta_text || 'Instalar App';
 
-  // Only hide if already installed
   if (isStandalone) return null;
 
   const handleClick = async () => {
@@ -34,8 +33,10 @@ const PwaFooterInstall = () => {
         </button>
       ) : (
         <div className="flex items-center justify-center gap-2 rounded-lg bg-accent/20 px-3 py-2.5 text-xs text-primary-foreground/80">
-          <Download className="h-4 w-4 shrink-0 text-accent" />
-          <span className="font-medium">Abra no celular para instalar o app</span>
+          <MoreVertical className="h-4 w-4 shrink-0 text-accent" />
+          <span className="font-medium">
+            Menu do navegador → "Instalar app"
+          </span>
         </div>
       )}
     </div>
