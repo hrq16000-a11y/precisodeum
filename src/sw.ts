@@ -53,7 +53,7 @@ self.addEventListener('push', (event) => {
     body: payload.body,
     icon: payload.icon || '/icons/icon-192.png',
     badge: payload.badge || '/icons/icon-96.png',
-    image: payload.image,
+    image: payload.image as string | undefined,
     data: payload.data || { url: payload.url || '/' },
     actions: payload.actions || [
       { action: 'open', title: 'Abrir' },
