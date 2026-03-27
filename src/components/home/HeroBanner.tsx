@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Users, Zap, Briefcase, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
+import GeoLocationChip from '@/components/GeoLocationChip';
 import { useHeroBanners, type HeroBannerData } from '@/hooks/useHeroBanners';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
@@ -142,6 +143,12 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           className="mt-5 md:mt-8 w-full max-w-2xl"
         >
           <SearchBar />
+          <div className="mt-3 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">
+            <MapPin className="h-3.5 w-3.5 text-secondary" />
+            <span>Mostrando resultados para <span className="font-semibold text-primary-foreground/90">{geoCity || 'sua região'}</span></span>
+            <span className="text-primary-foreground/40">·</span>
+            <GeoLocationChip variant="hero" />
+          </div>
         </motion.div>
         <motion.div
           initial={{ opacity: 0 }}
