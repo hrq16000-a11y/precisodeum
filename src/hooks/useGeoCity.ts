@@ -35,6 +35,7 @@ async function fetchGeoFromEdge(): Promise<GeoData | null> {
     method: 'GET',
     headers: {
       apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
       'Content-Type': 'application/json',
     },
   });
