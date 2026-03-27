@@ -1,14 +1,22 @@
 import { Download, Check } from 'lucide-react';
-import { usePwaInstallPrompt, usePwaSettings } from '@/hooks/usePwaInstall';
+import {
+  PWA_OPEN_INSTALL_MODAL_EVENT,
+  usePwaInstallPrompt,
+  usePwaSettings,
+} from '@/hooks/usePwaInstall';
 
 const PwaFooterInstall = () => {
-  const { canInstall, isStandalone, install } = usePwaInstallPrompt();
+  const { isStandalone } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
   const footerCta = settings?.footer_cta_text || 'Instalar App';
 
-  const handleClick = async () => {
-    if (!canInstall || isStandalone) return;
-    await install('footer');
+  const openInstallPopup = () => {
+    if (isStandalone) return;
+    window.dispatchEvent(
+      new CustomEvent(PWA_OPEN_INSTALL_MODAL_EVENT, {
+        detail: { source: 'footer' },
+      })
+    );
   };
 
   return (
@@ -20,9 +28,8 @@ const PwaFooterInstall = () => {
         </div>
       ) : (
         <button
-          onClick={handleClick}
-          disabled={!canInstall}
-          className="mx-auto flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground shadow-md transition-colors hover:bg-accent/90 disabled:opacity-50 disabled:cursor-default"
+          onClick={openInstallPopup}
+          className="mx-auto flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground shadow-md transition-colors hover:bg-accent/90"
         >
           <Download className="h-4 w-4" />
           {footerCta}

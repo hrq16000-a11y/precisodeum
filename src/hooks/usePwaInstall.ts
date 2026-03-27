@@ -6,6 +6,8 @@ const DISMISS_KEY = 'pwa_install_dismissed_v2';
 const VISIT_KEY = 'pwa_visit_count';
 const IMPRESSION_KEY = 'pwa_impression_count';
 
+export const PWA_OPEN_INSTALL_MODAL_EVENT = 'pwa:open-install-modal';
+
 export interface PwaSettings {
   enabled: boolean;
   title: string;
@@ -70,6 +72,7 @@ export function usePwaSettings() {
         .select('*')
         .limit(1)
         .single();
+
       if (error) return defaultSettings;
       return (data as unknown as PwaSettings) || defaultSettings;
     },
@@ -79,13 +82,16 @@ export function usePwaSettings() {
 
 export function useIsStandalone() {
   const [standalone, setStandalone] = useState(false);
+
   useEffect(() => {
     const mq = window.matchMedia('(display-mode: standalone)');
     setStandalone(mq.matches || (navigator as any).standalone === true);
+
     const handler = (e: MediaQueryListEvent) => setStandalone(e.matches);
     mq.addEventListener?.('change', handler);
     return () => mq.removeEventListener?.('change', handler);
   }, []);
+
   return standalone;
 }
 
@@ -97,64 +103,58 @@ export function trackPwaEvent(eventType: string, source: string) {
     .then(() => {});
 }
 
-/**
- * Central PWA install hook.
- * - No device restrictions
- * - beforeinstallprompt is captured and re-capturable after dismiss
- * - install() always cleans up to prevent UI freeze
- */
 export function usePwaInstallPrompt() {
   const [canInstall, setCanInstall] = useState(false);
   const isStandalone = useIsStandalone();
   const promptRef = useRef<any>(null);
-  const handlerRef = useRef<((e: Event) => void) | null>(null);
 
   useEffect(() => {
     if (isStandalone) return;
 
-    const handler = (e: Event) => {
+    const onBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       promptRef.current = e;
       setCanInstall(true);
     };
 
-    handlerRef.current = handler;
-    window.addEventListener('beforeinstallprompt', handler);
-
-    const installed = () => {
-      setCanInstall(false);
+    const onAppInstalled = () => {
       promptRef.current = null;
+      setCanInstall(false);
+      trackPwaEvent('installed', 'system');
     };
-    window.addEventListener('appinstalled', installed);
+
+    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+    window.addEventListener('appinstalled', onAppInstalled);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
-      window.removeEventListener('appinstalled', installed);
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', onAppInstalled);
     };
   }, [isStandalone]);
 
   const install = useCallback(async (source: string = 'banner') => {
     const prompt = promptRef.current;
-    if (!prompt) return false;
+    if (!prompt || isStandalone) return false;
+
+    let accepted = false;
 
     try {
       trackPwaEvent('cta_click', source);
       prompt.prompt();
+
       const { outcome } = await prompt.userChoice;
-      if (outcome === 'accepted') {
-        trackPwaEvent('installed', source);
-      }
+      accepted = outcome === 'accepted';
+      trackPwaEvent(accepted ? 'accepted' : 'dismissed', source);
     } catch {
-      // silent
+      // Silent fallback by design
     } finally {
-      // CRITICAL: always clean up to prevent UI freeze
+      // Critical cleanup to avoid stale overlays/locked state in UI flows
       promptRef.current = null;
       setCanInstall(false);
-      // The browser may fire beforeinstallprompt again on next navigation/interaction
-      // so we don't need to do anything else — the listener will re-capture it
     }
-    return true;
-  }, []);
+
+    return accepted;
+  }, [isStandalone]);
 
   const dismiss = useCallback((source: string = 'banner') => {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
@@ -173,9 +173,7 @@ export function usePwaInstallPrompt() {
     return visits;
   }, []);
 
-  const getImpressionCount = useCallback(() => {
-    return Number(localStorage.getItem(IMPRESSION_KEY) || '0');
-  }, []);
+  const getImpressionCount = useCallback(() => Number(localStorage.getItem(IMPRESSION_KEY) || '0'), []);
 
   const incrementImpressions = useCallback(() => {
     const count = Number(localStorage.getItem(IMPRESSION_KEY) || '0') + 1;
