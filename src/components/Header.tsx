@@ -58,7 +58,7 @@ const Header = () => {
       <div className="container flex h-14 items-center justify-between md:h-16">
         <div className="flex items-center gap-3">
           <Link to="/" className="flex items-center">
-            <img src={logo} alt="Preciso de um - Profissionais Confiáveis Perto de Você" className="h-9 md:h-10" width="111" height="40" />
+            <img src={logo} alt="Preciso de um - Profissionais Confiáveis Perto de Você" className="h-10 md:h-12 drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] object-contain" width="166" height="48" />
           </Link>
           {geoCity && (
             <span className="hidden items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">
