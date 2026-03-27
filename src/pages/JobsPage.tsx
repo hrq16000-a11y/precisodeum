@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Briefcase, Search, MessageCircle, Filter } from 'lucide-react';
+import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
