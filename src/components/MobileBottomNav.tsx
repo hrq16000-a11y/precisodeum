@@ -1,9 +1,8 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, Plus, User, Bell } from 'lucide-react';
+import { Home, Search, Plus, User, Bell, Menu } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useState, useEffect } from 'react';
 
 const MobileBottomNav = () => {
   const location = useLocation();
