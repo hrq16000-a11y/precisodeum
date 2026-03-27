@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer } from 'lucide-react';
@@ -18,6 +18,7 @@ const Header = () => {
   const logoUrl = useSettingValue('logo_url');
   const logo = logoUrl || DEFAULT_LOGO_URL;
   const { city: geoCity, temp: geoTemp } = useGeoCity();
+  const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
@@ -27,6 +28,18 @@ const Header = () => {
     };
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
+  }, [mobileOpen]);
+
+  // Close mobile menu on click outside
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setMobileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, [mobileOpen]);
 
   const handleSignOut = async () => {
@@ -52,7 +65,7 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    <header ref={headerRef} className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <div className="container flex h-14 items-center justify-between md:h-16">
         <div className="flex items-center gap-3">
           <Link to="/" className="flex items-center">
@@ -108,9 +121,7 @@ const Header = () => {
       </div>
 
       {mobileOpen && (
-        <>
-          <div className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm md:hidden" onClick={() => setMobileOpen(false)} />
-          <div className="relative z-50 border-t border-border bg-card p-4 md:hidden animate-in slide-in-from-top-2 duration-200">
+        <div className="relative z-50 border-t border-border bg-card p-4 md:hidden animate-in slide-in-from-top-2 duration-200">
             <nav className="flex flex-col gap-2">
               <Link to="/buscar" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Buscar Profissionais</Link>
               <Link to="/vagas" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Vagas</Link>
@@ -139,7 +150,6 @@ const Header = () => {
               )}
             </nav>
           </div>
-        </>
       )}
     </header>
   );
