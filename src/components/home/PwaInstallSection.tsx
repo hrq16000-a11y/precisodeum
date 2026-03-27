@@ -1,17 +1,28 @@
 import { Download, Smartphone, Zap, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePwaInstallPrompt, usePwaSettings } from '@/hooks/usePwaInstall';
+import {
+  PWA_OPEN_INSTALL_MODAL_EVENT,
+  usePwaInstallPrompt,
+  usePwaSettings,
+} from '@/hooks/usePwaInstall';
 
 const PwaInstallSection = () => {
-  const { canInstall, isStandalone, install } = usePwaInstallPrompt();
+  const { isStandalone } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
 
   const sectionTitle = settings?.homepage_section_title || 'Tenha o app na palma da mão';
-  const sectionSubtitle = settings?.homepage_section_subtitle || 'Instale gratuitamente e acesse profissionais, serviços e vagas com um toque.';
+  const sectionSubtitle =
+    settings?.homepage_section_subtitle ||
+    'Instale gratuitamente e acesse profissionais, serviços e vagas com um toque.';
   const sectionCta = settings?.homepage_section_cta || 'Instalar Agora';
 
-  const handleInstall = async () => {
-    await install('homepage');
+  const openInstallPopup = () => {
+    if (isStandalone) return;
+    window.dispatchEvent(
+      new CustomEvent(PWA_OPEN_INSTALL_MODAL_EVENT, {
+        detail: { source: 'homepage' },
+      })
+    );
   };
 
   return (
@@ -49,12 +60,7 @@ const PwaInstallSection = () => {
                 App instalado
               </Button>
             ) : (
-              <Button
-                onClick={handleInstall}
-                size="sm"
-                className="gap-2"
-                disabled={!canInstall}
-              >
+              <Button onClick={openInstallPopup} size="sm" className="gap-2">
                 <Download className="h-4 w-4" />
                 {sectionCta}
               </Button>
