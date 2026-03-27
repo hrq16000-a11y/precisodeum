@@ -1,3 +1,10 @@
+/**
+ * PWA Install Section — Homepage CTA
+ *
+ * BLINDADO: Sempre visível na homepage.
+ * Ao clicar, dispara PWA_OPEN_INSTALL_MODAL_EVENT para abrir o popup central.
+ * Se já instalado (standalone), mostra "App instalado" desabilitado.
+ */
 import { Download, Smartphone, Zap, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,9 +26,7 @@ const PwaInstallSection = () => {
   const openInstallPopup = () => {
     if (isStandalone) return;
     window.dispatchEvent(
-      new CustomEvent(PWA_OPEN_INSTALL_MODAL_EVENT, {
-        detail: { source: 'homepage' },
-      })
+      new CustomEvent(PWA_OPEN_INSTALL_MODAL_EVENT, { detail: { source: 'homepage' } }),
     );
   };
 
@@ -38,16 +43,13 @@ const PwaInstallSection = () => {
               <p className="mt-1 max-w-md text-xs text-muted-foreground">{sectionSubtitle}</p>
               <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
-                  <Zap className="h-3.5 w-3.5" />
-                  Acesso rápido
+                  <Zap className="h-3.5 w-3.5" /> Acesso rápido
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <Download className="h-3.5 w-3.5" />
-                  100% gratuito
+                  <Download className="h-3.5 w-3.5" /> 100% gratuito
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <Smartphone className="h-3.5 w-3.5" />
-                  Instalação simples
+                  <Smartphone className="h-3.5 w-3.5" /> Instalação simples
                 </span>
               </div>
             </div>
@@ -56,13 +58,11 @@ const PwaInstallSection = () => {
           <div className="flex items-start md:items-center">
             {isStandalone ? (
               <Button size="sm" variant="secondary" disabled className="gap-2">
-                <Check className="h-4 w-4" />
-                App instalado
+                <Check className="h-4 w-4" /> App instalado
               </Button>
             ) : (
               <Button onClick={openInstallPopup} size="sm" className="gap-2">
-                <Download className="h-4 w-4" />
-                {sectionCta}
+                <Download className="h-4 w-4" /> {sectionCta}
               </Button>
             )}
           </div>
