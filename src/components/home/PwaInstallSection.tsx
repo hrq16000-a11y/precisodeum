@@ -8,7 +8,6 @@ const PwaInstallSection = () => {
 
   if (isStandalone) return null;
   if (!settings?.enabled || !settings?.show_homepage_section) return null;
-  if (!canInstall && !isIos) return null;
 
   const handleInstall = async () => {
     trackPwaEvent('cta_click', 'homepage');
@@ -66,7 +65,7 @@ const PwaInstallSection = () => {
                       </p>
                     </div>
                   </div>
-                ) : (
+                ) : canInstall ? (
                   <Button
                     onClick={handleInstall}
                     size="lg"
@@ -75,6 +74,10 @@ const PwaInstallSection = () => {
                     <Download className="h-5 w-5" />
                     {settings.homepage_section_cta}
                   </Button>
+                ) : (
+                  <p className="text-xs text-primary-foreground/60">
+                    Abra este site no navegador do celular para instalar o app.
+                  </p>
                 )}
               </div>
             </div>
