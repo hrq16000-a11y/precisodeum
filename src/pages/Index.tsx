@@ -13,7 +13,7 @@ import CategoriesGrid from '@/components/home/CategoriesGrid';
 import HighlightsCarousel from '@/components/home/HighlightsCarousel';
 import FeaturedProviders from '@/components/home/FeaturedProviders';
 import RecentServices from '@/components/home/RecentServices';
-import PwaInstallSection from '@/components/home/PwaInstallSection';
+const PwaInstallSection = lazy(() => import('@/components/home/PwaInstallSection'));
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
