@@ -48,11 +48,15 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
+        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+          variant === 'hero'
+            ? 'border border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/90 hover:bg-primary-foreground/20'
+            : 'border border-border bg-card text-foreground shadow-sm hover:bg-muted'
+        }`}
       >
-        <MapPin className="h-3.5 w-3.5 text-accent" />
+        <MapPin className={`h-3.5 w-3.5 ${variant === 'hero' ? 'text-secondary' : 'text-accent'}`} />
         <span className="max-w-[160px] truncate">{displayText}</span>
-        <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-3 w-3 transition-transform ${variant === 'hero' ? 'text-primary-foreground/50' : 'text-muted-foreground'} ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
