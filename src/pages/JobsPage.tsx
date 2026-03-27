@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Briefcase, Search, MessageCircle, Filter } from 'lucide-react';
+import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -61,23 +62,36 @@ const JobsPage = () => {
     canonical: `${SITE_BASE_URL}/vagas`,
   });
 
+  const buildJobsQuery = (withCity: boolean) => async () => {
+    let query = (supabase
+      .from('jobs')
+      .select('*, categories(name, slug, icon)')
+      .eq('status', 'active') as any)
+      .eq('approval_status', 'approved')
+      .order('created_at', { ascending: false });
+    if (search) query = query.ilike('title', `%${search}%`);
+    if (withCity && cityFilter) query = query.ilike('city', `%${cityFilter}%`);
+    if (jobTypeFilter) query = query.eq('job_type' as any, jobTypeFilter);
+    if (workModelFilter) query = query.eq('work_model' as any, workModelFilter);
+    const { data } = await query.limit(50);
+    return data || [];
+  };
+
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['jobs-list', search, cityFilter, jobTypeFilter, workModelFilter],
-    queryFn: async () => {
-      let query = (supabase
-        .from('jobs')
-        .select('*, categories(name, slug, icon)')
-        .eq('status', 'active') as any)
-        .eq('approval_status', 'approved')
-        .order('created_at', { ascending: false });
-      if (search) query = query.ilike('title', `%${search}%`);
-      if (cityFilter) query = query.ilike('city', `%${cityFilter}%`);
-      if (jobTypeFilter) query = query.eq('job_type' as any, jobTypeFilter);
-      if (workModelFilter) query = query.eq('work_model' as any, workModelFilter);
-      const { data } = await query.limit(50);
-      return data || [];
-    },
+    queryFn: buildJobsQuery(true),
   });
+
+  // Fallback query without city filter (only runs when city is set)
+  const { data: jobsNoCityFilter = [] } = useQuery({
+    queryKey: ['jobs-list-noCity', search, jobTypeFilter, workModelFilter],
+    queryFn: buildJobsQuery(false),
+    enabled: !!cityFilter,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const jobsFallback = jobs.length === 0 && cityFilter && jobsNoCityFilter.length > 0;
+  const displayJobs = jobsFallback ? jobsNoCityFilter : jobs;
 
   const { data: cities = [] } = useQuery({
     queryKey: ['jobs-cities'],
@@ -92,7 +106,7 @@ const JobsPage = () => {
 
   let nativeAdCount = 0;
   const itemsWithAds: Array<{ type: 'job'; data: any } | { type: 'ad'; index: number }> = [];
-  jobs.forEach((job: any, i: number) => {
+  displayJobs.forEach((job: any, i: number) => {
     itemsWithAds.push({ type: 'job', data: job });
     if ((i + 1) % NATIVE_AD_INTERVAL === 0) {
       itemsWithAds.push({ type: 'ad', index: nativeAdCount++ });
@@ -171,7 +185,7 @@ const JobsPage = () => {
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
               </div>
-            ) : jobs.length === 0 ? (
+            ) : displayJobs.length === 0 ? (
               <div className="mt-12 text-center sm:mt-16">
                 <Briefcase className="mx-auto h-12 w-12 text-muted-foreground/50" />
                 <p className="mt-4 text-lg font-medium text-foreground">Nenhuma vaga encontrada</p>
@@ -181,6 +195,15 @@ const JobsPage = () => {
                 </Button>
               </div>
             ) : (
+              <>
+              {jobsFallback && (
+                <GeoFallbackBanner
+                  originalCity={cityFilter}
+                  expansionLevel="all"
+                  resultCount={displayJobs.length}
+                  onClearCity={() => setCityFilter('')}
+                />
+              )}
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {itemsWithAds.map((item, i) => {
                   if (item.type === 'ad') {
@@ -227,6 +250,7 @@ const JobsPage = () => {
                   );
                 })}
               </div>
+              </>
             )}
           </div>
 
