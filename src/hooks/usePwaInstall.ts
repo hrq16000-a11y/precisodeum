@@ -63,12 +63,15 @@ const defaultSettings: PwaSettings = {
 export function usePwaSettings() {
   return useQuery({
     queryKey: ['pwa-install-settings'],
+    initialData: defaultSettings,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('pwa_install_settings' as any)
         .select('*')
         .limit(1)
         .single();
+
+      if (error) return defaultSettings;
       return (data as unknown as PwaSettings) || defaultSettings;
     },
     staleTime: 1000 * 60 * 10,
