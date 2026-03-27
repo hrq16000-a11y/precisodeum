@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchProviders, useCategories } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { useGeoCity } from '@/hooks/useGeoCity';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -16,10 +17,14 @@ const SearchPage = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const city = searchParams.get('cidade') || '';
+  const { city: geoCity } = useGeoCity();
   const [selectedCategory, setSelectedCategory] = useState('');
   const [minRating, setMinRating] = useState(0);
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const [page, setPage] = useState(1);
+
+  // Use geo city as fallback when no city filter is specified
+  const effectiveCity = city || geoCity || '';
 
   const { data: categories = [], isError: categoriesError } = useCategories();
   const {
@@ -27,12 +32,17 @@ const SearchPage = () => {
     isLoading,
     isError: searchError,
     refetch,
-  } = useSearchProviders(query, city, selectedCategory, minRating);
+  } = useSearchProviders(query, effectiveCity, selectedCategory, minRating);
 
-  const seoTitle = query ? `Resultados para "${query}"` : 'Buscar Profissionais';
+  const seoCity = effectiveCity || '';
+  const seoTitle = query
+    ? `Resultados para "${query}"${seoCity ? ` em ${seoCity}` : ''}`
+    : seoCity ? `Profissionais em ${seoCity}` : 'Buscar Profissionais';
   const seoDesc = query
-    ? `Encontre profissionais para "${query}"${city ? ` em ${city}` : ''}. Compare avaliações e solicite orçamentos.`
-    : 'Busque e encontre profissionais confiáveis perto de você na maior plataforma de serviços do Brasil.';
+    ? `Encontre profissionais para "${query}"${seoCity ? ` em ${seoCity}` : ''}. Compare avaliações e solicite orçamentos.`
+    : seoCity
+      ? `Encontre profissionais confiáveis em ${seoCity}. Compare avaliações e solicite orçamentos.`
+      : 'Busque e encontre profissionais confiáveis perto de você na maior plataforma de serviços do Brasil.';
   useSeoHead({ title: seoTitle, description: seoDesc, canonical: `${SITE_BASE_URL}/buscar` });
 
   const paginatedResults = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
@@ -95,7 +105,7 @@ const SearchPage = () => {
             <p className="mb-4 text-sm text-muted-foreground">
               {isLoading ? 'Buscando...' : `${filtered.length} profissional(is) encontrado(s)`}
               {query && <> para "<span className="font-semibold text-foreground">{query}</span>"</>}
-              {city && <> em <span className="font-semibold text-foreground">{city}</span></>}
+              {effectiveCity && <> em <span className="font-semibold text-foreground">{effectiveCity}</span></>}
             </p>
             {isLoading ? (
               <div className="grid gap-4 sm:grid-cols-2">

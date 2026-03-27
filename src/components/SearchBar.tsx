@@ -86,7 +86,9 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
     setSearchError('');
     const params = new URLSearchParams();
     if (service) params.set('q', service);
-    if (location) params.set('cidade', location);
+    // Use typed location, or fallback to geo city
+    const finalLocation = location.trim() || geoCity || '';
+    if (finalLocation) params.set('cidade', finalLocation);
     navigate(`/buscar?${params.toString()}`);
   };
 

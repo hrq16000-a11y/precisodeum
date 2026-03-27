@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Users, Zap, Briefcase } from 'lucide-react';
+import { Shield, Users, Zap, Briefcase, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
 import { useHeroBanners, type HeroBannerData } from '@/hooks/useHeroBanners';
+import { useGeoCity } from '@/hooks/useGeoCity';
 
 const heroImage = '/hero-image.webp';
 
@@ -42,6 +43,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
   const [showJobs, setShowJobs] = useState(false);
   const { data: banners = [] } = useHeroBanners();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { city: geoCity } = useGeoCity();
 
   // Alternate between services and jobs every 5s
   useEffect(() => {
@@ -180,7 +182,17 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
               </>
             )}
           </span>
-          <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-secondary" /> Em todo o Brasil</span>
+          <span className="flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5 text-secondary" />
+            {geoCity ? (
+              <>
+                <MapPin className="h-3 w-3 text-secondary" />
+                {geoCity}
+              </>
+            ) : (
+              'Em todo o Brasil'
+            )}
+          </span>
           <span className="flex items-center gap-1.5"><Zap className="h-3.5 w-3.5 text-secondary" /> Resposta rápida</span>
         </motion.div>
 
