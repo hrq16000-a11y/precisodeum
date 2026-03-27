@@ -17,7 +17,7 @@ const Header = () => {
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoUrl = useSettingValue('logo_url');
   const logo = logoUrl || DEFAULT_LOGO_URL;
-  const { city: geoCity, temp: geoTemp, loading: geoLoading } = useGeoCity();
+  const { city: geoCity, temp: geoTemp } = useGeoCity();
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
@@ -35,14 +35,7 @@ const Header = () => {
   };
 
   const GeoBadge = ({ className = '' }: { className?: string }) => {
-    if (!geoCity && !geoLoading) return null;
-    if (!geoCity && geoLoading) {
-      return (
-        <span className={`inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground/60 animate-pulse ${className}`}>
-          Localizando...
-        </span>
-      );
-    }
+    if (!geoCity) return null;
     return (
       <span className={`inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground ${className}`}>
         <MapPin className="h-3 w-3 text-accent" />

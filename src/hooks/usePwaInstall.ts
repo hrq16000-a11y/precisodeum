@@ -2,11 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-interface DeferredPromptEvent extends Event {
-  prompt: () => Promise<void> | void;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
-}
-
 const DISMISS_KEY = 'pwa_install_dismissed_v2';
 const VISIT_KEY = 'pwa_visit_count';
 const IMPRESSION_KEY = 'pwa_impression_count';
@@ -95,6 +90,15 @@ export function useIsStandalone() {
   return standalone;
 }
 
+export function useIsIos() {
+  const [isIos, setIsIos] = useState(false);
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    setIsIos(/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+  }, []);
+  return isIos;
+}
+
 export function useIsMobileDevice() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -120,28 +124,19 @@ export function trackPwaEvent(eventType: string, source: string) {
 }
 
 export function usePwaInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<DeferredPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [canInstall, setCanInstall] = useState(false);
-  const [isIos, setIsIos] = useState(false);
   const isStandalone = useIsStandalone();
-  const promptRef = useRef<DeferredPromptEvent | null>(null);
-
-  useEffect(() => {
-    setIsIos(typeof (navigator as any).standalone !== 'undefined');
-  }, []);
+  const isIos = useIsIos();
+  const promptRef = useRef<any>(null);
 
   useEffect(() => {
     if (isStandalone) return;
 
     const handler = (e: Event) => {
-      const installEvent = e as DeferredPromptEvent;
-      if (typeof installEvent.prompt !== 'function' || !installEvent.userChoice) {
-        return;
-      }
-
       e.preventDefault();
-      promptRef.current = installEvent;
-      setDeferredPrompt(installEvent);
+      promptRef.current = e;
+      setDeferredPrompt(e);
       setCanInstall(true);
     };
 
@@ -164,19 +159,16 @@ export function usePwaInstallPrompt() {
     const prompt = promptRef.current || deferredPrompt;
     if (!prompt) return false;
     trackPwaEvent('cta_click', source);
-    try {
-      prompt.prompt();
-      const { outcome } = await prompt.userChoice;
-      if (outcome === 'accepted') {
-        trackPwaEvent('installed', source);
-        return true;
-      }
-      return false;
-    } finally {
+    prompt.prompt();
+    const { outcome } = await prompt.userChoice;
+    if (outcome === 'accepted') {
+      trackPwaEvent('installed', source);
       setCanInstall(false);
       setDeferredPrompt(null);
       promptRef.current = null;
+      return true;
     }
+    return false;
   }, [deferredPrompt]);
 
   const dismiss = useCallback((source: string = 'banner') => {
@@ -209,7 +201,7 @@ export function usePwaInstallPrompt() {
   return {
     canInstall: canInstall && !isStandalone,
     isStandalone,
-    isIos,
+    isIos: isIos && !isStandalone,
     install,
     dismiss,
     isDismissed,

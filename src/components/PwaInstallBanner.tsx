@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Download } from 'lucide-react';
+import { X, Download, Share, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePwaInstallPrompt, usePwaSettings, trackPwaEvent } from '@/hooks/usePwaInstall';
 
@@ -8,7 +8,7 @@ const COOLDOWN_MS = 3 * 86400000; // 3 days
 
 const PwaInstallBanner = () => {
   const [show, setShow] = useState(false);
-  const { canInstall, isStandalone, install } = usePwaInstallPrompt();
+  const { canInstall, isStandalone, isIos, install } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
 
   const isDismissedLocally = useCallback(() => {
@@ -20,20 +20,24 @@ const PwaInstallBanner = () => {
   }, []);
 
   useEffect(() => {
-    if (isStandalone || !canInstall) return;
+    // Only hide if already installed as standalone
+    if (isStandalone) return;
     if (isDismissedLocally()) return;
 
+    // Show after a very short delay (animation entrance)
     const timer = setTimeout(() => {
       setShow(true);
       trackPwaEvent('impression', 'banner');
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [isStandalone, canInstall, isDismissedLocally]);
+  }, [isStandalone, isDismissedLocally]);
 
   const handleInstall = async () => {
-    const result = await install('banner');
-    if (result) setShow(false);
+    if (canInstall) {
+      const result = await install('banner');
+      if (result) setShow(false);
+    }
   };
 
   const handleDismiss = () => {
@@ -42,7 +46,7 @@ const PwaInstallBanner = () => {
     setShow(false);
   };
 
-  if (!show || !canInstall) return null;
+  if (!show) return null;
 
   const titleText = settings?.title || 'Instale o App';
   const subtitleText = settings?.subtitle || 'Mais rápido';
@@ -57,6 +61,7 @@ const PwaInstallBanner = () => {
       aria-label="Instalação do aplicativo"
       style={{ isolation: 'isolate' }}
     >
+      {/* Overlay escuro + blur */}
       <button
         type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
@@ -64,7 +69,11 @@ const PwaInstallBanner = () => {
         aria-label="Fechar chamada de instalação"
       />
 
-      <div className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+      {/* Card central */}
+      <div
+        className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-300"
+      >
+        {/* Header */}
         <div className="flex items-start gap-3">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-lg">
             <Download className="h-6 w-6" />
@@ -78,16 +87,41 @@ const PwaInstallBanner = () => {
           </button>
         </div>
 
-        <div className="mt-5 space-y-3">
-          <Button
-            size="lg"
-            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-base font-bold shadow-lg"
-            onClick={handleInstall}
-          >
-            <Download className="mr-2 h-5 w-5" />
-            {ctaText}
-          </Button>
-        </div>
+        {/* Content */}
+        {isIos ? (
+          <div className="mt-5 rounded-xl border border-border bg-muted/60 p-4">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <Share className="h-4 w-4 text-accent" />
+              Instalação no iPhone
+            </div>
+            <ol className="space-y-2 text-sm text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">1</span>
+                Toque em <Share className="mx-0.5 inline h-3.5 w-3.5" /> compartilhar
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">2</span>
+                Escolha <Plus className="mx-0.5 inline h-3.5 w-3.5" /> Tela de Início
+              </li>
+            </ol>
+          </div>
+        ) : (
+          <div className="mt-5 space-y-3">
+            <Button
+              size="lg"
+              className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-base font-bold shadow-lg"
+              onClick={handleInstall}
+            >
+              <Download className="mr-2 h-5 w-5" />
+              {canInstall ? ctaText : 'Instalar'}
+            </Button>
+            {!canInstall && (
+              <p className="text-center text-xs text-muted-foreground">
+                Abra no navegador do celular para instalar.
+              </p>
+            )}
+          </div>
+        )}
 
         <button
           onClick={handleDismiss}

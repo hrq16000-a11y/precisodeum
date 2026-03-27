@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -247,6 +247,30 @@ const DashboardPage = () => {
           </Button>
         </div>
       )}
+
+      {/* Stats row */}
+      <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-4">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+          <Briefcase className="h-4 w-4 text-accent" />
+          <p className="mt-2 font-display text-2xl font-bold text-foreground">{servicesCount ?? 0}</p>
+          <p className="text-[11px] text-muted-foreground">{servicesCount === 0 ? 'Nenhum serviço ainda' : 'Serviços'}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+          <MessageSquare className="h-4 w-4 text-accent" />
+          <p className="mt-2 font-display text-2xl font-bold text-foreground">{leadsCount}</p>
+          <p className="text-[11px] text-muted-foreground">{leadsCount === 0 ? 'Nenhum lead ainda' : 'Leads'}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+          <Star className="h-4 w-4 text-accent" />
+          <p className="mt-2 font-display text-2xl font-bold text-foreground">{provider?.rating_avg ? Number(provider.rating_avg).toFixed(1) : '0'}</p>
+          <p className="text-[11px] text-muted-foreground">{!provider?.rating_avg || Number(provider.rating_avg) === 0 ? 'Sem avaliações ainda' : 'Avaliação'}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+          <Megaphone className="h-4 w-4 text-accent" />
+          <p className="mt-2 font-display text-2xl font-bold text-foreground">{jobsCount}</p>
+          <p className="text-[11px] text-muted-foreground">{jobsCount === 0 ? 'Nenhuma vaga ainda' : 'Vagas'}</p>
+        </div>
+      </div>
 
       {/* Quick Access */}
       <div className="mt-6">

@@ -211,9 +211,7 @@ const JobsPage = () => {
           </div>
 
           {/* Sticky sidebar — desktop only */}
-          <div className="hidden lg:block">
-            <AdSidebar position="sidebar" />
-          </div>
+          <AdSidebar position="sidebar" />
         </div>
       </div>
       <Footer />
