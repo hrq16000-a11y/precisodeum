@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+interface DeferredPromptEvent extends Event {
+  prompt: () => Promise<void> | void;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
 const DISMISS_KEY = 'pwa_install_dismissed_v2';
 const VISIT_KEY = 'pwa_visit_count';
 const IMPRESSION_KEY = 'pwa_impression_count';
@@ -115,18 +120,28 @@ export function trackPwaEvent(eventType: string, source: string) {
 }
 
 export function usePwaInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<DeferredPromptEvent | null>(null);
   const [canInstall, setCanInstall] = useState(false);
+  const [isIos, setIsIos] = useState(false);
   const isStandalone = useIsStandalone();
-  const promptRef = useRef<any>(null);
+  const promptRef = useRef<DeferredPromptEvent | null>(null);
+
+  useEffect(() => {
+    setIsIos(typeof (navigator as any).standalone !== 'undefined');
+  }, []);
 
   useEffect(() => {
     if (isStandalone) return;
 
     const handler = (e: Event) => {
+      const installEvent = e as DeferredPromptEvent;
+      if (typeof installEvent.prompt !== 'function' || !installEvent.userChoice) {
+        return;
+      }
+
       e.preventDefault();
-      promptRef.current = e;
-      setDeferredPrompt(e);
+      promptRef.current = installEvent;
+      setDeferredPrompt(installEvent);
       setCanInstall(true);
     };
 
@@ -194,6 +209,7 @@ export function usePwaInstallPrompt() {
   return {
     canInstall: canInstall && !isStandalone,
     isStandalone,
+    isIos,
     install,
     dismiss,
     isDismissed,
