@@ -29,7 +29,7 @@ const PwaInstallBanner = () => {
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [isStandalone, isDismissedLocally]);
+  }, [isStandalone, canInstall, isDismissedLocally]);
 
   const handleInstall = async () => {
     const result = await install('banner');

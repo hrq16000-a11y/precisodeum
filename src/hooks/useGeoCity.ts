@@ -26,8 +26,22 @@ export function useGeoCity(): GeoData {
       return trimmed;
     };
 
-    const cachedCity = normalizeCity(sessionStorage.getItem('geo_city'));
-    const cachedTempRaw = sessionStorage.getItem('geo_temp');
+    const getStored = (key: string) => {
+      try {
+        return sessionStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    };
+
+    const setStored = (key: string, value: string) => {
+      try {
+        sessionStorage.setItem(key, value);
+      } catch {}
+    };
+
+    const cachedCity = normalizeCity(getStored('geo_city'));
+    const cachedTempRaw = getStored('geo_temp');
     const cachedTemp = cachedTempRaw ? Number(cachedTempRaw) : null;
 
     if (cachedCity) {
@@ -38,9 +52,9 @@ export function useGeoCity(): GeoData {
       if (!active || !city) return;
       const normalized = normalizeCity(city);
       if (!normalized) return;
-      sessionStorage.setItem('geo_city', normalized);
+      setStored('geo_city', normalized);
       if (temp !== null && Number.isFinite(temp)) {
-        sessionStorage.setItem('geo_temp', String(temp));
+        setStored('geo_temp', String(temp));
       }
       setData({ city: normalized, temp: temp !== null && Number.isFinite(temp) ? temp : null });
     };
