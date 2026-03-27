@@ -1,0 +1,209 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+const DISMISS_KEY = 'pwa_install_dismissed';
+const VISIT_KEY = 'pwa_visit_count';
+const IMPRESSION_KEY = 'pwa_impression_count';
+
+export interface PwaSettings {
+  enabled: boolean;
+  title: string;
+  subtitle: string;
+  cta_text: string;
+  dismiss_text: string;
+  ios_instruction: string;
+  show_delay_seconds: number;
+  min_visits: number;
+  dismiss_cooldown_days: number;
+  max_impressions: number;
+  show_in_footer: boolean;
+  show_homepage_section: boolean;
+  show_floating_banner: boolean;
+  show_for_logged_in: boolean;
+  show_for_visitors: boolean;
+  show_on_mobile: boolean;
+  show_on_desktop: boolean;
+  accent_color: string;
+  animation_type: string;
+  animation_duration: number;
+  homepage_section_title: string;
+  homepage_section_subtitle: string;
+  homepage_section_cta: string;
+  footer_cta_text: string;
+}
+
+const defaultSettings: PwaSettings = {
+  enabled: true,
+  title: 'Instale o App',
+  subtitle: 'Acesse mais rápido direto da tela inicial',
+  cta_text: 'Instalar App',
+  dismiss_text: 'Agora não',
+  ios_instruction: 'Toque em compartilhar e depois em "Adicionar à Tela de Início"',
+  show_delay_seconds: 5,
+  min_visits: 1,
+  dismiss_cooldown_days: 7,
+  max_impressions: 0,
+  show_in_footer: true,
+  show_homepage_section: true,
+  show_floating_banner: true,
+  show_for_logged_in: true,
+  show_for_visitors: true,
+  show_on_mobile: true,
+  show_on_desktop: true,
+  accent_color: '#F97316',
+  animation_type: 'slide-up',
+  animation_duration: 300,
+  homepage_section_title: 'Tenha o app na palma da mão',
+  homepage_section_subtitle: 'Instale gratuitamente e acesse profissionais, serviços e vagas com um toque.',
+  homepage_section_cta: 'Instalar Agora',
+  footer_cta_text: 'Instalar App',
+};
+
+export function usePwaSettings() {
+  return useQuery({
+    queryKey: ['pwa-install-settings'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('pwa_install_settings' as any)
+        .select('*')
+        .limit(1)
+        .single();
+      return (data as unknown as PwaSettings) || defaultSettings;
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useIsStandalone() {
+  const [standalone, setStandalone] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(display-mode: standalone)');
+    setStandalone(mq.matches || (navigator as any).standalone === true);
+    const handler = (e: MediaQueryListEvent) => setStandalone(e.matches);
+    mq.addEventListener?.('change', handler);
+    return () => mq.removeEventListener?.('change', handler);
+  }, []);
+  return standalone;
+}
+
+export function useIsIos() {
+  const [isIos, setIsIos] = useState(false);
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    setIsIos(/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+  }, []);
+  return isIos;
+}
+
+export function useIsMobileDevice() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return isMobile;
+}
+
+export function useDeviceType() {
+  const isMobile = useIsMobileDevice();
+  return isMobile ? 'mobile' : 'desktop';
+}
+
+export function trackPwaEvent(eventType: string, source: string) {
+  const deviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
+  supabase
+    .from('pwa_install_events' as any)
+    .insert({ event_type: eventType, source, device_type: deviceType } as any)
+    .then(() => {});
+}
+
+export function usePwaInstallPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [canInstall, setCanInstall] = useState(false);
+  const isStandalone = useIsStandalone();
+  const isIos = useIsIos();
+  const promptRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (isStandalone) return;
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      promptRef.current = e;
+      setDeferredPrompt(e);
+      setCanInstall(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    const installed = () => {
+      setCanInstall(false);
+      setDeferredPrompt(null);
+      promptRef.current = null;
+    };
+    window.addEventListener('appinstalled', installed);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', installed);
+    };
+  }, [isStandalone]);
+
+  const install = useCallback(async (source: string = 'banner') => {
+    const prompt = promptRef.current || deferredPrompt;
+    if (!prompt) return false;
+    trackPwaEvent('cta_click', source);
+    prompt.prompt();
+    const { outcome } = await prompt.userChoice;
+    if (outcome === 'accepted') {
+      trackPwaEvent('installed', source);
+      setCanInstall(false);
+      setDeferredPrompt(null);
+      promptRef.current = null;
+      return true;
+    }
+    return false;
+  }, [deferredPrompt]);
+
+  const dismiss = useCallback((source: string = 'banner') => {
+    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    trackPwaEvent('dismissed', source);
+  }, []);
+
+  const isDismissed = useCallback((cooldownDays: number) => {
+    const dismissed = localStorage.getItem(DISMISS_KEY);
+    if (!dismissed) return false;
+    return Date.now() - Number(dismissed) < cooldownDays * 86400000;
+  }, []);
+
+  const getVisitCount = useCallback(() => {
+    const visits = Number(localStorage.getItem(VISIT_KEY) || '0') + 1;
+    localStorage.setItem(VISIT_KEY, String(visits));
+    return visits;
+  }, []);
+
+  const getImpressionCount = useCallback(() => {
+    return Number(localStorage.getItem(IMPRESSION_KEY) || '0');
+  }, []);
+
+  const incrementImpressions = useCallback(() => {
+    const count = Number(localStorage.getItem(IMPRESSION_KEY) || '0') + 1;
+    localStorage.setItem(IMPRESSION_KEY, String(count));
+    return count;
+  }, []);
+
+  return {
+    canInstall: canInstall && !isStandalone,
+    isStandalone,
+    isIos: isIos && !isStandalone,
+    install,
+    dismiss,
+    isDismissed,
+    getVisitCount,
+    getImpressionCount,
+    incrementImpressions,
+  };
+}
