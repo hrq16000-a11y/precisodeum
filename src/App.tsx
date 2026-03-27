@@ -68,6 +68,7 @@ const AdminAdSlotsPage = lazy(() => import("./pages/AdminAdSlotsPage"));
 const AdminAuditLogPage = lazy(() => import("./pages/AdminAuditLogPage"));
 const AdminTrashPage = lazy(() => import("./pages/AdminTrashPage"));
 const AdminBackupPage = lazy(() => import("./pages/AdminBackupPage"));
+const AdminHeroBannersPage = lazy(() => import("./pages/AdminHeroBannersPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
 const CityPage = lazy(() => import("./pages/CityPage"));
@@ -194,6 +195,7 @@ const App = () => {
                 <Route path="/admin/auditoria" element={<AdminAuditLogPage />} />
                 <Route path="/admin/backup" element={<AdminBackupPage />} />
                 <Route path="/admin/lixeira" element={<AdminTrashPage />} />
+                <Route path="/admin/hero-banners" element={<AdminHeroBannersPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />

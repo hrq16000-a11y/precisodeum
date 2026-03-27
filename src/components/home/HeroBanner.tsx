@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Users, Zap, Briefcase } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
+import { useHeroBanners, type HeroBannerData } from '@/hooks/useHeroBanners';
+
 const heroImage = '/hero-image.webp';
 
 interface HeroBannerProps {
@@ -38,6 +40,8 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
   const animatedServices = useCountUp(totalServices || 0);
   const animatedJobs = useCountUp(totalJobs || 0);
   const [showJobs, setShowJobs] = useState(false);
+  const { data: banners = [] } = useHeroBanners();
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   // Alternate between services and jobs every 5s
   useEffect(() => {
@@ -46,26 +50,89 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
     return () => clearInterval(interval);
   }, [totalJobs]);
 
+  // Auto-rotate banners if multiple
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % banners.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [banners.length]);
+
+  // Use database banner or defaults
+  const activeBanner: HeroBannerData | null = banners.length > 0 ? banners[currentSlide] || banners[0] : null;
+  const bgImage = activeBanner?.image_url || heroImage;
+  const overlayOpacity = activeBanner?.overlay_opacity ?? 0.8;
+  const title = activeBanner?.title || 'Encontre profissionais para';
+  const subtitle = activeBanner?.subtitle || '';
+  const ctaText = activeBanner?.cta_text || 'Cadastrar agora';
+  const ctaLink = activeBanner?.cta_link || '/cadastro';
+  const textAlign = activeBanner?.text_alignment || 'center';
+  const animType = activeBanner?.animation_type || 'fade';
+  const animDuration = (activeBanner?.animation_duration || 500) / 1000;
+  const animDelay = (activeBanner?.animation_delay || 0) / 1000;
+
+  const hasCustomTitle = !!activeBanner?.title;
+
+  const getAnimationProps = () => {
+    if (animType === 'none') return { initial: {}, animate: {}, transition: {} };
+    if (animType === 'slide-up') return {
+      initial: { opacity: 0, y: 30 },
+      animate: { opacity: 1, y: 0 },
+      transition: { duration: animDuration, delay: animDelay },
+    };
+    return {
+      initial: { opacity: 0, y: 20 },
+      animate: { opacity: 1, y: 0 },
+      transition: { duration: animDuration, delay: animDelay },
+    };
+  };
+
+  const anim = getAnimationProps();
+  const alignClass = textAlign === 'left' ? 'items-start text-left' : textAlign === 'right' ? 'items-end text-right' : 'items-center text-center';
+
   return (
     <section className="relative overflow-hidden py-10 md:py-24">
-      <img
-        src={heroImage}
-        alt=""
-        fetchPriority="high"
-        decoding="async"
-        className="absolute inset-0 h-full w-full object-cover object-center"
-      />
-      <div className="absolute inset-0 bg-primary/80" />
-      <div className="container relative z-10 flex flex-col items-center text-center">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+      <AnimatePresence mode="wait">
+        <motion.img
+          key={bgImage}
+          src={bgImage}
+          alt=""
+          fetchPriority="high"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover object-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
+        />
+      </AnimatePresence>
+      <div
+        className="absolute inset-0"
+        style={{ backgroundColor: `hsl(var(--primary) / ${overlayOpacity})` }}
+      />
+      <div className={`container relative z-10 flex flex-col ${alignClass}`}>
+        <motion.h1
+          key={title}
+          {...anim}
           className="font-display text-2xl font-extrabold tracking-tight text-primary-foreground sm:text-3xl md:text-5xl lg:text-6xl"
         >
-          Encontre profissionais para{' '}
-          <span className="text-secondary">qualquer serviço</span>
+          {hasCustomTitle ? title : (
+            <>
+              Encontre profissionais para{' '}
+              <span className="text-secondary">qualquer serviço</span>
+            </>
+          )}
         </motion.h1>
+        {subtitle && (
+          <motion.p
+            {...anim}
+            transition={{ ...anim.transition, delay: (animDelay || 0) + 0.1 }}
+            className="mt-3 text-base text-primary-foreground/80 md:text-lg max-w-2xl"
+          >
+            {subtitle}
+          </motion.p>
+        )}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -82,7 +149,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
         >
           <p className="text-sm text-primary-foreground/80">
             Cadastre seus serviços gratuitamente.{' '}
-            <Link to="/cadastro" className="font-semibold text-secondary hover:underline">Cadastrar agora →</Link>
+            <Link to={ctaLink} className="font-semibold text-secondary hover:underline">{ctaText} →</Link>
           </p>
           <span className="hidden sm:inline text-primary-foreground/40">|</span>
           <p className="text-sm text-primary-foreground/80">
@@ -116,6 +183,19 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-secondary" /> Em todo o Brasil</span>
           <span className="flex items-center gap-1.5"><Zap className="h-3.5 w-3.5 text-secondary" /> Resposta rápida</span>
         </motion.div>
+
+        {/* Slide indicators */}
+        {banners.length > 1 && (
+          <div className="mt-4 flex gap-2">
+            {banners.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentSlide(i)}
+                className={`h-2 rounded-full transition-all ${i === currentSlide ? 'w-6 bg-secondary' : 'w-2 bg-primary-foreground/40'}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

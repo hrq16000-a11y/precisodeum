@@ -322,6 +322,75 @@ export type Database = {
         }
         Relationships: []
       }
+      hero_banners: {
+        Row: {
+          active: boolean
+          animation_delay: number
+          animation_duration: number
+          animation_type: string
+          created_at: string
+          cta_link: string
+          cta_text: string
+          display_order: number
+          end_date: string | null
+          id: string
+          image_url: string | null
+          overlay_opacity: number
+          start_date: string | null
+          subtitle: string
+          target_city: string | null
+          target_device: string
+          target_state: string | null
+          text_alignment: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          animation_delay?: number
+          animation_duration?: number
+          animation_type?: string
+          created_at?: string
+          cta_link?: string
+          cta_text?: string
+          display_order?: number
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          overlay_opacity?: number
+          start_date?: string | null
+          subtitle?: string
+          target_city?: string | null
+          target_device?: string
+          target_state?: string | null
+          text_alignment?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          animation_delay?: number
+          animation_duration?: number
+          animation_type?: string
+          created_at?: string
+          cta_link?: string
+          cta_text?: string
+          display_order?: number
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          overlay_opacity?: number
+          start_date?: string | null
+          subtitle?: string
+          target_city?: string | null
+          target_device?: string
+          target_state?: string | null
+          text_alignment?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       highlights: {
         Row: {
           active: boolean
