@@ -78,7 +78,6 @@ export function usePwaSettings() {
   });
 }
 
-/** Detects if app is running in standalone/installed mode */
 export function useIsStandalone() {
   const [standalone, setStandalone] = useState(false);
   useEffect(() => {
@@ -91,56 +90,43 @@ export function useIsStandalone() {
   return standalone;
 }
 
-/** Detects iOS for Safari-specific install instructions */
-export function useIsIos() {
-  const [isIos, setIsIos] = useState(false);
+export function useIsMobileDevice() {
+  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    const ua = navigator.userAgent;
-    setIsIos(/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+    setIsMobile(window.innerWidth < 768);
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
   }, []);
-  return isIos;
+  return isMobile;
+}
+
+export function useDeviceType() {
+  const isMobile = useIsMobileDevice();
+  return isMobile ? 'mobile' : 'desktop';
 }
 
 export function trackPwaEvent(eventType: string, source: string) {
+  const deviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
   supabase
     .from('pwa_install_events' as any)
-    .insert({ event_type: eventType, source, device_type: window.innerWidth < 768 ? 'mobile' : 'desktop' } as any)
+    .insert({ event_type: eventType, source, device_type: deviceType } as any)
     .then(() => {});
 }
 
-/**
- * Core PWA install hook.
- * - No device-based blocking — works on mobile AND desktop.
- * - Uses native beforeinstallprompt exclusively.
- * - Provides iOS detection only for Safari-specific fallback instructions.
- */
 export function usePwaInstallPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [canInstall, setCanInstall] = useState(false);
-  const [standalone, setStandalone] = useState(false);
-  const [iosDevice, setIosDevice] = useState(false);
+  const isStandalone = useIsStandalone();
   const promptRef = useRef<any>(null);
 
-  // Inline standalone detection (stable hook order)
   useEffect(() => {
-    const mq = window.matchMedia('(display-mode: standalone)');
-    setStandalone(mq.matches || (navigator as any).standalone === true);
-    const handler = (e: MediaQueryListEvent) => setStandalone(e.matches);
-    mq.addEventListener?.('change', handler);
-    return () => mq.removeEventListener?.('change', handler);
-  }, []);
-
-  // Inline iOS detection (stable hook order)
-  useEffect(() => {
-    const ua = navigator.userAgent;
-    setIosDevice(/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
-  }, []);
-
-  useEffect(() => {
-    if (standalone) return;
+    if (isStandalone) return;
 
     const handler = (e: Event) => {
       e.preventDefault();
       promptRef.current = e;
+      setDeferredPrompt(e);
       setCanInstall(true);
     };
 
@@ -148,8 +134,8 @@ export function usePwaInstallPrompt() {
 
     const installed = () => {
       setCanInstall(false);
+      setDeferredPrompt(null);
       promptRef.current = null;
-      trackPwaEvent('installed_native', 'system');
     };
     window.addEventListener('appinstalled', installed);
 
@@ -157,23 +143,26 @@ export function usePwaInstallPrompt() {
       window.removeEventListener('beforeinstallprompt', handler);
       window.removeEventListener('appinstalled', installed);
     };
-  }, [standalone]);
+  }, [isStandalone]);
 
   const install = useCallback(async (source: string = 'banner') => {
-    const prompt = promptRef.current;
+    const prompt = promptRef.current || deferredPrompt;
     if (!prompt) return false;
     trackPwaEvent('cta_click', source);
-    prompt.prompt();
-    const { outcome } = await prompt.userChoice;
-    if (outcome === 'accepted') {
-      trackPwaEvent('installed', source);
+    try {
+      prompt.prompt();
+      const { outcome } = await prompt.userChoice;
+      if (outcome === 'accepted') {
+        trackPwaEvent('installed', source);
+        return true;
+      }
+      return false;
+    } finally {
       setCanInstall(false);
+      setDeferredPrompt(null);
       promptRef.current = null;
-      return true;
     }
-    trackPwaEvent('install_dismissed', source);
-    return false;
-  }, []);
+  }, [deferredPrompt]);
 
   const dismiss = useCallback((source: string = 'banner') => {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
@@ -203,9 +192,8 @@ export function usePwaInstallPrompt() {
   }, []);
 
   return {
-    canInstall: canInstall && !standalone,
-    isStandalone: standalone,
-    isIos: iosDevice && !standalone,
+    canInstall: canInstall && !isStandalone,
+    isStandalone,
     install,
     dismiss,
     isDismissed,
