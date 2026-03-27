@@ -136,7 +136,7 @@ export function usePwaInstallPrompt() {
   }, []);
 
   useEffect(() => {
-    if (isStandalone) return;
+    if (standalone) return;
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -157,7 +157,7 @@ export function usePwaInstallPrompt() {
       window.removeEventListener('beforeinstallprompt', handler);
       window.removeEventListener('appinstalled', installed);
     };
-  }, [isStandalone]);
+  }, [standalone]);
 
   const install = useCallback(async (source: string = 'banner') => {
     const prompt = promptRef.current;
@@ -203,9 +203,9 @@ export function usePwaInstallPrompt() {
   }, []);
 
   return {
-    canInstall: canInstall && !isStandalone,
-    isStandalone,
-    isIos: isIos && !isStandalone,
+    canInstall: canInstall && !standalone,
+    isStandalone: standalone,
+    isIos: iosDevice && !standalone,
     install,
     dismiss,
     isDismissed,
