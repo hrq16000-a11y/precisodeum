@@ -83,6 +83,9 @@ const BlogPage = () => {
       return data || [];
     },
     staleTime: 1000 * 60 * 3,
+    refetchInterval: 1000 * 60 * 60,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
   });
 
   const highlights = useMemo(() => shuffle(posts).slice(0, Math.min(6, posts.length)), [posts]);

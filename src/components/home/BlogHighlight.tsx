@@ -29,6 +29,9 @@ const BlogHighlight = () => {
       return data || [];
     },
     staleTime: 1000 * 60 * 5,
+    refetchInterval: 1000 * 60 * 60,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
   });
 
   const [activeTag, setActiveTag] = useState<string | null>(null);
