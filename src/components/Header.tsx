@@ -5,7 +5,7 @@ import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin } from 'lucide-
 import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 
-const DEFAULT_LOGO_URL = '/lovable-uploads/logo.png';
+const DEFAULT_LOGO_URL = '/lovable-uploads/1faf4a31-7d1f-4ec5-a325-22394df3d51c.png';
 
 /** Detect user city via free IP geolocation */
 function useGeoCity() {
@@ -58,7 +58,7 @@ const Header = () => {
       <div className="container flex h-14 items-center justify-between md:h-16">
         <div className="flex items-center gap-3">
           <Link to="/" className="flex items-center">
-            <img src={logo} alt="Preciso de um - Profissionais Confiáveis Perto de Você" className="h-10 md:h-12" width="166" height="48" />
+            <img src={logo} alt="Preciso de um - Profissionais Confiáveis Perto de Você" className="h-9 md:h-10" width="111" height="40" />
           </Link>
           {geoCity && (
             <span className="hidden items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">

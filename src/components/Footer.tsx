@@ -5,7 +5,7 @@ import { MessageCircle, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 
-const DEFAULT_LOGO_URL = '/lovable-uploads/9f8aeff5-703f-4b78-b322-404e698edf7a.png';
+const DEFAULT_LOGO_URL = '/lovable-uploads/1faf4a31-7d1f-4ec5-a325-22394df3d51c.png';
 import SponsorAd from '@/components/SponsorAd';
 import { Button } from '@/components/ui/button';
 import PwaFooterInstall from '@/components/PwaFooterInstall';

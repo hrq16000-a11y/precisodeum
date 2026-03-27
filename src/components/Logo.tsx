@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 
-const DEFAULT_LOGO_URL = '/lovable-uploads/logo.png';
+const DEFAULT_LOGO_URL = '/lovable-uploads/1faf4a31-7d1f-4ec5-a325-22394df3d51c.png';
 
 interface LogoProps {
   variant?: 'default' | 'white' | 'dark';
