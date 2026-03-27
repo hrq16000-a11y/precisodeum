@@ -6,9 +6,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { NotificationBell } from '@/components/NotificationCenter';
-import { useAuth } from '@/hooks/useAuth';
-import { useSettingValue } from '@/hooks/useSiteSettings';
-import { useGeoCity } from '@/hooks/useGeoCity';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
 
