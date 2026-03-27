@@ -19,6 +19,7 @@ const PwaInstallBanner = () => {
     } catch { return false; }
   }, []);
 
+  // Show popup when install is available and not dismissed
   useEffect(() => {
     if (isStandalone) return;
     if (isDismissedLocally()) return;
@@ -33,21 +34,21 @@ const PwaInstallBanner = () => {
   }, [isStandalone, isDismissedLocally, canInstall]);
 
   const handleInstall = async () => {
+    setShow(false); // close popup FIRST to free UI
     await install('banner');
-    setShow(false);
   };
 
   const handleDismiss = () => {
+    setShow(false); // close popup FIRST
     try { localStorage.setItem(DISMISS_KEY_BANNER, String(Date.now())); } catch {}
     trackPwaEvent('dismissed', 'banner');
-    setShow(false);
   };
 
-  // Only show when install prompt is available
-  if (!show || !canInstall) return null;
+  // Only render when actively showing
+  if (!show) return null;
 
   const titleText = settings?.title || 'Instale o App';
-  const subtitleText = settings?.subtitle || 'Mais rápido';
+  const subtitleText = settings?.subtitle || 'Acesse mais rápido direto da tela inicial';
   const ctaText = settings?.cta_text || 'Instalar';
   const dismissText = settings?.dismiss_text || 'Agora não';
 
@@ -57,14 +58,12 @@ const PwaInstallBanner = () => {
       role="dialog"
       aria-modal="true"
       aria-label="Instalação do aplicativo"
-      style={{ isolation: 'isolate' }}
     >
-      {/* Dark overlay */}
-      <button
-        type="button"
+      {/* Overlay — clicking it dismisses */}
+      <div
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={handleDismiss}
-        aria-label="Fechar chamada de instalação"
+        role="presentation"
       />
 
       {/* Card */}
@@ -78,12 +77,16 @@ const PwaInstallBanner = () => {
             <p className="text-xl font-bold leading-tight text-foreground">{titleText}</p>
             <p className="mt-1 text-sm font-medium leading-tight text-muted-foreground">{subtitleText}</p>
           </div>
-          <button onClick={handleDismiss} className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" aria-label="Fechar">
+          <button
+            onClick={handleDismiss}
+            className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            aria-label="Fechar"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Install button */}
+        {/* Install CTA */}
         <div className="mt-5">
           <Button
             size="lg"
@@ -95,6 +98,7 @@ const PwaInstallBanner = () => {
           </Button>
         </div>
 
+        {/* Dismiss link */}
         <button
           onClick={handleDismiss}
           className="mt-3 w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
