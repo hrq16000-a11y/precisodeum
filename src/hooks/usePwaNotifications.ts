@@ -31,7 +31,8 @@ export const usePwaNotifications = () => {
     topics: DEFAULT_TOPICS,
   });
 
-  const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY as string | undefined;
+  const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY as string | undefined
+    || 'BJBCJSPWvkaiyO-pXRx36-kVcfS5LKtKEtQ_u5euZt241F6pVtDxN18Dc9tI0D26kwiIW8Run5M4TcAftb9paoI';
   const isSupported = typeof window !== 'undefined' && 'Notification' in window && 'serviceWorker' in navigator;
 
   const refreshStatus = useCallback(async () => {
