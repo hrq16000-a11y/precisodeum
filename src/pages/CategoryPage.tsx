@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import ProviderCard from '@/components/ProviderCard';
 import PaginationControls from '@/components/PaginationControls';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';
+import GeoLocationChip from '@/components/GeoLocationChip';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCategoryProviders } from '@/hooks/useProviders';
@@ -119,6 +120,7 @@ const CategoryPage = () => {
           <p className="mt-2 text-primary-foreground/70">
             {displayProviders.length} profissional(is) {geoCity && !isFallback ? `em ${geoCity}` : 'cadastrado(s)'}
           </p>
+          <div className="mt-3"><GeoLocationChip /></div>
         </div>
       </section>
       <Suspense fallback={null}><AdSlot slotSlug="category-top" category={slug} /></Suspense>
