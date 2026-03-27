@@ -3,7 +3,11 @@ import { MapPin, ChevronDown, Check } from 'lucide-react';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useSearchSuggestions } from '@/hooks/useProviders';
 
-const GeoLocationChip = () => {
+interface GeoLocationChipProps {
+  variant?: 'default' | 'hero';
+}
+
+const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
   const { city, state, setCity } = useGeoCity();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
