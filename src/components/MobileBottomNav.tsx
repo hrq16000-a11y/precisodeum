@@ -18,6 +18,15 @@ const MobileBottomNav = () => {
     setShowMenu(false);
   }, [location.pathname]);
 
+  // Close menu on ESC
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showMenu) setShowMenu(false);
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [showMenu]);
+
   // Don't show on admin, login, signup, or dashboard (has its own nav)
   const hiddenPaths = ['/admin', '/login', '/cadastro', '/reset-password', '/dashboard', '/sponsor-panel'];
   const shouldHide = hiddenPaths.some(p => location.pathname.startsWith(p));
