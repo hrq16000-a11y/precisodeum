@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Briefcase, Search, MessageCircle, Filter } from 'lucide-react';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';
+import GeoLocationChip from '@/components/GeoLocationChip';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -151,6 +152,7 @@ const JobsPage = () => {
               <option value="">Todas as cidades</option>
               {cities.map((c: string) => <option key={c} value={c}>{c}</option>)}
             </select>
+            <GeoLocationChip />
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => setShowFilters(!showFilters)}>
                 <Filter className="mr-1 h-4 w-4" /> Filtros
