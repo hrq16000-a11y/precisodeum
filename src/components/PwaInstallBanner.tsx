@@ -1,3 +1,16 @@
+/**
+ * PWA Install Banner — Popup modal central
+ *
+ * BLINDADO: Este componente é o ÚNICO popup de instalação.
+ * Ele aparece automaticamente quando o app NÃO está instalado.
+ * Pode ser reaberto via PWA_OPEN_INSTALL_MODAL_EVENT de qualquer CTA.
+ *
+ * REGRAS:
+ * - Aparece SEMPRE (se não instalado), sem condição de beforeinstallprompt
+ * - Fechar NUNCA trava a interface (closeModal limpa estado antes do await)
+ * - Sem restrição por dispositivo
+ * - Sem mensagens técnicas
+ */
 import { useState, useEffect } from 'react';
 import { X, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,16 +21,13 @@ import {
   PWA_OPEN_INSTALL_MODAL_EVENT,
 } from '@/hooks/usePwaInstall';
 
-type OpenModalDetail = {
-  source?: string;
-};
-
 const PwaInstallBanner = () => {
   const [show, setShow] = useState(false);
-  const [source, setSource] = useState<'banner' | 'homepage' | 'footer'>('banner');
+  const [source, setSource] = useState<string>('banner');
   const { isStandalone, install } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
 
+  // Auto-show on mount (if not standalone)
   useEffect(() => {
     if (isStandalone) return;
 
@@ -30,36 +40,27 @@ const PwaInstallBanner = () => {
     return () => clearTimeout(timer);
   }, [isStandalone]);
 
+  // Listen for manual open from CTAs (homepage section, footer button, etc.)
   useEffect(() => {
     const onManualOpen = (evt: Event) => {
-      const customEvent = evt as CustomEvent<OpenModalDetail>;
-      const incomingSource = customEvent.detail?.source;
-
-      if (incomingSource === 'homepage' || incomingSource === 'footer' || incomingSource === 'banner') {
-        setSource(incomingSource);
-      } else {
-        setSource('banner');
-      }
-
+      const detail = (evt as CustomEvent).detail;
+      setSource(detail?.source || 'banner');
       setShow(true);
     };
 
-    window.addEventListener(PWA_OPEN_INSTALL_MODAL_EVENT, onManualOpen as EventListener);
-    return () => window.removeEventListener(PWA_OPEN_INSTALL_MODAL_EVENT, onManualOpen as EventListener);
+    window.addEventListener(PWA_OPEN_INSTALL_MODAL_EVENT, onManualOpen);
+    return () => window.removeEventListener(PWA_OPEN_INSTALL_MODAL_EVENT, onManualOpen);
   }, []);
 
-  const closeModal = () => {
-    setShow(false);
-  };
-
+  // CRITICAL: close modal FIRST, then do async work
   const handleInstall = async () => {
-    closeModal();
+    setShow(false);
     await install(source);
   };
 
   const handleDismiss = () => {
+    setShow(false);
     trackPwaEvent('dismissed', source);
-    closeModal();
   };
 
   if (!show || isStandalone) return null;
@@ -76,14 +77,16 @@ const PwaInstallBanner = () => {
       aria-modal="true"
       aria-label="Instalação do aplicativo"
     >
-      <button
-        type="button"
+      {/* Backdrop — click to dismiss */}
+      <div
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={handleDismiss}
-        aria-label="Fechar chamada de instalação"
+        role="presentation"
       />
 
+      {/* Card */}
       <div className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+        {/* Header */}
         <div className="flex items-start gap-3">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-lg">
             <Download className="h-6 w-6" />
@@ -101,6 +104,7 @@ const PwaInstallBanner = () => {
           </button>
         </div>
 
+        {/* Install CTA */}
         <div className="mt-5">
           <Button
             size="lg"
@@ -112,6 +116,7 @@ const PwaInstallBanner = () => {
           </Button>
         </div>
 
+        {/* Dismiss link */}
         <button
           onClick={handleDismiss}
           className="mt-3 w-full py-1 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"

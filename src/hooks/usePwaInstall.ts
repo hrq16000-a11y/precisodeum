@@ -1,13 +1,52 @@
+/**
+ * ╔══════════════════════════════════════════════════════════╗
+ * ║  MÓDULO PWA — BLINDADO                                  ║
+ * ║                                                         ║
+ * ║  Este arquivo é o ponto central de toda a lógica de     ║
+ * ║  instalação PWA do sistema. NÃO deve ser alterado       ║
+ * ║  sem revisão completa dos testes de estabilidade.       ║
+ * ║                                                         ║
+ * ║  Arquivos vinculados:                                   ║
+ * ║  - src/hooks/usePwaInstall.ts (este arquivo)            ║
+ * ║  - src/hooks/usePwaNotifications.ts                     ║
+ * ║  - src/components/PwaInstallBanner.tsx                  ║
+ * ║  - src/components/PwaFooterInstall.tsx                  ║
+ * ║  - src/components/home/PwaInstallSection.tsx            ║
+ * ║  - src/pages/AdminPwaPage.tsx                           ║
+ * ║  - src/sw.ts                                            ║
+ * ║  - src/test/stability-pwa.test.ts                       ║
+ * ║                                                         ║
+ * ║  Tabelas no banco:                                      ║
+ * ║  - pwa_install_settings                                 ║
+ * ║  - pwa_install_events                                   ║
+ * ║  - push_subscriptions                                   ║
+ * ║                                                         ║
+ * ║  Secrets:                                               ║
+ * ║  - VAPID_PUBLIC_KEY                                     ║
+ * ║  - VAPID_PRIVATE_KEY                                    ║
+ * ║                                                         ║
+ * ║  REGRAS OBRIGATÓRIAS:                                   ║
+ * ║  1. ZERO restrição por dispositivo (sem userAgent)      ║
+ * ║  2. ZERO mensagem técnica ("abra no celular" etc.)      ║
+ * ║  3. Popup FECHA SEM travar interface (try/finally)      ║
+ * ║  4. Botões SEMPRE visíveis (seção home + footer)        ║
+ * ║  5. Popup automático + reabrível via CustomEvent        ║
+ * ╚══════════════════════════════════════════════════════════╝
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+// ─── Constants ───────────────────────────────────────────────
 const DISMISS_KEY = 'pwa_install_dismissed_v2';
 const VISIT_KEY = 'pwa_visit_count';
 const IMPRESSION_KEY = 'pwa_impression_count';
 
+/** Custom event name used to open the install modal from any CTA */
 export const PWA_OPEN_INSTALL_MODAL_EVENT = 'pwa:open-install-modal';
 
+// ─── Types ───────────────────────────────────────────────────
 export interface PwaSettings {
   enabled: boolean;
   title: string;
@@ -35,6 +74,7 @@ export interface PwaSettings {
   footer_cta_text: string;
 }
 
+// ─── Default Settings ────────────────────────────────────────
 const defaultSettings: PwaSettings = {
   enabled: true,
   title: 'Instale o App',
@@ -62,6 +102,7 @@ const defaultSettings: PwaSettings = {
   footer_cta_text: 'Instalar App',
 };
 
+// ─── Hook: Settings from DB ─────────────────────────────────
 export function usePwaSettings() {
   return useQuery({
     queryKey: ['pwa-install-settings'],
@@ -80,6 +121,7 @@ export function usePwaSettings() {
   });
 }
 
+// ─── Hook: Standalone detection ─────────────────────────────
 export function useIsStandalone() {
   const [standalone, setStandalone] = useState(false);
 
@@ -95,6 +137,7 @@ export function useIsStandalone() {
   return standalone;
 }
 
+// ─── Analytics helper ────────────────────────────────────────
 export function trackPwaEvent(eventType: string, source: string) {
   const deviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
   supabase
@@ -103,6 +146,16 @@ export function trackPwaEvent(eventType: string, source: string) {
     .then(() => {});
 }
 
+// ─── Main Hook: Install Prompt ──────────────────────────────
+/**
+ * Central PWA install hook.
+ *
+ * RULES (DO NOT VIOLATE):
+ * - No device restrictions — works on ANY device with beforeinstallprompt
+ * - No iOS-specific instructions — silent fallback only
+ * - install() ALWAYS cleans up in finally block to prevent UI freeze
+ * - canInstall becomes false after install() to avoid stale prompts
+ */
 export function usePwaInstallPrompt() {
   const [canInstall, setCanInstall] = useState(false);
   const isStandalone = useIsStandalone();
@@ -141,14 +194,14 @@ export function usePwaInstallPrompt() {
     try {
       trackPwaEvent('cta_click', source);
       prompt.prompt();
-
       const { outcome } = await prompt.userChoice;
       accepted = outcome === 'accepted';
       trackPwaEvent(accepted ? 'accepted' : 'dismissed', source);
     } catch {
-      // Silent fallback by design
+      // Silent — by design
     } finally {
-      // Critical cleanup to avoid stale overlays/locked state in UI flows
+      // CRITICAL: Always clean up regardless of outcome
+      // This prevents interface blocking / stale overlay
       promptRef.current = null;
       setCanInstall(false);
     }
@@ -173,7 +226,10 @@ export function usePwaInstallPrompt() {
     return visits;
   }, []);
 
-  const getImpressionCount = useCallback(() => Number(localStorage.getItem(IMPRESSION_KEY) || '0'), []);
+  const getImpressionCount = useCallback(
+    () => Number(localStorage.getItem(IMPRESSION_KEY) || '0'),
+    [],
+  );
 
   const incrementImpressions = useCallback(() => {
     const count = Number(localStorage.getItem(IMPRESSION_KEY) || '0') + 1;
