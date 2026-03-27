@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.batch-optimize-images]
 verify_jwt = false
+
+[functions.push-notifications]
+verify_jwt = false

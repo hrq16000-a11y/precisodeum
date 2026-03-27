@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield, Layout, Megaphone, Users2 } from 'lucide-react';
+import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,6 +40,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina', show: !isClient && !isRH },
     { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas', show: !isClient },
     { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade', show: true },
+    { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes', show: true },
     { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads', show: !isClient && !isRH },
     { label: 'Plano', icon: CreditCard, path: '/dashboard/plano', show: !isClient && !isRH },
   ].filter(item => item.show);

@@ -3,6 +3,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 export interface Notification {
   id: string;
   user_id: string;
@@ -14,20 +25,24 @@ export interface Notification {
   created_at: string;
 }
 
-export function useNotifications() {
+export function useNotifications(options?: { limit?: number | null }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const limit = options?.limit ?? 50;
 
   const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ['notifications', user?.id],
+    queryKey: ['notifications', user?.id, limit],
     enabled: !!user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('notifications')
         .select('*')
         .eq('user_id', user!.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
+      if (limit !== null) {
+        query = query.limit(limit);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return (data || []) as Notification[];
     },
@@ -154,7 +169,7 @@ export function usePushSubscription() {
 
       const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: vapidPublicKey,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
       });
 
       const subJson = subscription.toJSON();

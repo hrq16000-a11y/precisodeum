@@ -1031,6 +1031,114 @@ export type Database = {
         }
         Relationships: []
       }
+      pwa_push_messages: {
+        Row: {
+          badge_url: string | null
+          body: string | null
+          created_at: string
+          data: Json | null
+          error_count: number
+          icon_url: string | null
+          id: string
+          image_url: string | null
+          sent_at: string | null
+          sent_count: number
+          status: string
+          target_device_type: string | null
+          target_topics: string[]
+          title: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          badge_url?: string | null
+          body?: string | null
+          created_at?: string
+          data?: Json | null
+          error_count?: number
+          icon_url?: string | null
+          id?: string
+          image_url?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          target_device_type?: string | null
+          target_topics?: string[]
+          title: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          badge_url?: string | null
+          body?: string | null
+          created_at?: string
+          data?: Json | null
+          error_count?: number
+          icon_url?: string | null
+          id?: string
+          image_url?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          target_device_type?: string | null
+          target_topics?: string[]
+          title?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      pwa_push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          device_type: string
+          endpoint: string
+          id: string
+          is_active: boolean
+          last_seen_at: string | null
+          locale: string | null
+          p256dh: string
+          platform: string | null
+          topics: string[]
+          timezone: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          device_type?: string
+          endpoint: string
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string | null
+          locale?: string | null
+          p256dh: string
+          platform?: string | null
+          topics?: string[]
+          timezone?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          device_type?: string
+          endpoint?: string
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string | null
+          locale?: string | null
+          p256dh?: string
+          platform?: string | null
+          topics?: string[]
+          timezone?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           comment: string

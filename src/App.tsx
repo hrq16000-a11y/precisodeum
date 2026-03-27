@@ -47,6 +47,7 @@ const DashboardPlanPage = lazy(() => import("./pages/DashboardPlanPage"));
 const DashboardMyPagePage = lazy(() => import("./pages/DashboardMyPagePage"));
 const DashboardJobsPage = lazy(() => import("./pages/DashboardJobsPage"));
 const DashboardCommunityPage = lazy(() => import("./pages/DashboardCommunityPage"));
+const DashboardNotificationsPage = lazy(() => import("./pages/DashboardNotificationsPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const AdminProvidersPage = lazy(() => import("./pages/AdminProvidersPage"));
 const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage"));
@@ -175,6 +176,7 @@ const App = () => {
                 <Route path="/dashboard/minha-pagina" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMyPagePage /></ProtectedRoute>} />
                 <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/comunidade" element={<DashboardCommunityPage />} />
+                <Route path="/dashboard/notificacoes" element={<DashboardNotificationsPage />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
                 <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
