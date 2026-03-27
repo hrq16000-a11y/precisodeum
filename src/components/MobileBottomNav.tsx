@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Search, Plus, User, Bell, Menu } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNotifications } from '@/hooks/useNotifications';
 
 const MobileBottomNav = () => {
@@ -20,6 +20,8 @@ const MobileBottomNav = () => {
     setShowMenu(false);
   }, [location.pathname]);
 
+  const menuRef = useRef<HTMLDivElement>(null);
+
   // Close menu on ESC
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -27,6 +29,18 @@ const MobileBottomNav = () => {
     };
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
+  }, [showMenu]);
+
+  // Close menu on click outside
+  useEffect(() => {
+    if (!showMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, [showMenu]);
 
   // Don't show on admin, login, signup, or dashboard (has its own nav)

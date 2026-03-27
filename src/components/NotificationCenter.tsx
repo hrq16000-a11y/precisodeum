@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Bell, Check, CheckCheck, Trash2, ExternalLink, Settings, BellRing, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications, usePushSubscription, type Notification } from '@/hooks/useNotifications';
@@ -78,11 +78,23 @@ export const NotificationBell = () => {
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
 
   if (!user) return null;
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen(!open)}
         className="relative rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -97,12 +109,9 @@ export const NotificationBell = () => {
       </button>
 
       {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
-            <NotificationDropdown onClose={() => setOpen(false)} />
-          </div>
-        </>
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+          <NotificationDropdown onClose={() => setOpen(false)} />
+        </div>
       )}
     </div>
   );
