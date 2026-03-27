@@ -146,9 +146,8 @@ const Index = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
-
+      <CategoriesGrid categories={categories} isLoading={catsLoading} />
       <PwaInstallSection />
-
       <HighlightsCarousel />
 
       <LazyErrorBoundary>
