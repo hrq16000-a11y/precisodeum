@@ -106,7 +106,7 @@ const JobsPage = () => {
 
   let nativeAdCount = 0;
   const itemsWithAds: Array<{ type: 'job'; data: any } | { type: 'ad'; index: number }> = [];
-  jobs.forEach((job: any, i: number) => {
+  displayJobs.forEach((job: any, i: number) => {
     itemsWithAds.push({ type: 'job', data: job });
     if ((i + 1) % NATIVE_AD_INTERVAL === 0) {
       itemsWithAds.push({ type: 'ad', index: nativeAdCount++ });
