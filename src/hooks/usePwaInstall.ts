@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-const DISMISS_KEY = 'pwa_install_dismissed';
+const DISMISS_KEY = 'pwa_install_dismissed_v2';
 const VISIT_KEY = 'pwa_visit_count';
 const IMPRESSION_KEY = 'pwa_impression_count';
 
@@ -63,12 +63,15 @@ const defaultSettings: PwaSettings = {
 export function usePwaSettings() {
   return useQuery({
     queryKey: ['pwa-install-settings'],
+    initialData: defaultSettings,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('pwa_install_settings' as any)
         .select('*')
         .limit(1)
         .single();
+
+      if (error) return defaultSettings;
       return (data as unknown as PwaSettings) || defaultSettings;
     },
     staleTime: 1000 * 60 * 10,

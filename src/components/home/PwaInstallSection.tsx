@@ -6,8 +6,12 @@ const PwaInstallSection = () => {
   const { canInstall, isStandalone, isIos, install } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
 
+  const sectionTitle = settings?.homepage_section_title || 'Instale o App';
+  const sectionSubtitle = settings?.homepage_section_subtitle || 'Mais rápido no seu celular';
+  const sectionCta = settings?.homepage_section_cta || 'Instalar';
+
   if (isStandalone) return null;
-  if (!settings?.enabled || !settings?.show_homepage_section) return null;
+  if (settings?.enabled === false) return null;
 
   const handleInstall = async () => {
     trackPwaEvent('cta_click', 'homepage');
@@ -31,10 +35,10 @@ const PwaInstallSection = () => {
             {/* Content */}
             <div className="flex-1 text-center md:text-left">
               <h2 className="text-2xl font-bold text-primary-foreground md:text-3xl">
-                {settings.homepage_section_title}
+                {sectionTitle}
               </h2>
               <p className="mt-2 text-sm text-primary-foreground/70 md:text-base max-w-lg">
-                {settings.homepage_section_subtitle}
+                {sectionSubtitle}
               </p>
 
               {/* Benefits */}
@@ -72,7 +76,7 @@ const PwaInstallSection = () => {
                     className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg gap-2 px-8"
                   >
                     <Download className="h-5 w-5" />
-                    {settings.homepage_section_cta}
+                    {sectionCta}
                   </Button>
                 ) : (
                   <p className="text-xs text-primary-foreground/60">
