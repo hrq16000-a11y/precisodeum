@@ -857,6 +857,120 @@ export type Database = {
           },
         ]
       }
+      pwa_install_events: {
+        Row: {
+          created_at: string
+          device_type: string
+          event_type: string
+          id: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          device_type?: string
+          event_type: string
+          id?: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          device_type?: string
+          event_type?: string
+          id?: string
+          source?: string
+        }
+        Relationships: []
+      }
+      pwa_install_settings: {
+        Row: {
+          accent_color: string
+          animation_duration: number
+          animation_type: string
+          created_at: string
+          cta_text: string
+          dismiss_cooldown_days: number
+          dismiss_text: string
+          enabled: boolean
+          footer_cta_text: string
+          homepage_section_cta: string
+          homepage_section_subtitle: string
+          homepage_section_title: string
+          id: string
+          ios_instruction: string
+          max_impressions: number
+          min_visits: number
+          show_delay_seconds: number
+          show_floating_banner: boolean
+          show_for_logged_in: boolean
+          show_for_visitors: boolean
+          show_homepage_section: boolean
+          show_in_footer: boolean
+          show_on_desktop: boolean
+          show_on_mobile: boolean
+          subtitle: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string
+          animation_duration?: number
+          animation_type?: string
+          created_at?: string
+          cta_text?: string
+          dismiss_cooldown_days?: number
+          dismiss_text?: string
+          enabled?: boolean
+          footer_cta_text?: string
+          homepage_section_cta?: string
+          homepage_section_subtitle?: string
+          homepage_section_title?: string
+          id?: string
+          ios_instruction?: string
+          max_impressions?: number
+          min_visits?: number
+          show_delay_seconds?: number
+          show_floating_banner?: boolean
+          show_for_logged_in?: boolean
+          show_for_visitors?: boolean
+          show_homepage_section?: boolean
+          show_in_footer?: boolean
+          show_on_desktop?: boolean
+          show_on_mobile?: boolean
+          subtitle?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string
+          animation_duration?: number
+          animation_type?: string
+          created_at?: string
+          cta_text?: string
+          dismiss_cooldown_days?: number
+          dismiss_text?: string
+          enabled?: boolean
+          footer_cta_text?: string
+          homepage_section_cta?: string
+          homepage_section_subtitle?: string
+          homepage_section_title?: string
+          id?: string
+          ios_instruction?: string
+          max_impressions?: number
+          min_visits?: number
+          show_delay_seconds?: number
+          show_floating_banner?: boolean
+          show_for_logged_in?: boolean
+          show_for_visitors?: boolean
+          show_homepage_section?: boolean
+          show_in_footer?: boolean
+          show_on_desktop?: boolean
+          show_on_mobile?: boolean
+          subtitle?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           comment: string
