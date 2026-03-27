@@ -10,9 +10,10 @@ import { whatsappLink } from '@/lib/whatsapp';
 
 interface ProviderCardProps {
   provider: DbProvider;
+  isFallback?: boolean;
 }
 
-const ProviderCard = ({ provider }: ProviderCardProps) => {
+const ProviderCard = ({ provider, isFallback = false }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const prefetch = usePrefetchProvider();
   const handlers = usePrefetchHandlers(prefetch, provider.slug);
@@ -60,6 +61,11 @@ const ProviderCard = ({ provider }: ProviderCardProps) => {
             {hasImages && (
               <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
                 <BadgeCheck className="h-3 w-3" /> Perfil Completo
+              </span>
+            )}
+            {isFallback && (
+              <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                <MapPin className="h-3 w-3" /> Atende sua região
               </span>
             )}
           </div>
