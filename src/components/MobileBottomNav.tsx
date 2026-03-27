@@ -10,6 +10,7 @@ const MobileBottomNav = () => {
   const { user, profile } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const { unreadCount } = useNotifications();
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const profileType = profile?.profile_type || 'client';
   const isProvider = profileType === 'provider';
@@ -19,8 +20,6 @@ const MobileBottomNav = () => {
   useEffect(() => {
     setShowMenu(false);
   }, [location.pathname]);
-
-  const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu on ESC
   useEffect(() => {
@@ -69,6 +68,7 @@ const MobileBottomNav = () => {
       <div className="h-16 md:hidden" />
 
       <nav
+        ref={menuRef}
         className="fixed bottom-0 left-0 right-0 border-t border-border/60 bg-card/95 backdrop-blur-lg supports-[backdrop-filter]:bg-card/85 md:hidden"
         style={{ zIndex: 1000, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
@@ -118,31 +118,28 @@ const MobileBottomNav = () => {
           })}
         </div>
 
-        {/* Quick menu overlay */}
+        {/* Quick menu */}
         {showMenu && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-            <div className="absolute bottom-full left-0 right-0 z-50 mb-1 mx-3 rounded-xl border border-border bg-card p-3 shadow-lg animate-in slide-in-from-bottom-2 duration-200">
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: 'Vagas', path: '/vagas' },
-                  { label: 'Notícias', path: '/blog' },
-                  { label: 'Como Funciona', path: '/sobre' },
-                  { label: 'FAQ', path: '/faq' },
-                  { label: 'Categorias', path: '/categorias' },
-                  { label: 'Cidades', path: '/cidades' },
-                ].map(link => (
-                  <button
-                    key={link.path}
-                    onClick={() => { navigate(link.path); setShowMenu(false); }}
-                    className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted text-left"
-                  >
-                    {link.label}
-                  </button>
-                ))}
-              </div>
+          <div className="absolute bottom-full left-0 right-0 z-50 mb-1 mx-3 rounded-xl border border-border bg-card p-3 shadow-lg animate-in slide-in-from-bottom-2 duration-200">
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Vagas', path: '/vagas' },
+                { label: 'Notícias', path: '/blog' },
+                { label: 'Como Funciona', path: '/sobre' },
+                { label: 'FAQ', path: '/faq' },
+                { label: 'Categorias', path: '/categorias' },
+                { label: 'Cidades', path: '/cidades' },
+              ].map(link => (
+                <button
+                  key={link.path}
+                  onClick={() => { navigate(link.path); setShowMenu(false); }}
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted text-left"
+                >
+                  {link.label}
+                </button>
+              ))}
             </div>
-          </>
+          </div>
         )}
       </nav>
     </>
