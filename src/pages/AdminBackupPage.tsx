@@ -7,25 +7,65 @@ import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { Download, Database, Loader2, FileJson, FileSpreadsheet } from 'lucide-react';
 
-const MODULES = [
-  { table: 'providers', label: 'Prestadores', icon: '👷' },
-  { table: 'services', label: 'Serviços', icon: '🔧' },
-  { table: 'jobs', label: 'Vagas', icon: '📋' },
-  { table: 'blog_posts', label: 'Blog / Notícias', icon: '📰' },
-  { table: 'sponsors', label: 'Patrocinadores', icon: '📢' },
-  { table: 'categories', label: 'Categorias', icon: '📂' },
-  { table: 'cities', label: 'Cidades', icon: '🏙️' },
-  { table: 'reviews', label: 'Avaliações', icon: '⭐' },
-  { table: 'leads', label: 'Leads', icon: '📩' },
-  { table: 'profiles', label: 'Perfis', icon: '👤' },
-  { table: 'faqs', label: 'FAQs', icon: '❓' },
-  { table: 'highlights', label: 'Destaques', icon: '✨' },
-  { table: 'popular_services', label: 'Serv. Populares', icon: '🔥' },
-  { table: 'audit_log', label: 'Trilha de Auditoria', icon: '📜' },
-  { table: 'pwa_install_settings', label: 'PWA Configurações', icon: '📱' },
-  { table: 'pwa_install_events', label: 'PWA Eventos', icon: '📊' },
-  { table: 'push_subscriptions', label: 'Push Inscrições', icon: '🔔' },
-] as const;
+const MODULE_GROUPS = [
+  {
+    label: 'Database (Tabelas)',
+    modules: [
+      { table: 'profiles', label: 'Perfis / Users', icon: '👤' },
+      { table: 'user_roles', label: 'Roles (Permissões)', icon: '🔐' },
+      { table: 'providers', label: 'Prestadores', icon: '👷' },
+      { table: 'services', label: 'Serviços', icon: '🔧' },
+      { table: 'service_categories', label: 'Serviço ↔ Categorias', icon: '🏷️' },
+      { table: 'service_images', label: 'Imagens de Serviços', icon: '🖼️' },
+      { table: 'provider_page_settings', label: 'Config. Página Prestador', icon: '⚙️' },
+      { table: 'jobs', label: 'Vagas', icon: '📋' },
+      { table: 'blog_posts', label: 'Blog / Notícias', icon: '📰' },
+      { table: 'sponsors', label: 'Patrocinadores', icon: '📢' },
+      { table: 'sponsor_campaigns', label: 'Campanhas', icon: '🎯' },
+      { table: 'sponsor_contacts', label: 'Contatos Sponsor', icon: '📇' },
+      { table: 'sponsor_contracts', label: 'Contratos', icon: '📄' },
+      { table: 'sponsor_metrics', label: 'Métricas Sponsor', icon: '📈' },
+      { table: 'sponsor_notes', label: 'Notas Sponsor', icon: '📝' },
+      { table: 'sponsor_notifications', label: 'Notif. Sponsor', icon: '🔔' },
+      { table: 'categories', label: 'Categorias', icon: '📂' },
+      { table: 'cities', label: 'Cidades', icon: '🏙️' },
+      { table: 'neighborhoods', label: 'Bairros', icon: '🏘️' },
+      { table: 'reviews', label: 'Avaliações', icon: '⭐' },
+      { table: 'leads', label: 'Leads', icon: '📩' },
+      { table: 'subscriptions', label: 'Assinaturas', icon: '💳' },
+      { table: 'notifications', label: 'Notificações', icon: '🔔' },
+      { table: 'faqs', label: 'FAQs', icon: '❓' },
+      { table: 'highlights', label: 'Destaques', icon: '✨' },
+      { table: 'popular_services', label: 'Serv. Populares', icon: '🔥' },
+      { table: 'community_links', label: 'Links Comunidade', icon: '🤝' },
+      { table: 'hero_banners', label: 'Hero Banners', icon: '🎨' },
+      { table: 'site_settings', label: 'Configurações do Site', icon: '⚙️' },
+    ],
+  },
+  {
+    label: 'Anúncios',
+    modules: [
+      { table: 'ad_slots', label: 'Slots de Anúncios', icon: '📐' },
+      { table: 'ad_slot_assignments', label: 'Atribuições de Slots', icon: '🔗' },
+    ],
+  },
+  {
+    label: 'Logs & Auditoria',
+    modules: [
+      { table: 'audit_log', label: 'Trilha de Auditoria', icon: '📜' },
+    ],
+  },
+  {
+    label: 'PWA & Push',
+    modules: [
+      { table: 'pwa_install_settings', label: 'PWA Configurações', icon: '📱' },
+      { table: 'pwa_install_events', label: 'PWA Eventos', icon: '📊' },
+      { table: 'push_subscriptions', label: 'Push Inscrições', icon: '🔔' },
+    ],
+  },
+];
+
+const ALL_MODULES = MODULE_GROUPS.flatMap(g => g.modules);
 
 type Format = 'csv' | 'json';
 
