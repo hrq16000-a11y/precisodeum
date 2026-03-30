@@ -875,6 +875,57 @@ const AdminBackupPage = () => {
         </div>
       </div>
 
+      {/* SQL Schema for Migration */}
+      <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+              <Code className="h-5 w-5" /> SQL de Migração (Schema Completo)
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Copie este SQL para recriar todas as tabelas, funções, triggers e RLS em outro projeto
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(FULL_SCHEMA_SQL);
+                toast.success('SQL copiado para a área de transferência!');
+              }}
+            >
+              <Copy className="mr-1 h-4 w-4" /> Copiar SQL
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSql(!showSql)}
+            >
+              {showSql ? <ChevronUp className="mr-1 h-4 w-4" /> : <ChevronDown className="mr-1 h-4 w-4" />}
+              {showSql ? 'Ocultar' : 'Visualizar'}
+            </Button>
+          </div>
+        </div>
+        {showSql && (
+          <pre className="mt-4 max-h-[500px] overflow-auto rounded-lg bg-muted p-4 text-xs text-muted-foreground font-mono whitespace-pre-wrap border border-border">
+            {FULL_SCHEMA_SQL}
+          </pre>
+        )}
+        <div className="mt-3 flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              downloadFile(FULL_SCHEMA_SQL, `schema_migracao_${new Date().toISOString().slice(0, 10)}.sql`, 'text/sql');
+              toast.success('Arquivo SQL baixado!');
+            }}
+          >
+            <Download className="mr-1 h-4 w-4" /> Baixar .sql
+          </Button>
+        </div>
+      </div>
+
       {/* Full backup */}
       <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
         <h2 className="font-display text-lg font-bold text-foreground">Backup Completo</h2>
