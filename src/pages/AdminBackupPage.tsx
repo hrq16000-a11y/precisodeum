@@ -953,6 +953,107 @@ const AdminBackupPage = () => {
         </div>
       </div>
 
+      {/* SQL de Dados (INSERT statements) */}
+      <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+              <Database className="h-5 w-5" /> SQL de Dados (INSERT)
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Gera INSERTs de todas as tabelas para migrar os dados para outro projeto
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="accent"
+              size="sm"
+              disabled={generatingData}
+              onClick={async () => {
+                setGeneratingData(true);
+                try {
+                  const parts: string[] = [
+                    '-- ============================================',
+                    '-- SQL DE DADOS — Preciso de Um',
+                    `-- Gerado em: ${new Date().toISOString()}`,
+                    '-- ============================================',
+                    '',
+                  ];
+                  // Order tables to respect FK dependencies
+                  const orderedTables = [
+                    'categories', 'cities', 'neighborhoods', 'site_settings', 'faqs',
+                    'highlights', 'popular_services', 'community_links', 'hero_banners',
+                    'profiles', 'user_roles', 'providers', 'provider_page_settings',
+                    'services', 'service_categories', 'service_images',
+                    'reviews', 'leads', 'jobs', 'blog_posts',
+                    'sponsors', 'sponsor_contacts', 'sponsor_campaigns',
+                    'sponsor_contracts', 'sponsor_metrics', 'sponsor_notes', 'sponsor_notifications',
+                    'ad_slots', 'ad_slot_assignments',
+                    'notifications', 'subscriptions',
+                    'pwa_install_settings', 'pwa_install_events', 'push_subscriptions',
+                    'audit_log',
+                  ];
+                  for (const table of orderedTables) {
+                    const { data } = await supabase.from(table as any).select('*').limit(10000);
+                    if (data && data.length > 0) {
+                      parts.push('');
+                      parts.push(generateInsertSQL(table, data));
+                    }
+                  }
+                  const sql = parts.join('\n');
+                  setDataSql(sql);
+                  setShowDataSql(true);
+                  toast.success('SQL de dados gerado com sucesso!');
+                } catch (err: any) {
+                  toast.error(`Erro: ${err.message}`);
+                }
+                setGeneratingData(false);
+              }}
+            >
+              {generatingData ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Code className="mr-1 h-4 w-4" />}
+              Gerar SQL de Dados
+            </Button>
+            {dataSql && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(dataSql);
+                    toast.success('SQL de dados copiado!');
+                  }}
+                >
+                  <Copy className="mr-1 h-4 w-4" /> Copiar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    downloadFile(dataSql, `dados_migracao_${new Date().toISOString().slice(0, 10)}.sql`, 'text/sql');
+                    toast.success('Arquivo SQL de dados baixado!');
+                  }}
+                >
+                  <Download className="mr-1 h-4 w-4" /> Baixar .sql
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDataSql(!showDataSql)}
+                >
+                  {showDataSql ? <ChevronUp className="mr-1 h-4 w-4" /> : <ChevronDown className="mr-1 h-4 w-4" />}
+                  {showDataSql ? 'Ocultar' : 'Visualizar'}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+        {showDataSql && dataSql && (
+          <pre className="mt-4 max-h-[500px] overflow-auto rounded-lg bg-muted p-4 text-xs text-muted-foreground font-mono whitespace-pre-wrap border border-border">
+            {dataSql}
+          </pre>
+        )}
+      </div>
+
       {/* Full backup */}
       <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
         <h2 className="font-display text-lg font-bold text-foreground">Backup Completo</h2>
