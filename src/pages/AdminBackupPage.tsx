@@ -760,52 +760,89 @@ ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pwa_install_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pwa_install_settings ENABLE ROW LEVEL SECURITY;
 
--- POLICIES (resumo das principais)
+-- POLICIES (com DROP IF EXISTS para idempotência)
 -- profiles
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT TO authenticated USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
 CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
 CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Admins can update any profile" ON public.profiles;
 CREATE POLICY "Admins can update any profile" ON public.profiles FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin')) WITH CHECK (has_role(auth.uid(), 'admin'));
 
 -- providers
+DROP POLICY IF EXISTS "Providers are viewable by everyone" ON public.providers;
 CREATE POLICY "Providers are viewable by everyone" ON public.providers FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Users can insert own provider" ON public.providers;
 CREATE POLICY "Users can insert own provider" ON public.providers FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can update own provider" ON public.providers;
 CREATE POLICY "Users can update own provider" ON public.providers FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Admins can update all providers" ON public.providers;
 CREATE POLICY "Admins can update all providers" ON public.providers FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin')) WITH CHECK (has_role(auth.uid(), 'admin'));
+DROP POLICY IF EXISTS "Admins can delete providers" ON public.providers;
 CREATE POLICY "Admins can delete providers" ON public.providers FOR DELETE TO authenticated USING (has_role(auth.uid(), 'admin'));
 
 -- services
+DROP POLICY IF EXISTS "Services are viewable by everyone" ON public.services;
 CREATE POLICY "Services are viewable by everyone" ON public.services FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Provider can manage own services" ON public.services;
 CREATE POLICY "Provider can manage own services" ON public.services FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM providers WHERE providers.id = services.provider_id AND providers.user_id = auth.uid()));
+DROP POLICY IF EXISTS "Provider can update own services" ON public.services;
 CREATE POLICY "Provider can update own services" ON public.services FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM providers WHERE providers.id = services.provider_id AND providers.user_id = auth.uid()));
+DROP POLICY IF EXISTS "Provider can delete own services" ON public.services;
 CREATE POLICY "Provider can delete own services" ON public.services FOR DELETE TO authenticated USING (EXISTS (SELECT 1 FROM providers WHERE providers.id = services.provider_id AND providers.user_id = auth.uid()));
 
 -- public tables (SELECT)
+DROP POLICY IF EXISTS "Categories are viewable by everyone" ON public.categories;
 CREATE POLICY "Categories are viewable by everyone" ON public.categories FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Cities are viewable by everyone" ON public.cities;
 CREATE POLICY "Cities are viewable by everyone" ON public.cities FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Neighborhoods are viewable by everyone" ON public.neighborhoods;
 CREATE POLICY "Neighborhoods are viewable by everyone" ON public.neighborhoods FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Reviews are viewable by everyone" ON public.reviews;
 CREATE POLICY "Reviews are viewable by everyone" ON public.reviews FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Jobs viewable by everyone" ON public.jobs;
 CREATE POLICY "Jobs viewable by everyone" ON public.jobs FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Blog posts viewable by everyone" ON public.blog_posts;
 CREATE POLICY "Blog posts viewable by everyone" ON public.blog_posts FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "FAQs viewable by everyone" ON public.faqs;
 CREATE POLICY "FAQs viewable by everyone" ON public.faqs FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Highlights viewable by everyone" ON public.highlights;
 CREATE POLICY "Highlights viewable by everyone" ON public.highlights FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Popular services viewable by everyone" ON public.popular_services;
 CREATE POLICY "Popular services viewable by everyone" ON public.popular_services FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Site settings viewable by everyone" ON public.site_settings;
 CREATE POLICY "Site settings viewable by everyone" ON public.site_settings FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Ad slots viewable by everyone" ON public.ad_slots;
 CREATE POLICY "Ad slots viewable by everyone" ON public.ad_slots FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Assignments viewable by everyone" ON public.ad_slot_assignments;
 CREATE POLICY "Assignments viewable by everyone" ON public.ad_slot_assignments FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Page settings viewable by everyone" ON public.provider_page_settings;
 CREATE POLICY "Page settings viewable by everyone" ON public.provider_page_settings FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Service categories viewable by everyone" ON public.service_categories;
 CREATE POLICY "Service categories viewable by everyone" ON public.service_categories FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Service images viewable by everyone" ON public.service_images;
 CREATE POLICY "Service images viewable by everyone" ON public.service_images FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Anyone can view active hero banners" ON public.hero_banners;
 CREATE POLICY "Anyone can view active hero banners" ON public.hero_banners FOR SELECT TO anon, authenticated USING (active = true);
+DROP POLICY IF EXISTS "Anyone can read pwa settings" ON public.pwa_install_settings;
 CREATE POLICY "Anyone can read pwa settings" ON public.pwa_install_settings FOR SELECT TO anon, authenticated USING (true);
+DROP POLICY IF EXISTS "Anyone can insert pwa events" ON public.pwa_install_events;
 CREATE POLICY "Anyone can insert pwa events" ON public.pwa_install_events FOR INSERT TO anon, authenticated WITH CHECK (true);
+DROP POLICY IF EXISTS "Anyone can create leads" ON public.leads;
 CREATE POLICY "Anyone can create leads" ON public.leads FOR INSERT TO public WITH CHECK (EXISTS (SELECT 1 FROM providers WHERE providers.id = leads.provider_id AND providers.status = 'approved'));
 
 -- notifications
+DROP POLICY IF EXISTS "Users can view own notifications" ON public.notifications;
 CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT TO authenticated USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can insert own notifications" ON public.notifications;
 CREATE POLICY "Users can insert own notifications" ON public.notifications FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id OR has_role(auth.uid(), 'admin'));
+DROP POLICY IF EXISTS "Users can update own notifications" ON public.notifications;
 CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can delete own notifications" ON public.notifications;
 CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
 -- admin CRUD pattern (categories, cities, faqs, highlights, popular_services, blog_posts, sponsors, etc.)
