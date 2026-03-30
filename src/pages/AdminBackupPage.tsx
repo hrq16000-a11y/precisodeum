@@ -823,14 +823,22 @@ const escapeSQL = (val: any): string => {
   return `'${String(val).replace(/'/g, "''")}'`;
 };
 
+// Tables that reference auth.users directly — need special handling
+const AUTH_DEPENDENT_TABLES = ['user_roles', 'profiles', 'push_subscriptions'];
+
 const generateInsertSQL = (table: string, rows: any[]): string => {
   if (!rows || rows.length === 0) return '';
   const cols = Object.keys(rows[0]);
+  const onConflict = ' ON CONFLICT DO NOTHING';
   const lines = rows.map(row => {
     const vals = cols.map(c => escapeSQL(row[c]));
-    return `INSERT INTO public.${table} (${cols.join(', ')}) VALUES (${vals.join(', ')});`;
+    return `INSERT INTO public.${table} (${cols.join(', ')}) VALUES (${vals.join(', ')})${onConflict};`;
   });
-  return `-- ${table} (${rows.length} registros)\n${lines.join('\n')}`;
+  let header = `-- ${table} (${rows.length} registros)`;
+  if (AUTH_DEPENDENT_TABLES.includes(table)) {
+    header += `\n-- ⚠️ ATENÇÃO: Esta tabela referencia auth.users. Os usuários devem existir no banco destino antes de executar.`;
+  }
+  return `${header}\n${lines.join('\n')}`;
 };
 
 const AdminBackupPage = () => {
