@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/hooks/useAdmin';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
-import { Download, Database, Loader2, FileJson, FileSpreadsheet } from 'lucide-react';
+import { Download, Database, Loader2, FileJson, FileSpreadsheet, Copy, Code, ChevronDown, ChevronUp } from 'lucide-react';
 
 const MODULE_GROUPS = [
   {
