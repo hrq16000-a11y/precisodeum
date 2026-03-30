@@ -865,16 +865,26 @@ const AUTH_DEPENDENT_TABLES = ['user_roles', 'profiles', 'push_subscriptions'];
 
 const generateInsertSQL = (table: string, rows: any[]): string => {
   if (!rows || rows.length === 0) return '';
+
   const cols = Object.keys(rows[0]);
   const onConflict = ' ON CONFLICT DO NOTHING';
+
   const lines = rows.map(row => {
     const vals = cols.map(c => escapeSQL(row[c]));
+
+    // Avoid FK error in user_roles when target DB does not have that auth user yet
+    if (table === 'user_roles') {
+      return `INSERT INTO public.user_roles (${cols.join(', ')}) SELECT ${vals.join(', ')} WHERE EXISTS (SELECT 1 FROM auth.users u WHERE u.id = ${escapeSQL(row.user_id)}::uuid)${onConflict};`;
+    }
+
     return `INSERT INTO public.${table} (${cols.join(', ')}) VALUES (${vals.join(', ')})${onConflict};`;
   });
+
   let header = `-- ${table} (${rows.length} registros)`;
   if (AUTH_DEPENDENT_TABLES.includes(table)) {
-    header += `\n-- ⚠️ ATENÇÃO: Esta tabela referencia auth.users. Os usuários devem existir no banco destino antes de executar.`;
+    header += `\n-- ⚠️ ATENÇÃO: Esta tabela referencia auth.users; registros sem usuário correspondente no destino serão ignorados.`;
   }
+
   return `${header}\n${lines.join('\n')}`;
 };
 
