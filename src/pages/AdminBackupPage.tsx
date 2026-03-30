@@ -872,9 +872,10 @@ const generateInsertSQL = (table: string, rows: any[]): string => {
   const lines = rows.map(row => {
     const vals = cols.map(c => escapeSQL(row[c]));
 
-    // Avoid FK error in user_roles when target DB does not have that auth user yet
-    if (table === 'user_roles') {
-      return `INSERT INTO public.user_roles (${cols.join(', ')}) SELECT ${vals.join(', ')} WHERE EXISTS (SELECT 1 FROM auth.users u WHERE u.id = ${escapeSQL(row.user_id)}::uuid)${onConflict};`;
+    // Avoid FK error when target DB does not have that auth user yet
+    const userIdCol = table === 'profiles' ? 'id' : 'user_id';
+    if (AUTH_DEPENDENT_TABLES.includes(table) && row[userIdCol]) {
+      return `INSERT INTO public.${table} (${cols.join(', ')}) SELECT ${vals.join(', ')} WHERE EXISTS (SELECT 1 FROM auth.users u WHERE u.id = ${escapeSQL(row[userIdCol])}::uuid)${onConflict};`;
     }
 
     return `INSERT INTO public.${table} (${cols.join(', ')}) VALUES (${vals.join(', ')})${onConflict};`;
