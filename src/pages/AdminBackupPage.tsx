@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/hooks/useAdmin';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
-import { Download, Database, Loader2, FileJson, FileSpreadsheet, Copy, Code, ChevronDown, ChevronUp } from 'lucide-react';
+import { Download, Database, Loader2, FileJson, FileSpreadsheet, Copy, Code, ChevronDown, ChevronUp, Image, FolderOpen, ExternalLink } from 'lucide-react';
 
 const MODULE_GROUPS = [
   {
@@ -889,6 +889,259 @@ const generateInsertSQL = (table: string, rows: any[]): string => {
   return `${header}\n${lines.join('\n')}`;
 };
 
+const STORAGE_BUCKETS = [
+  { id: 'avatars', label: 'Avatares', icon: '👤' },
+  { id: 'portfolio', label: 'Portfólio', icon: '🖼️' },
+  { id: 'service-images', label: 'Imagens de Serviços', icon: '📸' },
+];
+
+interface StorageFile {
+  bucket: string;
+  folder: string;
+  name: string;
+  size: number;
+  url: string;
+}
+
+const StorageBackupSection = () => {
+  const [loading, setLoading] = useState(false);
+  const [files, setFiles] = useState<StorageFile[]>([]);
+  const [scanned, setScanned] = useState(false);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+
+  const scanBuckets = async () => {
+    setLoading(true);
+    const allFiles: StorageFile[] = [];
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+    for (const bucket of STORAGE_BUCKETS) {
+      try {
+        // List top-level items
+        const { data: topLevel } = await supabase.storage.from(bucket.id).list('', { limit: 500 });
+        if (!topLevel) continue;
+
+        for (const item of topLevel) {
+          if (item.id === null) {
+            // It's a folder — list its contents
+            const { data: subFiles } = await supabase.storage.from(bucket.id).list(item.name, { limit: 500 });
+            if (subFiles) {
+              for (const sf of subFiles) {
+                if (!sf.name || sf.name === '.emptyFolderPlaceholder') continue;
+                if (sf.id === null) {
+                  // Nested subfolder
+                  const { data: deepFiles } = await supabase.storage.from(bucket.id).list(`${item.name}/${sf.name}`, { limit: 500 });
+                  if (deepFiles) {
+                    for (const df of deepFiles) {
+                      if (!df.name || df.name === '.emptyFolderPlaceholder' || df.id === null) continue;
+                      const path = `${item.name}/${sf.name}/${df.name}`;
+                      allFiles.push({
+                        bucket: bucket.id,
+                        folder: `${item.name}/${sf.name}`,
+                        name: df.name,
+                        size: (df.metadata as any)?.size || 0,
+                        url: `${supabaseUrl}/storage/v1/object/public/${bucket.id}/${path}`,
+                      });
+                    }
+                  }
+                } else {
+                  const path = `${item.name}/${sf.name}`;
+                  allFiles.push({
+                    bucket: bucket.id,
+                    folder: item.name,
+                    name: sf.name,
+                    size: (sf.metadata as any)?.size || 0,
+                    url: `${supabaseUrl}/storage/v1/object/public/${bucket.id}/${path}`,
+                  });
+                }
+              }
+            }
+          } else {
+            if (!item.name || item.name === '.emptyFolderPlaceholder') continue;
+            allFiles.push({
+              bucket: bucket.id,
+              folder: '/',
+              name: item.name,
+              size: (item.metadata as any)?.size || 0,
+              url: `${supabaseUrl}/storage/v1/object/public/${bucket.id}/${item.name}`,
+            });
+          }
+        }
+      } catch (err) {
+        console.error(`Error scanning bucket ${bucket.id}:`, err);
+      }
+    }
+
+    setFiles(allFiles);
+    setScanned(true);
+    setLoading(false);
+    toast.success(`${allFiles.length} arquivos encontrados em ${STORAGE_BUCKETS.length} buckets`);
+  };
+
+  const toggleFolder = (key: string) => {
+    setExpandedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const exportUrlList = () => {
+    const lines = files.map(f => f.url);
+    const content = lines.join('\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `storage-backup-urls-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Lista de URLs exportada!');
+  };
+
+  const exportJson = () => {
+    const hierarchy: Record<string, Record<string, { name: string; size: number; url: string }[]>> = {};
+    for (const f of files) {
+      if (!hierarchy[f.bucket]) hierarchy[f.bucket] = {};
+      if (!hierarchy[f.bucket][f.folder]) hierarchy[f.bucket][f.folder] = [];
+      hierarchy[f.bucket][f.folder].push({ name: f.name, size: f.size, url: f.url });
+    }
+    const content = JSON.stringify(hierarchy, null, 2);
+    const blob = new Blob([content], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `storage-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Backup JSON exportado!');
+  };
+
+  const copyAllUrls = () => {
+    navigator.clipboard.writeText(files.map(f => f.url).join('\n'));
+    toast.success('URLs copiadas para a área de transferência!');
+  };
+
+  // Build hierarchy for display
+  const hierarchy: Record<string, Record<string, StorageFile[]>> = {};
+  for (const f of files) {
+    if (!hierarchy[f.bucket]) hierarchy[f.bucket] = {};
+    if (!hierarchy[f.bucket][f.folder]) hierarchy[f.bucket][f.folder] = [];
+    hierarchy[f.bucket][f.folder].push(f);
+  }
+
+  const totalSizeKB = Math.round(files.reduce((s, f) => s + f.size, 0) / 1024);
+
+  return (
+    <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
+      <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+        <Image className="h-5 w-5" /> Backup de Imagens (Storage)
+      </h2>
+      <p className="text-sm text-muted-foreground mt-1">
+        Escaneia todos os buckets de armazenamento e lista arquivos com URLs públicas para download
+      </p>
+
+      <div className="mt-4 flex gap-2 flex-wrap">
+        <Button variant="accent" onClick={scanBuckets} disabled={loading}>
+          {loading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Database className="mr-1 h-4 w-4" />}
+          {scanned ? 'Reescanear' : 'Escanear Buckets'}
+        </Button>
+        {scanned && files.length > 0 && (
+          <>
+            <Button variant="outline" onClick={exportJson}>
+              <FileJson className="mr-1 h-4 w-4" /> Exportar JSON
+            </Button>
+            <Button variant="outline" onClick={exportUrlList}>
+              <Download className="mr-1 h-4 w-4" /> Lista de URLs
+            </Button>
+            <Button variant="outline" onClick={copyAllUrls}>
+              <Copy className="mr-1 h-4 w-4" /> Copiar URLs
+            </Button>
+          </>
+        )}
+      </div>
+
+      {scanned && (
+        <div className="mt-4 text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">{files.length}</span> arquivos encontrados
+          {' · '}
+          <span className="font-semibold text-foreground">{totalSizeKB > 1024 ? `${(totalSizeKB / 1024).toFixed(1)} MB` : `${totalSizeKB} KB`}</span> total
+        </div>
+      )}
+
+      {scanned && Object.keys(hierarchy).length > 0 && (
+        <div className="mt-4 space-y-3">
+          {STORAGE_BUCKETS.map(bucket => {
+            const bucketFiles = hierarchy[bucket.id];
+            if (!bucketFiles) return null;
+            const bucketKey = `bucket-${bucket.id}`;
+            const isExpanded = expandedFolders.has(bucketKey);
+            const fileCount = Object.values(bucketFiles).reduce((s, arr) => s + arr.length, 0);
+
+            return (
+              <div key={bucket.id} className="rounded-lg border border-border bg-background">
+                <button
+                  onClick={() => toggleFolder(bucketKey)}
+                  className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors rounded-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{bucket.icon}</span>
+                    <span className="font-bold text-sm text-foreground">{bucket.label}</span>
+                    <span className="text-xs text-muted-foreground">({fileCount} arquivos)</span>
+                  </div>
+                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </button>
+
+                {isExpanded && (
+                  <div className="px-3 pb-3 space-y-2">
+                    {Object.entries(bucketFiles).sort(([a], [b]) => a.localeCompare(b)).map(([folder, folderFiles]) => {
+                      const folderKey = `${bucket.id}/${folder}`;
+                      const isFolderExpanded = expandedFolders.has(folderKey);
+
+                      return (
+                        <div key={folderKey} className="rounded-md border border-border/50 bg-muted/30">
+                          <button
+                            onClick={() => toggleFolder(folderKey)}
+                            className="w-full flex items-center justify-between p-2 hover:bg-muted/50 transition-colors rounded-md"
+                          >
+                            <div className="flex items-center gap-2">
+                              <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-xs font-medium text-foreground">{folder === '/' ? '(raiz)' : folder}</span>
+                              <span className="text-xs text-muted-foreground">({folderFiles.length})</span>
+                            </div>
+                            {isFolderExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          </button>
+
+                          {isFolderExpanded && (
+                            <div className="px-2 pb-2 space-y-1">
+                              {folderFiles.map((f, i) => (
+                                <div key={i} className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-background transition-colors">
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <img src={f.url} alt="" className="h-8 w-8 rounded object-cover shrink-0 border border-border" onError={e => (e.currentTarget.style.display = 'none')} />
+                                    <span className="truncate text-foreground">{f.name}</span>
+                                    <span className="text-muted-foreground shrink-0">{f.size > 1024 * 1024 ? `${(f.size / 1024 / 1024).toFixed(1)}MB` : `${Math.round(f.size / 1024)}KB`}</span>
+                                  </div>
+                                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="shrink-0 ml-2 text-accent hover:text-accent/80">
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AdminBackupPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [exporting, setExporting] = useState<string | null>(null);
@@ -1125,6 +1378,9 @@ const AdminBackupPage = () => {
           </Button>
         </div>
       </div>
+
+      {/* Storage / Images Backup */}
+      <StorageBackupSection />
 
       {/* Grouped per-module export */}
       {MODULE_GROUPS.map(group => (
