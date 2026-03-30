@@ -1126,6 +1126,9 @@ const AdminBackupPage = () => {
         </div>
       </div>
 
+      {/* Storage / Images Backup */}
+      <StorageBackupSection />
+
       {/* Grouped per-module export */}
       {MODULE_GROUPS.map(group => (
         <div key={group.label} className="mt-6">
