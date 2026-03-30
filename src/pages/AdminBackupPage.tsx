@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/hooks/useAdmin';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
-import { Download, Database, Loader2, FileJson, FileSpreadsheet } from 'lucide-react';
+import { Download, Database, Loader2, FileJson, FileSpreadsheet, Copy, Code, ChevronDown, ChevronUp } from 'lucide-react';
 
 const MODULE_GROUPS = [
   {
@@ -95,9 +95,724 @@ const toCsv = (data: any[]): string => {
   ].join('\n');
 };
 
+const FULL_SCHEMA_SQL = `-- ============================================
+-- SQL COMPLETO DE MIGRAÇÃO — Preciso de Um
+-- Gerado automaticamente pelo painel admin
+-- ============================================
+
+-- EXTENSIONS
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ENUM
+DO $$ BEGIN
+  CREATE TYPE public.app_role AS ENUM ('admin', 'moderator', 'user');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- FUNCTIONS
+CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _user_id AND role = _role)
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_sponsor(_user_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM public.sponsor_contacts WHERE user_id = _user_id)
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_user_sponsor_id(_user_id uuid)
+RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT sponsor_id FROM public.sponsor_contacts WHERE user_id = _user_id LIMIT 1
+$$;
+
+CREATE OR REPLACE FUNCTION public.increment_sponsor_impression(sponsor_id uuid)
+RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
+  UPDATE public.sponsors SET impressions = impressions + 1 WHERE id = sponsor_id;
+$$;
+
+CREATE OR REPLACE FUNCTION public.increment_sponsor_click(sponsor_id uuid)
+RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
+  UPDATE public.sponsors SET clicks = clicks + 1 WHERE id = sponsor_id;
+$$;
+
+CREATE OR REPLACE FUNCTION public.track_sponsor_metric(_sponsor_id uuid, _slot_slug text, _event_type text, _page_path text DEFAULT NULL)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  INSERT INTO public.sponsor_metrics (sponsor_id, slot_slug, event_type, page_path, event_date, count)
+  VALUES (_sponsor_id, _slot_slug, _event_type, _page_path, CURRENT_DATE, 1)
+  ON CONFLICT DO NOTHING;
+  IF _event_type = 'impression' THEN
+    UPDATE public.sponsors SET impressions = impressions + 1 WHERE id = _sponsor_id;
+  ELSIF _event_type = 'click' THEN
+    UPDATE public.sponsors SET clicks = clicks + 1 WHERE id = _sponsor_id;
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, email, avatar_url)
+  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data ->> 'full_name', ''), NEW.email, COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', ''));
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.sanitize_provider_phone()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NEW.whatsapp IS NOT NULL THEN
+    NEW.whatsapp := REGEXP_REPLACE(NEW.whatsapp, '[^0-9]', '', 'g');
+    NEW.whatsapp := REGEXP_REPLACE(NEW.whatsapp, '^0+', '');
+    IF LENGTH(NEW.whatsapp) >= 10 AND LENGTH(NEW.whatsapp) <= 11 AND NEW.whatsapp NOT LIKE '55%' THEN
+      NEW.whatsapp := '55' || NEW.whatsapp;
+    END IF;
+  END IF;
+  IF NEW.phone IS NOT NULL THEN
+    NEW.phone := REGEXP_REPLACE(NEW.phone, '[^0-9]', '', 'g');
+    NEW.phone := REGEXP_REPLACE(NEW.phone, '^0+', '');
+    IF LENGTH(NEW.phone) >= 10 AND LENGTH(NEW.phone) <= 11 AND NEW.phone NOT LIKE '55%' THEN
+      NEW.phone := '55' || NEW.phone;
+    END IF;
+  END IF;
+  IF (NEW.whatsapp IS NULL OR NEW.whatsapp = '') AND NEW.phone IS NOT NULL AND NEW.phone != '' THEN
+    NEW.whatsapp := NEW.phone;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.sanitize_provider_slug()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NEW.slug IS NOT NULL AND NEW.slug != '' THEN
+    NEW.slug := LOWER(NEW.slug);
+    NEW.slug := TRANSLATE(NEW.slug, 'àáâãäåèéêëìíîïòóôõöùúûüýñçÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝÑÇ', 'aaaaaaeeeeiiiioooooouuuuyncAAAAAAEEEEIIIIOOOOOUUUUYNC');
+    NEW.slug := REGEXP_REPLACE(NEW.slug, '[_\\s]+', '-', 'g');
+    NEW.slug := REGEXP_REPLACE(NEW.slug, '[^a-z0-9-]', '', 'g');
+    NEW.slug := REGEXP_REPLACE(NEW.slug, '-{2,}', '-', 'g');
+    NEW.slug := TRIM(BOTH '-' FROM NEW.slug);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.auto_approve_provider()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NEW.status = 'pending' THEN
+    IF EXISTS (SELECT 1 FROM public.site_settings WHERE key = 'auto_approve_providers' AND value = 'true') THEN
+      NEW.status := 'approved';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.auto_premium_provider()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE total_providers INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO total_providers FROM public.providers WHERE status = 'approved';
+  IF total_providers <= 500 OR NEW.created_at <= '2027-06-30T23:59:59Z'::timestamptz THEN
+    NEW.plan := 'premium';
+    NEW.featured := true;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+-- TABLES
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid PRIMARY KEY,
+  full_name text NOT NULL DEFAULT '',
+  email text,
+  phone text,
+  whatsapp text DEFAULT '',
+  avatar_url text,
+  role text NOT NULL DEFAULT 'client',
+  profile_type text NOT NULL DEFAULT 'client',
+  status text NOT NULL DEFAULT 'active',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.user_roles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role app_role NOT NULL,
+  UNIQUE(user_id, role)
+);
+
+CREATE TABLE IF NOT EXISTS public.categories (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  slug text NOT NULL,
+  icon text NOT NULL DEFAULT '🔧',
+  parent_id uuid REFERENCES public.categories(id),
+  deleted_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.cities (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  slug text NOT NULL,
+  state text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.neighborhoods (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  slug text NOT NULL,
+  city_id uuid NOT NULL REFERENCES public.cities(id),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.providers (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  business_name text,
+  description text NOT NULL DEFAULT '',
+  photo_url text,
+  phone text NOT NULL DEFAULT '',
+  whatsapp text NOT NULL DEFAULT '',
+  city text NOT NULL DEFAULT '',
+  state text NOT NULL DEFAULT '',
+  neighborhood text NOT NULL DEFAULT '',
+  category_id uuid REFERENCES public.categories(id),
+  slug text,
+  website text,
+  plan text NOT NULL DEFAULT 'premium',
+  status text NOT NULL DEFAULT 'pending',
+  featured boolean NOT NULL DEFAULT true,
+  rating_avg numeric NOT NULL DEFAULT 0,
+  review_count integer NOT NULL DEFAULT 0,
+  years_experience integer NOT NULL DEFAULT 0,
+  response_time text,
+  service_radius text,
+  working_hours text,
+  latitude numeric,
+  longitude numeric,
+  deleted_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.services (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider_id uuid NOT NULL REFERENCES public.providers(id),
+  service_name text NOT NULL,
+  description text NOT NULL DEFAULT '',
+  price text,
+  whatsapp text NOT NULL DEFAULT '',
+  address text NOT NULL DEFAULT '',
+  service_area text NOT NULL DEFAULT '',
+  working_hours text NOT NULL DEFAULT '',
+  website text DEFAULT '',
+  category_id uuid REFERENCES public.categories(id),
+  deleted_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.service_categories (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  service_id uuid NOT NULL REFERENCES public.services(id),
+  category_id uuid NOT NULL REFERENCES public.categories(id)
+);
+
+CREATE TABLE IF NOT EXISTS public.service_images (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  service_id uuid NOT NULL REFERENCES public.services(id),
+  image_url text NOT NULL,
+  display_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.provider_page_settings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider_id uuid NOT NULL UNIQUE REFERENCES public.providers(id),
+  theme text DEFAULT 'default',
+  headline text DEFAULT '',
+  tagline text DEFAULT '',
+  accent_color text DEFAULT '',
+  cover_image_url text DEFAULT '',
+  cta_text text DEFAULT 'Solicitar Orçamento',
+  cta_whatsapp_text text DEFAULT 'Chamar no WhatsApp',
+  instagram_url text DEFAULT '',
+  facebook_url text DEFAULT '',
+  youtube_url text DEFAULT '',
+  tiktok_url text DEFAULT '',
+  sections_order jsonb NOT NULL DEFAULT '["about","portfolio","services","reviews","lead_form"]',
+  hidden_sections jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.reviews (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider_id uuid NOT NULL REFERENCES public.providers(id),
+  user_id uuid NOT NULL,
+  rating integer NOT NULL DEFAULT 5,
+  quality_rating integer NOT NULL DEFAULT 5,
+  punctuality_rating integer NOT NULL DEFAULT 5,
+  service_rating integer NOT NULL DEFAULT 5,
+  comment text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.leads (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider_id uuid NOT NULL REFERENCES public.providers(id),
+  client_name text NOT NULL,
+  phone text NOT NULL,
+  message text,
+  service_needed text,
+  status text NOT NULL DEFAULT 'new',
+  user_id uuid,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.jobs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  title text NOT NULL,
+  subtitle text DEFAULT '',
+  slug text,
+  description text NOT NULL DEFAULT '',
+  city text NOT NULL DEFAULT '',
+  state text NOT NULL DEFAULT '',
+  neighborhood text NOT NULL DEFAULT '',
+  contact_name text NOT NULL DEFAULT '',
+  contact_phone text NOT NULL DEFAULT '',
+  whatsapp text NOT NULL DEFAULT '',
+  job_type text NOT NULL DEFAULT '',
+  work_model text NOT NULL DEFAULT '',
+  opportunity_type text NOT NULL DEFAULT 'servico',
+  status text NOT NULL DEFAULT 'active',
+  approval_status text NOT NULL DEFAULT 'approved',
+  salary text DEFAULT '',
+  benefits text DEFAULT '',
+  requirements text DEFAULT '',
+  activities text DEFAULT '',
+  schedule text DEFAULT '',
+  deadline text,
+  cover_image_url text,
+  category_id uuid REFERENCES public.categories(id),
+  deleted_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.blog_posts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  slug text NOT NULL,
+  excerpt text NOT NULL DEFAULT '',
+  content text NOT NULL DEFAULT '',
+  author_name text NOT NULL DEFAULT 'Equipe Preciso de um',
+  cover_image_url text,
+  source_url text,
+  published boolean NOT NULL DEFAULT false,
+  featured boolean NOT NULL DEFAULT false,
+  deleted_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.sponsors (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  image_url text,
+  link_url text,
+  position text NOT NULL DEFAULT 'sidebar',
+  tier text NOT NULL DEFAULT 'bronze',
+  active boolean NOT NULL DEFAULT true,
+  display_order integer NOT NULL DEFAULT 0,
+  impressions integer NOT NULL DEFAULT 0,
+  clicks integer NOT NULL DEFAULT 0,
+  start_date date,
+  end_date date,
+  deleted_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.sponsor_contacts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  sponsor_id uuid NOT NULL REFERENCES public.sponsors(id),
+  user_id uuid NOT NULL,
+  contact_name text NOT NULL DEFAULT '',
+  company_name text NOT NULL DEFAULT '',
+  email text,
+  phone text,
+  role text NOT NULL DEFAULT 'owner',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.sponsor_campaigns (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  sponsor_id uuid NOT NULL REFERENCES public.sponsors(id),
+  name text NOT NULL,
+  description text NOT NULL DEFAULT '',
+  status text NOT NULL DEFAULT 'draft',
+  budget numeric DEFAULT 0,
+  start_date date,
+  end_date date,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.sponsor_contracts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  sponsor_id uuid NOT NULL REFERENCES public.sponsors(id),
+  contract_number text NOT NULL DEFAULT '',
+  status text NOT NULL DEFAULT 'draft',
+  value numeric DEFAULT 0,
+  notes text NOT NULL DEFAULT '',
+  start_date date,
+  end_date date,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.sponsor_metrics (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  sponsor_id uuid NOT NULL REFERENCES public.sponsors(id),
+  slot_slug text NOT NULL DEFAULT '',
+  event_type text NOT NULL DEFAULT 'impression',
+  event_date date NOT NULL DEFAULT CURRENT_DATE,
+  count integer NOT NULL DEFAULT 1,
+  page_path text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.sponsor_notes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  sponsor_id uuid NOT NULL REFERENCES public.sponsors(id),
+  author_id uuid NOT NULL,
+  content text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.sponsor_notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  sponsor_id uuid NOT NULL REFERENCES public.sponsors(id),
+  user_id uuid,
+  title text NOT NULL,
+  message text NOT NULL DEFAULT '',
+  type text NOT NULL DEFAULT 'info',
+  read boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.ad_slots (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  slug text NOT NULL,
+  page_type text NOT NULL DEFAULT 'global',
+  description text NOT NULL DEFAULT '',
+  max_ads integer NOT NULL DEFAULT 1,
+  active boolean NOT NULL DEFAULT true,
+  display_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.ad_slot_assignments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  slot_id uuid NOT NULL REFERENCES public.ad_slots(id),
+  sponsor_id uuid NOT NULL REFERENCES public.sponsors(id),
+  priority integer NOT NULL DEFAULT 0,
+  active boolean NOT NULL DEFAULT true,
+  start_date date,
+  end_date date,
+  target_category text,
+  target_city text,
+  target_state text,
+  target_keywords text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  title text NOT NULL DEFAULT '',
+  message text NOT NULL DEFAULT '',
+  type text NOT NULL DEFAULT 'system',
+  link text,
+  read boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider_id uuid NOT NULL REFERENCES public.providers(id),
+  plan text NOT NULL DEFAULT 'free',
+  status text NOT NULL DEFAULT 'active',
+  starts_at timestamptz NOT NULL DEFAULT now(),
+  ends_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.faqs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  question text NOT NULL,
+  answer text NOT NULL,
+  active boolean NOT NULL DEFAULT true,
+  display_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.highlights (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  description text NOT NULL DEFAULT '',
+  image_url text,
+  link_url text,
+  active boolean NOT NULL DEFAULT true,
+  display_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.popular_services (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  slug text NOT NULL,
+  description text NOT NULL DEFAULT '',
+  icon text NOT NULL DEFAULT '🔧',
+  category_name text NOT NULL DEFAULT '',
+  category_slug text,
+  min_price numeric NOT NULL DEFAULT 0,
+  active boolean NOT NULL DEFAULT true,
+  display_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.community_links (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  url text NOT NULL,
+  description text NOT NULL DEFAULT '',
+  icon text NOT NULL DEFAULT '🔗',
+  active boolean NOT NULL DEFAULT true,
+  display_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.hero_banners (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL DEFAULT '',
+  subtitle text NOT NULL DEFAULT '',
+  image_url text,
+  cta_text text NOT NULL DEFAULT 'Cadastrar agora',
+  cta_link text NOT NULL DEFAULT '/cadastro',
+  text_alignment text NOT NULL DEFAULT 'center',
+  overlay_opacity numeric NOT NULL DEFAULT 0.8,
+  animation_type text NOT NULL DEFAULT 'fade',
+  animation_duration numeric NOT NULL DEFAULT 500,
+  animation_delay numeric NOT NULL DEFAULT 0,
+  target_device text NOT NULL DEFAULT 'all',
+  target_city text,
+  target_state text,
+  active boolean NOT NULL DEFAULT true,
+  display_order integer NOT NULL DEFAULT 0,
+  start_date timestamptz,
+  end_date timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.site_settings (
+  key text PRIMARY KEY,
+  value text NOT NULL DEFAULT 'true',
+  label text NOT NULL DEFAULT '',
+  description text DEFAULT '',
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.audit_log (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  action text NOT NULL,
+  resource_type text NOT NULL,
+  resource_id text,
+  details jsonb DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.push_subscriptions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  endpoint text NOT NULL,
+  p256dh text NOT NULL,
+  auth text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.pwa_install_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_type text NOT NULL,
+  device_type text NOT NULL DEFAULT 'unknown',
+  source text NOT NULL DEFAULT 'banner',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.pwa_install_settings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  enabled boolean NOT NULL DEFAULT true,
+  title text NOT NULL DEFAULT 'Instale o App',
+  subtitle text NOT NULL DEFAULT 'Acesse mais rápido direto da tela inicial',
+  cta_text text NOT NULL DEFAULT 'Instalar App',
+  dismiss_text text NOT NULL DEFAULT 'Agora não',
+  ios_instruction text NOT NULL DEFAULT 'Toque em compartilhar e depois em "Adicionar à Tela de Início"',
+  accent_color text NOT NULL DEFAULT '#F97316',
+  animation_type text NOT NULL DEFAULT 'slide-up',
+  animation_duration integer NOT NULL DEFAULT 300,
+  show_delay_seconds integer NOT NULL DEFAULT 5,
+  min_visits integer NOT NULL DEFAULT 1,
+  max_impressions integer NOT NULL DEFAULT 0,
+  dismiss_cooldown_days integer NOT NULL DEFAULT 7,
+  show_on_mobile boolean NOT NULL DEFAULT true,
+  show_on_desktop boolean NOT NULL DEFAULT true,
+  show_for_visitors boolean NOT NULL DEFAULT true,
+  show_for_logged_in boolean NOT NULL DEFAULT true,
+  show_floating_banner boolean NOT NULL DEFAULT true,
+  show_homepage_section boolean NOT NULL DEFAULT true,
+  show_in_footer boolean NOT NULL DEFAULT true,
+  footer_cta_text text NOT NULL DEFAULT 'Instalar App',
+  homepage_section_title text NOT NULL DEFAULT 'Tenha o app na palma da mão',
+  homepage_section_subtitle text NOT NULL DEFAULT 'Instale gratuitamente e acesse profissionais, serviços e vagas com um toque.',
+  homepage_section_cta text NOT NULL DEFAULT 'Instalar Agora',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- VIEW
+CREATE OR REPLACE VIEW public.public_profiles AS
+SELECT id, full_name, avatar_url FROM public.profiles;
+
+-- TRIGGERS
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+CREATE OR REPLACE TRIGGER sanitize_provider_phone_trigger
+  BEFORE INSERT OR UPDATE ON public.providers
+  FOR EACH ROW EXECUTE FUNCTION public.sanitize_provider_phone();
+
+CREATE OR REPLACE TRIGGER sanitize_provider_slug_trigger
+  BEFORE INSERT OR UPDATE ON public.providers
+  FOR EACH ROW EXECUTE FUNCTION public.sanitize_provider_slug();
+
+CREATE OR REPLACE TRIGGER auto_approve_provider_trigger
+  BEFORE INSERT ON public.providers
+  FOR EACH ROW EXECUTE FUNCTION public.auto_approve_provider();
+
+CREATE OR REPLACE TRIGGER auto_premium_provider_trigger
+  BEFORE INSERT ON public.providers
+  FOR EACH ROW EXECUTE FUNCTION public.auto_premium_provider();
+
+-- RLS
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.neighborhoods ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.providers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.provider_page_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.blog_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sponsors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sponsor_contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sponsor_campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sponsor_contracts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sponsor_metrics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sponsor_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sponsor_notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ad_slots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ad_slot_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.faqs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.highlights ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.popular_services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.hero_banners ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pwa_install_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pwa_install_settings ENABLE ROW LEVEL SECURITY;
+
+-- POLICIES (resumo das principais)
+-- profiles
+CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT TO authenticated USING (auth.uid() = id);
+CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
+CREATE POLICY "Admins can update any profile" ON public.profiles FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin')) WITH CHECK (has_role(auth.uid(), 'admin'));
+
+-- providers
+CREATE POLICY "Providers are viewable by everyone" ON public.providers FOR SELECT TO public USING (true);
+CREATE POLICY "Users can insert own provider" ON public.providers FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own provider" ON public.providers FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Admins can update all providers" ON public.providers FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin')) WITH CHECK (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can delete providers" ON public.providers FOR DELETE TO authenticated USING (has_role(auth.uid(), 'admin'));
+
+-- services
+CREATE POLICY "Services are viewable by everyone" ON public.services FOR SELECT TO public USING (true);
+CREATE POLICY "Provider can manage own services" ON public.services FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM providers WHERE providers.id = services.provider_id AND providers.user_id = auth.uid()));
+CREATE POLICY "Provider can update own services" ON public.services FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM providers WHERE providers.id = services.provider_id AND providers.user_id = auth.uid()));
+CREATE POLICY "Provider can delete own services" ON public.services FOR DELETE TO authenticated USING (EXISTS (SELECT 1 FROM providers WHERE providers.id = services.provider_id AND providers.user_id = auth.uid()));
+
+-- public tables (SELECT)
+CREATE POLICY "Categories are viewable by everyone" ON public.categories FOR SELECT TO public USING (true);
+CREATE POLICY "Cities are viewable by everyone" ON public.cities FOR SELECT TO public USING (true);
+CREATE POLICY "Neighborhoods are viewable by everyone" ON public.neighborhoods FOR SELECT TO public USING (true);
+CREATE POLICY "Reviews are viewable by everyone" ON public.reviews FOR SELECT TO public USING (true);
+CREATE POLICY "Jobs viewable by everyone" ON public.jobs FOR SELECT TO public USING (true);
+CREATE POLICY "Blog posts viewable by everyone" ON public.blog_posts FOR SELECT TO public USING (true);
+CREATE POLICY "FAQs viewable by everyone" ON public.faqs FOR SELECT TO public USING (true);
+CREATE POLICY "Highlights viewable by everyone" ON public.highlights FOR SELECT TO public USING (true);
+CREATE POLICY "Popular services viewable by everyone" ON public.popular_services FOR SELECT TO public USING (true);
+CREATE POLICY "Site settings viewable by everyone" ON public.site_settings FOR SELECT TO public USING (true);
+CREATE POLICY "Ad slots viewable by everyone" ON public.ad_slots FOR SELECT TO public USING (true);
+CREATE POLICY "Assignments viewable by everyone" ON public.ad_slot_assignments FOR SELECT TO public USING (true);
+CREATE POLICY "Page settings viewable by everyone" ON public.provider_page_settings FOR SELECT TO public USING (true);
+CREATE POLICY "Service categories viewable by everyone" ON public.service_categories FOR SELECT TO public USING (true);
+CREATE POLICY "Service images viewable by everyone" ON public.service_images FOR SELECT TO public USING (true);
+CREATE POLICY "Anyone can view active hero banners" ON public.hero_banners FOR SELECT TO anon, authenticated USING (active = true);
+CREATE POLICY "Anyone can read pwa settings" ON public.pwa_install_settings FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Anyone can insert pwa events" ON public.pwa_install_events FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "Anyone can create leads" ON public.leads FOR INSERT TO public WITH CHECK (EXISTS (SELECT 1 FROM providers WHERE providers.id = leads.provider_id AND providers.status = 'approved'));
+
+-- notifications
+CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own notifications" ON public.notifications FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id OR has_role(auth.uid(), 'admin'));
+CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE TO authenticated USING (auth.uid() = user_id);
+
+-- admin CRUD pattern (categories, cities, faqs, highlights, popular_services, blog_posts, sponsors, etc.)
+-- Replicate for each table: INSERT/UPDATE/DELETE with has_role(auth.uid(), 'admin')
+`;
+
 const AdminBackupPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [exporting, setExporting] = useState<string | null>(null);
+  const [showSql, setShowSql] = useState(false);
 
   const exportModule = async (table: string, label: string, format: Format) => {
     setExporting(table + format);
@@ -157,6 +872,57 @@ const AdminBackupPage = () => {
             <Database className="h-6 w-6" /> Backup & Exportação Completa
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">Exporte todos os dados do sistema — {ALL_MODULES.length} tabelas disponíveis</p>
+        </div>
+      </div>
+
+      {/* SQL Schema for Migration */}
+      <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+              <Code className="h-5 w-5" /> SQL de Migração (Schema Completo)
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Copie este SQL para recriar todas as tabelas, funções, triggers e RLS em outro projeto
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(FULL_SCHEMA_SQL);
+                toast.success('SQL copiado para a área de transferência!');
+              }}
+            >
+              <Copy className="mr-1 h-4 w-4" /> Copiar SQL
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSql(!showSql)}
+            >
+              {showSql ? <ChevronUp className="mr-1 h-4 w-4" /> : <ChevronDown className="mr-1 h-4 w-4" />}
+              {showSql ? 'Ocultar' : 'Visualizar'}
+            </Button>
+          </div>
+        </div>
+        {showSql && (
+          <pre className="mt-4 max-h-[500px] overflow-auto rounded-lg bg-muted p-4 text-xs text-muted-foreground font-mono whitespace-pre-wrap border border-border">
+            {FULL_SCHEMA_SQL}
+          </pre>
+        )}
+        <div className="mt-3 flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              downloadFile(FULL_SCHEMA_SQL, `schema_migracao_${new Date().toISOString().slice(0, 10)}.sql`, 'text/sql');
+              toast.success('Arquivo SQL baixado!');
+            }}
+          >
+            <Download className="mr-1 h-4 w-4" /> Baixar .sql
+          </Button>
         </div>
       </div>
 
