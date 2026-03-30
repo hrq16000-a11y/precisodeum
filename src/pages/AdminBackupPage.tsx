@@ -815,10 +815,31 @@ CREATE POLICY "Users can delete own notifications" ON public.notifications FOR D
 SET check_function_bodies = on;
 `;
 
+const escapeSQL = (val: any): string => {
+  if (val === null || val === undefined) return 'NULL';
+  if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
+  if (typeof val === 'number') return String(val);
+  if (typeof val === 'object') return `'${JSON.stringify(val).replace(/'/g, "''")}'`;
+  return `'${String(val).replace(/'/g, "''")}'`;
+};
+
+const generateInsertSQL = (table: string, rows: any[]): string => {
+  if (!rows || rows.length === 0) return '';
+  const cols = Object.keys(rows[0]);
+  const lines = rows.map(row => {
+    const vals = cols.map(c => escapeSQL(row[c]));
+    return `INSERT INTO public.${table} (${cols.join(', ')}) VALUES (${vals.join(', ')});`;
+  });
+  return `-- ${table} (${rows.length} registros)\n${lines.join('\n')}`;
+};
+
 const AdminBackupPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [exporting, setExporting] = useState<string | null>(null);
   const [showSql, setShowSql] = useState(false);
+  const [showDataSql, setShowDataSql] = useState(false);
+  const [dataSql, setDataSql] = useState('');
+  const [generatingData, setGeneratingData] = useState(false);
 
   const exportModule = async (table: string, label: string, format: Format) => {
     setExporting(table + format);
