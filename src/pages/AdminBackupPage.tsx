@@ -126,7 +126,7 @@ const AdminBackupPage = () => {
   const exportAll = async (format: Format) => {
     setExporting('all' + format);
     const allData: Record<string, any[]> = {};
-    for (const mod of MODULES) {
+    for (const mod of ALL_MODULES) {
       const { data } = await supabase.from(mod.table as any).select('*').limit(10000);
       allData[mod.table] = data || [];
     }
@@ -134,7 +134,6 @@ const AdminBackupPage = () => {
     if (format === 'json') {
       downloadFile(JSON.stringify(allData, null, 2), `backup_completo_${date}.json`, 'application/json');
     } else {
-      // For CSV export all, create one file per table in a combined format
       let combined = '';
       for (const [table, rows] of Object.entries(allData)) {
         if (rows.length === 0) continue;
@@ -143,7 +142,7 @@ const AdminBackupPage = () => {
       }
       downloadFile(combined, `backup_completo_${date}.csv`, 'text/csv;charset=utf-8;');
     }
-    await logAuditAction({ action: 'export_backup_full', resource_type: 'system', details: { format, modules: MODULES.length } });
+    await logAuditAction({ action: 'export_backup_full', resource_type: 'system', details: { format, modules: ALL_MODULES.length } });
     toast.success(`Backup completo exportado (${format.toUpperCase()})`);
     setExporting(null);
   };
@@ -155,16 +154,16 @@ const AdminBackupPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <Database className="h-6 w-6" /> Backup & Exportação
+            <Database className="h-6 w-6" /> Backup & Exportação Completa
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Exporte dados do sistema por módulo ou backup completo</p>
+          <p className="mt-1 text-sm text-muted-foreground">Exporte todos os dados do sistema — {ALL_MODULES.length} tabelas disponíveis</p>
         </div>
       </div>
 
       {/* Full backup */}
       <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
         <h2 className="font-display text-lg font-bold text-foreground">Backup Completo</h2>
-        <p className="text-sm text-muted-foreground mt-1">Exporta todos os módulos em um único arquivo</p>
+        <p className="text-sm text-muted-foreground mt-1">Exporta todas as {ALL_MODULES.length} tabelas em um único arquivo</p>
         <div className="mt-4 flex gap-2">
           <Button variant="accent" onClick={() => exportAll('json')} disabled={!!exporting}>
             {exporting === 'alljson' ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileJson className="mr-1 h-4 w-4" />}
@@ -177,28 +176,33 @@ const AdminBackupPage = () => {
         </div>
       </div>
 
-      {/* Per-module export */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {MODULES.map(mod => (
-          <div key={mod.table} className="rounded-xl border border-border bg-card p-4 shadow-card flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{mod.icon}</span>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">{mod.label}</h3>
-                <p className="text-xs text-muted-foreground">{mod.table}</p>
+      {/* Grouped per-module export */}
+      {MODULE_GROUPS.map(group => (
+        <div key={group.label} className="mt-6">
+          <h2 className="font-display text-base font-bold text-foreground mb-3">{group.label}</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {group.modules.map(mod => (
+              <div key={mod.table} className="rounded-xl border border-border bg-card p-4 shadow-card flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{mod.icon}</span>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">{mod.label}</h3>
+                    <p className="text-xs text-muted-foreground">{mod.table}</p>
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" onClick={() => exportModule(mod.table, mod.label, 'json')} disabled={!!exporting} title="JSON">
+                    {exporting === mod.table + 'json' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileJson className="h-4 w-4" />}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => exportModule(mod.table, mod.label, 'csv')} disabled={!!exporting} title="CSV">
+                    {exporting === mod.table + 'csv' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-1">
-              <Button variant="ghost" size="sm" onClick={() => exportModule(mod.table, mod.label, 'json')} disabled={!!exporting} title="JSON">
-                {exporting === mod.table + 'json' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileJson className="h-4 w-4" />}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => exportModule(mod.table, mod.label, 'csv')} disabled={!!exporting} title="CSV">
-                {exporting === mod.table + 'csv' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
-              </Button>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </AdminLayout>
   );
 };
