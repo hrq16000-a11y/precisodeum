@@ -914,6 +914,7 @@ const StorageBackupSection = () => {
   const [zipBucket, setZipBucket] = useState<string>('all');
   const [zipImporting, setZipImporting] = useState(false);
   const [importMode, setImportMode] = useState<'replace' | 'preserve'>('replace');
+  const [zipProgress, setZipProgress] = useState<{ processed: number; total: number; status?: string } | null>(null);
 
   const scanBuckets = async () => {
     setLoading(true);
