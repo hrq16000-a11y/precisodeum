@@ -1209,6 +1209,15 @@ const StorageBackupSection = () => {
             Baixar .ZIP
           </Button>
         </div>
+        {zipProgress && (
+          <div className="mt-3 space-y-1">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{zipProgress.status || `Processando arquivos...`}</span>
+              <span>{zipProgress.total > 0 ? `${zipProgress.processed}/${zipProgress.total}` : ''}</span>
+            </div>
+            <Progress value={zipProgress.total > 0 ? (zipProgress.processed / zipProgress.total) * 100 : 0} className="h-2" />
+          </div>
+        )}
       </div>
 
       {/* ZIP Import */}
