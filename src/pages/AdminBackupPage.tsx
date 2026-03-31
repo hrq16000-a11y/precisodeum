@@ -909,6 +909,10 @@ const StorageBackupSection = () => {
   const [files, setFiles] = useState<StorageFile[]>([]);
   const [scanned, setScanned] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [zipExporting, setZipExporting] = useState(false);
+  const [zipBucket, setZipBucket] = useState<string>('all');
+  const [zipImporting, setZipImporting] = useState(false);
+  const [importMode, setImportMode] = useState<'replace' | 'preserve'>('replace');
 
   const scanBuckets = async () => {
     setLoading(true);
@@ -917,19 +921,16 @@ const StorageBackupSection = () => {
 
     for (const bucket of STORAGE_BUCKETS) {
       try {
-        // List top-level items
         const { data: topLevel } = await supabase.storage.from(bucket.id).list('', { limit: 500 });
         if (!topLevel) continue;
 
         for (const item of topLevel) {
           if (item.id === null) {
-            // It's a folder — list its contents
             const { data: subFiles } = await supabase.storage.from(bucket.id).list(item.name, { limit: 500 });
             if (subFiles) {
               for (const sf of subFiles) {
                 if (!sf.name || sf.name === '.emptyFolderPlaceholder') continue;
                 if (sf.id === null) {
-                  // Nested subfolder
                   const { data: deepFiles } = await supabase.storage.from(bucket.id).list(`${item.name}/${sf.name}`, { limit: 500 });
                   if (deepFiles) {
                     for (const df of deepFiles) {
@@ -1023,6 +1024,84 @@ const StorageBackupSection = () => {
     toast.success('URLs copiadas para a área de transferência!');
   };
 
+  const exportZip = async () => {
+    setZipExporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sessão expirada');
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const params = new URLSearchParams({ action: 'export' });
+      if (zipBucket !== 'all') params.set('bucket', zipBucket);
+
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/storage-backup?${params}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(err.error || 'Erro ao exportar');
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const disposition = res.headers.get('Content-Disposition');
+      const filename = disposition?.match(/filename="(.+)"/)?.[1] || `storage-backup.zip`;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('ZIP baixado com sucesso!');
+      await logAuditAction({ action: 'export_storage_zip', resource_type: 'storage', details: { bucket: zipBucket } });
+    } catch (err: any) {
+      toast.error(`Erro: ${err.message}`);
+    }
+    setZipExporting(false);
+  };
+
+  const importZip = async (file: File) => {
+    setZipImporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sessão expirada');
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const params = new URLSearchParams({ action: 'import', mode: importMode });
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/storage-backup?${params}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: formData,
+        }
+      );
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Erro ao importar');
+
+      toast.success(`Importação concluída: ${result.imported} arquivos importados, ${result.skipped} ignorados`);
+      if (result.errors?.length > 0) {
+        toast.error(`${result.errors.length} erros: ${result.errors[0]}`);
+      }
+      await logAuditAction({ action: 'import_storage_zip', resource_type: 'storage', details: result });
+    } catch (err: any) {
+      toast.error(`Erro: ${err.message}`);
+    }
+    setZipImporting(false);
+  };
+
   // Build hierarchy for display
   const hierarchy: Record<string, Record<string, StorageFile[]>> = {};
   for (const f of files) {
@@ -1060,6 +1139,77 @@ const StorageBackupSection = () => {
             </Button>
           </>
         )}
+      </div>
+
+      {/* ZIP Export */}
+      <div className="mt-4 rounded-lg border border-border bg-muted/30 p-4">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+          <Archive className="h-4 w-4" /> Exportar ZIP (Download direto dos arquivos)
+        </h3>
+        <p className="text-xs text-muted-foreground mt-1">
+          Baixa todos os arquivos binários do Storage e compacta em um .zip mantendo a hierarquia bucket/pasta/arquivo
+        </p>
+        <div className="mt-3 flex gap-2 items-center flex-wrap">
+          <Select value={zipBucket} onValueChange={setZipBucket}>
+            <SelectTrigger className="w-[200px] h-9 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os buckets</SelectItem>
+              {STORAGE_BUCKETS.map(b => (
+                <SelectItem key={b.id} value={b.id}>{b.icon} {b.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="accent" onClick={exportZip} disabled={zipExporting}>
+            {zipExporting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Archive className="mr-1 h-4 w-4" />}
+            Baixar .ZIP
+          </Button>
+        </div>
+      </div>
+
+      {/* ZIP Import */}
+      <div className="mt-4 rounded-lg border border-border bg-muted/30 p-4">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+          <Upload className="h-4 w-4" /> Importar ZIP (Restaurar Storage)
+        </h3>
+        <p className="text-xs text-muted-foreground mt-1">
+          Faça upload de um .zip exportado anteriormente. A hierarquia bucket/pasta/arquivo será recriada automaticamente.
+        </p>
+        <div className="mt-3 flex gap-2 items-center flex-wrap">
+          <Select value={importMode} onValueChange={(v) => setImportMode(v as 'replace' | 'preserve')}>
+            <SelectTrigger className="w-[220px] h-9 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="replace">
+                <span className="flex items-center gap-1">🔄 Substituir existentes</span>
+              </SelectItem>
+              <SelectItem value="preserve">
+                <span className="flex items-center gap-1"><ShieldCheck className="h-3 w-3" /> Preservar existentes</span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept=".zip"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) importZip(file);
+                e.target.value = '';
+              }}
+              disabled={zipImporting}
+            />
+            <Button variant="outline" asChild disabled={zipImporting}>
+              <span>
+                {zipImporting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Upload className="mr-1 h-4 w-4" />}
+                Selecionar .ZIP
+              </span>
+            </Button>
+          </label>
+        </div>
       </div>
 
       {scanned && (
