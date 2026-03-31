@@ -6,6 +6,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { Download, Database, Loader2, FileJson, FileSpreadsheet, Copy, Code, ChevronDown, ChevronUp, Image, FolderOpen, ExternalLink, Upload, Archive, ShieldCheck } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const MODULE_GROUPS = [
@@ -913,6 +914,7 @@ const StorageBackupSection = () => {
   const [zipBucket, setZipBucket] = useState<string>('all');
   const [zipImporting, setZipImporting] = useState(false);
   const [importMode, setImportMode] = useState<'replace' | 'preserve'>('replace');
+  const [zipProgress, setZipProgress] = useState<{ processed: number; total: number; status?: string } | null>(null);
 
   const scanBuckets = async () => {
     setLoading(true);
@@ -1026,6 +1028,7 @@ const StorageBackupSection = () => {
 
   const exportZip = async () => {
     setZipExporting(true);
+    setZipProgress(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Sessão expirada');
@@ -1048,13 +1051,52 @@ const StorageBackupSection = () => {
         throw new Error(err.error || 'Erro ao exportar');
       }
 
-      const blob = await res.blob();
+      // Read streaming NDJSON response
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('Streaming não suportado');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let zipFilename = 'storage-backup.zip';
+      let zipBase64 = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const msg = JSON.parse(line);
+            if (msg.type === 'progress') {
+              setZipProgress({ processed: msg.processed, total: msg.total });
+            } else if (msg.type === 'status') {
+              setZipProgress(prev => prev ? { ...prev, status: msg.message } : { processed: 0, total: 0, status: msg.message });
+            } else if (msg.type === 'complete') {
+              zipFilename = msg.filename;
+              zipBase64 = msg.data;
+            }
+          } catch {}
+        }
+      }
+
+      if (!zipBase64) throw new Error('Nenhum dado recebido');
+
+      // Convert base64 to blob and download
+      const binaryString = atob(zipBase64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: 'application/zip' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const disposition = res.headers.get('Content-Disposition');
-      const filename = disposition?.match(/filename="(.+)"/)?.[1] || `storage-backup.zip`;
-      a.download = filename;
+      a.download = zipFilename;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('ZIP baixado com sucesso!');
@@ -1063,6 +1105,7 @@ const StorageBackupSection = () => {
       toast.error(`Erro: ${err.message}`);
     }
     setZipExporting(false);
+    setZipProgress(null);
   };
 
   const importZip = async (file: File) => {
@@ -1166,6 +1209,15 @@ const StorageBackupSection = () => {
             Baixar .ZIP
           </Button>
         </div>
+        {zipProgress && (
+          <div className="mt-3 space-y-1">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{zipProgress.status || `Processando arquivos...`}</span>
+              <span>{zipProgress.total > 0 ? `${zipProgress.processed}/${zipProgress.total}` : ''}</span>
+            </div>
+            <Progress value={zipProgress.total > 0 ? (zipProgress.processed / zipProgress.total) * 100 : 0} className="h-2" />
+          </div>
+        )}
       </div>
 
       {/* ZIP Import */}
