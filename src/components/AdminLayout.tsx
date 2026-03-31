@@ -77,12 +77,12 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         </button>
       </div>
 
-      <aside className={`fixed inset-y-0 left-0 z-40 w-60 transform border-r border-sidebar-border bg-sidebar transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
-        <div className="flex h-14 items-center gap-2 px-5 border-b border-sidebar-border">
+      <aside className={`fixed inset-y-0 left-0 z-40 w-60 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
+        <div className="flex h-14 shrink-0 items-center gap-2 px-5 border-b border-sidebar-border">
           <Shield className="h-4 w-4 text-destructive" />
           <span className="font-display text-sm font-bold text-sidebar-foreground">Admin Panel</span>
         </div>
-        <nav className="mt-2 space-y-4 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 56px - 80px)' }}>
+        <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-4 px-3 pb-4">
           {menuGroups.map((group) => (
             <div key={group.label}>
               <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{group.label}</p>
@@ -105,7 +105,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           ))}
         </nav>
-        <div className="absolute bottom-4 left-3 right-3 space-y-1">
+        <div className="shrink-0 border-t border-sidebar-border p-3 space-y-1">
           <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-sidebar-foreground/70" asChild>
             <Link to="/dashboard"><LayoutDashboard className="h-4 w-4" /> Ir ao Dashboard</Link>
           </Button>
