@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Phone, MessageCircle } from 'lucide-react';
+import { Phone, MessageCircle, AlertTriangle } from 'lucide-react';
 import { whatsappLink } from '@/lib/whatsapp';
 import { useAuth } from '@/hooks/useAuth';
+import { useAccountLimits } from '@/hooks/useAccountLimits';
 import { supabase } from '@/integrations/supabase/client';
 
 const DashboardLeadsPage = () => {
   const { user, provider, loading } = useAuth();
+  const { limits, canReceiveMoreLeads, remainingLeads, loading: limitsLoading } = useAccountLimits();
   const navigate = useNavigate();
   const [leads, setLeads] = useState<any[]>([]);
 
@@ -26,10 +28,39 @@ const DashboardLeadsPage = () => {
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
+  // Block access if can_receive_leads is false
+  if (!limitsLoading && limits?.can_receive_leads === false) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <AlertTriangle className="h-12 w-12 text-destructive/60 mb-4" />
+          <h1 className="font-display text-xl font-bold text-foreground">Leads indisponível</h1>
+          <p className="mt-2 text-sm text-muted-foreground max-w-md">
+            Seu tipo de conta não permite receber leads. Atualize seu plano para ter acesso.
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <h1 className="font-display text-2xl font-bold text-foreground">Leads Recebidos</h1>
       <p className="mt-1 text-sm text-muted-foreground">{leads.length} lead(s) recebido(s)</p>
+
+      {/* Limits banner */}
+      {!limitsLoading && limits && remainingLeads !== null && (
+        <div className={`mt-3 rounded-lg border p-3 text-sm ${!canReceiveMoreLeads ? 'border-destructive/30 bg-destructive/5 text-destructive' : 'border-accent/20 bg-accent/5 text-foreground'}`}>
+          <div className="flex items-center gap-2">
+            {!canReceiveMoreLeads && <AlertTriangle className="h-4 w-4 shrink-0" />}
+            <span>
+              {!canReceiveMoreLeads
+                ? `Limite de ${limits.max_leads} lead(s) atingido. Atualize seu plano para receber mais.`
+                : `${remainingLeads} de ${limits.max_leads} lead(s) restante(s) no seu plano.`}
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 space-y-3">
         {leads.length === 0 && (

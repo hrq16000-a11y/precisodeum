@@ -215,12 +215,37 @@ const DashboardServicesPage = () => {
 
   return (
     <DashboardLayout>
+      {/* Account limits banner */}
+      {!limitsLoading && limits && limits.can_create_services && remainingServices !== null && (
+        <div className={`mb-4 rounded-lg border p-3 text-sm ${remainingServices === 0 ? 'border-destructive/30 bg-destructive/5 text-destructive' : 'border-accent/20 bg-accent/5 text-foreground'}`}>
+          <div className="flex items-center gap-2">
+            {remainingServices === 0 && <AlertTriangle className="h-4 w-4 shrink-0" />}
+            <span>
+              {remainingServices === 0
+                ? `Você atingiu o limite de ${limits.max_services} serviço(s). Atualize seu plano para cadastrar mais.`
+                : `${remainingServices} de ${limits.max_services} serviço(s) disponível(is) no seu plano.`}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {!limitsLoading && limits?.can_create_services === false && (
+        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>Seu tipo de conta não permite cadastrar serviços.</span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Meus Serviços</h1>
           <p className="mt-1 text-sm text-muted-foreground">Gerencie seus serviços oferecidos</p>
         </div>
-        <Button variant="accent" size="sm" onClick={() => {
+        <Button variant="accent" size="sm" disabled={!canCreateService && !editId} onClick={() => {
+          if (!canCreateService) {
+            toast.error('Limite de serviços atingido ou conta sem permissão.');
+            return;
+          }
           setShowForm(true);
           setEditId(null);
           setCategorySearch('');
