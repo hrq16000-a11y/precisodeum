@@ -125,6 +125,12 @@ const DashboardServicesPage = () => {
       toast.error('Agências RH não podem cadastrar serviços. Use a área de Vagas.');
       return;
     }
+    if (!editId && !canCreateService) {
+      toast.error(limits?.can_create_services === false
+        ? 'Seu tipo de conta não permite criar serviços.'
+        : `Limite de serviços atingido (${limits?.max_services}).`);
+      return;
+    }
     if (!form.service_name.trim()) {
       toast.error('Nome do serviço é obrigatório');
       return;
