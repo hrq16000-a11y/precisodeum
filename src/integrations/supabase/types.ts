@@ -1586,6 +1586,42 @@ export type Database = {
           },
         ]
       }
+      tier_rules: {
+        Row: {
+          can_create_services: boolean
+          can_receive_leads: boolean
+          created_at: string
+          id: string
+          max_leads: number
+          max_services: number
+          tier_key: string
+          tier_label: string
+          updated_at: string
+        }
+        Insert: {
+          can_create_services?: boolean
+          can_receive_leads?: boolean
+          created_at?: string
+          id?: string
+          max_leads?: number
+          max_services?: number
+          tier_key: string
+          tier_label?: string
+          updated_at?: string
+        }
+        Update: {
+          can_create_services?: boolean
+          can_receive_leads?: boolean
+          created_at?: string
+          id?: string
+          max_leads?: number
+          max_services?: number
+          tier_key?: string
+          tier_label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
