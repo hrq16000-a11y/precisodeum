@@ -539,6 +539,7 @@ export type Database = {
           service_needed: string | null
           status: string
           user_id: string | null
+          user_ref: string | null
         }
         Insert: {
           client_name: string
@@ -550,6 +551,7 @@ export type Database = {
           service_needed?: string | null
           status?: string
           user_id?: string | null
+          user_ref?: string | null
         }
         Update: {
           client_name?: string
@@ -561,6 +563,7 @@ export type Database = {
           service_needed?: string | null
           status?: string
           user_id?: string | null
+          user_ref?: string | null
         }
         Relationships: [
           {
@@ -694,6 +697,7 @@ export type Database = {
           role: string
           status: string
           updated_at: string
+          user_ref: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -707,6 +711,7 @@ export type Database = {
           role?: string
           status?: string
           updated_at?: string
+          user_ref?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -720,6 +725,7 @@ export type Database = {
           role?: string
           status?: string
           updated_at?: string
+          user_ref?: string | null
           whatsapp?: string | null
         }
         Relationships: []
@@ -742,6 +748,7 @@ export type Database = {
           theme: string | null
           tiktok_url: string | null
           updated_at: string
+          user_ref: string | null
           youtube_url: string | null
         }
         Insert: {
@@ -761,6 +768,7 @@ export type Database = {
           theme?: string | null
           tiktok_url?: string | null
           updated_at?: string
+          user_ref?: string | null
           youtube_url?: string | null
         }
         Update: {
@@ -780,6 +788,7 @@ export type Database = {
           theme?: string | null
           tiktok_url?: string | null
           updated_at?: string
+          user_ref?: string | null
           youtube_url?: string | null
         }
         Relationships: [
@@ -817,6 +826,7 @@ export type Database = {
           status: string
           updated_at: string
           user_id: string
+          user_ref: string | null
           website: string | null
           whatsapp: string
           working_hours: string | null
@@ -846,6 +856,7 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id: string
+          user_ref?: string | null
           website?: string | null
           whatsapp?: string
           working_hours?: string | null
@@ -875,6 +886,7 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+          user_ref?: string | null
           website?: string | null
           whatsapp?: string
           working_hours?: string | null
@@ -1152,6 +1164,7 @@ export type Database = {
           provider_id: string
           service_area: string
           service_name: string
+          user_ref: string | null
           website: string | null
           whatsapp: string
           working_hours: string
@@ -1167,6 +1180,7 @@ export type Database = {
           provider_id: string
           service_area?: string
           service_name: string
+          user_ref?: string | null
           website?: string | null
           whatsapp?: string
           working_hours?: string
@@ -1182,6 +1196,7 @@ export type Database = {
           provider_id?: string
           service_area?: string
           service_name?: string
+          user_ref?: string | null
           website?: string | null
           whatsapp?: string
           working_hours?: string
@@ -1576,21 +1591,70 @@ export type Database = {
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
+          user_ref: string | null
         }
         Insert: {
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
+          user_ref?: string | null
         }
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+          user_ref?: string | null
         }
         Relationships: []
       }
     }
     Views: {
+      account_limits_view: {
+        Row: {
+          account_tier: string | null
+          can_create_services: boolean | null
+          can_receive_leads: boolean | null
+          email: string | null
+          max_leads: number | null
+          max_services: number | null
+          user_ref: string | null
+        }
+        Relationships: []
+      }
+      account_model_view: {
+        Row: {
+          account_tier: string | null
+          email: string | null
+          is_premium: boolean | null
+          is_provider: boolean | null
+          is_rh: boolean | null
+          plan: string | null
+          profile_type: string | null
+          user_ref: string | null
+        }
+        Relationships: []
+      }
+      export_users: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string | null
+          user_ref: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          user_ref?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          user_ref?: string | null
+        }
+        Relationships: []
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
@@ -1606,6 +1670,19 @@ export type Database = {
           avatar_url?: string | null
           full_name?: string | null
           id?: string | null
+        }
+        Relationships: []
+      }
+      user_master_view: {
+        Row: {
+          email: string | null
+          plan: string | null
+          profile_type: string | null
+          role: string | null
+          system_role: Database["public"]["Enums"]["app_role"] | null
+          total_leads: number | null
+          total_services: number | null
+          user_ref: string | null
         }
         Relationships: []
       }
