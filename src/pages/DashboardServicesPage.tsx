@@ -180,6 +180,7 @@ const DashboardServicesPage = () => {
     setShowForm(false);
     setEditId(null);
     fetchServices();
+    refetchLimits();
   };
 
   const handleEdit = async (s: any) => {
