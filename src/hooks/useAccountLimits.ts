@@ -89,28 +89,22 @@ export const useAccountLimits = (): UseAccountLimitsReturn => {
         account_tier: limitsRes.data.account_tier,
       });
 
-      // Fetch current counts
-      setCurrentServices(limitsRes.data.total_services ?? 0);
-      setCurrentLeads(limitsRes.data.total_leads ?? 0);
     }
 
-    // If the view doesn't have counts, fetch them separately
-    if (limitsRes.data && (limitsRes.data as any).total_services === undefined) {
-      // We need to count from the actual tables
-      // Services count via user_ref on services table
-      const { count: svcCount } = await supabase
+    // Fetch current counts from actual tables
+    const [svcRes, leadRes] = await Promise.all([
+      supabase
         .from('services')
         .select('id', { count: 'exact', head: true })
         .eq('user_ref', userRef)
-        .is('deleted_at', null);
-      setCurrentServices(svcCount ?? 0);
-
-      const { count: leadCount } = await supabase
+        .is('deleted_at', null),
+      supabase
         .from('leads')
         .select('id', { count: 'exact', head: true })
-        .eq('user_ref', userRef);
-      setCurrentLeads(leadCount ?? 0);
-    }
+        .eq('user_ref', userRef),
+    ]);
+    setCurrentServices(svcRes.count ?? 0);
+    setCurrentLeads(leadRes.count ?? 0);
 
     setLoading(false);
   }, [userRef]);
