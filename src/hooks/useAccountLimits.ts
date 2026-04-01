@@ -114,25 +114,27 @@ export const useAccountLimits = (): UseAccountLimitsReturn => {
   }, [fetchData]);
 
   // Derived values
+  // -1 = unlimited, 0 = no access, positive = exact limit
+  const isUnlimitedServices = limits?.max_services === -1 || limits?.max_services === null;
+  const isUnlimitedLeads = limits?.max_leads === -1 || limits?.max_leads === null;
+
   const canCreateService = !!limits?.can_create_services && (
-    limits.max_services === null || limits.max_services === 0
-      ? true // 0 or null = unlimited in the view
-      : currentServices < limits.max_services
+    isUnlimitedServices
+      ? true
+      : (limits?.max_services ?? 0) > 0 && currentServices < (limits?.max_services ?? 0)
   );
 
   const canReceiveMoreLeads = !!limits?.can_receive_leads && (
-    limits.max_leads === null || limits.max_leads === 0
+    isUnlimitedLeads
       ? true
-      : currentLeads < limits.max_leads
+      : (limits?.max_leads ?? 0) > 0 && currentLeads < (limits?.max_leads ?? 0)
   );
 
-  const remainingServices = limits?.max_services && limits.max_services > 0
-    ? Math.max(0, limits.max_services - currentServices)
-    : null;
+  const remainingServices = isUnlimitedServices ? null
+    : (limits?.max_services ?? 0) > 0 ? Math.max(0, (limits.max_services ?? 0) - currentServices) : 0;
 
-  const remainingLeads = limits?.max_leads && limits.max_leads > 0
-    ? Math.max(0, limits.max_leads - currentLeads)
-    : null;
+  const remainingLeads = isUnlimitedLeads ? null
+    : (limits?.max_leads ?? 0) > 0 ? Math.max(0, (limits.max_leads ?? 0) - currentLeads) : 0;
 
   return {
     model,
