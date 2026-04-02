@@ -252,7 +252,8 @@ const AdminMediaPage = () => {
             {totalPages > 1 && (
               <PaginationControls
                 currentPage={page}
-                totalPages={totalPages}
+                totalItems={total}
+                itemsPerPage={PER_PAGE}
                 onPageChange={setPage}
               />
             )}
