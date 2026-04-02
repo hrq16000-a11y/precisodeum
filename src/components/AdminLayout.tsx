@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -48,6 +48,7 @@ const menuGroups = [
       { label: 'Meta Tags & SEO', icon: Globe, path: '/admin/metatags' },
       { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
       { label: 'Trilha de Auditoria', icon: ScrollText, path: '/admin/auditoria' },
+      { label: 'Mídia & Arquivos', icon: FileImage, path: '/admin/midia' },
       { label: 'Instalar App (PWA)', icon: Smartphone, path: '/admin/pwa' },
       { label: 'Backup & Export', icon: Database, path: '/admin/backup' },
       { label: 'Lixeira', icon: Trash2, path: '/admin/lixeira' },

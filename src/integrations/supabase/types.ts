@@ -575,6 +575,60 @@ export type Database = {
           },
         ]
       }
+      media: {
+        Row: {
+          created_at: string
+          entity_ref: string | null
+          entity_type: string
+          hash: string | null
+          height: number | null
+          id: string
+          is_active: boolean
+          mime_type: string
+          original_name: string
+          public_url: string
+          size_optimized: number | null
+          size_original: number | null
+          storage_path: string
+          user_ref: string | null
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          entity_ref?: string | null
+          entity_type?: string
+          hash?: string | null
+          height?: number | null
+          id?: string
+          is_active?: boolean
+          mime_type?: string
+          original_name?: string
+          public_url?: string
+          size_optimized?: number | null
+          size_original?: number | null
+          storage_path?: string
+          user_ref?: string | null
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          entity_ref?: string | null
+          entity_type?: string
+          hash?: string | null
+          height?: number | null
+          id?: string
+          is_active?: boolean
+          mime_type?: string
+          original_name?: string
+          public_url?: string
+          size_optimized?: number | null
+          size_original?: number | null
+          storage_path?: string
+          user_ref?: string | null
+          width?: number | null
+        }
+        Relationships: []
+      }
       neighborhoods: {
         Row: {
           city_id: string

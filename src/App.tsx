@@ -72,6 +72,7 @@ const AdminBackupPage = lazy(() => import("./pages/AdminBackupPage"));
 const AdminHeroBannersPage = lazy(() => import("./pages/AdminHeroBannersPage"));
 const AdminPwaPage = lazy(() => import("./pages/AdminPwaPage"));
 const AdminTierRulesPage = lazy(() => import("./pages/AdminTierRulesPage"));
+const AdminMediaPage = lazy(() => import("./pages/AdminMediaPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
 const CityPage = lazy(() => import("./pages/CityPage"));
@@ -202,6 +203,7 @@ const App = () => {
                 <Route path="/admin/hero-banners" element={<AdminHeroBannersPage />} />
                 <Route path="/admin/pwa" element={<AdminPwaPage />} />
                 <Route path="/admin/planos-regras" element={<AdminTierRulesPage />} />
+                <Route path="/admin/midia" element={<AdminMediaPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
