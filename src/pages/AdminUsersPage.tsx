@@ -14,6 +14,7 @@ import UserFilters from '@/components/admin/UserFilters';
 import UserTable from '@/components/admin/UserTable';
 import UserEditDialog from '@/components/admin/UserEditDialog';
 import UserDetailSheet from '@/components/admin/UserDetailSheet';
+import { logAuditAction } from '@/hooks/useAuditLog';
 
 const PAGE_SIZE = 20;
 
@@ -78,6 +79,12 @@ const AdminUsersPage = () => {
       });
       if (res.error) throw res.error;
       if (res.data?.error) throw new Error(res.data.error);
+      await logAuditAction({
+        action: 'update',
+        resource_type: 'user',
+        resource_id: pwUser.id,
+        details: { target_user_id: pwUser.id, changes: { password: { from: '***', to: '***' } } },
+      });
       toast.success('Senha redefinida com sucesso!');
       setPwUser(null);
       setNewPassword('');
@@ -88,17 +95,40 @@ const AdminUsersPage = () => {
   };
 
   const handleBlock = async (p: any) => {
-    const newStatus = (p.status || 'active') === 'active' ? 'inactive' : 'active';
+    const prevStatus = p.status || 'active';
+    const newStatus = prevStatus === 'active' ? 'inactive' : 'active';
     const { error } = await supabase.from('profiles').update({ status: newStatus }).eq('id', p.id);
-    if (error) toast.error('Erro: ' + error.message);
-    else { toast.success(newStatus === 'active' ? 'Usuário desbloqueado!' : 'Usuário bloqueado!'); fetchProfiles(); }
+    if (error) {
+      toast.error('Erro: ' + error.message);
+    } else {
+      await logAuditAction({
+        action: newStatus === 'inactive' ? 'block' : 'unblock',
+        resource_type: 'user',
+        resource_id: p.id,
+        details: { target_user_id: p.id, changes: { status: { from: prevStatus, to: newStatus } } },
+      });
+      toast.success(newStatus === 'active' ? 'Usuário desbloqueado!' : 'Usuário bloqueado!');
+      fetchProfiles();
+    }
   };
 
   const handleDelete = async () => {
     if (!deleteUser) return;
+    const prevStatus = deleteUser.status || 'active';
     const { error } = await supabase.from('profiles').update({ status: 'inactive' }).eq('id', deleteUser.id);
-    if (error) toast.error('Erro: ' + error.message);
-    else { toast.success('Usuário desativado!'); setDeleteUser(null); fetchProfiles(); }
+    if (error) {
+      toast.error('Erro: ' + error.message);
+    } else {
+      await logAuditAction({
+        action: 'soft_delete',
+        resource_type: 'user',
+        resource_id: deleteUser.id,
+        details: { target_user_id: deleteUser.id, changes: { status: { from: prevStatus, to: 'inactive' } }, reason: 'Soft delete via admin' },
+      });
+      toast.success('Usuário desativado!');
+      setDeleteUser(null);
+      fetchProfiles();
+    }
   };
 
   const makeAdmin = async (userId: string) => {
@@ -107,6 +137,12 @@ const AdminUsersPage = () => {
       if (error.code === '23505') toast.info('Usuário já é admin');
       else toast.error('Erro: ' + error.message);
     } else {
+      await logAuditAction({
+        action: 'update',
+        resource_type: 'user',
+        resource_id: userId,
+        details: { target_user_id: userId, changes: { role: { from: 'user', to: 'admin' } } },
+      });
       toast.success('Usuário promovido a admin!');
       fetchAdmins();
     }
@@ -124,6 +160,7 @@ const AdminUsersPage = () => {
     a.download = `usuarios_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    logAuditAction({ action: 'export', resource_type: 'user', details: { count: filtered.length } });
     toast.success('CSV exportado!');
   };
 
@@ -181,10 +218,8 @@ const AdminUsersPage = () => {
         </div>
       )}
 
-      {/* Edit Dialog */}
       {editUser && <UserEditDialog user={editUser} onClose={() => setEditUser(null)} onSaved={fetchProfiles} />}
 
-      {/* Detail Sheet */}
       <UserDetailSheet user={detailUser} isAdmin={adminIds.has(detailUser?.id)} onClose={() => setDetailUser(null)} />
 
       {/* Password Reset Dialog */}
@@ -213,6 +248,7 @@ const AdminUsersPage = () => {
           <DialogHeader><DialogTitle>Desativar Usuário</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">
             Deseja realmente desativar <strong>{deleteUser?.full_name || deleteUser?.email}</strong>?
+            <br /><span className="text-xs">Os dados do usuário serão preservados (soft delete).</span>
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteUser(null)}>Cancelar</Button>
