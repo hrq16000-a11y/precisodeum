@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logAuditAction } from '@/hooks/useAuditLog';
 
 const PROFILE_TYPE_OPTIONS = [
   { value: 'client', label: 'Cliente' },
@@ -39,19 +40,40 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
+
     const sanitizedWhatsapp = (form.whatsapp || '').replace(/\D/g, '');
-    const { error } = await supabase.from('profiles').update({
+    const updateData = {
       full_name: form.full_name,
       phone: form.phone,
       whatsapp: sanitizedWhatsapp,
       role: form.profile_type === 'rh' ? 'client' : form.profile_type,
       profile_type: form.profile_type,
       status: form.status,
-    }).eq('id', user.id);
+    };
+
+    // Build changes object tracking previous → new values
+    const changes: Record<string, { from: any; to: any }> = {};
+    if (form.full_name !== (user.full_name || '')) changes.full_name = { from: user.full_name || '', to: form.full_name };
+    if (form.phone !== (user.phone || '')) changes.phone = { from: user.phone || '', to: form.phone };
+    if (sanitizedWhatsapp !== (user.whatsapp || '')) changes.whatsapp = { from: user.whatsapp || '', to: sanitizedWhatsapp };
+    if (form.profile_type !== (user.profile_type || user.role || 'client')) changes.profile_type = { from: user.profile_type || user.role || 'client', to: form.profile_type };
+    if (form.status !== (user.status || 'active')) changes.status = { from: user.status || 'active', to: form.status };
+
+    const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id);
     setSaving(false);
+
     if (error) {
       toast.error('Erro ao atualizar: ' + error.message);
     } else {
+      // Log audit with previous/new values
+      if (Object.keys(changes).length > 0) {
+        await logAuditAction({
+          action: 'update',
+          resource_type: 'user',
+          resource_id: user.id,
+          details: { target_user_id: user.id, changes },
+        });
+      }
       toast.success('Usuário atualizado!');
       onSaved();
       onClose();
