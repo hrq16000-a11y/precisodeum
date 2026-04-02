@@ -203,6 +203,7 @@ const App = () => {
                 <Route path="/admin/hero-banners" element={<AdminHeroBannersPage />} />
                 <Route path="/admin/pwa" element={<AdminPwaPage />} />
                 <Route path="/admin/planos-regras" element={<AdminTierRulesPage />} />
+                <Route path="/admin/midia" element={<AdminMediaPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
