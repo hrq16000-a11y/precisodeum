@@ -2,9 +2,11 @@
  * Optimized image URL utility.
  * Converts Supabase storage public URLs to use the render/image transform endpoint.
  * Falls back to original URL for external images.
+ * 
+ * IMPORTANT: If Image Transforms are not available on the Supabase plan,
+ * the <img> tag should use handleImageError from imageResolver.ts as onError
+ * to fallback to original URLs gracefully.
  */
-
-const SUPABASE_HOST = import.meta.env.VITE_SUPABASE_URL?.replace('https://', '') || '';
 
 interface ImageOptions {
   width?: number;
@@ -16,6 +18,7 @@ interface ImageOptions {
 /**
  * Returns an optimized image URL using Supabase Image Transforms.
  * Only transforms Supabase storage URLs; external URLs pass through unchanged.
+ * If transforms aren't available, the URL will 404 — use handleImageError on <img>.
  */
 export function optimizedImageUrl(
   url: string | null | undefined,
@@ -76,4 +79,15 @@ export function coverImage(url: string | null | undefined): string {
 /** Preset: sponsor image */
 export function sponsorImage(url: string | null | undefined): string {
   return optimizedImageUrl(url, { width: 600, quality: 70, resize: 'contain' });
+}
+
+/**
+ * Get the original (non-transformed) URL from either a render or object URL.
+ * Useful as fallback when Image Transforms are not available.
+ */
+export function originalUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  return url
+    .replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
+    .split('?')[0];
 }
