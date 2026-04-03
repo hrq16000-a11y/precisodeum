@@ -7,6 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { DbProvider } from '@/hooks/useProviders';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { whatsappLink } from '@/lib/whatsapp';
+import { handleImageError } from '@/lib/imageResolver';
 
 interface ProviderCardProps {
   provider: DbProvider;
