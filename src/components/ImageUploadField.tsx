@@ -117,7 +117,7 @@ const ImageUploadField = ({
       )}
 
       {value && (
-        <img src={value} alt="Preview" className="mt-1 h-20 w-auto rounded-lg object-cover border border-border" />
+        <img src={value} alt="Preview" className="mt-1 h-20 w-auto rounded-lg object-cover border border-border" onError={handleImageError} />
       )}
     </div>
   );
