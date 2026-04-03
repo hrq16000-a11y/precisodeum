@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Upload, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { handleImageError } from '@/lib/imageResolver';
 
 interface ImageUploadFieldProps {
   value: string;
