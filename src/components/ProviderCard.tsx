@@ -33,7 +33,7 @@ const ProviderCard = ({ provider, isFallback = false }: ProviderCardProps) => {
       <div className="flex flex-1 flex-col p-5">
         <div className="flex gap-4">
            <Avatar className="h-14 w-14 shrink-0">
-            <AvatarImage src={displayPhoto || undefined} alt={displayName} loading="lazy" decoding="async" />
+            <AvatarImage src={displayPhoto || undefined} alt={displayName} loading="lazy" decoding="async" onError={handleImageError} />
             <AvatarFallback className="bg-primary/10 text-2xl">
               {provider.categoryIcon || '🔧'}
             </AvatarFallback>
