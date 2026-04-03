@@ -545,7 +545,7 @@ const ProviderProfile = () => {
       {/* Cover Image Hero */}
       {pageSettings.cover_image_url && (
         <div className="relative w-full aspect-[16/5] sm:aspect-[16/5] overflow-hidden">
-          <img src={coverImage(pageSettings.cover_image_url)} alt="Capa" className="h-full w-full object-cover" loading="eager" />
+          <img src={coverImage(pageSettings.cover_image_url)} alt="Capa" className="h-full w-full object-cover" loading="eager" onError={handleImageError} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 container pb-6 text-white">
             {pageSettings.headline && (
