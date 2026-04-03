@@ -78,6 +78,7 @@ const SponsorImage = ({
           src={optimizedSrc}
           alt={alt}
           onLoad={onLoad}
+          onError={handleImageError}
           loading="lazy"
           className={cn(
             'absolute inset-0 block h-full w-full rounded-2xl object-contain object-center transition-opacity duration-300',

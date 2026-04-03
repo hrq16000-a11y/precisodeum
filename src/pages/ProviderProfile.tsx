@@ -850,7 +850,7 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
                 <div className="mt-3 flex gap-2 overflow-hidden">
                   {s.serviceImages.slice(0, 3).map((img: any) => (
                     <div key={img.id} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border">
-                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-cover" loading="lazy" />
+                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
                     </div>
                   ))}
                   {s.serviceImages.length > 3 && (
