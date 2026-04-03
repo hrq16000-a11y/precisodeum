@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
+import { avatarThumb, serviceImageThumb, originalUrl } from '@/lib/imageOptimizer';
 
 export interface DbProvider {
   id: string;

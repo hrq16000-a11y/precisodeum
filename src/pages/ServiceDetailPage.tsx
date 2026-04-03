@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { serviceImageThumb } from '@/lib/imageOptimizer';
+import { handleImageError } from '@/lib/imageResolver';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';

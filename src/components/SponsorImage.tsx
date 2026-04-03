@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { sponsorImage } from '@/lib/imageOptimizer';
+import { sponsorImage, originalUrl } from '@/lib/imageOptimizer';
+import { handleImageError } from '@/lib/imageResolver';
 
 type BannerShape = 'horizontal' | 'square' | 'vertical' | 'leaderboard';
 

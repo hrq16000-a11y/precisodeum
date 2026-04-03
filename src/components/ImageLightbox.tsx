@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { portfolioFull } from '@/lib/imageOptimizer';
+import { handleImageError } from '@/lib/imageResolver';
 
 interface ImageLightboxProps {
   images: string[];
