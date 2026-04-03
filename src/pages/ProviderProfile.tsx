@@ -786,7 +786,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
               className="aspect-video cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]"
               onClick={() => onImageClick?.(service.serviceImages.map((i: any) => i.image_url), idx)}
             >
-              <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" />
+              <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
             </div>
           ))}
         </div>
