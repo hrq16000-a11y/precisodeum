@@ -457,7 +457,7 @@ const ProviderProfile = () => {
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {portfolioImages.map((url, i) => (
             <div key={i} className="aspect-square cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]" onClick={() => openPortfolioLightbox(i)}>
-              <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+              <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
             </div>
           ))}
         </div>
