@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ImagePlus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { handleImageError } from '@/lib/imageResolver';
 
 interface ServiceImage {
   id: string;
@@ -31,6 +32,40 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
   useEffect(() => {
     fetchImages();
   }, [serviceId]);
+
+  /** Get user_ref for media table */
+  const getUserRef = async (): Promise<string | null> => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('user_ref')
+        .eq('id', userId)
+        .maybeSingle();
+      return data?.user_ref || null;
+    } catch {
+      return null;
+    }
+  };
+
+  /** Insert into media table (additive, non-blocking) */
+  const insertMedia = async (publicUrl: string, storagePath: string, file: File) => {
+    try {
+      const userRef = await getUserRef();
+      await supabase.from('media').insert({
+        user_ref: userRef,
+        entity_type: 'service',
+        entity_ref: serviceId,
+        original_name: file.name,
+        storage_path: storagePath,
+        public_url: publicUrl,
+        mime_type: file.type || 'image/jpeg',
+        size_original: file.size,
+        is_active: true,
+      });
+    } catch {
+      // Non-blocking: media insert failure should not break upload
+    }
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -67,6 +102,9 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
           image_url: urlData.publicUrl,
           display_order: maxOrder,
         });
+
+        // Also insert into media table (additive, non-blocking)
+        await insertMedia(urlData.publicUrl, `service-images/${path}`, file);
       }
 
       toast.success('Imagens enviadas!');
@@ -86,6 +124,15 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
       await supabase.storage.from('service-images').remove([decodeURIComponent(urlParts[1])]);
     }
     await supabase.from('service_images').delete().eq('id', img.id);
+
+    // Also deactivate in media table (non-blocking)
+    try {
+      await supabase
+        .from('media')
+        .update({ is_active: false })
+        .eq('public_url', img.image_url);
+    } catch {}
+
     toast.success('Imagem removida');
     fetchImages();
   };
@@ -138,6 +185,7 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
                 src={img.image_url}
                 alt="Foto do serviço"
                 className="w-full h-28 object-cover"
+                onError={handleImageError}
               />
               <div className="absolute inset-0 bg-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                 {idx > 0 && (

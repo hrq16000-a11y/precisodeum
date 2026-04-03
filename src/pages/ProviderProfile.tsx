@@ -1,5 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb } from '@/lib/imageOptimizer';
+import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl } from '@/lib/imageOptimizer';
+import { handleImageError } from '@/lib/imageResolver';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube } from 'lucide-react';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import ImageLightbox from '@/components/ImageLightbox';
@@ -456,7 +457,7 @@ const ProviderProfile = () => {
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {portfolioImages.map((url, i) => (
             <div key={i} className="aspect-square cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]" onClick={() => openPortfolioLightbox(i)}>
-              <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+              <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
             </div>
           ))}
         </div>
@@ -544,7 +545,7 @@ const ProviderProfile = () => {
       {/* Cover Image Hero */}
       {pageSettings.cover_image_url && (
         <div className="relative w-full aspect-[16/5] sm:aspect-[16/5] overflow-hidden">
-          <img src={coverImage(pageSettings.cover_image_url)} alt="Capa" className="h-full w-full object-cover" loading="eager" />
+          <img src={coverImage(pageSettings.cover_image_url)} alt="Capa" className="h-full w-full object-cover" loading="eager" onError={handleImageError} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 container pb-6 text-white">
             {pageSettings.headline && (
@@ -785,7 +786,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
               className="aspect-video cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]"
               onClick={() => onImageClick?.(service.serviceImages.map((i: any) => i.image_url), idx)}
             >
-              <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" />
+              <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
             </div>
           ))}
         </div>
@@ -849,7 +850,7 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
                 <div className="mt-3 flex gap-2 overflow-hidden">
                   {s.serviceImages.slice(0, 3).map((img: any) => (
                     <div key={img.id} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border">
-                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-cover" loading="lazy" />
+                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
                     </div>
                   ))}
                   {s.serviceImages.length > 3 && (

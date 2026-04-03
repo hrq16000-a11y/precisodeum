@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { portfolioFull } from '@/lib/imageOptimizer';
+import { handleImageError } from '@/lib/imageResolver';
 
 interface ImageLightboxProps {
   images: string[];
@@ -86,6 +87,7 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
         className="max-h-[85vh] max-w-[92vw] rounded-lg object-contain select-none"
         onClick={e => e.stopPropagation()}
         draggable={false}
+        onError={handleImageError}
       />
 
       {images.length > 1 && (

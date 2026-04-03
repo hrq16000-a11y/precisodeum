@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Upload, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { handleImageError } from '@/lib/imageResolver';
 
 interface ImageUploadFieldProps {
   value: string;
@@ -116,7 +117,7 @@ const ImageUploadField = ({
       )}
 
       {value && (
-        <img src={value} alt="Preview" className="mt-1 h-20 w-auto rounded-lg object-cover border border-border" />
+        <img src={value} alt="Preview" className="mt-1 h-20 w-auto rounded-lg object-cover border border-border" onError={handleImageError} />
       )}
     </div>
   );

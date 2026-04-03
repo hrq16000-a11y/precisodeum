@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { sponsorImage } from '@/lib/imageOptimizer';
+import { sponsorImage, originalUrl } from '@/lib/imageOptimizer';
+import { handleImageError } from '@/lib/imageResolver';
 
 type BannerShape = 'horizontal' | 'square' | 'vertical' | 'leaderboard';
 
@@ -77,6 +78,7 @@ const SponsorImage = ({
           src={optimizedSrc}
           alt={alt}
           onLoad={onLoad}
+          onError={handleImageError}
           loading="lazy"
           className={cn(
             'absolute inset-0 block h-full w-full rounded-2xl object-contain object-center transition-opacity duration-300',
