@@ -751,7 +751,7 @@ export type Database = {
           role: string
           status: string
           updated_at: string
-          user_ref: string | null
+          user_ref: string
           whatsapp: string | null
         }
         Insert: {
@@ -765,7 +765,7 @@ export type Database = {
           role?: string
           status?: string
           updated_at?: string
-          user_ref?: string | null
+          user_ref: string
           whatsapp?: string | null
         }
         Update: {
@@ -779,7 +779,7 @@ export type Database = {
           role?: string
           status?: string
           updated_at?: string
-          user_ref?: string | null
+          user_ref?: string
           whatsapp?: string | null
         }
         Relationships: []
