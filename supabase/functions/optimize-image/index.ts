@@ -1,136 +1,180 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const ALLOWED_BUCKETS = ['service-images', 'avatars', 'portfolio'];
+const ALLOWED_BUCKETS = ["service-images", "avatars", "portfolio"];
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+type PathRequest = {
+  bucket?: string;
+  path?: string;
+};
+
+const jsonResponse = (body: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const isInvalidStoragePath = (value: string) =>
+  value.includes("..") || value.includes("//") || value.startsWith("/");
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
 
-    // --- Auth: require authenticated user ---
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+      console.error("Missing required env vars", {
+        hasSupabaseUrl: !!supabaseUrl,
+        hasServiceRoleKey: !!serviceRoleKey,
+        hasAnonKey: !!anonKey,
       });
+      return jsonResponse({ error: "Server configuration error" }, 500);
     }
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
+
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user } } = await callerClient.auth.getUser();
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthenticated' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const {
+      data: { user },
+      error: authError,
+    } = await callerClient.auth.getUser();
+
+    if (authError || !user) {
+      console.error("Auth failed", authError);
+      return jsonResponse({ error: "Unauthenticated" }, 401);
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const contentType = req.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      const { bucket = "service-images", path = "" } = (await req.json()) as PathRequest;
+
+      if (!ALLOWED_BUCKETS.includes(bucket)) {
+        return jsonResponse({ error: "Invalid bucket" }, 400);
+      }
+
+      if (!path || isInvalidStoragePath(path)) {
+        return jsonResponse({ error: "Invalid file path" }, 400);
+      }
+
+      const { data: existingFile, error: downloadError } = await supabase.storage
+        .from(bucket)
+        .download(path);
+
+      if (downloadError || !existingFile) {
+        console.error("Download failed", downloadError);
+        return jsonResponse({ error: "File not found" }, 404);
+      }
+
+      const fileBytes = new Uint8Array(await existingFile.arrayBuffer());
+      const uploadContentType = existingFile.type || "application/octet-stream";
+
+      const { error: uploadError } = await supabase.storage.from(bucket).upload(path, fileBytes, {
+        contentType: uploadContentType,
+        upsert: true,
+      });
+
+      if (uploadError) {
+        console.error("Re-upload failed", uploadError);
+        return jsonResponse({ error: "Upload failed" }, 500);
+      }
+
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+      return jsonResponse({
+        url: urlData.publicUrl,
+        path,
+        deduplicated: false,
+        optimized: true,
+        mode: "existing-path",
       });
     }
 
     const formData = await req.formData();
-    const file = formData.get('file') as File;
-    const bucket = (formData.get('bucket') as string) || 'service-images';
-    const folder = (formData.get('folder') as string) || '';
+    const file = formData.get("file") as File | null;
+    const bucket = (formData.get("bucket") as string) || "service-images";
+    const folder = (formData.get("folder") as string) || "";
 
-    // --- Bucket allowlist ---
     if (!ALLOWED_BUCKETS.includes(bucket)) {
-      return new Response(JSON.stringify({ error: 'Invalid bucket' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return jsonResponse({ error: "Invalid bucket" }, 400);
     }
 
-    // --- Path traversal protection ---
-    if (folder.includes('..') || folder.includes('//')) {
-      return new Response(JSON.stringify({ error: 'Invalid folder path' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (folder && isInvalidStoragePath(folder)) {
+      return jsonResponse({ error: "Invalid folder path" }, 400);
     }
 
     if (!file) {
-      return new Response(JSON.stringify({ error: 'No file provided' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return jsonResponse({ error: "No file provided" }, 400);
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      return new Response(JSON.stringify({ error: 'File too large. Max 5MB.' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (file.size > MAX_FILE_SIZE) {
+      return jsonResponse({ error: "File too large. Max 5MB." }, 400);
     }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const arrayBuffer = await file.arrayBuffer();
     const uint8 = new Uint8Array(arrayBuffer);
 
-    const hashBuffer = await crypto.subtle.digest('SHA-256', uint8);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", uint8);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+    const hash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
 
-    const originalName = file.name || 'image';
-    const ext = originalName.split('.').pop()?.toLowerCase() || 'jpg';
-    const isGif = ext === 'gif';
-    const finalExt = isGif ? 'gif' : ext;
-    const contentType = isGif ? 'image/gif' : file.type || 'image/jpeg';
-
-    const basePath = folder ? `${folder}/${hash}` : hash;
-    const filePath = `${basePath}.${finalExt}`;
+    const originalName = file.name || "image";
+    const ext = originalName.split(".").pop()?.toLowerCase() || "jpg";
+    const isGif = ext === "gif";
+    const finalExt = isGif ? "gif" : ext;
+    const uploadPath = `${folder ? `${folder}/` : ""}${hash}.${finalExt}`;
+    const uploadContentType = isGif ? "image/gif" : file.type || "image/jpeg";
 
     const { data: existing } = await supabase.storage.from(bucket).list(folder || undefined, {
       search: `${hash}.`,
     });
 
-    if (existing && existing.length > 0) {
-      const existingFile = existing.find(f => f.name.startsWith(hash));
-      if (existingFile) {
-        const existingPath = folder ? `${folder}/${existingFile.name}` : existingFile.name;
-        const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(existingPath);
-        return new Response(JSON.stringify({
-          url: urlData.publicUrl,
-          path: existingPath,
-          deduplicated: true,
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+    const existingFile = existing?.find((entry) => entry.name.startsWith(hash));
+    if (existingFile) {
+      const existingPath = folder ? `${folder}/${existingFile.name}` : existingFile.name;
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(existingPath);
+      return jsonResponse({
+        url: urlData.publicUrl,
+        path: existingPath,
+        deduplicated: true,
+      });
     }
 
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(filePath, uint8, {
-        contentType,
-        upsert: true,
-      });
+    const { error: uploadError } = await supabase.storage.from(bucket).upload(uploadPath, uint8, {
+      contentType: uploadContentType,
+      upsert: true,
+    });
 
     if (uploadError) {
-      console.error('Upload failed:', uploadError);
-      return new Response(JSON.stringify({ error: 'Upload failed' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.error("Upload failed", uploadError);
+      return jsonResponse({ error: "Upload failed" }, 500);
     }
 
-    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
-
-    return new Response(JSON.stringify({
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(uploadPath);
+    return jsonResponse({
       url: urlData.publicUrl,
-      path: filePath,
+      path: uploadPath,
       hash,
       deduplicated: false,
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      mode: "upload",
     });
   } catch (err) {
-    console.error('optimize-image error:', err);
-    return new Response(JSON.stringify({ error: 'Internal error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error("optimize-image error:", err);
+    return jsonResponse({ error: "Internal error" }, 500);
   }
 });
