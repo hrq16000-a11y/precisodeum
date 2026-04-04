@@ -16,7 +16,7 @@ import PaginationControls from '@/components/PaginationControls';
 const ENTITY_TYPES = ['all', 'profile', 'service', 'provider', 'banner', 'sponsor', 'portfolio', 'generic'];
 const MIME_TYPES = ['all', 'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
 const STATUS_OPTIONS = ['all', 'active', 'inactive'];
-const PER_PAGE = 24;
+const PER_PAGE = 100;
 
 const AdminMediaPage = () => {
   const { isAdmin, loading: adminLoading } = useAdmin();
