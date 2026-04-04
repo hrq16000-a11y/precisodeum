@@ -3,7 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Users, Key, Trash2 } from 'lucide-react';
+import { Users, Key, Trash2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,8 @@ import UserFilters from '@/components/admin/UserFilters';
 import UserTable from '@/components/admin/UserTable';
 import UserEditDialog from '@/components/admin/UserEditDialog';
 import UserDetailSheet from '@/components/admin/UserDetailSheet';
+import BulkActionsBar from '@/components/admin/BulkActionsBar';
+import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
 import { logAuditAction } from '@/hooks/useAuditLog';
 
 const PAGE_SIZE = 20;
@@ -33,6 +35,18 @@ const AdminUsersPage = () => {
   const [resettingPw, setResettingPw] = useState(false);
   const [deleteUser, setDeleteUser] = useState<any | null>(null);
   const [detailUser, setDetailUser] = useState<any | null>(null);
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const fetchProfiles = () => {
     supabase.from('profiles').select('*').order('created_at', { ascending: false })
@@ -60,7 +74,9 @@ const AdminUsersPage = () => {
         (p.full_name || '').toLowerCase().includes(q) ||
         (p.email || '').toLowerCase().includes(q) ||
         (p.phone || '').toLowerCase().includes(q) ||
-        (p.whatsapp || '').toLowerCase().includes(q)
+        (p.whatsapp || '').toLowerCase().includes(q) ||
+        (p.id || '').toLowerCase().includes(q) ||
+        (p.user_ref || '').toLowerCase().includes(q)
       );
     }
     return list;
@@ -68,6 +84,22 @@ const AdminUsersPage = () => {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Bulk actions
+  const bulkSetStatus = async (status: string) => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from('profiles').update({ status }).in('id', ids);
+    if (error) toast.error('Erro: ' + error.message);
+    else {
+      await logAuditAction({ action: status === 'active' ? 'bulk_active' : 'bulk_inactive', resource_type: 'user', details: { ids, count: ids.length } });
+      toast.success(`${ids.length} usuário(s) ${status === 'active' ? 'ativado(s)' : 'desativado(s)'}`);
+      setSelectedIds(new Set());
+      fetchProfiles();
+    }
+    setBulkLoading(false);
+  };
 
   const handleResetPassword = async () => {
     if (!pwUser || !newPassword) return;
@@ -80,9 +112,7 @@ const AdminUsersPage = () => {
       if (res.error) throw res.error;
       if (res.data?.error) throw new Error(res.data.error);
       await logAuditAction({
-        action: 'update',
-        resource_type: 'user',
-        resource_id: pwUser.id,
+        action: 'update', resource_type: 'user', resource_id: pwUser.id,
         details: { target_user_id: pwUser.id, changes: { password: { from: '***', to: '***' } } },
       });
       toast.success('Senha redefinida com sucesso!');
@@ -102,9 +132,7 @@ const AdminUsersPage = () => {
       toast.error('Erro: ' + error.message);
     } else {
       await logAuditAction({
-        action: newStatus === 'inactive' ? 'block' : 'unblock',
-        resource_type: 'user',
-        resource_id: p.id,
+        action: newStatus === 'inactive' ? 'block' : 'unblock', resource_type: 'user', resource_id: p.id,
         details: { target_user_id: p.id, changes: { status: { from: prevStatus, to: newStatus } } },
       });
       toast.success(newStatus === 'active' ? 'Usuário desbloqueado!' : 'Usuário bloqueado!');
@@ -120,9 +148,7 @@ const AdminUsersPage = () => {
       toast.error('Erro: ' + error.message);
     } else {
       await logAuditAction({
-        action: 'soft_delete',
-        resource_type: 'user',
-        resource_id: deleteUser.id,
+        action: 'soft_delete', resource_type: 'user', resource_id: deleteUser.id,
         details: { target_user_id: deleteUser.id, changes: { status: { from: prevStatus, to: 'inactive' } }, reason: 'Soft delete via admin' },
       });
       toast.success('Usuário desativado!');
@@ -138,9 +164,7 @@ const AdminUsersPage = () => {
       else toast.error('Erro: ' + error.message);
     } else {
       await logAuditAction({
-        action: 'update',
-        resource_type: 'user',
-        resource_id: userId,
+        action: 'update', resource_type: 'user', resource_id: userId,
         details: { target_user_id: userId, changes: { role: { from: 'user', to: 'admin' } } },
       });
       toast.success('Usuário promovido a admin!');
@@ -182,9 +206,7 @@ const AdminUsersPage = () => {
         <Users className="h-6 w-6" /> Gerenciar Usuários
       </h1>
 
-      <div className="mt-4">
-        <UserStatsCards stats={stats} />
-      </div>
+      <div className="mt-4"><UserStatsCards stats={stats} /></div>
 
       <div className="mt-4">
         <UserFilters
@@ -199,6 +221,25 @@ const AdminUsersPage = () => {
         />
       </div>
 
+      {/* Bulk actions */}
+      {selectedIds.size > 0 && (
+        <div className="mt-3">
+          <BulkActionsBar
+            count={selectedIds.size}
+            onClear={() => setSelectedIds(new Set())}
+            onExport={handleExport}
+            loading={bulkLoading}
+          >
+            <Button size="sm" variant="outline" onClick={() => bulkSetStatus('active')} disabled={bulkLoading} className="text-green-600 border-green-200">
+              Ativar
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => bulkSetStatus('inactive')} disabled={bulkLoading} className="text-destructive border-destructive/30">
+              Desativar
+            </Button>
+          </BulkActionsBar>
+        </div>
+      )}
+
       <div className="mt-3">
         <UserTable
           users={paginated}
@@ -209,6 +250,8 @@ const AdminUsersPage = () => {
           onMakeAdmin={makeAdmin}
           onDelete={setDeleteUser}
           onViewDetails={setDetailUser}
+          selectedIds={selectedIds}
+          onToggleSelection={toggleSelection}
         />
       </div>
 
@@ -219,7 +262,6 @@ const AdminUsersPage = () => {
       )}
 
       {editUser && <UserEditDialog user={editUser} onClose={() => setEditUser(null)} onSaved={fetchProfiles} />}
-
       <UserDetailSheet user={detailUser} isAdmin={adminIds.has(detailUser?.id)} onClose={() => setDetailUser(null)} />
 
       {/* Password Reset Dialog */}
