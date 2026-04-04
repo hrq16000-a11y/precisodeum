@@ -273,15 +273,8 @@ export function filterAndRankProviders(
     results = results.filter((p) => p.categorySlug === categorySlug);
   }
 
-  if (city) {
-    const lc = city.toLowerCase();
-    results = results.filter(
-      (p) =>
-        p.city.toLowerCase().includes(lc) ||
-        p.state.toLowerCase().includes(lc) ||
-        p.neighborhood.toLowerCase().includes(lc)
-    );
-  }
+  // BUSCA GLOBAL: cidade é usada para RANKING, NÃO como filtro
+  // Resultados da mesma cidade aparecem primeiro, mas não excluem outras
 
   if (query) {
     const lq = query.toLowerCase();
@@ -300,13 +293,24 @@ export function filterAndRankProviders(
   }
 
   const planPriority: Record<string, number> = { premium: 0, pro: 1, free: 2 };
+  const cityLower = city?.toLowerCase() || '';
+
   results.sort((a, b) => {
+    // 1. City proximity ranking (same city first, NOT a filter)
+    if (cityLower) {
+      const aCity = a.city.toLowerCase() === cityLower ? 0 : 1;
+      const bCity = b.city.toLowerCase() === cityLower ? 0 : 1;
+      if (aCity !== bCity) return aCity - bCity;
+    }
+    // 2. Visual content priority
     const aImg = a.serviceImage || a.hasPortfolio ? 0 : 1;
     const bImg = b.serviceImage || b.hasPortfolio ? 0 : 1;
     if (aImg !== bImg) return aImg - bImg;
+    // 3. Plan priority
     const pa = planPriority[a.plan] ?? 2;
     const pb = planPriority[b.plan] ?? 2;
     if (pa !== pb) return pa - pb;
+    // 4. Rating & reviews
     if (b.rating !== a.rating) return b.rating - a.rating;
     return b.reviewCount - a.reviewCount;
   });
