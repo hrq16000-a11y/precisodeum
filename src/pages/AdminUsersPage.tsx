@@ -93,7 +93,7 @@ const AdminUsersPage = () => {
     const { error } = await supabase.from('profiles').update({ status }).in('id', ids);
     if (error) toast.error('Erro: ' + error.message);
     else {
-      await logAuditAction({ action: `bulk_${status}`, resource_type: 'user', details: { ids, count: ids.length } });
+      await logAuditAction({ action: status === 'active' ? 'bulk_active' : 'bulk_inactive', resource_type: 'user', details: { ids, count: ids.length } });
       toast.success(`${ids.length} usuário(s) ${status === 'active' ? 'ativado(s)' : 'desativado(s)'}`);
       setSelectedIds(new Set());
       fetchProfiles();
