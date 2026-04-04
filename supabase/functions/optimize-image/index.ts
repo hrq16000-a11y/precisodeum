@@ -7,6 +7,8 @@ const corsHeaders = {
 
 const ALLOWED_BUCKETS = ["service-images", "avatars", "portfolio"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
 
 type PathRequest = {
   bucket?: string;
