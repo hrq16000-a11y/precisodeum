@@ -3,14 +3,14 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { FileText, Search } from 'lucide-react';
+import { FileText, Search, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PaginationControls from '@/components/PaginationControls';
 import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
+import LeadEditDialog from '@/components/admin/LeadEditDialog';
 import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { format } from 'date-fns';
@@ -24,6 +24,7 @@ const AdminLeadsPage = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [editLead, setEditLead] = useState<any | null>(null);
 
   const fetchLeads = async () => {
     let query = supabase
@@ -60,11 +61,12 @@ const AdminLeadsPage = () => {
 
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const changeStatus = async (id: string, newStatus: string) => {
-    const { error } = await supabase.from('leads').update({ status: newStatus } as any).eq('id', id);
+  const handleDelete = async (id: string) => {
+    if (!confirm('Excluir este lead permanentemente?')) return;
+    const { error } = await supabase.from('leads').delete().eq('id', id);
     if (error) { toast.error('Erro: ' + error.message); return; }
-    await logAuditAction({ action: 'update', resource_type: 'lead', resource_id: id, details: { status: newStatus } });
-    toast.success('Status atualizado');
+    await logAuditAction({ action: 'delete', resource_type: 'lead', resource_id: id });
+    toast.success('Lead excluído');
     fetchLeads();
   };
 
@@ -148,15 +150,14 @@ const AdminLeadsPage = () => {
                   {l.created_at ? format(new Date(l.created_at), 'dd/MM/yyyy') : '—'}
                 </td>
                 <td className="px-3 py-2.5">
-                  <Select value={l.status} onValueChange={v => changeStatus(l.id, v)}>
-                    <SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new">Novo</SelectItem>
-                      <SelectItem value="contacted">Contatado</SelectItem>
-                      <SelectItem value="converted">Convertido</SelectItem>
-                      <SelectItem value="closed">Fechado</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-0.5">
+                    <Button size="sm" variant="ghost" onClick={() => setEditLead(l)} title="Editar">
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleDelete(l.id)} title="Excluir">
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -172,6 +173,8 @@ const AdminLeadsPage = () => {
           <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
         </div>
       )}
+
+      <LeadEditDialog lead={editLead} onClose={() => setEditLead(null)} onSaved={fetchLeads} />
     </AdminLayout>
   );
 };
