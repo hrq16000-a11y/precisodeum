@@ -1,6 +1,7 @@
 import { Edit2, Key, Ban, Shield, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 
 const profileTypeLabel = (t: string) => {
@@ -24,13 +25,16 @@ interface UserTableProps {
   onMakeAdmin: (id: string) => void;
   onDelete: (u: any) => void;
   onViewDetails: (u: any) => void;
+  selectedIds?: Set<string>;
+  onToggleSelection?: (id: string) => void;
 }
 
-const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAdmin, onDelete, onViewDetails }: UserTableProps) => (
+const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => (
   <div className="overflow-x-auto rounded-xl border border-border shadow-card">
     <table className="w-full text-sm">
       <thead>
         <tr className="border-b border-border bg-muted/50">
+          {onToggleSelection && <th className="px-3 py-2.5 w-8"></th>}
           <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Nome</th>
           <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden sm:table-cell">E-mail</th>
           <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden md:table-cell">Telefone</th>
@@ -46,6 +50,14 @@ const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAd
           const isAdminUser = adminIds.has(p.id);
           return (
             <tr key={p.id} className={`border-b border-border bg-card hover:bg-muted/30 transition-colors ${isInactive ? 'opacity-60' : ''}`}>
+              {onToggleSelection && (
+                <td className="px-3 py-2.5">
+                  <Checkbox
+                    checked={selectedIds?.has(p.id) || false}
+                    onCheckedChange={() => onToggleSelection(p.id)}
+                  />
+                </td>
+              )}
               <td className="px-3 py-2.5">
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 shrink-0 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
@@ -103,7 +115,7 @@ const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAd
           );
         })}
         {users.length === 0 && (
-          <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum usuário encontrado</td></tr>
+          <tr><td colSpan={onToggleSelection ? 8 : 7} className="px-4 py-8 text-center text-muted-foreground">Nenhum usuário encontrado</td></tr>
         )}
       </tbody>
     </table>
