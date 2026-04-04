@@ -78,20 +78,20 @@ Deno.serve(async (req) => {
         .download(path);
 
       if (downloadError || !existingFile) {
-        console.error("Download failed", downloadError);
+        console.error("Download failed", { bucket, path, downloadError });
         return jsonResponse({ error: "File not found" }, 404);
       }
 
       const fileBytes = new Uint8Array(await existingFile.arrayBuffer());
       const uploadContentType = existingFile.type || "application/octet-stream";
 
-      const { error: uploadError } = await supabase.storage.from(bucket).upload(path, fileBytes, {
+      const { error: uploadError } = await supabase.storage.from(bucket).update(path, fileBytes, {
         contentType: uploadContentType,
         upsert: true,
       });
 
       if (uploadError) {
-        console.error("Re-upload failed", uploadError);
+        console.error("Re-upload failed", { bucket, path, uploadError });
         return jsonResponse({ error: "Upload failed" }, 500);
       }
 
