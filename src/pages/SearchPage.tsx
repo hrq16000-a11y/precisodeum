@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -6,10 +6,9 @@ import SearchBar from '@/components/SearchBar';
 import ProviderCard from '@/components/ProviderCard';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import PaginationControls from '@/components/PaginationControls';
-import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useSearchProviders, useCategories, filterAndRankProviders } from '@/hooks/useProviders';
+import { useSearchProviders, useCategories } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
@@ -36,34 +35,9 @@ const SearchPage = () => {
     refetch,
   } = useSearchProviders(query, effectiveCity, selectedCategory, minRating);
 
-  // --- Geo Fallback: expand to state then all when city yields 0 ---
-  const baseProviders = useSearchProviders(query, '', selectedCategory, minRating).data || [];
-
-  const { fallbackResults, expansionLevel } = useMemo(() => {
-    if (filtered.length > 0 || !effectiveCity || isLoading) {
-      return { fallbackResults: [], expansionLevel: null };
-    }
-
-    // Level 2: same state
-    const userState = geoState || '';
-    if (userState) {
-      const stateResults = filterAndRankProviders(baseProviders, '', '', '', 0)
-        .filter((p) => p.state.toLowerCase() === userState.toLowerCase());
-      if (stateResults.length > 0) {
-        return { fallbackResults: stateResults, expansionLevel: 'state' as const };
-      }
-    }
-
-    // Level 3: all results
-    if (baseProviders.length > 0) {
-      return { fallbackResults: baseProviders, expansionLevel: 'all' as const };
-    }
-
-    return { fallbackResults: [], expansionLevel: null };
-  }, [filtered, effectiveCity, isLoading, baseProviders, geoState]);
-
-  const displayResults = filtered.length > 0 ? filtered : fallbackResults;
-  const isFallback = filtered.length === 0 && fallbackResults.length > 0;
+  // Search is now global — city is used for RANKING, not filtering
+  const displayResults = filtered;
+  const isFallback = false;
 
   const seoCity = effectiveCity || '';
   const seoTitle = query
@@ -140,14 +114,7 @@ const SearchPage = () => {
               {effectiveCity && !isFallback && <> em <span className="font-semibold text-foreground">{effectiveCity}</span></>}
             </p>
 
-            {isFallback && expansionLevel && (
-              <GeoFallbackBanner
-                originalCity={effectiveCity}
-                expansionLevel={expansionLevel}
-                stateName={geoState || undefined}
-                resultCount={fallbackResults.length}
-              />
-            )}
+            {/* Busca global — sem banner de fallback necessário */}
 
             {isLoading ? (
               <div className="grid gap-4 sm:grid-cols-2">
