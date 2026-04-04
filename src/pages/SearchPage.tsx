@@ -115,14 +115,7 @@ const SearchPage = () => {
               {effectiveCity && !isFallback && <> em <span className="font-semibold text-foreground">{effectiveCity}</span></>}
             </p>
 
-            {isFallback && expansionLevel && (
-              <GeoFallbackBanner
-                originalCity={effectiveCity}
-                expansionLevel={expansionLevel}
-                stateName={geoState || undefined}
-                resultCount={fallbackResults.length}
-              />
-            )}
+            {/* Busca global — sem banner de fallback necessário */}
 
             {isLoading ? (
               <div className="grid gap-4 sm:grid-cols-2">
