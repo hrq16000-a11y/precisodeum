@@ -127,6 +127,16 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "File too large. Max 5MB." }, 400);
     }
 
+    // Server-side file type validation (prevent SVG/HTML uploads)
+    const originalName = file.name || "image";
+    const ext = originalName.split(".").pop()?.toLowerCase() || "jpg";
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      return jsonResponse({ error: "Invalid file type. Allowed: jpg, png, gif, webp." }, 400);
+    }
+    if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
+      return jsonResponse({ error: "Invalid MIME type. Allowed: jpeg, png, gif, webp." }, 400);
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const uint8 = new Uint8Array(arrayBuffer);
 
@@ -134,8 +144,6 @@ Deno.serve(async (req) => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
 
-    const originalName = file.name || "image";
-    const ext = originalName.split(".").pop()?.toLowerCase() || "jpg";
     const isGif = ext === "gif";
     const finalExt = isGif ? "gif" : ext;
     const uploadPath = `${folder ? `${folder}/` : ""}${hash}.${finalExt}`;
