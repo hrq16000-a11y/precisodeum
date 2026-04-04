@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Shield, Mail, Phone, Calendar, UserCheck, Briefcase, FileText, History } from 'lucide-react';
+import { Shield, Mail, Phone, Calendar, UserCheck, Briefcase, FileText, History, ImageIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +16,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose }: UserDetailSheetProps) => {
   const [services, setServices] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [media, setMedia] = useState<any[]>([]);
   const [tab, setTab] = useState('profile');
 
   useEffect(() => {
@@ -31,6 +32,15 @@ const UserDetailSheet = ({ user, isAdmin, onClose }: UserDetailSheetProps) => {
       supabase.from('leads').select('id, client_name, status, created_at, service_needed').in('provider_id', providerIds).order('created_at', { ascending: false }).limit(50)
         .then(({ data }) => setLeads(data || []));
     });
+
+    // Fetch media by user_ref
+    if (user.user_ref) {
+      supabase.from('media').select('id, original_name, public_url, entity_type, mime_type, created_at, is_active')
+        .eq('user_ref', user.user_ref).order('created_at', { ascending: false }).limit(50)
+        .then(({ data }) => setMedia(data || []));
+    } else {
+      setMedia([]);
+    }
 
     // Fetch audit logs for this user
     supabase.from('audit_log').select('*').eq('resource_id', user.id).eq('resource_type', 'user').order('created_at', { ascending: false }).limit(50)
@@ -56,8 +66,12 @@ const UserDetailSheet = ({ user, isAdmin, onClose }: UserDetailSheetProps) => {
           <div className="mt-4 space-y-4">
             {/* Header */}
             <div className="flex items-center gap-3">
-              <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-muted-foreground">
-                {(user.full_name || '?')[0]?.toUpperCase()}
+              <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-muted-foreground overflow-hidden">
+                {user.avatar_url ? (
+                  <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  (user.full_name || '?')[0]?.toUpperCase()
+                )}
               </div>
               <div>
                 <p className="font-display font-bold text-foreground text-lg">{user.full_name || '—'}</p>
@@ -71,11 +85,12 @@ const UserDetailSheet = ({ user, isAdmin, onClose }: UserDetailSheetProps) => {
             </div>
 
             <Tabs value={tab} onValueChange={setTab}>
-              <TabsList className="w-full grid grid-cols-4">
-                <TabsTrigger value="profile"><UserCheck className="h-3.5 w-3.5 mr-1" />Perfil</TabsTrigger>
-                <TabsTrigger value="services"><Briefcase className="h-3.5 w-3.5 mr-1" />Serviços</TabsTrigger>
-                <TabsTrigger value="leads"><FileText className="h-3.5 w-3.5 mr-1" />Leads</TabsTrigger>
-                <TabsTrigger value="audit"><History className="h-3.5 w-3.5 mr-1" />Histórico</TabsTrigger>
+              <TabsList className="w-full grid grid-cols-5">
+                <TabsTrigger value="profile"><UserCheck className="h-3.5 w-3.5" /></TabsTrigger>
+                <TabsTrigger value="services"><Briefcase className="h-3.5 w-3.5" /></TabsTrigger>
+                <TabsTrigger value="leads"><FileText className="h-3.5 w-3.5" /></TabsTrigger>
+                <TabsTrigger value="media"><ImageIcon className="h-3.5 w-3.5" /></TabsTrigger>
+                <TabsTrigger value="audit"><History className="h-3.5 w-3.5" /></TabsTrigger>
               </TabsList>
 
               {/* Profile Tab */}
@@ -113,6 +128,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose }: UserDetailSheetProps) => {
 
               {/* Services Tab */}
               <TabsContent value="services" className="mt-3">
+                <p className="text-xs text-muted-foreground mb-2">{services.length} serviço(s)</p>
                 {services.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-4 text-center">Nenhum serviço vinculado</p>
                 ) : (
@@ -132,6 +148,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose }: UserDetailSheetProps) => {
 
               {/* Leads Tab */}
               <TabsContent value="leads" className="mt-3">
+                <p className="text-xs text-muted-foreground mb-2">{leads.length} lead(s)</p>
                 {leads.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-4 text-center">Nenhum lead vinculado</p>
                 ) : (
@@ -143,6 +160,35 @@ const UserDetailSheet = ({ user, isAdmin, onClose }: UserDetailSheetProps) => {
                           <p className="text-xs text-muted-foreground">{l.service_needed || ''} · {l.created_at ? format(new Date(l.created_at), 'dd/MM/yyyy') : ''}</p>
                         </div>
                         <Badge variant="outline" className="text-[10px] capitalize">{l.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Media Tab */}
+              <TabsContent value="media" className="mt-3">
+                <p className="text-xs text-muted-foreground mb-2">{media.length} arquivo(s)</p>
+                {media.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma mídia vinculada</p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {media.map(m => (
+                      <div key={m.id} className="relative rounded-lg border border-border overflow-hidden group">
+                        {m.mime_type?.startsWith('image/') ? (
+                          <img src={m.public_url} alt={m.original_name} className="w-full h-20 object-cover" loading="lazy" />
+                        ) : (
+                          <div className="w-full h-20 bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                            {m.mime_type?.split('/')[1] || 'file'}
+                          </div>
+                        )}
+                        <div className="absolute bottom-0 left-0 right-0 bg-background/80 px-1 py-0.5">
+                          <p className="text-[9px] text-foreground truncate">{m.original_name}</p>
+                          <div className="flex items-center gap-1">
+                            <Badge variant="outline" className="text-[8px]">{m.entity_type}</Badge>
+                            {!m.is_active && <Badge variant="destructive" className="text-[8px]">Inativo</Badge>}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -3,21 +3,18 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Briefcase, Search, Edit2, Trash2, RotateCcw, Eye } from 'lucide-react';
+import { Briefcase, Search, Edit2, Trash2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import PaginationControls from '@/components/PaginationControls';
 import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
+import ServiceEditDialog from '@/components/admin/ServiceEditDialog';
 import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
 
 const PAGE_SIZE = 30;
 
@@ -28,12 +25,11 @@ const AdminServicesPage = () => {
   const [statusFilter, setStatusFilter] = useState('active');
   const [page, setPage] = useState(1);
   const [editService, setEditService] = useState<any | null>(null);
-  const [editForm, setEditForm] = useState({ service_name: '', description: '', price: '', whatsapp: '', service_area: '' });
 
   const fetchServices = async () => {
     let query = supabase
       .from('services')
-      .select('*, providers(business_name, slug, user_id)')
+      .select('*, providers(business_name, slug, user_id), categories(name)')
       .order('created_at', { ascending: false });
 
     if (statusFilter === 'active') query = query.is('deleted_at', null);
@@ -65,27 +61,6 @@ const AdminServicesPage = () => {
   }, [services, search]);
 
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const openEdit = (s: any) => {
-    setEditService(s);
-    setEditForm({
-      service_name: s.service_name || '',
-      description: s.description || '',
-      price: s.price || '',
-      whatsapp: s.whatsapp || '',
-      service_area: s.service_area || '',
-    });
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editService) return;
-    const { error } = await supabase.from('services').update(editForm).eq('id', editService.id);
-    if (error) { toast.error('Erro: ' + error.message); return; }
-    await logAuditAction({ action: 'update', resource_type: 'service', resource_id: editService.id });
-    toast.success('Serviço atualizado!');
-    setEditService(null);
-    fetchServices();
-  };
 
   const handleSoftDelete = async (id: string) => {
     if (!confirm('Mover para lixeira?')) return;
@@ -147,7 +122,7 @@ const AdminServicesPage = () => {
               <th className="px-3 py-2.5 w-8"></th>
               <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Nome</th>
               <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden sm:table-cell">Prestador</th>
-              <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden md:table-cell">Área</th>
+              <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden md:table-cell">Categoria</th>
               <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden md:table-cell">Preço</th>
               <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden lg:table-cell">Criado</th>
               <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Ações</th>
@@ -166,14 +141,14 @@ const AdminServicesPage = () => {
                 <td className="px-3 py-2.5 hidden sm:table-cell text-muted-foreground text-xs truncate max-w-[150px]">
                   {s.providers?.business_name || '—'}
                 </td>
-                <td className="px-3 py-2.5 hidden md:table-cell text-muted-foreground text-xs">{s.service_area || '—'}</td>
+                <td className="px-3 py-2.5 hidden md:table-cell text-muted-foreground text-xs">{s.categories?.name || '—'}</td>
                 <td className="px-3 py-2.5 hidden md:table-cell text-muted-foreground text-xs">{s.price || '—'}</td>
                 <td className="px-3 py-2.5 hidden lg:table-cell text-muted-foreground text-xs">
                   {s.created_at ? format(new Date(s.created_at), 'dd/MM/yyyy') : '—'}
                 </td>
                 <td className="px-3 py-2.5">
                   <div className="flex gap-0.5">
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(s)} title="Editar"><Edit2 className="h-3.5 w-3.5" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditService(s)} title="Editar"><Edit2 className="h-3.5 w-3.5" /></Button>
                     {s.deleted_at ? (
                       <Button size="sm" variant="ghost" onClick={() => handleRestore(s.id)} title="Restaurar">
                         <RotateCcw className="h-3.5 w-3.5 text-green-600" />
@@ -200,25 +175,7 @@ const AdminServicesPage = () => {
         </div>
       )}
 
-      {/* Edit Dialog */}
-      <Dialog open={!!editService} onOpenChange={open => !open && setEditService(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Editar Serviço</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Nome</Label><Input value={editForm.service_name} onChange={e => setEditForm(f => ({ ...f, service_name: e.target.value }))} /></div>
-            <div><Label>Descrição</Label><Textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} rows={3} /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Preço</Label><Input value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))} /></div>
-              <div><Label>WhatsApp</Label><Input value={editForm.whatsapp} onChange={e => setEditForm(f => ({ ...f, whatsapp: e.target.value }))} /></div>
-            </div>
-            <div><Label>Área de atuação</Label><Input value={editForm.service_area} onChange={e => setEditForm(f => ({ ...f, service_area: e.target.value }))} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditService(null)}>Cancelar</Button>
-            <Button onClick={handleSaveEdit}>Salvar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ServiceEditDialog service={editService} onClose={() => setEditService(null)} onSaved={fetchServices} />
     </AdminLayout>
   );
 };
