@@ -8,7 +8,7 @@ import GeoLocationChip from '@/components/GeoLocationChip';
 import PaginationControls from '@/components/PaginationControls';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useSearchProviders, useCategories, filterAndRankProviders } from '@/hooks/useProviders';
+import { useSearchProviders, useCategories } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
