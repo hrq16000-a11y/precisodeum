@@ -73,6 +73,8 @@ const AdminHeroBannersPage = lazy(() => import("./pages/AdminHeroBannersPage"));
 const AdminPwaPage = lazy(() => import("./pages/AdminPwaPage"));
 const AdminTierRulesPage = lazy(() => import("./pages/AdminTierRulesPage"));
 const AdminMediaPage = lazy(() => import("./pages/AdminMediaPage"));
+const AdminServicesPage = lazy(() => import("./pages/AdminServicesPage"));
+const AdminLeadsPage = lazy(() => import("./pages/AdminLeadsPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
 const CityPage = lazy(() => import("./pages/CityPage"));
