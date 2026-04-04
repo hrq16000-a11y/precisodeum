@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Plus, Pencil, Trash2, Eye, Rss, Loader2, Search } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useNavigate } from 'react-router-dom';
@@ -64,6 +65,14 @@ const AdminBlogPage = () => {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const allPageIds = paginated.map((p: any) => p.id);
+  const allSelected = paginated.length > 0 && paginated.every((p: any) => bulk.selectedIds.has(p.id));
+
+  const handleSelectAll = () => {
+    if (allSelected) bulk.clearSelection();
+    else bulk.selectAll(allPageIds);
+  };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -203,7 +212,13 @@ const AdminBlogPage = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-10"></TableHead>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Selecionar todos"
+                  />
+                </TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden sm:table-cell">Fonte</TableHead>

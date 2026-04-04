@@ -75,6 +75,7 @@ const AdminTierRulesPage = lazy(() => import("./pages/AdminTierRulesPage"));
 const AdminMediaPage = lazy(() => import("./pages/AdminMediaPage"));
 const AdminServicesPage = lazy(() => import("./pages/AdminServicesPage"));
 const AdminLeadsPage = lazy(() => import("./pages/AdminLeadsPage"));
+const AdminModulesPage = lazy(() => import("./pages/AdminModulesPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
 const CityPage = lazy(() => import("./pages/CityPage"));
@@ -208,6 +209,7 @@ const App = () => {
                 <Route path="/admin/midia" element={<AdminMediaPage />} />
                 <Route path="/admin/servicos" element={<AdminServicesPage />} />
                 <Route path="/admin/leads" element={<AdminLeadsPage />} />
+                <Route path="/admin/modulos" element={<AdminModulesPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
