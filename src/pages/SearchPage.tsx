@@ -36,31 +36,8 @@ const SearchPage = () => {
     refetch,
   } = useSearchProviders(query, effectiveCity, selectedCategory, minRating);
 
-  // --- Geo Fallback: expand to state then all when city yields 0 ---
-  const baseProviders = useSearchProviders(query, '', selectedCategory, minRating).data || [];
-
-  const { fallbackResults, expansionLevel } = useMemo(() => {
-    if (filtered.length > 0 || !effectiveCity || isLoading) {
-      return { fallbackResults: [], expansionLevel: null };
-    }
-
-    // Level 2: same state
-    const userState = geoState || '';
-    if (userState) {
-      const stateResults = filterAndRankProviders(baseProviders, '', '', '', 0)
-        .filter((p) => p.state.toLowerCase() === userState.toLowerCase());
-      if (stateResults.length > 0) {
-        return { fallbackResults: stateResults, expansionLevel: 'state' as const };
-      }
-    }
-
-    // Level 3: all results
-    if (baseProviders.length > 0) {
-      return { fallbackResults: baseProviders, expansionLevel: 'all' as const };
-    }
-
-    return { fallbackResults: [], expansionLevel: null };
-  }, [filtered, effectiveCity, isLoading, baseProviders, geoState]);
+  // Geo fallback is no longer needed since search is now global
+  // City is used for RANKING, not filtering — results from all cities appear
 
   const displayResults = filtered.length > 0 ? filtered : fallbackResults;
   const isFallback = filtered.length === 0 && fallbackResults.length > 0;
