@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -8,7 +7,7 @@ const corsHeaders = {
 
 const ALLOWED_BUCKETS = ['service-images', 'avatars', 'portfolio'];
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -103,7 +102,7 @@ serve(async (req) => {
       }
     }
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(filePath, uint8, {
         contentType,
@@ -111,6 +110,7 @@ serve(async (req) => {
       });
 
     if (uploadError) {
+      console.error('Upload failed:', uploadError);
       return new Response(JSON.stringify({ error: 'Upload failed' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -127,6 +127,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
+    console.error('optimize-image error:', err);
     return new Response(JSON.stringify({ error: 'Internal error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
