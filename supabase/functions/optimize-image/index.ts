@@ -87,7 +87,6 @@ Deno.serve(async (req) => {
 
       const { error: uploadError } = await supabase.storage.from(bucket).update(path, fileBytes, {
         contentType: uploadContentType,
-        upsert: true,
       });
 
       if (uploadError) {
