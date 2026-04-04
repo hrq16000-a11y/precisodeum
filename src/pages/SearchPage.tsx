@@ -36,11 +36,9 @@ const SearchPage = () => {
     refetch,
   } = useSearchProviders(query, effectiveCity, selectedCategory, minRating);
 
-  // Geo fallback is no longer needed since search is now global
-  // City is used for RANKING, not filtering — results from all cities appear
-
-  const displayResults = filtered.length > 0 ? filtered : fallbackResults;
-  const isFallback = filtered.length === 0 && fallbackResults.length > 0;
+  // Search is now global — city is used for RANKING, not filtering
+  const displayResults = filtered;
+  const isFallback = false;
 
   const seoCity = effectiveCity || '';
   const seoTitle = query
