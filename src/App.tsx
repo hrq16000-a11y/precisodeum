@@ -209,6 +209,7 @@ const App = () => {
                 <Route path="/admin/midia" element={<AdminMediaPage />} />
                 <Route path="/admin/servicos" element={<AdminServicesPage />} />
                 <Route path="/admin/leads" element={<AdminLeadsPage />} />
+                <Route path="/admin/modulos" element={<AdminModulesPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />

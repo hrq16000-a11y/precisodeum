@@ -52,6 +52,7 @@ const menuGroups = [
       { label: 'Trilha de Auditoria', icon: ScrollText, path: '/admin/auditoria' },
       { label: 'Mídia & Arquivos', icon: FileImage, path: '/admin/midia' },
       { label: 'Instalar App (PWA)', icon: Smartphone, path: '/admin/pwa' },
+      { label: 'Módulos', icon: Blocks, path: '/admin/modulos' },
       { label: 'Backup & Export', icon: Database, path: '/admin/backup' },
       { label: 'Lixeira', icon: Trash2, path: '/admin/lixeira' },
     ],
