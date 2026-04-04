@@ -16,6 +16,8 @@ const menuGroups = [
     items: [
       { label: 'Prestadores', icon: Briefcase, path: '/admin/prestadores' },
       { label: 'Usuários', icon: Users, path: '/admin/usuarios' },
+      { label: 'Serviços', icon: Package, path: '/admin/servicos' },
+      { label: 'Leads', icon: FileText, path: '/admin/leads' },
       { label: 'Planos & Regras', icon: Crown, path: '/admin/planos-regras' },
       { label: 'Comunidade', icon: Users2, path: '/admin/comunidade' },
     ],
