@@ -7,7 +7,6 @@ import ProviderCard from '@/components/ProviderCard';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import PaginationControls from '@/components/PaginationControls';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
-import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchProviders, useCategories, filterAndRankProviders } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
