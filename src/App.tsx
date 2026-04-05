@@ -76,6 +76,9 @@ const AdminMediaPage = lazy(() => import("./pages/AdminMediaPage"));
 const AdminServicesPage = lazy(() => import("./pages/AdminServicesPage"));
 const AdminLeadsPage = lazy(() => import("./pages/AdminLeadsPage"));
 const AdminModulesPage = lazy(() => import("./pages/AdminModulesPage"));
+const AdminBlocksPage = lazy(() => import("./pages/AdminBlocksPage"));
+const AdminInstitutionalPagesPage = lazy(() => import("./pages/AdminInstitutionalPagesPage"));
+const InstitutionalPage = lazy(() => import("./pages/InstitutionalPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
 const CityPage = lazy(() => import("./pages/CityPage"));
@@ -210,6 +213,8 @@ const App = () => {
                 <Route path="/admin/servicos" element={<AdminServicesPage />} />
                 <Route path="/admin/leads" element={<AdminLeadsPage />} />
                 <Route path="/admin/modulos" element={<AdminModulesPage />} />
+                <Route path="/admin/blocos" element={<AdminBlocksPage />} />
+                <Route path="/admin/paginas" element={<AdminInstitutionalPagesPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
@@ -233,6 +238,7 @@ const App = () => {
                 <Route path="/sponsor-panel/contratos" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorContractsPage /></ModuleBoundary>} />
                 <Route path="/sponsor-panel/notificacoes" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorNotificationsPage /></ModuleBoundary>} />
                 <Route path="/sponsor-panel/dados" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorDataPage /></ModuleBoundary>} />
+                <Route path="/p/:slug" element={<InstitutionalPage />} />
                 <Route path="/:slug" element={<SeoPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
