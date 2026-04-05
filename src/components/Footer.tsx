@@ -4,10 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { MessageCircle, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
+import { useMenuItems } from '@/hooks/useMenuItems';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
 import SponsorAd from '@/components/SponsorAd';
-import { Button } from '@/components/ui/button';
 import PwaFooterInstall from '@/components/PwaFooterInstall';
 
 const ecosystemLinks = [
@@ -35,7 +35,8 @@ const Footer = () => {
   const [showAllSearches, setShowAllSearches] = useState(false);
   const [showAllServices, setShowAllServices] = useState(false);
 
-  // Cities with active services only, random 3
+  const { data: footerItems = [] } = useMenuItems('footer');
+
   const { data: topCities = [] } = useQuery({
     queryKey: ['footer-cities-with-services'],
     queryFn: async () => {
@@ -70,6 +71,19 @@ const Footer = () => {
 
   const visibleSeoLinks = showAllSearches ? randomSeoLinks : randomSeoLinks.slice(0, 4);
   const visibleServices = showAllServices ? categories : categories.slice(0, 4);
+
+  // Fallback footer links
+  const fallbackFooterLinks = [
+    { label: 'Cadastro', url: '/cadastro' },
+    { label: 'Login', url: '/login' },
+    { label: 'Dashboard', url: '/dashboard' },
+    { label: 'Buscar Profissionais', url: '/buscar' },
+    { label: 'Vagas', url: '/vagas' },
+    { label: 'Notícias', url: '/blog' },
+    { label: 'Sobre', url: '/sobre' },
+  ];
+
+  const footerNavLinks = footerItems.length > 0 ? footerItems : fallbackFooterLinks;
 
   return (
     <footer className="border-t border-border bg-primary text-primary-foreground">
@@ -117,17 +131,25 @@ const Footer = () => {
             </Link>
           </div>
 
-          {/* Profissionais */}
+          {/* Dynamic Footer Nav */}
           <div>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Profissionais</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
-              <li><Link to="/cadastro" className="transition-colors hover:text-primary-foreground">Cadastro</Link></li>
-              <li><Link to="/login" className="transition-colors hover:text-primary-foreground">Login</Link></li>
-              <li><Link to="/dashboard" className="transition-colors hover:text-primary-foreground">Dashboard</Link></li>
-              <li><Link to="/buscar" className="transition-colors hover:text-primary-foreground">Buscar Profissionais</Link></li>
-              <li><Link to="/vagas" className="transition-colors hover:text-primary-foreground">Vagas</Link></li>
-              <li><Link to="/blog" className="transition-colors hover:text-primary-foreground">Notícias</Link></li>
-              <li><Link to="/sobre" className="transition-colors hover:text-primary-foreground">Sobre</Link></li>
+              {footerNavLinks.map((item: any) => (
+                <li key={item.id || item.url}>
+                  {item.open_in_new_tab || item.url?.startsWith('http') ? (
+                    <a href={item.url} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary-foreground">
+                      {item.icon && <span className="mr-1">{item.icon}</span>}
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link to={item.url} className="transition-colors hover:text-primary-foreground">
+                      {item.icon && <span className="mr-1">{item.icon}</span>}
+                      {item.label}
+                    </Link>
+                  )}
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -177,7 +199,7 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* SEO Links Grid - limited to 4, expandable */}
+        {/* SEO Links Grid */}
         {randomSeoLinks.length > 0 && (
           <div className="mt-10 border-t border-primary-foreground/10 pt-6">
             <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-primary-foreground/40">Buscas populares</h4>

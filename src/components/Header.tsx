@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { NotificationBell } from '@/components/NotificationCenter';
+import { useMenuItems } from '@/hooks/useMenuItems';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
 
@@ -20,6 +21,9 @@ const Header = () => {
   const { city: geoCity, temp: geoTemp } = useGeoCity();
   const headerRef = useRef<HTMLElement>(null);
 
+  const { data: headerItems = [] } = useMenuItems('header');
+  const { data: mobileItems = [] } = useMenuItems('mobile');
+
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
   useEffect(() => {
@@ -30,7 +34,6 @@ const Header = () => {
     return () => document.removeEventListener('keydown', handleEsc);
   }, [mobileOpen]);
 
-  // Close mobile menu on click outside
   useEffect(() => {
     if (!mobileOpen) return;
     const handler = (e: MouseEvent) => {
@@ -46,6 +49,28 @@ const Header = () => {
     await signOut();
     navigate('/');
   };
+
+  // Fallback hardcoded links when no DB menu items exist
+  const fallbackHeaderLinks = [
+    { label: 'Buscar', url: '/buscar' },
+    { label: 'Vagas', url: '/vagas' },
+    { label: 'Notícias', url: '/blog' },
+    { label: 'Como Funciona', url: '/sobre' },
+    { label: 'Seja Profissional', url: '/cadastro' },
+  ];
+
+  const fallbackMobileLinks = [
+    { label: 'Buscar Profissionais', url: '/buscar' },
+    { label: 'Vagas', url: '/vagas' },
+    { label: 'Notícias', url: '/blog' },
+    { label: 'Como Funciona', url: '/sobre' },
+    { label: 'Categorias', url: '/categorias' },
+    { label: 'Cidades', url: '/cidades' },
+    { label: 'Seja Profissional', url: '/cadastro' },
+  ];
+
+  const navLinks = headerItems.length > 0 ? headerItems : fallbackHeaderLinks.map((l, i) => ({ ...l, id: `fb-${i}`, icon: '', open_in_new_tab: false, parent_id: null, display_order: i, active: true, menu_location: 'header' }));
+  const mobileNavLinks = mobileItems.length > 0 ? mobileItems : (headerItems.length > 0 ? headerItems : fallbackMobileLinks.map((l, i) => ({ ...l, id: `fbm-${i}`, icon: '', open_in_new_tab: false, parent_id: null, display_order: i, active: true, menu_location: 'mobile' })));
 
   const GeoBadge = ({ className = '' }: { className?: string }) => {
     if (!geoCity) return null;
@@ -64,6 +89,23 @@ const Header = () => {
     );
   };
 
+  const renderLink = (item: any, className: string, onClick?: () => void) => {
+    if (item.open_in_new_tab || item.url?.startsWith('http')) {
+      return (
+        <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer" className={className} onClick={onClick}>
+          {item.icon && <span className="mr-1">{item.icon}</span>}
+          {item.label}
+        </a>
+      );
+    }
+    return (
+      <Link key={item.id} to={item.url} className={className} onClick={onClick}>
+        {item.icon && <span className="mr-1">{item.icon}</span>}
+        {item.label}
+      </Link>
+    );
+  };
+
   return (
     <header ref={headerRef} className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <div className="container flex h-14 items-center justify-between md:h-16">
@@ -75,11 +117,9 @@ const Header = () => {
         </div>
 
         <nav className="hidden items-center gap-5 md:flex">
-          <Link to="/buscar" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Buscar</Link>
-          <Link to="/vagas" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Vagas</Link>
-          <Link to="/blog" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Notícias</Link>
-          <Link to="/sobre" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Como Funciona</Link>
-          <Link to="/cadastro" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Seja Profissional</Link>
+          {navLinks.filter(i => !i.parent_id).map(item =>
+            renderLink(item, 'text-sm font-medium text-muted-foreground transition-colors hover:text-foreground')
+          )}
           {whatsappGroupUrl && (
             <a href={whatsappGroupUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-[#25D366] transition-colors hover:text-[#128C7E]">
               <Users className="h-4 w-4" />
@@ -123,13 +163,9 @@ const Header = () => {
       {mobileOpen && (
         <div className="relative z-50 border-t border-border bg-card p-4 md:hidden animate-in slide-in-from-top-2 duration-200">
             <nav className="flex flex-col gap-2">
-              <Link to="/buscar" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Buscar Profissionais</Link>
-              <Link to="/vagas" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Vagas</Link>
-              <Link to="/blog" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Notícias</Link>
-              <Link to="/sobre" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Como Funciona</Link>
-              <Link to="/categorias" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Categorias</Link>
-              <Link to="/cidades" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Cidades</Link>
-              <Link to="/cadastro" className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Seja Profissional</Link>
+              {mobileNavLinks.filter(i => !i.parent_id).map(item =>
+                renderLink(item, 'rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted', () => setMobileOpen(false))
+              )}
               {whatsappGroupUrl && (
                 <a href={whatsappGroupUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg px-3 py-2 text-sm font-medium text-[#25D366] hover:bg-muted flex items-center gap-2" onClick={() => setMobileOpen(false)}>
                   <Users className="h-4 w-4" />
