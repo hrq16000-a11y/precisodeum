@@ -20,9 +20,9 @@ serve(async (req) => {
 
     const results: { bucket: string; file: string; sizeKB: number }[] = [];
 
-    // Helper to scan a bucket's folder recursively (one level)
+    // Scan a single folder level (no recursion to avoid timeouts)
     const scanFolder = async (bucket: string, folder: string) => {
-      const { data: files } = await supabase.storage.from(bucket).list(folder || undefined, { limit: 200 });
+      const { data: files } = await supabase.storage.from(bucket).list(folder || undefined, { limit: 500 });
       if (!files) return;
       for (const f of files) {
         if (!f.name || f.name === '.emptyFolderPlaceholder') continue;
@@ -32,27 +32,29 @@ serve(async (req) => {
         if (size > MAX_SIZE) {
           results.push({ bucket, file: filePath, sizeKB: Math.round(size / 1024) });
         }
-        // If it's a folder (no metadata/size), scan inside it
-        if (f.id === null || (!meta?.size && !meta?.mimetype)) {
-          await scanFolder(bucket, filePath);
-        }
       }
     };
 
-    // Scan all relevant buckets
-    for (const bucket of ['avatars', 'service-images', 'portfolio']) {
-      await scanFolder(bucket, '');
-    }
+    // Scan top-level of each bucket
+    const buckets = ['avatars', 'service-images', 'portfolio'];
+    for (const bucket of buckets) {
+      // List top-level entries
+      const { data: topLevel } = await supabase.storage.from(bucket).list('', { limit: 500 });
+      if (!topLevel) continue;
 
-    // Also check sponsors subfolder explicitly
-    const { data: sponsorFiles } = await supabase.storage.from('service-images').list('sponsors', { limit: 50 });
-    if (sponsorFiles) {
-      for (const f of sponsorFiles) {
-        if (!f.name || f.name === '.emptyFolderPlaceholder') continue;
-        const meta = f.metadata as any;
+      for (const entry of topLevel) {
+        if (!entry.name || entry.name === '.emptyFolderPlaceholder') continue;
+        const meta = entry.metadata as any;
         const size = meta?.size || 0;
-        if (size > MAX_SIZE && !results.find(r => r.bucket === 'service-images' && r.file === `sponsors/${f.name}`)) {
-          results.push({ bucket: 'service-images', file: `sponsors/${f.name}`, sizeKB: Math.round(size / 1024) });
+
+        if (size > 0) {
+          // It's a file
+          if (size > MAX_SIZE) {
+            results.push({ bucket, file: entry.name, sizeKB: Math.round(size / 1024) });
+          }
+        } else {
+          // It's a folder — scan one level deep
+          await scanFolder(bucket, entry.name);
         }
       }
     }
