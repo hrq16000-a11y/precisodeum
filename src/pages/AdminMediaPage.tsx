@@ -42,6 +42,7 @@ const AdminMediaPage = () => {
   const [oversizedFiles, setOversizedFiles] = useState<any[]>([]);
   const [showOversized, setShowOversized] = useState(false);
   const [zipLoading, setZipLoading] = useState(false);
+  const [batchCompressing, setBatchCompressing] = useState(false);
 
   const fetchMedia = useCallback(async () => {
     setLoading(true);
@@ -213,10 +214,30 @@ const AdminMediaPage = () => {
       });
       if (error) throw error;
       toast.success('Imagem otimizada com sucesso');
-      scanOversized(); // refresh list
+      scanOversized();
     } catch (err: any) {
       toast.error('Erro ao comprimir: ' + (err.message || ''));
     }
+  };
+
+  const compressAll = async () => {
+    if (!oversizedFiles.length) return;
+    setBatchCompressing(true);
+    let ok = 0, fail = 0;
+    for (const f of oversizedFiles) {
+      try {
+        const { error } = await supabase.functions.invoke('optimize-image', {
+          body: { bucket: f.bucket, path: f.file },
+        });
+        if (error) throw error;
+        ok++;
+      } catch {
+        fail++;
+      }
+    }
+    toast.success(`${ok} otimizada(s), ${fail} erro(s)`);
+    setBatchCompressing(false);
+    scanOversized();
   };
 
   if (adminLoading || !isAdmin) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
@@ -255,7 +276,14 @@ const AdminMediaPage = () => {
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
                   Arquivos Grandes no Storage ({oversizedFiles.length})
                 </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setShowOversized(false)}>Fechar</Button>
+                <div className="flex gap-2">
+                  {oversizedFiles.length > 0 && (
+                    <Button variant="accent" size="sm" onClick={compressAll} disabled={batchCompressing}>
+                      {batchCompressing ? <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Comprimindo...</> : `Comprimir Todos (${oversizedFiles.length})`}
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => setShowOversized(false)}>Fechar</Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

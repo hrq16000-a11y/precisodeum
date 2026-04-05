@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const MAX_SIZE = 200 * 1024; // 200KB
+const SCAN_LIMIT = 100; // items per listing
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,60 +19,59 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // Optional: filter by bucket via query or body
+    let filterBucket: string | null = null;
+    try {
+      const url = new URL(req.url);
+      filterBucket = url.searchParams.get('bucket');
+    } catch { /* ignore */ }
+
     const results: { bucket: string; file: string; sizeKB: number }[] = [];
 
-    // Scan avatars bucket (folders = user IDs)
-    const { data: avatarFolders } = await supabase.storage.from('avatars').list('', { limit: 200 });
-    if (avatarFolders) {
-      for (const folder of avatarFolders) {
-        if (folder.id !== null) continue; // skip files, we want folders
-        const { data: files } = await supabase.storage.from('avatars').list(folder.name, { limit: 10 });
-        if (!files) continue;
-        for (const f of files) {
-          if (!f.name || f.name === '.emptyFolderPlaceholder') continue;
-          const meta = f.metadata as any;
-          const size = meta?.size || 0;
-          if (size > MAX_SIZE) {
-            results.push({ bucket: 'avatars', file: `${folder.name}/${f.name}`, sizeKB: Math.round(size / 1024) });
-          }
-        }
-      }
-    }
-
-    // Scan service-images bucket (top-level only)
-    const { data: serviceFiles } = await supabase.storage.from('service-images').list('', { limit: 200 });
-    if (serviceFiles) {
-      for (const f of serviceFiles) {
-        if (!f.name || f.name === '.emptyFolderPlaceholder' || f.id === null) continue;
+    const scanFolder = async (bucket: string, folder: string) => {
+      const { data: files } = await supabase.storage.from(bucket).list(folder || undefined, { limit: SCAN_LIMIT });
+      if (!files) return;
+      for (const f of files) {
+        if (!f.name || f.name === '.emptyFolderPlaceholder') continue;
         const meta = f.metadata as any;
         const size = meta?.size || 0;
+        const filePath = folder ? `${folder}/${f.name}` : f.name;
         if (size > MAX_SIZE) {
-          results.push({ bucket: 'service-images', file: f.name, sizeKB: Math.round(size / 1024) });
+          results.push({ bucket, file: filePath, sizeKB: Math.round(size / 1024) });
         }
       }
-      // Also check sponsors subfolder
-      const { data: sponsorFiles } = await supabase.storage.from('service-images').list('sponsors', { limit: 50 });
-      if (sponsorFiles) {
-        for (const f of sponsorFiles) {
-          if (!f.name || f.name === '.emptyFolderPlaceholder') continue;
-          const meta = f.metadata as any;
-          const size = meta?.size || 0;
+    };
+
+    const allBuckets = ['avatars', 'service-images', 'portfolio'];
+    const buckets = filterBucket ? allBuckets.filter(b => b === filterBucket) : allBuckets;
+
+    for (const bucket of buckets) {
+      const { data: topLevel } = await supabase.storage.from(bucket).list('', { limit: SCAN_LIMIT });
+      if (!topLevel) continue;
+
+      for (const entry of topLevel) {
+        if (!entry.name || entry.name === '.emptyFolderPlaceholder') continue;
+        const meta = entry.metadata as any;
+        const size = meta?.size || 0;
+
+        if (meta?.mimetype || size > 0) {
           if (size > MAX_SIZE) {
-            results.push({ bucket: 'service-images', file: `sponsors/${f.name}`, sizeKB: Math.round(size / 1024) });
+            results.push({ bucket, file: entry.name, sizeKB: Math.round(size / 1024) });
           }
+        } else {
+          await scanFolder(bucket, entry.name);
         }
       }
     }
 
-    // Sort by size descending
     results.sort((a, b) => b.sizeKB - a.sizeKB);
-
     const totalWastedKB = results.reduce((sum, r) => sum + r.sizeKB, 0);
 
     return new Response(JSON.stringify({
       oversized_count: results.length,
       total_wasted_kb: totalWastedKB,
       threshold_kb: Math.round(MAX_SIZE / 1024),
+      buckets_scanned: buckets,
       files: results,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
