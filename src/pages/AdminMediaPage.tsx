@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Trash2, Eye, EyeOff, Search, Image as ImageIcon, RefreshCw, Download, AlertTriangle, Loader2 } from 'lucide-react';
+import { Trash2, Eye, EyeOff, Search, Image as ImageIcon, RefreshCw, Download, AlertTriangle, Loader2, CloudUpload } from 'lucide-react';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
@@ -16,7 +16,7 @@ import PaginationControls from '@/components/PaginationControls';
 const ENTITY_TYPES = ['all', 'profile', 'service', 'provider', 'banner', 'sponsor', 'portfolio', 'generic'];
 const MIME_TYPES = ['all', 'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
 const STATUS_OPTIONS = ['all', 'active', 'inactive'];
-const PER_PAGE = 100;
+const PER_PAGE = 60;
 
 const formatSize = (bytes: number) => {
   if (!bytes) return '—';
@@ -43,6 +43,8 @@ const AdminMediaPage = () => {
   const [showOversized, setShowOversized] = useState(false);
   const [zipLoading, setZipLoading] = useState(false);
   const [batchCompressing, setBatchCompressing] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncDone, setSyncDone] = useState(false);
 
   const fetchMedia = useCallback(async () => {
     setLoading(true);
@@ -67,21 +69,56 @@ const AdminMediaPage = () => {
   }, [page, entityFilter, mimeFilter, statusFilter, search]);
 
   const fetchStats = async () => {
-    const { data } = await supabase.from('media').select('is_active, size_original, size_optimized');
-    if (data) {
-      const oversized = data.filter((m: any) => (m.size_original || 0) > 1048576);
-      setStats({
-        total: data.length,
-        active: data.filter((m: any) => m.is_active).length,
-        totalSize: data.reduce((acc: number, m: any) => acc + ((m.size_optimized || m.size_original || 0) as number), 0),
-        oversized: oversized.length,
-      });
+    const { count: totalCount } = await supabase.from('media').select('id', { count: 'exact', head: true });
+    const { count: activeCount } = await supabase.from('media').select('id', { count: 'exact', head: true }).eq('is_active', true);
+    
+    // For size stats, sample recent 1000
+    const { data } = await supabase.from('media').select('size_original, size_optimized').limit(1000);
+    const totalSize = (data || []).reduce((acc: number, m: any) => acc + ((m.size_optimized || m.size_original || 0) as number), 0);
+    const oversized = (data || []).filter((m: any) => (m.size_original || 0) > 204800).length;
+    
+    setStats({
+      total: totalCount || 0,
+      active: activeCount || 0,
+      totalSize,
+      oversized,
+    });
+  };
+
+  const syncStorage = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-storage-media');
+      if (error) throw error;
+      const newFiles = data?.inserted || 0;
+      if (newFiles > 0) {
+        toast.success(`${newFiles} arquivo(s) novo(s) sincronizado(s) do storage`);
+      } else {
+        toast.info('Storage já está sincronizado');
+      }
+      setSyncDone(true);
+      fetchMedia();
+      fetchStats();
+    } catch (err: any) {
+      toast.error('Erro ao sincronizar: ' + (err.message || ''));
+    } finally {
+      setSyncing(false);
     }
   };
 
+  // Auto-sync on first load
   useEffect(() => {
-    if (isAdmin) { fetchMedia(); fetchStats(); }
-  }, [isAdmin, page, entityFilter, mimeFilter, statusFilter]);
+    if (isAdmin && !syncDone) {
+      syncStorage();
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (isAdmin && syncDone) {
+      fetchMedia();
+      fetchStats();
+    }
+  }, [isAdmin, syncDone, page, entityFilter, mimeFilter, statusFilter]);
 
   const handleSearch = () => { setPage(1); fetchMedia(); };
 
@@ -140,8 +177,6 @@ const AdminMediaPage = () => {
     try {
       const selected = media.filter(m => selectedIds.has(m.id) && m.public_url);
       if (selected.length === 0) { toast.error('Nenhum arquivo com URL válida'); return; }
-
-      // Download files individually and trigger browser downloads
       for (const item of selected) {
         try {
           const response = await fetch(item.public_url);
@@ -154,14 +189,13 @@ const AdminMediaPage = () => {
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          // Small delay to avoid browser blocking multiple downloads
           await new Promise(r => setTimeout(r, 300));
         } catch {
           console.warn('Failed to download:', item.original_name);
         }
       }
       toast.success(`${selected.length} arquivo(s) baixado(s)`);
-    } catch (err) {
+    } catch {
       toast.error('Erro no download');
     } finally {
       setZipLoading(false);
@@ -248,21 +282,38 @@ const AdminMediaPage = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Gestão de Mídia</h1>
-          <p className="text-sm text-muted-foreground">Gerencie todas as imagens e arquivos do sistema</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">Biblioteca de Mídia</h1>
+            <p className="text-sm text-muted-foreground">Todas as imagens e arquivos do sistema — sincronizado com storage</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={syncStorage} disabled={syncing}>
+            {syncing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CloudUpload className="mr-1 h-4 w-4" />}
+            {syncing ? 'Sincronizando...' : 'Sincronizar Storage'}
+          </Button>
         </div>
 
+        {/* Syncing indicator */}
+        {syncing && (
+          <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 flex items-center gap-3">
+            <Loader2 className="h-5 w-5 animate-spin text-accent" />
+            <div>
+              <p className="text-sm font-medium text-foreground">Sincronizando storage com biblioteca de mídia...</p>
+              <p className="text-xs text-muted-foreground">Escaneando buckets: avatars, service-images, portfolio</p>
+            </div>
+          </div>
+        )}
+
         {/* Stats */}
-        <div className="grid gap-4 sm:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-foreground">{stats.total}</p></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Ativas</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-primary">{stats.active}</p></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Tamanho Total</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-foreground">{formatSize(stats.totalSize)}</p></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Tamanho Amostral</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-foreground">{formatSize(stats.totalSize)}</p></CardContent></Card>
           <Card className="cursor-pointer hover:border-accent/50 transition-colors" onClick={scanOversized}>
-            <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Acima de 200KB</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> &gt;200KB</CardTitle></CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-amber-600">{stats.oversized}</p>
-              <p className="text-[10px] text-muted-foreground">Clique para escanear storage</p>
+              <p className="text-[10px] text-muted-foreground">Clique para escanear</p>
             </CardContent>
           </Card>
         </div>
@@ -274,11 +325,11 @@ const AdminMediaPage = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  Arquivos Grandes no Storage ({oversizedFiles.length})
+                  Arquivos Grandes ({oversizedFiles.length})
                 </CardTitle>
                 <div className="flex gap-2">
                   {oversizedFiles.length > 0 && (
-                    <Button variant="accent" size="sm" onClick={compressAll} disabled={batchCompressing}>
+                    <Button variant="default" size="sm" onClick={compressAll} disabled={batchCompressing}>
                       {batchCompressing ? <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Comprimindo...</> : `Comprimir Todos (${oversizedFiles.length})`}
                     </Button>
                   )}
@@ -315,7 +366,7 @@ const AdminMediaPage = () => {
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} placeholder="Buscar por nome, hash, entity_ref, URL..." className="pl-9" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} placeholder="Buscar por nome, hash, ref, URL..." className="pl-9" />
             </div>
           </div>
           <Select value={entityFilter} onValueChange={(v) => { setEntityFilter(v); setPage(1); }}>
@@ -356,62 +407,59 @@ const AdminMediaPage = () => {
         <div className="flex items-center gap-2">
           <Checkbox checked={media.length > 0 && selectedIds.size === media.length} onCheckedChange={selectAll} />
           <span className="text-xs text-muted-foreground">Selecionar todos da página</span>
-          <span className="ml-auto text-xs text-muted-foreground">{total} resultado(s)</span>
+          <span className="ml-auto text-xs text-muted-foreground">
+            Página {page} de {totalPages || 1} · {total} arquivo(s) no total
+          </span>
         </div>
 
         {/* Grid */}
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-            {Array.from({ length: 12 }).map((_, i) => <div key={i} className="aspect-square animate-pulse rounded-lg bg-muted" />)}
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-2">
+            {Array.from({ length: 24 }).map((_, i) => <div key={i} className="aspect-square animate-pulse rounded-lg bg-muted" />)}
           </div>
         ) : media.length === 0 ? (
           <div className="rounded-xl border border-border bg-card p-12 text-center">
             <ImageIcon className="mx-auto h-10 w-10 text-muted-foreground" />
             <p className="mt-2 text-foreground font-semibold">Nenhuma mídia encontrada</p>
+            <p className="text-sm text-muted-foreground mt-1">Clique em "Sincronizar Storage" para indexar todos os arquivos</p>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-2">
               {media.map((item: any) => (
-                <div key={item.id} className={`group relative rounded-lg border overflow-hidden ${selectedIds.has(item.id) ? 'ring-2 ring-accent' : ''} ${item.is_active ? 'border-border' : 'border-destructive/30 opacity-60'}`}>
+                <div key={item.id} className={`group relative rounded-lg border overflow-hidden cursor-pointer ${selectedIds.has(item.id) ? 'ring-2 ring-accent' : ''} ${item.is_active ? 'border-border' : 'border-destructive/30 opacity-60'}`}>
                   <div className="absolute top-1 left-1 z-10">
-                    <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelection(item.id)} className="bg-background/80" />
+                    <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelection(item.id)} className="bg-background/80 h-4 w-4" />
                   </div>
                   <div className="aspect-square bg-muted">
                     {item.public_url ? (
                       <img src={item.public_url} alt={item.original_name || 'Mídia'} className="w-full h-full object-cover" loading="lazy" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-8 w-8 text-muted-foreground" /></div>
+                      <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-6 w-6 text-muted-foreground" /></div>
                     )}
                   </div>
-                  <div className="absolute inset-0 bg-foreground/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-2">
+                  <div className="absolute inset-0 bg-foreground/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
                     <div className="flex gap-1">
-                      <Button variant="secondary" size="sm" className="h-7 w-7 p-0" onClick={() => toggleActive(item)} title={item.is_active ? 'Desativar' : 'Ativar'}>
+                      <Button variant="secondary" size="sm" className="h-6 w-6 p-0" onClick={() => toggleActive(item)} title={item.is_active ? 'Desativar' : 'Ativar'}>
                         {item.is_active ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                       </Button>
                       {item.public_url && (
-                        <Button variant="secondary" size="sm" className="h-7 w-7 p-0" asChild>
+                        <Button variant="secondary" size="sm" className="h-6 w-6 p-0" asChild>
                           <a href={item.public_url} download={item.original_name} target="_blank" rel="noopener noreferrer" title="Download"><Download className="h-3 w-3" /></a>
                         </Button>
                       )}
-                      <Button variant="destructive" size="sm" className="h-7 w-7 p-0" onClick={() => handleDelete(item)}>
+                      <Button variant="destructive" size="sm" className="h-6 w-6 p-0" onClick={() => handleDelete(item)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
-                    <p className="text-[10px] text-white text-center truncate w-full mt-1">{item.original_name || '—'}</p>
-                    {item.width && item.height && (
-                      <p className="text-[9px] text-white/70">{item.width}×{item.height}</p>
-                    )}
-                    <p className="text-[9px] text-white/70">{formatSize(item.size_original)}</p>
+                    <p className="text-[9px] text-white text-center truncate w-full">{item.original_name || '—'}</p>
+                    <p className="text-[8px] text-white/70">{formatSize(item.size_original)} · {item.mime_type?.split('/')[1]}</p>
                   </div>
-                  <div className="p-1.5 space-y-0.5">
-                    <p className="text-[10px] font-medium text-foreground truncate">{item.original_name || 'Sem nome'}</p>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <Badge variant="outline" className="text-[8px] px-1 py-0">{item.entity_type}</Badge>
-                      <span className="text-[8px] text-muted-foreground">{formatSize(item.size_optimized || item.size_original)}</span>
-                      <span className="text-[8px] text-muted-foreground">{item.mime_type?.split('/')[1]}</span>
+                  <div className="p-1 space-y-0.5">
+                    <p className="text-[9px] font-medium text-foreground truncate">{item.original_name || 'Sem nome'}</p>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className="text-[7px] px-1 py-0 leading-tight">{item.entity_type}</Badge>
                     </div>
-                    {item.user_ref && <p className="text-[8px] text-muted-foreground truncate">ref: {item.user_ref}</p>}
                   </div>
                 </div>
               ))}
