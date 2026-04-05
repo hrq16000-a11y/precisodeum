@@ -42,6 +42,7 @@ const AdminMediaPage = () => {
   const [oversizedFiles, setOversizedFiles] = useState<any[]>([]);
   const [showOversized, setShowOversized] = useState(false);
   const [zipLoading, setZipLoading] = useState(false);
+  const [batchCompressing, setBatchCompressing] = useState(false);
 
   const fetchMedia = useCallback(async () => {
     setLoading(true);
