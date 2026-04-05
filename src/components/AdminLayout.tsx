@@ -26,6 +26,8 @@ const menuGroups = [
     label: 'Conteúdo',
     items: [
       { label: 'Hero / Banners', icon: ImageIcon, path: '/admin/hero-banners' },
+      { label: 'Blocos de Página', icon: PanelTop, path: '/admin/blocos' },
+      { label: 'Páginas', icon: FileText, path: '/admin/paginas' },
       { label: 'Categorias', icon: FolderOpen, path: '/admin/categorias' },
       { label: 'Vagas', icon: ClipboardList, path: '/admin/vagas' },
       { label: 'Blog / Notícias', icon: Newspaper, path: '/admin/blog' },
