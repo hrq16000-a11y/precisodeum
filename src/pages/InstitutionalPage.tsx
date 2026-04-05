@@ -23,6 +23,15 @@ const InstitutionalPage = () => {
       });
   }, [slug]);
 
+  useEffect(() => {
+    if (page?.meta_title) document.title = page.meta_title;
+    if (page?.meta_description) {
+      let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+      if (!meta) { meta = document.createElement('meta'); meta.name = 'description'; document.head.appendChild(meta); }
+      meta.content = page.meta_description;
+    }
+  }, [page]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -49,15 +58,6 @@ const InstitutionalPage = () => {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (page?.meta_title) document.title = page.meta_title;
-    if (page?.meta_description) {
-      let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-      if (!meta) { meta = document.createElement('meta'); meta.name = 'description'; document.head.appendChild(meta); }
-      meta.content = page.meta_description;
-    }
-  }, [page]);
 
   return (
     <div className="min-h-screen bg-background">
