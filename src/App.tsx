@@ -80,7 +80,6 @@ const AdminBlocksPage = lazy(() => import("./pages/AdminBlocksPage"));
 const AdminInstitutionalPagesPage = lazy(() => import("./pages/AdminInstitutionalPagesPage"));
 const AdminMenuPage = lazy(() => import("./pages/AdminMenuPage"));
 const InstitutionalPage = lazy(() => import("./pages/InstitutionalPage"));
-const InstitutionalPage = lazy(() => import("./pages/InstitutionalPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
 const CityPage = lazy(() => import("./pages/CityPage"));
