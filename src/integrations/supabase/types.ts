@@ -668,6 +668,56 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_items: {
+        Row: {
+          active: boolean
+          created_at: string
+          display_order: number
+          icon: string
+          id: string
+          label: string
+          menu_location: string
+          open_in_new_tab: boolean
+          parent_id: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          label?: string
+          menu_location?: string
+          open_in_new_tab?: boolean
+          parent_id?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          label?: string
+          menu_location?: string
+          open_in_new_tab?: boolean
+          parent_id?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       neighborhoods: {
         Row: {
           city_id: string
@@ -1203,6 +1253,8 @@ export type Database = {
       }
       reviews: {
         Row: {
+          admin_note: string
+          approval_status: string
           comment: string
           created_at: string
           id: string
@@ -1214,6 +1266,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_note?: string
+          approval_status?: string
           comment?: string
           created_at?: string
           id?: string
@@ -1225,6 +1279,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_note?: string
+          approval_status?: string
           comment?: string
           created_at?: string
           id?: string

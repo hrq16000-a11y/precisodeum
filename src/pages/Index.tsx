@@ -15,6 +15,7 @@ import HighlightsCarousel from '@/components/home/HighlightsCarousel';
 import FeaturedProviders from '@/components/home/FeaturedProviders';
 import RecentServices from '@/components/home/RecentServices';
 import PwaInstallSection from '@/components/home/PwaInstallSection';
+import DynamicPageBlocks from '@/components/DynamicPageBlocks';
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
@@ -157,6 +158,7 @@ const Index = () => {
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
       <PwaInstallSection />
       <HighlightsCarousel />
+      <DynamicPageBlocks pageSlug="home" city={geoCity || undefined} />
 
       <LazyErrorBoundary>
         <Suspense fallback={<SectionFallback />}>
