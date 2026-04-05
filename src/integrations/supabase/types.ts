@@ -1908,6 +1908,98 @@ export type Database = {
         }
         Relationships: []
       }
+      public_jobs: {
+        Row: {
+          activities: string | null
+          approval_status: string | null
+          benefits: string | null
+          category_id: string | null
+          city: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          deadline: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string | null
+          job_type: string | null
+          neighborhood: string | null
+          opportunity_type: string | null
+          requirements: string | null
+          salary: string | null
+          schedule: string | null
+          slug: string | null
+          state: string | null
+          status: string | null
+          subtitle: string | null
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
+          work_model: string | null
+        }
+        Insert: {
+          activities?: string | null
+          approval_status?: string | null
+          benefits?: string | null
+          category_id?: string | null
+          city?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string | null
+          job_type?: string | null
+          neighborhood?: string | null
+          opportunity_type?: string | null
+          requirements?: string | null
+          salary?: string | null
+          schedule?: string | null
+          slug?: string | null
+          state?: string | null
+          status?: string | null
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          work_model?: string | null
+        }
+        Update: {
+          activities?: string | null
+          approval_status?: string | null
+          benefits?: string | null
+          category_id?: string | null
+          city?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string | null
+          job_type?: string | null
+          neighborhood?: string | null
+          opportunity_type?: string | null
+          requirements?: string | null
+          salary?: string | null
+          schedule?: string | null
+          slug?: string | null
+          state?: string | null
+          status?: string | null
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          work_model?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
