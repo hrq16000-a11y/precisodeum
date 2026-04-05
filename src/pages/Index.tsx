@@ -158,6 +158,7 @@ const Index = () => {
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
       <PwaInstallSection />
       <HighlightsCarousel />
+      <DynamicPageBlocks pageSlug="home" city={geoCity || undefined} />
 
       <LazyErrorBoundary>
         <Suspense fallback={<SectionFallback />}>
