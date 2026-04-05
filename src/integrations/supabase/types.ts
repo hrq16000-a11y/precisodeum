@@ -1435,6 +1435,7 @@ export type Database = {
       site_settings: {
         Row: {
           description: string | null
+          is_public: boolean
           key: string
           label: string
           updated_at: string
@@ -1442,6 +1443,7 @@ export type Database = {
         }
         Insert: {
           description?: string | null
+          is_public?: boolean
           key: string
           label?: string
           updated_at?: string
@@ -1449,6 +1451,7 @@ export type Database = {
         }
         Update: {
           description?: string | null
+          is_public?: boolean
           key?: string
           label?: string
           updated_at?: string
