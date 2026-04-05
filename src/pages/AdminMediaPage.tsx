@@ -220,7 +220,6 @@ const AdminMediaPage = () => {
     }
   };
 
-  const [batchCompressing, setBatchCompressing] = useState(false);
   const compressAll = async () => {
     if (!oversizedFiles.length) return;
     setBatchCompressing(true);
