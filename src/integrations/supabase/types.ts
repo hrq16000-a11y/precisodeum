@@ -427,6 +427,45 @@ export type Database = {
         }
         Relationships: []
       }
+      institutional_pages: {
+        Row: {
+          content: string
+          created_at: string
+          display_order: number
+          id: string
+          meta_description: string
+          meta_title: string
+          published: boolean
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          meta_description?: string
+          meta_title?: string
+          published?: boolean
+          slug: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          meta_description?: string
+          meta_title?: string
+          published?: boolean
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       jobs: {
         Row: {
           activities: string | null
@@ -693,6 +732,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      page_blocks: {
+        Row: {
+          active: boolean
+          block_type: string
+          content: Json
+          created_at: string
+          display_order: number
+          end_date: string | null
+          id: string
+          page_slug: string
+          sponsor_id: string | null
+          start_date: string | null
+          subtitle: string
+          target_campaign: string | null
+          target_category: string | null
+          target_city: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          block_type?: string
+          content?: Json
+          created_at?: string
+          display_order?: number
+          end_date?: string | null
+          id?: string
+          page_slug?: string
+          sponsor_id?: string | null
+          start_date?: string | null
+          subtitle?: string
+          target_campaign?: string | null
+          target_category?: string | null
+          target_city?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          block_type?: string
+          content?: Json
+          created_at?: string
+          display_order?: number
+          end_date?: string | null
+          id?: string
+          page_slug?: string
+          sponsor_id?: string | null
+          start_date?: string | null
+          subtitle?: string
+          target_campaign?: string | null
+          target_category?: string | null
+          target_city?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_blocks_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       popular_services: {
         Row: {
