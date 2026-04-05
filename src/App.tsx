@@ -217,6 +217,7 @@ const App = () => {
                 <Route path="/admin/modulos" element={<AdminModulesPage />} />
                 <Route path="/admin/blocos" element={<AdminBlocksPage />} />
                 <Route path="/admin/paginas" element={<AdminInstitutionalPagesPage />} />
+                <Route path="/admin/menus" element={<AdminMenuPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
