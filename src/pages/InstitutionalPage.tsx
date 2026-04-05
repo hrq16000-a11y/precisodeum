@@ -50,14 +50,17 @@ const InstitutionalPage = () => {
     );
   }
 
+  useEffect(() => {
+    if (page?.meta_title) document.title = page.meta_title;
+    if (page?.meta_description) {
+      let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+      if (!meta) { meta = document.createElement('meta'); meta.name = 'description'; document.head.appendChild(meta); }
+      meta.content = page.meta_description;
+    }
+  }, [page]);
+
   return (
     <div className="min-h-screen bg-background">
-      {(page.meta_title || page.meta_description) && (
-        <Helmet>
-          {page.meta_title && <title>{page.meta_title}</title>}
-          {page.meta_description && <meta name="description" content={page.meta_description} />}
-        </Helmet>
-      )}
       <Header />
       <main className="container mx-auto px-4 py-12 max-w-3xl">
         <h1 className="text-3xl font-bold text-foreground mb-6">{page.title}</h1>
