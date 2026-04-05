@@ -50,6 +50,7 @@ const menuGroups = [
     label: 'Sistema',
     items: [
       { label: 'Meta Tags & SEO', icon: Globe, path: '/admin/metatags' },
+      { label: 'Menus', icon: Menu, path: '/admin/menus' },
       { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
       { label: 'Trilha de Auditoria', icon: ScrollText, path: '/admin/auditoria' },
       { label: 'Mídia & Arquivos', icon: FileImage, path: '/admin/midia' },
