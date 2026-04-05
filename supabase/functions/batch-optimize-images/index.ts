@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const MAX_SIZE = 200 * 1024; // 200KB
+const SCAN_LIMIT = 100; // items per listing
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,11 +19,17 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // Optional: filter by bucket via query or body
+    let filterBucket: string | null = null;
+    try {
+      const url = new URL(req.url);
+      filterBucket = url.searchParams.get('bucket');
+    } catch { /* ignore */ }
+
     const results: { bucket: string; file: string; sizeKB: number }[] = [];
 
-    // Scan a single folder level (no recursion to avoid timeouts)
     const scanFolder = async (bucket: string, folder: string) => {
-      const { data: files } = await supabase.storage.from(bucket).list(folder || undefined, { limit: 500 });
+      const { data: files } = await supabase.storage.from(bucket).list(folder || undefined, { limit: SCAN_LIMIT });
       if (!files) return;
       for (const f of files) {
         if (!f.name || f.name === '.emptyFolderPlaceholder') continue;
@@ -35,11 +42,11 @@ serve(async (req) => {
       }
     };
 
-    // Scan top-level of each bucket
-    const buckets = ['avatars', 'service-images', 'portfolio'];
+    const allBuckets = ['avatars', 'service-images', 'portfolio'];
+    const buckets = filterBucket ? allBuckets.filter(b => b === filterBucket) : allBuckets;
+
     for (const bucket of buckets) {
-      // List top-level entries
-      const { data: topLevel } = await supabase.storage.from(bucket).list('', { limit: 500 });
+      const { data: topLevel } = await supabase.storage.from(bucket).list('', { limit: SCAN_LIMIT });
       if (!topLevel) continue;
 
       for (const entry of topLevel) {
@@ -47,27 +54,24 @@ serve(async (req) => {
         const meta = entry.metadata as any;
         const size = meta?.size || 0;
 
-        if (size > 0) {
-          // It's a file
+        if (meta?.mimetype || size > 0) {
           if (size > MAX_SIZE) {
             results.push({ bucket, file: entry.name, sizeKB: Math.round(size / 1024) });
           }
         } else {
-          // It's a folder — scan one level deep
           await scanFolder(bucket, entry.name);
         }
       }
     }
 
-    // Sort by size descending
     results.sort((a, b) => b.sizeKB - a.sizeKB);
-
     const totalWastedKB = results.reduce((sum, r) => sum + r.sizeKB, 0);
 
     return new Response(JSON.stringify({
       oversized_count: results.length,
       total_wasted_kb: totalWastedKB,
       threshold_kb: Math.round(MAX_SIZE / 1024),
+      buckets_scanned: buckets,
       files: results,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
