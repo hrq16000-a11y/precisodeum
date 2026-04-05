@@ -276,7 +276,14 @@ const AdminMediaPage = () => {
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
                   Arquivos Grandes no Storage ({oversizedFiles.length})
                 </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setShowOversized(false)}>Fechar</Button>
+                <div className="flex gap-2">
+                  {oversizedFiles.length > 0 && (
+                    <Button variant="accent" size="sm" onClick={compressAll} disabled={batchCompressing}>
+                      {batchCompressing ? <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Comprimindo...</> : `Comprimir Todos (${oversizedFiles.length})`}
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => setShowOversized(false)}>Fechar</Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
