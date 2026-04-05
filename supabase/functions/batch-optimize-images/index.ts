@@ -20,45 +20,39 @@ serve(async (req) => {
 
     const results: { bucket: string; file: string; sizeKB: number }[] = [];
 
-    // Scan avatars bucket (folders = user IDs)
-    const { data: avatarFolders } = await supabase.storage.from('avatars').list('', { limit: 200 });
-    if (avatarFolders) {
-      for (const folder of avatarFolders) {
-        if (folder.id !== null) continue; // skip files, we want folders
-        const { data: files } = await supabase.storage.from('avatars').list(folder.name, { limit: 10 });
-        if (!files) continue;
-        for (const f of files) {
-          if (!f.name || f.name === '.emptyFolderPlaceholder') continue;
-          const meta = f.metadata as any;
-          const size = meta?.size || 0;
-          if (size > MAX_SIZE) {
-            results.push({ bucket: 'avatars', file: `${folder.name}/${f.name}`, sizeKB: Math.round(size / 1024) });
-          }
-        }
-      }
-    }
-
-    // Scan service-images bucket (top-level only)
-    const { data: serviceFiles } = await supabase.storage.from('service-images').list('', { limit: 200 });
-    if (serviceFiles) {
-      for (const f of serviceFiles) {
-        if (!f.name || f.name === '.emptyFolderPlaceholder' || f.id === null) continue;
+    // Helper to scan a bucket's folder recursively (one level)
+    const scanFolder = async (bucket: string, folder: string) => {
+      const { data: files } = await supabase.storage.from(bucket).list(folder || undefined, { limit: 200 });
+      if (!files) return;
+      for (const f of files) {
+        if (!f.name || f.name === '.emptyFolderPlaceholder') continue;
         const meta = f.metadata as any;
         const size = meta?.size || 0;
+        const filePath = folder ? `${folder}/${f.name}` : f.name;
         if (size > MAX_SIZE) {
-          results.push({ bucket: 'service-images', file: f.name, sizeKB: Math.round(size / 1024) });
+          results.push({ bucket, file: filePath, sizeKB: Math.round(size / 1024) });
+        }
+        // If it's a folder (no metadata/size), scan inside it
+        if (f.id === null || (!meta?.size && !meta?.mimetype)) {
+          await scanFolder(bucket, filePath);
         }
       }
-      // Also check sponsors subfolder
-      const { data: sponsorFiles } = await supabase.storage.from('service-images').list('sponsors', { limit: 50 });
-      if (sponsorFiles) {
-        for (const f of sponsorFiles) {
-          if (!f.name || f.name === '.emptyFolderPlaceholder') continue;
-          const meta = f.metadata as any;
-          const size = meta?.size || 0;
-          if (size > MAX_SIZE) {
-            results.push({ bucket: 'service-images', file: `sponsors/${f.name}`, sizeKB: Math.round(size / 1024) });
-          }
+    };
+
+    // Scan all relevant buckets
+    for (const bucket of ['avatars', 'service-images', 'portfolio']) {
+      await scanFolder(bucket, '');
+    }
+
+    // Also check sponsors subfolder explicitly
+    const { data: sponsorFiles } = await supabase.storage.from('service-images').list('sponsors', { limit: 50 });
+    if (sponsorFiles) {
+      for (const f of sponsorFiles) {
+        if (!f.name || f.name === '.emptyFolderPlaceholder') continue;
+        const meta = f.metadata as any;
+        const size = meta?.size || 0;
+        if (size > MAX_SIZE && !results.find(r => r.bucket === 'service-images' && r.file === `sponsors/${f.name}`)) {
+          results.push({ bucket: 'service-images', file: `sponsors/${f.name}`, sizeKB: Math.round(size / 1024) });
         }
       }
     }

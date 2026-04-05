@@ -213,10 +213,31 @@ const AdminMediaPage = () => {
       });
       if (error) throw error;
       toast.success('Imagem otimizada com sucesso');
-      scanOversized(); // refresh list
+      scanOversized();
     } catch (err: any) {
       toast.error('Erro ao comprimir: ' + (err.message || ''));
     }
+  };
+
+  const [batchCompressing, setBatchCompressing] = useState(false);
+  const compressAll = async () => {
+    if (!oversizedFiles.length) return;
+    setBatchCompressing(true);
+    let ok = 0, fail = 0;
+    for (const f of oversizedFiles) {
+      try {
+        const { error } = await supabase.functions.invoke('optimize-image', {
+          body: { bucket: f.bucket, path: f.file },
+        });
+        if (error) throw error;
+        ok++;
+      } catch {
+        fail++;
+      }
+    }
+    toast.success(`${ok} otimizada(s), ${fail} erro(s)`);
+    setBatchCompressing(false);
+    scanOversized();
   };
 
   if (adminLoading || !isAdmin) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
