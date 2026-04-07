@@ -289,7 +289,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
           <input
             ref={inputRef}
             type="text"
-            placeholder="O que você precisa? Ex: eletricista, pintor..."
+            placeholder={typingPlaceholder || "O que você precisa? Ex: eletricista, pintor..."}
             value={query}
             onChange={(e) => { setQuery(e.target.value); setSearchError(''); setIsOpen(true); }}
             onFocus={handleFocus}
