@@ -13,7 +13,7 @@ const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
   show: (i: number) => ({
     opacity: 1, x: 0,
-    transition: { delay: i * 0.04, duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] },
+    transition: { delay: i * 0.04, duration: 0.3, ease: "easeOut" },
   }),
 };
 
@@ -170,7 +170,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           className="p-4 pb-20 sm:p-6 sm:pb-6"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
           key={location.pathname}
         >
           {children}
