@@ -225,6 +225,10 @@ const App = () => {
                 <Route path="/admin/blocos" element={<AdminBlocksPage />} />
                 <Route path="/admin/paginas" element={<AdminInstitutionalPagesPage />} />
                 <Route path="/admin/menus" element={<AdminMenuPage />} />
+                <Route path="/admin/como-funciona" element={<AdminHomeStepsPage />} />
+                <Route path="/admin/depoimentos" element={<AdminTestimonialsPage />} />
+                <Route path="/admin/cta-blocos" element={<AdminCtaBlocksPage />} />
+                <Route path="/admin/secoes-home" element={<AdminHomeSectionsPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
