@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -274,31 +275,29 @@ const DashboardPage = () => {
 
       {/* Stats row */}
       <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-5">
-        <div className="rounded-xl border border-border bg-card p-4 shadow-card">
-          <Briefcase className="h-4 w-4 text-accent" />
-          <p className="mt-2 font-display text-2xl font-bold text-foreground">{servicesCount ?? 0}</p>
-          <p className="text-[11px] text-muted-foreground">{servicesCount === 0 ? 'Nenhum serviço ainda' : 'Serviços'}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4 shadow-card">
-          <MessageSquare className="h-4 w-4 text-accent" />
-          <p className="mt-2 font-display text-2xl font-bold text-foreground">{leadsCount}</p>
-          <p className="text-[11px] text-muted-foreground">{leadsCount === 0 ? 'Nenhum lead ainda' : 'Leads'}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4 shadow-card">
-          <TrendingUp className="h-4 w-4 text-accent" />
-          <p className="mt-2 font-display text-2xl font-bold text-foreground">{viewsTotal}</p>
-          <p className="text-[11px] text-muted-foreground">{viewsTotal === 0 ? 'Nenhuma visualização' : 'Visualizações'}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4 shadow-card">
-          <Star className="h-4 w-4 text-accent" />
-          <p className="mt-2 font-display text-2xl font-bold text-foreground">{provider?.rating_avg ? Number(provider.rating_avg).toFixed(1) : '0'}</p>
-          <p className="text-[11px] text-muted-foreground">{!provider?.rating_avg || Number(provider.rating_avg) === 0 ? 'Sem avaliações ainda' : 'Avaliação'}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4 shadow-card">
-          <Megaphone className="h-4 w-4 text-accent" />
-          <p className="mt-2 font-display text-2xl font-bold text-foreground">{jobsCount}</p>
-          <p className="text-[11px] text-muted-foreground">{jobsCount === 0 ? 'Nenhuma vaga ainda' : 'Vagas'}</p>
-        </div>
+        {[
+          { icon: Briefcase, value: servicesCount ?? 0, label: servicesCount === 0 ? 'Nenhum serviço ainda' : 'Serviços' },
+          { icon: MessageSquare, value: leadsCount, label: leadsCount === 0 ? 'Nenhum lead ainda' : 'Leads' },
+          { icon: TrendingUp, value: viewsTotal, label: viewsTotal === 0 ? 'Nenhuma visualização' : 'Visualizações' },
+          { icon: Star, value: provider?.rating_avg ? Number(provider.rating_avg).toFixed(1) : '0', label: !provider?.rating_avg || Number(provider.rating_avg) === 0 ? 'Sem avaliações ainda' : 'Avaliação' },
+          { icon: Megaphone, value: jobsCount, label: jobsCount === 0 ? 'Nenhuma vaga ainda' : 'Vagas' },
+        ].map((stat, i) => {
+          const Icon = stat.icon;
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.4, delay: 0.1 + i * 0.07, ease: [0.25, 0.46, 0.45, 0.94] }}
+              whileHover={{ y: -3, scale: 1.02 }}
+              className="rounded-xl border border-border bg-card p-4 shadow-card transition-shadow hover:shadow-card-hover"
+            >
+              <Icon className="h-4 w-4 text-accent" />
+              <p className="mt-2 font-display text-2xl font-bold text-foreground">{stat.value}</p>
+              <p className="text-[11px] text-muted-foreground">{stat.label}</p>
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Profile Completeness + Leads Chart */}

@@ -10,14 +10,16 @@ import { whatsappLink } from '@/lib/whatsapp';
 import { handleImageError } from '@/lib/imageResolver';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
+import { motion } from 'framer-motion';
 
 interface ProviderCardProps {
   provider: DbProvider;
   isFallback?: boolean;
   trackingSource?: string;
+  index?: number;
 }
 
-const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home' }: ProviderCardProps) => {
+const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', index = 0 }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const prefetch = usePrefetchProvider();
   const handlers = usePrefetchHandlers(prefetch, provider.slug);
@@ -32,14 +34,19 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home' }:
   const displayName = provider.name || provider.businessName || 'Profissional';
 
   return (
-    <div
+    <motion.div
       ref={impressionRef}
-      className={`group flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-30px' }}
+      transition={{ duration: 0.45, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
+      whileHover={{ y: -4 }}
+      className={`group flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-shadow duration-300 hover:shadow-card-hover ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`}
       {...handlers}
     >
       <div className="flex flex-1 flex-col p-5">
         <div className="flex gap-4">
-           <Avatar className="h-14 w-14 shrink-0">
+           <Avatar className="h-14 w-14 shrink-0 transition-transform duration-300 group-hover:scale-105">
             <AvatarImage src={displayPhoto || undefined} alt={displayName} loading="lazy" decoding="async" onError={handleImageError} />
             <AvatarFallback className="bg-primary/10 text-2xl">
               {provider.categoryIcon || '🔧'}
@@ -56,7 +63,11 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home' }:
                 <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
                   {displayName}
                 </h3>
-                {provider.plan === 'premium' && <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />}
+                {provider.plan === 'premium' && (
+                  <motion.div animate={{ rotate: [0, 12, -12, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}>
+                    <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />
+                  </motion.div>
+                )}
               </div>
             </Link>
             {provider.businessName && provider.businessName !== displayName && (
@@ -100,7 +111,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home' }:
 
         <div className="mt-4 flex gap-2">
           {provider.whatsapp && (
-            <Button variant="accent" size="sm" className="flex-1" asChild>
+            <Button variant="accent" size="sm" className="flex-1 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" asChild>
               <a
                 href={whatsappLink(provider.whatsapp, `Olá! Vi seu perfil "${displayName}" no Preciso de um e gostaria de mais informações.`)}
                 target="_blank"
@@ -111,7 +122,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home' }:
               </a>
             </Button>
           )}
-          <Button variant="outline" size="sm" className={provider.whatsapp ? '' : 'flex-1'} asChild>
+          <Button variant="outline" size="sm" className={`transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] ${provider.whatsapp ? '' : 'flex-1'}`} asChild>
             <Link
               to={`/profissional/${provider.slug}`}
               onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource)}
@@ -122,7 +133,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home' }:
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
