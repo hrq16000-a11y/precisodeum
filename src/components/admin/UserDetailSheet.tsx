@@ -468,6 +468,63 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                   </div>
                 )}
               </div>
+
+              {/* Permissions Section */}
+              <div className="rounded-xl border border-border p-4 space-y-3">
+                <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                  <Shield className="h-4 w-4" /> Permissões
+                </h3>
+                <div className="space-y-3">
+                  {/* Admin Toggle */}
+                  <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">👑 Administrador</p>
+                      <p className="text-xs text-muted-foreground">Acesso total ao painel administrativo</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={userIsAdmin ? 'destructive' : 'default'}
+                      className="h-8 text-xs"
+                      onClick={toggleAdmin}
+                      disabled={permLoading}
+                    >
+                      {userIsAdmin ? 'Revogar Admin' : 'Tornar Admin'}
+                    </Button>
+                  </div>
+
+                  {/* Sponsor Toggle */}
+                  <div className="rounded-lg border border-border p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">📢 Patrocinador</p>
+                        <p className="text-xs text-muted-foreground">Acesso ao painel de patrocinadores</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={userIsSponsor ? 'destructive' : 'default'}
+                        className="h-8 text-xs"
+                        onClick={toggleSponsor}
+                        disabled={permLoading}
+                      >
+                        {userIsSponsor ? 'Revogar Acesso' : 'Conceder Acesso'}
+                      </Button>
+                    </div>
+                    {!userIsSponsor && (
+                      <div>
+                        <Label className="text-xs">Vincular ao patrocinador</Label>
+                        <Select value={selectedSponsorId} onValueChange={setSelectedSponsorId}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectContent>
+                            {sponsors.map(s => (
+                              <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </TabsContent>
 
             {/* ====== PROVIDER TAB ====== */}
