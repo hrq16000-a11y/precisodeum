@@ -82,7 +82,7 @@ const FeaturedJobs = () => {
   if (jobs.length === 0) return null;
 
   // Hero = first job
-  const hero = jobs[0];
+  const hero: any = jobs[0];
   const heroType = typeColors[hero.opportunity_type] || typeColors.servico;
 
   return (
