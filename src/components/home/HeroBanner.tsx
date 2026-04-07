@@ -216,7 +216,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           </span>
           <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
             <Users className="h-3.5 w-3.5 text-secondary" />
-            Profissionais verificados
+            Os melhores Profissionais
           </span>
           <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
             <Zap className="h-3.5 w-3.5 text-secondary" /> Resposta rápida
