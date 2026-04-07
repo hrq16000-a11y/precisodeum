@@ -4,6 +4,7 @@ import { Search, X, Sparkles, TrendingUp, MapPin, Wrench, Grid3X3 } from 'lucide
 import { Button } from '@/components/ui/button';
 import { useSearchSuggestions } from '@/hooks/useProviders';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { useTypingPlaceholder } from '@/hooks/useTypingPlaceholder';
 
 interface SearchBarProps {
   variant?: 'hero' | 'compact';
