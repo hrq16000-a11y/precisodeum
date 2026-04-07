@@ -1834,6 +1834,7 @@ export type Database = {
       sponsors: {
         Row: {
           active: boolean
+          ad_format: string
           clicks: number
           created_at: string
           deleted_at: string | null
@@ -1843,13 +1844,17 @@ export type Database = {
           image_url: string | null
           impressions: number
           link_url: string | null
+          max_height: number
+          max_width: number
           position: string
           start_date: string | null
+          target_pages: string
           tier: string
           title: string
         }
         Insert: {
           active?: boolean
+          ad_format?: string
           clicks?: number
           created_at?: string
           deleted_at?: string | null
@@ -1859,13 +1864,17 @@ export type Database = {
           image_url?: string | null
           impressions?: number
           link_url?: string | null
+          max_height?: number
+          max_width?: number
           position?: string
           start_date?: string | null
+          target_pages?: string
           tier?: string
           title: string
         }
         Update: {
           active?: boolean
+          ad_format?: string
           clicks?: number
           created_at?: string
           deleted_at?: string | null
@@ -1875,8 +1884,11 @@ export type Database = {
           image_url?: string | null
           impressions?: number
           link_url?: string | null
+          max_height?: number
+          max_width?: number
           position?: string
           start_date?: string | null
+          target_pages?: string
           tier?: string
           title?: string
         }
