@@ -774,7 +774,7 @@ const AdminSponsorCrmPage = () => {
 
       {/* ─── Contract Dialog ─────────────────────────────────────── */}
       <Dialog open={contractDialog} onOpenChange={setContractDialog}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Novo Contrato</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); contractMutation.mutate(); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={contractForm.sponsor_id} onChange={v => setContractForm(p => ({ ...p, sponsor_id: v }))} /></div>
