@@ -184,7 +184,7 @@ const Index = () => {
           {blogEnabled && <BlogHighlight />}
 
           {citiesEnabled && topCities.length > 0 && <CitiesSection cities={topCities} />}
-          <CtaSection />
+          {ctaEnabled && <CtaSection />}
           <AdShowcase />
           <SponsorsSection sponsors={sponsors} />
           <HowItWorksSection />
