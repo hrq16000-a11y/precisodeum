@@ -463,8 +463,11 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     <InfoRow icon={<Phone className="h-4 w-4" />} label="Telefone" value={user.phone || '—'} />
                     <InfoRow icon={<MessageCircle className="h-4 w-4" />} label="WhatsApp" value={user.whatsapp || '—'} />
                     <InfoRow icon={<UserCheck className="h-4 w-4" />} label="Tipo" value={user.profile_type === 'provider' ? 'Profissional' : user.profile_type === 'rh' ? 'Agência/RH' : 'Cliente'} />
+                    <InfoRow icon={<Shield className="h-4 w-4" />} label="Status" value={user.status === 'inactive' ? '🔴 Inativo' : '🟢 Ativo'} />
                     <InfoRow icon={<Calendar className="h-4 w-4" />} label="Cadastro" value={user.created_at ? format(new Date(user.created_at), 'dd/MM/yyyy HH:mm') : '—'} />
                     {user.user_ref && <InfoRow icon={<Shield className="h-4 w-4" />} label="Ref" value={user.user_ref} />}
+                    {user.department && <InfoRow icon={<Briefcase className="h-4 w-4" />} label="Depto" value={user.department} />}
+                    {provider?.plan && <InfoRow icon={<Eye className="h-4 w-4" />} label="Plano" value={provider.plan} />}
                   </div>
                 )}
               </div>
