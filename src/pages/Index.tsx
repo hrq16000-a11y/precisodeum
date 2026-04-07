@@ -37,6 +37,8 @@ const PopularSearches = lazy(() => import('@/components/home/PopularSearches'));
 const AdBanner = lazy(() => import('@/components/ads/AdBanner'));
 const AdShowcase = lazy(() => import('@/components/ads/AdShowcase'));
 const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
+const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
 
 const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
