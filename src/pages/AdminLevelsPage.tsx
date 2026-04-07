@@ -52,9 +52,18 @@ const AdminLevelsPage = () => {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
 
-  const fetchLevels = () => {
-    supabase.from('user_levels').select('*').order('priority', { ascending: false })
-      .then(({ data }) => setLevels(data || []));
+  const [levelCounts, setLevelCounts] = useState<Record<string, number>>({});
+
+  const fetchLevels = async () => {
+    const { data } = await supabase.from('user_levels').select('*').order('priority', { ascending: false });
+    setLevels(data || []);
+    // Fetch usage counts
+    const { data: profiles } = await supabase.from('profiles').select('level_id');
+    const counts: Record<string, number> = {};
+    (profiles || []).forEach((p: any) => {
+      if (p.level_id) counts[p.level_id] = (counts[p.level_id] || 0) + 1;
+    });
+    setLevelCounts(counts);
   };
 
   useEffect(() => {
