@@ -131,7 +131,7 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
           </div>
         </div>
 
-        {(rating > 0 || reviewCount > 0) && (
+        {(rating > 0 || reviewCount > 0) ? (
           <div className="mt-3 flex items-center gap-2">
             <div className="flex items-center gap-0.5">
               {[1, 2, 3, 4, 5].map(star => (
@@ -146,13 +146,13 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
               <span className="text-[11px] text-muted-foreground">({reviewCount} {reviewCount === 1 ? 'avaliação' : 'avaliações'})</span>
             )}
           </div>
-        )}
+        ) : null}
 
-        {p.yearsExperience && p.yearsExperience > 0 && (
+        {p.yearsExperience > 0 ? (
           <Badge variant="secondary" className="mt-2 w-fit text-[10px]">
             {p.yearsExperience}+ anos de experiência
           </Badge>
-        )}
+        ) : null}
 
         <div className="flex-1" />
 
