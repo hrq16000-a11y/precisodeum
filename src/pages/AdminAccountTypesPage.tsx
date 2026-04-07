@@ -52,9 +52,17 @@ const AdminAccountTypesPage = () => {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
 
-  const fetchTypes = () => {
-    supabase.from('account_types').select('*').order('display_order')
-      .then(({ data }) => setTypes(data || []));
+  const [typeCounts, setTypeCounts] = useState<Record<string, number>>({});
+
+  const fetchTypes = async () => {
+    const { data } = await supabase.from('account_types').select('*').order('display_order');
+    setTypes(data || []);
+    const { data: profiles } = await supabase.from('profiles').select('account_type_id');
+    const counts: Record<string, number> = {};
+    (profiles || []).forEach((p: any) => {
+      if (p.account_type_id) counts[p.account_type_id] = (counts[p.account_type_id] || 0) + 1;
+    });
+    setTypeCounts(counts);
   };
 
   useEffect(() => {
