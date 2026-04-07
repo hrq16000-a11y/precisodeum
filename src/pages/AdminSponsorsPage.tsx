@@ -185,6 +185,10 @@ const AdminSponsorsPage = () => {
       start_date: s.start_date || '',
       end_date: s.end_date || '',
       tier: (s as any).tier || 'basic',
+      ad_format: (s as any).ad_format || 'auto',
+      max_width: (s as any).max_width || 0,
+      max_height: (s as any).max_height || 0,
+      target_pages: (s as any).target_pages || 'all',
     });
     setDialogOpen(true);
   };
