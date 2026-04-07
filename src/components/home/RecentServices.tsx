@@ -1,10 +1,15 @@
 import { useMemo } from 'react';
-import { MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { MapPin, Clock, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import FadeInSection from '@/components/FadeInSection';
 
 interface RecentService {
   id: string;
   service_name: string;
   service_area: string;
+  created_at?: string;
+  categories?: { name?: string; slug?: string; icon?: string } | null;
   provider?: { city?: string; state?: string } | null;
 }
 
@@ -21,45 +26,99 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+function timeAgo(dateStr?: string) {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}min atrás`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h atrás`;
+  const days = Math.floor(hours / 24);
+  return `${days}d atrás`;
+}
+
 const RecentServices = ({ services }: Props) => {
-  // Show 4 random items max
-  const displayed = useMemo(() => shuffle(services).slice(0, 4), [services]);
+  const displayed = useMemo(() => shuffle(services).slice(0, 6), [services]);
 
   if (displayed.length === 0) return null;
 
   return (
-    <section className="bg-muted/50 py-8">
+    <section className="py-10">
       <div className="container">
-        <div className="mb-5 text-center">
+        <FadeInSection className="mb-6 text-center">
+          <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary mb-2">
+            🆕 Novidades
+          </span>
           <h2 className="font-display text-xl font-bold text-foreground md:text-2xl">
-            Serviços Recentes
+            Serviços Recém-Cadastrados
           </h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Últimos serviços cadastrados por profissionais
+          <p className="mt-1 text-xs text-muted-foreground">
+            Profissionais que acabaram de publicar seus serviços
           </p>
-        </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {displayed.map((s) => {
-            const location = s.provider?.city
-              ? `${s.provider.city} - ${s.provider.state}`
-              : s.service_area || 'Brasil';
+        </FadeInSection>
 
-            return (
-              <div
-                key={s.id}
-                className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-card"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <MapPin className="h-3.5 w-3.5 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1 overflow-hidden">
-                  <p className="text-sm font-semibold text-foreground leading-tight break-words line-clamp-1">{s.service_name}</p>
-                  <p className="text-[11px] text-muted-foreground break-words">{location}</p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {displayed.map((s, i) => {
+            const location = s.provider?.city
+              ? `${s.provider.city}${s.provider.state ? ` - ${s.provider.state}` : ''}`
+              : s.service_area || 'Brasil';
+            const catSlug = (s.categories as any)?.slug;
+            const catIcon = (s.categories as any)?.icon || '🔧';
+            const catName = (s.categories as any)?.name;
+            const ago = timeAgo(s.created_at);
+
+            const content = (
+              <div className="group relative flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/20 overflow-hidden">
+                <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:to-accent/5 transition-all duration-500" />
+                <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg transition-transform duration-300 group-hover:scale-110">
+                  {catIcon}
+                </span>
+                <div className="relative min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-primary transition-colors">
+                    {s.service_name}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <MapPin className="h-3 w-3" /> {location}
+                    </span>
+                    {ago && (
+                      <>
+                        <span className="text-muted-foreground/40">·</span>
+                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Clock className="h-3 w-3" /> {ago}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {catName && (
+                    <span className="mt-1 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                      {catName}
+                    </span>
+                  )}
                 </div>
               </div>
             );
+
+            return (
+              <FadeInSection key={s.id} delay={i * 0.06}>
+                {catSlug ? (
+                  <Link to={`/categoria/${catSlug}`}>{content}</Link>
+                ) : (
+                  content
+                )}
+              </FadeInSection>
+            );
           })}
         </div>
+
+        <FadeInSection delay={0.3} className="mt-5 text-center">
+          <Button variant="outline" size="sm" className="gap-1.5 rounded-full" asChild>
+            <Link to="/buscar">
+              Ver Todos os Serviços
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </Button>
+        </FadeInSection>
       </div>
     </section>
   );
