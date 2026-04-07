@@ -43,8 +43,8 @@ const FeaturedJobs = () => {
         .eq('status', 'active')
         .eq('approval_status', 'approved')
         .order('created_at', { ascending: false })
-        .limit(24);
-      return shuffle(data || []).slice(0, 12);
+        .limit(12);
+      return shuffle(data || []).slice(0, 6);
     },
     staleTime: 1000 * 60 * 5,
   });
