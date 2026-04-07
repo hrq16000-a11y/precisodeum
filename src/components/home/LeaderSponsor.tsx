@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { handleImageError } from '@/lib/imageResolver';
 
@@ -76,7 +76,7 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="relative w-full"
+      className="relative w-full bg-gradient-to-r from-amber-50 via-white to-amber-50 border-b border-amber-100/60 shadow-sm"
     >
       <AnimatePresence mode="wait">
         <motion.a
@@ -86,18 +86,19 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
           rel="noopener noreferrer"
           onClick={() => handleClick(current.id)}
           data-sponsor={displayName}
+          data-click="true"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="relative block w-full h-[70px] sm:h-[90px] overflow-hidden cursor-pointer"
+          className="relative flex items-center justify-center w-full min-h-[50px] max-h-[70px] sm:min-h-[70px] sm:max-h-[110px] px-3 sm:px-6 py-1 cursor-pointer group transition-transform duration-200 hover:scale-[1.01]"
         >
-          {/* Background image — full width */}
+          {/* Banner image — contain mode, no crop, no zoom */}
           {imageSrc && (
             <img
               src={imageSrc}
               alt={displayName}
-              className="absolute inset-0 w-full h-full object-cover object-center"
+              className="w-full h-full max-h-[50px] sm:max-h-[90px] object-contain object-center"
               loading="lazy"
               width={1920}
               height={512}
@@ -105,23 +106,26 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
             />
           )}
 
-          {/* Subtle gradient at bottom for text legibility */}
-          <div className="absolute inset-x-0 bottom-0 h-7 bg-gradient-to-t from-black/45 to-transparent pointer-events-none" />
-
-          {/* Sponsor label — bottom-center, small & unobtrusive */}
-          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] sm:text-[9px] font-medium tracking-widest uppercase text-white/60 whitespace-nowrap pointer-events-none">
-            Patrocinado • {displayName}
+          {/* CTA hint on hover */}
+          <span className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] sm:text-xs font-medium text-amber-700/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+            <ExternalLink className="h-3 w-3" />
+            <span className="hidden sm:inline">Visitar</span>
           </span>
         </motion.a>
       </AnimatePresence>
 
-      {/* Dismiss */}
+      {/* Badge — top-left, discrete */}
+      <span className="absolute top-1 left-2 sm:left-3 text-[7px] sm:text-[8px] font-semibold tracking-widest uppercase text-amber-600/50 pointer-events-none select-none">
+        Patrocinado
+      </span>
+
+      {/* Dismiss button */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           setDismissed(true);
         }}
-        className="absolute top-1.5 right-2 p-0.5 rounded-full bg-black/25 text-white/60 hover:text-white transition-colors z-10"
+        className="absolute top-1.5 right-2 p-0.5 rounded-full bg-amber-900/10 text-amber-700/40 hover:text-amber-900/70 transition-colors z-10"
         aria-label="Fechar"
       >
         <X className="h-3 w-3" />
@@ -129,14 +133,14 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
 
       {/* Rotation dots */}
       {validSponsors.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 z-10">
           {validSponsors.map((_, i) => (
             <span
               key={i}
               className={`block h-1 rounded-full transition-all duration-300 ${
                 i === currentIdx % validSponsors.length
-                  ? 'w-4 bg-white/70'
-                  : 'w-1.5 bg-white/30'
+                  ? 'w-4 bg-amber-500/70'
+                  : 'w-1.5 bg-amber-300/40'
               }`}
             />
           ))}
