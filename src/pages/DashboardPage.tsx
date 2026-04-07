@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,9 @@ import { supabase } from '@/integrations/supabase/client';
 import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
 import LeadsChart from '@/components/dashboard/LeadsChart';
 import { usePermissions } from '@/hooks/usePermissions';
+import AnimatedCounter from '@/components/ui/AnimatedCounter';
+import GlassCard from '@/components/ui/GlassCard';
+import ProgressRing from '@/components/ui/ProgressRing';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
@@ -26,7 +29,6 @@ const DashboardPage = () => {
 
   useEffect(() => {
     if (!loading && !user) {
-      // Small delay to avoid redirect race with auth state propagation
       const timer = setTimeout(() => navigate('/login', { replace: true }), 200);
       return () => clearTimeout(timer);
     }
@@ -68,12 +70,23 @@ const DashboardPage = () => {
   if (isClient) {
     return (
       <DashboardLayout>
-        <h1 className="font-display text-2xl font-bold text-foreground">Olá, {profile?.full_name?.split(' ')[0] || 'Bem-vindo'}!</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Sua conta de cliente</p>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
+          <motion.div
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10"
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 6, repeat: Infinity }}
+          >
+            <User className="h-5 w-5 text-blue-600" />
+          </motion.div>
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">Olá, {profile?.full_name?.split(' ')[0] || 'Bem-vindo'}!</h1>
+            <p className="text-sm text-muted-foreground">Sua conta de cliente</p>
+          </div>
+        </motion.div>
 
-        <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
+        <GlassCard variant="gradient" className="mt-6">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/15 text-blue-600">
               <User className="h-5 w-5" />
             </div>
             <div>
@@ -83,12 +96,12 @@ const DashboardPage = () => {
               </p>
             </div>
           </div>
-        </div>
+        </GlassCard>
 
         <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-2">
-          <Card className="group cursor-pointer p-5 transition-all hover:shadow-md hover:border-accent/40" onClick={() => navigate('/buscar')}>
+          <GlassCard variant="default" delay={0.1} className="cursor-pointer" onClick={() => navigate('/buscar')}>
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent group-hover:scale-110 transition-transform">
                 <Eye className="h-5 w-5" />
               </div>
               <div>
@@ -96,11 +109,11 @@ const DashboardPage = () => {
                 <p className="text-xs text-muted-foreground mt-0.5">Encontre o profissional ideal na sua cidade</p>
               </div>
             </div>
-          </Card>
+          </GlassCard>
 
-          <Card className="group cursor-pointer p-5 transition-all hover:shadow-md hover:border-accent/40" onClick={() => navigate('/vagas')}>
+          <GlassCard variant="default" delay={0.2} className="cursor-pointer" onClick={() => navigate('/vagas')}>
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
                 <Megaphone className="h-5 w-5" />
               </div>
               <div>
@@ -108,11 +121,14 @@ const DashboardPage = () => {
                 <p className="text-xs text-muted-foreground mt-0.5">Confira oportunidades disponíveis</p>
               </div>
             </div>
-          </Card>
+          </GlassCard>
         </div>
 
-        <div className="mt-6 rounded-lg border border-accent/20 bg-accent/5 p-4">
-          <p className="text-sm text-foreground font-medium">Quer oferecer serviços?</p>
+        <GlassCard variant="glow" delay={0.3} className="mt-6">
+          <p className="text-sm text-foreground font-medium flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-accent" />
+            Quer oferecer serviços?
+          </p>
           <p className="text-xs text-muted-foreground mt-1">
             Altere o tipo da sua conta para "Profissional" na página de perfil e comece a divulgar seus serviços.
           </p>
@@ -122,7 +138,7 @@ const DashboardPage = () => {
           >
             Alterar tipo de conta <ArrowRight className="h-3 w-3" />
           </button>
-        </div>
+        </GlassCard>
       </DashboardLayout>
     );
   }
@@ -131,12 +147,23 @@ const DashboardPage = () => {
   if (isRH) {
     return (
       <DashboardLayout>
-        <h1 className="font-display text-2xl font-bold text-foreground">Painel RH</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Gerencie vagas e recrutamento</p>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
+          <motion.div
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10"
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 6, repeat: Infinity }}
+          >
+            <Megaphone className="h-5 w-5 text-purple-600" />
+          </motion.div>
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">Painel RH</h1>
+            <p className="text-sm text-muted-foreground">Gerencie vagas e recrutamento</p>
+          </div>
+        </motion.div>
 
-        <div className="mt-6 rounded-xl border border-purple-200 bg-purple-50/50 p-5 dark:border-purple-800 dark:bg-purple-900/20">
+        <GlassCard variant="gradient" className="mt-6 border-purple-200 dark:border-purple-800">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/15 text-purple-600">
               <Megaphone className="h-5 w-5" />
             </div>
             <div>
@@ -146,49 +173,33 @@ const DashboardPage = () => {
               </p>
             </div>
           </div>
-        </div>
+        </GlassCard>
 
         <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <Card className="group cursor-pointer p-5 transition-all hover:shadow-md hover:border-accent/40" onClick={() => navigate('/dashboard/vagas')}>
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
-                <Megaphone className="h-5 w-5" />
+          {[
+            { icon: Megaphone, title: 'Minhas Vagas', desc: 'Gerencie suas vagas publicadas', path: '/dashboard/vagas', count: jobsCount, countLabel: 'vaga', action: 'Publicar nova vaga' },
+            { icon: Eye, title: 'Buscar Profissionais', desc: 'Encontre profissionais para suas vagas', path: '/buscar' },
+            { icon: Users, title: 'Comunidade', desc: 'Conecte-se com a comunidade', path: '/dashboard/comunidade' },
+          ].map((item, i) => (
+            <GlassCard key={item.path} variant="default" delay={0.1 + i * 0.1} className="cursor-pointer" onClick={() => navigate(item.path)}>
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                  <item.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">{item.title}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                  {item.count && item.count > 0 && <span className="inline-block mt-1 text-xs font-medium text-accent">{item.count} {item.countLabel}{item.count !== 1 ? 's' : ''}</span>}
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">Minhas Vagas</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Gerencie suas vagas publicadas</p>
-                {jobsCount > 0 && <span className="inline-block mt-1 text-xs font-medium text-accent">{jobsCount} vaga{jobsCount !== 1 ? 's' : ''}</span>}
-              </div>
-            </div>
-            <button onClick={(e) => { e.stopPropagation(); navigate('/dashboard/vagas'); }}
-              className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
-              <PlusCircle className="h-3.5 w-3.5" /> Publicar nova vaga
-            </button>
-          </Card>
-
-          <Card className="group cursor-pointer p-5 transition-all hover:shadow-md hover:border-accent/40" onClick={() => navigate('/buscar')}>
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                <Eye className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">Buscar Profissionais</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Encontre profissionais para suas vagas</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="group cursor-pointer p-5 transition-all hover:shadow-md hover:border-accent/40" onClick={() => navigate('/dashboard/comunidade')}>
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                <Users className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">Comunidade</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Conecte-se com a comunidade</p>
-              </div>
-            </div>
-          </Card>
+              {item.action && (
+                <button onClick={(e) => { e.stopPropagation(); navigate(item.path); }}
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
+                  <PlusCircle className="h-3.5 w-3.5" /> {item.action}
+                </button>
+              )}
+            </GlassCard>
+          ))}
         </div>
       </DashboardLayout>
     );
@@ -199,7 +210,7 @@ const DashboardPage = () => {
     {
       number: '1',
       title: 'Complete seu perfil',
-      description: 'Adicione sua foto, descrição profissional, cidade e contato. Um perfil completo gera mais confiança e aparece com destaque na plataforma.',
+      description: 'Adicione sua foto, descrição profissional, cidade e contato.',
       action: () => navigate('/dashboard/perfil'),
       actionLabel: 'Editar Perfil',
       icon: User,
@@ -208,7 +219,7 @@ const DashboardPage = () => {
     {
       number: '2',
       title: 'Cadastre seus serviços',
-      description: 'Adicione os serviços que você oferece, com imagens e descrições. Profissionais com serviços e imagens recebem o selo "Perfil Completo".',
+      description: 'Adicione os serviços que você oferece, com imagens e descrições.',
       action: () => navigate('/dashboard/servicos'),
       actionLabel: 'Meus Serviços',
       icon: Briefcase,
@@ -217,7 +228,7 @@ const DashboardPage = () => {
     {
       number: '3',
       title: 'Personalize sua página',
-      description: 'Configure sua landing page profissional — escolha temas, cores, organize seções e adicione portfólio.',
+      description: 'Configure sua landing page profissional — escolha temas, cores e adicione portfólio.',
       action: () => navigate('/dashboard/minha-pagina'),
       actionLabel: 'Minha Página',
       icon: Layout,
@@ -226,7 +237,7 @@ const DashboardPage = () => {
     {
       number: '4',
       title: 'Entre no grupo do WhatsApp',
-      description: 'Participe do nosso grupo exclusivo para profissionais e receba dicas.',
+      description: 'Participe do nosso grupo exclusivo para profissionais.',
       action: () => whatsappGroupUrl && window.open(whatsappGroupUrl, '_blank'),
       actionLabel: 'Entrar no Grupo',
       icon: Users,
@@ -237,89 +248,163 @@ const DashboardPage = () => {
 
   const allStepsDone = profileDone && servicesDone;
 
+  // Profile completeness percentage
+  const completenessItems = [profileDone, servicesDone, portfolioCount > 0, !!provider?.photo_url];
+  const completenessPercent = Math.round((completenessItems.filter(Boolean).length / completenessItems.length) * 100);
+
+  const statCards = [
+    { icon: Briefcase, value: servicesCount ?? 0, label: servicesCount === 0 ? 'Nenhum serviço' : 'Serviços', gradient: 'from-blue-500/10 to-blue-600/5', iconColor: 'text-blue-500' },
+    { icon: MessageSquare, value: leadsCount, label: leadsCount === 0 ? 'Nenhum lead' : 'Leads', gradient: 'from-purple-500/10 to-purple-600/5', iconColor: 'text-purple-500' },
+    { icon: TrendingUp, value: viewsTotal, label: viewsTotal === 0 ? 'Sem visualizações' : 'Visualizações', gradient: 'from-emerald-500/10 to-emerald-600/5', iconColor: 'text-emerald-500' },
+    { icon: Star, value: provider?.rating_avg ? Number(provider.rating_avg).toFixed(1) : '0', label: !provider?.rating_avg || Number(provider.rating_avg) === 0 ? 'Sem avaliações' : 'Avaliação', gradient: 'from-amber-500/10 to-amber-600/5', iconColor: 'text-amber-500' },
+    { icon: Megaphone, value: jobsCount, label: jobsCount === 0 ? 'Nenhuma vaga' : 'Vagas', gradient: 'from-indigo-500/10 to-indigo-600/5', iconColor: 'text-indigo-500' },
+  ];
+
   return (
     <DashboardLayout>
-      <h1 className="font-display text-2xl font-bold text-foreground">
-        Olá, {profile?.full_name?.split(' ')[0] || 'Profissional'}!
-      </h1>
-      <div className="mt-1 flex flex-wrap items-center gap-2">
-        <p className="text-sm text-muted-foreground">Seu painel profissional</p>
-        {levelName && (
-          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: `${levelColor}20`, color: levelColor }}>
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: levelColor }} />
-            {levelName}
-          </span>
-        )}
-        {accountTypeName && (
-          <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold" style={{ borderColor: `${accountTypeColor}40`, color: accountTypeColor }}>
-            {accountTypeName}
-          </span>
-        )}
-      </div>
+      {/* Enhanced header with gradient */}
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative">
+        <div className="absolute -top-4 -left-4 -right-4 h-28 bg-gradient-to-br from-accent/5 via-primary/3 to-transparent rounded-3xl -z-10" />
+        <div className="flex items-center gap-3">
+          <motion.div
+            className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-accent/20 to-primary/20"
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Zap className="h-5 w-5 text-accent" />
+          </motion.div>
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">
+              Olá, {profile?.full_name?.split(' ')[0] || 'Profissional'}!
+            </h1>
+            <div className="flex flex-wrap items-center gap-2 mt-0.5">
+              <p className="text-sm text-muted-foreground">Seu painel profissional</p>
+              {levelName && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                  style={{ backgroundColor: `${levelColor}20`, color: levelColor }}
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: levelColor }} />
+                  {levelName}
+                </motion.span>
+              )}
+              {accountTypeName && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold"
+                  style={{ borderColor: `${accountTypeColor}40`, color: accountTypeColor }}
+                >
+                  {accountTypeName}
+                </motion.span>
+              )}
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Dominant CTA when no services */}
-      {servicesCount !== null && servicesCount === 0 && (
-        <div className="mt-4 rounded-xl border-2 border-accent bg-accent/10 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
-            <PlusCircle className="h-6 w-6" />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-base font-bold text-foreground">Crie seu primeiro serviço!</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">Publique seus serviços para que clientes possam encontrá-lo na plataforma.</p>
-          </div>
-          <Button variant="accent" size="sm" onClick={() => navigate('/dashboard/servicos')} className="shrink-0">
-            <PlusCircle className="mr-1 h-4 w-4" /> Criar Serviço
-          </Button>
-        </div>
-      )}
+      <AnimatePresence>
+        {servicesCount !== null && servicesCount === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mt-4 rounded-2xl border-2 border-accent bg-gradient-to-r from-accent/10 via-accent/5 to-transparent p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 relative overflow-hidden"
+          >
+            <div className="absolute inset-0 shimmer opacity-20" />
+            <motion.div
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-accent-foreground"
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <PlusCircle className="h-6 w-6" />
+            </motion.div>
+            <div className="flex-1 relative">
+              <h2 className="text-base font-bold text-foreground">Crie seu primeiro serviço!</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">Publique seus serviços para que clientes possam encontrá-lo.</p>
+            </div>
+            <Button variant="accent" size="sm" onClick={() => navigate('/dashboard/servicos')} className="shrink-0 relative">
+              <PlusCircle className="mr-1 h-4 w-4" /> Criar Serviço
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Stats row */}
+      {/* Stats with animated counters and gradient cards */}
       <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-5">
-        {[
-          { icon: Briefcase, value: servicesCount ?? 0, label: servicesCount === 0 ? 'Nenhum serviço ainda' : 'Serviços' },
-          { icon: MessageSquare, value: leadsCount, label: leadsCount === 0 ? 'Nenhum lead ainda' : 'Leads' },
-          { icon: TrendingUp, value: viewsTotal, label: viewsTotal === 0 ? 'Nenhuma visualização' : 'Visualizações' },
-          { icon: Star, value: provider?.rating_avg ? Number(provider.rating_avg).toFixed(1) : '0', label: !provider?.rating_avg || Number(provider.rating_avg) === 0 ? 'Sem avaliações ainda' : 'Avaliação' },
-          { icon: Megaphone, value: jobsCount, label: jobsCount === 0 ? 'Nenhuma vaga ainda' : 'Vagas' },
-        ].map((stat, i) => {
+        {statCards.map((stat, i) => {
           const Icon = stat.icon;
           return (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.1 + i * 0.07, ease: [0.25, 0.46, 0.45, 0.94] }}
-              whileHover={{ y: -3, scale: 1.02 }}
-              className="rounded-xl border border-border bg-card p-4 shadow-card transition-shadow hover:shadow-card-hover"
+              transition={{ duration: 0.4, delay: 0.1 + i * 0.07, ease: 'easeOut' as const }}
+              whileHover={{ y: -5, scale: 1.04, transition: { duration: 0.2 } }}
+              className={`group rounded-2xl border border-border bg-gradient-to-br ${stat.gradient} p-4 shadow-card transition-shadow hover:shadow-card-hover relative overflow-hidden`}
             >
-              <Icon className="h-4 w-4 text-accent" />
-              <p className="mt-2 font-display text-2xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-[11px] text-muted-foreground">{stat.label}</p>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+              <Icon className={`h-4 w-4 ${stat.iconColor} relative`} />
+              <div className="mt-2 relative">
+                <AnimatedCounter value={stat.value} className="font-display text-2xl font-bold text-foreground" />
+              </div>
+              <p className="text-[11px] text-muted-foreground relative">{stat.label}</p>
             </motion.div>
           );
         })}
       </div>
 
-      {/* Profile Completeness + Leads Chart */}
+      {/* Profile Completeness Ring + Leads Chart */}
       {provider && (
         <div className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
-          <ProfileCompleteness
-            provider={provider}
-            profile={profile}
-            servicesCount={servicesCount ?? 0}
-            portfolioCount={portfolioCount}
-          />
-          <LeadsChart providerId={provider.id} />
+          <GlassCard variant="gradient" hoverEffect={false} delay={0.3}>
+            <div className="flex items-center gap-4">
+              <ProgressRing value={completenessPercent} size={80} label="Perfil" />
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-foreground">Completude do Perfil</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {completenessPercent < 100
+                    ? 'Complete seu perfil para aparecer no topo dos resultados.'
+                    : '🎉 Perfil completo! Você está no máximo destaque.'}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <ProfileCompleteness
+                provider={provider}
+                profile={profile}
+                servicesCount={servicesCount ?? 0}
+                portfolioCount={portfolioCount}
+              />
+            </div>
+          </GlassCard>
+          <GlassCard variant="default" hoverEffect={false} delay={0.4}>
+            <LeadsChart providerId={provider.id} />
+          </GlassCard>
         </div>
       )}
 
-      {/* Quick Access */}
+      {/* Quick Access — enhanced cards */}
       <div className="mt-6">
-        <h2 className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Acesso Rápido</h2>
+        <motion.h2
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
+          className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2"
+        >
+          <Sparkles className="h-3.5 w-3.5 text-accent" />
+          Acesso Rápido
+        </motion.h2>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <Card className="group cursor-pointer p-5 transition-all hover:shadow-md hover:border-accent/40 hover:scale-[1.01]" onClick={() => navigate('/dashboard/servicos')}>
+          <GlassCard variant="default" delay={0.5} className="cursor-pointer" onClick={() => navigate('/dashboard/servicos')}>
             <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent transition-all duration-300 group-hover:bg-accent group-hover:text-accent-foreground">
                 <Settings className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
@@ -334,11 +419,11 @@ const DashboardPage = () => {
               className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
               <PlusCircle className="h-3.5 w-3.5" /> Adicionar novo serviço
             </button>
-          </Card>
+          </GlassCard>
 
-          <Card className="group cursor-pointer p-5 transition-all hover:shadow-md hover:border-accent/40 hover:scale-[1.01]" onClick={() => navigate('/dashboard/vagas')}>
+          <GlassCard variant="default" delay={0.6} className="cursor-pointer" onClick={() => navigate('/dashboard/vagas')}>
             <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
                 <Megaphone className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
@@ -350,12 +435,12 @@ const DashboardPage = () => {
               className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
               <PlusCircle className="h-3.5 w-3.5" /> Publicar vaga
             </button>
-          </Card>
+          </GlassCard>
 
           {provider?.slug && (
-            <Card className="group cursor-pointer p-5 transition-all hover:shadow-md hover:border-primary/40 hover:scale-[1.01] border-dashed" onClick={() => navigate(`/profissional/${provider.slug}`)}>
+            <GlassCard variant="bordered" delay={0.7} className="cursor-pointer border-dashed" onClick={() => navigate(`/profissional/${provider.slug}`)}>
               <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <Eye className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -363,61 +448,99 @@ const DashboardPage = () => {
                   <p className="text-xs text-muted-foreground mt-0.5">Veja como seu perfil aparece para os clientes</p>
                 </div>
               </div>
-            </Card>
+            </GlassCard>
           )}
         </div>
       </div>
 
-      {/* Onboarding guide - always visible, collapsible */}
-      <div className="mt-6 rounded-xl border border-accent/30 bg-accent/5 p-4 sm:p-6">
+      {/* Onboarding guide — enhanced */}
+      <GlassCard variant="glow" hoverEffect={false} delay={0.8} className="mt-6 border-accent/20 bg-accent/3">
         <button
           onClick={() => setGuideOpen(!guideOpen)}
           className="flex w-full items-center justify-between text-left"
         >
-          <div>
-            <h2 className="font-display text-lg font-bold text-foreground">
-              🚀 Como funciona a plataforma
-              {allStepsDone && <span className="ml-2 text-xs font-normal text-accent">✓ Tudo concluído</span>}
-            </h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {allStepsDone
-                ? 'Parabéns! Seu perfil está completo. Consulte os passos sempre que precisar.'
-                : 'Siga os passos abaixo para começar a receber clientes.'}
-            </p>
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="text-xl"
+            >
+              🚀
+            </motion.div>
+            <div>
+              <h2 className="font-display text-lg font-bold text-foreground">
+                Como funciona a plataforma
+                {allStepsDone && (
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="ml-2 text-xs font-normal text-accent"
+                  >
+                    ✓ Tudo concluído
+                  </motion.span>
+                )}
+              </h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {allStepsDone
+                  ? 'Parabéns! Seu perfil está completo.'
+                  : 'Siga os passos abaixo para começar a receber clientes.'}
+              </p>
+            </div>
           </div>
-          {guideOpen ? <ChevronUp className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />}
+          <motion.div
+            animate={{ rotate: guideOpen ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
+          </motion.div>
         </button>
 
-        {guideOpen && (
-          <div className="mt-4 space-y-3">
-            {providerSteps.filter(s => !s.hidden).map((step) => (
-              <div
-                key={step.number}
-                className={`flex items-start gap-3 rounded-lg border p-3 transition-colors sm:gap-4 sm:p-4 ${
-                  step.done ? 'border-accent/30 bg-accent/5' : 'border-border bg-card'
-                }`}
-              >
-                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                  step.done ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'
-                }`}>
-                  {step.done ? '✓' : step.number}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-foreground">{step.title}</h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground break-words">{step.description}</p>
-                  <button
-                    onClick={step.action}
-                    className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
+        <AnimatePresence>
+          {guideOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' as const }}
+              className="overflow-hidden"
+            >
+              <div className="mt-4 space-y-3">
+                {providerSteps.filter(s => !s.hidden).map((step, i) => (
+                  <motion.div
+                    key={step.number}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                    className={`flex items-start gap-3 rounded-xl border p-3 transition-all sm:gap-4 sm:p-4 hover:shadow-card ${
+                      step.done ? 'border-accent/30 bg-accent/5' : 'border-border bg-card'
+                    }`}
                   >
-                    {step.actionLabel} <ArrowRight className="h-3 w-3" />
-                  </button>
-                </div>
-                <step.icon className="h-5 w-5 shrink-0 text-muted-foreground hidden sm:block" />
+                    <motion.div
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                        step.done ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'
+                      }`}
+                      whileHover={{ scale: 1.15 }}
+                    >
+                      {step.done ? '✓' : step.number}
+                    </motion.div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-foreground">{step.title}</h3>
+                      <p className="mt-0.5 text-xs text-muted-foreground break-words">{step.description}</p>
+                      <button
+                        onClick={step.action}
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
+                      >
+                        {step.actionLabel} <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                    <step.icon className="h-5 w-5 shrink-0 text-muted-foreground hidden sm:block" />
+                  </motion.div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </GlassCard>
     </DashboardLayout>
   );
 };
