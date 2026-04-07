@@ -18,7 +18,8 @@ interface Props {
   isLoading: boolean;
 }
 
-const HOME_COUNT = 6;
+const HOME_COUNT_MOBILE = 6;
+const HOME_COUNT_DESKTOP = 8;
 
 const CategoriesGrid = ({ categories, isLoading }: Props) => {
   const visible = useMemo(() => {
@@ -33,7 +34,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
       }
       return a;
     };
-    return [...shuffle(withProviders), ...shuffle(withoutProviders)].slice(0, HOME_COUNT);
+    return [...shuffle(withProviders), ...shuffle(withoutProviders)].slice(0, HOME_COUNT_DESKTOP);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categories.length]);
 
@@ -50,31 +51,32 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
         </FadeInSection>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 rounded-xl" />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 rounded-xl" />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               {visible.map((cat, i) => (
-                <FadeInSection key={cat.id} delay={i * 0.06}>
+                <FadeInSection key={cat.id} delay={i * 0.05}>
                   <Link
                     to={`/categoria/${cat.slug}`}
-                    className="group relative flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 hover:border-primary/30 overflow-hidden"
+                    className="group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 hover:border-primary/30 overflow-hidden text-center"
                   >
-                    {/* Subtle gradient on hover */}
                     <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:to-accent/5 transition-all duration-500" />
-                    <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary/15">
+                    <span className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-2xl transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary/15">
                       {cat.icon}
                     </span>
-                    <div className="relative min-w-0 flex-1">
+                    <div className="relative">
                       <span className="block text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2">
                         {cat.name}
                       </span>
                       {cat.count > 0 && (
-                        <span className="text-[11px] text-muted-foreground">{cat.count} profissionais</span>
+                        <span className="mt-1 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                          {cat.count} {cat.count === 1 ? 'profissional' : 'profissionais'}
+                        </span>
                       )}
                     </div>
                   </Link>
