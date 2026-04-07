@@ -286,6 +286,51 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     return map[action] || action;
   };
 
+  // === Toggle Admin ===
+  const toggleAdmin = async () => {
+    if (!user) return;
+    setPermLoading(true);
+    if (userIsAdmin) {
+      await supabase.from('user_roles').delete().eq('user_id', user.id).eq('role', 'admin');
+      await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { admin: { from: true, to: false } } } });
+      toast.success('Permissão de admin removida');
+      setUserIsAdmin(false);
+    } else {
+      await supabase.from('user_roles').insert({ user_id: user.id, role: 'admin' } as any);
+      await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { admin: { from: false, to: true } } } });
+      toast.success('Usuário promovido a admin');
+      setUserIsAdmin(true);
+    }
+    setPermLoading(false);
+    onRefresh?.();
+  };
+
+  // === Toggle Sponsor ===
+  const toggleSponsor = async () => {
+    if (!user) return;
+    setPermLoading(true);
+    if (userIsSponsor) {
+      await supabase.from('sponsor_contacts').delete().eq('user_id', user.id);
+      await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { sponsor: { from: true, to: false } } } });
+      toast.success('Acesso de patrocinador removido');
+      setUserIsSponsor(false);
+      setSelectedSponsorId('');
+    } else {
+      if (!selectedSponsorId) { toast.error('Selecione um patrocinador'); setPermLoading(false); return; }
+      await supabase.from('sponsor_contacts').insert({
+        user_id: user.id,
+        sponsor_id: selectedSponsorId,
+        contact_name: user.full_name || '',
+        email: user.email || '',
+      });
+      await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { sponsor: { from: false, to: true }, sponsor_id: selectedSponsorId } } });
+      toast.success('Acesso de patrocinador concedido');
+      setUserIsSponsor(true);
+    }
+    setPermLoading(false);
+    onRefresh?.();
+  };
+
   if (!user) return null;
 
   const initials = (user.full_name || '?')[0]?.toUpperCase();
