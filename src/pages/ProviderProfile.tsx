@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye } from 'lucide-react';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import ImageLightbox from '@/components/ImageLightbox';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -11,11 +11,11 @@ import StarRating from '@/components/StarRating';
 import SponsorAd from '@/components/SponsorAd';
 import { lazy, Suspense } from 'react';
 const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -137,6 +137,55 @@ const THEME_CLASSES: Record<string, ThemeConfig> = {
     input: 'rounded-none border-0 border-b border-border/50 bg-transparent',
   },
 };
+
+/* ── Animated Counter ── */
+const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: number }) => {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    if (value <= 0) return;
+    let start = 0;
+    const step = value / (duration * 60);
+    const id = setInterval(() => {
+      start += step;
+      if (start >= value) { setDisplay(value); clearInterval(id); }
+      else setDisplay(Math.floor(start));
+    }, 1000 / 60);
+    return () => clearInterval(id);
+  }, [value, duration]);
+  return <>{display}</>;
+};
+
+/* ── Stat Mini Card ── */
+const StatMiniCard = ({ icon: Icon, label, value, delay, accentBg }: { icon: any; label: string; value: string | number; delay: number; accentBg?: string }) => (
+  <motion.div
+    className="flex flex-col items-center gap-1 rounded-xl bg-accent/5 border border-accent/10 px-3 py-2.5 text-center"
+    initial={{ opacity: 0, y: 16, scale: 0.9 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ delay, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    whileHover={{ scale: 1.05, y: -2 }}
+  >
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10" style={accentBg ? { backgroundColor: `${accentBg}20` } : undefined}>
+      <Icon className="h-4 w-4 text-accent" style={accentBg ? { color: accentBg } : undefined} />
+    </div>
+    <span className="text-lg font-bold text-foreground leading-none">
+      {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
+    </span>
+    <span className="text-[10px] text-muted-foreground leading-none">{label}</span>
+  </motion.div>
+);
+
+/* ── Trust Badge ── */
+const TrustBadge = ({ icon: Icon, text, delay }: { icon: any; text: string; delay: number }) => (
+  <motion.span
+    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-600"
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ delay, type: 'spring', stiffness: 300, damping: 20 }}
+  >
+    <Icon className="h-3 w-3" />
+    {text}
+  </motion.span>
+);
 
 const ProviderProfile = () => {
   const isMobile = useIsMobile();
@@ -317,7 +366,7 @@ const ProviderProfile = () => {
           preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
         }
 
-         // Fetch related providers — prioritize same category, then same city
+        // Fetch related providers — prioritize same category, then same city
         try {
           let relatedQuery = supabase
             .from('providers')
@@ -328,7 +377,6 @@ const ProviderProfile = () => {
             .order('rating_avg', { ascending: false })
             .limit(6);
 
-          // Filter by category first (same profession)
           if (data.category_id) {
             relatedQuery = relatedQuery.eq('category_id', data.category_id);
           } else if (data.city) {
@@ -386,6 +434,7 @@ const ProviderProfile = () => {
   const avatarUrl = provider ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : '';
   const category = provider ? ((provider.categories as any)?.name || '') : '';
   const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
+  const categoryIcon = provider ? ((provider.categories as any)?.icon || '🔧') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
   const effectiveWhatsApp = provider ? toCanonical(provider.whatsapp || provider.phone || '') : '';
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
@@ -455,17 +504,23 @@ const ProviderProfile = () => {
   };
 
   const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
-  const stagger = { visible: { transition: { staggerChildren: 0.1 } } };
+  const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
   const scaleIn = { hidden: { opacity: 0, scale: 0.92 }, visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
+  const slideInLeft = { hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
 
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
         <div className="container py-8 space-y-4">
-          <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-56 rounded-2xl" />
+          <div className="grid grid-cols-3 gap-3">
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+          </div>
+          <Skeleton className="h-40 rounded-xl" />
           <Skeleton className="h-32 rounded-xl" />
-          <Skeleton className="h-24 rounded-xl" />
         </div>
         <Footer />
       </div>
@@ -477,7 +532,20 @@ const ProviderProfile = () => {
       <div className="flex min-h-screen flex-col">
         <Header />
         <div className="container flex flex-1 items-center justify-center py-20">
-          <p className="text-lg text-muted-foreground">Profissional não encontrado.</p>
+          <motion.div
+            className="text-center space-y-3"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="mx-auto h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+              <Users className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-lg font-semibold text-foreground">Profissional não encontrado</p>
+            <p className="text-sm text-muted-foreground">Verifique o link ou tente buscar novamente.</p>
+            <Button variant="outline" asChild>
+              <Link to="/buscar">Buscar profissionais</Link>
+            </Button>
+          </motion.div>
         </div>
         <Footer />
       </div>
@@ -495,34 +563,115 @@ const ProviderProfile = () => {
   // ── Section renderers ──
 
   const renderAbout = () => (
-    <motion.div key="about" className={`mt-6 p-6 ${tc.section}`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
-      <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Sobre o profissional</h2>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+    <motion.div key="about" className={`mt-6 ${tc.section} overflow-hidden`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+          <Briefcase className="h-4 w-4 text-accent" />
+        </div>
+        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Sobre o profissional</h2>
+      </div>
+      <motion.p
+        className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line"
+        variants={slideInLeft}
+      >
         {provider.description || 'Este profissional ainda não adicionou uma descrição.'}
-      </p>
+      </motion.p>
+
+      {/* Info grid */}
+      <motion.div
+        className="mt-5 grid grid-cols-2 gap-3"
+        variants={stagger}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+      >
+        {provider.city && (
+          <motion.div variants={scaleIn} className="flex items-center gap-2.5 rounded-lg bg-muted/40 p-3">
+            <MapPin className="h-4 w-4 text-accent shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Localização</p>
+              <p className="text-xs font-medium text-foreground">{provider.city} - {provider.state}</p>
+            </div>
+          </motion.div>
+        )}
+        {provider.neighborhood && (
+          <motion.div variants={scaleIn} className="flex items-center gap-2.5 rounded-lg bg-muted/40 p-3">
+            <MapPin className="h-4 w-4 text-accent shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Bairro</p>
+              <p className="text-xs font-medium text-foreground">{provider.neighborhood}</p>
+            </div>
+          </motion.div>
+        )}
+        {provider.working_hours && (
+          <motion.div variants={scaleIn} className="flex items-center gap-2.5 rounded-lg bg-muted/40 p-3">
+            <Clock className="h-4 w-4 text-accent shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Horário</p>
+              <p className="text-xs font-medium text-foreground">{provider.working_hours}</p>
+            </div>
+          </motion.div>
+        )}
+        {provider.service_radius && (
+          <motion.div variants={scaleIn} className="flex items-center gap-2.5 rounded-lg bg-muted/40 p-3">
+            <Zap className="h-4 w-4 text-accent shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Raio de Atuação</p>
+              <p className="text-xs font-medium text-foreground">{provider.service_radius}</p>
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
     </motion.div>
   );
 
   const renderPortfolio = () => {
     if (portfolioImages.length === 0) return null;
+    const showCount = isMobile ? 4 : 6;
+    const visiblePhotos = portfolioImages.slice(0, showCount);
+    const remaining = portfolioImages.length - showCount;
+
     return (
-      <motion.div key="portfolio" className={`mt-6 p-6 ${tc.section}`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
+      <motion.div key="portfolio" className={`mt-6 ${tc.section} overflow-hidden`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
         <div className="flex items-center gap-2 mb-4">
-          <ImageIcon className="h-5 w-5 text-accent" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+            <ImageIcon className="h-4 w-4 text-accent" />
+          </div>
           <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Portfólio</h2>
-          <span className="ml-auto text-xs text-muted-foreground">{portfolioImages.length} fotos</span>
+          <motion.span
+            className="ml-auto inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.3, type: 'spring' }}
+          >
+            <ImageIcon className="h-3 w-3" />
+            {portfolioImages.length} fotos
+          </motion.span>
         </div>
-        <motion.div className="grid grid-cols-2 gap-3 sm:grid-cols-3" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          {portfolioImages.map((url, i) => (
+        <motion.div className="grid grid-cols-2 gap-2 sm:grid-cols-3" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+          {visiblePhotos.map((url, i) => (
             <motion.div
               key={i}
               variants={scaleIn}
-              className="aspect-square cursor-pointer overflow-hidden rounded-xl border border-border group"
+              className={`relative cursor-pointer overflow-hidden rounded-xl border border-border group ${i === 0 ? 'col-span-2 row-span-2 aspect-[4/3]' : 'aspect-square'}`}
               onClick={() => openPortfolioLightbox(i)}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" onError={handleImageError} />
+              <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" onError={handleImageError} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <motion.div
+                className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-foreground opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                whileHover={{ scale: 1.1 }}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </motion.div>
+              {/* Show remaining count on last visible item */}
+              {i === showCount - 1 && remaining > 0 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
+                  <span className="text-white text-lg font-bold">+{remaining}</span>
+                </div>
+              )}
             </motion.div>
           ))}
         </motion.div>
@@ -546,27 +695,50 @@ const ProviderProfile = () => {
 
   const renderReviews = () => {
     if (!reviewsEnabled) return null;
+    const avgRating = Number(provider.rating_avg) || 0;
     return (
-      <motion.div key="reviews" className={`mt-6 p-6 ${tc.section}`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
-        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Avaliações</h2>
+      <motion.div key="reviews" className={`mt-6 ${tc.section} overflow-hidden`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+            <Star className="h-4 w-4 text-accent" />
+          </div>
+          <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Avaliações</h2>
+          {reviews.length > 0 && (
+            <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent">
+              <Star className="h-3 w-3 fill-accent" />
+              {avgRating.toFixed(1)} ({reviews.length})
+            </span>
+          )}
+        </div>
+
         {reviews.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
+          <div className="text-center py-6 space-y-2">
+            <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+              <Star className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
+          </div>
         ) : (
-          <motion.div className="mt-4 space-y-4" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+          <motion.div className="mt-2 space-y-4" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             {reviews.map((r) => (
-              <motion.div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0" variants={fadeUp}>
+              <motion.div key={r.id} className="rounded-lg border border-border/50 p-4 hover:border-accent/20 transition-colors" variants={fadeUp}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-foreground">
-                    {(r.profiles as any)?.full_name || 'Cliente'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">
+                      {((r.profiles as any)?.full_name || 'C')[0]}
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">
+                      {(r.profiles as any)?.full_name || 'Cliente'}
+                    </span>
+                  </div>
                   <span className="text-xs text-muted-foreground">
                     {new Date(r.created_at).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
-                <div className="mt-1">
-                  <StarRating rating={r.rating} showValue={false} size={12} />
+                <div className="mt-2">
+                  <StarRating rating={r.rating} showValue={false} size={14} />
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">{r.comment}</p>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{r.comment}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -588,14 +760,28 @@ const ProviderProfile = () => {
 
       {/* Cover Image Hero */}
       {pageSettings.cover_image_url && (
-        <div className="relative w-full aspect-[16/5] overflow-hidden">
-          <img src={coverImage(pageSettings.cover_image_url)} alt="Capa" className="h-full w-full object-cover" loading="eager" onError={handleImageError} />
+        <motion.div
+          className="relative w-full aspect-[16/5] overflow-hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+        >
+          <motion.img
+            src={coverImage(pageSettings.cover_image_url)}
+            alt="Capa"
+            className="h-full w-full object-cover"
+            loading="eager"
+            onError={handleImageError}
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 container pb-6 text-white">
             {pageSettings.headline && <h2 className="font-display text-xl sm:text-3xl font-bold drop-shadow-lg">{pageSettings.headline}</h2>}
             {pageSettings.tagline && <p className="mt-1 text-sm sm:text-lg opacity-90 drop-shadow">{pageSettings.tagline}</p>}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {!pageSettings.cover_image_url && (pageSettings.headline || pageSettings.tagline) && (
@@ -607,21 +793,21 @@ const ProviderProfile = () => {
 
       {/* Breadcrumb */}
       <nav className="container py-3 text-sm text-muted-foreground">
-        <Link to="/" className="hover:text-foreground">Início</Link>
+        <Link to="/" className="hover:text-foreground transition-colors">Início</Link>
         {categorySlug && (
           <>
             <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/categoria/${categorySlug}`} className="hover:text-foreground">{category}</Link>
+            <Link to={`/categoria/${categorySlug}`} className="hover:text-foreground transition-colors">{category}</Link>
           </>
         )}
         {provider.city && (
           <>
             <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/cidade/${citySlug}`} className="hover:text-foreground">{provider.city}</Link>
+            <Link to={`/cidade/${citySlug}`} className="hover:text-foreground transition-colors">{provider.city}</Link>
           </>
         )}
         <ChevronRight className="mx-1 inline h-3 w-3" />
-        <span className="text-foreground">{name}</span>
+        <span className="text-foreground font-medium">{name}</span>
       </nav>
 
       <Suspense fallback={null}><AdSlot slotSlug="profile-top" category={category} city={provider.city} state={provider.state} /></Suspense>
@@ -630,23 +816,33 @@ const ProviderProfile = () => {
         <div className="mx-auto max-w-3xl">
           {/* ── Profile Header Card ── */}
           <motion.div
-            className={`p-6 ${tc.card}`}
+            className={`p-6 ${tc.card} overflow-hidden relative`}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="flex flex-col items-center text-center gap-4 sm:flex-row sm:items-start sm:text-left">
+            {/* Subtle gradient background accent */}
+            <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-accent/5 blur-3xl -translate-y-1/2 translate-x-1/2" />
+
+            <div className="relative flex flex-col items-center text-center gap-4 sm:flex-row sm:items-start sm:text-left">
               <motion.div
+                className="relative"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+                transition={{ delay: 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               >
-                <Avatar className="h-28 w-28 shrink-0 rounded-2xl ring-4 ring-accent/20 shadow-lg">
+                <Avatar className="h-28 w-28 shrink-0 rounded-2xl ring-4 ring-accent/20 shadow-xl">
                   <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
                   <AvatarFallback className="rounded-2xl bg-primary text-3xl font-bold text-primary-foreground">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
+                {/* Online indicator pulse */}
+                <motion.div
+                  className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 border-2 border-card"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                />
               </motion.div>
               <motion.div
                 className="flex-1 min-w-0"
@@ -658,10 +854,10 @@ const ProviderProfile = () => {
                   <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
                   {provider.plan === 'premium' && (
                     <motion.span
-                      className={`inline-flex items-center gap-1 ${tc.badge} bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground`}
-                      style={accentBg ? { backgroundColor: accentBg } : undefined}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
+                      className={`inline-flex items-center gap-1 ${tc.badge} bg-gradient-to-r from-accent to-accent/80 px-2.5 py-0.5 text-xs font-semibold text-accent-foreground shadow-md`}
+                      style={accentBg ? { background: `linear-gradient(135deg, ${accentBg}, ${accentBg}cc)` } : undefined}
+                      initial={{ scale: 0, rotate: -12 }}
+                      animate={{ scale: 1, rotate: 0 }}
                       transition={{ delay: 0.4, type: 'spring', stiffness: 300, damping: 15 }}
                     >
                       <Crown className="h-3 w-3" /> DESTAQUE
@@ -680,7 +876,8 @@ const ProviderProfile = () => {
                   )}
                 </div>
                 {provider.business_name && <p className="text-sm text-muted-foreground mt-1">{provider.business_name}</p>}
-                <p className="mt-1 text-sm font-semibold" style={accentBg ? { color: accentBg } : undefined}>
+                <p className="mt-1 text-sm font-semibold flex items-center justify-center sm:justify-start gap-1" style={accentBg ? { color: accentBg } : undefined}>
+                  <span className="text-base">{categoryIcon}</span>
                   {category || 'Categoria não informada'}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center justify-center sm:justify-start gap-3 text-sm text-muted-foreground">
@@ -702,69 +899,99 @@ const ProviderProfile = () => {
                     <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
                   </div>
                 )}
+
+                {/* Trust Badges */}
+                <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-1.5">
+                  <TrustBadge icon={Shield} text="Perfil verificado" delay={0.5} />
+                  {provider.years_experience >= 3 && <TrustBadge icon={Award} text="Experiente" delay={0.6} />}
+                  {provider.review_count >= 3 && <TrustBadge icon={ThumbsUp} text="Recomendado" delay={0.7} />}
+                </div>
+
                 {hasSocial && (
                   <div className="mt-3 flex justify-center sm:justify-start gap-2">
                     {pageSettings.instagram_url && (
-                      <a href={pageSettings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110 inline-block">
-                        <Instagram className="h-5 w-5" />
-                      </a>
+                      <motion.a href={pageSettings.instagram_url} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                        <Instagram className="h-4 w-4" />
+                      </motion.a>
                     )}
                     {pageSettings.facebook_url && (
-                      <a href={pageSettings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110 inline-block">
-                        <Facebook className="h-5 w-5" />
-                      </a>
+                      <motion.a href={pageSettings.facebook_url} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                        <Facebook className="h-4 w-4" />
+                      </motion.a>
                     )}
                     {pageSettings.youtube_url && (
-                      <a href={pageSettings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110 inline-block">
-                        <Youtube className="h-5 w-5" />
-                      </a>
+                      <motion.a href={pageSettings.youtube_url} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                        <Youtube className="h-4 w-4" />
+                      </motion.a>
                     )}
                     {pageSettings.tiktok_url && (
-                      <a href={pageSettings.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110 inline-block text-sm font-bold">
-                        🎵
-                      </a>
+                      <motion.a href={pageSettings.tiktok_url} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                        <span className="text-sm">🎵</span>
+                      </motion.a>
                     )}
                   </div>
                 )}
               </motion.div>
             </div>
 
+            {/* ── Stats Mini Cards ── */}
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              {provider.years_experience > 0 && (
+                <StatMiniCard icon={Briefcase} label="Experiência" value={`${provider.years_experience}+`} delay={0.4} accentBg={accentBg} />
+              )}
+              {provider.review_count > 0 && (
+                <StatMiniCard icon={Star} label="Avaliações" value={provider.review_count} delay={0.5} accentBg={accentBg} />
+              )}
+              {services.length > 0 && (
+                <StatMiniCard icon={Briefcase} label="Serviços" value={services.length} delay={0.6} accentBg={accentBg} />
+              )}
+              {portfolioImages.length > 0 && !(provider.years_experience > 0 && provider.review_count > 0 && services.length > 0) && (
+                <StatMiniCard icon={ImageIcon} label="Fotos" value={portfolioImages.length} delay={0.6} accentBg={accentBg} />
+              )}
+            </div>
+
             {/* ── CTA Buttons ── */}
             <motion.div
-              className="mt-6 flex flex-wrap justify-center sm:justify-start gap-2"
+              className="mt-6 flex flex-col sm:flex-row flex-wrap justify-center sm:justify-start gap-2"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.5 }}
             >
-              <Button
-                variant="accent"
-                size="lg"
-                className={`${tc.button} gap-2 shadow-lg hover:shadow-xl transition-shadow`}
-                onClick={() => setLeadDialogOpen(true)}
-                style={accentBg ? { backgroundColor: accentBg } : undefined}
-              >
-                <Send className="h-4 w-4" />
-                {pageSettings.cta_text}
-              </Button>
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <Button
+                  variant="accent"
+                  size="lg"
+                  className={`${tc.button} gap-2 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto`}
+                  onClick={() => setLeadDialogOpen(true)}
+                  style={accentBg ? { backgroundColor: accentBg } : undefined}
+                >
+                  <Send className="h-4 w-4" />
+                  {pageSettings.cta_text}
+                </Button>
+              </motion.div>
               {effectiveWhatsApp && (
-                <Button variant="outline" size="lg" className={`${tc.buttonOutline} gap-2`} asChild>
-                  <a href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-5 w-5 text-[#25D366]" /> {pageSettings.cta_whatsapp_text}
-                  </a>
-                </Button>
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                  <Button variant="outline" size="lg" className={`${tc.buttonOutline} gap-2 w-full sm:w-auto border-[#25D366]/30 hover:bg-[#25D366]/5`} asChild>
+                    <a href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)} target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="h-5 w-5 text-[#25D366]" /> {pageSettings.cta_whatsapp_text}
+                    </a>
+                  </Button>
+                </motion.div>
               )}
-              {isMobile && provider.phone && telLink(provider.phone) && (
-                <Button variant="outline" size="lg" className={tc.buttonOutline} asChild>
-                  <a href={telLink(provider.phone)}>
-                    <Phone className="h-5 w-5" /> Ligar
-                  </a>
+              <div className="flex gap-2 justify-center">
+                {isMobile && provider.phone && telLink(provider.phone) && (
+                  <Button variant="outline" size="lg" className={tc.buttonOutline} asChild>
+                    <a href={telLink(provider.phone)}>
+                      <Phone className="h-5 w-5" /> Ligar
+                    </a>
+                  </Button>
+                )}
+                <Button variant="ghost" size="lg" onClick={() => {
+                  navigator.clipboard.writeText(window.location.href).then(() => toast.success('Link copiado!')).catch(() => window.prompt('Copie o link:', window.location.href));
+                }}>
+                  <Copy className="h-4 w-4" /> Copiar Link
                 </Button>
-              )}
-              <Button variant="ghost" size="lg" onClick={() => {
-                navigator.clipboard.writeText(window.location.href).then(() => toast.success('Link copiado!')).catch(() => window.prompt('Copie o link:', window.location.href));
-              }}>
-                <Copy className="h-4 w-4" /> Copiar Link
-              </Button>
+              </div>
             </motion.div>
           </motion.div>
 
@@ -787,9 +1014,16 @@ const ProviderProfile = () => {
           {/* ── Related Providers ── */}
           {relatedProviders.length > 0 && (
             <motion.div className="mt-8" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
-              <div className="flex items-center gap-2 mb-4">
-                <Users className="h-5 w-5 text-accent" />
-                <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Profissionais Relacionados</h2>
+              <div className="flex items-center gap-2 mb-5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+                  <Users className="h-4 w-4 text-accent" />
+                </div>
+                <div>
+                  <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>
+                    {category ? `Outros profissionais de ${category}` : 'Profissionais Relacionados'}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">Veja mais opções na mesma área</p>
+                </div>
               </div>
               <motion.div className="grid grid-cols-2 gap-3 sm:grid-cols-3" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                 {relatedProviders.map((rp: any) => {
@@ -797,38 +1031,67 @@ const ProviderProfile = () => {
                   const rpInitials = rpName.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
                   const rpAvatar = avatarLarge(rp.profiles?.avatar_url || rp.photo_url);
                   const rpCategory = (rp.categories as any)?.name || '';
+                  const rpCatIcon = (rp.categories as any)?.icon || '🔧';
                   return (
-                    <motion.div key={rp.id} variants={scaleIn} whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+                    <motion.div key={rp.id} variants={scaleIn} whileHover={{ y: -6 }} transition={{ duration: 0.25 }}>
                       <Link
                         to={`/profissional/${rp.slug}`}
-                        className={`group block p-4 transition-all hover:shadow-lg hover:border-accent/30 ${tc.card}`}
+                        className={`group block p-4 transition-all hover:shadow-xl hover:border-accent/30 ${tc.card} relative overflow-hidden`}
                       >
-                        <div className="flex flex-col items-center text-center gap-2">
-                          <Avatar className="h-14 w-14 rounded-xl ring-1 ring-border group-hover:ring-accent/30 transition-all">
-                            <AvatarImage src={rpAvatar || undefined} alt={rpName} className="rounded-xl" />
-                            <AvatarFallback className="rounded-xl bg-primary/10 text-sm font-bold text-primary">
-                              {rpInitials}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
+                        {/* Subtle gradient on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                        <div className="relative flex flex-col items-center text-center gap-2.5">
+                          <div className="relative">
+                            <Avatar className="h-16 w-16 rounded-xl ring-2 ring-border group-hover:ring-accent/30 transition-all shadow-md">
+                              <AvatarImage src={rpAvatar || undefined} alt={rpName} className="rounded-xl" />
+                              <AvatarFallback className="rounded-xl bg-primary/10 text-sm font-bold text-primary">
+                                {rpInitials}
+                              </AvatarFallback>
+                            </Avatar>
+                          </div>
+                          <div className="min-w-0 w-full">
                             <p className="text-sm font-semibold text-foreground truncate">{rpName}</p>
-                            {rpCategory && <p className="text-[11px] text-accent truncate">{rpCategory}</p>}
-                            <p className="text-[11px] text-muted-foreground truncate">
-                              <MapPin className="inline h-3 w-3 mr-0.5" />{rp.city}
+                            {rpCategory && (
+                              <p className="text-[11px] text-accent truncate flex items-center justify-center gap-0.5">
+                                <span>{rpCatIcon}</span> {rpCategory}
+                              </p>
+                            )}
+                            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                              <MapPin className="inline h-3 w-3 mr-0.5" />{rp.city}{rp.state ? ` - ${rp.state}` : ''}
                             </p>
                             {rp.rating_avg > 0 && (
-                              <div className="flex items-center justify-center gap-1 mt-1">
-                                <Star className="h-3 w-3 fill-accent text-accent" />
-                                <span className="text-[11px] font-medium text-foreground">{Number(rp.rating_avg).toFixed(1)}</span>
+                              <div className="flex items-center justify-center gap-1 mt-1.5">
+                                <Star className="h-3.5 w-3.5 fill-accent text-accent" />
+                                <span className="text-xs font-semibold text-foreground">{Number(rp.rating_avg).toFixed(1)}</span>
+                                {rp.review_count > 0 && (
+                                  <span className="text-[10px] text-muted-foreground">({rp.review_count})</span>
+                                )}
                               </div>
                             )}
                           </div>
+                          <span className="text-[10px] text-accent font-medium flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            Ver perfil <ArrowRight className="h-3 w-3" />
+                          </span>
                         </div>
                       </Link>
                     </motion.div>
                   );
                 })}
               </motion.div>
+
+              {/* Link to full category */}
+              {categorySlug && (
+                <motion.div className="mt-4 text-center" variants={fadeUp}>
+                  <Link
+                    to={`/categoria/${categorySlug}`}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
+                  >
+                    Ver todos os profissionais de {category}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </motion.div>
+              )}
             </motion.div>
           )}
 
@@ -842,65 +1105,93 @@ const ProviderProfile = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-              <Send className="h-5 w-5 text-accent" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10">
+                <Send className="h-4 w-4 text-accent" />
+              </div>
               {pageSettings.cta_text}
             </DialogTitle>
           </DialogHeader>
-          {leadSent ? (
-            <div className="rounded-xl bg-accent/10 p-6 text-center space-y-2">
-              <div className="mx-auto h-12 w-12 rounded-full bg-accent/20 flex items-center justify-center">
-                <Send className="h-6 w-6 text-accent" />
-              </div>
-              <p className="text-sm font-semibold text-foreground">Solicitação enviada!</p>
-              <p className="text-xs text-muted-foreground">O profissional entrará em contato em breve.</p>
-              <Button variant="outline" onClick={() => setLeadDialogOpen(false)} className="mt-2">Fechar</Button>
-            </div>
-          ) : (
-            <form onSubmit={handleLeadSubmit} className="space-y-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Seu nome</label>
-                <input type="text" placeholder="Como quer ser chamado?" required value={leadForm.name}
-                  onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none" />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Telefone</label>
-                <input type="tel" placeholder="(00) 00000-0000" required value={leadForm.phone}
-                  onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none" />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Serviço necessário</label>
-                <input type="text" placeholder="Ex: Reforma de banheiro" required value={leadForm.service}
-                  onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none" />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Mensagem</label>
-                <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
-                  onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none resize-none" />
-              </div>
-              <Button type="submit" variant="accent" className="w-full gap-2" style={accentBg ? { backgroundColor: accentBg } : undefined}>
-                <Send className="h-4 w-4" /> Enviar Solicitação
-              </Button>
-            </form>
-          )}
+          <AnimatePresence mode="wait">
+            {leadSent ? (
+              <motion.div
+                key="success"
+                className="rounded-xl bg-accent/10 p-6 text-center space-y-3"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+              >
+                <motion.div
+                  className="mx-auto h-14 w-14 rounded-full bg-emerald-500/20 flex items-center justify-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
+                >
+                  <CheckCircle2 className="h-7 w-7 text-emerald-500" />
+                </motion.div>
+                <p className="text-base font-semibold text-foreground">Solicitação enviada!</p>
+                <p className="text-sm text-muted-foreground">O profissional entrará em contato em breve.</p>
+                <Button variant="outline" onClick={() => setLeadDialogOpen(false)} className="mt-2">Fechar</Button>
+              </motion.div>
+            ) : (
+              <motion.form
+                key="form"
+                onSubmit={handleLeadSubmit}
+                className="space-y-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Seu nome</label>
+                  <input type="text" placeholder="Como quer ser chamado?" required value={leadForm.name}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
+                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Telefone</label>
+                  <input type="tel" placeholder="(00) 00000-0000" required value={leadForm.phone}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
+                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Serviço necessário</label>
+                  <input type="text" placeholder="Ex: Reforma de banheiro" required value={leadForm.service}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
+                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Mensagem</label>
+                  <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
+                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none resize-none transition-all`} />
+                </div>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button type="submit" variant="accent" className="w-full gap-2 shadow-lg" style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                    <Send className="h-4 w-4" /> Enviar Solicitação
+                  </Button>
+                </motion.div>
+              </motion.form>
+            )}
+          </AnimatePresence>
         </DialogContent>
       </Dialog>
 
       {/* Floating WhatsApp */}
       {effectiveWhatsApp && (
-        <a
+        <motion.a
           href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed right-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
+          className="fixed right-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg"
           style={{ zIndex: 9999, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}
           aria-label="WhatsApp"
+          whileHover={{ scale: 1.15 }}
+          whileTap={{ scale: 0.9 }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 1, type: 'spring', stiffness: 300 }}
         >
           <MessageCircle className="h-5 w-5" />
-        </a>
+        </motion.a>
       )}
 
       <Footer />
@@ -924,13 +1215,14 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
       {service.serviceImages?.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
           {service.serviceImages.map((img: any, idx: number) => (
-            <div
+            <motion.div
               key={img.id}
               className="aspect-[4/3] cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]"
               onClick={() => onImageClick?.(service.serviceImages.map((i: any) => i.image_url), idx)}
+              whileHover={{ scale: 1.03 }}
             >
               <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-contain bg-muted/30" loading="lazy" onError={handleImageError} />
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
@@ -949,11 +1241,13 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
         {service.service_area && <span>📍 {service.service_area}</span>}
         {service.working_hours && <span>🕐 {service.working_hours}</span>}
       </div>
-      <Button variant="accent" className="w-full gap-2" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-        <a href={whatsappLink(whatsapp || '', `Olá! Vi seu serviço no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
-          <MessageCircle className="h-4 w-4" /> {ctaWhatsappText || 'Chamar no WhatsApp'}
-        </a>
-      </Button>
+      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+        <Button variant="accent" className="w-full gap-2" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
+          <a href={whatsappLink(whatsapp || '', `Olá! Vi seu serviço no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
+            <MessageCircle className="h-4 w-4" /> {ctaWhatsappText || 'Chamar no WhatsApp'}
+          </a>
+        </Button>
+      </motion.div>
     </DialogContent>
   </Dialog>
 );
@@ -965,19 +1259,33 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
 
   return (
     <>
-      <div className={`mt-6 p-6 ${tc.section}`}>
-        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Serviços oferecidos</h2>
+      <motion.div className={`mt-6 ${tc.section} overflow-hidden`} variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+            <Briefcase className="h-4 w-4 text-accent" />
+          </div>
+          <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Serviços oferecidos</h2>
+          {services.length > 0 && (
+            <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent">
+              {services.length} {services.length === 1 ? 'serviço' : 'serviços'}
+            </span>
+          )}
+        </div>
         <div className="mt-4 space-y-3">
-          {services.map((s: any) => (
-            <button
+          {services.map((s: any, idx: number) => (
+            <motion.button
               key={s.id}
               onClick={() => setSelected(s)}
-              className="w-full text-left rounded-lg border border-border p-4 transition-all hover:border-accent/30 hover:shadow-sm group"
+              className="w-full text-left rounded-xl border border-border p-4 transition-all hover:border-accent/30 hover:shadow-md group"
+              initial={{ opacity: 0, x: -16 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.08, duration: 0.4 }}
+              whileHover={{ x: 4 }}
             >
               <div className="flex gap-3">
-                {/* Service thumbnail preview */}
                 {s.serviceImages?.length > 0 && (
-                  <div className="shrink-0 h-20 w-20 overflow-hidden rounded-lg border border-border">
+                  <div className="shrink-0 h-20 w-20 overflow-hidden rounded-lg border border-border shadow-sm">
                     <img
                       src={serviceImageThumb(s.serviceImages[0].image_url)}
                       alt=""
@@ -1004,8 +1312,8 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
                     {s.service_area && <span>📍 {s.service_area}</span>}
                   </div>
                 </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity self-center shrink-0" />
               </div>
-              {/* Additional image thumbnails */}
               {s.serviceImages?.length > 1 && (
                 <div className="mt-2 flex gap-1.5 overflow-hidden pl-[calc(5rem+0.75rem)]">
                   {s.serviceImages.slice(1, 4).map((img: any) => (
@@ -1018,11 +1326,18 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
                   )}
                 </div>
               )}
-            </button>
+            </motion.button>
           ))}
-          {services.length === 0 && <p className="text-sm text-muted-foreground">Nenhum serviço cadastrado.</p>}
+          {services.length === 0 && (
+            <div className="text-center py-6 space-y-2">
+              <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                <Briefcase className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground">Nenhum serviço cadastrado.</p>
+            </div>
+          )}
         </div>
-      </div>
+      </motion.div>
       {selected && (
         <ServiceDetailDialog service={selected} open={!!selected} onClose={() => setSelected(null)} whatsapp={whatsapp} ctaWhatsappText={ctaWhatsappText} accentBg={accentBg} onImageClick={onImageClick} />
       )}
