@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSearchSuggestions } from '@/hooks/useProviders';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { useTypingPlaceholder } from '@/hooks/useTypingPlaceholder';
 
 interface SearchBarProps {
   variant?: 'hero' | 'compact';
@@ -17,21 +18,60 @@ interface Suggestion {
   extra?: string;
 }
 
+const GEO_ASKED_KEY = 'geo_browser_asked';
+
 const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
-  const { city: geoCity } = useGeoCity();
+  const { city: geoCity, setCity } = useGeoCity();
   const [service, setService] = useState('');
   const [location, setLocation] = useState('');
   const [activeField, setActiveField] = useState<'service' | 'location' | null>(null);
   const [highlightIdx, setHighlightIdx] = useState(-1);
+  const [isFocused, setIsFocused] = useState(false);
   const navigate = useNavigate();
   const serviceRef = useRef<HTMLInputElement>(null);
   const locationRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { data: suggestions } = useSearchSuggestions();
+  const typingPlaceholder = useTypingPlaceholder(geoCity);
 
-  const servicePlaceholder = geoCity ? `Preciso de um... em ${geoCity}` : 'Preciso de um...';
+  const servicePlaceholder = service ? '' : typingPlaceholder || (geoCity ? `Preciso de um... em ${geoCity}` : 'Preciso de um...');
   const locationPlaceholder = geoCity ? geoCity : 'Cidade ou região';
+
+  // Request browser geolocation on first search focus
+  const requestGeoOnce = useCallback(() => {
+    try {
+      if (localStorage.getItem(GEO_ASKED_KEY)) return;
+      if (!navigator.geolocation) return;
+      localStorage.setItem(GEO_ASKED_KEY, '1');
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const r = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&localityLanguage=pt`
+            );
+            if (!r.ok) return;
+            const d = await r.json();
+            const city = d?.city || d?.locality || null;
+            const state = d?.principalSubdivision || null;
+            if (city) setCity(city, state || undefined);
+          } catch { /* silent */ }
+        },
+        () => { /* denied - no problem */ },
+        { timeout: 5000 }
+      );
+    } catch { /* silent */ }
+  }, [setCity]);
+
+  const handleServiceFocus = () => {
+    setActiveField('service');
+    setIsFocused(true);
+    requestGeoOnce();
+  };
+
+  const handleServiceBlur = () => {
+    setIsFocused(false);
+  };
 
   // Close dropdown on outside click
   useEffect(() => {
