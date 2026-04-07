@@ -2,13 +2,27 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, Edit2, ChevronDown, ChevronUp, X, Search, AlertTriangle, ImagePlus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Plus, Trash2, Edit2, X, Search, AlertTriangle, ImagePlus, MapPin, Eye, Pause, Play } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccountLimits } from '@/hooks/useAccountLimits';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ServiceImageUpload from '@/components/ServiceImageUpload';
-import ServiceWizard from '@/components/dashboard/ServiceWizard';
+import { handleImageError } from '@/lib/imageResolver';
+import { format } from 'date-fns';
+
+const CATEGORY_FILTERS = [
+  { label: 'Todas', value: 'all', icon: '🔥' },
+  { label: 'Venda', value: 'venda', icon: '🛒' },
+  { label: 'Compra', value: 'compra', icon: '💰' },
+  { label: 'Serviço', value: 'servico', icon: '🏠' },
+  { label: 'Troca', value: 'troca', icon: '🔄' },
+  { label: 'Aluguel', value: 'aluguel', icon: '🏢' },
+  { label: 'Doação', value: 'doacao', icon: '🎁' },
+  { label: 'Promoção', value: 'promocao', icon: '％' },
+  { label: 'Vaga de Emprego', value: 'vaga', icon: '👔' },
+];
 
 const DashboardServicesPage = () => {
   const { user, provider, profile, loading, refetchProfile } = useAuth();
@@ -16,15 +30,30 @@ const DashboardServicesPage = () => {
   const navigate = useNavigate();
   const [services, setServices] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [showWizard, setShowWizard] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [categorySearch, setCategorySearch] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
+  const [serviceImages, setServiceImages] = useState<Record<string, string>>({});
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [newServicePhoto, setNewServicePhoto] = useState<File | null>(null);
+  const [newServicePhotoPreview, setNewServicePhotoPreview] = useState<string | null>(null);
   const categoryContainerRef = useRef<HTMLDivElement>(null);
+
+  const [form, setForm] = useState({
+    service_name: '',
+    description: '',
+    price: '',
+    whatsapp: '',
+    service_area: '',
+    address: '',
+    working_hours: '',
+    website: '',
+    category_type: 'venda',
+  });
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -35,15 +64,6 @@ const DashboardServicesPage = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  const [form, setForm] = useState({
-    service_name: '',
-    description: '',
-    whatsapp: '',
-    service_area: '',
-    address: '',
-    working_hours: '',
-    website: '',
-  });
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');
@@ -61,21 +81,29 @@ const DashboardServicesPage = () => {
       .from('services')
       .select('*')
       .eq('provider_id', provider.id)
-      .order('created_at');
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
 
     if (data) {
-      // Fetch categories for each service
       const serviceIds = data.map(s => s.id);
-      const { data: scData } = await supabase
-        .from('service_categories')
-        .select('service_id, category_id, categories(name, icon)')
-        .in('service_id', serviceIds);
+      
+      // Fetch categories and images in parallel
+      const [scRes, imgRes] = await Promise.all([
+        supabase.from('service_categories').select('service_id, category_id, categories(name, icon)').in('service_id', serviceIds),
+        supabase.from('service_images').select('service_id, image_url').in('service_id', serviceIds).order('display_order'),
+      ]);
 
       const catMap: Record<string, any[]> = {};
-      (scData || []).forEach((sc: any) => {
+      (scRes.data || []).forEach((sc: any) => {
         if (!catMap[sc.service_id]) catMap[sc.service_id] = [];
         catMap[sc.service_id].push(sc.categories);
       });
+
+      const imgMap: Record<string, string> = {};
+      (imgRes.data || []).forEach((img: any) => {
+        if (!imgMap[img.service_id]) imgMap[img.service_id] = img.image_url;
+      });
+      setServiceImages(imgMap);
 
       setServices(data.map(s => ({ ...s, serviceCategories: catMap[s.id] || [] })));
     }
@@ -85,7 +113,7 @@ const DashboardServicesPage = () => {
     if (provider) fetchServices();
   }, [provider]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === 'whatsapp') {
       setForm(prev => ({ ...prev, [name]: value.replace(/\D/g, '').replace(/^0+/, '') }));
@@ -103,19 +131,13 @@ const DashboardServicesPage = () => {
   const ensureProvider = async (): Promise<string | null> => {
     if (provider) return provider.id;
     if (!user) return null;
-
     const slug = `profissional-${Date.now()}`;
     const { data, error } = await supabase
       .from('providers')
       .insert({ user_id: user.id, slug, status: 'pending' })
       .select('id')
       .single();
-
-    if (error) {
-      toast.error('Erro ao criar perfil: ' + error.message);
-      return null;
-    }
-
+    if (error) { toast.error('Erro ao criar perfil: ' + error.message); return null; }
     await refetchProfile();
     return data.id;
   };
@@ -123,21 +145,37 @@ const DashboardServicesPage = () => {
   const profileType = (profile as any)?.profile_type || (profile as any)?.role || 'client';
   const isRH = profileType === 'rh';
 
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error('Imagem excede 5MB'); return; }
+    setNewServicePhoto(file);
+    setNewServicePhotoPreview(URL.createObjectURL(file));
+  };
+
+  const uploadPhoto = async (serviceId: string): Promise<void> => {
+    if (!newServicePhoto || !user) return;
+    const ext = newServicePhoto.name.split('.').pop();
+    const path = `${user.id}/${serviceId}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('service-images').upload(path, newServicePhoto);
+    if (error) return;
+    const { data: urlData } = supabase.storage.from('service-images').getPublicUrl(path);
+    await supabase.from('service_images').insert({
+      service_id: serviceId,
+      image_url: urlData.publicUrl,
+      display_order: 0,
+    });
+  };
+
   const handleSave = async () => {
-    if (isRH) {
-      toast.error('Agências RH não podem cadastrar serviços. Use a área de Vagas.');
-      return;
-    }
+    if (isRH) { toast.error('Agências RH não podem cadastrar serviços.'); return; }
     if (!editId && !canCreateService) {
       toast.error(limits?.can_create_services === false
         ? 'Seu tipo de conta não permite criar serviços.'
         : `Limite de serviços atingido (${limits?.max_services}).`);
       return;
     }
-    if (!form.service_name.trim()) {
-      toast.error('Nome do serviço é obrigatório');
-      return;
-    }
+    if (!form.service_name.trim()) { toast.error('Título é obrigatório'); return; }
 
     const providerId = await ensureProvider();
     if (!providerId) return;
@@ -145,15 +183,15 @@ const DashboardServicesPage = () => {
     const payload = {
       service_name: form.service_name,
       description: form.description,
-      whatsapp: form.whatsapp,
+      whatsapp: form.whatsapp || provider?.whatsapp || '',
       service_area: form.service_area,
       address: provider ? [provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') : form.address,
       working_hours: form.working_hours,
       website: form.website,
+      price: form.price || null,
     } as any;
 
     let serviceId = editId;
-    const isNew = !editId;
 
     if (editId) {
       const { error } = await supabase.from('services').update(payload).eq('id', editId);
@@ -168,7 +206,6 @@ const DashboardServicesPage = () => {
       serviceId = data.id;
     }
 
-    // Update categories: delete old, insert new
     if (serviceId) {
       await supabase.from('service_categories').delete().eq('service_id', serviceId);
       if (selectedCategoryIds.length > 0) {
@@ -176,361 +213,345 @@ const DashboardServicesPage = () => {
           selectedCategoryIds.map(catId => ({ service_id: serviceId!, category_id: catId }))
         );
       }
+      // Upload photo if selected
+      if (!editId && newServicePhoto) {
+        await uploadPhoto(serviceId);
+      }
     }
 
-    toast.success(editId ? 'Serviço atualizado!' : 'Serviço adicionado! Agora adicione fotos.');
-    setForm({ service_name: '', description: '', whatsapp: '', service_area: '', address: '', working_hours: '', website: '' });
-    setSelectedCategoryIds([]);
-    setShowForm(false);
-    setEditId(null);
+    toast.success(editId ? 'Anúncio atualizado!' : 'Anúncio publicado!');
+    resetForm();
+    setShowDialog(false);
     await fetchServices();
     refetchLimits();
+  };
 
-    // Auto-expand image upload for newly created service
-    if (isNew && serviceId) {
-      setJustCreatedId(serviceId);
-      setExpandedId(serviceId);
-    }
+  const resetForm = () => {
+    setForm({ service_name: '', description: '', price: '', whatsapp: '', service_area: '', address: '', working_hours: '', website: '', category_type: 'venda' });
+    setSelectedCategoryIds([]);
+    setEditId(null);
+    setNewServicePhoto(null);
+    setNewServicePhotoPreview(null);
   };
 
   const handleEdit = async (s: any) => {
     setForm({
       service_name: s.service_name,
       description: s.description || '',
+      price: s.price || '',
       whatsapp: s.whatsapp || '',
       service_area: s.service_area || '',
       address: s.address || '',
       working_hours: s.working_hours || '',
       website: (s as any).website || provider?.website || '',
+      category_type: 'venda',
     });
     setEditId(s.id);
-
-    // Load existing categories for this service
-    const { data } = await supabase
-      .from('service_categories')
-      .select('category_id')
-      .eq('service_id', s.id);
+    const { data } = await supabase.from('service_categories').select('category_id').eq('service_id', s.id);
     setSelectedCategoryIds((data || []).map((d: any) => d.category_id));
-
-    setShowForm(true);
+    setNewServicePhoto(null);
+    setNewServicePhotoPreview(null);
+    setShowDialog(true);
   };
 
   const handleDelete = async (id: string) => {
     await supabase.from('services').delete().eq('id', id);
-    toast.success('Serviço removido');
+    toast.success('Anúncio removido');
     fetchServices();
   };
+
+  const handlePause = async (s: any) => {
+    const newDate = s.deleted_at ? null : new Date().toISOString();
+    await supabase.from('services').update({ deleted_at: newDate }).eq('id', s.id);
+    toast.success(newDate ? 'Anúncio pausado' : 'Anúncio reativado');
+    fetchServices();
+  };
+
+  // Filter services
+  const filtered = services.filter(s => {
+    if (searchQuery && !s.service_name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
+  });
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
   return (
     <DashboardLayout>
-      {/* Account limits banner */}
-      {!limitsLoading && limits && limits.can_create_services && remainingServices !== null && (
-        <div className={`mb-4 rounded-lg border p-3 text-sm ${remainingServices === 0 ? 'border-destructive/30 bg-destructive/5 text-destructive' : 'border-accent/20 bg-accent/5 text-foreground'}`}>
-          <div className="flex items-center gap-2">
-            {remainingServices === 0 && <AlertTriangle className="h-4 w-4 shrink-0" />}
-            <span>
-              {remainingServices === 0
-                ? `Você atingiu o limite de ${limits.max_services} serviço(s). Atualize seu plano para cadastrar mais.`
-                : `${remainingServices} de ${limits.max_services} serviço(s) disponível(is) no seu plano.`}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {!limitsLoading && limits?.can_create_services === false && (
+      {/* Limits banner */}
+      {!limitsLoading && limits && limits.can_create_services && remainingServices !== null && remainingServices === 0 && (
         <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span>Seu tipo de conta não permite cadastrar serviços.</span>
+          <span>Limite de {limits.max_services} anúncio(s) atingido. Atualize seu plano.</span>
         </div>
       )}
 
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Meus Serviços</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Gerencie seus serviços oferecidos</p>
+          <h1 className="font-display text-2xl font-bold text-foreground">Meus Anúncios</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">{services.length} anúncio{services.length !== 1 ? 's' : ''}</p>
         </div>
-        <Button variant="accent" size="sm" disabled={!canCreateService && !editId} onClick={() => {
-          if (!canCreateService) {
-            toast.error('Limite de serviços atingido ou conta sem permissão.');
-            return;
-          }
-          setShowWizard(true);
-          setShowForm(false);
-        }}>
-          <Plus className="mr-1 h-4 w-4" /> Novo Serviço
+        <Button
+          variant="accent"
+          disabled={!canCreateService}
+          onClick={() => {
+            if (!canCreateService) { toast.error('Limite atingido.'); return; }
+            resetForm();
+            setShowDialog(true);
+          }}
+        >
+          <Plus className="mr-1 h-4 w-4" /> Novo Anúncio
         </Button>
       </div>
 
-      {/* Explanation banner */}
-      <div className="mt-4 rounded-lg border border-accent/20 bg-accent/5 p-4">
-        <p className="text-sm text-foreground">
-          📌 <strong>Este é o seu espaço de postagens!</strong> Cadastre aqui todos os serviços que você oferece. 
-          Cada serviço cadastrado aparecerá no seu perfil público e nos resultados de busca da plataforma.
-        </p>
+      {/* Search */}
+      <div className="mt-4 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Buscar anúncios..."
+          className="w-full rounded-lg border border-input bg-background pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
+        />
       </div>
 
-      {/* Wizard for new services */}
-      {showWizard && provider && user && (
-        <div className="mt-6">
-          <ServiceWizard
-            providerId={provider.id}
-            userId={user.id}
-            provider={provider}
-            categories={categories}
-            onComplete={(serviceId) => {
-              setShowWizard(false);
-              fetchServices();
-              refetchLimits();
-            }}
-            onCancel={() => setShowWizard(false)}
-          />
-        </div>
-      )}
+      {/* Category filter tabs */}
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        {CATEGORY_FILTERS.map(f => (
+          <button
+            key={f.value}
+            onClick={() => setActiveFilter(f.value)}
+            className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+              activeFilter === f.value
+                ? 'bg-accent text-accent-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            {f.icon} {f.label}
+          </button>
+        ))}
+      </div>
 
-      {showForm && (
-        <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
-          <h2 className="font-display text-lg font-bold text-foreground">
-            {editId ? 'Editar' : 'Novo'} Serviço
-          </h2>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Nome do serviço *</label>
-              <input name="service_name" value={form.service_name} onChange={handleChange}
-                placeholder="Ex: Instalação elétrica residencial"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
-              <input name="whatsapp" value={form.whatsapp} onChange={handleChange}
-                placeholder="Ex: 11999999999"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Site <span className="text-muted-foreground">(opcional)</span></label>
-              <input name="website" value={form.website} onChange={handleChange}
-                placeholder="Ex: https://meusite.com.br"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-          </div>
-
-          {/* Autocomplete categories */}
-          <div ref={categoryContainerRef}>
-            <label className="mb-1 block text-sm font-medium text-foreground">Categorias</label>
-            {/* Selected chips */}
-            <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 min-h-[40px]">
-              {selectedCategoryIds.map(catId => {
-                const cat = categories.find(c => c.id === catId);
-                if (!cat) return null;
-                return (
-                  <span key={catId} className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-medium text-accent">
-                    {cat.icon} {cat.name}
-                    <button onClick={() => toggleCategory(catId)} className="hover:text-destructive">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                );
-              })}
-              <div className="relative flex-1 min-w-[120px]">
-                <input
-                  value={categorySearch}
-                  onChange={(e) => { setCategorySearch(e.target.value); setShowCategoryDropdown(true); }}
-                  onFocus={() => setShowCategoryDropdown(true)}
-                  placeholder={selectedCategoryIds.length === 0 ? 'Digite para buscar categorias...' : 'Adicionar...'}
-                  className="w-full border-0 bg-transparent px-1 py-0.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                />
-              </div>
-            </div>
-            {/* Dropdown */}
-            {showCategoryDropdown && (() => {
-              const filtered = categories.filter(c =>
-                !selectedCategoryIds.includes(c.id) &&
-                (categorySearch === '' || c.name.toLowerCase().includes(categorySearch.toLowerCase()))
-              );
-
-              // Group by segment
-              const groups: Record<string, any[]> = {};
-
-              const segmentMap: Record<string, string> = {};
-              const segments: [string, string[]][] = [
-                ['Construção e Manutenção', ['eletricista','encanador','pedreiro','pintor','serralheiro','marceneiro','gesseiro','vidraceiro','construcao-civil','impermeabilizacao','desentupidora','ar-condicionado','antenista','instalador-cameras','instalador-tv','marido-de-aluguel','chaveiro','azulejista','calceteiro','telhadista','soldador','piscineiro','paisagista','instalador-pisos','instalador-cortinas','instalador-redes-protecao','montador-moveis','limpador-vidros','sapateiro']],
-                ['Técnicos e Assistência', ['assistencia-tecnica','tecnico-celular','tecnico-refrigeracao','tecnico-maquina-lavar','tecnico-eletronica','tecnico-energia-solar','tecnico-informatica','suporte-tecnico']],
-                ['Transporte e Logística', ['motorista','taxista','motoboy','caminhoneiro','fretista','entregador','mudancas','guincheiro','motorista-escolar','bicicleteiro']],
-                ['Segurança', ['seguranca-patrimonial','seguranca-pessoal','vigilante','porteiro']],
-                ['Beleza e Estética', ['cabeleireiro','manicure','maquiador','barbeiro','esteticista','consultor-moda']],
-                ['Saúde e Bem-estar', ['medico','psicólogo','dentista','fisioterapeuta','nutricionista','personal-trainer','enfermeiro','cuidador-idosos','fonoaudiologo','terapeuta-ocupacional','massagista','acupunturista','podologo','radiologista']],
-                ['Alimentação e Eventos', ['cozinheiro','confeiteiro','churrasqueiro','bartender','garcom','padeiro','cozinheira-domestica','dj','decorador-festas','cerimonialista','sonorizacao-iluminacao','buffet','organizador-eventos','recreador-infantil']],
-                ['Limpeza e Conservação', ['diarista','limpeza-residencial','limpeza-comercial','limpeza-pos-obra','lavanderia','dedetizacao','limpeza-piscina','limpeza-estofados','dedetizador']],
-                ['Serviços Domésticos e Pets', ['baba','passadeira','mordomo','dog-walker','pet-sitter','tosador','veterinario','banhista-animais']],
-                ['Consultoria e Negócios', ['consultoria-empresarial','consultoria-financeira','consultoria-marketing','consultoria-ti','consultoria-rh','contador','escritorio-contabilidade','advogado','corretor-imoveis','corretor-seguros','despachante','perito','detetive-particular']],
-                ['Design e Comunicação', ['designer-grafico','designer-interiores','designer-moda','fotografo','videomaker','editor-video','redator','tradutor','interprete','locutor','social-media','musico','produtor-conteudo','produtor-audiovisual','assessor-imprensa','filmmaker']],
-                ['Educação', ['professor-particular','tutor','instrutor-idiomas','guia-turismo']],
-                ['TI e Digital', ['desenvolvimento-software','ciberseguranca','web-designer','marketing-digital']],
-                ['Automotivo', ['mecanico','eletricista-automotivo','funileiro','borracheiro','tecnico-pneus']],
-              ];
-
-              segments.forEach(([name]) => { groups[name] = []; });
-              groups['Outros'] = [];
-              segments.forEach(([name, slugs]) => { slugs.forEach(s => { segmentMap[s] = name; }); });
-
-              filtered.forEach(c => {
-                const group = segmentMap[c.slug] || 'Outros';
-                groups[group].push(c);
-              });
-
-              const hasResults = filtered.length > 0;
-
-              return (
-                <div className="relative">
-                  <div className="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto rounded-md border border-border bg-card shadow-lg">
-                    {!hasResults && (
-                      <p className="px-3 py-2 text-xs text-muted-foreground">Nenhuma categoria encontrada</p>
-                    )}
-                    {Object.entries(groups).map(([groupName, items]) => {
-                      if (items.length === 0) return null;
-                      return (
-                        <div key={groupName}>
-                          <p className="sticky top-0 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                            {groupName}
-                          </p>
-                          {items.map(c => (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => { toggleCategory(c.id); setCategorySearch(''); }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent/10 transition-colors"
-                            >
-                              <span>{c.icon}</span> {c.name}
-                            </button>
-                          ))}
-                        </div>
-                      );
-                    })}
-                    <button
-                      type="button"
-                      onClick={() => setShowCategoryDropdown(false)}
-                      className="w-full border-t border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted text-center"
-                    >
-                      Fechar
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
-            <textarea name="description" rows={3} value={form.description} onChange={handleChange}
-              placeholder="Descreva o serviço oferecido..."
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-          </div>
-
-          {/* Location from profile (read-only display) */}
-          {provider && (provider.city || provider.neighborhood) && (
-            <div className="rounded-lg bg-muted/50 p-3 space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">📍 Localização (do seu perfil)</p>
-              <p className="text-sm text-foreground">
-                {[provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ')}
-              </p>
-            </div>
-          )}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Área de atendimento <span className="text-muted-foreground">(opcional)</span></label>
-              <input name="service_area" value={form.service_area} onChange={handleChange}
-                placeholder="Ex: Zona Sul, Grande São Paulo"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Horário de atendimento <span className="text-muted-foreground">(opcional)</span></label>
-              <input name="working_hours" value={form.working_hours} onChange={handleChange}
-                placeholder="Ex: Seg a Sex, 8h às 18h"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="accent" onClick={handleSave}>
-              {editId ? 'Salvar' : 'Salvar e adicionar fotos'}
-            </Button>
-            <Button variant="outline" onClick={() => { setShowForm(false); setEditId(null); setShowCategoryDropdown(false); }}>Cancelar</Button>
-          </div>
-
-          {/* Image upload inline when editing */}
-          {editId && user && (
-            <div className="rounded-lg border border-border bg-muted/30 p-4">
-              <ServiceImageUpload serviceId={editId} userId={user.id} />
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="mt-6 space-y-3">
-        {services.length === 0 && !showForm && (
-          <div className="rounded-xl border border-border bg-card p-12 text-center shadow-card">
-            <p className="text-foreground font-semibold">Nenhum serviço cadastrado</p>
-            <p className="mt-1 text-sm text-muted-foreground">Adicione seus serviços para que clientes possam encontrá-lo.</p>
+      {/* Service cards */}
+      <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.length === 0 && (
+          <div className="col-span-full rounded-xl border border-border bg-card p-12 text-center">
+            <p className="text-foreground font-semibold">Nenhum anúncio encontrado</p>
+            <p className="mt-1 text-sm text-muted-foreground">Crie seu primeiro anúncio para começar a vender.</p>
           </div>
         )}
-        {services.map(s => (
-          <div key={s.id} className="rounded-xl border border-border bg-card shadow-card">
-            <div className="flex items-center justify-between p-4">
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">{s.service_name}</p>
+        {filtered.map(s => {
+          const imgUrl = serviceImages[s.id];
+          return (
+            <div key={s.id} className="rounded-xl border border-border bg-card shadow-sm overflow-hidden group">
+              {/* Image area */}
+              <div className="relative aspect-[4/3] bg-muted">
+                {imgUrl ? (
+                  <img
+                    src={imgUrl}
+                    alt={s.service_name}
+                    className="w-full h-full object-cover"
+                    onError={handleImageError}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    <ImagePlus className="h-10 w-10 opacity-30" />
+                  </div>
+                )}
+                {/* Category chips */}
                 {s.serviceCategories?.length > 0 && (
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {s.serviceCategories.map((cat: any, i: number) => (
-                      <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                  <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                    {s.serviceCategories.slice(0, 2).map((cat: any, i: number) => (
+                      <span key={i} className="rounded-full bg-card/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm">
                         {cat.icon} {cat.name}
                       </span>
                     ))}
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>
-                <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  {s.whatsapp && <span>📱 {s.whatsapp}</span>}
-                  {s.address && <span>📍 {s.address}</span>}
-                  {s.working_hours && <span>🕐 {s.working_hours}</span>}
-                  {s.service_area && <span>🗺️ {s.service_area}</span>}
+              </div>
+
+              {/* Info */}
+              <div className="p-3 space-y-1.5">
+                <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">{s.service_name}</h3>
+                
+                <div className="flex items-center gap-1">
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                    s.deleted_at ? 'bg-muted text-muted-foreground' : 'bg-green-100 text-green-700'
+                  }`}>
+                    {s.deleted_at ? 'Pausado' : 'Ativo'}
+                  </span>
+                </div>
+
+                {s.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-1">{s.description}</p>
+                )}
+
+                <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                  {s.address && (
+                    <span className="flex items-center gap-0.5">
+                      <MapPin className="h-3 w-3" /> {s.address.split(',')[0]}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-0.5">
+                    <Eye className="h-3 w-3" /> 0 views
+                  </span>
+                </div>
+
+                <p className="text-[10px] text-muted-foreground">
+                  {format(new Date(s.created_at), 'dd/MM/yyyy')}
+                  {s.price && <span className="ml-2 font-medium text-foreground">R$ {s.price}</span>}
+                </p>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-1.5 border-t border-border">
+                  <Button variant="outline" size="sm" className="flex-1 text-xs h-8" onClick={() => handleEdit(s)}>
+                    <Edit2 className="mr-1 h-3 w-3" /> Editar
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => handlePause(s)}>
+                    {s.deleted_at ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs h-8 text-destructive hover:text-destructive" onClick={() => handleDelete(s.id)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant={expandedId === s.id ? 'accent' : 'outline'}
-                  size="sm"
-                  onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                  className="text-xs gap-1"
+            </div>
+          );
+        })}
+      </div>
+
+      {/* New/Edit Dialog */}
+      <Dialog open={showDialog} onOpenChange={(open) => { if (!open) { resetForm(); } setShowDialog(open); }}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              📦 {editId ? 'Editar Anúncio' : 'Novo Anúncio'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            {/* Title */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-foreground">Título *</label>
+              <input
+                name="service_name"
+                value={form.service_name}
+                onChange={handleChange}
+                placeholder="Ex: iPhone 15 Pro Max 256GB"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
+              <textarea
+                name="description"
+                rows={3}
+                value={form.description}
+                onChange={handleChange}
+                placeholder="Detalhes do produto ou serviço..."
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+              />
+            </div>
+
+            {/* Price + Category */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground">Preço (R$)</label>
+                <input
+                  name="price"
+                  value={form.price}
+                  onChange={handleChange}
+                  placeholder="0,00"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground">Categoria</label>
+                <select
+                  name="category_type"
+                  value={form.category_type}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
                 >
-                  <ImagePlus className="h-3.5 w-3.5" />
-                  Fotos
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleEdit(s)}>
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(s.id)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                  {CATEGORY_FILTERS.filter(f => f.value !== 'all').map(f => (
+                    <option key={f.value} value={f.value}>{f.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            {expandedId === s.id && user && (
-              <div className="border-t border-border p-4">
-                {justCreatedId === s.id && (
-                  <div className="mb-3 rounded-lg border border-accent/30 bg-accent/5 p-3 text-sm text-foreground flex items-center gap-2">
-                    <ImagePlus className="h-4 w-4 text-accent shrink-0" />
-                    <span><strong>Serviço criado!</strong> Adicione fotos para atrair mais clientes.</span>
-                  </div>
-                )}
-                <ServiceImageUpload serviceId={s.id} userId={user.id} />
+            {/* City + WhatsApp */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground">Cidade *</label>
+                <input
+                  name="service_area"
+                  value={form.service_area || (provider ? provider.city : '')}
+                  onChange={handleChange}
+                  placeholder="Selecione"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                />
               </div>
-            )}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
+                <input
+                  name="whatsapp"
+                  value={form.whatsapp || (provider?.whatsapp ? provider.whatsapp.replace(/^55/, '') : '')}
+                  onChange={handleChange}
+                  placeholder="(61) 99999-9999"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Photo upload area */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-foreground">Foto do Anúncio</label>
+              {editId && user ? (
+                <div className="rounded-lg border border-border p-3">
+                  <ServiceImageUpload serviceId={editId} userId={user.id} />
+                </div>
+              ) : (
+                <label className="cursor-pointer block">
+                  <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
+                  <div className="rounded-lg border-2 border-dashed border-border bg-muted/30 p-6 flex flex-col items-center justify-center gap-2 hover:border-accent/40 transition-colors">
+                    {newServicePhotoPreview ? (
+                      <div className="relative w-full">
+                        <img src={newServicePhotoPreview} alt="Preview" className="w-full h-32 object-cover rounded-md" />
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); setNewServicePhoto(null); setNewServicePhotoPreview(null); }}
+                          className="absolute top-1 right-1 rounded-full bg-card p-1 shadow"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <ImagePlus className="h-8 w-8 text-muted-foreground/50" />
+                        <span className="text-sm text-muted-foreground">Clique para enviar foto</span>
+                        <span className="text-[10px] text-muted-foreground/70">JPG, PNG • Max 5MB</span>
+                      </>
+                    )}
+                  </div>
+                </label>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => { resetForm(); setShowDialog(false); }}>
+                Cancelar
+              </Button>
+              <Button variant="accent" className="flex-1" onClick={handleSave}>
+                📢 {editId ? 'Salvar' : 'Publicar'}
+              </Button>
+            </div>
           </div>
-        ))}
-      </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
