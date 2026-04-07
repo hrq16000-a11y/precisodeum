@@ -17,10 +17,28 @@ const ecosystemLinks = [
   { name: 'TamoNaWeb', url: 'https://www.TamoNaWeb.com.br' },
 ];
 
+const footerTaglines = [
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Encontre serviços na sua cidade com contato direto e avaliações reais.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Conectamos você a prestadores de serviços confiáveis perto de você.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Compare, escolha e fale direto com profissionais da sua região.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Serviços verificados, contato rápido e profissionais próximos de você.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Descubra prestadores de serviços na sua cidade com avaliações reais.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Escolha, entre em contato e resolva seu serviço hoje mesmo.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Encontre rapidamente quem você precisa e fale direto no WhatsApp.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Do orçamento ao contato direto, tudo em um só lugar.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Plataforma de serviços que conecta você a profissionais da sua região.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Encontre prestadores de serviços locais com avaliações verificadas.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Conectando você aos melhores prestadores de serviços em todo o Brasil.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Serviços confiáveis perto de você.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Encontre e fale direto com quem resolve.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Simples, rápido e direto ao profissional.' },
+];
+
 const Footer = () => {
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoFooterUrl = useSettingValue('logo_footer_url');
   const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : DEFAULT_LOGO_URL;
+  const tagline = useMemo(() => footerTaglines[Math.floor(Math.random() * footerTaglines.length)], []);
 
   const { data: footerItems = [] } = useMenuItems('footer');
 
