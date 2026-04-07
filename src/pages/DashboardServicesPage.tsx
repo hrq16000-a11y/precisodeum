@@ -8,6 +8,7 @@ import { useAccountLimits } from '@/hooks/useAccountLimits';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ServiceImageUpload from '@/components/ServiceImageUpload';
+import ServiceWizard from '@/components/dashboard/ServiceWizard';
 
 const DashboardServicesPage = () => {
   const { user, provider, profile, loading, refetchProfile } = useAuth();
