@@ -324,7 +324,7 @@ const AdminSponsorsPage = () => {
                 <Label>Descrição Completa</Label>
                 <textarea value={form.full_description} onChange={(e) => setForm({ ...form, full_description: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px]" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label>Telefone</Label>
                   <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
