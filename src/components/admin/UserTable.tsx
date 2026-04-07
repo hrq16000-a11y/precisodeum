@@ -1,7 +1,9 @@
-import { Edit2, Key, Ban, Shield, Trash2, Eye } from 'lucide-react';
+import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 
 const profileTypeLabel = (t: string) => {
@@ -14,6 +16,12 @@ const profileTypeBadge = (t: string) => {
   if (t === 'rh') return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
   if (t === 'provider') return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
   return 'bg-muted text-muted-foreground';
+};
+
+const profileTypeIcon = (t: string) => {
+  if (t === 'rh') return '🏢';
+  if (t === 'provider') return '🔧';
+  return '👤';
 };
 
 interface UserTableProps {
@@ -29,97 +37,146 @@ interface UserTableProps {
   onToggleSelection?: (id: string) => void;
 }
 
-const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => (
-  <div className="overflow-x-auto rounded-xl border border-border shadow-card">
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="border-b border-border bg-muted/50">
-          {onToggleSelection && <th className="px-3 py-2.5 w-8"></th>}
-          <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Nome</th>
-          <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden sm:table-cell">E-mail</th>
-          <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden md:table-cell">Telefone</th>
-          <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Tipo</th>
-          <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden md:table-cell">Status</th>
-          <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden lg:table-cell">Criado em</th>
-          <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        {users.map(p => {
-          const isInactive = p.status === 'inactive';
-          const isAdminUser = adminIds.has(p.id);
-          return (
-            <tr key={p.id} className={`border-b border-border bg-card hover:bg-muted/30 transition-colors ${isInactive ? 'opacity-60' : ''}`}>
+const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
+  if (users.length === 0) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-12 text-center">
+        <p className="text-muted-foreground">Nenhum usuário encontrado</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+      {users.map(p => {
+        const isInactive = p.status === 'inactive';
+        const isAdminUser = adminIds.has(p.id);
+        const type = p.profile_type || p.role || 'client';
+        const phone = p.phone || p.whatsapp || '';
+
+        return (
+          <div
+            key={p.id}
+            className={`group relative rounded-xl border bg-card shadow-card transition-all hover:shadow-card-hover ${
+              isInactive ? 'opacity-60 border-destructive/30' : 'border-border'
+            } ${selectedIds?.has(p.id) ? 'ring-2 ring-accent' : ''}`}
+          >
+            {/* Selection & Menu */}
+            <div className="absolute top-3 left-3 z-10">
               {onToggleSelection && (
-                <td className="px-3 py-2.5">
-                  <Checkbox
-                    checked={selectedIds?.has(p.id) || false}
-                    onCheckedChange={() => onToggleSelection(p.id)}
-                  />
-                </td>
+                <Checkbox
+                  checked={selectedIds?.has(p.id) || false}
+                  onCheckedChange={() => onToggleSelection(p.id)}
+                  className="bg-background"
+                />
               )}
-              <td className="px-3 py-2.5">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 shrink-0 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
-                    {(p.full_name || '?')[0]?.toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-foreground truncate max-w-[140px]">
-                      {p.full_name || '—'}
-                      {isAdminUser && <Shield className="inline h-3 w-3 ml-1 text-amber-500" />}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground sm:hidden truncate">{p.email || ''}</p>
-                  </div>
-                </div>
-              </td>
-              <td className="px-3 py-2.5 hidden sm:table-cell text-muted-foreground text-xs truncate max-w-[200px]">{p.email || '—'}</td>
-              <td className="px-3 py-2.5 hidden md:table-cell text-muted-foreground text-xs">{p.phone || p.whatsapp || '—'}</td>
-              <td className="px-3 py-2.5">
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${profileTypeBadge(p.profile_type || p.role)}`}>
-                  {profileTypeLabel(p.profile_type || p.role)}
-                </span>
-              </td>
-              <td className="px-3 py-2.5 hidden md:table-cell">
-                <Badge variant={isInactive ? 'destructive' : 'default'} className="text-[10px]">
-                  {isInactive ? 'Inativo' : 'Ativo'}
-                </Badge>
-              </td>
-              <td className="px-3 py-2.5 hidden lg:table-cell text-muted-foreground text-xs">
-                {p.created_at ? format(new Date(p.created_at), 'dd/MM/yyyy') : '—'}
-              </td>
-              <td className="px-3 py-2.5">
-                <div className="flex gap-0.5 flex-wrap">
-                  <Button size="sm" variant="ghost" onClick={() => onViewDetails(p)} title="Ver detalhes">
-                    <Eye className="h-3.5 w-3.5" />
+            </div>
+            <div className="absolute top-3 right-3 z-10">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <MoreHorizontal className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => onEdit(p)} title="Editar">
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => onResetPassword(p)} title="Redefinir Senha">
-                    <Key className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => onBlock(p)} title={isInactive ? 'Desbloquear' : 'Bloquear'}>
-                    <Ban className={`h-3.5 w-3.5 ${isInactive ? 'text-green-600' : 'text-destructive'}`} />
-                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem onClick={() => onViewDetails(p)}>
+                    <Eye className="h-3.5 w-3.5 mr-2" /> Ver Detalhes
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onEdit(p)}>
+                    <Edit2 className="h-3.5 w-3.5 mr-2" /> Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onResetPassword(p)}>
+                    <Key className="h-3.5 w-3.5 mr-2" /> Redefinir Senha
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => onBlock(p)}>
+                    <Ban className={`h-3.5 w-3.5 mr-2 ${isInactive ? 'text-green-600' : 'text-destructive'}`} />
+                    {isInactive ? 'Desbloquear' : 'Bloquear'}
+                  </DropdownMenuItem>
                   {!isAdminUser && (
-                    <Button size="sm" variant="ghost" onClick={() => onMakeAdmin(p.id)} title="Promover a Admin">
-                      <Shield className="h-3.5 w-3.5 text-amber-600" />
-                    </Button>
+                    <DropdownMenuItem onClick={() => onMakeAdmin(p.id)}>
+                      <Shield className="h-3.5 w-3.5 mr-2 text-amber-600" /> Promover Admin
+                    </DropdownMenuItem>
                   )}
-                  <Button size="sm" variant="ghost" onClick={() => onDelete(p)} title="Desativar">
-                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                  </Button>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => onDelete(p)} className="text-destructive">
+                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Desativar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Card Content */}
+            <div className="p-4 pt-5 cursor-pointer" onClick={() => onViewDetails(p)}>
+              {/* Avatar + Name */}
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12 shrink-0">
+                  <AvatarImage src={p.avatar_url || undefined} alt={p.full_name} />
+                  <AvatarFallback className="bg-primary/10 text-lg font-bold">
+                    {(p.full_name || '?')[0]?.toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-display font-bold text-foreground truncate text-sm">
+                      {p.full_name || '—'}
+                    </p>
+                    {isAdminUser && <Shield className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                    <Mail className="h-3 w-3 shrink-0" />
+                    {p.email || '—'}
+                  </p>
                 </div>
-              </td>
-            </tr>
-          );
-        })}
-        {users.length === 0 && (
-          <tr><td colSpan={onToggleSelection ? 8 : 7} className="px-4 py-8 text-center text-muted-foreground">Nenhum usuário encontrado</td></tr>
-        )}
-      </tbody>
-    </table>
-  </div>
-);
+              </div>
+
+              {/* Badges */}
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                {isAdminUser && (
+                  <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
+                    👑 Admin
+                  </Badge>
+                )}
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${profileTypeBadge(type)}`}>
+                  {profileTypeIcon(type)} {profileTypeLabel(type)}
+                </span>
+                <Badge variant={isInactive ? 'destructive' : 'default'} className="text-[10px]">
+                  {isInactive ? '🔴 Inativo' : '🟢 Ativo'}
+                </Badge>
+              </div>
+
+              {/* Info Row */}
+              <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+                {phone && (
+                  <span className="flex items-center gap-1 truncate">
+                    <Phone className="h-3 w-3 shrink-0" /> {phone}
+                  </span>
+                )}
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3 shrink-0" />
+                  {p.created_at ? format(new Date(p.created_at), 'dd/MM/yyyy') : '—'}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Actions Footer */}
+            <div className="border-t border-border px-4 py-2 flex items-center gap-1">
+              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => onEdit(p)}>
+                <Edit2 className="h-3 w-3" /> Editar
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => onBlock(p)}>
+                <Ban className={`h-3 w-3 ${isInactive ? 'text-green-600' : 'text-destructive'}`} />
+                {isInactive ? 'Ativar' : 'Bloquear'}
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1 text-destructive" onClick={() => onDelete(p)}>
+                <Trash2 className="h-3 w-3" /> Excluir
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 export default UserTable;

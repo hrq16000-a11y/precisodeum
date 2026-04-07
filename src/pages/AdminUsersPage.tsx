@@ -202,11 +202,16 @@ const AdminUsersPage = () => {
 
   return (
     <AdminLayout>
-      <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-        <Users className="h-6 w-6" /> Gerenciar Usuários
-      </h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+            <Users className="h-6 w-6" /> Gestão de Usuários
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gerencie todos os usuários da plataforma</p>
+        </div>
+      </div>
 
-      <div className="mt-4"><UserStatsCards stats={stats} /></div>
+      <div className="mt-5"><UserStatsCards stats={stats} /></div>
 
       <div className="mt-4">
         <UserFilters
