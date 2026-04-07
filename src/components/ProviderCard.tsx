@@ -8,28 +8,35 @@ import type { DbProvider } from '@/hooks/useProviders';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { whatsappLink } from '@/lib/whatsapp';
 import { handleImageError } from '@/lib/imageResolver';
+import { useCardImpression } from '@/hooks/useCardImpression';
+import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 
 interface ProviderCardProps {
   provider: DbProvider;
   isFallback?: boolean;
+  trackingSource?: string;
 }
 
-const ProviderCard = ({ provider, isFallback = false }: ProviderCardProps) => {
+const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home' }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const prefetch = usePrefetchProvider();
   const handlers = usePrefetchHandlers(prefetch, provider.slug);
   const displayPhoto = provider.photo || provider.serviceImage || '';
   const hasImages = !!provider.serviceImage || !!provider.hasPortfolio;
+  const impressionRef = useCardImpression(provider.id, provider.slug, trackingSource);
 
   const hasLocation = !!(provider.city || provider.neighborhood);
   const locationParts = [provider.neighborhood, provider.city, provider.state].filter(Boolean);
   const locationText = locationParts.join(', ');
 
-  // Safe display name - never show empty
   const displayName = provider.name || provider.businessName || 'Profissional';
 
   return (
-    <div className={`group flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`} {...handlers}>
+    <div
+      ref={impressionRef}
+      className={`group flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`}
+      {...handlers}
+    >
       <div className="flex flex-1 flex-col p-5">
         <div className="flex gap-4">
            <Avatar className="h-14 w-14 shrink-0">
@@ -39,7 +46,12 @@ const ProviderCard = ({ provider, isFallback = false }: ProviderCardProps) => {
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <Link to={`/profissional/${provider.slug}`} className="block" {...handlers}>
+            <Link
+              to={`/profissional/${provider.slug}`}
+              className="block"
+              onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource)}
+              {...handlers}
+            >
               <div className="flex items-start justify-between gap-2">
                 <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
                   {displayName}
@@ -84,19 +96,29 @@ const ProviderCard = ({ provider, isFallback = false }: ProviderCardProps) => {
           </p>
         )}
 
-        {/* Spacer to push CTAs to bottom for consistent card height */}
         <div className="flex-1" />
 
         <div className="mt-4 flex gap-2">
           {provider.whatsapp && (
             <Button variant="accent" size="sm" className="flex-1" asChild>
-              <a href={whatsappLink(provider.whatsapp, `Olá! Vi seu perfil "${displayName}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
+              <a
+                href={whatsappLink(provider.whatsapp, `Olá! Vi seu perfil "${displayName}" no Preciso de um e gostaria de mais informações.`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackWhatsAppClick(provider.id, provider.slug, trackingSource)}
+              >
                 <MessageCircle className="h-4 w-4" /> WhatsApp
               </a>
             </Button>
           )}
           <Button variant="outline" size="sm" className={provider.whatsapp ? '' : 'flex-1'} asChild>
-            <Link to={`/profissional/${provider.slug}`} {...handlers}>Ver Perfil</Link>
+            <Link
+              to={`/profissional/${provider.slug}`}
+              onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource)}
+              {...handlers}
+            >
+              Ver Perfil
+            </Link>
           </Button>
         </div>
       </div>
