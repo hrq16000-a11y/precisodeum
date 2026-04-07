@@ -44,7 +44,8 @@ const MobileBottomNav = () => {
                 <button
                   key={i}
                   onClick={item.action}
-                  className="flex flex-col items-center justify-center px-2 py-0.5 text-green-600"
+                  className="flex flex-col items-center justify-center px-2 py-0.5"
+                  style={{ color: '#25D366' }}
                 >
                   <Icon className="h-[17px] w-[17px]" />
                   <span className="mt-0.5 text-[9px] font-medium">WhatsApp</span>
