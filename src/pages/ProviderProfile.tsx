@@ -542,14 +542,14 @@ const ProviderProfile = () => {
   const renderReviews = () => {
     if (!reviewsEnabled) return null;
     return (
-      <div key="reviews" className={`mt-6 p-6 ${tc.section}`}>
+      <motion.div key="reviews" className={`mt-6 p-6 ${tc.section}`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
         <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Avaliações</h2>
         {reviews.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
         ) : (
-          <div className="mt-4 space-y-4">
+          <motion.div className="mt-4 space-y-4" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             {reviews.map((r) => (
-              <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+              <motion.div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0" variants={fadeUp}>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-foreground">
                     {(r.profiles as any)?.full_name || 'Cliente'}
@@ -562,11 +562,11 @@ const ProviderProfile = () => {
                   <StarRating rating={r.rating} showValue={false} size={12} />
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{r.comment}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     );
   };
 
