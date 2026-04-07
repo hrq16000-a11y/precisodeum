@@ -171,8 +171,6 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           <div className="mt-3 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">
             <MapPin className="h-3.5 w-3.5 text-secondary" />
             <span>{geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
-            <span className="text-primary-foreground/40">·</span>
-            <GeoLocationChip variant="hero" />
           </div>
         </motion.div>
 
