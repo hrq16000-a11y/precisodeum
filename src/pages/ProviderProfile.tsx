@@ -490,12 +490,12 @@ const ProviderProfile = () => {
   // ── Section renderers ──
 
   const renderAbout = () => (
-    <div key="about" className={`mt-6 p-6 ${tc.section}`}>
+    <motion.div key="about" className={`mt-6 p-6 ${tc.section}`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
       <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Sobre o profissional</h2>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
         {provider.description || 'Este profissional ainda não adicionou uma descrição.'}
       </p>
-    </div>
+    </motion.div>
   );
 
   const renderPortfolio = () => {
