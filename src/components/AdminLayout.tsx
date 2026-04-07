@@ -16,7 +16,7 @@ const menuGroups = [
     items: [
       { label: 'Prestadores', icon: Briefcase, path: '/admin/prestadores' },
       { label: 'Usuários', icon: Users, path: '/admin/usuarios' },
-      { label: 'CRM Usuários', icon: Shield, path: '/admin/crm-usuarios' },
+      { label: 'CRM Usuários', icon: Target, path: '/admin/crm-usuarios' },
       { label: 'Serviços', icon: Package, path: '/admin/servicos' },
       { label: 'Leads', icon: FileText, path: '/admin/leads' },
       { label: 'Planos & Regras', icon: Crown, path: '/admin/planos-regras' },
