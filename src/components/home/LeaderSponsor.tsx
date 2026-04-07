@@ -90,13 +90,14 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="relative block w-full max-h-[90px] overflow-hidden cursor-pointer"
+          className="relative block w-full h-[70px] sm:h-[90px] overflow-hidden cursor-pointer"
         >
+          {/* Background image — full width */}
           {imageSrc && (
             <img
               src={imageSrc}
               alt={displayName}
-              className="w-full h-[70px] sm:h-[90px] object-cover object-center"
+              className="absolute inset-0 w-full h-full object-cover object-center"
               loading="lazy"
               width={1920}
               height={512}
@@ -104,12 +105,13 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
             />
           )}
 
-          {/* Gradient overlay at bottom with sponsor name */}
-          <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-black/50 to-transparent flex items-end justify-center pb-0.5">
-            <span className="text-[9px] sm:text-[10px] font-medium tracking-wider uppercase text-white/70">
-              Patrocinado • {displayName}
-            </span>
-          </div>
+          {/* Subtle gradient at bottom for text legibility */}
+          <div className="absolute inset-x-0 bottom-0 h-7 bg-gradient-to-t from-black/45 to-transparent pointer-events-none" />
+
+          {/* Sponsor label — bottom-center, small & unobtrusive */}
+          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] sm:text-[9px] font-medium tracking-widest uppercase text-white/60 whitespace-nowrap pointer-events-none">
+            Patrocinado • {displayName}
+          </span>
         </motion.a>
       </AnimatePresence>
 
@@ -119,22 +121,22 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
           e.stopPropagation();
           setDismissed(true);
         }}
-        className="absolute top-1 right-2 p-1 rounded-full bg-black/30 text-white/70 hover:text-white transition-colors z-10"
+        className="absolute top-1.5 right-2 p-0.5 rounded-full bg-black/25 text-white/60 hover:text-white transition-colors z-10"
         aria-label="Fechar"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-3 w-3" />
       </button>
 
       {/* Rotation dots */}
       {validSponsors.length > 1 && (
-        <div className="absolute bottom-7 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1 z-10">
           {validSponsors.map((_, i) => (
             <span
               key={i}
-              className={`block h-1.5 rounded-full transition-all duration-300 ${
+              className={`block h-1 rounded-full transition-all duration-300 ${
                 i === currentIdx % validSponsors.length
-                  ? 'w-5 bg-white/80'
-                  : 'w-1.5 bg-white/40'
+                  ? 'w-4 bg-white/70'
+                  : 'w-1.5 bg-white/30'
               }`}
             />
           ))}
