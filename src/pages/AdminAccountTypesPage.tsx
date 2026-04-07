@@ -189,6 +189,7 @@ const AdminAccountTypesPage = () => {
                     <Users className="h-3.5 w-3.5" /> Até {t.max_users} usuários
                   </span>
                   <span className="font-semibold text-foreground">R$ {Number(t.price).toFixed(2)}/mês</span>
+                  <span className="text-xs text-muted-foreground">({typeCounts[t.id] || 0} em uso)</span>
                 </div>
                 <div className="mt-3">
                   <p className="text-[10px] text-muted-foreground mb-1">Recursos principais:</p>
