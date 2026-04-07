@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ExternalLink, BadgeCheck, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { handleImageError } from '@/lib/imageResolver';
 
@@ -37,10 +37,8 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
   const tracked = useRef(new Set<string>());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Filter only sponsors with visual content
   const validSponsors = sponsors.filter(s => s.image_url || s.logo_url);
 
-  // Track impressions
   useEffect(() => {
     validSponsors.forEach(s => {
       if (!tracked.current.has(s.id)) {
@@ -50,7 +48,6 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
     });
   }, [validSponsors]);
 
-  // Auto-rotate
   useEffect(() => {
     if (validSponsors.length <= 1) return;
     intervalRef.current = setInterval(() => {
@@ -71,95 +68,69 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
   if (!current) return null;
 
   const displayName = current.company_name || current.title;
-  const logoSrc = current.logo_url || current.image_url;
+  const imageSrc = current.image_url || current.logo_url;
 
   return (
     <motion.section
       aria-label="Patrocinador"
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="relative w-full border-b border-border/40 bg-gradient-to-r from-card via-card to-muted/30"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="relative w-full bg-card"
     >
-      <div className="container px-4">
-        <AnimatePresence mode="wait">
-          <motion.a
-            key={current.id}
-            href={current.link_url || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => handleClick(current.id)}
-            data-sponsor={displayName}
-            data-click="true"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="group flex items-center gap-3 sm:gap-4 py-2 sm:py-3 min-h-[50px] sm:min-h-[60px] max-h-[60px] sm:max-h-[90px] transition-transform duration-200 hover:scale-[1.005] cursor-pointer"
-          >
-            {/* Logo */}
-            <div className="flex h-[36px] w-[36px] sm:h-[50px] sm:w-[50px] shrink-0 items-center justify-center rounded-lg bg-muted/40 p-1.5 sm:p-2 overflow-hidden">
-              {logoSrc && (
-                <img
-                  src={logoSrc}
-                  alt={displayName}
-                  className="h-full w-full object-contain"
-                  loading="lazy"
-                  onError={handleImageError}
-                />
-              )}
-            </div>
-
-            {/* Text content */}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs sm:text-sm font-bold text-foreground">
-                {displayName}
-              </p>
-              {current.short_description && (
-                <p className="truncate text-[10px] sm:text-xs text-muted-foreground mt-0.5">
-                  {current.short_description}
-                </p>
-              )}
-            </div>
-          </motion.a>
-        </AnimatePresence>
-
-        {/* Badge */}
-        <div className="absolute top-1 right-12 sm:right-14 flex items-center gap-0.5 opacity-50">
-          <BadgeCheck className="h-2.5 w-2.5 text-muted-foreground" />
-          <span className="text-[8px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Patrocinado
-          </span>
-        </div>
-
-        {/* Dismiss button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setDismissed(true);
-          }}
-          className="absolute top-1 right-3 sm:right-4 p-1 rounded-full text-muted-foreground/40 hover:text-muted-foreground transition-colors"
-          aria-label="Fechar"
+      <AnimatePresence mode="wait">
+        <motion.a
+          key={current.id}
+          href={current.link_url || '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => handleClick(current.id)}
+          data-sponsor={displayName}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="block w-full max-h-[90px] overflow-hidden cursor-pointer"
         >
-          <X className="h-3 w-3" />
-        </button>
+          {imageSrc && (
+            <img
+              src={imageSrc}
+              alt={displayName}
+              className="w-full h-auto max-h-[90px] object-cover object-center"
+              loading="lazy"
+              onError={handleImageError}
+            />
+          )}
+        </motion.a>
+      </AnimatePresence>
 
-        {/* Rotation dots */}
-        {validSponsors.length > 1 && (
-          <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-1">
-            {validSponsors.map((_, i) => (
-              <span
-                key={i}
-                className={`block h-1 rounded-full transition-all duration-300 ${
-                  i === currentIdx % validSponsors.length
-                    ? 'w-4 bg-primary/60'
-                    : 'w-1.5 bg-muted-foreground/20'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Dismiss */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setDismissed(true);
+        }}
+        className="absolute top-1 right-2 p-1 rounded-full bg-black/30 text-white/70 hover:text-white transition-colors z-10"
+        aria-label="Fechar"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+
+      {/* Rotation dots */}
+      {validSponsors.length > 1 && (
+        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+          {validSponsors.map((_, i) => (
+            <span
+              key={i}
+              className={`block h-1.5 rounded-full transition-all duration-300 ${
+                i === currentIdx % validSponsors.length
+                  ? 'w-5 bg-white/80'
+                  : 'w-1.5 bg-white/40'
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </motion.section>
   );
 });
