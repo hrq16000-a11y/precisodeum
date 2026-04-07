@@ -65,6 +65,14 @@ const ServiceDetailPage = () => {
 
   useJsonLd(ld);
 
+  // Auto-increment view_count once per page visit
+  const viewTracked = useRef(false);
+  useEffect(() => {
+    if (!svc?.id || viewTracked.current) return;
+    viewTracked.current = true;
+    supabase.rpc('increment_service_view', { service_id: svc.id }).then(() => {});
+  }, [svc?.id]);
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col">
