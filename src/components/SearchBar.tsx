@@ -281,7 +281,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
         <div
           className={`flex items-center gap-2 rounded-full bg-card p-2 pl-5 transition-all duration-300 ${
             isFocused
-              ? 'shadow-lg ring-2 ring-accent/20 scale-[1.02]'
+              ? 'shadow-lg ring-2 ring-accent/20'
               : 'shadow-card-hover'
           }`}
         >
