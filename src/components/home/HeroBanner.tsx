@@ -8,7 +8,13 @@ import RotatingServiceText from '@/components/home/RotatingServiceText';
 import { useHeroBanners, type HeroBannerData } from '@/hooks/useHeroBanners';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
-const DEFAULT_BG_IMAGES = ['/hero-bg-1.jpg', '/hero-bg-2.jpg', '/hero-bg-3.jpg', '/hero-bg-4.jpg', '/hero-bg-5.jpg', '/hero-bg-6.jpg', '/hero-bg-7.jpg', '/hero-bg-8.jpg'];
+const DEFAULT_BG_IMAGES = [
+  '/hero-bg-1.jpg', '/hero-bg-2.jpg', '/hero-bg-3.jpg', '/hero-bg-4.jpg',
+  '/hero-bg-5.jpg', '/hero-bg-6.jpg', '/hero-bg-7.jpg', '/hero-bg-8.jpg',
+  '/hero-bg-9.jpg', '/hero-bg-10.jpg', '/hero-bg-11.jpg', '/hero-bg-12.jpg',
+  '/hero-bg-13.jpg', '/hero-bg-14.jpg', '/hero-bg-15.jpg', '/hero-bg-16.jpg',
+  '/hero-bg-17.jpg', '/hero-bg-18.jpg', '/hero-bg-19.jpg', '/hero-bg-20.jpg',
+];
 const BG_INTERVAL = 7000;
 const HERO_PREFIXES = ['Encontre um', 'Preciso de um'];
 
