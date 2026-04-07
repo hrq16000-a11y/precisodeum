@@ -365,7 +365,7 @@ const DashboardServicesPage = () => {
                     </span>
                   )}
                   <span className="flex items-center gap-0.5">
-                    <Eye className="h-3 w-3" /> 0 views
+                    <Eye className="h-3 w-3" /> {s.view_count ?? 0} views
                   </span>
                 </div>
 
