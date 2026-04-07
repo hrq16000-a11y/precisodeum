@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,19 +101,21 @@ const AdminSponsorsPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [detectedShape, setDetectedShape] = useState<{ width: number; height: number; shape: BannerShape } | null>(null);
-
-  const loading = authLoading || adminLoading;
-
-  if (!loading && (!user || !isAdmin)) {
-    navigate('/');
-    return null;
-  }
-
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
+  const loading = authLoading || adminLoading;
+  const canAccessAdminSponsors = !!user && isAdmin;
+
+  useEffect(() => {
+    if (!loading && !canAccessAdminSponsors) {
+      navigate('/', { replace: true });
+    }
+  }, [canAccessAdminSponsors, loading, navigate]);
+
   const { data: sponsors = [], isLoading } = useQuery({
     queryKey: ['admin-sponsors'],
+    enabled: canAccessAdminSponsors,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sponsors')
