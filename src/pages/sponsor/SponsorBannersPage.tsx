@@ -71,6 +71,19 @@ const SponsorBannersPage = () => {
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardContent className="pt-6">
+            <a
+              href="/pagina/diretrizes-banner-hero"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+            >
+              📐 Ver diretrizes de formato e boas práticas para banners
+            </a>
+          </CardContent>
+        </Card>
       </div>
     </SponsorLayout>
   );
