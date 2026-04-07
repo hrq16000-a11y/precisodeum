@@ -270,7 +270,7 @@ const AdminSponsorsPage = () => {
               <DialogTitle>{editingId ? 'Editar Patrocinador' : 'Novo Patrocinador'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(); }} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label>Título *</Label>
                   <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
