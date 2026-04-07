@@ -50,6 +50,21 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const [editingProvider, setEditingProvider] = useState(false);
   const [providerForm, setProviderForm] = useState<any>({});
 
+  // Permissions state
+  const [userIsAdmin, setUserIsAdmin] = useState(false);
+  const [userIsSponsor, setUserIsSponsor] = useState(false);
+  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [selectedSponsorId, setSelectedSponsorId] = useState('');
+  const [permLoading, setPermLoading] = useState(false);
+
+  // Editable profile state
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState<any>({});
+
+  // Editable provider state
+  const [editingProvider, setEditingProvider] = useState(false);
+  const [providerForm, setProviderForm] = useState<any>({});
+
   useEffect(() => {
     if (!user) return;
     setTab('profile');
