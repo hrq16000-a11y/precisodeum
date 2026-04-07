@@ -244,18 +244,25 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   return (
     <div ref={wrapperRef} className="relative w-full max-w-2xl">
       <form onSubmit={handleSearch}>
-        <div className="flex flex-col gap-3 rounded-2xl bg-card p-3 shadow-card-hover sm:flex-row sm:items-center sm:gap-0 sm:rounded-full sm:p-2">
+        <div
+          className={`flex flex-col gap-3 rounded-2xl bg-card p-3 sm:flex-row sm:items-center sm:gap-0 sm:rounded-full sm:p-2 transition-all duration-300 ${
+            isFocused
+              ? 'shadow-lg ring-2 ring-secondary/30 scale-[1.02]'
+              : 'shadow-card-hover'
+          }`}
+        >
           <div className="relative flex flex-1 items-center gap-2 px-4">
-            <Search className="h-5 w-5 shrink-0 text-muted-foreground" />
+            <Search className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isFocused ? 'text-secondary' : 'text-muted-foreground'}`} />
             <input
               ref={serviceRef}
               type="text"
               placeholder={servicePlaceholder}
               value={service}
               onChange={(e) => { setService(e.target.value); setSearchError(''); }}
-              onFocus={() => setActiveField('service')}
+              onFocus={handleServiceFocus}
+              onBlur={handleServiceBlur}
               onKeyDown={handleKeyDown}
-              className="w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
+              className="w-full bg-transparent text-foreground placeholder:text-muted-foreground/70 outline-none"
             />
             {service && (
               <button type="button" onClick={() => setService('')} className="text-muted-foreground hover:text-foreground">
