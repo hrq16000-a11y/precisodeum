@@ -1,7 +1,7 @@
-import { lazy as reactLazy, Suspense, memo, Component, ReactNode, type ComponentType } from 'react';
+import { lazy as reactLazy, Suspense, memo, Component, ReactNode, type ComponentType, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
@@ -51,9 +51,11 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
 
 const SectionFallback = () => null;
 
+// Default section order
+const DEFAULT_ORDER = 'highlights,categories,pwa,dynamic,ad1,featured,popular,recent,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq';
+
 const Index = () => {
   const { city: geoCity } = useGeoCity();
-  const seoSuffix = geoCity ? ` em ${geoCity}` : '';
 
   useSeoHead({
     title: geoCity
@@ -77,6 +79,7 @@ const Index = () => {
     },
   });
 
+  // Feature flags
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const featuredEnabled = useFeatureEnabled('featured_providers_enabled');
   const popularSearchesEnabled = useFeatureEnabled('popular_searches_enabled');
@@ -87,10 +90,21 @@ const Index = () => {
   const ctaEnabled = useFeatureEnabled('module_cta');
   const citiesEnabled = useFeatureEnabled('module_cities');
   const sponsorsEnabled = useFeatureEnabled('module_sponsors');
+
+  // Section order from admin
+  const sectionsOrderRaw = useSettingValue('homepage_sections_order');
+  const hiddenSectionsRaw = useSettingValue('homepage_hidden_sections');
+
+  const sectionOrder = useMemo(() => {
+    const order = (sectionsOrderRaw || DEFAULT_ORDER).split(',').map(s => s.trim()).filter(Boolean);
+    const hidden = new Set((hiddenSectionsRaw || '').split(',').map(s => s.trim()).filter(Boolean));
+    return order.filter(s => !hidden.has(s));
+  }, [sectionsOrderRaw, hiddenSectionsRaw]);
+
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
 
-  // Consolidated counts query (single request instead of two)
+  // Consolidated counts query
   const { data: counts } = useQuery({
     queryKey: ['home-counts'],
     queryFn: async () => {
@@ -106,12 +120,11 @@ const Index = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Consolidated secondary data (cities + categories for SEO + recent services + sponsors)
+  // Consolidated secondary data
   const { data: secondaryData } = useQuery({
     queryKey: ['home-secondary-data'],
     queryFn: async () => {
       const [citiesRes, allCatsRes, recentRes, sponsorsRes] = await Promise.all([
-        // Cities with services
         (async () => {
           const { data: services } = await supabase.from('services').select('provider_id');
           if (!services || services.length === 0) return [];
@@ -123,9 +136,7 @@ const Index = () => {
           const shuffled = [...(cities || [])].sort(() => Math.random() - 0.5);
           return shuffled.slice(0, 6);
         })(),
-        // All categories slugs
         supabase.from('categories').select('name, slug').order('name').then(r => r.data || []),
-        // Recent services
         (async () => {
           const { data } = await supabase
             .from('services')
@@ -139,7 +150,6 @@ const Index = () => {
           (providers || []).forEach((p: any) => { providerMap[p.id] = p; });
           return data.map((s: any) => ({ ...s, provider: providerMap[s.provider_id] || null }));
         })(),
-        // Sponsors
         supabase.from('sponsors').select('id, title, image_url, link_url, tier, position, active, display_order').eq('active', true).order('display_order').then(r => r.data || []),
       ]);
       return {
@@ -157,42 +167,72 @@ const Index = () => {
   const recentServices = secondaryData?.recentServices || [];
   const sponsors = secondaryData?.sponsors || [];
 
+  // Section renderer — maps slug to component
+  const renderSection = (slug: string) => {
+    switch (slug) {
+      case 'highlights':
+        return <HighlightsCarousel key={slug} />;
+      case 'categories':
+        return <CategoriesGrid key={slug} categories={categories} isLoading={catsLoading} />;
+      case 'pwa':
+        return <PwaInstallSection key={slug} />;
+      case 'dynamic':
+        return <DynamicPageBlocks key={slug} pageSlug="home" city={geoCity || undefined} />;
+      case 'ad1':
+        return (
+          <div key={slug}>
+            <AdBanner position="between-sections" className="container mx-auto px-4" />
+            <AdSlot slotSlug="home-between" />
+          </div>
+        );
+      case 'featured':
+        return featuredEnabled ? <FeaturedProviders key={slug} providers={featuredProviders} isLoading={provsLoading} /> : null;
+      case 'popular':
+        return <PopularServices key={slug} />;
+      case 'recent':
+        return recentServices.length > 0 ? <RecentServices key={slug} services={recentServices} /> : null;
+      case 'ad2':
+        return (
+          <div key={slug}>
+            <AdBanner position="mid-content" className="container mx-auto px-4" />
+            <AdSlot slotSlug="home-mid" />
+          </div>
+        );
+      case 'jobs':
+        return jobsEnabled ? <FeaturedJobs key={slug} /> : null;
+      case 'blog':
+        return blogEnabled ? <BlogHighlight key={slug} /> : null;
+      case 'cities':
+        return citiesEnabled && topCities.length > 0 ? <CitiesSection key={slug} cities={topCities} /> : null;
+      case 'cta':
+        return ctaEnabled ? <CtaSection key={slug} /> : null;
+      case 'showcase':
+        return <AdShowcase key={slug} />;
+      case 'sponsors':
+        return sponsorsEnabled ? <SponsorsSection key={slug} sponsors={sponsors} /> : null;
+      case 'howitworks':
+        return howItWorksEnabled ? <HowItWorksSection key={slug} /> : null;
+      case 'searches':
+        return popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0
+          ? <PopularSearches key={slug} categories={allCategories} cities={topCities} />
+          : null;
+      case 'testimonials':
+        return reviewsEnabled ? <TestimonialsSection key={slug} /> : null;
+      case 'faq':
+        return faqEnabled ? <FaqSection key={slug} /> : null;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
-      <CategoriesGrid categories={categories} isLoading={catsLoading} />
-      <PwaInstallSection />
-      <HighlightsCarousel />
-      <DynamicPageBlocks pageSlug="home" city={geoCity || undefined} />
 
       <LazyErrorBoundary>
         <Suspense fallback={<SectionFallback />}>
-          <AdBanner position="between-sections" className="container mx-auto px-4" />
-          <AdSlot slotSlug="home-between" />
-
-          {featuredEnabled && (
-            <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
-          )}
-          <PopularServices />
-          {recentServices.length > 0 && <RecentServices services={recentServices} />}
-
-          <AdBanner position="mid-content" className="container mx-auto px-4" />
-          <AdSlot slotSlug="home-mid" />
-
-          {jobsEnabled && <FeaturedJobs />}
-          {blogEnabled && <BlogHighlight />}
-
-          {citiesEnabled && topCities.length > 0 && <CitiesSection cities={topCities} />}
-          {ctaEnabled && <CtaSection />}
-          <AdShowcase />
-          {sponsorsEnabled && <SponsorsSection sponsors={sponsors} />}
-          {howItWorksEnabled && <HowItWorksSection />}
-          {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
-            <PopularSearches categories={allCategories} cities={topCities} />
-          )}
-          {reviewsEnabled && <TestimonialsSection />}
-          {faqEnabled && <FaqSection />}
+          {sectionOrder.map(renderSection)}
           <Footer />
           <FloatingWhatsApp />
         </Suspense>
