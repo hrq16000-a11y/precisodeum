@@ -152,43 +152,45 @@ const AdminJobsPage = () => {
       ) : (
         <div className="mt-6 space-y-2">
           {paginated.map((job: any) => (
-            <div key={job.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
-              <SelectionCheckbox
-                checked={bulk.selectedIds.has(job.id)}
-                onCheckedChange={() => bulk.toggleSelection(job.id)}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-medium text-foreground truncate text-sm">{job.title}</h3>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
-                    {job.status === 'active' ? 'Ativa' : 'Inativa'}
-                  </span>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                    job.approval_status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                    job.approval_status === 'rejected' ? 'bg-red-100 text-red-700' :
-                    'bg-green-100 text-green-700'
-                  }`}>
-                    {job.approval_status === 'pending' ? '⏳ Pendente' : job.approval_status === 'rejected' ? '❌ Rejeitada' : '✅ Aprovada'}
-                  </span>
+            <div key={job.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+              <div className="flex items-start gap-2">
+                <SelectionCheckbox
+                  checked={bulk.selectedIds.has(job.id)}
+                  onCheckedChange={() => bulk.toggleSelection(job.id)}
+                />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-foreground text-sm line-clamp-1">{job.title}</h3>
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+                      {job.status === 'active' ? 'Ativa' : 'Inativa'}
+                    </span>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                      job.approval_status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                      job.approval_status === 'rejected' ? 'bg-red-100 text-red-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {job.approval_status === 'pending' ? '⏳ Pendente' : job.approval_status === 'rejected' ? '❌ Rejeitada' : '✅ Aprovada'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {(job.categories as any)?.name || 'Sem categoria'} · {job.city || '?'} · {new Date(job.created_at).toLocaleDateString('pt-BR')}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {(job.categories as any)?.name || 'Sem categoria'} · {job.city || '?'} · {new Date(job.created_at).toLocaleDateString('pt-BR')}
-                </p>
-              </div>
-              <div className="flex items-center gap-1">
-                {job.approval_status === 'pending' && (
-                  <>
-                    <Button variant="ghost" size="icon" onClick={() => handleApprove(job.id)} title="Aprovar">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleReject(job.id)} title="Rejeitar">
-                      <XCircle className="h-4 w-4 text-red-600" />
-                    </Button>
-                  </>
-                )}
-                <Button variant="ghost" size="icon" onClick={() => window.open(`/vaga/${job.slug || job.id}`, '_blank')}><ExternalLink className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(job)}><Pencil className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(job.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                <div className="flex items-center gap-0.5 shrink-0 flex-wrap justify-end">
+                  {job.approval_status === 'pending' && (
+                    <>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleApprove(job.id)} title="Aprovar">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleReject(job.id)} title="Rejeitar">
+                        <XCircle className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </>
+                  )}
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => window.open(`/vaga/${job.slug || job.id}`, '_blank')}><ExternalLink className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(job)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleDelete(job.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </div>
               </div>
             </div>
           ))}
@@ -203,7 +205,7 @@ const AdminJobsPage = () => {
       )}
 
       <Dialog open={!!editJob} onOpenChange={() => setEditJob(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Editar Vaga</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
             <div>

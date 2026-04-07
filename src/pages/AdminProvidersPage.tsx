@@ -153,20 +153,20 @@ const AdminProvidersPage = () => {
                   </p>
                   <p className="text-xs text-muted-foreground">{(p.profiles as any)?.email} • {p.phone}</p>
                 </div>
-                <div className="flex gap-1.5 shrink-0">
+                <div className="flex gap-1.5 shrink-0 flex-wrap">
                   {p.slug && (
-                    <Button variant="ghost" size="sm" asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 sm:w-auto sm:px-3" asChild>
                       <Link to={`/profissional/${p.slug}`}><Eye className="h-4 w-4" /></Link>
                     </Button>
                   )}
                   {p.status !== 'approved' && (
-                    <Button variant="outline" size="sm" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => updateStatus(p.id, 'approved')}>
-                      <Check className="h-4 w-4" /> Aprovar
+                    <Button variant="outline" size="sm" className="h-8 text-green-600 border-green-200 hover:bg-green-50" onClick={() => updateStatus(p.id, 'approved')}>
+                      <Check className="h-4 w-4" /> <span className="hidden sm:inline">Aprovar</span>
                     </Button>
                   )}
                   {p.status !== 'rejected' && (
-                    <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => updateStatus(p.id, 'rejected')}>
-                      <X className="h-4 w-4" /> Rejeitar
+                    <Button variant="outline" size="sm" className="h-8 text-red-600 border-red-200 hover:bg-red-50" onClick={() => updateStatus(p.id, 'rejected')}>
+                      <X className="h-4 w-4" /> <span className="hidden sm:inline">Rejeitar</span>
                     </Button>
                   )}
                 </div>

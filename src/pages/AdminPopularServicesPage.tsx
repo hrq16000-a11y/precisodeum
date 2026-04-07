@@ -100,24 +100,24 @@ const AdminPopularServicesPage = () => {
 
       <div className="mt-6 space-y-2">
         {services.map(s => (
-          <div key={s.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-card">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{s.icon}</span>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">{s.name}</h3>
-                <p className="text-xs text-muted-foreground">{s.category_name} · A partir de R$ {s.min_price.toFixed(2).replace('.', ',')}</p>
+          <div key={s.id} className="rounded-xl border border-border bg-card p-3 shadow-card">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl shrink-0">{s.icon}</span>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-foreground truncate">{s.name}</h3>
+                <p className="text-xs text-muted-foreground">{s.category_name} · R$ {s.min_price.toFixed(2).replace('.', ',')}</p>
+                <span className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${s.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {s.active ? 'Ativo' : 'Inativo'}
+                </span>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs px-2 py-0.5 rounded-full ${s.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {s.active ? 'Ativo' : 'Inativo'}
-              </span>
-              <Button variant="ghost" size="sm" onClick={() => { setEditing(s); setIsNew(false); }}>
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleDelete(s.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              <div className="flex gap-1 shrink-0">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setEditing(s); setIsNew(false); }}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleDelete(s.id)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
             </div>
           </div>
         ))}
