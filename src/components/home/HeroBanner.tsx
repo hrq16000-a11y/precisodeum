@@ -141,15 +141,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
             {hasCustomTitle ? title : (
               <>
                 Encontre profissionais para{' '}
-                <span className="relative inline-block">
-                  <span className="text-secondary">qualquer serviço</span>
-                  <motion.span
-                    className="absolute -bottom-1 left-0 h-1 rounded-full bg-secondary/60"
-                    initial={{ width: 0 }}
-                    animate={{ width: '100%' }}
-                    transition={{ delay: 0.8, duration: 0.6, ease: 'easeOut' }}
-                  />
-                </span>
+                <RotatingServiceText />
               </>
             )}
           </h1>
