@@ -73,15 +73,18 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
   return (
     <div className="rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-bold text-foreground">Portfólio de Trabalhos</h2>
+        <div>
+          <h2 className="font-display text-lg font-bold text-foreground">Portfólio de Trabalhos</h2>
+          <p className="text-xs text-muted-foreground">{images.length}/{MAX_PORTFOLIO_IMAGES} fotos</p>
+        </div>
         <label className="cursor-pointer">
-          <Button variant="accent" size="sm" asChild disabled={uploading}>
+          <Button variant="accent" size="sm" asChild disabled={uploading || images.length >= MAX_PORTFOLIO_IMAGES}>
             <span>
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               Adicionar
             </span>
           </Button>
-          <input type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
+          <input type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} disabled={images.length >= MAX_PORTFOLIO_IMAGES} />
         </label>
       </div>
       {images.length === 0 ? (
