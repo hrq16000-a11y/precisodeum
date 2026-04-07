@@ -114,7 +114,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           <span className="font-display text-sm font-bold text-sidebar-foreground">Admin Panel</span>
         </div>
         <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-4 px-3 pb-4">
-          {menuGroups.map((group) => (
+          {filteredGroups.map((group) => (
             <div key={group.label}>
               <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{group.label}</p>
               <div className="space-y-0.5">
