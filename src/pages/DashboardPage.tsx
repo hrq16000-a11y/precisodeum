@@ -1,20 +1,26 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
+import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
+import LeadsChart from '@/components/dashboard/LeadsChart';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
   const navigate = useNavigate();
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
+  const { levelName, levelColor, accountTypeName, accountTypeColor } = usePermissions();
   const [servicesCount, setServicesCount] = useState<number | null>(null);
   const [leadsCount, setLeadsCount] = useState<number>(0);
   const [jobsCount, setJobsCount] = useState<number>(0);
+  const [portfolioCount, setPortfolioCount] = useState<number>(0);
+  const [viewsTotal, setViewsTotal] = useState<number>(0);
   const [guideOpen, setGuideOpen] = useState(true);
 
   useEffect(() => {
@@ -28,11 +34,16 @@ const DashboardPage = () => {
   useEffect(() => {
     if (!provider) return;
     Promise.all([
-      supabase.from('services').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
+      supabase.from('services').select('id, view_count', { count: 'exact' }).eq('provider_id', provider.id),
       supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
-    ]).then(([sRes, lRes]) => {
+      supabase.storage.from('portfolio').list(`${provider.user_id}`, { limit: 100 }),
+    ]).then(([sRes, lRes, pRes]) => {
       setServicesCount(sRes.count ?? 0);
       setLeadsCount(lRes.count ?? 0);
+      const files = (pRes.data || []).filter(f => f.name !== '.emptyFolderPlaceholder');
+      setPortfolioCount(files.length);
+      const totalViews = (sRes.data || []).reduce((acc: number, s: any) => acc + (s.view_count || 0), 0);
+      setViewsTotal(totalViews);
     });
   }, [provider]);
 
@@ -230,7 +241,20 @@ const DashboardPage = () => {
       <h1 className="font-display text-2xl font-bold text-foreground">
         Olá, {profile?.full_name?.split(' ')[0] || 'Profissional'}!
       </h1>
-      <p className="mt-1 text-sm text-muted-foreground">Seu painel profissional</p>
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        <p className="text-sm text-muted-foreground">Seu painel profissional</p>
+        {levelName && (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: `${levelColor}20`, color: levelColor }}>
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: levelColor }} />
+            {levelName}
+          </span>
+        )}
+        {accountTypeName && (
+          <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold" style={{ borderColor: `${accountTypeColor}40`, color: accountTypeColor }}>
+            {accountTypeName}
+          </span>
+        )}
+      </div>
 
       {/* Dominant CTA when no services */}
       {servicesCount !== null && servicesCount === 0 && (
@@ -249,7 +273,7 @@ const DashboardPage = () => {
       )}
 
       {/* Stats row */}
-      <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-4">
+      <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-5">
         <div className="rounded-xl border border-border bg-card p-4 shadow-card">
           <Briefcase className="h-4 w-4 text-accent" />
           <p className="mt-2 font-display text-2xl font-bold text-foreground">{servicesCount ?? 0}</p>
@@ -259,6 +283,11 @@ const DashboardPage = () => {
           <MessageSquare className="h-4 w-4 text-accent" />
           <p className="mt-2 font-display text-2xl font-bold text-foreground">{leadsCount}</p>
           <p className="text-[11px] text-muted-foreground">{leadsCount === 0 ? 'Nenhum lead ainda' : 'Leads'}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+          <TrendingUp className="h-4 w-4 text-accent" />
+          <p className="mt-2 font-display text-2xl font-bold text-foreground">{viewsTotal}</p>
+          <p className="text-[11px] text-muted-foreground">{viewsTotal === 0 ? 'Nenhuma visualização' : 'Visualizações'}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 shadow-card">
           <Star className="h-4 w-4 text-accent" />
@@ -271,6 +300,19 @@ const DashboardPage = () => {
           <p className="text-[11px] text-muted-foreground">{jobsCount === 0 ? 'Nenhuma vaga ainda' : 'Vagas'}</p>
         </div>
       </div>
+
+      {/* Profile Completeness + Leads Chart */}
+      {provider && (
+        <div className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
+          <ProfileCompleteness
+            provider={provider}
+            profile={profile}
+            servicesCount={servicesCount ?? 0}
+            portfolioCount={portfolioCount}
+          />
+          <LeadsChart providerId={provider.id} />
+        </div>
+      )}
 
       {/* Quick Access */}
       <div className="mt-6">

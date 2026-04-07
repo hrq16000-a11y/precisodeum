@@ -3,7 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Shield, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Shield, Plus, Edit2, Trash2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,9 +52,18 @@ const AdminLevelsPage = () => {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
 
-  const fetchLevels = () => {
-    supabase.from('user_levels').select('*').order('priority', { ascending: false })
-      .then(({ data }) => setLevels(data || []));
+  const [levelCounts, setLevelCounts] = useState<Record<string, number>>({});
+
+  const fetchLevels = async () => {
+    const { data } = await supabase.from('user_levels').select('*').order('priority', { ascending: false });
+    setLevels(data || []);
+    // Fetch usage counts
+    const { data: profiles } = await supabase.from('profiles').select('level_id');
+    const counts: Record<string, number> = {};
+    (profiles || []).forEach((p: any) => {
+      if (p.level_id) counts[p.level_id] = (counts[p.level_id] || 0) + 1;
+    });
+    setLevelCounts(counts);
   };
 
   useEffect(() => {
@@ -165,7 +174,13 @@ const AdminLevelsPage = () => {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{level.description || '—'}</p>
-                <div className="mt-2 text-xs text-muted-foreground">Prioridade: <strong>{level.priority}</strong></div>
+                <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>Prioridade: <strong>{level.priority}</strong></span>
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    <strong>{levelCounts[level.id] || 0}</strong> usuário(s)
+                  </span>
+                </div>
                 <div className="mt-3 flex flex-wrap gap-1">
                   {activePerms.length > 0 ? activePerms.map(p => (
                     <Badge key={p.key} variant="outline" className="text-[10px]">{p.label}</Badge>

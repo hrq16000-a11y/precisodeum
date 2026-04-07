@@ -219,7 +219,25 @@ const ProviderProfile = () => {
           .eq('id', data.user_id)
           .maybeSingle();
 
-        const providerWithProfile = { ...data, profiles: profile };
+        // Fetch user level and account type
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('level_id, account_type_id')
+          .eq('id', data.user_id)
+          .maybeSingle();
+
+        let levelInfo: any = null;
+        let accTypeInfo: any = null;
+        if (userProfile?.level_id) {
+          const { data: lv } = await supabase.from('user_levels').select('name, color').eq('id', userProfile.level_id).single();
+          levelInfo = lv;
+        }
+        if (userProfile?.account_type_id) {
+          const { data: at } = await supabase.from('account_types').select('name, color').eq('id', userProfile.account_type_id).single();
+          accTypeInfo = at;
+        }
+
+        const providerWithProfile = { ...data, profiles: profile, levelInfo, accTypeInfo };
 
         const [{ data: svc }, { data: rev }, { data: files }, { data: ps }] = await Promise.all([
           supabase.from('services').select('*').eq('provider_id', data.id),
@@ -610,6 +628,17 @@ const ProviderProfile = () => {
                     {provider.plan === 'premium' && (
                       <span className={`inline-flex items-center gap-1 ${tc.badge} bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
                         <Crown className="h-3 w-3" /> DESTAQUE
+                      </span>
+                    )}
+                    {provider.levelInfo && (
+                      <span className={`inline-flex items-center gap-1 ${tc.badge} px-2 py-0.5 text-xs font-medium`} style={{ backgroundColor: `${provider.levelInfo.color}20`, color: provider.levelInfo.color }}>
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: provider.levelInfo.color }} />
+                        {provider.levelInfo.name}
+                      </span>
+                    )}
+                    {provider.accTypeInfo && (
+                      <span className={`inline-flex items-center gap-1 ${tc.badge} border px-2 py-0.5 text-xs font-medium`} style={{ borderColor: `${provider.accTypeInfo.color}40`, color: provider.accTypeInfo.color }}>
+                        {provider.accTypeInfo.name}
                       </span>
                     )}
                   </div>

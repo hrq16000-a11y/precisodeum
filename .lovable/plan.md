@@ -1,31 +1,34 @@
 
-# Plano: CMS Modular — Páginas/Blocos + Segmentação por Empresa/Campanha
+# Plano de Melhorias Significativas — Estrutura Completa
 
-## Fase 1: Tabela `page_blocks` (blocos de página administráveis)
-- Criar tabela `page_blocks` com: `page_slug`, `block_type`, `title`, `content` (jsonb), `display_order`, `active`, `target_city`, `target_category`, `target_campaign`, `sponsor_id`
-- RLS: leitura pública (ativos), CRUD admin
-- Permite ao admin montar seções da home e páginas institucionais como blocos reordenáveis
+## 1. Permissões Baseadas em Nível (Rotas + Perfil Público)
+- Criar hook `usePermissions` que lê as permissões do `user_levels` do usuário logado
+- Aplicar verificação de permissões nas rotas admin (ex: se não tem `manage_settings`, não acessa `/admin/configuracoes`)
+- Exibir badge de Nível e Tipo de Conta no perfil público do profissional (`ProviderProfile`)
+- Admin Layout: ocultar itens do menu baseado nas permissões do nível
 
-## Fase 2: Tabela `institutional_pages` (páginas institucionais dinâmicas)
-- Criar tabela `institutional_pages` com: `slug`, `title`, `content` (rich text), `meta_title`, `meta_description`, `published`, `display_order`
-- RLS: leitura pública (publicadas), CRUD admin
-- Permite criar páginas como "Sobre", "Termos", "Política" direto pelo admin
+## 2. Dashboard do Usuário — Métricas e Ações Rápidas
+- Adicionar cards de KPI no dashboard (total de visualizações, leads recebidos, avaliações)
+- Gráfico de leads/visualizações nos últimos 30 dias
+- Ações rápidas: editar perfil, gerenciar serviços, ver leads pendentes
+- Indicador de completude do perfil com checklist visual
 
-## Fase 3: Painel Admin — Gestão de Blocos (`/admin/blocos`)
-- CRUD de blocos com drag-to-reorder
-- Filtros por página, tipo, cidade, categoria, campanha, patrocinador
-- Duplicar, agendar (start/end date), ativar/desativar
-- Preview inline
+## 3. Gestão de Portfólio e Serviços (Sincronização)
+- Melhorar o wizard de serviços com preview em tempo real
+- Adicionar gestão de imagens do portfólio diretamente no dashboard com drag-to-reorder
+- Sincronizar contagem de serviços/fotos entre perfil e dashboard
+- Validação visual de limites (ex: 20 fotos max com barra de progresso)
 
-## Fase 4: Painel Admin — Páginas Institucionais (`/admin/paginas`)
-- CRUD de páginas com editor de conteúdo
-- SEO fields (meta title, description)
-- Publicar/despublicar
+## 4. Configurações de Página do Profissional
+- Melhorar DashboardMyPagePage com preview do tema selecionado
+- Permitir personalizar cores, headline, tagline e redes sociais
+- Mostrar preview live da página pública
 
-## Fase 5: Renderização dinâmica no frontend
-- Componente `DynamicPageBlocks` que lê blocos por `page_slug`
-- Filtragem automática por cidade/categoria do contexto
-- Rota dinâmica `/p/:slug` para páginas institucionais
+## 5. Performance & SEO
+- Adicionar meta tags dinâmicas no perfil do profissional (og:image, description)
+- JSON-LD para profissionais (LocalBusiness schema)
+- Lazy loading de imagens do portfólio com intersection observer
 
-## Fase 6: Menu lateral admin atualizado
-- Adicionar "Blocos de Página" e "Páginas" ao menu admin
+## 6. UX/Design do Admin
+- Melhorar cards de níveis e tipos de conta com visual mais rico
+- Adicionar contadores de uso (quantos usuários em cada nível/tipo)

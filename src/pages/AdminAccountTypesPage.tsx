@@ -52,9 +52,17 @@ const AdminAccountTypesPage = () => {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
 
-  const fetchTypes = () => {
-    supabase.from('account_types').select('*').order('display_order')
-      .then(({ data }) => setTypes(data || []));
+  const [typeCounts, setTypeCounts] = useState<Record<string, number>>({});
+
+  const fetchTypes = async () => {
+    const { data } = await supabase.from('account_types').select('*').order('display_order');
+    setTypes(data || []);
+    const { data: profiles } = await supabase.from('profiles').select('account_type_id');
+    const counts: Record<string, number> = {};
+    (profiles || []).forEach((p: any) => {
+      if (p.account_type_id) counts[p.account_type_id] = (counts[p.account_type_id] || 0) + 1;
+    });
+    setTypeCounts(counts);
   };
 
   useEffect(() => {
@@ -181,6 +189,7 @@ const AdminAccountTypesPage = () => {
                     <Users className="h-3.5 w-3.5" /> Até {t.max_users} usuários
                   </span>
                   <span className="font-semibold text-foreground">R$ {Number(t.price).toFixed(2)}/mês</span>
+                  <span className="text-xs text-muted-foreground">({typeCounts[t.id] || 0} em uso)</span>
                 </div>
                 <div className="mt-3">
                   <p className="text-[10px] text-muted-foreground mb-1">Recursos principais:</p>

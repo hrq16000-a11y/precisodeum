@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
+import { usePermissions, ADMIN_ROUTE_PERMISSIONS, type UserPermissions } from '@/hooks/usePermissions';
 
 const menuGroups = [
   {
@@ -74,7 +76,20 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { isAdmin } = useAdmin();
+  const { hasPermission } = usePermissions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Filter menu items based on permissions (admins see everything)
+  const filteredGroups = menuGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+      if (isAdmin) return true; // Full admin sees all
+      const requiredPerm = ADMIN_ROUTE_PERMISSIONS[item.path];
+      if (!requiredPerm) return true; // No restriction
+      return hasPermission(requiredPerm);
+    }),
+  })).filter(group => group.items.length > 0);
 
   const handleSignOut = async () => {
     await signOut();
@@ -99,7 +114,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           <span className="font-display text-sm font-bold text-sidebar-foreground">Admin Panel</span>
         </div>
         <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-4 px-3 pb-4">
-          {menuGroups.map((group) => (
+          {filteredGroups.map((group) => (
             <div key={group.label}>
               <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{group.label}</p>
               <div className="space-y-0.5">
