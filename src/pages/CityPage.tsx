@@ -194,6 +194,8 @@ const CityPage = () => {
         </div>
       </section>
 
+      <Suspense fallback={null}><SponsorFooterCTA city={city!.name} /></Suspense>
+
       <Footer />
     </div>
   );
