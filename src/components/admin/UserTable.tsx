@@ -56,6 +56,8 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], onEdit, on
         const isAdminUser = adminIds.has(p.id);
         const type = p.profile_type || p.role || 'client';
         const phone = p.phone || p.whatsapp || '';
+        const userLevel = levels.find((l: any) => l.id === p.level_id);
+        const userAccType = accountTypes.find((a: any) => a.id === p.account_type_id);
 
         return (
           <div
