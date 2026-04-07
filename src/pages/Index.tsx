@@ -181,7 +181,7 @@ const Index = () => {
           <AdSlot slotSlug="home-mid" />
 
           {jobsEnabled && <FeaturedJobs />}
-          <BlogHighlight />
+          {blogEnabled && <BlogHighlight />}
 
           {topCities.length > 0 && <CitiesSection cities={topCities} />}
           <CtaSection />
