@@ -44,7 +44,9 @@ const sizeHints: Record<string, string> = {
 interface Sponsor {
   id: string;
   title: string;
+  company_name: string;
   image_url: string | null;
+  logo_url: string;
   link_url: string | null;
   position: string;
   active: boolean;
@@ -54,9 +56,27 @@ interface Sponsor {
   end_date: string | null;
   impressions: number;
   clicks: number;
+  sponsor_type: string;
+  short_description: string;
+  full_description: string;
+  phone: string;
+  whatsapp: string;
+  external_link: string;
+  linked_city: string;
+  linked_category: string;
+  plan_tier: string;
+  badge_type: string;
+  status: string;
 }
 
-const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0, start_date: '' as string, end_date: '' as string, tier: 'basic', ad_format: 'auto', max_width: 0, max_height: 0, target_pages: 'all' };
+const emptyForm = {
+  title: '', company_name: '', image_url: '', logo_url: '', link_url: '', position: 'banner',
+  active: true, display_order: 0, start_date: '' as string, end_date: '' as string,
+  tier: 'basic', ad_format: 'auto', max_width: 0, max_height: 0, target_pages: 'all',
+  sponsor_type: 'global', short_description: '', full_description: '',
+  phone: '', whatsapp: '', external_link: '', linked_city: '', linked_category: '',
+  plan_tier: 'basic', badge_type: 'Patrocinado', status: 'active',
+};
 
 const idealSizes: Record<string, { width: number; height: number; label: string }> = {
   'hero-top': { width: 970, height: 90, label: '970×90 px (Leaderboard)' },
