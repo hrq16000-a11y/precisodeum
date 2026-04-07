@@ -22,23 +22,76 @@ interface ServiceWizardProps {
   onCancel: () => void;
 }
 
-/* ───── Hardcoded avatars ───── */
-const AVATARS = [
-  { id: 'jovem', label: 'Jovem Empreendedor', emoji: '👨‍💼', gender: 'M' },
-  { id: 'empresario', label: 'Empresário', emoji: '🧑‍💼', gender: 'M' },
-  { id: 'vendedor', label: 'Vendedor', emoji: '🤝', gender: 'M' },
-  { id: 'experiente', label: 'Experiente', emoji: '👨‍🔧', gender: 'M' },
-  { id: 'consultor', label: 'Consultor', emoji: '💼', gender: 'M' },
-  { id: 'corretor', label: 'Corretor', emoji: '🏠', gender: 'M' },
-  { id: 'medico', label: 'Médico', emoji: '👨‍⚕️', gender: 'M' },
-  { id: 'tech', label: 'Tech', emoji: '💻', gender: 'M' },
-  { id: 'construtor', label: 'Construtor', emoji: '👷', gender: 'M' },
-  { id: 'agro', label: 'Agro', emoji: '🌾', gender: 'M' },
-  { id: 'empreendedora', label: 'Empreendedora', emoji: '👩‍💼', gender: 'F' },
-  { id: 'executiva', label: 'Executiva', emoji: '👩‍💻', gender: 'F' },
-  { id: 'vendedora', label: 'Vendedora', emoji: '🛍️', gender: 'F' },
-  { id: 'consultora', label: 'Consultora', emoji: '📊', gender: 'F' },
-  { id: 'educadora', label: 'Educadora', emoji: '👩‍🏫', gender: 'F' },
+/* ───── Hardcoded avatars grouped by segment ───── */
+const AVATAR_GROUPS = [
+  {
+    label: 'Construção & Manutenção',
+    items: [
+      { id: 'pedreiro', emoji: '🧱', label: 'Pedreiro' },
+      { id: 'eletricista', emoji: '⚡', label: 'Eletricista' },
+      { id: 'pintor', emoji: '🎨', label: 'Pintor' },
+      { id: 'encanador', emoji: '🔧', label: 'Encanador' },
+      { id: 'construtor', emoji: '👷', label: 'Construtor' },
+      { id: 'marceneiro', emoji: '🪵', label: 'Marceneiro' },
+    ],
+  },
+  {
+    label: 'Técnicos & TI',
+    items: [
+      { id: 'tech', emoji: '💻', label: 'TI' },
+      { id: 'celular', emoji: '📱', label: 'Celular' },
+      { id: 'arcondicionado', emoji: '❄️', label: 'Ar-cond.' },
+      { id: 'eletronico', emoji: '🔌', label: 'Eletrônica' },
+      { id: 'solar', emoji: '☀️', label: 'Solar' },
+    ],
+  },
+  {
+    label: 'Saúde & Beleza',
+    items: [
+      { id: 'medico', emoji: '👨‍⚕️', label: 'Saúde' },
+      { id: 'cabeleireiro', emoji: '✂️', label: 'Cabelo' },
+      { id: 'estetica', emoji: '💆', label: 'Estética' },
+      { id: 'personal', emoji: '💪', label: 'Personal' },
+    ],
+  },
+  {
+    label: 'Alimentação & Eventos',
+    items: [
+      { id: 'cozinheiro', emoji: '👨‍🍳', label: 'Chef' },
+      { id: 'confeiteiro', emoji: '🎂', label: 'Confeiteiro' },
+      { id: 'eventos', emoji: '🎉', label: 'Eventos' },
+      { id: 'dj', emoji: '🎧', label: 'DJ' },
+    ],
+  },
+  {
+    label: 'Transporte & Serviços',
+    items: [
+      { id: 'motorista', emoji: '🚗', label: 'Motorista' },
+      { id: 'mudanca', emoji: '📦', label: 'Mudança' },
+      { id: 'limpeza', emoji: '🧹', label: 'Limpeza' },
+      { id: 'seguranca', emoji: '🛡️', label: 'Segurança' },
+    ],
+  },
+  {
+    label: 'Negócios & Educação',
+    items: [
+      { id: 'consultor', emoji: '💼', label: 'Consultor' },
+      { id: 'contador', emoji: '📊', label: 'Contador' },
+      { id: 'advogado', emoji: '⚖️', label: 'Advogado' },
+      { id: 'professor', emoji: '📚', label: 'Professor' },
+      { id: 'fotografo', emoji: '📸', label: 'Fotógrafo' },
+      { id: 'designer', emoji: '🖌️', label: 'Designer' },
+    ],
+  },
+  {
+    label: 'Pets & Agro',
+    items: [
+      { id: 'veterinario', emoji: '🐾', label: 'Pet' },
+      { id: 'agro', emoji: '🌾', label: 'Agro' },
+      { id: 'mecanico', emoji: '🔩', label: 'Mecânico' },
+      { id: 'imoveis', emoji: '🏠', label: 'Imóveis' },
+    ],
+  },
 ];
 
 /* ───── Hardcoded cover images by category ───── */
