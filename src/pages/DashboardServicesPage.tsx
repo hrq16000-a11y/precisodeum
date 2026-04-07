@@ -8,6 +8,7 @@ import { useAccountLimits } from '@/hooks/useAccountLimits';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ServiceImageUpload from '@/components/ServiceImageUpload';
+import ServiceWizard from '@/components/dashboard/ServiceWizard';
 
 const DashboardServicesPage = () => {
   const { user, provider, profile, loading, refetchProfile } = useAuth();
@@ -16,6 +17,7 @@ const DashboardServicesPage = () => {
   const [services, setServices] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
@@ -254,20 +256,8 @@ const DashboardServicesPage = () => {
             toast.error('Limite de serviços atingido ou conta sem permissão.');
             return;
           }
-          setShowForm(true);
-          setEditId(null);
-          setCategorySearch('');
-          const providerCategory = provider?.category_id || '';
-          setSelectedCategoryIds(providerCategory ? [providerCategory] : []);
-          setForm({
-            service_name: '',
-            description: '',
-            whatsapp: provider?.whatsapp || '',
-            service_area: '',
-            address: '',
-            working_hours: provider?.working_hours || '',
-            website: provider?.website || '',
-          });
+          setShowWizard(true);
+          setShowForm(false);
         }}>
           <Plus className="mr-1 h-4 w-4" /> Novo Serviço
         </Button>
@@ -280,6 +270,24 @@ const DashboardServicesPage = () => {
           Cada serviço cadastrado aparecerá no seu perfil público e nos resultados de busca da plataforma.
         </p>
       </div>
+
+      {/* Wizard for new services */}
+      {showWizard && provider && user && (
+        <div className="mt-6">
+          <ServiceWizard
+            providerId={provider.id}
+            userId={user.id}
+            provider={provider}
+            categories={categories}
+            onComplete={(serviceId) => {
+              setShowWizard(false);
+              fetchServices();
+              refetchLimits();
+            }}
+            onCancel={() => setShowWizard(false)}
+          />
+        </div>
+      )}
 
       {showForm && (
         <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
