@@ -4,19 +4,14 @@ const CinematicLoader = () => (
   <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-6">
       {/* Logo pulse */}
-      <motion.div
-        className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80"
+      <motion.img
+        src="/favicon.ico"
+        alt=""
+        className="h-12 w-12"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.5 }}
-      >
-        <motion.div
-          className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent/30 to-accent/0"
-          animate={{ opacity: [0.3, 0.8, 0.3] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        />
-        <span className="relative text-2xl font-bold text-primary-foreground">P</span>
-      </motion.div>
+      />
 
       {/* Shimmer bar */}
       <div className="relative h-1 w-48 overflow-hidden rounded-full bg-muted">
