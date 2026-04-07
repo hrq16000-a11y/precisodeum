@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { DollarSign, ArrowRight, Wrench } from 'lucide-react';
+import { DollarSign, ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import FadeInSection from '@/components/FadeInSection';
 
-// Map common services to relatable problem descriptions
 const problemMap: Record<string, string> = {
   'eletricista': 'Tomada sem funcionar? Curto-circuito?',
   'encanador': 'Vazamento ou cano estourado?',
@@ -55,16 +55,24 @@ const PopularServices = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Show max 4, randomized
-  const displayed = useMemo(() => shuffle(services).slice(0, 4), [services]);
+  const displayed = useMemo(() => shuffle(services).slice(0, 6), [services]);
 
   if (isLoading) {
     return (
-      <section className="py-8">
+      <section className="py-10">
         <div className="container">
           <Skeleton className="mx-auto mb-6 h-7 w-48" />
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="flex gap-3 rounded-xl border border-border p-4">
+                <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -74,52 +82,62 @@ const PopularServices = () => {
   if (displayed.length === 0) return null;
 
   return (
-    <section className="py-8">
+    <section className="py-10">
       <div className="container">
-        <div className="mb-6 text-center">
+        <FadeInSection className="mb-6 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent mb-3">
+            <Sparkles className="h-3.5 w-3.5" />
+            Serviços mais procurados
+          </div>
           <h2 className="font-display text-xl font-bold text-foreground md:text-2xl">
             Precisa de Ajuda?
           </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Problemas comuns que nossos profissionais resolvem
           </p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {displayed.map((s: any) => {
+        </FadeInSection>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {displayed.map((s: any, i: number) => {
             const problem = getServiceProblem(s.name, s.slug);
-            // Add 30-50% margin for displayed price range
             const basePrice = Number(s.min_price) || 0;
             const maxPrice = Math.round(basePrice * 1.8);
 
             return (
-              <Link
-                key={s.id}
-                to={`/servico/${s.slug}`}
-                className="group flex gap-3 rounded-xl border border-border bg-card p-4 shadow-card transition-all hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30"
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-xl">
-                  {s.icon || '🔧'}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
-                    {problem}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
-                    {s.description || `Visita técnica, diagnóstico e execução do serviço.`}
-                  </p>
-                  <div className="mt-2 flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-3.5 w-3.5 text-accent" />
-                      <span className="text-xs font-semibold text-accent">
-                        R$ {basePrice.toFixed(0)} - R$ {maxPrice.toFixed(0)}
+              <FadeInSection key={s.id} delay={i * 0.05}>
+                <Link
+                  to={`/servico/${s.slug}`}
+                  className="group relative flex gap-3.5 rounded-xl border border-border bg-card p-4 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 hover:border-primary/30 overflow-hidden"
+                >
+                  {/* Decorative gradient on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-accent/[0.04] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                  <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent/10 to-accent/20 text-xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                    {s.icon || '🔧'}
+                  </span>
+                  <div className="relative min-w-0 flex-1">
+                    <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                      {problem}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
+                      {s.description || 'Visita técnica, diagnóstico e execução do serviço.'}
+                    </p>
+                    <div className="mt-2 flex items-center justify-between">
+                      {basePrice > 0 && (
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-3.5 w-3.5 text-accent" />
+                          <span className="text-xs font-semibold text-accent">
+                            R$ {basePrice.toFixed(0)} - R$ {maxPrice.toFixed(0)}
+                          </span>
+                        </div>
+                      )}
+                      <span className="flex items-center gap-1 text-[10px] font-medium text-primary opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0.5">
+                        Ver profissionais <ArrowRight className="h-3 w-3" />
                       </span>
                     </div>
-                    <span className="flex items-center gap-1 text-[10px] font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                      Encontrar profissional <ArrowRight className="h-3 w-3" />
-                    </span>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </FadeInSection>
             );
           })}
         </div>
