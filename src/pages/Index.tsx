@@ -180,7 +180,7 @@ const Index = () => {
           <AdBanner position="mid-content" className="container mx-auto px-4" />
           <AdSlot slotSlug="home-mid" />
 
-          <FeaturedJobs />
+          {jobsEnabled && <FeaturedJobs />}
           <BlogHighlight />
 
           {topCities.length > 0 && <CitiesSection cities={topCities} />}
