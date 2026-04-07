@@ -108,6 +108,7 @@ const CookiesPage = lazy(() => import("./pages/CookiesPage"));
 
 import CookieConsent from "./components/CookieConsent";
 import PwaInstallBanner from "./components/PwaInstallBanner";
+import OAuthRedirectHandler from "./components/OAuthRedirectHandler";
 
 // Sponsor Panel (CRM) — isolated module
 const SponsorDashboardPage = lazy(() => import("./pages/sponsor/SponsorDashboardPage"));
