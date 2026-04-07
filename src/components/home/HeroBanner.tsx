@@ -101,7 +101,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
 
   const activeBanner: HeroBannerData | null = banners.length > 0 ? banners[currentSlide] || banners[0] : null;
   const overlayOpacity = activeBanner?.overlay_opacity ?? 0.8;
-  const title = activeBanner?.title || 'Encontre profissionais para';
+  const title = activeBanner?.title || 'Encontre um';
   const subtitle = activeBanner?.subtitle || '';
   const ctaText = activeBanner?.cta_text || 'Cadastrar agora';
   const ctaLink = activeBanner?.cta_link || '/cadastro';
@@ -162,7 +162,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-primary-foreground sm:text-4xl md:text-5xl lg:text-6xl drop-shadow-sm">
             {hasCustomTitle ? title : (
               <>
-                Encontre profissionais para
+                Encontre um
                 <br />
                 <RotatingServiceText />
               </>
