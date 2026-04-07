@@ -465,7 +465,7 @@ const AdminSponsorsPage = () => {
                 </Select>
               </div>
               {form.ad_format === 'custom' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <Label>Largura máx. (px)</Label>
                     <Input type="number" value={form.max_width} onChange={(e) => setForm({ ...form, max_width: Number(e.target.value) })} placeholder="0 = sem limite" />
