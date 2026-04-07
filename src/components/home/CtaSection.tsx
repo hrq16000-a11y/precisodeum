@@ -31,7 +31,7 @@ const CtaSection = () => {
         .select('*')
         .eq('active', true)
         .order('display_order');
-      return (data || []) as CtaBlock[];
+      return (data || []) as unknown as CtaBlock[];
     },
     staleTime: 1000 * 60 * 10,
   });

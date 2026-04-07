@@ -13,7 +13,7 @@ const TestimonialsSection = () => {
         .select('*')
         .eq('active', true)
         .order('display_order');
-      return (data || []) as Array<{ id: string; name: string; city: string; text: string; rating: number }>;
+      return (data || []) as unknown as Array<{ id: string; name: string; city: string; text: string; rating: number }>;
     },
     staleTime: 1000 * 60 * 10,
   });

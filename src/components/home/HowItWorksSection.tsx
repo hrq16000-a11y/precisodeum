@@ -11,7 +11,7 @@ const HowItWorksSection = () => {
         .select('*')
         .eq('active', true)
         .order('display_order');
-      return (data || []) as Array<{ id: string; step: number; title: string; description: string; icon: string }>;
+      return (data || []) as unknown as Array<{ id: string; step: number; title: string; description: string; icon: string }>;
     },
     staleTime: 1000 * 60 * 10,
   });
