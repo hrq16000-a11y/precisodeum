@@ -8,7 +8,7 @@ import RotatingServiceText from '@/components/home/RotatingServiceText';
 import { useHeroBanners, type HeroBannerData } from '@/hooks/useHeroBanners';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
-const DEFAULT_BG_IMAGES = ['/hero-bg-1.jpg', '/hero-bg-2.jpg', '/hero-bg-3.jpg'];
+const DEFAULT_BG_IMAGES = ['/hero-bg-1.jpg', '/hero-bg-2.jpg', '/hero-bg-3.jpg', '/hero-bg-4.jpg', '/hero-bg-5.jpg', '/hero-bg-6.jpg', '/hero-bg-7.jpg', '/hero-bg-8.jpg'];
 const BG_INTERVAL = 7000;
 
 interface HeroBannerProps {
