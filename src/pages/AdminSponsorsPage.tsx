@@ -147,7 +147,9 @@ const AdminSponsorsPage = () => {
     mutationFn: async () => {
       const payload: any = {
         title: form.title,
+        company_name: form.company_name,
         image_url: form.image_url || null,
+        logo_url: form.logo_url || '',
         link_url: form.link_url || null,
         position: form.position,
         active: form.active,
@@ -159,6 +161,17 @@ const AdminSponsorsPage = () => {
         max_width: form.max_width || 0,
         max_height: form.max_height || 0,
         target_pages: form.target_pages || 'all',
+        sponsor_type: form.sponsor_type,
+        short_description: form.short_description,
+        full_description: form.full_description,
+        phone: form.phone,
+        whatsapp: form.whatsapp,
+        external_link: form.external_link,
+        linked_city: form.linked_city,
+        linked_category: form.linked_category,
+        plan_tier: form.plan_tier,
+        badge_type: form.badge_type,
+        status: form.status,
       };
       if (editingId) {
         const { error } = await supabase.from('sponsors').update(payload).eq('id', editingId);
