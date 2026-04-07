@@ -256,20 +256,8 @@ const DashboardServicesPage = () => {
             toast.error('Limite de serviços atingido ou conta sem permissão.');
             return;
           }
-          setShowForm(true);
-          setEditId(null);
-          setCategorySearch('');
-          const providerCategory = provider?.category_id || '';
-          setSelectedCategoryIds(providerCategory ? [providerCategory] : []);
-          setForm({
-            service_name: '',
-            description: '',
-            whatsapp: provider?.whatsapp || '',
-            service_area: '',
-            address: '',
-            working_hours: provider?.working_hours || '',
-            website: provider?.website || '',
-          });
+          setShowWizard(true);
+          setShowForm(false);
         }}>
           <Plus className="mr-1 h-4 w-4" /> Novo Serviço
         </Button>
