@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon } from 'lucide-react';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import ImageLightbox from '@/components/ImageLightbox';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -11,6 +11,7 @@ import StarRating from '@/components/StarRating';
 import SponsorAd from '@/components/SponsorAd';
 import { lazy, Suspense } from 'react';
 const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
