@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MessageCircle, MapPin, ChevronRight, Clock, Globe } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { whatsappLink } from '@/lib/whatsapp';
 
 const ServiceDetailPage = () => {
