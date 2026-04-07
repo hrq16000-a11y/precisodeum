@@ -742,7 +742,7 @@ const AdminSponsorCrmPage = () => {
 
       {/* ─── Campaign Dialog ─────────────────────────────────────── */}
       <Dialog open={campaignDialog} onOpenChange={setCampaignDialog}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nova Campanha</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); campaignMutation.mutate(); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={campaignForm.sponsor_id} onChange={v => setCampaignForm(p => ({ ...p, sponsor_id: v }))} /></div>
