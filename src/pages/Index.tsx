@@ -241,6 +241,8 @@ const Index = () => {
         return reviewsEnabled ? <TestimonialsSection key={slug} /> : null;
       case 'faq':
         return faqEnabled ? <FaqSection key={slug} /> : null;
+      case 'sponsor_cta':
+        return sponsorsEnabled ? <SponsorFooterCTA key={slug} city={geoCity || undefined} /> : null;
       default:
         return null;
     }
