@@ -50,6 +50,14 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const [editingProvider, setEditingProvider] = useState(false);
   const [providerForm, setProviderForm] = useState<any>({});
 
+  // Permissions state
+  const [userIsAdmin, setUserIsAdmin] = useState(false);
+  const [userIsSponsor, setUserIsSponsor] = useState(false);
+  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [selectedSponsorId, setSelectedSponsorId] = useState('');
+  const [permLoading, setPermLoading] = useState(false);
+
+
   useEffect(() => {
     if (!user) return;
     setTab('profile');
@@ -65,6 +73,17 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       profile_type: user.profile_type || user.role || 'client',
       status: user.status || 'active',
     });
+
+    // Fetch permissions
+    supabase.from('user_roles').select('id').eq('user_id', user.id).eq('role', 'admin')
+      .then(({ data }) => setUserIsAdmin((data || []).length > 0));
+    supabase.from('sponsor_contacts').select('id, sponsor_id').eq('user_id', user.id)
+      .then(({ data }) => {
+        setUserIsSponsor((data || []).length > 0);
+        setSelectedSponsorId((data || [])[0]?.sponsor_id || '');
+      });
+    supabase.from('sponsors').select('id, title').eq('active', true).order('title')
+      .then(({ data }) => setSponsors(data || []));
 
     // Fetch provider + related data
     supabase.from('providers').select('*, categories(name, icon)').eq('user_id', user.id).maybeSingle().then(({ data: prov }) => {
@@ -267,6 +286,51 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     return map[action] || action;
   };
 
+  // === Toggle Admin ===
+  const toggleAdmin = async () => {
+    if (!user) return;
+    setPermLoading(true);
+    if (userIsAdmin) {
+      await supabase.from('user_roles').delete().eq('user_id', user.id).eq('role', 'admin');
+      await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { admin: { from: true, to: false } } } });
+      toast.success('Permissão de admin removida');
+      setUserIsAdmin(false);
+    } else {
+      await supabase.from('user_roles').insert({ user_id: user.id, role: 'admin' } as any);
+      await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { admin: { from: false, to: true } } } });
+      toast.success('Usuário promovido a admin');
+      setUserIsAdmin(true);
+    }
+    setPermLoading(false);
+    onRefresh?.();
+  };
+
+  // === Toggle Sponsor ===
+  const toggleSponsor = async () => {
+    if (!user) return;
+    setPermLoading(true);
+    if (userIsSponsor) {
+      await supabase.from('sponsor_contacts').delete().eq('user_id', user.id);
+      await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { sponsor: { from: true, to: false } } } });
+      toast.success('Acesso de patrocinador removido');
+      setUserIsSponsor(false);
+      setSelectedSponsorId('');
+    } else {
+      if (!selectedSponsorId) { toast.error('Selecione um patrocinador'); setPermLoading(false); return; }
+      await supabase.from('sponsor_contacts').insert({
+        user_id: user.id,
+        sponsor_id: selectedSponsorId,
+        contact_name: user.full_name || '',
+        email: user.email || '',
+      });
+      await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { sponsor: { from: false, to: true }, sponsor_id: selectedSponsorId } } });
+      toast.success('Acesso de patrocinador concedido');
+      setUserIsSponsor(true);
+    }
+    setPermLoading(false);
+    onRefresh?.();
+  };
+
   if (!user) return null;
 
   const initials = (user.full_name || '?')[0]?.toUpperCase();
@@ -403,6 +467,63 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     {user.user_ref && <InfoRow icon={<Shield className="h-4 w-4" />} label="Ref" value={user.user_ref} />}
                   </div>
                 )}
+              </div>
+
+              {/* Permissions Section */}
+              <div className="rounded-xl border border-border p-4 space-y-3">
+                <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                  <Shield className="h-4 w-4" /> Permissões
+                </h3>
+                <div className="space-y-3">
+                  {/* Admin Toggle */}
+                  <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">👑 Administrador</p>
+                      <p className="text-xs text-muted-foreground">Acesso total ao painel administrativo</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={userIsAdmin ? 'destructive' : 'default'}
+                      className="h-8 text-xs"
+                      onClick={toggleAdmin}
+                      disabled={permLoading}
+                    >
+                      {userIsAdmin ? 'Revogar Admin' : 'Tornar Admin'}
+                    </Button>
+                  </div>
+
+                  {/* Sponsor Toggle */}
+                  <div className="rounded-lg border border-border p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">📢 Patrocinador</p>
+                        <p className="text-xs text-muted-foreground">Acesso ao painel de patrocinadores</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={userIsSponsor ? 'destructive' : 'default'}
+                        className="h-8 text-xs"
+                        onClick={toggleSponsor}
+                        disabled={permLoading}
+                      >
+                        {userIsSponsor ? 'Revogar Acesso' : 'Conceder Acesso'}
+                      </Button>
+                    </div>
+                    {!userIsSponsor && (
+                      <div>
+                        <Label className="text-xs">Vincular ao patrocinador</Label>
+                        <Select value={selectedSponsorId} onValueChange={setSelectedSponsorId}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectContent>
+                            {sponsors.map(s => (
+                              <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
