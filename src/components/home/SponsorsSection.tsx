@@ -68,7 +68,7 @@ const SponsorsSection = ({ sponsors }: Props) => {
             const style: React.CSSProperties = {};
             if (sponsor.max_width && sponsor.max_width > 0) style.maxWidth = `${sponsor.max_width}px`;
             if (sponsor.max_height && sponsor.max_height > 0) style.maxHeight = `${sponsor.max_height}px`;
-            const logoStyle = isLogoStyle(sponsor.image_url);
+            const logoStyle = isLogoStyle(sponsor.image_url, sponsor.company_name);
 
             return (
               <a
