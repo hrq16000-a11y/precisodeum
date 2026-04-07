@@ -36,6 +36,14 @@ const AdminUsersPage = () => {
   const [deleteUser, setDeleteUser] = useState<any | null>(null);
   const [detailUser, setDetailUser] = useState<any | null>(null);
 
+  // Create user
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [createEmail, setCreateEmail] = useState('');
+  const [createPassword, setCreatePassword] = useState('');
+  const [createName, setCreateName] = useState('');
+  const [createType, setCreateType] = useState('client');
+  const [creating, setCreating] = useState(false);
+
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
