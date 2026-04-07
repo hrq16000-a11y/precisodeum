@@ -391,7 +391,7 @@ const AdminSponsorCrmPage = () => {
 
             {/* Table */}
             <div className="rounded-xl border border-border bg-card overflow-x-auto">
-              <Table>
+              <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patrocinador</TableHead>
