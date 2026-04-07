@@ -154,9 +154,16 @@ const Footer = () => {
             <p className="mt-1">CNPJ: 41.723.708/0001-58 — Ping Soluções · <a href="https://mestredosservicos.com.br" target="_blank" rel="noopener noreferrer" className="hover:text-primary-foreground/70">mestredosservicos.com.br</a></p>
           </div>
         </div>
+
+        {/* Global footer ad slot */}
+        <Suspense fallback={null}>
+          <AdSlot slotSlug="global-footer" layout="inline" className="mt-6 border-t border-primary-foreground/10 pt-6" />
+        </Suspense>
       </div>
     </footer>
   );
 };
+
+const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
 
 export default Footer;
