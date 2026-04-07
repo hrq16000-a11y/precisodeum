@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer } from 'lucide-react';
@@ -187,8 +187,14 @@ const Header = () => {
             </nav>
           </div>
       )}
+      {/* Global top ad slot */}
+      <Suspense fallback={null}>
+        <AdSlot slotSlug="global-top" />
+      </Suspense>
     </header>
   );
 };
+
+const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
 
 export default Header;
