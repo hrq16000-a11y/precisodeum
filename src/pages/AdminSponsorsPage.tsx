@@ -265,7 +265,7 @@ const AdminSponsorsPage = () => {
               <Plus className="h-4 w-4" /> Novo Patrocinador
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] overflow-y-auto w-[95vw] max-w-lg sm:max-w-xl">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Editar Patrocinador' : 'Novo Patrocinador'}</DialogTitle>
             </DialogHeader>
