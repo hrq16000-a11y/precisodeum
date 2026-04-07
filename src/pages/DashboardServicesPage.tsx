@@ -446,9 +446,18 @@ const DashboardServicesPage = () => {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="accent" onClick={handleSave}>Salvar</Button>
+            <Button variant="accent" onClick={handleSave}>
+              {editId ? 'Salvar' : 'Salvar e adicionar fotos'}
+            </Button>
             <Button variant="outline" onClick={() => { setShowForm(false); setEditId(null); setShowCategoryDropdown(false); }}>Cancelar</Button>
           </div>
+
+          {/* Image upload inline when editing */}
+          {editId && user && (
+            <div className="rounded-lg border border-border bg-muted/30 p-4">
+              <ServiceImageUpload serviceId={editId} userId={user.id} />
+            </div>
+          )}
         </div>
       )}
 
