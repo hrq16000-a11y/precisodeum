@@ -389,9 +389,53 @@ const AdminSponsorCrmPage = () => {
               </Select>
             </div>
 
-            {/* Table */}
-            <div className="rounded-xl border border-border bg-card overflow-x-auto">
-              <Table className="min-w-[700px]">
+            {/* Mobile cards */}
+            <div className="space-y-3 sm:hidden">
+              {filteredSponsors.map(s => {
+                const expired = s.end_date && new Date(s.end_date) < new Date();
+                const ctr = s.impressions > 0 ? ((s.clicks / s.impressions) * 100).toFixed(1) : '0.0';
+                const hasContact = contacts.some((c: any) => c.sponsor_id === s.id);
+                return (
+                  <div key={s.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-foreground text-sm">{s.title}</p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <Badge variant="outline" className="capitalize text-[10px]">{s.tier}</Badge>
+                          <Badge variant={expired ? 'destructive' : s.active ? 'default' : 'secondary'} className="text-[10px]">
+                            {expired ? 'Expirado' : s.active ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                          {hasContact && <Badge variant="outline" className="text-[10px] text-accent">Vinculado</Badge>}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                          <span>{s.start_date ? format(new Date(s.start_date), 'dd/MM/yy') : '—'} → {s.end_date ? format(new Date(s.end_date), 'dd/MM/yy') : '∞'}</span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{s.impressions.toLocaleString('pt-BR')}</span>
+                          <span className="flex items-center gap-1"><MousePointerClick className="h-3 w-3" />{s.clicks.toLocaleString('pt-BR')}</span>
+                          <span>CTR: {ctr}%</span>
+                        </div>
+                      </div>
+                      {!hasContact && (
+                        <Button variant="ghost" size="sm" className="text-xs shrink-0" onClick={() => {
+                          setLinkForm(p => ({ ...p, sponsor_id: s.id }));
+                          setLinkDialog(true);
+                        }}>
+                          <Plus className="h-3 w-3 mr-1" /> Vincular
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredSponsors.length === 0 && (
+                <p className="text-center py-8 text-muted-foreground">Nenhum patrocinador encontrado.</p>
+              )}
+            </div>
+
+            {/* Desktop table */}
+            <div className="rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patrocinador</TableHead>

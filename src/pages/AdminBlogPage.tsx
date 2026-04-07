@@ -203,13 +203,48 @@ const AdminBlogPage = () => {
         </div>
       )}
 
-      <div className="mt-4 rounded-xl border border-border bg-card overflow-x-auto">
+      {/* Mobile cards */}
+      <div className="mt-4 space-y-3 sm:hidden">
         {isLoading ? (
           <p className="p-6 text-muted-foreground">Carregando...</p>
         ) : paginated.length === 0 ? (
           <p className="p-6 text-center text-muted-foreground">Nenhum post encontrado.</p>
         ) : (
-          <Table className="min-w-[600px]">
+          paginated.map((p: any) => (
+            <div key={p.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+              <div className="flex items-start gap-3">
+                <SelectionCheckbox checked={bulk.selectedIds.has(p.id)} onCheckedChange={() => bulk.toggleSelection(p.id)} />
+                {p.cover_image_url && <img src={p.cover_image_url} alt="" className="h-12 w-12 rounded-lg object-cover shrink-0" />}
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-foreground text-sm line-clamp-2">{p.title}</span>
+                  <p className="text-[10px] text-muted-foreground">/{p.slug}</p>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${p.published ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
+                      {p.published ? 'Publicado' : 'Rascunho'}
+                    </span>
+                    {p.featured && <span title="Destaque">⭐</span>}
+                    <span className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1 shrink-0">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild><Link to={`/blog/${p.slug}`} target="_blank"><Eye className="h-4 w-4" /></Link></Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleSoftDelete(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="mt-4 rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
+        {isLoading ? (
+          <p className="p-6 text-muted-foreground">Carregando...</p>
+        ) : paginated.length === 0 ? (
+          <p className="p-6 text-center text-muted-foreground">Nenhum post encontrado.</p>
+        ) : (
+          <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
@@ -221,8 +256,8 @@ const AdminBlogPage = () => {
                 </TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden sm:table-cell">Fonte</TableHead>
-                <TableHead className="hidden sm:table-cell">Data</TableHead>
+                <TableHead>Fonte</TableHead>
+                <TableHead>Data</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -249,10 +284,10 @@ const AdminBlogPage = () => {
                       {p.featured && <span title="Destaque">⭐</span>}
                     </div>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {p.source_url ? <span title={p.source_url}>Externa</span> : 'Original'}
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString('pt-BR')}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString('pt-BR')}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="sm" asChild><Link to={`/blog/${p.slug}`} target="_blank"><Eye className="h-4 w-4" /></Link></Button>
