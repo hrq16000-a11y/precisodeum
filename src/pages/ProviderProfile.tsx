@@ -317,20 +317,25 @@ const ProviderProfile = () => {
           preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
         }
 
-        // Fetch related providers (same city or category, exclude current)
+         // Fetch related providers — prioritize same category, then same city
         try {
-          const conditions = [];
-          if (data.city) conditions.push(`city.eq.${data.city}`);
-          if (data.category_id) conditions.push(`category_id.eq.${data.category_id}`);
-          
-          const { data: related } = await supabase
+          let relatedQuery = supabase
             .from('providers')
-            .select('id, slug, business_name, city, state, photo_url, rating_avg, review_count, user_id, categories(name, icon)')
+            .select('id, slug, business_name, city, state, photo_url, rating_avg, review_count, user_id, category_id, categories(name, icon)')
             .neq('id', data.id)
-            .or(conditions.join(','))
-            .eq('status', 'active')
+            .eq('status', 'approved')
             .is('deleted_at', null)
+            .order('rating_avg', { ascending: false })
             .limit(6);
+
+          // Filter by category first (same profession)
+          if (data.category_id) {
+            relatedQuery = relatedQuery.eq('category_id', data.category_id);
+          } else if (data.city) {
+            relatedQuery = relatedQuery.eq('city', data.city);
+          }
+
+          const { data: related } = await relatedQuery;
 
           if (related && related.length > 0) {
             const relUserIds = related.map((r: any) => r.user_id);
