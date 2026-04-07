@@ -233,6 +233,7 @@ const App = () => {
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
+                <Route path="/servicos" element={<ServicesPage />} />
                 <Route path="/servico-detalhe/:id" element={<ServiceDetailPage />} />
                 <Route path="/cidade/:slug" element={<CityPage />} />
                 <Route path="/cidades" element={<CitiesListPage />} />

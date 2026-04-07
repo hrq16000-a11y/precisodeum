@@ -78,11 +78,6 @@ const ServicesPage = () => {
     return result;
   }, [services, search, selectedCategory]);
 
-  const Footer = useMemo(() => {
-    const mod = import('@/components/Footer');
-    const { lazy: reactLazy } = require('react');
-    return reactLazy(() => mod);
-  }, []);
 
   return (
     <div className="flex min-h-screen flex-col">
