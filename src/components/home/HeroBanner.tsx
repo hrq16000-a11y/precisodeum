@@ -162,7 +162,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-primary-foreground sm:text-4xl md:text-5xl lg:text-6xl drop-shadow-sm">
             {hasCustomTitle ? title : (
               <>
-                Encontre um
+                <HeroPrefixRotator />
                 <br />
                 <RotatingServiceText />
               </>
