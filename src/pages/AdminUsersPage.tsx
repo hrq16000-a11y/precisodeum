@@ -253,6 +253,20 @@ const AdminUsersPage = () => {
     }
   };
 
+  const removeAdmin = async (userId: string) => {
+    const { error } = await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', 'admin');
+    if (error) {
+      toast.error('Erro: ' + error.message);
+    } else {
+      await logAuditAction({
+        action: 'update', resource_type: 'user', resource_id: userId,
+        details: { target_user_id: userId, changes: { role: { from: 'admin', to: 'user' } } },
+      });
+      toast.success('Permissão de admin removida!');
+      fetchAdmins();
+    }
+  };
+
   const handleExport = () => {
     const csvHeader = 'Nome,Email,Telefone,WhatsApp,Tipo,Status,Criado em\n';
     const source = selectedIds.size > 0 ? filtered.filter(p => selectedIds.has(p.id)) : filtered;
