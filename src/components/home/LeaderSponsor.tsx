@@ -95,7 +95,7 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="group flex items-center gap-3 sm:gap-4 py-2 sm:py-3 min-h-[50px] sm:min-h-[70px] max-h-[70px] sm:max-h-[110px] transition-transform duration-200 hover:scale-[1.005] cursor-pointer"
+            className="group flex items-center gap-3 sm:gap-4 py-2 sm:py-3 min-h-[50px] sm:min-h-[60px] max-h-[60px] sm:max-h-[90px] transition-transform duration-200 hover:scale-[1.005] cursor-pointer"
           >
             {/* Logo */}
             <div className="flex h-[36px] w-[36px] sm:h-[50px] sm:w-[50px] shrink-0 items-center justify-center rounded-lg bg-muted/40 p-1.5 sm:p-2 overflow-hidden">
