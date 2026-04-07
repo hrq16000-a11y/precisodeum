@@ -205,7 +205,7 @@ const AdminJobsPage = () => {
       )}
 
       <Dialog open={!!editJob} onOpenChange={() => setEditJob(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Editar Vaga</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
             <div>

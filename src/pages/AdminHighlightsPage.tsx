@@ -90,21 +90,21 @@ const AdminHighlightsPage = () => {
 
       <div className="mt-6 space-y-3">
         {highlights.map((h: any) => (
-          <div key={h.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-card">
-            <div className="min-w-0 flex-1 flex items-center gap-3">
+          <div key={h.id} className="rounded-xl border border-border bg-card p-3 shadow-card">
+            <div className="flex items-start gap-3">
               {h.image_url && <img src={h.image_url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />}
-              <div>
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${h.active ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
+                  <span className={`h-2 w-2 rounded-full shrink-0 ${h.active ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
                   <h3 className="text-sm font-bold text-foreground truncate">{h.title}</h3>
-                  <span className="text-xs text-muted-foreground">#{h.display_order}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">#{h.display_order}</span>
                 </div>
-                <p className="mt-0.5 text-xs text-muted-foreground truncate">{h.description}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">{h.description}</p>
               </div>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <Button variant="outline" size="sm" onClick={() => startEdit(h)}>Editar</Button>
-              <Button variant="outline" size="sm" onClick={() => handleDelete(h.id)}><Trash2 className="h-3 w-3" /></Button>
+              <div className="flex gap-1 shrink-0">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => startEdit(h)}><Pencil className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleDelete(h.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+              </div>
             </div>
           </div>
         ))}
