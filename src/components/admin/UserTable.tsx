@@ -1,4 +1,4 @@
-import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar } from 'lucide-react';
+import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
