@@ -51,11 +51,11 @@ const SponsorCard = memo(({ sponsor }: { sponsor: Sponsor }) => {
         </span>
       )}
 
-      <div className="flex aspect-[16/9] items-center justify-center bg-muted/20 p-4 sm:p-5">
+      <div className="flex aspect-[5/3] items-center justify-center bg-muted/10 p-3 sm:p-4">
         <img
           src={visualSrc}
           alt={sponsor.title}
-          className={usesOfficialLogo ? 'h-full w-full object-contain' : 'h-full w-full object-cover'}
+          className="max-h-full max-w-full object-contain"
           loading="lazy"
           onError={handleImageError}
         />
