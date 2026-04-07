@@ -150,6 +150,7 @@ const CategoryPage = () => {
         )}
         <PaginationControls currentPage={page} totalItems={displayProviders.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
       </div>
+      <Suspense fallback={null}><SponsorFooterCTA category={slug} /></Suspense>
       <Footer />
     </div>
   );
