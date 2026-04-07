@@ -1992,6 +1992,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_tags: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          tag_name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          tag_name: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          tag_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       account_limits_view: {

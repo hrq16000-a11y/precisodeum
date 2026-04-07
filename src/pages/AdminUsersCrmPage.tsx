@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import {
   Users, UserCheck, Briefcase, Building2, TrendingUp, ArrowRight,
   Filter, Download, Send, Search, ChevronDown, BarChart3, Target,
-  UserPlus, Clock, Eye, Mail
+  UserPlus, Clock, Eye, Mail, Tag, X, Plus, Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,12 +18,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import PaginationControls from '@/components/PaginationControls';
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import { format, subDays, startOfDay, parseISO } from 'date-fns';
+import { format, subDays, subMonths, startOfDay, startOfMonth, parseISO, eachMonthOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const PAGE_SIZE = 15;
@@ -37,12 +38,18 @@ const FUNNEL_STAGES = [
 
 const PIE_COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
+const TAG_COLORS = [
+  '#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6',
+  '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#06b6d4',
+];
+
 const AdminUsersCrmPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [profiles, setProfiles] = useState<any[]>([]);
   const [providers, setProviders] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
+  const [userTags, setUserTags] = useState<any[]>([]);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -50,6 +57,7 @@ const AdminUsersCrmPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPeriod, setFilterPeriod] = useState('all');
   const [filterCity, setFilterCity] = useState('all');
+  const [filterTag, setFilterTag] = useState('all');
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showNotifyDialog, setShowNotifyDialog] = useState(false);
@@ -57,17 +65,25 @@ const AdminUsersCrmPage = () => {
   const [notifyMessage, setNotifyMessage] = useState('');
   const [sending, setSending] = useState(false);
 
+  // Tag management
+  const [showTagDialog, setShowTagDialog] = useState(false);
+  const [tagTargetIds, setTagTargetIds] = useState<string[]>([]);
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
+
   const fetchData = () => {
     Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
       supabase.from('providers').select('id,user_id,plan,status,city,state,created_at').is('deleted_at', null),
       supabase.from('services').select('id,provider_id,created_at').is('deleted_at', null),
       supabase.from('leads').select('id,provider_id,created_at'),
-    ]).then(([pRes, prRes, sRes, lRes]) => {
+      supabase.from('user_tags').select('*'),
+    ]).then(([pRes, prRes, sRes, lRes, tRes]) => {
       setProfiles(pRes.data || []);
       setProviders(prRes.data || []);
       setServices(sRes.data || []);
       setLeads(lRes.data || []);
+      setUserTags(tRes.data || []);
     });
   };
 
@@ -93,6 +109,23 @@ const AdminUsersCrmPage = () => {
     leads.forEach(l => { map[l.provider_id] = (map[l.provider_id] || 0) + 1; });
     return map;
   }, [leads]);
+
+  // Tags by user
+  const tagsByUser = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    userTags.forEach(t => {
+      if (!map[t.user_id]) map[t.user_id] = [];
+      map[t.user_id].push(t);
+    });
+    return map;
+  }, [userTags]);
+
+  // All unique tag names
+  const allTagNames = useMemo(() => {
+    const set = new Set<string>();
+    userTags.forEach(t => set.add(t.tag_name));
+    return Array.from(set).sort();
+  }, [userTags]);
 
   // Cities list
   const cities = useMemo(() => {
@@ -143,6 +176,34 @@ const AdminUsersCrmPage = () => {
     ].filter(d => d.value > 0);
   }, [profiles]);
 
+  // Retention data (last 12 months)
+  const retentionData = useMemo(() => {
+    const now = new Date();
+    const months = eachMonthOfInterval({ start: subMonths(now, 11), end: now });
+    return months.map(month => {
+      const monthStr = format(month, 'yyyy-MM');
+      const label = format(month, 'MMM/yy', { locale: ptBR });
+
+      // Users created up to end of this month
+      const endOfMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0, 23, 59, 59);
+      const totalByMonth = profiles.filter(p => parseISO(p.created_at) <= endOfMonth).length;
+      const activeByMonth = profiles.filter(p => parseISO(p.created_at) <= endOfMonth && p.status !== 'inactive').length;
+      const inactiveByMonth = totalByMonth - activeByMonth;
+
+      // New users in this month
+      const newInMonth = profiles.filter(p => format(parseISO(p.created_at), 'yyyy-MM') === monthStr).length;
+
+      return {
+        month: label,
+        total: totalByMonth,
+        ativos: activeByMonth,
+        inativos: inactiveByMonth,
+        novos: newInMonth,
+        retentionRate: totalByMonth > 0 ? Math.round((activeByMonth / totalByMonth) * 100) : 0,
+      };
+    });
+  }, [profiles]);
+
   // Filtered users
   const filtered = useMemo(() => {
     let list = profiles;
@@ -157,6 +218,10 @@ const AdminUsersCrmPage = () => {
       const cityProviderUserIds = new Set(providers.filter(p => p.city === filterCity).map(p => p.user_id));
       list = list.filter(p => cityProviderUserIds.has(p.id));
     }
+    if (filterTag !== 'all') {
+      const tagUserIds = new Set(userTags.filter(t => t.tag_name === filterTag).map(t => t.user_id));
+      list = list.filter(p => tagUserIds.has(p.id));
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(p =>
@@ -167,7 +232,7 @@ const AdminUsersCrmPage = () => {
       );
     }
     return list;
-  }, [profiles, search, filterType, filterStatus, filterPeriod, filterCity, providers]);
+  }, [profiles, search, filterType, filterStatus, filterPeriod, filterCity, filterTag, providers, userTags]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -190,17 +255,34 @@ const AdminUsersCrmPage = () => {
     });
   };
 
-  // Send notification to selected users
+  // Tag operations
+  const handleAddTag = async () => {
+    if (!newTagName.trim()) { toast.error('Digite o nome da tag'); return; }
+    const ids = tagTargetIds.length > 0 ? tagTargetIds : Array.from(selectedIds);
+    if (ids.length === 0) { toast.error('Selecione pelo menos um usuário'); return; }
+
+    const rows = ids.map(uid => ({ user_id: uid, tag_name: newTagName.trim(), color: newTagColor }));
+    const { error } = await supabase.from('user_tags').upsert(rows, { onConflict: 'user_id,tag_name' });
+    if (error) { toast.error('Erro: ' + error.message); return; }
+    toast.success(`Tag "${newTagName}" aplicada a ${ids.length} usuário(s)`);
+    setShowTagDialog(false);
+    setNewTagName('');
+    setTagTargetIds([]);
+    fetchData();
+  };
+
+  const handleRemoveTag = async (tagId: string) => {
+    await supabase.from('user_tags').delete().eq('id', tagId);
+    setUserTags(prev => prev.filter(t => t.id !== tagId));
+    toast.success('Tag removida');
+  };
+
+  // Send notification
   const handleSendNotification = async () => {
     if (!notifyTitle.trim() || !notifyMessage.trim()) { toast.error('Preencha título e mensagem'); return; }
     setSending(true);
     const ids = selectedIds.size > 0 ? Array.from(selectedIds) : filtered.map(p => p.id);
-    const rows = ids.map(uid => ({
-      user_id: uid,
-      title: notifyTitle,
-      message: notifyMessage,
-      type: 'crm',
-    }));
+    const rows = ids.map(uid => ({ user_id: uid, title: notifyTitle, message: notifyMessage, type: 'crm' }));
     const batchSize = 100;
     let sent = 0;
     for (let i = 0; i < rows.length; i += batchSize) {
@@ -219,10 +301,12 @@ const AdminUsersCrmPage = () => {
   // Export CSV
   const exportCsv = () => {
     const data = (selectedIds.size > 0 ? filtered.filter(p => selectedIds.has(p.id)) : filtered);
-    const headers = ['Nome', 'Email', 'Telefone', 'WhatsApp', 'Tipo', 'Status', 'Ref', 'Cadastro'];
+    const headers = ['Nome', 'Email', 'Telefone', 'WhatsApp', 'Tipo', 'Status', 'Tags', 'Ref', 'Cadastro'];
     const rows = data.map(p => [
       p.full_name, p.email, p.phone, p.whatsapp,
-      p.profile_type, p.status, p.user_ref,
+      p.profile_type, p.status,
+      (tagsByUser[p.id] || []).map((t: any) => t.tag_name).join('; '),
+      p.user_ref,
       format(parseISO(p.created_at), 'dd/MM/yyyy HH:mm')
     ]);
     const csv = [headers, ...rows].map(r => r.map((c: string) => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -267,7 +351,7 @@ const AdminUsersCrmPage = () => {
             <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
               <Target className="h-6 w-6 text-primary" /> CRM de Usuários
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">Funil, segmentação, métricas e comunicação em massa</p>
+            <p className="text-sm text-muted-foreground mt-1">Funil, segmentação, métricas, tags e retenção</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={exportCsv}>
@@ -323,9 +407,10 @@ const AdminUsersCrmPage = () => {
         </div>
 
         <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard"><BarChart3 className="h-4 w-4 mr-1" /> Dashboard</TabsTrigger>
             <TabsTrigger value="funnel"><Target className="h-4 w-4 mr-1" /> Funil</TabsTrigger>
+            <TabsTrigger value="retention"><Activity className="h-4 w-4 mr-1" /> Retenção</TabsTrigger>
             <TabsTrigger value="segment"><Filter className="h-4 w-4 mr-1" /> Segmentar</TabsTrigger>
           </TabsList>
 
@@ -455,6 +540,115 @@ const AdminUsersCrmPage = () => {
             </div>
           </TabsContent>
 
+          {/* Retention Tab */}
+          <TabsContent value="retention" className="space-y-4">
+            {/* Retention KPIs */}
+            <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Taxa de Retenção Atual</p>
+                  <p className="font-display text-3xl font-bold text-emerald-600">
+                    {retentionData.length > 0 ? retentionData[retentionData.length - 1].retentionRate : 0}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">Ativos / Total</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Usuários Ativos</p>
+                  <p className="font-display text-3xl font-bold text-primary">
+                    {profiles.filter(p => p.status !== 'inactive').length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Com status ativo</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Usuários Inativos</p>
+                  <p className="font-display text-3xl font-bold text-destructive">
+                    {profiles.filter(p => p.status === 'inactive').length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Bloqueados ou desativados</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Churn Mensal</p>
+                  <p className="font-display text-3xl font-bold text-amber-600">
+                    {profiles.length > 0 ? Math.round((profiles.filter(p => p.status === 'inactive').length / profiles.length) * 100) : 0}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">Inativos / Total</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Retention chart */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Ativos vs Inativos (12 meses)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={retentionData}>
+                    <defs>
+                      <linearGradient id="colorAtivos" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorInativos" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="ativos" name="Ativos" stroke="#10b981" fill="url(#colorAtivos)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="inativos" name="Inativos" stroke="#ef4444" fill="url(#colorInativos)" strokeWidth={2} />
+                    <Legend />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Retention rate trend */}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Taxa de Retenção (%)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <LineChart data={retentionData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
+                      <Tooltip formatter={(v: number) => `${v}%`} />
+                      <Line type="monotone" dataKey="retentionRate" name="Retenção" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Novos Cadastros por Mês</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={retentionData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      <Bar dataKey="novos" name="Novos" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
           {/* Segment Tab */}
           <TabsContent value="segment" className="space-y-4">
             {/* Filters bar */}
@@ -513,12 +707,27 @@ const AdminUsersCrmPage = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="w-40">
+                    <Label className="text-xs">Tag</Label>
+                    <Select value={filterTag} onValueChange={v => { setFilterTag(v); setPage(1); }}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        {allTagNames.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                   <span className="text-sm text-muted-foreground">
                     {filtered.length} resultado(s) {selectedIds.size > 0 && `• ${selectedIds.size} selecionado(s)`}
                   </span>
                   <div className="flex gap-2">
+                    {selectedIds.size > 0 && (
+                      <Button variant="outline" size="sm" onClick={() => { setTagTargetIds(Array.from(selectedIds)); setShowTagDialog(true); }}>
+                        <Tag className="h-3 w-3 mr-1" /> Aplicar Tag ({selectedIds.size})
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" onClick={exportCsv}>
                       <Download className="h-3 w-3 mr-1" /> CSV
                     </Button>
@@ -545,9 +754,10 @@ const AdminUsersCrmPage = () => {
                       <th className="p-3 text-left font-medium text-muted-foreground">Usuário</th>
                       <th className="p-3 text-left font-medium text-muted-foreground hidden md:table-cell">Tipo</th>
                       <th className="p-3 text-left font-medium text-muted-foreground hidden md:table-cell">Status</th>
+                      <th className="p-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Tags</th>
                       <th className="p-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Cidade</th>
-                      <th className="p-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Serviços</th>
-                      <th className="p-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Leads</th>
+                      <th className="p-3 text-left font-medium text-muted-foreground hidden xl:table-cell">Serviços</th>
+                      <th className="p-3 text-left font-medium text-muted-foreground hidden xl:table-cell">Leads</th>
                       <th className="p-3 text-left font-medium text-muted-foreground">Cadastro</th>
                     </tr>
                   </thead>
@@ -556,6 +766,7 @@ const AdminUsersCrmPage = () => {
                       const prov = providerByUser[p.id];
                       const svcCount = prov ? (servicesByProvider[prov.id] || 0) : 0;
                       const leadCount = prov ? (leadsByProvider[prov.id] || 0) : 0;
+                      const tags = tagsByUser[p.id] || [];
                       return (
                         <tr key={p.id} className="border-b border-border hover:bg-muted/30 transition-colors">
                           <td className="p-3">
@@ -569,15 +780,35 @@ const AdminUsersCrmPage = () => {
                             <Badge variant="outline" className="text-xs">{getTypeLabel(p.profile_type)}</Badge>
                           </td>
                           <td className="p-3 hidden md:table-cell">{getStatusBadge(p.status || 'active')}</td>
+                          <td className="p-3 hidden lg:table-cell">
+                            <div className="flex flex-wrap gap-1 items-center">
+                              {tags.map((t: any) => (
+                                <span
+                                  key={t.id}
+                                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-white"
+                                  style={{ backgroundColor: t.color }}
+                                >
+                                  {t.tag_name}
+                                  <button onClick={() => handleRemoveTag(t.id)} className="hover:opacity-70"><X className="h-2.5 w-2.5" /></button>
+                                </span>
+                              ))}
+                              <button
+                                onClick={() => { setTagTargetIds([p.id]); setShowTagDialog(true); }}
+                                className="inline-flex items-center rounded-full border border-dashed border-muted-foreground/40 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                              >
+                                <Plus className="h-2.5 w-2.5" />
+                              </button>
+                            </div>
+                          </td>
                           <td className="p-3 hidden lg:table-cell text-muted-foreground">{prov?.city || '—'}</td>
-                          <td className="p-3 hidden lg:table-cell text-muted-foreground">{svcCount}</td>
-                          <td className="p-3 hidden lg:table-cell text-muted-foreground">{leadCount}</td>
+                          <td className="p-3 hidden xl:table-cell text-muted-foreground">{svcCount}</td>
+                          <td className="p-3 hidden xl:table-cell text-muted-foreground">{leadCount}</td>
                           <td className="p-3 text-xs text-muted-foreground">{format(parseISO(p.created_at), 'dd/MM/yy')}</td>
                         </tr>
                       );
                     })}
                     {paginated.length === 0 && (
-                      <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">Nenhum usuário encontrado</td></tr>
+                      <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Nenhum usuário encontrado</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -588,6 +819,49 @@ const AdminUsersCrmPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Tag Dialog */}
+      <Dialog open={showTagDialog} onOpenChange={setShowTagDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Tag className="h-5 w-5" /> Aplicar Tag</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Aplicar a {tagTargetIds.length} usuário(s).
+            </p>
+            <div>
+              <Label>Nome da Tag</Label>
+              <Input
+                value={newTagName}
+                onChange={e => setNewTagName(e.target.value)}
+                placeholder="Ex: VIP, Leads Quentes, Inativo..."
+                list="existing-tags"
+              />
+              <datalist id="existing-tags">
+                {allTagNames.map(t => <option key={t} value={t} />)}
+              </datalist>
+            </div>
+            <div>
+              <Label>Cor</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {TAG_COLORS.map(color => (
+                  <button
+                    key={color}
+                    className={`h-7 w-7 rounded-full border-2 transition-transform ${newTagColor === color ? 'border-foreground scale-110' : 'border-transparent'}`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setNewTagColor(color)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTagDialog(false)}>Cancelar</Button>
+            <Button onClick={handleAddTag}>Aplicar Tag</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Notification Dialog */}
       <Dialog open={showNotifyDialog} onOpenChange={setShowNotifyDialog}>
