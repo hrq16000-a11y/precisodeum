@@ -92,10 +92,21 @@ const AdminUsersPage = () => {
       .then(({ data }) => setAdminIds(new Set((data || []).map((r: any) => r.user_id))));
   };
 
+  const fetchLevels = () => {
+    supabase.from('user_levels').select('*').order('priority', { ascending: false })
+      .then(({ data }) => setLevels(data || []));
+  };
+  const fetchAccountTypes = () => {
+    supabase.from('account_types').select('*').order('display_order')
+      .then(({ data }) => setAccountTypes(data || []));
+  };
+
   useEffect(() => {
     if (!isAdmin) return;
     fetchProfiles();
     fetchAdmins();
+    fetchLevels();
+    fetchAccountTypes();
   }, [isAdmin]);
 
   const filtered = useMemo(() => {
