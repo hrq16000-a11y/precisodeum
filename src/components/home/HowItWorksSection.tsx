@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { motion } from 'framer-motion';
 import FadeInSection from '@/components/FadeInSection';
+import ParallaxSection from '@/components/ParallaxSection';
 
 const HowItWorksSection = () => {
   const { data: steps = [] } = useQuery({
