@@ -218,8 +218,8 @@ const AdminAdSlotsPage = () => {
                 return (
                   <Card key={slot.id}>
                     <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <CardTitle className="text-sm">{slot.name}</CardTitle>
                           <Badge variant="outline" className="text-[10px]">{slot.page_type}</Badge>
                           <Badge variant="outline" className="text-[10px] font-mono">{slot.slug}</Badge>
@@ -241,8 +241,8 @@ const AdminAdSlotsPage = () => {
                             const key = `${a.sponsor_id}__${slot.slug}`;
                             const m = metricsSummary.get(key);
                             return (
-                              <div key={a.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
-                                <div className="flex items-center gap-3">
+                              <div key={a.id} className="flex flex-col gap-2 rounded-lg border border-border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <span className="text-sm font-medium">{getSponsorTitle(a.sponsor_id)}</span>
                                   <Badge variant={a.active ? 'default' : 'secondary'} className="text-[10px]">
                                     {a.active ? 'Ativo' : 'Inativo'}
@@ -250,7 +250,7 @@ const AdminAdSlotsPage = () => {
                                   {a.target_category && <Badge variant="outline" className="text-[10px]">Cat: {a.target_category}</Badge>}
                                   {a.target_city && <Badge variant="outline" className="text-[10px]">🏙 {a.target_city}</Badge>}
                                 </div>
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-3">
                                   {m && (
                                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                       <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{m.impressions}</span>

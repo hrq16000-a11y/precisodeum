@@ -389,9 +389,53 @@ const AdminSponsorCrmPage = () => {
               </Select>
             </div>
 
-            {/* Table */}
-            <div className="rounded-xl border border-border bg-card overflow-x-auto">
-              <Table className="min-w-[700px]">
+            {/* Mobile cards */}
+            <div className="space-y-3 sm:hidden">
+              {filteredSponsors.map(s => {
+                const expired = s.end_date && new Date(s.end_date) < new Date();
+                const ctr = s.impressions > 0 ? ((s.clicks / s.impressions) * 100).toFixed(1) : '0.0';
+                const hasContact = contacts.some((c: any) => c.sponsor_id === s.id);
+                return (
+                  <div key={s.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-foreground text-sm">{s.title}</p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <Badge variant="outline" className="capitalize text-[10px]">{s.tier}</Badge>
+                          <Badge variant={expired ? 'destructive' : s.active ? 'default' : 'secondary'} className="text-[10px]">
+                            {expired ? 'Expirado' : s.active ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                          {hasContact && <Badge variant="outline" className="text-[10px] text-accent">Vinculado</Badge>}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                          <span>{s.start_date ? format(new Date(s.start_date), 'dd/MM/yy') : '—'} → {s.end_date ? format(new Date(s.end_date), 'dd/MM/yy') : '∞'}</span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{s.impressions.toLocaleString('pt-BR')}</span>
+                          <span className="flex items-center gap-1"><MousePointerClick className="h-3 w-3" />{s.clicks.toLocaleString('pt-BR')}</span>
+                          <span>CTR: {ctr}%</span>
+                        </div>
+                      </div>
+                      {!hasContact && (
+                        <Button variant="ghost" size="sm" className="text-xs shrink-0" onClick={() => {
+                          setLinkForm(p => ({ ...p, sponsor_id: s.id }));
+                          setLinkDialog(true);
+                        }}>
+                          <Plus className="h-3 w-3 mr-1" /> Vincular
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredSponsors.length === 0 && (
+                <p className="text-center py-8 text-muted-foreground">Nenhum patrocinador encontrado.</p>
+              )}
+            </div>
+
+            {/* Desktop table */}
+            <div className="rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patrocinador</TableHead>
@@ -453,8 +497,27 @@ const AdminSponsorCrmPage = () => {
               <h2 className="text-lg font-semibold">Vínculos Patrocinador ↔ Usuário</h2>
               <Button size="sm" onClick={() => setLinkDialog(true)}><Plus className="h-4 w-4 mr-1" /> Vincular</Button>
             </div>
-            <div className="rounded-xl border border-border bg-card overflow-x-auto">
-              <Table className="min-w-[650px]">
+            {/* Mobile cards */}
+            <div className="space-y-3 sm:hidden">
+              {contacts.map((c: any) => (
+                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground text-sm">{getSponsorTitle(c.sponsor_id)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{c.contact_name || '—'} • {c.company_name || '—'}</p>
+                      <p className="text-xs text-muted-foreground">{c.email || '—'} • {c.phone || '—'}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => unlinkMutation.mutate(c.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {contacts.length === 0 && <p className="text-center py-8 text-muted-foreground">Nenhum vínculo.</p>}
+            </div>
+            {/* Desktop table */}
+            <div className="rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patrocinador</TableHead>
@@ -494,8 +557,31 @@ const AdminSponsorCrmPage = () => {
               <h2 className="text-lg font-semibold">Campanhas</h2>
               <Button size="sm" onClick={() => setCampaignDialog(true)}><Plus className="h-4 w-4 mr-1" /> Nova Campanha</Button>
             </div>
-            <div className="rounded-xl border border-border bg-card overflow-x-auto">
-              <Table className="min-w-[650px]">
+            {/* Mobile cards */}
+            <div className="space-y-3 sm:hidden">
+              {campaigns.map((c: any) => (
+                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground text-sm">{c.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{getSponsorTitle(c.sponsor_id)}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Badge variant={c.status === 'active' ? 'default' : 'secondary'} className="text-[10px] capitalize">{c.status}</Badge>
+                        <span className="text-[10px] text-muted-foreground">{c.start_date ? format(new Date(c.start_date), 'dd/MM/yy') : '—'} → {c.end_date ? format(new Date(c.end_date), 'dd/MM/yy') : '—'}</span>
+                      </div>
+                      {c.budget > 0 && <p className="text-xs mt-1">R$ {Number(c.budget).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>}
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => deleteCampaignMutation.mutate(c.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {campaigns.length === 0 && <p className="text-center py-8 text-muted-foreground">Nenhuma campanha.</p>}
+            </div>
+            {/* Desktop table */}
+            <div className="rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patrocinador</TableHead>
@@ -541,8 +627,31 @@ const AdminSponsorCrmPage = () => {
               <h2 className="text-lg font-semibold">Contratos</h2>
               <Button size="sm" onClick={() => setContractDialog(true)}><Plus className="h-4 w-4 mr-1" /> Novo Contrato</Button>
             </div>
-            <div className="rounded-xl border border-border bg-card overflow-x-auto">
-              <Table className="min-w-[650px]">
+            {/* Mobile cards */}
+            <div className="space-y-3 sm:hidden">
+              {contracts.map((c: any) => (
+                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground text-sm">{getSponsorTitle(c.sponsor_id)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Nº {c.contract_number || '—'}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Badge variant={c.status === 'active' ? 'default' : 'secondary'} className="text-[10px] capitalize">{c.status}</Badge>
+                        <span className="text-[10px] text-muted-foreground">{c.start_date ? format(new Date(c.start_date), 'dd/MM/yy') : '—'} → {c.end_date ? format(new Date(c.end_date), 'dd/MM/yy') : '—'}</span>
+                      </div>
+                      {c.value > 0 && <p className="text-xs mt-1">R$ {Number(c.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>}
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => deleteContractMutation.mutate(c.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {contracts.length === 0 && <p className="text-center py-8 text-muted-foreground">Nenhum contrato.</p>}
+            </div>
+            {/* Desktop table */}
+            <div className="rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patrocinador</TableHead>
@@ -615,7 +724,7 @@ const AdminSponsorCrmPage = () => {
 
       {/* ─── Link Dialog ─────────────────────────────────────────── */}
       <Dialog open={linkDialog} onOpenChange={setLinkDialog}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Vincular Patrocinador a Usuário</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); linkMutation.mutate(); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={linkForm.sponsor_id} onChange={v => setLinkForm(p => ({ ...p, sponsor_id: v }))} /></div>
@@ -633,7 +742,7 @@ const AdminSponsorCrmPage = () => {
 
       {/* ─── Campaign Dialog ─────────────────────────────────────── */}
       <Dialog open={campaignDialog} onOpenChange={setCampaignDialog}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nova Campanha</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); campaignMutation.mutate(); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={campaignForm.sponsor_id} onChange={v => setCampaignForm(p => ({ ...p, sponsor_id: v }))} /></div>
@@ -665,7 +774,7 @@ const AdminSponsorCrmPage = () => {
 
       {/* ─── Contract Dialog ─────────────────────────────────────── */}
       <Dialog open={contractDialog} onOpenChange={setContractDialog}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Novo Contrato</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); contractMutation.mutate(); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={contractForm.sponsor_id} onChange={v => setContractForm(p => ({ ...p, sponsor_id: v }))} /></div>
@@ -697,7 +806,7 @@ const AdminSponsorCrmPage = () => {
 
       {/* ─── Note Dialog ─────────────────────────────────────────── */}
       <Dialog open={noteDialog} onOpenChange={setNoteDialog}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nova Nota Interna</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); noteMutation.mutate(); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={noteForm.sponsor_id} onChange={v => setNoteForm(p => ({ ...p, sponsor_id: v }))} /></div>
