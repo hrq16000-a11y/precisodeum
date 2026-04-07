@@ -566,13 +566,56 @@ const AdminSponsorsPage = () => {
         </div>
       )}
 
-      <div className="mt-4 rounded-xl border border-border bg-card overflow-x-auto">
+      {/* Mobile card list */}
+      <div className="mt-4 space-y-3 sm:hidden">
         {isLoading ? (
           <p className="p-6 text-muted-foreground">Carregando...</p>
         ) : paginated.length === 0 ? (
           <p className="p-6 text-center text-muted-foreground">Nenhum patrocinador encontrado.</p>
         ) : (
-          <Table className="min-w-[700px]">
+          paginated.map((s) => {
+            const expired = s.end_date && new Date(s.end_date) < new Date();
+            return (
+              <div key={s.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <SelectionCheckbox checked={bulk.selectedIds.has(s.id)} onCheckedChange={() => bulk.toggleSelection(s.id)} />
+                  {s.image_url && <img src={s.image_url} alt="" className="h-12 w-12 rounded-lg object-cover shrink-0" />}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium text-foreground text-sm truncate">{s.title}</span>
+                      {s.link_url && <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{positionLabels[s.position] || s.position}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <span>{s.start_date ? format(new Date(s.start_date), 'dd/MM/yy') : '—'} → {s.end_date ? format(new Date(s.end_date), 'dd/MM/yy') : '∞'}</span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${s.active && !expired ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
+                        {expired ? 'Expirado' : s.active ? 'Ativo' : 'Inativo'}
+                      </span>
+                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground"><Eye className="h-3 w-3" /> {s.impressions}</span>
+                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground"><MousePointerClick className="h-3 w-3" /> {s.clicks}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleSoftDelete(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="mt-4 rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
+        {isLoading ? (
+          <p className="p-6 text-muted-foreground">Carregando...</p>
+        ) : paginated.length === 0 ? (
+          <p className="p-6 text-center text-muted-foreground">Nenhum patrocinador encontrado.</p>
+        ) : (
+          <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10"></TableHead>

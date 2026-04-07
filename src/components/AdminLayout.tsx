@@ -182,9 +182,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 pt-14 lg:ml-60 lg:pt-0">
+      <main className="flex-1 min-w-0 overflow-x-hidden pt-14 lg:ml-60 lg:pt-0">
         <motion.div
-          className="p-4 sm:p-6"
+          className="p-3 sm:p-6 max-w-full"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
