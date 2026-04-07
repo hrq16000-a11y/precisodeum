@@ -118,16 +118,10 @@ const SponsorContractsPage = lazy(() => import("./pages/sponsor/SponsorContracts
 const SponsorNotificationsPage = lazy(() => import("./pages/sponsor/SponsorNotificationsPage"));
 const SponsorDataPage = lazy(() => import("./pages/sponsor/SponsorDataPage"));
 
-// Minimal loading fallback (skeleton-style)
-const PageFallback = () => (
-  <div className="flex min-h-screen items-center justify-center">
-    <div className="space-y-3 w-full max-w-md px-4">
-      <div className="h-8 w-3/4 animate-pulse rounded-lg bg-muted" />
-      <div className="h-4 w-full animate-pulse rounded bg-muted" />
-      <div className="h-4 w-5/6 animate-pulse rounded bg-muted" />
-    </div>
-  </div>
-);
+// Cinematic loading fallback
+import CinematicLoader from './components/CinematicLoader';
+
+const PageFallback = () => <CinematicLoader />;
 
 const queryClient = new QueryClient({
   defaultOptions: {

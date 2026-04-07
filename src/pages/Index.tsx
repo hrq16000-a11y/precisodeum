@@ -251,18 +251,20 @@ const Index = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
+    <PageTransition>
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
 
-      <LazyErrorBoundary>
-        <Suspense fallback={<SectionFallback />}>
-          {sectionOrder.map(renderSection)}
-          <Footer />
-          <FloatingWhatsApp />
-        </Suspense>
-      </LazyErrorBoundary>
-    </div>
+        <LazyErrorBoundary>
+          <Suspense fallback={<SectionFallback />}>
+            {sectionOrder.map(renderSection)}
+            <Footer />
+            <FloatingWhatsApp />
+          </Suspense>
+        </LazyErrorBoundary>
+      </div>
+    </PageTransition>
   );
 };
 
