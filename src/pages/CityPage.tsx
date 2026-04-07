@@ -150,6 +150,8 @@ const CityPage = () => {
         </div>
       </section>
 
+      <Suspense fallback={null}><SponsorTopBanner city={city!.name} /></Suspense>
+
       <div className="container py-8">
         <p className="mb-6 text-sm text-muted-foreground">
           {providers.length} profissional(is) encontrado(s) em {city!.name}
