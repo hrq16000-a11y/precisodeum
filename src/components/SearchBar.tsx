@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSearchSuggestions } from '@/hooks/useProviders';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { useTypingPlaceholder } from '@/hooks/useTypingPlaceholder';
 
 interface SearchBarProps {
   variant?: 'hero' | 'compact';
@@ -17,21 +18,60 @@ interface Suggestion {
   extra?: string;
 }
 
+const GEO_ASKED_KEY = 'geo_browser_asked';
+
 const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
-  const { city: geoCity } = useGeoCity();
+  const { city: geoCity, setCity } = useGeoCity();
   const [service, setService] = useState('');
   const [location, setLocation] = useState('');
   const [activeField, setActiveField] = useState<'service' | 'location' | null>(null);
   const [highlightIdx, setHighlightIdx] = useState(-1);
+  const [isFocused, setIsFocused] = useState(false);
   const navigate = useNavigate();
   const serviceRef = useRef<HTMLInputElement>(null);
   const locationRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { data: suggestions } = useSearchSuggestions();
+  const typingPlaceholder = useTypingPlaceholder(geoCity);
 
-  const servicePlaceholder = geoCity ? `Preciso de um... em ${geoCity}` : 'Preciso de um...';
+  const servicePlaceholder = service ? '' : typingPlaceholder || (geoCity ? `Preciso de um... em ${geoCity}` : 'Preciso de um...');
   const locationPlaceholder = geoCity ? geoCity : 'Cidade ou região';
+
+  // Request browser geolocation on first search focus
+  const requestGeoOnce = useCallback(() => {
+    try {
+      if (localStorage.getItem(GEO_ASKED_KEY)) return;
+      if (!navigator.geolocation) return;
+      localStorage.setItem(GEO_ASKED_KEY, '1');
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const r = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&localityLanguage=pt`
+            );
+            if (!r.ok) return;
+            const d = await r.json();
+            const city = d?.city || d?.locality || null;
+            const state = d?.principalSubdivision || null;
+            if (city) setCity(city, state || undefined);
+          } catch { /* silent */ }
+        },
+        () => { /* denied - no problem */ },
+        { timeout: 5000 }
+      );
+    } catch { /* silent */ }
+  }, [setCity]);
+
+  const handleServiceFocus = () => {
+    setActiveField('service');
+    setIsFocused(true);
+    requestGeoOnce();
+  };
+
+  const handleServiceBlur = () => {
+    setIsFocused(false);
+  };
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -204,18 +244,25 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   return (
     <div ref={wrapperRef} className="relative w-full max-w-2xl">
       <form onSubmit={handleSearch}>
-        <div className="flex flex-col gap-3 rounded-2xl bg-card p-3 shadow-card-hover sm:flex-row sm:items-center sm:gap-0 sm:rounded-full sm:p-2">
+        <div
+          className={`flex flex-col gap-3 rounded-2xl bg-card p-3 sm:flex-row sm:items-center sm:gap-0 sm:rounded-full sm:p-2 transition-all duration-300 ${
+            isFocused
+              ? 'shadow-lg ring-2 ring-secondary/30 scale-[1.02]'
+              : 'shadow-card-hover'
+          }`}
+        >
           <div className="relative flex flex-1 items-center gap-2 px-4">
-            <Search className="h-5 w-5 shrink-0 text-muted-foreground" />
+            <Search className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isFocused ? 'text-secondary' : 'text-muted-foreground'}`} />
             <input
               ref={serviceRef}
               type="text"
               placeholder={servicePlaceholder}
               value={service}
               onChange={(e) => { setService(e.target.value); setSearchError(''); }}
-              onFocus={() => setActiveField('service')}
+              onFocus={handleServiceFocus}
+              onBlur={handleServiceBlur}
               onKeyDown={handleKeyDown}
-              className="w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
+              className="w-full bg-transparent text-foreground placeholder:text-muted-foreground/70 outline-none"
             />
             {service && (
               <button type="button" onClick={() => setService('')} className="text-muted-foreground hover:text-foreground">

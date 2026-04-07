@@ -4,6 +4,7 @@ import { Shield, Users, Zap, Briefcase, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
 import GeoLocationChip from '@/components/GeoLocationChip';
+import RotatingServiceText from '@/components/home/RotatingServiceText';
 import { useHeroBanners, type HeroBannerData } from '@/hooks/useHeroBanners';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
@@ -140,15 +141,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
             {hasCustomTitle ? title : (
               <>
                 Encontre profissionais para{' '}
-                <span className="relative inline-block">
-                  <span className="text-secondary">qualquer serviço</span>
-                  <motion.span
-                    className="absolute -bottom-1 left-0 h-1 rounded-full bg-secondary/60"
-                    initial={{ width: 0 }}
-                    animate={{ width: '100%' }}
-                    transition={{ delay: 0.8, duration: 0.6, ease: 'easeOut' }}
-                  />
-                </span>
+                <RotatingServiceText />
               </>
             )}
           </h1>
@@ -176,7 +169,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           </div>
           <div className="mt-3 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">
             <MapPin className="h-3.5 w-3.5 text-secondary" />
-            <span>Mostrando resultados para <span className="font-semibold text-primary-foreground/90">{geoCity || 'sua região'}</span></span>
+            <span>{geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
             <span className="text-primary-foreground/40">·</span>
             <GeoLocationChip variant="hero" />
           </div>
@@ -224,14 +217,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           </span>
           <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
             <Users className="h-3.5 w-3.5 text-secondary" />
-            {geoCity ? (
-              <>
-                <MapPin className="h-3 w-3 text-secondary" />
-                {geoCity}
-              </>
-            ) : (
-              'Todo o Brasil'
-            )}
+            Profissionais verificados
           </span>
           <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
             <Zap className="h-3.5 w-3.5 text-secondary" /> Resposta rápida
