@@ -115,7 +115,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
     <section className="relative overflow-hidden py-12 md:py-28">
       {/* Background images with crossfade */}
       {hasCmsBg ? (
-        <motion.img
+        <img
           key={activeBanner!.image_url!}
           src={activeBanner!.image_url!}
           alt=""
@@ -123,14 +123,11 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           height={768}
           fetchPriority="high"
           decoding="async"
-          className="absolute inset-0 h-full w-full object-cover object-center"
-          initial={{ opacity: 0, scale: 1.1 }}
-          animate={{ opacity: 1, scale: 1.05 }}
-          transition={{ duration: 1.2, ease: 'easeInOut' }}
+          className="absolute inset-0 h-full w-full object-cover object-center hero-img-cinematic"
         />
       ) : (
         DEFAULT_BG_IMAGES.map((src, i) => (
-          <motion.img
+          <img
             key={src}
             src={src}
             alt=""
@@ -138,13 +135,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
             height={768}
             fetchPriority={i === 0 ? 'high' : 'low'}
             decoding="async"
-            className="absolute inset-0 h-full w-full object-cover object-center"
-            initial={false}
-            animate={{
-              opacity: i === bgIndex ? 1 : 0,
-              scale: i === bgIndex ? 1.05 : 1.1,
-            }}
-            transition={{ duration: 1.5, ease: 'easeInOut' }}
+            className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[1500ms] ease-in-out ${i === bgIndex ? 'opacity-100 hero-img-cinematic' : 'opacity-0'}`}
           />
         ))
       )}
