@@ -9,20 +9,21 @@ interface PortfolioUploadProps {
   providerId: string;
 }
 
+const MAX_PORTFOLIO_IMAGES = 20;
+
 const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
   const [images, setImages] = useState<{ name: string; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
 
   const loadImages = async () => {
-    const { data } = await supabase.storage.from('portfolio').list(`${userId}`, { limit: 20 });
+    const { data } = await supabase.storage.from('portfolio').list(`${userId}`, { limit: 100 });
     if (data) {
+      const filtered = data.filter((f) => f.name !== '.emptyFolderPlaceholder');
       setImages(
-        data
-          .filter((f) => f.name !== '.emptyFolderPlaceholder')
-          .map((f) => ({
-            name: f.name,
-            url: supabase.storage.from('portfolio').getPublicUrl(`${userId}/${f.name}`).data.publicUrl,
-          }))
+        filtered.map((f) => ({
+          name: f.name,
+          url: supabase.storage.from('portfolio').getPublicUrl(`${userId}/${f.name}`).data.publicUrl,
+        }))
       );
     }
   };
@@ -35,8 +36,20 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
     const files = e.target.files;
     if (!files?.length) return;
 
+    const remaining = MAX_PORTFOLIO_IMAGES - images.length;
+    if (remaining <= 0) {
+      toast.error(`Limite de ${MAX_PORTFOLIO_IMAGES} fotos atingido. Remova alguma para adicionar novas.`);
+      e.target.value = '';
+      return;
+    }
+
+    const filesToUpload = Array.from(files).slice(0, remaining);
+    if (filesToUpload.length < files.length) {
+      toast.info(`Apenas ${filesToUpload.length} de ${files.length} fotos serão enviadas (limite: ${MAX_PORTFOLIO_IMAGES}).`);
+    }
+
     setUploading(true);
-    for (const file of Array.from(files)) {
+    for (const file of filesToUpload) {
       if (file.size > 5 * 1024 * 1024) {
         toast.error(`${file.name}: máximo 5MB`);
         continue;
@@ -60,15 +73,18 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
   return (
     <div className="rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-bold text-foreground">Portfólio de Trabalhos</h2>
+        <div>
+          <h2 className="font-display text-lg font-bold text-foreground">Portfólio de Trabalhos</h2>
+          <p className="text-xs text-muted-foreground">{images.length}/{MAX_PORTFOLIO_IMAGES} fotos</p>
+        </div>
         <label className="cursor-pointer">
-          <Button variant="accent" size="sm" asChild disabled={uploading}>
+          <Button variant="accent" size="sm" asChild disabled={uploading || images.length >= MAX_PORTFOLIO_IMAGES}>
             <span>
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               Adicionar
             </span>
           </Button>
-          <input type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
+          <input type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} disabled={images.length >= MAX_PORTFOLIO_IMAGES} />
         </label>
       </div>
       {images.length === 0 ? (
