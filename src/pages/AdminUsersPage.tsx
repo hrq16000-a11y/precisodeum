@@ -24,6 +24,8 @@ const AdminUsersPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [profiles, setProfiles] = useState<any[]>([]);
   const [adminIds, setAdminIds] = useState<Set<string>>(new Set());
+  const [levels, setLevels] = useState<any[]>([]);
+  const [accountTypes, setAccountTypes] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
