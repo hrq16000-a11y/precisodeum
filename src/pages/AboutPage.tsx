@@ -146,7 +146,7 @@ const AboutPage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </ParallaxSection>
 
       {/* Service Types */}
       <section className="py-16">
