@@ -79,6 +79,10 @@ const AdminModulesPage = lazy(() => import("./pages/AdminModulesPage"));
 const AdminBlocksPage = lazy(() => import("./pages/AdminBlocksPage"));
 const AdminInstitutionalPagesPage = lazy(() => import("./pages/AdminInstitutionalPagesPage"));
 const AdminMenuPage = lazy(() => import("./pages/AdminMenuPage"));
+const AdminHomeStepsPage = lazy(() => import("./pages/AdminHomeStepsPage"));
+const AdminTestimonialsPage = lazy(() => import("./pages/AdminTestimonialsPage"));
+const AdminCtaBlocksPage = lazy(() => import("./pages/AdminCtaBlocksPage"));
+const AdminHomeSectionsPage = lazy(() => import("./pages/AdminHomeSectionsPage"));
 const InstitutionalPage = lazy(() => import("./pages/InstitutionalPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
@@ -221,6 +225,10 @@ const App = () => {
                 <Route path="/admin/blocos" element={<AdminBlocksPage />} />
                 <Route path="/admin/paginas" element={<AdminInstitutionalPagesPage />} />
                 <Route path="/admin/menus" element={<AdminMenuPage />} />
+                <Route path="/admin/como-funciona" element={<AdminHomeStepsPage />} />
+                <Route path="/admin/depoimentos" element={<AdminTestimonialsPage />} />
+                <Route path="/admin/cta-blocos" element={<AdminCtaBlocksPage />} />
+                <Route path="/admin/secoes-home" element={<AdminHomeSectionsPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />

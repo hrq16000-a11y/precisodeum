@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -34,6 +34,10 @@ const menuGroups = [
       { label: 'Serv. Populares', icon: Wrench, path: '/admin/servicos-populares' },
       { label: 'FAQ', icon: HelpCircle, path: '/admin/faq' },
       { label: 'Destaques', icon: Sparkles, path: '/admin/destaques' },
+      { label: 'Como Funciona', icon: Footprints, path: '/admin/como-funciona' },
+      { label: 'Depoimentos', icon: MessageSquareQuote, path: '/admin/depoimentos' },
+      { label: 'Blocos CTA', icon: MousePointerClick, path: '/admin/cta-blocos' },
+      { label: 'Ordem Seções', icon: LayoutList, path: '/admin/secoes-home' },
     ],
   },
   {
