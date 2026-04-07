@@ -32,6 +32,7 @@ const BlogHighlight = lazy(() => import('@/components/home/BlogHighlight'));
 const CitiesSection = lazy(() => import('@/components/home/CitiesSection'));
 const CtaSection = lazy(() => import('@/components/home/CtaSection'));
 const SponsorsSection = lazy(() => import('@/components/home/SponsorsSection'));
+const LeaderSponsor = lazy(() => import('@/components/home/LeaderSponsor'));
 const HowItWorksSection = lazy(() => import('@/components/home/HowItWorksSection'));
 const TestimonialsSection = lazy(() => import('@/components/home/TestimonialsSection'));
 const FaqSection = lazy(() => import('@/components/home/FaqSection'));
@@ -58,7 +59,7 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
 const SectionFallback = () => null;
 
 // Default section order
-const DEFAULT_ORDER = 'urgency,sponsor_top,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
+const DEFAULT_ORDER = 'urgency,leader_sponsor,sponsor_top,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
 
 const Index = () => {
   const { city: geoCity } = useGeoCity();
@@ -192,6 +193,12 @@ const Index = () => {
     switch (slug) {
       case 'urgency':
         return <UrgencyBanner key={slug} />;
+      case 'leader_sponsor': {
+        const heroTopSponsors = sponsors.filter(s => s.position === 'hero-top' && (s.image_url || s.logo_url));
+        return sponsorsEnabled && heroTopSponsors.length > 0
+          ? <LeaderSponsor key={slug} sponsors={heroTopSponsors as any} />
+          : null;
+      }
       case 'sponsor_top':
         return sponsorsEnabled ? <SponsorTopBanner key={slug} city={geoCity || undefined} /> : null;
       case 'stats':
