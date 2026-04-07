@@ -156,7 +156,7 @@ const FeaturedJobs = () => {
             <div
               ref={scrollRef}
               onScroll={checkScroll}
-              className="flex flex-col gap-2.5 overflow-y-auto scrollbar-hide max-h-[400px] pr-1"
+              className="flex flex-col gap-2 overflow-y-auto scrollbar-hide max-h-[260px] pr-1"
             >
               {items.slice(1).map((item, idx) => {
                 if (item.type === 'ad') {
