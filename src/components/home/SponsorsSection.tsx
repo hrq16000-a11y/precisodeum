@@ -1,4 +1,4 @@
-import { useEffect, useRef, memo, useCallback } from 'react';
+import { useEffect, useRef, memo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { handleImageError } from '@/lib/imageResolver';
 
@@ -32,6 +32,10 @@ function trackMetric(sponsorId: string, eventType: 'impression' | 'click') {
 
 const SponsorCard = memo(({ sponsor }: { sponsor: Sponsor }) => {
   const isPremium = sponsor.tier === 'premium';
+  const visualSrc = sponsor.logo_url || sponsor.image_url;
+  const usesOfficialLogo = Boolean(sponsor.logo_url);
+
+  if (!visualSrc) return null;
 
   return (
     <a
@@ -39,26 +43,29 @@ const SponsorCard = memo(({ sponsor }: { sponsor: Sponsor }) => {
       target="_blank"
       rel="noopener noreferrer"
       onClick={() => trackMetric(sponsor.id, 'click')}
-      className="group relative block overflow-hidden rounded-2xl shadow-card transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+      className="group relative block overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
     >
       {isPremium && (
         <span className="absolute top-2 right-2 z-10 rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold text-accent-foreground shadow-sm">
           Premium
         </span>
       )}
-      {sponsor.image_url ? (
+
+      <div className="flex aspect-[16/9] items-center justify-center bg-muted/20 p-4 sm:p-5">
         <img
-          src={sponsor.image_url}
+          src={visualSrc}
           alt={sponsor.title}
-          className="w-full aspect-[2/1] object-cover"
+          className={usesOfficialLogo ? 'h-full w-full object-contain' : 'h-full w-full object-cover'}
           loading="lazy"
           onError={handleImageError}
         />
-      ) : (
-        <div className="flex items-center justify-center aspect-[2/1] bg-gradient-to-br from-primary/20 to-accent/20 p-4">
-          <span className="text-sm font-bold text-foreground">{sponsor.title}</span>
-        </div>
-      )}
+      </div>
+
+      <div className="border-t border-border/60 px-3 py-2">
+        <p className="line-clamp-2 text-xs font-semibold text-foreground">
+          {sponsor.company_name || sponsor.title}
+        </p>
+      </div>
     </a>
   );
 });
@@ -67,12 +74,14 @@ SponsorCard.displayName = 'SponsorCard';
 
 const SponsorsSection = ({ sponsors }: Props) => {
   const visibleSponsors = sponsors.filter(
-    s => s.position === 'banner' || s.position === 'card' || s.position === 'featured'
+    (s) =>
+      (s.position === 'banner' || s.position === 'card' || s.position === 'featured') &&
+      Boolean(s.logo_url || s.image_url)
   );
   const tracked = useRef(new Set<string>());
 
   useEffect(() => {
-    visibleSponsors.forEach(s => {
+    visibleSponsors.forEach((s) => {
       if (!tracked.current.has(s.id)) {
         tracked.current.add(s.id);
         trackMetric(s.id, 'impression');
@@ -99,7 +108,7 @@ const SponsorsSection = ({ sponsors }: Props) => {
           </span>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {sorted.map(sponsor => (
+          {sorted.map((sponsor) => (
             <SponsorCard key={sponsor.id} sponsor={sponsor} />
           ))}
         </div>

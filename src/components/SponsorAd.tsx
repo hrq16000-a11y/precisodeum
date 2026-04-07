@@ -7,6 +7,7 @@ interface Sponsor {
   id: string;
   title: string;
   image_url: string | null;
+  logo_url?: string | null;
   link_url: string | null;
   position: string;
   tier?: string;
@@ -27,7 +28,6 @@ function weightedShuffle(sponsors: Sponsor[]): Sponsor[] {
     return Array(weight).fill(s);
   });
   const shuffled = weighted.sort(() => Math.random() - 0.5);
-  // Deduplicate keeping order
   const seen = new Set<string>();
   return shuffled.filter((s) => {
     if (seen.has(s.id)) return false;
@@ -71,7 +71,6 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
   const [currentIndex, setCurrentIndex] = useState(0);
   const tracked = useRef(new Set<string>());
 
-  // Rotate for single-display positions
   useEffect(() => {
     if (sponsors.length <= 1) return;
     const interval = setInterval(() => {
@@ -80,7 +79,6 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
     return () => clearInterval(interval);
   }, [sponsors.length]);
 
-  // Track impression on mount/change
   useEffect(() => {
     if (sponsors.length === 0) return;
     if (layout === 'vertical' || layout === 'inline') {
@@ -108,22 +106,26 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
   if (layout === 'vertical') {
     return (
       <div className={`space-y-3 ${className}`}>
-        {sponsors.map((s) => (
-          <a
-            key={s.id}
-            href={s.link_url || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => handleClick(s)}
-            className="block rounded-xl bg-card p-3 shadow-card transition-all hover:shadow-card-hover"
-          >
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
-            {s.image_url && (
-              <SponsorImage src={s.image_url} alt={s.title} containerClassName="mt-2 rounded-lg" />
-            )}
-            <p className="mt-2 text-xs font-medium text-foreground">{s.title}</p>
-          </a>
-        ))}
+        {sponsors.map((s) => {
+          const visualSrc = s.logo_url || s.image_url;
+
+          return (
+            <a
+              key={s.id}
+              href={s.link_url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => handleClick(s)}
+              className="block rounded-xl bg-card p-3 shadow-card transition-all hover:shadow-card-hover"
+            >
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
+              {visualSrc && (
+                <SponsorImage src={visualSrc} alt={s.title} containerClassName="mt-2 rounded-lg" />
+              )}
+              <p className="mt-2 text-xs font-medium text-foreground">{s.title}</p>
+            </a>
+          );
+        })}
       </div>
     );
   }
@@ -131,29 +133,34 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
   if (layout === 'inline') {
     return (
       <div className={`flex flex-wrap items-center justify-center gap-4 ${className}`}>
-        {sponsors.map((s) => (
-          <a
-            key={s.id}
-            href={s.link_url || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => handleClick(s)}
-            className="opacity-60 transition-opacity hover:opacity-100"
-            title={s.title}
-          >
-            {s.image_url ? (
-              <img src={s.image_url} alt={s.title} className="h-8 max-w-[140px] object-contain" loading="lazy" />
-            ) : (
-              <span className="text-xs text-primary-foreground/50">{s.title}</span>
-            )}
-          </a>
-        ))}
+        {sponsors.map((s) => {
+          const visualSrc = s.logo_url || s.image_url;
+
+          return (
+            <a
+              key={s.id}
+              href={s.link_url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => handleClick(s)}
+              className="opacity-60 transition-opacity hover:opacity-100"
+              title={s.title}
+            >
+              {visualSrc ? (
+                <img src={visualSrc} alt={s.title} className="h-8 max-w-[140px] object-contain" loading="lazy" />
+              ) : (
+                <span className="text-xs text-primary-foreground/50">{s.title}</span>
+              )}
+            </a>
+          );
+        })}
       </div>
     );
   }
 
-  // Rotational horizontal (between sections)
   const current = sponsors[currentIndex] || sponsors[0];
+  const currentVisualSrc = current.logo_url || current.image_url;
+
   return (
     <section className={`py-6 ${className}`}>
       <div className="container">
@@ -167,8 +174,8 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
             className="block text-center transition-opacity hover:opacity-80"
             title={current.title}
           >
-            {current.image_url ? (
-              <SponsorImage src={current.image_url} alt={current.title} containerClassName="mx-auto max-w-[300px] rounded-lg" />
+            {currentVisualSrc ? (
+              <SponsorImage src={currentVisualSrc} alt={current.title} containerClassName="mx-auto max-w-[300px] rounded-lg" />
             ) : (
               <span className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground">{current.title}</span>
             )}

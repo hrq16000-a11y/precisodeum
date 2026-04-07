@@ -14,6 +14,7 @@ const AdNativeCard = ({ sponsorIndex = 0, className = '' }: AdNativeCardProps) =
   const tracked = useRef(new Set<string>());
 
   const sponsor = sponsors[sponsorIndex % sponsors.length];
+  const visualSrc = sponsor?.logo_url || sponsor?.image_url;
 
   useEffect(() => {
     if (sponsor && !tracked.current.has(sponsor.id)) {
@@ -37,9 +38,9 @@ const AdNativeCard = ({ sponsorIndex = 0, className = '' }: AdNativeCardProps) =
       <span className="mb-2 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
         <Megaphone className="h-3 w-3" /> Patrocinado
       </span>
-      {sponsor.image_url && (
+      {visualSrc && (
         <SponsorImage
-          src={sponsor.image_url}
+          src={visualSrc}
           alt={sponsor.title}
           containerClassName="mb-3 rounded-lg"
         />
