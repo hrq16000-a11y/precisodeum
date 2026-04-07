@@ -28,9 +28,9 @@ const ProfileCompleteness = ({ provider, profile, servicesCount, portfolioCount 
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
           {percentage === 100 ? (
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <CheckCircle2 className="h-4 w-4 text-primary" />
           ) : (
-            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <AlertCircle className="h-4 w-4 text-accent" />
           )}
           Completude do Perfil
         </h3>
