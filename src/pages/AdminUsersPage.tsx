@@ -3,11 +3,12 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Users, Key, Trash2, Download } from 'lucide-react';
+import { Users, Key, Trash2, Download, CheckSquare, UserCog, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PaginationControls from '@/components/PaginationControls';
 import UserStatsCards from '@/components/admin/UserStatsCards';
 import UserFilters from '@/components/admin/UserFilters';
@@ -15,7 +16,6 @@ import UserTable from '@/components/admin/UserTable';
 import UserEditDialog from '@/components/admin/UserEditDialog';
 import UserDetailSheet from '@/components/admin/UserDetailSheet';
 import BulkActionsBar from '@/components/admin/BulkActionsBar';
-import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
 import { logAuditAction } from '@/hooks/useAuditLog';
 
 const PAGE_SIZE = 20;
@@ -39,6 +39,8 @@ const AdminUsersPage = () => {
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkTypeTarget, setBulkTypeTarget] = useState('');
+  const [bulkStatusTarget, setBulkStatusTarget] = useState('');
 
   const toggleSelection = (id: string) => {
     setSelectedIds(prev => {
@@ -46,6 +48,28 @@ const AdminUsersPage = () => {
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
+  };
+
+  const selectAllOnPage = () => {
+    const allPageIds = paginated.map(p => p.id);
+    const allSelected = allPageIds.every(id => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        allPageIds.forEach(id => next.delete(id));
+        return next;
+      });
+    } else {
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        allPageIds.forEach(id => next.add(id));
+        return next;
+      });
+    }
+  };
+
+  const selectAllFiltered = () => {
+    setSelectedIds(new Set(filtered.map(p => p.id)));
   };
 
   const fetchProfiles = () => {
@@ -95,6 +119,55 @@ const AdminUsersPage = () => {
     else {
       await logAuditAction({ action: status === 'active' ? 'bulk_active' : 'bulk_inactive', resource_type: 'user', details: { ids, count: ids.length } });
       toast.success(`${ids.length} usuário(s) ${status === 'active' ? 'ativado(s)' : 'desativado(s)'}`);
+      setSelectedIds(new Set());
+      fetchProfiles();
+    }
+    setBulkLoading(false);
+  };
+
+  const bulkChangeType = async (profileType: string) => {
+    if (selectedIds.size === 0 || !profileType) return;
+    setBulkLoading(true);
+    const ids = Array.from(selectedIds);
+    const role = profileType === 'rh' ? 'client' : profileType;
+    const { error } = await supabase.from('profiles').update({ profile_type: profileType, role }).in('id', ids);
+    if (error) toast.error('Erro: ' + error.message);
+    else {
+      await logAuditAction({ action: 'bulk_update', resource_type: 'user', details: { ids, count: ids.length, changes: { profile_type: profileType } } });
+      toast.success(`${ids.length} usuário(s) alterado(s) para ${profileType === 'provider' ? 'Profissional' : profileType === 'rh' ? 'Agência/RH' : 'Cliente'}`);
+      setSelectedIds(new Set());
+      fetchProfiles();
+    }
+    setBulkLoading(false);
+    setBulkTypeTarget('');
+  };
+
+  const bulkMakeAdmin = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    const ids = Array.from(selectedIds).filter(id => !adminIds.has(id));
+    if (ids.length === 0) { toast.info('Todos já são admins'); setBulkLoading(false); return; }
+    let count = 0;
+    for (const id of ids) {
+      const { error } = await supabase.from('user_roles').insert({ user_id: id, role: 'admin' } as any);
+      if (!error) count++;
+    }
+    await logAuditAction({ action: 'bulk_update', resource_type: 'user', details: { ids, count, changes: { role: 'admin' } } });
+    toast.success(`${count} usuário(s) promovido(s) a admin`);
+    setSelectedIds(new Set());
+    fetchAdmins();
+    setBulkLoading(false);
+  };
+
+  const bulkSoftDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from('profiles').update({ status: 'inactive' }).in('id', ids);
+    if (error) toast.error('Erro: ' + error.message);
+    else {
+      await logAuditAction({ action: 'bulk_delete', resource_type: 'user', details: { ids, count: ids.length } });
+      toast.success(`${ids.length} usuário(s) desativado(s)`);
       setSelectedIds(new Set());
       fetchProfiles();
     }
@@ -174,7 +247,8 @@ const AdminUsersPage = () => {
 
   const handleExport = () => {
     const csvHeader = 'Nome,Email,Telefone,WhatsApp,Tipo,Status,Criado em\n';
-    const csvRows = filtered.map(p =>
+    const source = selectedIds.size > 0 ? filtered.filter(p => selectedIds.has(p.id)) : filtered;
+    const csvRows = source.map(p =>
       `"${p.full_name || ''}","${p.email || ''}","${p.phone || ''}","${p.whatsapp || ''}","${p.profile_type || p.role || ''}","${p.status || 'active'}","${p.created_at || ''}"`
     ).join('\n');
     const blob = new Blob([csvHeader + csvRows], { type: 'text/csv;charset=utf-8;' });
@@ -184,8 +258,8 @@ const AdminUsersPage = () => {
     a.download = `usuarios_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    logAuditAction({ action: 'export', resource_type: 'user', details: { count: filtered.length } });
-    toast.success('CSV exportado!');
+    logAuditAction({ action: 'export', resource_type: 'user', details: { count: source.length } });
+    toast.success(`${source.length} usuário(s) exportado(s)!`);
   };
 
   if (loading) return <AdminLayout><p className="text-muted-foreground p-4">Carregando...</p></AdminLayout>;
@@ -199,6 +273,8 @@ const AdminUsersPage = () => {
     rh: profiles.filter(p => (p.profile_type || p.role) === 'rh').length,
     admins: adminIds.size,
   };
+
+  const allPageSelected = paginated.length > 0 && paginated.every(p => selectedIds.has(p.id));
 
   return (
     <AdminLayout>
@@ -226,22 +302,76 @@ const AdminUsersPage = () => {
         />
       </div>
 
+      {/* Select all bar */}
+      <div className="mt-3 flex items-center gap-3">
+        <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={selectAllOnPage}>
+          <CheckSquare className="h-3.5 w-3.5" />
+          {allPageSelected ? 'Desmarcar Página' : 'Selecionar Página'}
+        </Button>
+        {filtered.length > PAGE_SIZE && (
+          <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={selectAllFiltered}>
+            <CheckSquare className="h-3.5 w-3.5" />
+            Selecionar Todos ({filtered.length})
+          </Button>
+        )}
+        {selectedIds.size > 0 && (
+          <span className="text-xs text-muted-foreground">{selectedIds.size} selecionado(s)</span>
+        )}
+      </div>
+
       {/* Bulk actions */}
       {selectedIds.size > 0 && (
-        <div className="mt-3">
-          <BulkActionsBar
-            count={selectedIds.size}
-            onClear={() => setSelectedIds(new Set())}
-            onExport={handleExport}
-            loading={bulkLoading}
-          >
-            <Button size="sm" variant="outline" onClick={() => bulkSetStatus('active')} disabled={bulkLoading} className="text-green-600 border-green-200">
-              Ativar
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => bulkSetStatus('inactive')} disabled={bulkLoading} className="text-destructive border-destructive/30">
-              Desativar
-            </Button>
-          </BulkActionsBar>
+        <div className="mt-3 sticky top-0 z-20 flex flex-wrap items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 shadow-sm">
+          <span className="text-sm font-medium text-foreground mr-2">
+            {selectedIds.size} selecionado(s)
+          </span>
+
+          {/* Status */}
+          <Button size="sm" variant="outline" onClick={() => bulkSetStatus('active')} disabled={bulkLoading} className="text-green-600 border-green-200 h-7 text-xs">
+            ✅ Ativar
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => bulkSetStatus('inactive')} disabled={bulkLoading} className="text-destructive border-destructive/30 h-7 text-xs">
+            🔴 Desativar
+          </Button>
+
+          {/* Change type */}
+          <div className="flex items-center gap-1">
+            <Select value={bulkTypeTarget} onValueChange={setBulkTypeTarget}>
+              <SelectTrigger className="h-7 w-[130px] text-xs">
+                <SelectValue placeholder="Mudar tipo..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="client">👤 Cliente</SelectItem>
+                <SelectItem value="provider">🔧 Profissional</SelectItem>
+                <SelectItem value="rh">🏢 Agência/RH</SelectItem>
+              </SelectContent>
+            </Select>
+            {bulkTypeTarget && (
+              <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => bulkChangeType(bulkTypeTarget)} disabled={bulkLoading}>
+                <UserCog className="h-3 w-3 mr-1" /> Aplicar
+              </Button>
+            )}
+          </div>
+
+          {/* Promote to admin */}
+          <Button size="sm" variant="outline" onClick={bulkMakeAdmin} disabled={bulkLoading} className="h-7 text-xs text-amber-600 border-amber-200">
+            <Shield className="h-3 w-3 mr-1" /> Promover Admin
+          </Button>
+
+          {/* Export */}
+          <Button size="sm" variant="outline" onClick={handleExport} disabled={bulkLoading} className="h-7 text-xs">
+            <Download className="h-3 w-3 mr-1" /> Exportar
+          </Button>
+
+          {/* Delete */}
+          <Button size="sm" variant="destructive" onClick={bulkSoftDelete} disabled={bulkLoading} className="h-7 text-xs">
+            <Trash2 className="h-3 w-3 mr-1" /> Desativar
+          </Button>
+
+          {/* Clear */}
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="h-7 text-xs ml-auto">
+            ✕ Limpar
+          </Button>
         </div>
       )}
 
