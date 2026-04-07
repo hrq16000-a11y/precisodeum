@@ -223,7 +223,7 @@ const Index = () => {
       case 'blog':
         return blogEnabled ? <BlogHighlight key={slug} /> : null;
       case 'cities':
-        return citiesEnabled && topCities.length > 0 ? <CitiesSection key={slug} cities={topCities} /> : null;
+        return null;
       case 'cta':
         return ctaEnabled ? <CtaSection key={slug} /> : null;
       case 'showcase':
