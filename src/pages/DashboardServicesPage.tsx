@@ -12,17 +12,6 @@ import ServiceImageUpload from '@/components/ServiceImageUpload';
 import { handleImageError } from '@/lib/imageResolver';
 import { format } from 'date-fns';
 
-const CATEGORY_FILTERS = [
-  { label: 'Todas', value: 'all', icon: '🔥' },
-  { label: 'Venda', value: 'venda', icon: '🛒' },
-  { label: 'Compra', value: 'compra', icon: '💰' },
-  { label: 'Serviço', value: 'servico', icon: '🏠' },
-  { label: 'Troca', value: 'troca', icon: '🔄' },
-  { label: 'Aluguel', value: 'aluguel', icon: '🏢' },
-  { label: 'Doação', value: 'doacao', icon: '🎁' },
-  { label: 'Promoção', value: 'promocao', icon: '％' },
-  { label: 'Vaga de Emprego', value: 'vaga', icon: '👔' },
-];
 
 const DashboardServicesPage = () => {
   const { user, provider, profile, loading, refetchProfile } = useAuth();
