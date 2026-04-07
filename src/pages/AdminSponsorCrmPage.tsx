@@ -724,7 +724,7 @@ const AdminSponsorCrmPage = () => {
 
       {/* ─── Link Dialog ─────────────────────────────────────────── */}
       <Dialog open={linkDialog} onOpenChange={setLinkDialog}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Vincular Patrocinador a Usuário</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); linkMutation.mutate(); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={linkForm.sponsor_id} onChange={v => setLinkForm(p => ({ ...p, sponsor_id: v }))} /></div>
