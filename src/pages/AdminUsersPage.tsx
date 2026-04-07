@@ -433,6 +433,7 @@ const AdminUsersPage = () => {
           onResetPassword={setPwUser}
           onBlock={handleBlock}
           onMakeAdmin={makeAdmin}
+          onRemoveAdmin={removeAdmin}
           onDelete={setDeleteUser}
           onViewDetails={setDetailUser}
           selectedIds={selectedIds}
