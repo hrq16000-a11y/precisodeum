@@ -70,7 +70,7 @@ const ServiceDetailPage = () => {
   useEffect(() => {
     if (!svc?.id || viewTracked.current) return;
     viewTracked.current = true;
-    supabase.rpc('increment_service_view', { service_id: svc.id }).then(() => {});
+    (supabase.rpc as any)('increment_service_view', { service_id: svc.id });
   }, [svc?.id]);
 
   if (isLoading) {
