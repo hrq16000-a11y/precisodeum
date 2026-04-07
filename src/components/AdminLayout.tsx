@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard } from 'lucide-react';
-import AdminGroupNav from '@/components/admin/AdminGroupNav';
+import AdminGroupNav, { AdminGroupTabs } from '@/components/admin/AdminGroupNav';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -183,9 +183,10 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 min-w-0 overflow-x-hidden pt-14 lg:ml-60 lg:pt-0">
+      <main className="flex-1 min-w-0 overflow-x-hidden pt-14 lg:ml-60 lg:pt-0 flex flex-col">
+        <AdminGroupTabs />
         <motion.div
-          className="p-3 sm:p-6 max-w-full"
+          className="flex-1 p-3 sm:p-6 max-w-full"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}

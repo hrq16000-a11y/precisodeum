@@ -95,16 +95,48 @@ function findCurrentGroup(pathname: string) {
   return null;
 }
 
+/** Top-level group tabs — always visible, allows jumping between groups */
+export const AdminGroupTabs = () => {
+  const location = useLocation();
+  const currentGroup = findCurrentGroup(location.pathname);
+
+  return (
+    <div className="border-b border-border bg-muted/30">
+      <ScrollArea className="w-full">
+        <div className="flex gap-0.5 px-2 py-1">
+          {menuGroups.map((group) => {
+            const active = currentGroup?.label === group.label;
+            const firstPath = group.items[0].path;
+            return (
+              <Link
+                key={group.label}
+                to={firstPath}
+                className={`whitespace-nowrap rounded-md px-3 py-1.5 text-[11px] font-semibold transition-all duration-200 shrink-0 ${
+                  active
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                {group.label}
+              </Link>
+            );
+          })}
+        </div>
+        <ScrollBar orientation="horizontal" className="h-0.5" />
+      </ScrollArea>
+    </div>
+  );
+};
+
+/** Sub-navigation within the current group */
 const AdminGroupNav = () => {
   const location = useLocation();
   const currentGroup = findCurrentGroup(location.pathname);
 
-  // Don't show for the main admin page or if group has only 1 item
   if (!currentGroup || currentGroup.items.length <= 1) return null;
 
   return (
     <div className="mb-4 -mx-1">
-      {/* Group label */}
       <div className="flex items-center gap-1.5 mb-2 px-1">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
           {currentGroup.label}
@@ -115,7 +147,6 @@ const AdminGroupNav = () => {
         </span>
       </div>
 
-      {/* Horizontal scrollable nav */}
       <ScrollArea className="w-full">
         <div className="flex gap-1 pb-1 px-1">
           {currentGroup.items.map((item) => {
@@ -127,7 +158,7 @@ const AdminGroupNav = () => {
                 to={item.path}
                 className={`relative flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200 shrink-0 ${
                   active
-                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    ? 'bg-accent/15 text-accent border border-accent/30'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
