@@ -31,6 +31,7 @@ interface UserTableProps {
   onResetPassword: (u: any) => void;
   onBlock: (u: any) => void;
   onMakeAdmin: (id: string) => void;
+  onRemoveAdmin?: (id: string) => void;
   onDelete: (u: any) => void;
   onViewDetails: (u: any) => void;
   selectedIds?: Set<string>;
