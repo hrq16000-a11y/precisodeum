@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +11,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+
+const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
+const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
 
 const ITEMS_PER_PAGE = 12;
 
@@ -147,6 +150,8 @@ const CityPage = () => {
         </div>
       </section>
 
+      <Suspense fallback={null}><SponsorTopBanner city={city!.name} /></Suspense>
+
       <div className="container py-8">
         <p className="mb-6 text-sm text-muted-foreground">
           {providers.length} profissional(is) encontrado(s) em {city!.name}
@@ -188,6 +193,8 @@ const CityPage = () => {
           </div>
         </div>
       </section>
+
+      <Suspense fallback={null}><SponsorFooterCTA city={city!.name} /></Suspense>
 
       <Footer />
     </div>

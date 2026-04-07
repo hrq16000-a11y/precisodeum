@@ -14,6 +14,9 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
 const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
+const SponsorMidContent = lazy(() => import('@/components/sponsors/SponsorMidContent'));
+const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
 
 const ITEMS_PER_PAGE = 12;
 
@@ -123,6 +126,7 @@ const CategoryPage = () => {
           <div className="mt-3"><GeoLocationChip /></div>
         </div>
       </section>
+      <Suspense fallback={null}><SponsorTopBanner category={slug} /></Suspense>
       <Suspense fallback={null}><AdSlot slotSlug="category-top" category={slug} /></Suspense>
       <div className="container py-8">
         {isFallback && expansionLevel && (
@@ -135,7 +139,7 @@ const CategoryPage = () => {
         )}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {paginatedProviders.map((p, i) => (
-            <>{i === 6 && <Suspense key="cat-ad" fallback={null}><AdSlot slotSlug="category-between" layout="native" category={slug} /></Suspense>}<ProviderCard key={p.id} provider={p} isFallback={isFallback} /></>
+            <>{i === 6 && <Suspense key="cat-ad" fallback={null}><AdSlot slotSlug="category-between" layout="native" category={slug} /></Suspense>}{i === 4 && <Suspense key="cat-sponsor" fallback={null}><SponsorMidContent category={slug} /></Suspense>}<ProviderCard key={p.id} provider={p} isFallback={isFallback} /></>
           ))}
         </div>
         {displayProviders.length === 0 && (
@@ -146,6 +150,7 @@ const CategoryPage = () => {
         )}
         <PaginationControls currentPage={page} totalItems={displayProviders.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
       </div>
+      <Suspense fallback={null}><SponsorFooterCTA category={slug} /></Suspense>
       <Footer />
     </div>
   );

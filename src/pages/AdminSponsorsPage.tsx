@@ -44,7 +44,9 @@ const sizeHints: Record<string, string> = {
 interface Sponsor {
   id: string;
   title: string;
+  company_name: string;
   image_url: string | null;
+  logo_url: string;
   link_url: string | null;
   position: string;
   active: boolean;
@@ -54,9 +56,27 @@ interface Sponsor {
   end_date: string | null;
   impressions: number;
   clicks: number;
+  sponsor_type: string;
+  short_description: string;
+  full_description: string;
+  phone: string;
+  whatsapp: string;
+  external_link: string;
+  linked_city: string;
+  linked_category: string;
+  plan_tier: string;
+  badge_type: string;
+  status: string;
 }
 
-const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0, start_date: '' as string, end_date: '' as string, tier: 'basic', ad_format: 'auto', max_width: 0, max_height: 0, target_pages: 'all' };
+const emptyForm = {
+  title: '', company_name: '', image_url: '', logo_url: '', link_url: '', position: 'banner',
+  active: true, display_order: 0, start_date: '' as string, end_date: '' as string,
+  tier: 'basic', ad_format: 'auto', max_width: 0, max_height: 0, target_pages: 'all',
+  sponsor_type: 'global', short_description: '', full_description: '',
+  phone: '', whatsapp: '', external_link: '', linked_city: '', linked_category: '',
+  plan_tier: 'basic', badge_type: 'Patrocinado', status: 'active',
+};
 
 const idealSizes: Record<string, { width: number; height: number; label: string }> = {
   'hero-top': { width: 970, height: 90, label: '970×90 px (Leaderboard)' },
@@ -127,7 +147,9 @@ const AdminSponsorsPage = () => {
     mutationFn: async () => {
       const payload: any = {
         title: form.title,
+        company_name: form.company_name,
         image_url: form.image_url || null,
+        logo_url: form.logo_url || '',
         link_url: form.link_url || null,
         position: form.position,
         active: form.active,
@@ -139,6 +161,17 @@ const AdminSponsorsPage = () => {
         max_width: form.max_width || 0,
         max_height: form.max_height || 0,
         target_pages: form.target_pages || 'all',
+        sponsor_type: form.sponsor_type,
+        short_description: form.short_description,
+        full_description: form.full_description,
+        phone: form.phone,
+        whatsapp: form.whatsapp,
+        external_link: form.external_link,
+        linked_city: form.linked_city,
+        linked_category: form.linked_category,
+        plan_tier: form.plan_tier,
+        badge_type: form.badge_type,
+        status: form.status,
       };
       if (editingId) {
         const { error } = await supabase.from('sponsors').update(payload).eq('id', editingId);
@@ -177,7 +210,9 @@ const AdminSponsorsPage = () => {
     setEditingId(s.id);
     setForm({
       title: s.title,
+      company_name: (s as any).company_name || '',
       image_url: s.image_url || '',
+      logo_url: (s as any).logo_url || '',
       link_url: s.link_url || '',
       position: s.position,
       active: s.active,
@@ -189,6 +224,17 @@ const AdminSponsorsPage = () => {
       max_width: (s as any).max_width || 0,
       max_height: (s as any).max_height || 0,
       target_pages: (s as any).target_pages || 'all',
+      sponsor_type: (s as any).sponsor_type || 'global',
+      short_description: (s as any).short_description || '',
+      full_description: (s as any).full_description || '',
+      phone: (s as any).phone || '',
+      whatsapp: (s as any).whatsapp || '',
+      external_link: (s as any).external_link || '',
+      linked_city: (s as any).linked_city || '',
+      linked_category: (s as any).linked_category || '',
+      plan_tier: (s as any).plan_tier || 'basic',
+      badge_type: (s as any).badge_type || 'Patrocinado',
+      status: (s as any).status || 'active',
     });
     setDialogOpen(true);
   };
@@ -224,9 +270,99 @@ const AdminSponsorsPage = () => {
               <DialogTitle>{editingId ? 'Editar Patrocinador' : 'Novo Patrocinador'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(); }} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Título *</Label>
+                  <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+                </div>
+                <div>
+                  <Label>Nome da Empresa</Label>
+                  <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Tipo de Patrocínio</Label>
+                  <Select value={form.sponsor_type} onValueChange={(v) => setForm({ ...form, sponsor_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="global">Global (todo o site)</SelectItem>
+                      <SelectItem value="city">Por Cidade</SelectItem>
+                      <SelectItem value="category">Por Categoria</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Plano</Label>
+                  <Select value={form.plan_tier} onValueChange={(v) => setForm({ ...form, plan_tier: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="basic">Básico</SelectItem>
+                      <SelectItem value="highlight">Destaque</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {form.sponsor_type === 'city' && (
+                <div>
+                  <Label>Cidade Vinculada</Label>
+                  <Input value={form.linked_city} onChange={(e) => setForm({ ...form, linked_city: e.target.value })} placeholder="Ex: São Paulo" />
+                </div>
+              )}
+              {form.sponsor_type === 'category' && (
+                <div>
+                  <Label>Categoria Vinculada (slug)</Label>
+                  <Input value={form.linked_category} onChange={(e) => setForm({ ...form, linked_category: e.target.value })} placeholder="Ex: eletricista" />
+                </div>
+              )}
               <div>
-                <Label>Título *</Label>
-                <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+                <Label>Descrição Curta (até 120 chars)</Label>
+                <Input value={form.short_description} onChange={(e) => setForm({ ...form, short_description: e.target.value.slice(0, 120) })} maxLength={120} />
+              </div>
+              <div>
+                <Label>Descrição Completa</Label>
+                <textarea value={form.full_description} onChange={(e) => setForm({ ...form, full_description: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px]" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Telefone</Label>
+                  <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                </div>
+                <div>
+                  <Label>WhatsApp</Label>
+                  <Input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} placeholder="5511999999999" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Link Externo</Label>
+                  <Input value={form.external_link} onChange={(e) => setForm({ ...form, external_link: e.target.value })} placeholder="https://..." />
+                </div>
+                <div>
+                  <Label>Badge</Label>
+                  <Input value={form.badge_type} onChange={(e) => setForm({ ...form, badge_type: e.target.value })} placeholder="Patrocinado" />
+                </div>
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Ativo</SelectItem>
+                    <SelectItem value="paused">Pausado</SelectItem>
+                    <SelectItem value="expired">Expirado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Logo</Label>
+                <ImageUploadField
+                  value={form.logo_url}
+                  onChange={(url) => setForm({ ...form, logo_url: url })}
+                  bucket="service-images"
+                  folder="sponsors"
+                />
               </div>
               <div>
                 <Label>Imagem</Label>
