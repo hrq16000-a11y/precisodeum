@@ -45,7 +45,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
             {providers.map((p, i) => {
               const displayName = p.name || p.businessName || p.category || 'Profissional';
               const displayPhoto = p.photo || p.serviceImage || '';
-              const rating = p.ratingAvg ?? 0;
+              const rating = p.rating ?? 0;
               const reviewCount = p.reviewCount ?? 0;
 
               return (
