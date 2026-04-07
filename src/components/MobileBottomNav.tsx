@@ -28,35 +28,29 @@ const MobileBottomNav = () => {
   return (
     <>
       {/* Spacer */}
-      <div className="h-16 md:hidden" />
+      <div className="h-14 md:hidden" />
 
       <nav
-        ref={menuRef}
         className="fixed bottom-0 left-0 right-0 border-t border-border/60 bg-card/95 backdrop-blur-lg supports-[backdrop-filter]:bg-card/85 md:hidden"
         style={{ zIndex: 1000, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="flex items-center justify-around px-1 py-0.5">
+        <div className="flex items-center justify-around px-1 py-1">
           {items.map((item, i) => {
             const Icon = item.icon;
             const isActive = item.active;
 
-            if (item.isCreate) {
+            if (item.isWhatsApp) {
               return (
                 <button
                   key={i}
                   onClick={item.action}
-                  className="flex flex-col items-center justify-center -mt-3"
+                  className="flex flex-col items-center justify-center px-2 py-0.5 text-green-600"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md">
-                    <Plus className="h-4 w-4" />
-                  </div>
-                  <span className="mt-0.5 text-[9px] font-semibold text-accent">Criar</span>
+                  <Icon className="h-[17px] w-[17px]" />
+                  <span className="mt-0.5 text-[9px] font-medium">WhatsApp</span>
                 </button>
               );
             }
-
-            // Show badge on Menu icon for unread notifications
-            const showBadge = item.label === 'Menu' && unreadCount > 0;
 
             return (
               <button
@@ -70,40 +64,11 @@ const MobileBottomNav = () => {
                 }`}
               >
                 <Icon className="h-[17px] w-[17px]" />
-                {showBadge && (
-                  <span className="absolute -right-0.5 top-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-destructive px-0.5 text-[8px] font-bold text-destructive-foreground">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
                 <span className="mt-0.5 text-[9px] font-medium">{item.label}</span>
               </button>
             );
           })}
         </div>
-
-        {/* Quick menu */}
-        {showMenu && (
-          <div className="absolute bottom-full left-0 right-0 z-50 mb-1 mx-3 rounded-xl border border-border bg-card p-3 shadow-lg animate-in slide-in-from-bottom-2 duration-200">
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: 'Vagas', path: '/vagas' },
-                { label: 'Notícias', path: '/blog' },
-                { label: 'Como Funciona', path: '/sobre' },
-                { label: 'FAQ', path: '/faq' },
-                { label: 'Categorias', path: '/categorias' },
-                { label: 'Cidades', path: '/cidades' },
-              ].map(link => (
-                <button
-                  key={link.path}
-                  onClick={() => { navigate(link.path); setShowMenu(false); }}
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted text-left"
-                >
-                  {link.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </nav>
     </>
   );

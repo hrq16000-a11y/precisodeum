@@ -496,6 +496,12 @@ const DashboardServicesPage = () => {
 
             {expandedId === s.id && user && (
               <div className="border-t border-border p-4">
+                {justCreatedId === s.id && (
+                  <div className="mb-3 rounded-lg border border-accent/30 bg-accent/5 p-3 text-sm text-foreground flex items-center gap-2">
+                    <ImagePlus className="h-4 w-4 text-accent shrink-0" />
+                    <span><strong>Serviço criado!</strong> Adicione fotos para atrair mais clientes.</span>
+                  </div>
+                )}
                 <ServiceImageUpload serviceId={s.id} userId={user.id} />
               </div>
             )}
