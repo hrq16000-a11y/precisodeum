@@ -90,7 +90,6 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                   </MagneticButton>
                 </FadeInSection>
               ))}
-              ))}
             </div>
 
             <FadeInSection delay={0.3} className="mt-5 text-center">
