@@ -1,4 +1,4 @@
-import { Search, Download } from 'lucide-react';
+import { Search, Download, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,20 +31,31 @@ const UserFilters = ({
   filterStatus, onFilterStatusChange,
   totalResults, onExport,
 }: UserFiltersProps) => (
-  <>
-    <div className="flex flex-col gap-2 sm:flex-row">
+  <div className="space-y-3">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Buscar nome, e-mail, telefone, WhatsApp..."
+          placeholder="Buscar usuário..."
           value={search}
           onChange={e => onSearchChange(e.target.value)}
           className="pl-9"
         />
       </div>
-      <Select value={filterType} onValueChange={onFilterTypeChange}>
+      <Select value={filterStatus} onValueChange={onFilterStatusChange}>
         <SelectTrigger className="w-full sm:w-40">
-          <SelectValue placeholder="Tipo" />
+          <SelectValue placeholder="Todos status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos os status</SelectItem>
+          {STATUS_OPTIONS.map(o => (
+            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select value={filterType} onValueChange={onFilterTypeChange}>
+        <SelectTrigger className="w-full sm:w-44">
+          <SelectValue placeholder="Todos os níveis" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos os tipos</SelectItem>
@@ -53,23 +64,12 @@ const UserFilters = ({
           ))}
         </SelectContent>
       </Select>
-      <Select value={filterStatus} onValueChange={onFilterStatusChange}>
-        <SelectTrigger className="w-full sm:w-36">
-          <SelectValue placeholder="Status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todos status</SelectItem>
-          {STATUS_OPTIONS.map(o => (
-            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
       <Button variant="outline" size="sm" onClick={onExport} className="gap-2">
         <Download className="h-4 w-4" /> Exportar
       </Button>
     </div>
-    <p className="mt-2 text-xs text-muted-foreground">{totalResults} resultado(s)</p>
-  </>
+    <p className="text-xs text-muted-foreground">{totalResults} resultado(s) encontrado(s)</p>
+  </div>
 );
 
 export default UserFilters;
