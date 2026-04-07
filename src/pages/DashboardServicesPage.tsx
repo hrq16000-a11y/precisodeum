@@ -430,7 +430,7 @@ const DashboardServicesPage = () => {
 
             {/* Price + Category */}
             <div className="grid grid-cols-2 gap-3">
-              <div>
+            <div>
                 <label className="mb-1 block text-sm font-medium text-foreground">Preço (R$)</label>
                 <input
                   name="price"
@@ -439,19 +439,6 @@ const DashboardServicesPage = () => {
                   placeholder="0,00"
                   className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
                 />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Categoria</label>
-                <select
-                  name="category_type"
-                  value={form.category_type}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                >
-                  {CATEGORY_FILTERS.filter(f => f.value !== 'all').map(f => (
-                    <option key={f.value} value={f.value}>{f.label}</option>
-                  ))}
-                </select>
               </div>
             </div>
 
