@@ -1,9 +1,8 @@
 /**
  * PWA Install Section — Homepage CTA
  *
- * BLINDADO: Sempre visível na homepage.
+ * Respeita show_homepage_section da tabela pwa_install_settings.
  * Ao clicar, dispara PWA_OPEN_INSTALL_MODAL_EVENT para abrir o popup central.
- * Se já instalado (standalone), mostra "App instalado" desabilitado.
  */
 import { Download, Smartphone, Zap, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,10 @@ import {
 const PwaInstallSection = () => {
   const { isStandalone } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
+
+  // Respect settings
+  if (!settings?.enabled) return null;
+  if (!settings?.show_homepage_section) return null;
 
   const sectionTitle = settings?.homepage_section_title || 'Tenha o app na palma da mão';
   const sectionSubtitle =

@@ -427,6 +427,123 @@ export type Database = {
         }
         Relationships: []
       }
+      home_cta_blocks: {
+        Row: {
+          active: boolean
+          button_link: string
+          button_text: string
+          created_at: string
+          display_order: number
+          icon: string
+          id: string
+          section: string
+          subtitle: string
+          title: string
+          updated_at: string
+          variant: string
+        }
+        Insert: {
+          active?: boolean
+          button_link?: string
+          button_text?: string
+          created_at?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          section?: string
+          subtitle?: string
+          title?: string
+          updated_at?: string
+          variant?: string
+        }
+        Update: {
+          active?: boolean
+          button_link?: string
+          button_text?: string
+          created_at?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          section?: string
+          subtitle?: string
+          title?: string
+          updated_at?: string
+          variant?: string
+        }
+        Relationships: []
+      }
+      home_steps: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          display_order: number
+          icon: string
+          id: string
+          step: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          step?: number
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          step?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      home_testimonials: {
+        Row: {
+          active: boolean
+          city: string
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          rating: number
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          city?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          rating?: number
+          text?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          city?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          rating?: number
+          text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       institutional_pages: {
         Row: {
           content: string
