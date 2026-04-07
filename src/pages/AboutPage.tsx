@@ -117,7 +117,7 @@ const AboutPage = () => {
       </section>
 
       {/* 5 Characteristics */}
-      <section className="bg-muted/50 py-16">
+      <ParallaxSection speed={0.12} orb orbColor="primary" className="bg-muted/50 py-16">
         <div className="container">
           <motion.div {...fadeIn} className="mb-10 text-center">
             <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
