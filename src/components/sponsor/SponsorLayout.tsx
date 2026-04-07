@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Megaphone, Settings } from 'lucide-react';
+import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Megaphone, Settings, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +63,9 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
           })}
         </nav>
         <div className="absolute bottom-4 left-3 right-3 space-y-1">
+          <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-sidebar-foreground/70" asChild>
+            <Link to="/admin"><Shield className="h-4 w-4" /> Painel Admin</Link>
+          </Button>
           <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-sidebar-foreground/70" asChild>
             <Link to="/"><LayoutDashboard className="h-4 w-4" /> Ir ao Site</Link>
           </Button>
