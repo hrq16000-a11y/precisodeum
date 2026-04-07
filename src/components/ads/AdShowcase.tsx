@@ -4,6 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { handleImageError } from '@/lib/imageResolver';
 import { ExternalLink } from 'lucide-react';
 
+interface ShowcaseSponsor {
+  id: string;
+  title: string;
+  company_name?: string;
+  short_description?: string;
+  image_url: string | null;
+  link_url: string | null;
+  position: string;
+  tier?: string;
+}
+
 /** Full-width showcase with professional card layout */
 const AdShowcase = ({ className = '' }: { className?: string }) => {
   const { data: sponsors = [] } = useSponsorsByPosition('showcase');
