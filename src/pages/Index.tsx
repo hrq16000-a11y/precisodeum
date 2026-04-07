@@ -9,6 +9,8 @@ import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
 import Header from '@/components/Header';
+import PageTransition from '@/components/PageTransition';
+import ParallaxSection from '@/components/ParallaxSection';
 import HeroBanner from '@/components/home/HeroBanner';
 import CategoriesGrid from '@/components/home/CategoriesGrid';
 import HighlightsCarousel from '@/components/home/HighlightsCarousel';
