@@ -76,7 +76,7 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="relative w-full bg-gradient-to-r from-amber-50 via-white to-amber-50 border-b border-amber-100/60 shadow-sm"
+      className="relative w-full mt-2 border-b border-amber-100/60"
     >
       <AnimatePresence mode="wait">
         <motion.a
@@ -91,14 +91,14 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="relative block w-full h-[70px] sm:h-[90px] overflow-hidden cursor-pointer group transition-transform duration-200 hover:scale-[1.005]"
+          className="block w-full cursor-pointer group"
         >
-          {/* Banner image — full width, cover */}
+          {/* Banner image — full width */}
           {imageSrc && (
             <img
               src={imageSrc}
               alt={displayName}
-              className="absolute inset-0 w-full h-full object-cover object-center"
+              className="w-full h-[70px] sm:h-[90px] object-cover object-center"
               loading="lazy"
               width={1920}
               height={512}
@@ -106,18 +106,28 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
             />
           )}
 
-          {/* CTA hint on hover */}
-          <span className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] sm:text-xs font-medium text-amber-700/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-            <ExternalLink className="h-3 w-3" />
-            <span className="hidden sm:inline">Visitar</span>
-          </span>
+          {/* Text bar below image */}
+          <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 bg-gradient-to-r from-amber-50 via-white to-amber-50">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[7px] sm:text-[8px] font-semibold tracking-widest uppercase text-amber-500/60 shrink-0">
+                Patrocinado
+              </span>
+              <span className="text-[10px] sm:text-xs font-medium text-amber-900/70 truncate">
+                {displayName}
+              </span>
+              {current.short_description && (
+                <span className="hidden sm:inline text-[10px] text-amber-700/50 truncate">
+                  — {current.short_description}
+                </span>
+              )}
+            </div>
+            <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-medium text-amber-600/50 group-hover:text-amber-700 transition-colors shrink-0">
+              <ExternalLink className="h-2.5 w-2.5" />
+              <span className="hidden sm:inline">Visitar</span>
+            </span>
+          </div>
         </motion.a>
       </AnimatePresence>
-
-      {/* Badge — top-left, discrete */}
-      <span className="absolute top-1 left-2 sm:left-3 text-[7px] sm:text-[8px] font-semibold tracking-widest uppercase text-amber-600/50 pointer-events-none select-none">
-        Patrocinado
-      </span>
 
       {/* Dismiss button */}
       <button
@@ -125,7 +135,7 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
           e.stopPropagation();
           setDismissed(true);
         }}
-        className="absolute top-1.5 right-2 p-0.5 rounded-full bg-amber-900/10 text-amber-700/40 hover:text-amber-900/70 transition-colors z-10"
+        className="absolute top-1.5 right-2 p-0.5 rounded-full bg-black/20 text-white/60 hover:text-white transition-colors z-10"
         aria-label="Fechar"
       >
         <X className="h-3 w-3" />
@@ -133,7 +143,7 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
 
       {/* Rotation dots */}
       {validSponsors.length > 1 && (
-        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1 z-10">
           {validSponsors.map((_, i) => (
             <span
               key={i}
