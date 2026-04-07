@@ -73,6 +73,7 @@ const exampleProviders = [
 
 const AboutPage = () => {
   return (
+    <PageTransition>
     <div className="flex min-h-screen flex-col">
       <Header />
 
