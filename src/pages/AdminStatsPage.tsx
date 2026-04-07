@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { BarChart3, Users, Briefcase, Image, AlertTriangle, CheckCircle, Star, FileText, MapPin } from 'lucide-react';
+import { BarChart3, Users, Briefcase, Star, FileText, MapPin, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid } from 'recharts';
 
 interface HealthStats {
   totalProviders: number;
@@ -34,7 +35,12 @@ interface HealthStats {
   providersByCity: { city: string; count: number }[];
   providersByCategory: { name: string; count: number }[];
   recentLeads: any[];
+  leadsOverTime: { date: string; count: number }[];
+  servicesOverTime: { date: string; count: number }[];
+  providersOverTime: { date: string; count: number }[];
 }
+
+const CHART_COLORS = ['hsl(var(--accent))', 'hsl(var(--primary))', 'hsl(142 71% 45%)', 'hsl(38 92% 50%)', 'hsl(0 84% 60%)'];
 
 const AdminStatsPage = () => {
   const { isAdmin, loading } = useAdmin();
@@ -45,21 +51,11 @@ const AdminStatsPage = () => {
 
     const fetchAll = async () => {
       const [
-        providersRes,
-        servicesRes,
-        leadsRes,
-        reviewsRes,
-        jobsRes,
-        blogRes,
-        pagesRes,
-        menuRes,
-        blocksRes,
-        sponsorsRes,
-        categoriesRes,
+        providersRes, servicesRes, leadsRes, reviewsRes, jobsRes, blogRes, pagesRes, menuRes, blocksRes, sponsorsRes, categoriesRes,
       ] = await Promise.all([
-        supabase.from('providers').select('id, status, city, photo_url, description, featured, categories(name)'),
-        supabase.from('services').select('id, provider_id'),
-        supabase.from('leads').select('id, client_name, created_at, providers:provider_id(business_name, city)').order('created_at', { ascending: false }).limit(10),
+        supabase.from('providers').select('id, status, city, photo_url, description, featured, created_at, categories(name)'),
+        supabase.from('services').select('id, provider_id, created_at'),
+        supabase.from('leads').select('id, client_name, created_at, providers:provider_id(business_name, city)').order('created_at', { ascending: false }).limit(50),
         supabase.from('reviews').select('id, approval_status'),
         supabase.from('jobs').select('id').is('deleted_at', null),
         supabase.from('blog_posts').select('id, published').is('deleted_at', null),
@@ -72,6 +68,7 @@ const AdminStatsPage = () => {
 
       const providers = providersRes.data || [];
       const services = servicesRes.data || [];
+      const leads = leadsRes.data || [];
       const providerIdsWithServices = new Set(services.map(s => s.provider_id));
       const categoryProviderCount: Record<string, number> = {};
       const cityCount: Record<string, number> = {};
@@ -93,12 +90,22 @@ const AdminStatsPage = () => {
 
       const categories = categoriesRes.data || [];
       const emptyCats = categories.filter(c => !categoryProviderCount[c.name]);
-
       const reviews = reviewsRes.data || [];
       const blog = blogRes.data || [];
       const pages = pagesRes.data || [];
       const blocks = blocksRes.data || [];
       const sponsors = sponsorsRes.data || [];
+
+      // Time-series aggregation helper
+      const aggregateByDay = (items: any[], dateField = 'created_at') => {
+        const map: Record<string, number> = {};
+        items.forEach(item => {
+          const d = new Date(item[dateField]);
+          const key = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+          map[key] = (map[key] || 0) + 1;
+        });
+        return Object.entries(map).slice(-14).map(([date, count]) => ({ date, count }));
+      };
 
       setStats({
         totalProviders: providers.length,
@@ -112,7 +119,7 @@ const AdminStatsPage = () => {
         totalCategories: categories.length,
         emptyCategories: emptyCats.length,
         totalServices: services.length,
-        totalLeads: (leadsRes.data || []).length,
+        totalLeads: leads.length,
         totalReviews: reviews.length,
         pendingReviews: reviews.filter(r => r.approval_status === 'pending').length,
         totalJobs: (jobsRes.data || []).length,
@@ -125,14 +132,12 @@ const AdminStatsPage = () => {
         activeBlocks: blocks.filter(b => b.active).length,
         totalSponsors: sponsors.length,
         activeSponsors: sponsors.filter(s => s.active).length,
-        providersByCity: Object.entries(cityCount)
-          .map(([city, count]) => ({ city, count }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 10),
-        providersByCategory: Object.entries(categoryProviderCount)
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count),
-        recentLeads: leadsRes.data || [],
+        providersByCity: Object.entries(cityCount).map(([city, count]) => ({ city, count })).sort((a, b) => b.count - a.count).slice(0, 10),
+        providersByCategory: Object.entries(categoryProviderCount).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
+        recentLeads: leads.slice(0, 10),
+        leadsOverTime: aggregateByDay(leads),
+        servicesOverTime: aggregateByDay(services),
+        providersOverTime: aggregateByDay(providers),
       });
     };
 
@@ -166,6 +171,89 @@ const AdminStatsPage = () => {
             <StatCard icon={FileText} label="Conteúdo" value={s.totalBlogPosts + s.totalPages + s.totalBlocks} sub={`${s.totalJobs} vagas ativas`} color="text-purple-500" />
           </div>
 
+          {/* Charts Row */}
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            {/* Leads over time */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-display text-sm font-bold text-foreground flex items-center gap-2 mb-4">
+                  <TrendingUp className="h-4 w-4" /> Leads por Dia
+                </h3>
+                {s.leadsOverTime.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={s.leadsOverTime}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                      <Line type="monotone" dataKey="count" stroke="hsl(var(--accent))" strokeWidth={2} dot={{ fill: 'hsl(var(--accent))' }} name="Leads" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-xs text-muted-foreground">Sem dados</p>}
+              </CardContent>
+            </Card>
+
+            {/* Provider Status Pie */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-display text-sm font-bold text-foreground mb-4">Status dos Prestadores</h3>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'Aprovados', value: s.approvedProviders },
+                        { name: 'Pendentes', value: s.pendingProviders },
+                        { name: 'Rejeitados', value: s.rejectedProviders },
+                      ]}
+                      cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, value }) => value > 0 ? `${name}: ${value}` : ''}
+                    >
+                      <Cell fill="hsl(142 71% 45%)" />
+                      <Cell fill="hsl(38 92% 50%)" />
+                      <Cell fill="hsl(0 84% 60%)" />
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Top Cities Bar Chart */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-display text-sm font-bold text-foreground flex items-center gap-2 mb-4">
+                  <MapPin className="h-4 w-4" /> Top Cidades
+                </h3>
+                {s.providersByCity.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={s.providersByCity.slice(0, 8)} layout="vertical">
+                      <XAxis type="number" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} allowDecimals={false} />
+                      <YAxis type="category" dataKey="city" width={100} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                      <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Prestadores" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-xs text-muted-foreground">Sem dados</p>}
+              </CardContent>
+            </Card>
+
+            {/* Categories Bar Chart */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-display text-sm font-bold text-foreground mb-4">Prestadores por Categoria</h3>
+                {s.providersByCategory.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={s.providersByCategory.slice(0, 8)} layout="vertical">
+                      <XAxis type="number" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} allowDecimals={false} />
+                      <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                      <Bar dataKey="count" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} name="Prestadores" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-xs text-muted-foreground">Sem dados</p>}
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Health Alerts */}
           <div className="mt-6">
             <h2 className="font-display text-lg font-bold text-foreground mb-3">🏥 Saúde do Conteúdo</h2>
@@ -185,90 +273,24 @@ const AdminStatsPage = () => {
             </div>
           </div>
 
-          {/* Detailed breakdowns */}
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            {/* Providers by status */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-display text-sm font-bold text-foreground">Prestadores por Status</h3>
-                <div className="mt-4 space-y-3">
-                  {[
-                    { key: 'approved', label: 'Aprovados', count: s.approvedProviders, color: 'bg-green-500' },
-                    { key: 'pending', label: 'Pendentes', count: s.pendingProviders, color: 'bg-amber-500' },
-                    { key: 'rejected', label: 'Rejeitados', count: s.rejectedProviders, color: 'bg-red-500' },
-                  ].map(item => {
-                    const pct = s.totalProviders > 0 ? (item.count / s.totalProviders) * 100 : 0;
-                    return (
-                      <div key={item.key}>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-foreground">{item.label}</span>
-                          <span className="text-muted-foreground">{item.count}</span>
-                        </div>
-                        <div className="mt-1 h-2 rounded-full bg-muted">
-                          <div className={`h-2 rounded-full ${item.color}`} style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Providers by category */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-display text-sm font-bold text-foreground">Prestadores por Categoria</h3>
-                <div className="mt-4 space-y-2 max-h-60 overflow-y-auto">
-                  {s.providersByCategory.length === 0 && <p className="text-xs text-muted-foreground">Sem dados</p>}
-                  {s.providersByCategory.map(c => (
-                    <div key={c.name} className="flex items-center justify-between text-xs">
-                      <span className="text-foreground truncate">{c.name}</span>
-                      <Badge variant="secondary" className="text-[10px]">{c.count}</Badge>
+          {/* Recent leads */}
+          <Card className="mt-6">
+            <CardContent className="p-6">
+              <h3 className="font-display text-sm font-bold text-foreground">Leads Recentes</h3>
+              <div className="mt-4 space-y-3">
+                {s.recentLeads.length === 0 && <p className="text-xs text-muted-foreground">Nenhum lead</p>}
+                {s.recentLeads.map(l => (
+                  <div key={l.id} className="flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-medium text-foreground">{l.client_name}</span>
+                      <span className="text-muted-foreground"> → {(l.providers as any)?.business_name || '—'}</span>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Top cities */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-display text-sm font-bold text-foreground flex items-center gap-2">
-                  <MapPin className="h-4 w-4" /> Top Cidades
-                </h3>
-                <div className="mt-4 space-y-2">
-                  {s.providersByCity.length === 0 && <p className="text-xs text-muted-foreground">Sem dados</p>}
-                  {s.providersByCity.map((c, i) => (
-                    <div key={c.city} className="flex items-center justify-between text-xs">
-                      <span className="text-foreground">
-                        <span className="mr-2 text-muted-foreground">{i + 1}.</span>{c.city}
-                      </span>
-                      <span className="text-muted-foreground">{c.count}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent leads */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-display text-sm font-bold text-foreground">Leads Recentes</h3>
-                <div className="mt-4 space-y-3">
-                  {s.recentLeads.length === 0 && <p className="text-xs text-muted-foreground">Nenhum lead</p>}
-                  {s.recentLeads.map(l => (
-                    <div key={l.id} className="flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-medium text-foreground">{l.client_name}</span>
-                        <span className="text-muted-foreground"> → {(l.providers as any)?.business_name || '—'}</span>
-                      </div>
-                      <span className="text-muted-foreground">{new Date(l.created_at).toLocaleDateString('pt-BR')}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                    <span className="text-muted-foreground">{new Date(l.created_at).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
     </AdminLayout>
