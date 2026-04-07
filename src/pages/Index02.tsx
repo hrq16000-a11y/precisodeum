@@ -130,7 +130,7 @@ const Index02 = () => {
           <SponsorsSection sponsors={sponsors} />
           <HowItWorksSection />
           {allCategories.length > 0 && topCities.length > 0 && (
-            <PopularSearches categories={allCategories} cities={topCities} />
+            <PopularSearches />
           )}
           <TestimonialsSection />
           <FaqSection />
