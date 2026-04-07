@@ -172,6 +172,10 @@ const Index = () => {
   // Section renderer — maps slug to component
   const renderSection = (slug: string) => {
     switch (slug) {
+      case 'urgency':
+        return <UrgencyBanner key={slug} />;
+      case 'stats':
+        return <StatsCounter key={slug} />;
       case 'highlights':
         return <HighlightsCarousel key={slug} />;
       case 'categories':
