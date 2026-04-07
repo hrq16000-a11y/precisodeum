@@ -217,14 +217,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           </span>
           <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
             <Users className="h-3.5 w-3.5 text-secondary" />
-            {geoCity ? (
-              <>
-                <MapPin className="h-3 w-3 text-secondary" />
-                {geoCity}
-              </>
-            ) : (
-              'Todo o Brasil'
-            )}
+            Profissionais verificados
           </span>
           <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
             <Zap className="h-3.5 w-3.5 text-secondary" /> Resposta rápida
