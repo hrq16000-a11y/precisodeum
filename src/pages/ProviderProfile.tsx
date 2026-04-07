@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users } from 'lucide-react';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import ImageLightbox from '@/components/ImageLightbox';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -14,7 +14,7 @@ const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,7 @@ interface PageSettings {
 }
 
 const DEFAULT_SETTINGS: PageSettings = {
-  sections_order: ['about', 'portfolio', 'services', 'reviews', 'lead_form'],
+  sections_order: ['about', 'portfolio', 'services', 'reviews'],
   hidden_sections: [],
   headline: '',
   tagline: '',
@@ -80,6 +80,7 @@ interface ProviderProfileSnapshot {
   portfolioImages: string[];
   portfolioRawUrls: string[];
   pageSettings: PageSettings;
+  relatedProviders: any[];
 }
 
 const PROVIDER_PROFILE_CACHE_TTL = 1000 * 60 * 15;
@@ -150,9 +151,11 @@ const ProviderProfile = () => {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [leadDialogOpen, setLeadDialogOpen] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
   const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '' });
   const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
+  const [relatedProviders, setRelatedProviders] = useState<any[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -165,6 +168,7 @@ const ProviderProfile = () => {
       setPortfolioRawUrls(snapshot.portfolioRawUrls);
       setPortfolioImages(snapshot.portfolioImages);
       setPageSettings(snapshot.pageSettings);
+      setRelatedProviders(snapshot.relatedProviders);
       setLoading(false);
     };
 
@@ -182,14 +186,12 @@ const ProviderProfile = () => {
 
       if (active) setLoading(true);
 
-      // Try exact match first
       let { data } = await supabase
         .from('providers')
         .select('*, categories(name, slug, icon)')
         .eq('slug', slug)
         .maybeSingle();
 
-      // If not found, try sanitized version of the URL slug
       if (!data && slug) {
         const sanitized = sanitizeSlug(slug);
         if (sanitized !== slug) {
@@ -199,7 +201,6 @@ const ProviderProfile = () => {
             .eq('slug', sanitized)
             .maybeSingle();
           if (fallback) {
-            // Redirect to the canonical URL (301-style client redirect)
             navigate(`/profissional/${fallback.slug}`, { replace: true });
             return;
           }
@@ -212,6 +213,7 @@ const ProviderProfile = () => {
         let preparedReviews: any[] = [];
         let preparedPortfolioRawUrls: string[] = [];
         let preparedPortfolioImages: string[] = [];
+        let preparedRelated: any[] = [];
 
         const { data: profile } = await supabase
           .from('public_profiles' as any)
@@ -219,7 +221,6 @@ const ProviderProfile = () => {
           .eq('id', data.user_id)
           .maybeSingle();
 
-        // Fetch user level and account type
         const { data: userProfile } = await supabase
           .from('profiles')
           .select('level_id, account_type_id')
@@ -315,6 +316,35 @@ const ProviderProfile = () => {
           preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
         }
 
+        // Fetch related providers (same city or category, exclude current)
+        try {
+          const conditions = [];
+          if (data.city) conditions.push(`city.eq.${data.city}`);
+          if (data.category_id) conditions.push(`category_id.eq.${data.category_id}`);
+          
+          const { data: related } = await supabase
+            .from('providers')
+            .select('id, slug, business_name, city, state, photo_url, rating_avg, review_count, user_id, categories(name, icon)')
+            .neq('id', data.id)
+            .or(conditions.join(','))
+            .eq('status', 'active')
+            .is('deleted_at', null)
+            .limit(6);
+
+          if (related && related.length > 0) {
+            const relUserIds = related.map((r: any) => r.user_id);
+            const { data: relProfiles } = await supabase
+              .from('public_profiles' as any)
+              .select('id, full_name, avatar_url')
+              .in('id', relUserIds);
+            const pMap: Record<string, any> = {};
+            (relProfiles || []).forEach((p: any) => { pMap[p.id] = p; });
+            preparedRelated = related.map((r: any) => ({ ...r, profiles: pMap[r.user_id] || null }));
+          }
+        } catch {
+          // silently ignore
+        }
+
         const snapshot: ProviderProfileSnapshot = {
           provider: providerWithProfile,
           services: preparedServices,
@@ -322,6 +352,7 @@ const ProviderProfile = () => {
           portfolioImages: preparedPortfolioImages,
           portfolioRawUrls: preparedPortfolioRawUrls,
           pageSettings: preparedPageSettings,
+          relatedProviders: preparedRelated,
         };
 
         providerProfileCache.set(slug, { ts: Date.now(), snapshot });
@@ -336,15 +367,13 @@ const ProviderProfile = () => {
         setPortfolioImages([]);
         setPortfolioRawUrls([]);
         setPageSettings(DEFAULT_SETTINGS);
+        setRelatedProviders([]);
         setLoading(false);
       }
     };
 
     fetchProvider();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [slug, navigate]);
 
   const name = provider ? ((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : '';
@@ -352,9 +381,7 @@ const ProviderProfile = () => {
   const category = provider ? ((provider.categories as any)?.name || '') : '';
   const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
-  // Auto-fill WhatsApp from phone if empty
   const effectiveWhatsApp = provider ? toCanonical(provider.whatsapp || provider.phone || '') : '';
-
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
   useSeoHead({
@@ -392,13 +419,43 @@ const ProviderProfile = () => {
   useJsonLd(breadcrumbLd);
   useJsonLd(localBusinessLd);
 
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { error } = await supabase.from('leads').insert({
+      provider_id: provider.id,
+      client_name: leadForm.name,
+      phone: leadForm.phone,
+      service_needed: leadForm.service,
+      message: leadForm.message,
+    });
+    if (error) {
+      toast.error('Erro ao enviar solicitação');
+      return;
+    }
+    setLeadSent(true);
+    toast.success('Solicitação enviada com sucesso!');
+  };
+
+  const openPortfolioLightbox = (index: number) => {
+    setLightboxImages(portfolioRawUrls);
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const openServiceLightbox = (images: string[], index: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
-        <div className="container py-8">
-          <Skeleton className="mb-4 h-40 rounded-xl" />
-          <Skeleton className="mb-4 h-32 rounded-xl" />
+        <div className="container py-8 space-y-4">
+          <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-32 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
         </div>
         <Footer />
       </div>
@@ -420,52 +477,21 @@ const ProviderProfile = () => {
   const accentStyle = pageSettings.accent_color
     ? { '--provider-accent': pageSettings.accent_color } as React.CSSProperties
     : {};
-
   const accentBg = pageSettings.accent_color ? `hsl(${pageSettings.accent_color})` : undefined;
-
-  const handleLeadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await supabase.from('leads').insert({
-      provider_id: provider.id,
-      client_name: leadForm.name,
-      phone: leadForm.phone,
-      service_needed: leadForm.service,
-      message: leadForm.message,
-    });
-    if (error) {
-      toast.error('Erro ao enviar solicitação');
-      return;
-    }
-    setLeadSent(true);
-    toast.success('Solicitação enviada!');
-  };
-
   const citySlug = provider.city?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
-
   const visibleSections = pageSettings.sections_order.filter(s => !pageSettings.hidden_sections.includes(s));
   const tc = THEME_CLASSES[pageSettings.theme] || THEME_CLASSES.default;
 
-  // Section renderers
+  // ── Section renderers ──
+
   const renderAbout = () => (
     <div key="about" className={`mt-6 p-6 ${tc.section}`}>
       <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Sobre o profissional</h2>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
         {provider.description || 'Este profissional ainda não adicionou uma descrição.'}
       </p>
     </div>
   );
-
-  const openPortfolioLightbox = (index: number) => {
-    setLightboxImages(portfolioRawUrls);
-    setLightboxIndex(index);
-    setLightboxOpen(true);
-  };
-
-  const openServiceLightbox = (images: string[], index: number) => {
-    setLightboxImages(images);
-    setLightboxIndex(index);
-    setLightboxOpen(true);
-  };
 
   const renderPortfolio = () => {
     if (portfolioImages.length === 0) return null;
@@ -484,7 +510,17 @@ const ProviderProfile = () => {
   };
 
   const renderServices = () => (
-    <ServicesList key="services" services={services} whatsapp={effectiveWhatsApp} providerName={name} providerCity={provider.city} ctaWhatsappText={pageSettings.cta_whatsapp_text} accentBg={accentBg} themeClasses={tc} onImageClick={openServiceLightbox} />
+    <ServicesList
+      key="services"
+      services={services}
+      whatsapp={effectiveWhatsApp}
+      providerName={name}
+      providerCity={provider.city}
+      ctaWhatsappText={pageSettings.cta_whatsapp_text}
+      accentBg={accentBg}
+      themeClasses={tc}
+      onImageClick={openServiceLightbox}
+    />
   );
 
   const renderReviews = () => {
@@ -518,42 +554,11 @@ const ProviderProfile = () => {
     );
   };
 
-  const renderLeadForm = () => (
-    <div key="lead_form" className={`mt-6 w-full lg:hidden p-6 ${tc.section}`}>
-      <h3 className={`${tc.heading} text-lg font-bold text-foreground`}>{pageSettings.cta_text}</h3>
-      {leadSent ? (
-        <div className="mt-4 rounded-lg bg-success/10 p-4 text-center">
-          <p className="text-sm font-semibold text-foreground">Solicitação enviada!</p>
-          <p className="mt-1 text-xs text-muted-foreground">O profissional entrará em contato em breve.</p>
-        </div>
-      ) : (
-        <form onSubmit={handleLeadSubmit} className="mt-4 space-y-3">
-          <input type="text" placeholder="Seu nome" required value={leadForm.name}
-            onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
-            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-          <input type="tel" placeholder="Seu telefone" required value={leadForm.phone}
-            onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
-            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-          <input type="text" placeholder="Serviço necessário" required value={leadForm.service}
-            onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
-            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-          <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
-            onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
-            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-          <Button type="submit" variant="accent" className={`w-full ${tc.button}`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
-            Enviar Solicitação
-          </Button>
-        </form>
-      )}
-    </div>
-  );
-
   const sectionMap: Record<string, () => React.ReactNode> = {
     about: renderAbout,
     portfolio: renderPortfolio,
     services: renderServices,
     reviews: renderReviews,
-    lead_form: renderLeadForm,
   };
 
   return (
@@ -562,29 +567,20 @@ const ProviderProfile = () => {
 
       {/* Cover Image Hero */}
       {pageSettings.cover_image_url && (
-        <div className="relative w-full aspect-[16/5] sm:aspect-[16/5] overflow-hidden">
+        <div className="relative w-full aspect-[16/5] overflow-hidden">
           <img src={coverImage(pageSettings.cover_image_url)} alt="Capa" className="h-full w-full object-cover" loading="eager" onError={handleImageError} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 container pb-6 text-white">
-            {pageSettings.headline && (
-              <h2 className="font-display text-xl sm:text-3xl font-bold drop-shadow-lg">{pageSettings.headline}</h2>
-            )}
-            {pageSettings.tagline && (
-              <p className="mt-1 text-sm sm:text-lg opacity-90 drop-shadow">{pageSettings.tagline}</p>
-            )}
+            {pageSettings.headline && <h2 className="font-display text-xl sm:text-3xl font-bold drop-shadow-lg">{pageSettings.headline}</h2>}
+            {pageSettings.tagline && <p className="mt-1 text-sm sm:text-lg opacity-90 drop-shadow">{pageSettings.tagline}</p>}
           </div>
         </div>
       )}
 
-      {/* Headline without cover */}
       {!pageSettings.cover_image_url && (pageSettings.headline || pageSettings.tagline) && (
         <div className="container pt-6">
-          {pageSettings.headline && (
-            <h2 className="font-display text-xl font-bold text-foreground">{pageSettings.headline}</h2>
-          )}
-          {pageSettings.tagline && (
-            <p className="mt-1 text-sm text-muted-foreground">{pageSettings.tagline}</p>
-          )}
+          {pageSettings.headline && <h2 className="font-display text-xl font-bold text-foreground">{pageSettings.headline}</h2>}
+          {pageSettings.tagline && <p className="mt-1 text-sm text-muted-foreground">{pageSettings.tagline}</p>}
         </div>
       )}
 
@@ -607,190 +603,258 @@ const ProviderProfile = () => {
         <span className="text-foreground">{name}</span>
       </nav>
 
-      {/* Profile Top Ad Slot */}
       <Suspense fallback={null}><AdSlot slotSlug="profile-top" category={category} city={provider.city} state={provider.state} /></Suspense>
 
-      <div className="container py-8">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          <div className="flex-1">
-            {/* Profile header */}
-            <div className={`p-6 ${tc.card}`}>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                <Avatar className="h-20 w-20 shrink-0 rounded-2xl">
-                  <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
-                  <AvatarFallback className="rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
-                    {provider.plan === 'premium' && (
-                      <span className={`inline-flex items-center gap-1 ${tc.badge} bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
-                        <Crown className="h-3 w-3" /> DESTAQUE
-                      </span>
-                    )}
-                    {provider.levelInfo && (
-                      <span className={`inline-flex items-center gap-1 ${tc.badge} px-2 py-0.5 text-xs font-medium`} style={{ backgroundColor: `${provider.levelInfo.color}20`, color: provider.levelInfo.color }}>
-                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: provider.levelInfo.color }} />
-                        {provider.levelInfo.name}
-                      </span>
-                    )}
-                    {provider.accTypeInfo && (
-                      <span className={`inline-flex items-center gap-1 ${tc.badge} border px-2 py-0.5 text-xs font-medium`} style={{ borderColor: `${provider.accTypeInfo.color}40`, color: provider.accTypeInfo.color }}>
-                        {provider.accTypeInfo.name}
-                      </span>
-                    )}
-                  </div>
-                  {provider.business_name && (
-                    <p className="text-sm text-muted-foreground">{provider.business_name}</p>
-                  )}
-                  <p className="mt-1 text-sm font-medium" style={accentBg ? { color: accentBg } : undefined}>
-                    {category || 'Categoria não informada'}
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {provider.city
-                        ? `${provider.neighborhood ? `${provider.neighborhood}, ` : ''}${provider.city} - ${provider.state}`
-                        : 'Localização não informada'}
+      <div className="container py-6">
+        <div className="mx-auto max-w-3xl">
+          {/* ── Profile Header Card ── */}
+          <div className={`p-6 ${tc.card}`}>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+              <Avatar className="h-24 w-24 shrink-0 rounded-2xl ring-2 ring-accent/20">
+                <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
+                <AvatarFallback className="rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
+                  {provider.plan === 'premium' && (
+                    <span className={`inline-flex items-center gap-1 ${tc.badge} bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                      <Crown className="h-3 w-3" /> DESTAQUE
                     </span>
-                    {provider.years_experience > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {provider.years_experience} anos de experiência
-                      </span>
-                    )}
-                  </div>
-                  {reviewsEnabled && (
-                    <div className="mt-3">
-                      <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
-                    </div>
                   )}
-                  {/* Social links */}
-                  {hasSocial && (
-                    <div className="mt-3 flex gap-2">
-                      {pageSettings.instagram_url && (
-                        <a href={pageSettings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                          <Instagram className="h-5 w-5" />
-                        </a>
-                      )}
-                      {pageSettings.facebook_url && (
-                        <a href={pageSettings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                          <Facebook className="h-5 w-5" />
-                        </a>
-                      )}
-                      {pageSettings.youtube_url && (
-                        <a href={pageSettings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                          <Youtube className="h-5 w-5" />
-                        </a>
-                      )}
-                      {pageSettings.tiktok_url && (
-                        <a href={pageSettings.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors text-sm font-bold">
-                          🎵
-                        </a>
-                      )}
-                    </div>
+                  {provider.levelInfo && (
+                    <span className={`inline-flex items-center gap-1 ${tc.badge} px-2 py-0.5 text-xs font-medium`} style={{ backgroundColor: `${provider.levelInfo.color}20`, color: provider.levelInfo.color }}>
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: provider.levelInfo.color }} />
+                      {provider.levelInfo.name}
+                    </span>
+                  )}
+                  {provider.accTypeInfo && (
+                    <span className={`inline-flex items-center gap-1 ${tc.badge} border px-2 py-0.5 text-xs font-medium`} style={{ borderColor: `${provider.accTypeInfo.color}40`, color: provider.accTypeInfo.color }}>
+                      {provider.accTypeInfo.name}
+                    </span>
                   )}
                 </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {effectiveWhatsApp && (
-                  <Button variant="accent" size="lg" className={tc.button} asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-                    <a href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)} target="_blank" rel="noopener noreferrer">
-                      <MessageCircle className="h-5 w-5" /> {pageSettings.cta_whatsapp_text}
-                    </a>
-                  </Button>
+                {provider.business_name && <p className="text-sm text-muted-foreground">{provider.business_name}</p>}
+                <p className="mt-1 text-sm font-medium" style={accentBg ? { color: accentBg } : undefined}>
+                  {category || 'Categoria não informada'}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    {provider.city
+                      ? `${provider.neighborhood ? `${provider.neighborhood}, ` : ''}${provider.city} - ${provider.state}`
+                      : 'Localização não informada'}
+                  </span>
+                  {provider.years_experience > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {provider.years_experience} anos exp.
+                    </span>
+                  )}
+                </div>
+                {reviewsEnabled && (
+                  <div className="mt-3">
+                    <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
+                  </div>
                 )}
-                {isMobile && provider.phone && telLink(provider.phone) && (
-                  <Button variant="outline" size="lg" className={tc.buttonOutline} asChild>
-                    <a href={telLink(provider.phone)}>
-                      <Phone className="h-5 w-5" /> Ligar
-                    </a>
-                  </Button>
+                {hasSocial && (
+                  <div className="mt-3 flex gap-2">
+                    {pageSettings.instagram_url && (
+                      <a href={pageSettings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                        <Instagram className="h-5 w-5" />
+                      </a>
+                    )}
+                    {pageSettings.facebook_url && (
+                      <a href={pageSettings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                        <Facebook className="h-5 w-5" />
+                      </a>
+                    )}
+                    {pageSettings.youtube_url && (
+                      <a href={pageSettings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                        <Youtube className="h-5 w-5" />
+                      </a>
+                    )}
+                    {pageSettings.tiktok_url && (
+                      <a href={pageSettings.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors text-sm font-bold">
+                        🎵
+                      </a>
+                    )}
+                  </div>
                 )}
-                <Button variant="outline" size="lg" onClick={() => {
-                  navigator.clipboard.writeText(window.location.href).then(() => {
-                    toast.success('Link copiado!');
-                  }).catch(() => {
-                    window.prompt('Copie o link:', window.location.href);
-                  });
-                }}>
-                  <Copy className="h-4 w-4" /> Copiar Link
-                </Button>
               </div>
             </div>
 
-            {/* Dynamic sections with ad slots interspersed */}
-            {visibleSections.map((sectionId, idx) => {
-              const render = sectionMap[sectionId];
-              return (
-                <div key={sectionId}>
-                  {render ? render() : null}
-                  {sectionId === 'about' && (
-                    <Suspense fallback={null}><AdSlot slotSlug="profile-after-desc" category={category} city={provider.city} state={provider.state} /></Suspense>
-                  )}
-                  {sectionId === 'services' && (
-                    <Suspense fallback={null}><AdSlot slotSlug="profile-between-services" category={category} city={provider.city} state={provider.state} /></Suspense>
-                  )}
-                </div>
-              );
-            })}
+            {/* ── CTA Buttons ── */}
+            <div className="mt-5 flex flex-wrap gap-2">
+              {/* Primary: Solicitar Orçamento popup button */}
+              <Button
+                variant="accent"
+                size="lg"
+                className={`${tc.button} gap-2`}
+                onClick={() => setLeadDialogOpen(true)}
+                style={accentBg ? { backgroundColor: accentBg } : undefined}
+              >
+                <Send className="h-4 w-4" />
+                {pageSettings.cta_text}
+              </Button>
+              {effectiveWhatsApp && (
+                <Button variant="outline" size="lg" className={`${tc.buttonOutline} gap-2`} asChild>
+                  <a href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-5 w-5 text-[#25D366]" /> {pageSettings.cta_whatsapp_text}
+                  </a>
+                </Button>
+              )}
+              {isMobile && provider.phone && telLink(provider.phone) && (
+                <Button variant="outline" size="lg" className={tc.buttonOutline} asChild>
+                  <a href={telLink(provider.phone)}>
+                    <Phone className="h-5 w-5" /> Ligar
+                  </a>
+                </Button>
+              )}
+              <Button variant="ghost" size="lg" onClick={() => {
+                navigator.clipboard.writeText(window.location.href).then(() => toast.success('Link copiado!')).catch(() => window.prompt('Copie o link:', window.location.href));
+              }}>
+                <Copy className="h-4 w-4" /> Copiar Link
+              </Button>
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <aside className="hidden lg:block w-80">
-            <div className={`sticky top-20 p-6 ${tc.card}`}>
-              <h3 className={`${tc.heading} text-lg font-bold text-foreground`}>{pageSettings.cta_text}</h3>
-              {leadSent ? (
-                <div className="mt-4 rounded-lg bg-success/10 p-4 text-center">
-                  <p className="text-sm font-semibold text-foreground">Solicitação enviada!</p>
-                  <p className="mt-1 text-xs text-muted-foreground">O profissional entrará em contato em breve.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleLeadSubmit} className="mt-4 space-y-3">
-                  <input type="text" placeholder="Seu nome" required value={leadForm.name}
-                    onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
-                    className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-                  <input type="tel" placeholder="Seu telefone" required value={leadForm.phone}
-                    onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-                  <input type="text" placeholder="Serviço necessário" required value={leadForm.service}
-                    onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
-                    className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-                  <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
-                    onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
-                    className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-                  <Button type="submit" variant="accent" className={`w-full ${tc.button}`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
-                    Enviar Solicitação
-                  </Button>
-                </form>
-              )}
+          {/* ── Dynamic sections ── */}
+          {visibleSections.map((sectionId) => {
+            const render = sectionMap[sectionId];
+            return (
+              <div key={sectionId}>
+                {render ? render() : null}
+                {sectionId === 'about' && (
+                  <Suspense fallback={null}><AdSlot slotSlug="profile-after-desc" category={category} city={provider.city} state={provider.state} /></Suspense>
+                )}
+                {sectionId === 'services' && (
+                  <Suspense fallback={null}><AdSlot slotSlug="profile-between-services" category={category} city={provider.city} state={provider.state} /></Suspense>
+                )}
+              </div>
+            );
+          })}
+
+          {/* ── Related Providers ── */}
+          {relatedProviders.length > 0 && (
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="h-5 w-5 text-accent" />
+                <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Profissionais Relacionados</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {relatedProviders.map((rp: any) => {
+                  const rpName = rp.profiles?.full_name || rp.business_name || 'Profissional';
+                  const rpInitials = rpName.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
+                  const rpAvatar = avatarLarge(rp.profiles?.avatar_url || rp.photo_url);
+                  const rpCategory = (rp.categories as any)?.name || '';
+                  return (
+                    <Link
+                      key={rp.id}
+                      to={`/profissional/${rp.slug}`}
+                      className={`group block p-4 transition-all hover:shadow-md hover:border-accent/30 ${tc.card}`}
+                    >
+                      <div className="flex flex-col items-center text-center gap-2">
+                        <Avatar className="h-14 w-14 rounded-xl ring-1 ring-border group-hover:ring-accent/30 transition-all">
+                          <AvatarImage src={rpAvatar || undefined} alt={rpName} className="rounded-xl" />
+                          <AvatarFallback className="rounded-xl bg-primary/10 text-sm font-bold text-primary">
+                            {rpInitials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{rpName}</p>
+                          {rpCategory && <p className="text-[11px] text-accent truncate">{rpCategory}</p>}
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            <MapPin className="inline h-3 w-3 mr-0.5" />{rp.city}
+                          </p>
+                          {rp.rating_avg > 0 && (
+                            <div className="flex items-center justify-center gap-1 mt-1">
+                              <Star className="h-3 w-3 fill-accent text-accent" />
+                              <span className="text-[11px] font-medium text-foreground">{Number(rp.rating_avg).toFixed(1)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-            <SponsorAd position="sidebar" layout="vertical" className="mt-4" />
-          </aside>
+          )}
+
+          <Suspense fallback={null}><AdSlot slotSlug="profile-before-whatsapp" category={category} city={provider.city} state={provider.state} /></Suspense>
+          <Suspense fallback={null}><AdSlot slotSlug="profile-footer" category={category} city={provider.city} state={provider.state} /></Suspense>
+        </div>
       </div>
-      {/* Profile before WhatsApp ad slot */}
-      <Suspense fallback={null}><AdSlot slotSlug="profile-before-whatsapp" category={category} city={provider.city} state={provider.state} /></Suspense>
-      {/* Profile footer ad slot */}
-      <Suspense fallback={null}><AdSlot slotSlug="profile-footer" category={category} city={provider.city} state={provider.state} /></Suspense>
-      </div>
-      {/* Floating WhatsApp Button — same pattern as homepage FloatingWhatsApp */}
+
+      {/* ── Lead Form Dialog (popup) ── */}
+      <Dialog open={leadDialogOpen} onOpenChange={setLeadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+              <Send className="h-5 w-5 text-accent" />
+              {pageSettings.cta_text}
+            </DialogTitle>
+          </DialogHeader>
+          {leadSent ? (
+            <div className="rounded-xl bg-accent/10 p-6 text-center space-y-2">
+              <div className="mx-auto h-12 w-12 rounded-full bg-accent/20 flex items-center justify-center">
+                <Send className="h-6 w-6 text-accent" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">Solicitação enviada!</p>
+              <p className="text-xs text-muted-foreground">O profissional entrará em contato em breve.</p>
+              <Button variant="outline" onClick={() => setLeadDialogOpen(false)} className="mt-2">Fechar</Button>
+            </div>
+          ) : (
+            <form onSubmit={handleLeadSubmit} className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Seu nome</label>
+                <input type="text" placeholder="Como quer ser chamado?" required value={leadForm.name}
+                  onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Telefone</label>
+                <input type="tel" placeholder="(00) 00000-0000" required value={leadForm.phone}
+                  onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Serviço necessário</label>
+                <input type="text" placeholder="Ex: Reforma de banheiro" required value={leadForm.service}
+                  onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Mensagem</label>
+                <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
+                  onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none resize-none" />
+              </div>
+              <Button type="submit" variant="accent" className="w-full gap-2" style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                <Send className="h-4 w-4" /> Enviar Solicitação
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Floating WhatsApp */}
       {effectiveWhatsApp && (
         <a
           href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)}
           target="_blank"
           rel="noopener noreferrer"
           className="fixed right-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
-          style={{
-            zIndex: 9999,
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)',
-          }}
+          style={{ zIndex: 9999, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}
           aria-label="WhatsApp"
         >
           <MessageCircle className="h-5 w-5" />
         </a>
       )}
+
       <Footer />
       <ImageLightbox
         images={lightboxImages}
@@ -814,10 +878,10 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
           {service.serviceImages.map((img: any, idx: number) => (
             <div
               key={img.id}
-              className="aspect-video cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]"
+              className="aspect-[4/3] cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]"
               onClick={() => onImageClick?.(service.serviceImages.map((i: any) => i.image_url), idx)}
             >
-              <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
+              <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-contain bg-muted/30" loading="lazy" onError={handleImageError} />
             </div>
           ))}
         </div>
@@ -837,7 +901,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
         {service.service_area && <span>📍 {service.service_area}</span>}
         {service.working_hours && <span>🕐 {service.working_hours}</span>}
       </div>
-      <Button variant="accent" className="w-full" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
+      <Button variant="accent" className="w-full gap-2" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
         <a href={whatsappLink(whatsapp || '', `Olá! Vi seu serviço no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
           <MessageCircle className="h-4 w-4" /> {ctaWhatsappText || 'Chamar no WhatsApp'}
         </a>
@@ -860,32 +924,49 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
             <button
               key={s.id}
               onClick={() => setSelected(s)}
-              className="w-full text-left rounded-lg border border-border p-4 transition-all hover:border-primary/30 hover:shadow-sm"
+              className="w-full text-left rounded-lg border border-border p-4 transition-all hover:border-accent/30 hover:shadow-sm group"
             >
-              <h3 className="text-sm font-semibold text-foreground">{s.service_name}</h3>
-              {s.serviceCategories?.length > 0 && (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {s.serviceCategories.map((cat: any, i: number) => (
-                    <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2.5 py-0.5 text-[11px] font-medium text-accent">
-                      {cat.icon} {cat.name}
-                    </span>
-                  ))}
+              <div className="flex gap-3">
+                {/* Service thumbnail preview */}
+                {s.serviceImages?.length > 0 && (
+                  <div className="shrink-0 h-20 w-20 overflow-hidden rounded-lg border border-border">
+                    <img
+                      src={serviceImageThumb(s.serviceImages[0].image_url)}
+                      alt=""
+                      className="h-full w-full object-contain bg-muted/20"
+                      loading="lazy"
+                      onError={handleImageError}
+                    />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">{s.service_name}</h3>
+                  {s.serviceCategories?.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {s.serviceCategories.map((cat: any, i: number) => (
+                        <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                          {cat.icon} {cat.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {s.description && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{s.description}</p>}
+                  <div className="mt-1.5 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                    {s.price && <span className="font-medium text-foreground">💰 {s.price}</span>}
+                    {s.service_area && <span>📍 {s.service_area}</span>}
+                  </div>
                 </div>
-              )}
-              {s.description && <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{s.description}</p>}
-              <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                {s.price && <span>💰 {s.price}</span>}
-                {s.service_area && <span>📍 {s.service_area}</span>}
               </div>
-              {s.serviceImages?.length > 0 && (
-                <div className="mt-3 flex gap-2 overflow-hidden">
-                  {s.serviceImages.slice(0, 3).map((img: any) => (
-                    <div key={img.id} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border">
-                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
+              {/* Additional image thumbnails */}
+              {s.serviceImages?.length > 1 && (
+                <div className="mt-2 flex gap-1.5 overflow-hidden pl-[calc(5rem+0.75rem)]">
+                  {s.serviceImages.slice(1, 4).map((img: any) => (
+                    <div key={img.id} className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border">
+                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-contain bg-muted/20" loading="lazy" onError={handleImageError} />
                     </div>
                   ))}
-                  {s.serviceImages.length > 3 && (
-                    <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted text-xs text-muted-foreground">+{s.serviceImages.length - 3}</span>
+                  {s.serviceImages.length > 4 && (
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-medium text-muted-foreground">+{s.serviceImages.length - 4}</span>
                   )}
                 </div>
               )}
