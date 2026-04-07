@@ -497,8 +497,27 @@ const AdminSponsorCrmPage = () => {
               <h2 className="text-lg font-semibold">Vínculos Patrocinador ↔ Usuário</h2>
               <Button size="sm" onClick={() => setLinkDialog(true)}><Plus className="h-4 w-4 mr-1" /> Vincular</Button>
             </div>
-            <div className="rounded-xl border border-border bg-card overflow-x-auto">
-              <Table className="min-w-[650px]">
+            {/* Mobile cards */}
+            <div className="space-y-3 sm:hidden">
+              {contacts.map((c: any) => (
+                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground text-sm">{getSponsorTitle(c.sponsor_id)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{c.contact_name || '—'} • {c.company_name || '—'}</p>
+                      <p className="text-xs text-muted-foreground">{c.email || '—'} • {c.phone || '—'}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => unlinkMutation.mutate(c.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {contacts.length === 0 && <p className="text-center py-8 text-muted-foreground">Nenhum vínculo.</p>}
+            </div>
+            {/* Desktop table */}
+            <div className="rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patrocinador</TableHead>
