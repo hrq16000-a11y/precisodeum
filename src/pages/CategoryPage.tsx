@@ -126,6 +126,7 @@ const CategoryPage = () => {
           <div className="mt-3"><GeoLocationChip /></div>
         </div>
       </section>
+      <Suspense fallback={null}><SponsorTopBanner category={slug} /></Suspense>
       <Suspense fallback={null}><AdSlot slotSlug="category-top" category={slug} /></Suspense>
       <div className="container py-8">
         {isFallback && expansionLevel && (
