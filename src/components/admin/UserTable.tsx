@@ -38,7 +38,7 @@ interface UserTableProps {
   onToggleSelection?: (id: string) => void;
 }
 
-const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
+const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
   if (users.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card p-12 text-center">
