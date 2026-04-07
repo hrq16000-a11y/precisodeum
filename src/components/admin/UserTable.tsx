@@ -31,13 +31,14 @@ interface UserTableProps {
   onResetPassword: (u: any) => void;
   onBlock: (u: any) => void;
   onMakeAdmin: (id: string) => void;
+  onRemoveAdmin?: (id: string) => void;
   onDelete: (u: any) => void;
   onViewDetails: (u: any) => void;
   selectedIds?: Set<string>;
   onToggleSelection?: (id: string) => void;
 }
 
-const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
+const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
   if (users.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card p-12 text-center">
@@ -93,7 +94,13 @@ const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAd
                     <Ban className={`h-3.5 w-3.5 mr-2 ${isInactive ? 'text-green-600' : 'text-destructive'}`} />
                     {isInactive ? 'Desbloquear' : 'Bloquear'}
                   </DropdownMenuItem>
-                  {!isAdminUser && (
+                  {isAdminUser ? (
+                    onRemoveAdmin && (
+                      <DropdownMenuItem onClick={() => onRemoveAdmin(p.id)}>
+                        <Shield className="h-3.5 w-3.5 mr-2 text-destructive" /> Remover Admin
+                      </DropdownMenuItem>
+                    )
+                  ) : (
                     <DropdownMenuItem onClick={() => onMakeAdmin(p.id)}>
                       <Shield className="h-3.5 w-3.5 mr-2 text-amber-600" /> Promover Admin
                     </DropdownMenuItem>
