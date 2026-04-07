@@ -16,6 +16,8 @@ import FeaturedProviders from '@/components/home/FeaturedProviders';
 import RecentServices from '@/components/home/RecentServices';
 import PwaInstallSection from '@/components/home/PwaInstallSection';
 import DynamicPageBlocks from '@/components/DynamicPageBlocks';
+import StatsCounter from '@/components/home/StatsCounter';
+import UrgencyBanner from '@/components/home/UrgencyBanner';
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
