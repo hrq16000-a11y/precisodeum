@@ -100,28 +100,54 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
   }, []);
 
   const activeBanner: HeroBannerData | null = banners.length > 0 ? banners[currentSlide] || banners[0] : null;
-  const bgImage = activeBanner?.image_url || DEFAULT_BG_IMAGES[bgIndex];
   const overlayOpacity = activeBanner?.overlay_opacity ?? 0.8;
+  const title = activeBanner?.title || 'Encontre profissionais para';
+  const subtitle = activeBanner?.subtitle || '';
+  const ctaText = activeBanner?.cta_text || 'Cadastrar agora';
+  const ctaLink = activeBanner?.cta_link || '/cadastro';
+  const textAlign = activeBanner?.text_alignment || 'center';
+  const hasCustomTitle = !!activeBanner?.title;
+  const hasCmsBg = !!activeBanner?.image_url;
 
+  const alignClass = textAlign === 'left' ? 'items-start text-left' : textAlign === 'right' ? 'items-end text-right' : 'items-center text-center';
+
+  return (
+    <section className="relative overflow-hidden py-12 md:py-28">
       {/* Background images with crossfade */}
-      {DEFAULT_BG_IMAGES.map((src, i) => (
+      {hasCmsBg ? (
         <motion.img
-          key={src}
-          src={src}
+          key={activeBanner!.image_url!}
+          src={activeBanner!.image_url!}
           alt=""
           width={1920}
           height={768}
-          fetchPriority={i === 0 ? 'high' : 'low'}
+          fetchPriority="high"
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover object-center"
-          initial={false}
-          animate={{
-            opacity: (activeBanner?.image_url ? src === activeBanner.image_url : i === bgIndex) ? 1 : 0,
-            scale: (activeBanner?.image_url ? src === activeBanner.image_url : i === bgIndex) ? 1.05 : 1.1,
-          }}
-          transition={{ duration: 1.5, ease: 'easeInOut' }}
+          initial={{ opacity: 0, scale: 1.1 }}
+          animate={{ opacity: 1, scale: 1.05 }}
+          transition={{ duration: 1.2, ease: 'easeInOut' }}
         />
-      ))}
+      ) : (
+        DEFAULT_BG_IMAGES.map((src, i) => (
+          <motion.img
+            key={src}
+            src={src}
+            alt=""
+            width={1920}
+            height={768}
+            fetchPriority={i === 0 ? 'high' : 'low'}
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+            initial={false}
+            animate={{
+              opacity: i === bgIndex ? 1 : 0,
+              scale: i === bgIndex ? 1.05 : 1.1,
+            }}
+            transition={{ duration: 1.5, ease: 'easeInOut' }}
+          />
+        ))
+      )}
 
       {/* Gradient overlay */}
       <div
