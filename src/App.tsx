@@ -93,6 +93,7 @@ const FaqPage = lazy(() => import("./pages/FaqPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Index02 = lazy(() => import("./pages/Index02"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const CookiesPage = lazy(() => import("./pages/CookiesPage"));
@@ -169,6 +170,9 @@ const App = () => {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/index" element={<Index />} />
+                <Route path="/index02" element={<Index02 />} />
+                <Route path="/index02.html" element={<Index02 />} />
+                <Route path="/index02.php" element={<Index02 />} />
                 <Route path="/buscar" element={<SearchPage />} />
                 <Route path="/categoria/:slug" element={<CategoryPage />} />
                 <Route path="/profissional/:slug" element={<ProviderProfile />} />
