@@ -141,8 +141,36 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], onEdit, on
                 </div>
               </div>
 
+              {/* Level & Account Type */}
+              <div className="mt-2 space-y-1 text-xs">
+                {userLevel && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">Nível:</span>
+                    <span className="inline-flex items-center gap-1 font-semibold">
+                      <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: userLevel.color }} />
+                      {userLevel.name}
+                    </span>
+                  </div>
+                )}
+                {userAccType && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">Tipo:</span>
+                    <span className="inline-flex items-center gap-1 font-semibold">
+                      <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: userAccType.color }} />
+                      {userAccType.name}
+                    </span>
+                  </div>
+                )}
+                {p.department && (
+                  <div className="flex items-center gap-1.5">
+                    <Briefcase className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground">{p.department}</span>
+                  </div>
+                )}
+              </div>
+
               {/* Badges */}
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 {isAdminUser && (
                   <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
                     👑 Admin
