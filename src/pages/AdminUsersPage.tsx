@@ -442,6 +442,8 @@ const AdminUsersPage = () => {
         <UserTable
           users={paginated}
           adminIds={adminIds}
+          levels={levels}
+          accountTypes={accountTypes}
           onEdit={setEditUser}
           onResetPassword={setPwUser}
           onBlock={handleBlock}
