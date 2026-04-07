@@ -135,6 +135,10 @@ const AdminSponsorsPage = () => {
         start_date: form.start_date || null,
         end_date: form.end_date || null,
         tier: form.tier,
+        ad_format: form.ad_format,
+        max_width: form.max_width || 0,
+        max_height: form.max_height || 0,
+        target_pages: form.target_pages || 'all',
       };
       if (editingId) {
         const { error } = await supabase.from('sponsors').update(payload).eq('id', editingId);
