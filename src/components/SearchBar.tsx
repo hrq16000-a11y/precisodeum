@@ -45,9 +45,9 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   // Request browser geolocation on first focus
   const requestGeoOnce = useCallback(() => {
     try {
-      if (localStorage.getItem(GEO_ASKED_KEY)) return;
+      if (sessionStorage.getItem(GEO_ASKED_KEY)) return;
       if (!navigator.geolocation) return;
-      localStorage.setItem(GEO_ASKED_KEY, '1');
+      sessionStorage.setItem(GEO_ASKED_KEY, '1');
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           try {
@@ -62,7 +62,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
           } catch { /* silent */ }
         },
         () => {},
-        { timeout: 5000 }
+        { timeout: 8000 }
       );
     } catch { /* silent */ }
   }, [setCity]);
