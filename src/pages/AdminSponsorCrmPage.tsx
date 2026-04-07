@@ -806,7 +806,7 @@ const AdminSponsorCrmPage = () => {
 
       {/* ─── Note Dialog ─────────────────────────────────────────── */}
       <Dialog open={noteDialog} onOpenChange={setNoteDialog}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nova Nota Interna</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); noteMutation.mutate(); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={noteForm.sponsor_id} onChange={v => setNoteForm(p => ({ ...p, sponsor_id: v }))} /></div>
