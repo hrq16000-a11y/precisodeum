@@ -94,31 +94,8 @@ const AVATAR_GROUPS = [
   },
 ];
 
-/* ───── Hardcoded cover images by category ───── */
-const COVERS = [
-  { id: 'tech-1', label: 'Futurista', category: 'Tech', gradient: 'from-violet-600 via-purple-600 to-indigo-800' },
-  { id: 'tech-2', label: 'Eletrônicos', category: 'Tech', gradient: 'from-cyan-600 via-blue-600 to-indigo-700' },
-  { id: 'tech-3', label: 'Coworking', category: 'Tech', gradient: 'from-slate-700 via-blue-800 to-slate-900' },
-  { id: 'servicos-1', label: 'Profissional', category: 'Serviços', gradient: 'from-amber-500 via-orange-500 to-red-500' },
-  { id: 'servicos-2', label: 'Oficina', category: 'Serviços', gradient: 'from-stone-600 via-amber-700 to-stone-800' },
-  { id: 'servicos-3', label: 'Ferramentas', category: 'Serviços', gradient: 'from-emerald-600 via-teal-600 to-cyan-700' },
-  { id: 'gastro-1', label: 'Restaurante', category: 'Gastro', gradient: 'from-red-600 via-orange-500 to-yellow-500' },
-  { id: 'gastro-2', label: 'Bebidas', category: 'Gastro', gradient: 'from-pink-500 via-rose-500 to-red-500' },
-  { id: 'moda-1', label: 'Boutique', category: 'Moda', gradient: 'from-fuchsia-500 via-pink-500 to-rose-400' },
-  { id: 'moda-2', label: 'Ateliê', category: 'Moda', gradient: 'from-violet-400 via-purple-400 to-fuchsia-400' },
-  { id: 'saude-1', label: 'Clínica', category: 'Saúde', gradient: 'from-teal-400 via-emerald-400 to-green-500' },
-  { id: 'saude-2', label: 'Bem-estar', category: 'Saúde', gradient: 'from-sky-400 via-cyan-400 to-teal-400' },
-  { id: 'edu-1', label: 'Educação', category: 'Educação', gradient: 'from-blue-500 via-indigo-500 to-violet-500' },
-  { id: 'obras-1', label: 'Construção', category: 'Obras', gradient: 'from-yellow-600 via-amber-600 to-orange-600' },
-  { id: 'obras-2', label: 'Reforma', category: 'Obras', gradient: 'from-stone-500 via-zinc-500 to-stone-700' },
-  { id: 'eventos-1', label: 'Eventos', category: 'Eventos', gradient: 'from-pink-500 via-purple-500 to-indigo-500' },
-  { id: 'veiculos-1', label: 'Veículos', category: 'Veículos', gradient: 'from-gray-700 via-zinc-600 to-gray-800' },
-  { id: 'imoveis-1', label: 'Imóveis', category: 'Imóveis', gradient: 'from-emerald-700 via-green-600 to-lime-500' },
-  { id: 'agro-1', label: 'Agro', category: 'Agro & Pet', gradient: 'from-lime-600 via-green-600 to-emerald-700' },
-  { id: 'agro-2', label: 'Pet', category: 'Agro & Pet', gradient: 'from-amber-400 via-orange-400 to-yellow-400' },
-];
+const ALL_AVATARS = AVATAR_GROUPS.flatMap(g => g.items);
 
-const COVER_CATEGORIES = ['Todos', 'Moda', 'Gastro', 'Tech', 'Serviços', 'Veículos', 'Imóveis', 'Saúde', 'Educação', 'Eventos', 'Obras', 'Agro & Pet'];
 
 const STEPS = [
   { key: 'identity', label: 'Identidade', icon: Store },
