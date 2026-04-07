@@ -203,6 +203,8 @@ const App = () => {
                 <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
                 <Route path="/admin/usuarios" element={<AdminUsersPage />} />
                 <Route path="/admin/crm-usuarios" element={<AdminUsersCrmPage />} />
+                <Route path="/admin/niveis" element={<AdminLevelsPage />} />
+                <Route path="/admin/tipos-conta" element={<AdminAccountTypesPage />} />
                 <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
                 <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
                 <Route path="/admin/cidades" element={<AdminCitiesPage />} />
