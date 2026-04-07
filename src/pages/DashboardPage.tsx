@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
+import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
+import LeadsChart from '@/components/dashboard/LeadsChart';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
