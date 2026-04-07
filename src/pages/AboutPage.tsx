@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Wrench, ShieldCheck, Lightbulb, Users, Clock } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageTransition from '@/components/PageTransition';
+import ParallaxSection from '@/components/ParallaxSection';
 import { Button } from '@/components/ui/button';
 
 const fadeIn = {
