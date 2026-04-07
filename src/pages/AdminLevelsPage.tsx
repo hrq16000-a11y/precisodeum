@@ -174,7 +174,13 @@ const AdminLevelsPage = () => {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{level.description || '—'}</p>
-                <div className="mt-2 text-xs text-muted-foreground">Prioridade: <strong>{level.priority}</strong></div>
+                <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>Prioridade: <strong>{level.priority}</strong></span>
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    <strong>{levelCounts[level.id] || 0}</strong> usuário(s)
+                  </span>
+                </div>
                 <div className="mt-3 flex flex-wrap gap-1">
                   {activePerms.length > 0 ? activePerms.map(p => (
                     <Badge key={p.key} variant="outline" className="text-[10px]">{p.label}</Badge>
