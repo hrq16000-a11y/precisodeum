@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, type MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import FadeInSection from '@/components/FadeInSection';
+import MagneticButton from '@/components/MagneticButton';
 
 interface CategoryItem {
   id: string;
