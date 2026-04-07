@@ -81,6 +81,12 @@ const Index = () => {
   const featuredEnabled = useFeatureEnabled('featured_providers_enabled');
   const popularSearchesEnabled = useFeatureEnabled('popular_searches_enabled');
   const faqEnabled = useFeatureEnabled('faq_enabled');
+  const blogEnabled = useFeatureEnabled('module_blog');
+  const jobsEnabled = useFeatureEnabled('module_jobs');
+  const howItWorksEnabled = useFeatureEnabled('module_howitworks');
+  const ctaEnabled = useFeatureEnabled('module_cta');
+  const citiesEnabled = useFeatureEnabled('module_cities');
+  const sponsorsEnabled = useFeatureEnabled('module_sponsors');
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
 
