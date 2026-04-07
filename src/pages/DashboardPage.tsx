@@ -241,7 +241,20 @@ const DashboardPage = () => {
       <h1 className="font-display text-2xl font-bold text-foreground">
         Olá, {profile?.full_name?.split(' ')[0] || 'Profissional'}!
       </h1>
-      <p className="mt-1 text-sm text-muted-foreground">Seu painel profissional</p>
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        <p className="text-sm text-muted-foreground">Seu painel profissional</p>
+        {levelName && (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: `${levelColor}20`, color: levelColor }}>
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: levelColor }} />
+            {levelName}
+          </span>
+        )}
+        {accountTypeName && (
+          <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold" style={{ borderColor: `${accountTypeColor}40`, color: accountTypeColor }}>
+            {accountTypeName}
+          </span>
+        )}
+      </div>
 
       {/* Dominant CTA when no services */}
       {servicesCount !== null && servicesCount === 0 && (
