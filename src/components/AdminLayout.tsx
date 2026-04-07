@@ -191,6 +191,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
           key={location.pathname}
         >
+          <AdminGroupNav />
           {children}
         </motion.div>
       </main>
