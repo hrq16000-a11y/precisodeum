@@ -564,13 +564,13 @@ const AdminSponsorsPage = () => {
         </div>
       )}
 
-      <div className="mt-4 rounded-xl border border-border bg-card">
+      <div className="mt-4 rounded-xl border border-border bg-card overflow-x-auto">
         {isLoading ? (
           <p className="p-6 text-muted-foreground">Carregando...</p>
         ) : paginated.length === 0 ? (
           <p className="p-6 text-center text-muted-foreground">Nenhum patrocinador encontrado.</p>
         ) : (
-          <Table>
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10"></TableHead>
