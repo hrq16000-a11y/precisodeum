@@ -254,10 +254,10 @@ const AdminSponsorsPage = () => {
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Patrocinadores</h1>
-          <p className="text-sm text-muted-foreground">Gerencie banners e anúncios da plataforma</p>
+          <h1 className="font-display text-xl sm:text-2xl font-bold text-foreground">Patrocinadores</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Gerencie banners e anúncios da plataforma</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(v) => { if (!v) closeDialog(); else setDialogOpen(true); }}>
           <DialogTrigger asChild>
