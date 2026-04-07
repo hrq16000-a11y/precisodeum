@@ -190,7 +190,8 @@ const Index = () => {
     switch (slug) {
       case 'urgency':
         return <UrgencyBanner key={slug} />;
-      case 'stats':
+      case 'sponsor_top':
+        return sponsorsEnabled ? <SponsorTopBanner key={slug} city={geoCity || undefined} /> : null;
         return <StatsCounter key={slug} />;
       case 'highlights':
         return <HighlightsCarousel key={slug} />;
