@@ -176,6 +176,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] }}
             key={location.pathname}
           >
+            <DashboardGroupNav />
             {children}
           </motion.div>
         </AnimatePresence>
