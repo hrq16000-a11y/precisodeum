@@ -1,34 +1,34 @@
 
-# Plano de Melhorias Significativas — Estrutura Completa
+## Sistema de Patrocinadores - Plano de Implementação
 
-## 1. Permissões Baseadas em Nível (Rotas + Perfil Público)
-- Criar hook `usePermissions` que lê as permissões do `user_levels` do usuário logado
-- Aplicar verificação de permissões nas rotas admin (ex: se não tem `manage_settings`, não acessa `/admin/configuracoes`)
-- Exibir badge de Nível e Tipo de Conta no perfil público do profissional (`ProviderProfile`)
-- Admin Layout: ocultar itens do menu baseado nas permissões do nível
+### Fase 1: Expansão do Banco de Dados
+- Adicionar campos na tabela `sponsors`: `sponsor_type` (global/city/category), `logo_url`, `short_description`, `full_description`, `phone`, `whatsapp`, `external_link`, `linked_city`, `linked_category`, `badge_type`, `max_slots`
+- Criar tabela `sponsor_slot_limits` para controle de escassez (max 1 global, 3 por cidade, 3 por categoria)
+- Adicionar campo `plan_tier` (basic/highlight/premium) para preparação de monetização
 
-## 2. Dashboard do Usuário — Métricas e Ações Rápidas
-- Adicionar cards de KPI no dashboard (total de visualizações, leads recebidos, avaliações)
-- Gráfico de leads/visualizações nos últimos 30 dias
-- Ações rápidas: editar perfil, gerenciar serviços, ver leads pendentes
-- Indicador de completude do perfil com checklist visual
+### Fase 2: Componentes Visuais (Frontend)
+- Criar `SponsorPremiumCard` — card de alta conversão com logo, selo, frase de impacto, botões WhatsApp/Ver mais, animações fade+slide
+- Criar `SponsorScarcityBadge` — exibição de "Restam X vagas"
+- Criar `SponsorTopBanner` — bloco topo premium
+- Criar `SponsorMidContent` — inserção entre listagens
+- Criar `SponsorSidebarWidget` — sidebar desktop fixa
+- Criar `SponsorFooterCTA` — bloco reforço final
 
-## 3. Gestão de Portfólio e Serviços (Sincronização)
-- Melhorar o wizard de serviços com preview em tempo real
-- Adicionar gestão de imagens do portfólio diretamente no dashboard com drag-to-reorder
-- Sincronizar contagem de serviços/fotos entre perfil e dashboard
-- Validação visual de limites (ex: 20 fotos max com barra de progresso)
+### Fase 3: Exibição Inteligente
+- Integrar componentes nas páginas existentes (Home, Categoria, Cidade, Perfil) sem alterar rotas
+- Filtragem automática por tipo (global aparece em tudo, cidade/categoria filtrado)
+- Lazy loading e carregamento progressivo
 
-## 4. Configurações de Página do Profissional
-- Melhorar DashboardMyPagePage com preview do tema selecionado
-- Permitir personalizar cores, headline, tagline e redes sociais
-- Mostrar preview live da página pública
+### Fase 4: Dashboard do Patrocinador
+- Expandir painel sponsor com métricas: views, cliques, WhatsApp, taxa de conversão, ranking
+- Gráficos leves com Recharts
 
-## 5. Performance & SEO
-- Adicionar meta tags dinâmicas no perfil do profissional (og:image, description)
-- JSON-LD para profissionais (LocalBusiness schema)
-- Lazy loading de imagens do portfólio com intersection observer
+### Fase 5: Admin - Gestão Completa
+- Expandir página admin de sponsors com CRUD completo dos novos campos
+- Controle de limites por contexto
+- Sistema de expiração visual
 
-## 6. UX/Design do Admin
-- Melhorar cards de níveis e tipos de conta com visual mais rico
-- Adicionar contadores de uso (quantos usuários em cada nível/tipo)
+### Fase 6: Tracking e SEO
+- Expandir tracking existente para novos eventos
+- Schema.org LocalBusiness para patrocinadores
+- UTM automática nos links
