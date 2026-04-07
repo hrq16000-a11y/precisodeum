@@ -83,6 +83,7 @@ const AdminHomeStepsPage = lazy(() => import("./pages/AdminHomeStepsPage"));
 const AdminTestimonialsPage = lazy(() => import("./pages/AdminTestimonialsPage"));
 const AdminCtaBlocksPage = lazy(() => import("./pages/AdminCtaBlocksPage"));
 const AdminHomeSectionsPage = lazy(() => import("./pages/AdminHomeSectionsPage"));
+const AdminUsersCrmPage = lazy(() => import("./pages/AdminUsersCrmPage"));
 const InstitutionalPage = lazy(() => import("./pages/InstitutionalPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
@@ -199,6 +200,7 @@ const App = () => {
                 <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
                 <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
                 <Route path="/admin/usuarios" element={<AdminUsersPage />} />
+                <Route path="/admin/crm-usuarios" element={<AdminUsersCrmPage />} />
                 <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
                 <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
                 <Route path="/admin/cidades" element={<AdminCitiesPage />} />
