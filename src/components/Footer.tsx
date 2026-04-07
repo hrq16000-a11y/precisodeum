@@ -1,8 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { MessageCircle, Users } from 'lucide-react';
-import { useMemo, useState } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { useMenuItems } from '@/hooks/useMenuItems';
 
@@ -19,22 +16,13 @@ const ecosystemLinks = [
   { name: 'TamoNaWeb', url: 'https://www.TamoNaWeb.com.br' },
 ];
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
 const Footer = () => {
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoFooterUrl = useSettingValue('logo_footer_url');
   const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : DEFAULT_LOGO_URL;
-  const [showAllSearches, setShowAllSearches] = useState(false);
 
-  // Fallback footer links
+  const { data: footerItems = [] } = useMenuItems('footer');
+
   const fallbackFooterLinks = [
     { label: 'Cadastro', url: '/cadastro' },
     { label: 'Login', url: '/login' },
@@ -50,7 +38,7 @@ const Footer = () => {
   return (
     <footer className="border-t border-border bg-primary text-primary-foreground">
       <div className="container py-12">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <Link to="/">
@@ -59,38 +47,6 @@ const Footer = () => {
             <p className="text-sm leading-relaxed text-primary-foreground/70">
               A maior plataforma de serviços do Brasil. Conectamos você aos melhores profissionais da sua região com avaliações verificadas e contato direto.
             </p>
-          </div>
-
-          {/* Serviços Populares */}
-          <div>
-            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Serviços Populares</h4>
-            <ul className="space-y-2 text-sm text-primary-foreground/70">
-              {visibleServices.map((s) => (
-                <li key={s.slug}>
-                  <Link to={`/categoria/${s.slug}`} className="transition-colors hover:text-primary-foreground">{s.name}</Link>
-                </li>
-              ))}
-            </ul>
-            {!showAllServices && categories.length > 4 && (
-              <button onClick={() => setShowAllServices(true)} className="mt-2 text-xs font-medium text-secondary hover:underline">
-                Ver mais serviços
-              </button>
-            )}
-          </div>
-
-          {/* Cidades */}
-          <div>
-            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Cidades</h4>
-            <ul className="space-y-2 text-sm text-primary-foreground/70">
-              {topCities.map((city) => (
-                <li key={city.slug}>
-                  <Link to={`/cidade/${city.slug}`} className="transition-colors hover:text-primary-foreground">{city.name}</Link>
-                </li>
-              ))}
-            </ul>
-            <Link to="/cidades" className="mt-2 inline-block text-xs font-medium text-secondary hover:underline">
-              Ver mais cidades
-            </Link>
           </div>
 
           {/* Dynamic Footer Nav */}
@@ -160,29 +116,6 @@ const Footer = () => {
             </ul>
           </div>
         </div>
-
-        {/* SEO Links Grid */}
-        {randomSeoLinks.length > 0 && (
-          <div className="mt-10 border-t border-primary-foreground/10 pt-6">
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-primary-foreground/40">Buscas populares</h4>
-            <div className="flex flex-wrap gap-2">
-              {visibleSeoLinks.map(({ cat, city }) => (
-                <Link
-                  key={`${cat.slug}-${city.slug}`}
-                  to={`/${cat.slug}-${city.slug}`}
-                  className="text-xs text-primary-foreground/40 transition-colors hover:text-primary-foreground/70"
-                >
-                  {cat.name} em {city.name}
-                </Link>
-              ))}
-            </div>
-            {!showAllSearches && randomSeoLinks.length > 4 && (
-              <button onClick={() => setShowAllSearches(true)} className="mt-2 text-xs font-medium text-secondary hover:underline">
-                Ver mais buscas
-              </button>
-            )}
-          </div>
-        )}
 
         <PwaFooterInstall />
 
