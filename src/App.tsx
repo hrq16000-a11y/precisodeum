@@ -169,6 +169,7 @@ const App = () => {
         <BrowserRouter>
           <ScrollToTop />
           <AuthProvider>
+            <OAuthRedirectHandler />
             <Suspense fallback={<PageFallback />}>
               <Routes>
                 <Route path="/" element={<Index />} />
