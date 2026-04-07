@@ -122,9 +122,6 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
 
   // Step 2 — Visual
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
-  const [avatarFilter, setAvatarFilter] = useState<'Todos' | 'Masculino' | 'Feminino'>('Todos');
-  const [selectedCover, setSelectedCover] = useState<string | null>(null);
-  const [coverFilter, setCoverFilter] = useState('Todos');
 
   // Step 3 — Contact
   const [whatsapp, setWhatsapp] = useState(provider?.whatsapp || '');
