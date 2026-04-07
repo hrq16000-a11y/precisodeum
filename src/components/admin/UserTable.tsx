@@ -94,7 +94,13 @@ const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAd
                     <Ban className={`h-3.5 w-3.5 mr-2 ${isInactive ? 'text-green-600' : 'text-destructive'}`} />
                     {isInactive ? 'Desbloquear' : 'Bloquear'}
                   </DropdownMenuItem>
-                  {!isAdminUser && (
+                  {isAdminUser ? (
+                    onRemoveAdmin && (
+                      <DropdownMenuItem onClick={() => onRemoveAdmin(p.id)}>
+                        <Shield className="h-3.5 w-3.5 mr-2 text-destructive" /> Remover Admin
+                      </DropdownMenuItem>
+                    )
+                  ) : (
                     <DropdownMenuItem onClick={() => onMakeAdmin(p.id)}>
                       <Shield className="h-3.5 w-3.5 mr-2 text-amber-600" /> Promover Admin
                     </DropdownMenuItem>
