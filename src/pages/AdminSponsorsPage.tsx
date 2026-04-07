@@ -270,9 +270,99 @@ const AdminSponsorsPage = () => {
               <DialogTitle>{editingId ? 'Editar Patrocinador' : 'Novo Patrocinador'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(); }} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Título *</Label>
+                  <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+                </div>
+                <div>
+                  <Label>Nome da Empresa</Label>
+                  <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Tipo de Patrocínio</Label>
+                  <Select value={form.sponsor_type} onValueChange={(v) => setForm({ ...form, sponsor_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="global">Global (todo o site)</SelectItem>
+                      <SelectItem value="city">Por Cidade</SelectItem>
+                      <SelectItem value="category">Por Categoria</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Plano</Label>
+                  <Select value={form.plan_tier} onValueChange={(v) => setForm({ ...form, plan_tier: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="basic">Básico</SelectItem>
+                      <SelectItem value="highlight">Destaque</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {form.sponsor_type === 'city' && (
+                <div>
+                  <Label>Cidade Vinculada</Label>
+                  <Input value={form.linked_city} onChange={(e) => setForm({ ...form, linked_city: e.target.value })} placeholder="Ex: São Paulo" />
+                </div>
+              )}
+              {form.sponsor_type === 'category' && (
+                <div>
+                  <Label>Categoria Vinculada (slug)</Label>
+                  <Input value={form.linked_category} onChange={(e) => setForm({ ...form, linked_category: e.target.value })} placeholder="Ex: eletricista" />
+                </div>
+              )}
               <div>
-                <Label>Título *</Label>
-                <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+                <Label>Descrição Curta (até 120 chars)</Label>
+                <Input value={form.short_description} onChange={(e) => setForm({ ...form, short_description: e.target.value.slice(0, 120) })} maxLength={120} />
+              </div>
+              <div>
+                <Label>Descrição Completa</Label>
+                <textarea value={form.full_description} onChange={(e) => setForm({ ...form, full_description: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px]" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Telefone</Label>
+                  <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                </div>
+                <div>
+                  <Label>WhatsApp</Label>
+                  <Input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} placeholder="5511999999999" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Link Externo</Label>
+                  <Input value={form.external_link} onChange={(e) => setForm({ ...form, external_link: e.target.value })} placeholder="https://..." />
+                </div>
+                <div>
+                  <Label>Badge</Label>
+                  <Input value={form.badge_type} onChange={(e) => setForm({ ...form, badge_type: e.target.value })} placeholder="Patrocinado" />
+                </div>
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Ativo</SelectItem>
+                    <SelectItem value="paused">Pausado</SelectItem>
+                    <SelectItem value="expired">Expirado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Logo</Label>
+                <ImageUploadField
+                  value={form.logo_url}
+                  onChange={(url) => setForm({ ...form, logo_url: url })}
+                  bucket="service-images"
+                  folder="sponsors"
+                />
               </div>
               <div>
                 <Label>Imagem</Label>
