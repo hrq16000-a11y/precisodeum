@@ -228,7 +228,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           transition={{ duration: 0.5, delay: 0.25 }}
           className="mt-6 md:mt-10 w-full max-w-2xl"
         >
-          <div className="rounded-2xl bg-background/10 backdrop-blur-sm p-2 ring-1 ring-primary-foreground/10">
+          <div className="rounded-2xl bg-background/85 p-2 ring-1 ring-primary-foreground/10 shadow-card">
             <SearchBar />
           </div>
           <div className="mt-3 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">
