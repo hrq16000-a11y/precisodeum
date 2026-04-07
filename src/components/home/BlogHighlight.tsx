@@ -14,9 +14,6 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-// Curated category tags for portal feel
-const categoryTags = ['Trabalho', 'Tecnologia', 'Leis', 'Curiosidades'];
-
 const BlogHighlight = () => {
   const { data: posts = [] } = useQuery({
     queryKey: ['blog-highlight-home'],
@@ -34,12 +31,7 @@ const BlogHighlight = () => {
     refetchOnWindowFocus: true,
   });
 
-  const [activeTag, setActiveTag] = useState<string | null>(null);
-
-  const displayed = useMemo(() => {
-    const shuffled = shuffle(posts).slice(0, 8);
-    return shuffled;
-  }, [posts]);
+  const displayed = useMemo(() => shuffle(posts).slice(0, 8), [posts]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -72,18 +64,10 @@ const BlogHighlight = () => {
           <div className="flex items-center gap-2">
             {displayed.length > 3 && (
               <div className="hidden sm:flex gap-1">
-                <button
-                  onClick={() => scroll('left')}
-                  disabled={!canScrollLeft}
-                  className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 transition-colors"
-                >
+                <button onClick={() => scroll('left')} disabled={!canScrollLeft} className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 transition-colors">
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <button
-                  onClick={() => scroll('right')}
-                  disabled={!canScrollRight}
-                  className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 transition-colors"
-                >
+                <button onClick={() => scroll('right')} disabled={!canScrollRight} className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 transition-colors">
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
@@ -94,59 +78,31 @@ const BlogHighlight = () => {
           </div>
         </div>
 
-        {/* Category filter tags */}
-        <div className="mb-3 flex gap-1.5 overflow-x-auto scrollbar-hide">
-          <button
-            onClick={() => setActiveTag(null)}
-            className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
-              !activeTag ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Tudo
-          </button>
-          {categoryTags.map(tag => (
-            <button
-              key={tag}
-              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-              className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
-                activeTag === tag ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-
         <div
           ref={scrollRef}
           onScroll={checkScroll}
           className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0"
         >
-          {displayed.map((post, idx) => (
+          {displayed.map((post) => (
             <Link
               key={post.id}
               to={`/blog/${post.slug}`}
               className="group flex-shrink-0 w-[200px] sm:w-[220px] snap-start overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all hover:shadow-lg"
             >
               {post.cover_image_url ? (
-                <img
-                  src={post.cover_image_url}
-                  alt={post.title}
-                  className="aspect-[4/3] w-full object-cover"
-                  loading="lazy"
-                />
+                <img src={post.cover_image_url} alt={post.title} className="aspect-[4/3] w-full object-cover" loading="lazy" />
               ) : (
                 <div className="aspect-[4/3] w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
                   <Newspaper className="h-8 w-8 text-muted-foreground/30" />
                 </div>
               )}
               <div className="p-2.5">
-                <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-[9px] font-medium text-muted-foreground mb-1">
-                  {categoryTags[idx % categoryTags.length]}
-                </span>
                 <h3 className="font-display text-xs font-bold text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words leading-snug">
                   {post.title}
                 </h3>
+                {post.excerpt && (
+                  <p className="mt-1 text-[10px] text-muted-foreground line-clamp-2">{post.excerpt}</p>
+                )}
               </div>
             </Link>
           ))}

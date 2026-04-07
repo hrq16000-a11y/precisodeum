@@ -10,11 +10,13 @@ interface AdBannerProps {
   sticky?: boolean;
 }
 
-function trackImpression(id: string) {
-  supabase.rpc('increment_sponsor_impression', { sponsor_id: id } as any).then(() => {});
-}
-function trackClick(id: string) {
-  supabase.rpc('increment_sponsor_click', { sponsor_id: id } as any).then(() => {});
+function trackMetric(id: string, slotSlug: string, eventType: 'impression' | 'click') {
+  supabase.rpc('track_sponsor_metric', {
+    _sponsor_id: id,
+    _slot_slug: slotSlug,
+    _event_type: eventType,
+    _page_path: window.location.pathname,
+  } as any).then(() => {});
 }
 
 const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBannerProps) => {
@@ -33,9 +35,9 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
     const s = sponsors[idx];
     if (s && !tracked.current.has(s.id)) {
       tracked.current.add(s.id);
-      trackImpression(s.id);
+      trackMetric(s.id, `position-${position}`, 'impression');
     }
-  }, [sponsors, idx]);
+  }, [sponsors, idx, position]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStart.current = e.touches[0].clientX;
@@ -70,7 +72,7 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
           href={current.link_url || '#'}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => trackClick(current.id)}
+          onClick={() => trackMetric(current.id, `position-${position}`, 'click')}
           className="block transition-opacity hover:opacity-95"
         >
           {current.image_url ? (
