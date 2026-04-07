@@ -56,7 +56,7 @@ interface Sponsor {
   clicks: number;
 }
 
-const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0, start_date: '' as string, end_date: '' as string, tier: 'basic' };
+const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0, start_date: '' as string, end_date: '' as string, tier: 'basic', ad_format: 'auto', max_width: 0, max_height: 0, target_pages: 'all' };
 
 const idealSizes: Record<string, { width: number; height: number; label: string }> = {
   'hero-top': { width: 970, height: 90, label: '970×90 px (Leaderboard)' },
