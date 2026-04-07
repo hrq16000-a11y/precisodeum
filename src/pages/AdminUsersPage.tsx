@@ -270,6 +270,31 @@ const AdminUsersPage = () => {
     toast.success(`${source.length} usuário(s) exportado(s)!`);
   };
 
+  const handleCreateUser = async () => {
+    if (!createEmail.includes('@')) { toast.error('Email inválido'); return; }
+    if (createPassword.length < 6) { toast.error('Senha mínima: 6 caracteres'); return; }
+    if (createName.trim().length < 2) { toast.error('Nome mínimo: 2 caracteres'); return; }
+    setCreating(true);
+    try {
+      const res = await supabase.functions.invoke('admin-create-user', {
+        body: { email: createEmail, password: createPassword, full_name: createName, profile_type: createType },
+      });
+      if (res.error) throw res.error;
+      if (res.data?.error) throw new Error(res.data.error);
+      await logAuditAction({
+        action: 'create', resource_type: 'user', resource_id: res.data?.user_id,
+        details: { email: createEmail, profile_type: createType },
+      });
+      toast.success('Usuário criado com sucesso!');
+      setShowCreateDialog(false);
+      setCreateEmail(''); setCreatePassword(''); setCreateName(''); setCreateType('client');
+      fetchProfiles();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'Falha ao criar usuário'));
+    }
+    setCreating(false);
+  };
+
   if (loading) return <AdminLayout><p className="text-muted-foreground p-4">Carregando...</p></AdminLayout>;
 
   const stats = {
@@ -293,6 +318,9 @@ const AdminUsersPage = () => {
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gerencie todos os usuários da plataforma</p>
         </div>
+        <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+          <UserPlus className="h-4 w-4 mr-1" /> Criar Usuário
+        </Button>
       </div>
 
       <div className="mt-5"><UserStatsCards stats={stats} /></div>
