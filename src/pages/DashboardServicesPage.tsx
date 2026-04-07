@@ -271,6 +271,24 @@ const DashboardServicesPage = () => {
         </p>
       </div>
 
+      {/* Wizard for new services */}
+      {showWizard && provider && user && (
+        <div className="mt-6">
+          <ServiceWizard
+            providerId={provider.id}
+            userId={user.id}
+            provider={provider}
+            categories={categories}
+            onComplete={(serviceId) => {
+              setShowWizard(false);
+              fetchServices();
+              refetchLimits();
+            }}
+            onCancel={() => setShowWizard(false)}
+          />
+        </div>
+      )}
+
       {showForm && (
         <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
           <h2 className="font-display text-lg font-bold text-foreground">
