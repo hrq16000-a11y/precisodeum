@@ -10,6 +10,47 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 
 const DEFAULT_BG_IMAGES = ['/hero-bg-1.jpg', '/hero-bg-2.jpg', '/hero-bg-3.jpg', '/hero-bg-4.jpg', '/hero-bg-5.jpg', '/hero-bg-6.jpg', '/hero-bg-7.jpg', '/hero-bg-8.jpg'];
 const BG_INTERVAL = 7000;
+const HERO_PREFIXES = ['Encontre um', 'Preciso de um'];
+
+const HeroPrefixRotator = () => {
+  const [index, setIndex] = useState(0);
+  const [phase, setPhase] = useState<'visible' | 'glitch' | 'hidden'>('visible');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhase('glitch');
+      setTimeout(() => {
+        setPhase('hidden');
+        setTimeout(() => {
+          setIndex(prev => (prev + 1) % HERO_PREFIXES.length);
+          setPhase('glitch');
+          setTimeout(() => setPhase('visible'), 150);
+        }, 100);
+      }, 200);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <span className="relative inline-block overflow-hidden">
+      <span
+        className={`inline-block transition-all duration-150 ${
+          phase === 'visible' ? 'opacity-100 translate-y-0' :
+          phase === 'glitch' ? 'opacity-80 hero-glitch-flash' :
+          'opacity-0 translate-y-1'
+        }`}
+      >
+        {HERO_PREFIXES[index]}
+      </span>
+      {phase === 'glitch' && (
+        <>
+          <span className="pointer-events-none absolute inset-0 hero-scanline" />
+          <span className="pointer-events-none absolute inset-0 hero-glitch-line" />
+        </>
+      )}
+    </span>
+  );
+};
 
 interface HeroBannerProps {
   totalServices?: number;
