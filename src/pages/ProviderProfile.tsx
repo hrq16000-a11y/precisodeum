@@ -630,6 +630,17 @@ const ProviderProfile = () => {
                         <Crown className="h-3 w-3" /> DESTAQUE
                       </span>
                     )}
+                    {provider.levelInfo && (
+                      <span className={`inline-flex items-center gap-1 ${tc.badge} px-2 py-0.5 text-xs font-medium`} style={{ backgroundColor: `${provider.levelInfo.color}20`, color: provider.levelInfo.color }}>
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: provider.levelInfo.color }} />
+                        {provider.levelInfo.name}
+                      </span>
+                    )}
+                    {provider.accTypeInfo && (
+                      <span className={`inline-flex items-center gap-1 ${tc.badge} border px-2 py-0.5 text-xs font-medium`} style={{ borderColor: `${provider.accTypeInfo.color}40`, color: provider.accTypeInfo.color }}>
+                        {provider.accTypeInfo.name}
+                      </span>
+                    )}
                   </div>
                   {provider.business_name && (
                     <p className="text-sm text-muted-foreground">{provider.business_name}</p>
