@@ -4,9 +4,16 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 
 const UrgencyBanner = memo(() => {
   const [visible, setVisible] = useState(false);
+
+  // Admin-configurable texts via site_settings
+  const customMainText = useSettingValue('urgency_main_text');
+  const customSubText = useSettingValue('urgency_sub_text');
+  const customCtaText = useSettingValue('urgency_cta_text');
+  const customCtaLink = useSettingValue('urgency_cta_link');
 
   const { data: recentCount = 0 } = useQuery({
     queryKey: ['urgency-recent-leads'],
@@ -29,6 +36,11 @@ const UrgencyBanner = memo(() => {
 
   if (recentCount === 0) return null;
 
+  const mainText = customMainText || `${recentCount} solicitações nas últimas 24h`;
+  const subText = customSubText || 'Profissionais respondendo agora';
+  const ctaText = customCtaText || 'Cadastre-se grátis';
+  const ctaLink = customCtaLink || '/cadastro';
+
   return (
     <div
       className={`bg-gradient-to-r from-accent/10 via-accent/5 to-accent/10 border-y border-accent/20 transition-all duration-700 ${
@@ -41,16 +53,15 @@ const UrgencyBanner = memo(() => {
             <TrendingUp className="h-4 w-4 text-accent" />
           </div>
           <div className="text-sm">
-            <span className="font-bold text-foreground">{recentCount} solicitações</span>
-            <span className="text-muted-foreground"> nas últimas 24h</span>
+            <span className="font-bold text-foreground">{mainText.includes('{count}') ? mainText.replace('{count}', String(recentCount)) : mainText}</span>
           </div>
           <div className="hidden items-center gap-1 text-xs text-muted-foreground sm:flex">
             <Clock className="h-3 w-3" />
-            Profissionais respondendo agora
+            {subText}
           </div>
         </div>
         <Button variant="accent" size="sm" className="rounded-full text-xs shadow-sm" asChild>
-          <Link to="/cadastro">Cadastre-se grátis</Link>
+          <Link to={ctaLink}>{ctaText}</Link>
         </Button>
       </div>
     </div>
