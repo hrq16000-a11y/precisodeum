@@ -13,7 +13,9 @@ const SERVICES = [
 
 type AnimationType = 'fade' | 'slideUp' | 'typing';
 
-const animations: Record<AnimationType, { initial: object; animate: object; exit: object }> = {
+type MotionProps = { opacity?: number; y?: number; width?: number | string };
+
+const animations: Record<AnimationType, { initial: MotionProps; animate: MotionProps; exit: MotionProps }> = {
   fade: {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
