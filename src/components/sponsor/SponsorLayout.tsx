@@ -64,6 +64,9 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
         </nav>
         <div className="absolute bottom-4 left-3 right-3 space-y-1">
           <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-sidebar-foreground/70" asChild>
+            <Link to="/admin"><Shield className="h-4 w-4" /> Painel Admin</Link>
+          </Button>
+          <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-sidebar-foreground/70" asChild>
             <Link to="/"><LayoutDashboard className="h-4 w-4" /> Ir ao Site</Link>
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground/50" onClick={handleSignOut}>
