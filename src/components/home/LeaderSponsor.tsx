@@ -95,7 +95,7 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="group flex items-center gap-3 sm:gap-4 py-2.5 sm:py-3 min-h-[50px] sm:min-h-[70px] max-h-[70px] sm:max-h-[110px] transition-transform duration-200 hover:scale-[1.005]"
+            className="group flex items-center gap-3 sm:gap-4 py-2 sm:py-3 min-h-[50px] sm:min-h-[70px] max-h-[70px] sm:max-h-[110px] transition-transform duration-200 hover:scale-[1.005] cursor-pointer"
           >
             {/* Logo */}
             <div className="flex h-[36px] w-[36px] sm:h-[50px] sm:w-[50px] shrink-0 items-center justify-center rounded-lg bg-muted/40 p-1.5 sm:p-2 overflow-hidden">
@@ -116,18 +116,11 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
                 {displayName}
               </p>
               {current.short_description && (
-                <p className="hidden sm:block truncate text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+                <p className="truncate text-[10px] sm:text-xs text-muted-foreground mt-0.5">
                   {current.short_description}
                 </p>
               )}
             </div>
-
-            {/* CTA */}
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-primary px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-bold text-primary-foreground shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:brightness-110">
-              <span className="hidden sm:inline">Acessar</span>
-              <span className="sm:hidden">Ver</span>
-              <ExternalLink className="h-3 w-3" />
-            </span>
           </motion.a>
         </AnimatePresence>
 
