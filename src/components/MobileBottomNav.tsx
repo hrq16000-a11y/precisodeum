@@ -1,65 +1,28 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, Plus, User, Bell, Menu } from 'lucide-react';
+import { Home, Search, LayoutGrid, User, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect, useRef } from 'react';
-import { useNotifications } from '@/hooks/useNotifications';
 
 const MobileBottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const [showMenu, setShowMenu] = useState(false);
-  const { unreadCount } = useNotifications();
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  const profileType = profile?.profile_type || 'client';
-  const isProvider = profileType === 'provider';
-  const isRH = profileType === 'rh';
-
-  // Close menu on route change
-  useEffect(() => {
-    setShowMenu(false);
-  }, [location.pathname]);
-
-  // Close menu on ESC
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showMenu) setShowMenu(false);
-    };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [showMenu]);
-
-  // Close menu on click outside
-  useEffect(() => {
-    if (!showMenu) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showMenu]);
 
   // Don't show on admin, login, signup, or dashboard (has its own nav)
   const hiddenPaths = ['/admin', '/login', '/cadastro', '/reset-password', '/dashboard', '/sponsor-panel'];
   const shouldHide = hiddenPaths.some(p => location.pathname.startsWith(p));
   if (shouldHide) return null;
 
-  const handleCreate = () => {
-    if (!user) { navigate('/cadastro'); return; }
-    if (isProvider) { navigate('/dashboard/servicos'); }
-    else if (isRH) { navigate('/dashboard/vagas'); }
-    else { navigate('/cadastro'); }
+  const handleWhatsApp = () => {
+    window.open('https://wa.me/5511999999999?text=Olá! Preciso de ajuda.', '_blank');
   };
 
   const items = [
-    { icon: Home, label: 'Início', path: '/', active: location.pathname === '/' || location.pathname === '/index' },
+    { icon: Home, label: 'Home', path: '/', active: location.pathname === '/' || location.pathname === '/index' },
     { icon: Search, label: 'Buscar', path: '/buscar', active: location.pathname === '/buscar' },
-    { icon: Plus, label: 'Criar', action: handleCreate, isCreate: true },
+    { icon: LayoutGrid, label: 'Categorias', path: '/categorias', active: location.pathname === '/categorias' },
     { icon: User, label: 'Perfil', path: user ? '/dashboard' : '/login', active: location.pathname.startsWith('/dashboard') },
-    { icon: Menu, label: 'Menu', action: () => setShowMenu(!showMenu) },
+    { icon: MessageCircle, label: 'WhatsApp', action: handleWhatsApp, isWhatsApp: true },
   ];
 
   return (
