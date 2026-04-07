@@ -84,6 +84,8 @@ const AdminTestimonialsPage = lazy(() => import("./pages/AdminTestimonialsPage")
 const AdminCtaBlocksPage = lazy(() => import("./pages/AdminCtaBlocksPage"));
 const AdminHomeSectionsPage = lazy(() => import("./pages/AdminHomeSectionsPage"));
 const AdminUsersCrmPage = lazy(() => import("./pages/AdminUsersCrmPage"));
+const AdminLevelsPage = lazy(() => import("./pages/AdminLevelsPage"));
+const AdminAccountTypesPage = lazy(() => import("./pages/AdminAccountTypesPage"));
 const InstitutionalPage = lazy(() => import("./pages/InstitutionalPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
