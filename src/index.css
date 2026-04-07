@@ -299,6 +299,22 @@
   50% { transform: translateY(-8px); }
 }
 
+@keyframes text-reveal {
+  0% { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0% 0 0); }
+}
+
+/* Smooth entrance for stat numbers */
+@keyframes count-up-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.count-pop {
+  animation: count-up-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 /* Hero prefix glitch / TV scanline effect */
 @keyframes hero-scanline {
   0% { background-position: 0 0; }
