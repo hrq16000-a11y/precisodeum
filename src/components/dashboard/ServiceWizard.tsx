@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import ServiceImageUpload from '@/components/ServiceImageUpload';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import {
-  ArrowRight, ArrowLeft, Store, Camera, Phone,
+  ArrowRight, ArrowLeft, Store, Phone, ImagePlus,
   CheckCircle2, Copy, ExternalLink, Share2, Sparkles, X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,84 +22,10 @@ interface ServiceWizardProps {
   onCancel: () => void;
 }
 
-/* ───── Ícones agrupados por segmento ───── */
-const AVATAR_GROUPS = [
-  {
-    label: 'Construção & Manutenção',
-    items: [
-      { id: 'pedreiro', emoji: '🧱', label: 'Pedreiro' },
-      { id: 'eletricista', emoji: '⚡', label: 'Eletricista' },
-      { id: 'pintor', emoji: '🎨', label: 'Pintor' },
-      { id: 'encanador', emoji: '🔧', label: 'Encanador' },
-      { id: 'construtor', emoji: '👷', label: 'Construtor' },
-      { id: 'marceneiro', emoji: '🪵', label: 'Marceneiro' },
-    ],
-  },
-  {
-    label: 'Técnicos & TI',
-    items: [
-      { id: 'tech', emoji: '💻', label: 'TI' },
-      { id: 'celular', emoji: '📱', label: 'Celular' },
-      { id: 'arcondicionado', emoji: '❄️', label: 'Ar-cond.' },
-      { id: 'eletronico', emoji: '🔌', label: 'Eletrônica' },
-      { id: 'solar', emoji: '☀️', label: 'Solar' },
-    ],
-  },
-  {
-    label: 'Saúde & Beleza',
-    items: [
-      { id: 'medico', emoji: '👨‍⚕️', label: 'Saúde' },
-      { id: 'cabeleireiro', emoji: '✂️', label: 'Cabelo' },
-      { id: 'estetica', emoji: '💆', label: 'Estética' },
-      { id: 'personal', emoji: '💪', label: 'Personal' },
-    ],
-  },
-  {
-    label: 'Alimentação & Eventos',
-    items: [
-      { id: 'cozinheiro', emoji: '👨‍🍳', label: 'Chef' },
-      { id: 'confeiteiro', emoji: '🎂', label: 'Confeiteiro' },
-      { id: 'eventos', emoji: '🎉', label: 'Eventos' },
-      { id: 'dj', emoji: '🎧', label: 'DJ' },
-    ],
-  },
-  {
-    label: 'Transporte & Serviços',
-    items: [
-      { id: 'motorista', emoji: '🚗', label: 'Motorista' },
-      { id: 'mudanca', emoji: '📦', label: 'Mudança' },
-      { id: 'limpeza', emoji: '🧹', label: 'Limpeza' },
-      { id: 'seguranca', emoji: '🛡️', label: 'Segurança' },
-    ],
-  },
-  {
-    label: 'Negócios & Educação',
-    items: [
-      { id: 'consultor', emoji: '💼', label: 'Consultor' },
-      { id: 'contador', emoji: '📊', label: 'Contador' },
-      { id: 'advogado', emoji: '⚖️', label: 'Advogado' },
-      { id: 'professor', emoji: '📚', label: 'Professor' },
-      { id: 'fotografo', emoji: '📸', label: 'Fotógrafo' },
-      { id: 'designer', emoji: '🖌️', label: 'Designer' },
-    ],
-  },
-  {
-    label: 'Pets & Agro',
-    items: [
-      { id: 'veterinario', emoji: '🐾', label: 'Pet' },
-      { id: 'agro', emoji: '🌾', label: 'Agro' },
-      { id: 'mecanico', emoji: '🔩', label: 'Mecânico' },
-      { id: 'imoveis', emoji: '🏠', label: 'Imóveis' },
-    ],
-  },
-];
-
-const ALL_AVATARS = AVATAR_GROUPS.flatMap(g => g.items);
-
 const STEPS = [
   { key: 'identity', label: 'Identidade', icon: Store },
-  { key: 'visual', label: 'Visual', icon: Camera },
-  { key: 'contact', label: 'Contato', icon: Phone },
+  { key: 'details', label: 'Detalhes', icon: Phone },
+  { key: 'photos', label: 'Fotos', icon: ImagePlus },
 ] as const;
 
 /* ───── Component ───── */
@@ -107,7 +33,6 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [createdServiceId, setCreatedServiceId] = useState<string | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
   // Step 1 — Identity
@@ -119,10 +44,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   const [showCatDrop, setShowCatDrop] = useState(false);
   const catRef = useRef<HTMLDivElement>(null);
 
-  // Step 2 — Visual
-  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
-
-  // Step 3 — Contact
+  // Step 2 — Details (contact + description)
   const [whatsapp, setWhatsapp] = useState(provider?.whatsapp || '');
   const [description, setDescription] = useState('');
   const [serviceArea, setServiceArea] = useState('');
@@ -154,9 +76,9 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
     return true;
   };
 
-  /* ──── Save ──── */
-  const handleCreate = async () => {
-    if (!serviceName.trim()) { toast.error('Nome do serviço é obrigatório'); return; }
+  /* ──── Save service (called when moving from step 2 → step 3) ──── */
+  const handleCreate = async (): Promise<boolean> => {
+    if (!serviceName.trim()) { toast.error('Nome do serviço é obrigatório'); return false; }
     setSaving(true);
 
     try {
@@ -176,9 +98,8 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
         .select('id')
         .single();
 
-      if (error) { toast.error('Erro: ' + error.message); setSaving(false); return; }
+      if (error) { toast.error('Erro: ' + error.message); setSaving(false); return false; }
 
-      // Save categories
       if (selectedCategoryIds.length > 0 && data) {
         await supabase.from('service_categories').insert(
           selectedCategoryIds.map(catId => ({ service_id: data.id, category_id: catId }))
@@ -186,13 +107,23 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
       }
 
       setCreatedServiceId(data.id);
-      setShowSuccess(true);
-      toast.success('Serviço criado com sucesso!');
+      toast.success('Serviço criado! Agora adicione fotos.');
+      return true;
     } catch (err: any) {
       toast.error('Erro: ' + err.message);
+      return false;
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleNext = async () => {
+    if (step === 1 && !createdServiceId) {
+      // Save the service before going to photos
+      const ok = await handleCreate();
+      if (!ok) return;
+    }
+    setStep(step + 1);
   };
 
   const handleCopyLink = () => {
@@ -207,56 +138,8 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  const progress = showSuccess ? 100 : ((step + 1) / STEPS.length) * 100;
-
-  /* ──── Success Screen ──── */
-  if (showSuccess && createdServiceId) {
-    return (
-      <div className="mx-auto max-w-lg space-y-6 py-4">
-        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-          <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-500" style={{ width: '100%' }} />
-        </div>
-
-        <div className="text-center space-y-3">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
-            <Sparkles className="h-8 w-8 text-accent" />
-          </div>
-          <h2 className="font-display text-2xl font-bold text-foreground">Tudo pronto! 🚀</h2>
-          <p className="text-muted-foreground text-sm">
-            <strong>{serviceName}</strong> foi publicado. Agora adicione fotos para atrair mais clientes!
-          </p>
-        </div>
-
-        {/* Photo upload */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-          <ServiceImageUpload serviceId={createdServiceId} userId={userId} />
-        </div>
-
-        {/* Share link */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card space-y-3">
-          <p className="text-sm font-medium text-foreground">Link da sua loja</p>
-          <div className="flex items-center gap-2">
-            <Input value={profileUrl} readOnly className="text-xs flex-1" />
-            <Button variant="outline" size="sm" onClick={handleCopyLink}>
-              <Copy className="h-4 w-4 mr-1" /> {linkCopied ? 'Copiado!' : 'Copiar'}
-            </Button>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="accent" className="flex-1" onClick={handleShareWhatsApp}>
-              <Share2 className="h-4 w-4 mr-1" /> Compartilhar no WhatsApp
-            </Button>
-            <Button variant="outline" className="flex-1" onClick={() => window.open(profileUrl, '_blank')}>
-              <ExternalLink className="h-4 w-4 mr-1" /> Ver minha loja
-            </Button>
-          </div>
-        </div>
-
-        <Button variant="accent" className="w-full" onClick={() => onComplete(createdServiceId)}>
-          Ir para o Painel da Loja →
-        </Button>
-      </div>
-    );
-  }
+  const progress = ((step + 1) / STEPS.length) * 100;
+  const isPhotosStep = step === 2;
 
   /* ──── Wizard ──── */
   return (
@@ -277,7 +160,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           Seu serviço pronto em <span className="text-accent italic">2 minutos</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {step + 1} passos rápidos para criar seu anúncio profissional.
+          3 passos rápidos para criar seu anúncio profissional.
         </p>
       </div>
 
@@ -298,8 +181,9 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           return (
             <button
               key={s.key}
-              onClick={() => i < step && setStep(i)}
-              className={`flex items-center gap-1.5 transition-colors ${active ? 'text-accent font-bold' : done ? 'text-accent/70 cursor-pointer' : 'text-muted-foreground'}`}
+              onClick={() => i < step && !isPhotosStep && setStep(i)}
+              disabled={isPhotosStep}
+              className={`flex items-center gap-1.5 transition-colors ${active ? 'text-accent font-bold' : done ? 'text-accent/70' : 'text-muted-foreground'} ${i < step && !isPhotosStep ? 'cursor-pointer' : ''}`}
             >
               <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${active ? 'bg-accent text-accent-foreground' : done ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground'}`}>
                 {done ? <CheckCircle2 className="h-3 w-3" /> : i + 1}
@@ -397,76 +281,29 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
               </>
             )}
 
-            {/* ──── STEP 2: Visual ──── */}
+            {/* ──── STEP 2: Details (Contact + Description) ──── */}
             {step === 1 && (
-              <>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
-                    <Camera className="h-5 w-5 text-accent" />
-                  </div>
-                  <div>
-                    <h3 className="font-display font-bold text-foreground">Visual do Serviço</h3>
-                    <p className="text-xs text-muted-foreground">Escolha um ícone que represente seu serviço</p>
-                  </div>
-                </div>
-
-                {/* Preview card */}
-                <div className="relative rounded-lg overflow-hidden h-20 bg-gradient-to-r from-primary/80 to-accent/80">
-                  <div className="absolute inset-0 flex items-center p-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-4xl">
-                        {selectedAvatar ? ALL_AVATARS.find(a => a.id === selectedAvatar)?.emoji || '🔧' : '🔧'}
-                      </span>
-                      <div>
-                        <p className="text-sm font-bold text-white drop-shadow">{serviceName || 'Meu Serviço'}</p>
-                        <p className="text-[11px] text-white/80 drop-shadow">📍 {providerCity || 'Sua cidade'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <p className="text-[11px] text-muted-foreground text-center">👁 Preview ao vivo — como seus clientes verão</p>
-
-                {/* Grouped avatar selector */}
-                <div className="space-y-4 max-h-[340px] overflow-y-auto pr-1">
-                  {AVATAR_GROUPS.map(group => (
-                    <div key={group.label}>
-                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                        {group.label}
-                      </p>
-                      <div className="grid grid-cols-5 sm:grid-cols-6 gap-1.5">
-                        {group.items.map(a => (
-                          <button
-                            key={a.id}
-                            onClick={() => setSelectedAvatar(selectedAvatar === a.id ? null : a.id)}
-                            className={`relative flex flex-col items-center gap-0.5 rounded-lg p-2 transition-all ${selectedAvatar === a.id ? 'ring-2 ring-accent bg-accent/10 scale-105' : 'hover:bg-muted/50'}`}
-                          >
-                            <span className="text-xl">{a.emoji}</span>
-                            <span className="text-[8px] text-muted-foreground text-center leading-tight truncate w-full">{a.label}</span>
-                            {selectedAvatar === a.id && (
-                              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                                <CheckCircle2 className="h-3 w-3" />
-                              </span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* ──── STEP 3: Contact ──── */}
-            {step === 2 && (
               <>
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
                     <Phone className="h-5 w-5 text-accent" />
                   </div>
                   <div>
-                    <h3 className="font-display font-bold text-foreground">Contato & Detalhes</h3>
-                    <p className="text-xs text-muted-foreground">WhatsApp e informações adicionais</p>
+                    <h3 className="font-display font-bold text-foreground">Detalhes do Serviço</h3>
+                    <p className="text-xs text-muted-foreground">Descrição, WhatsApp e horários</p>
                   </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">📝 Descrição do serviço</label>
+                  <Textarea
+                    placeholder="Descreva seus serviços, diferenciais e horário de funcionamento..."
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    rows={4}
+                    autoFocus
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">{description.length}/500 caracteres</p>
                 </div>
 
                 <div>
@@ -479,22 +316,11 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                   />
                 </div>
 
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">📝 Descrição do serviço</label>
-                  <Textarea
-                    placeholder="Descreva seus produtos, serviços, diferenciais e horário de funcionamento..."
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    rows={4}
-                  />
-                  <p className="text-[11px] text-muted-foreground mt-1">{description.length}/500 caracteres — mínimo recomendado: 50</p>
-                </div>
-
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">🗺️ Área de atendimento</label>
                     <Input
-                      placeholder="Ex: Zona Sul, Grande São Paulo"
+                      placeholder="Ex: Zona Sul, Grande SP"
                       value={serviceArea}
                       onChange={e => setServiceArea(e.target.value)}
                     />
@@ -502,7 +328,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">🕐 Horário</label>
                     <Input
-                      placeholder="Ex: Seg a Sex, 8h às 18h"
+                      placeholder="Ex: Seg-Sex, 8h-18h"
                       value={workingHours}
                       onChange={e => setWorkingHours(e.target.value)}
                     />
@@ -510,14 +336,35 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">🌐 Link de Rede Social</label>
+                  <label className="mb-1 block text-sm font-medium text-foreground">🌐 Site / Rede Social</label>
                   <Input
                     placeholder="https://instagram.com/sualoja"
                     value={website}
                     onChange={e => setWebsite(e.target.value)}
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">Instagram, Facebook ou site</p>
                 </div>
+              </>
+            )}
+
+            {/* ──── STEP 3: Photos ──── */}
+            {step === 2 && createdServiceId && (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                    <ImagePlus className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-bold text-foreground">Fotos do Serviço</h3>
+                    <p className="text-xs text-muted-foreground">Lojas com fotos recebem 3x mais visualizações</p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-3 text-sm text-foreground flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                  <span><strong>{serviceName}</strong> foi criado com sucesso! Adicione fotos abaixo.</span>
+                </div>
+
+                <ServiceImageUpload serviceId={createdServiceId} userId={userId} />
               </>
             )}
           </div>
@@ -526,32 +373,57 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
 
       {/* Navigation buttons */}
       <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          onClick={() => step === 0 ? onCancel() : setStep(step - 1)}
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          {step === 0 ? 'Cancelar' : 'Voltar'}
-        </Button>
-
-        {step < STEPS.length - 1 ? (
-          <Button
-            variant="accent"
-            disabled={!canNext()}
-            onClick={() => setStep(step + 1)}
-          >
-            Próximo <ArrowRight className="h-4 w-4 ml-1" />
-          </Button>
+        {isPhotosStep ? (
+          <>
+            <Button variant="outline" onClick={() => onComplete(createdServiceId!)}>
+              Pular →
+            </Button>
+            <Button variant="accent" onClick={() => onComplete(createdServiceId!)}>
+              Concluir <Sparkles className="h-4 w-4 ml-1" />
+            </Button>
+          </>
         ) : (
-          <Button
-            variant="accent"
-            disabled={saving || !serviceName.trim()}
-            onClick={handleCreate}
-          >
-            {saving ? 'Criando...' : 'Criar Meu Serviço'} <Sparkles className="h-4 w-4 ml-1" />
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              onClick={() => step === 0 ? onCancel() : setStep(step - 1)}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              {step === 0 ? 'Cancelar' : 'Voltar'}
+            </Button>
+
+            <Button
+              variant="accent"
+              disabled={!canNext() || saving}
+              onClick={handleNext}
+            >
+              {saving ? 'Salvando...' : step === 1 ? 'Salvar e adicionar fotos' : 'Próximo'}
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </>
         )}
       </div>
+
+      {/* Share section (only on photos step) */}
+      {isPhotosStep && createdServiceId && (
+        <div className="rounded-xl border border-border bg-card p-4 shadow-card space-y-3">
+          <p className="text-sm font-medium text-foreground">🔗 Compartilhe seu perfil</p>
+          <div className="flex items-center gap-2">
+            <Input value={profileUrl} readOnly className="text-xs flex-1" />
+            <Button variant="outline" size="sm" onClick={handleCopyLink}>
+              <Copy className="h-4 w-4 mr-1" /> {linkCopied ? 'Copiado!' : 'Copiar'}
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="accent" size="sm" className="flex-1" onClick={handleShareWhatsApp}>
+              <Share2 className="h-4 w-4 mr-1" /> WhatsApp
+            </Button>
+            <Button variant="outline" size="sm" className="flex-1" onClick={() => window.open(profileUrl, '_blank')}>
+              <ExternalLink className="h-4 w-4 mr-1" /> Ver loja
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
