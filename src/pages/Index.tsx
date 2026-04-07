@@ -81,6 +81,20 @@ const Index = () => {
     },
   });
 
+  useJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Preciso de um',
+    url: SITE_BASE_URL,
+    logo: `${SITE_BASE_URL}/placeholder.svg`,
+    sameAs: [],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'customer service',
+      availableLanguage: 'Portuguese',
+    },
+  });
+
   // Feature flags
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const featuredEnabled = useFeatureEnabled('featured_providers_enabled');
