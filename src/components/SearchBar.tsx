@@ -4,6 +4,7 @@ import { Search, X, Sparkles, TrendingUp, MapPin, Wrench, Grid3X3 } from 'lucide
 import { Button } from '@/components/ui/button';
 import { useSearchSuggestions } from '@/hooks/useProviders';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { useTypingPlaceholder } from '@/hooks/useTypingPlaceholder';
 
 interface SearchBarProps {
   variant?: 'hero' | 'compact';
@@ -39,6 +40,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { data: suggestions } = useSearchSuggestions();
+  const typingPlaceholder = useTypingPlaceholder(geoCity);
 
   // Request browser geolocation on first focus
   const requestGeoOnce = useCallback(() => {
@@ -250,7 +252,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
             <input
               ref={inputRef}
               type="text"
-              placeholder="O que você precisa?"
+              placeholder={typingPlaceholder || "O que você precisa?"}
               value={query}
               onChange={(e) => { setQuery(e.target.value); setSearchError(''); setIsOpen(true); }}
               onFocus={handleFocus}
@@ -287,7 +289,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
           <input
             ref={inputRef}
             type="text"
-            placeholder="O que você precisa? Ex: eletricista, pintor..."
+            placeholder={typingPlaceholder || "O que você precisa? Ex: eletricista, pintor..."}
             value={query}
             onChange={(e) => { setQuery(e.target.value); setSearchError(''); setIsOpen(true); }}
             onFocus={handleFocus}
