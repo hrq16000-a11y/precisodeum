@@ -1496,6 +1496,7 @@ export type Database = {
           service_area: string
           service_name: string
           user_ref: string | null
+          view_count: number
           website: string | null
           whatsapp: string
           working_hours: string
@@ -1512,6 +1513,7 @@ export type Database = {
           service_area?: string
           service_name: string
           user_ref?: string | null
+          view_count?: number
           website?: string | null
           whatsapp?: string
           working_hours?: string
@@ -1528,6 +1530,7 @@ export type Database = {
           service_area?: string
           service_name?: string
           user_ref?: string | null
+          view_count?: number
           website?: string | null
           whatsapp?: string
           working_hours?: string
