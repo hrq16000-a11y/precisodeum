@@ -4,6 +4,7 @@ import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogO
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import DashboardGroupNav from '@/components/dashboard/DashboardGroupNav';
 import { supabase } from '@/integrations/supabase/client';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 
