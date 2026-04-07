@@ -187,7 +187,7 @@ const Index = () => {
           {ctaEnabled && <CtaSection />}
           <AdShowcase />
           {sponsorsEnabled && <SponsorsSection sponsors={sponsors} />}
-          <HowItWorksSection />
+          {howItWorksEnabled && <HowItWorksSection />}
           {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
             <PopularSearches categories={allCategories} cities={topCities} />
           )}
