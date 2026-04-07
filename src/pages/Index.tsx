@@ -233,9 +233,7 @@ const Index = () => {
       case 'howitworks':
         return howItWorksEnabled ? <HowItWorksSection key={slug} /> : null;
       case 'searches':
-        return popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0
-          ? <PopularSearches key={slug} categories={allCategories} cities={topCities} />
-          : null;
+        return popularSearchesEnabled ? <PopularSearches key={slug} /> : null;
       case 'testimonials':
         return reviewsEnabled ? <TestimonialsSection key={slug} /> : null;
       case 'faq':
