@@ -1,4 +1,4 @@
-import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase } from 'lucide-react';
+import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -29,6 +29,7 @@ interface UserTableProps {
   adminIds: Set<string>;
   levels?: any[];
   accountTypes?: any[];
+  providersMap?: Record<string, any>;
   onEdit: (u: any) => void;
   onResetPassword: (u: any) => void;
   onBlock: (u: any) => void;
@@ -40,7 +41,7 @@ interface UserTableProps {
   onToggleSelection?: (id: string) => void;
 }
 
-const UserTable = ({ users, adminIds, levels = [], accountTypes = [], onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
+const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
   if (users.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card p-12 text-center">
@@ -58,6 +59,7 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], onEdit, on
         const phone = p.phone || p.whatsapp || '';
         const userLevel = levels.find((l: any) => l.id === p.level_id);
         const userAccType = accountTypes.find((a: any) => a.id === p.account_type_id);
+        const provider = providersMap[p.id];
 
         return (
           <div
@@ -141,6 +143,37 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], onEdit, on
                 </div>
               </div>
 
+              {/* Provider info */}
+              {provider && (
+                <div className="mt-2 rounded-lg bg-accent/10 border border-accent/20 px-2.5 py-1.5 space-y-1">
+                  {provider.business_name && (
+                    <p className="text-xs font-semibold text-foreground truncate flex items-center gap-1">
+                      <Briefcase className="h-3 w-3 text-accent shrink-0" />
+                      {provider.business_name}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                    {(provider.city || provider.state) && (
+                      <span className="flex items-center gap-0.5 truncate">
+                        <MapPin className="h-2.5 w-2.5 shrink-0" />
+                        {[provider.city, provider.state].filter(Boolean).join(', ')}
+                      </span>
+                    )}
+                    {provider.plan && (
+                      <span className="flex items-center gap-0.5">
+                        <Star className="h-2.5 w-2.5 shrink-0 text-amber-500" />
+                        {provider.plan}
+                      </span>
+                    )}
+                    {provider.categories && (
+                      <span className="truncate">
+                        {(provider.categories as any)?.icon} {(provider.categories as any)?.name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Level & Account Type */}
               <div className="mt-2 space-y-1 text-xs">
                 {userLevel && (
@@ -154,7 +187,7 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], onEdit, on
                 )}
                 {userAccType && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">Tipo:</span>
+                    <span className="text-muted-foreground">Plano:</span>
                     <span className="inline-flex items-center gap-1 font-semibold">
                       <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: userAccType.color }} />
                       {userAccType.name}

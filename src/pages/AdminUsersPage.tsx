@@ -26,6 +26,7 @@ const AdminUsersPage = () => {
   const [adminIds, setAdminIds] = useState<Set<string>>(new Set());
   const [levels, setLevels] = useState<any[]>([]);
   const [accountTypes, setAccountTypes] = useState<any[]>([]);
+  const [providersMap, setProvidersMap] = useState<Record<string, any>>({});
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -85,6 +86,13 @@ const AdminUsersPage = () => {
   const fetchProfiles = () => {
     supabase.from('profiles').select('*').order('created_at', { ascending: false })
       .then(({ data }) => setProfiles(data || []));
+    supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon)')
+      .eq('status', 'approved').is('deleted_at', null)
+      .then(({ data }) => {
+        const map: Record<string, any> = {};
+        (data || []).forEach((p: any) => { map[p.user_id] = p; });
+        setProvidersMap(map);
+      });
   };
 
   const fetchAdmins = () => {
@@ -444,6 +452,7 @@ const AdminUsersPage = () => {
           adminIds={adminIds}
           levels={levels}
           accountTypes={accountTypes}
+          providersMap={providersMap}
           onEdit={setEditUser}
           onResetPassword={setPwUser}
           onBlock={handleBlock}
