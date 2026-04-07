@@ -57,13 +57,6 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const [selectedSponsorId, setSelectedSponsorId] = useState('');
   const [permLoading, setPermLoading] = useState(false);
 
-  // Editable profile state
-  const [editingProfile, setEditingProfile] = useState(false);
-  const [profileForm, setProfileForm] = useState<any>({});
-
-  // Editable provider state
-  const [editingProvider, setEditingProvider] = useState(false);
-  const [providerForm, setProviderForm] = useState<any>({});
 
   useEffect(() => {
     if (!user) return;
