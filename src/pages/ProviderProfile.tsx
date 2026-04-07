@@ -741,6 +741,8 @@ const ProviderProfile = () => {
             <SponsorAd position="sidebar" layout="vertical" className="mt-4" />
           </aside>
       </div>
+      {/* Profile before WhatsApp ad slot */}
+      <Suspense fallback={null}><AdSlot slotSlug="profile-before-whatsapp" category={category} city={provider.city} state={provider.state} /></Suspense>
       {/* Profile footer ad slot */}
       <Suspense fallback={null}><AdSlot slotSlug="profile-footer" category={category} city={provider.city} state={provider.state} /></Suspense>
       </div>
