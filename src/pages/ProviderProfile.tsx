@@ -624,21 +624,43 @@ const ProviderProfile = () => {
       <div className="container py-6">
         <div className="mx-auto max-w-3xl">
           {/* ── Profile Header Card ── */}
-          <div className={`p-6 ${tc.card}`}>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-              <Avatar className="h-24 w-24 shrink-0 rounded-2xl ring-2 ring-accent/20">
-                <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
-                <AvatarFallback className="rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
+          <motion.div
+            className={`p-6 ${tc.card}`}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+          >
+            <div className="flex flex-col items-center text-center gap-4 sm:flex-row sm:items-start sm:text-left">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+              >
+                <Avatar className="h-28 w-28 shrink-0 rounded-2xl ring-4 ring-accent/20 shadow-lg">
+                  <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
+                  <AvatarFallback className="rounded-2xl bg-primary text-3xl font-bold text-primary-foreground">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+              </motion.div>
+              <motion.div
+                className="flex-1 min-w-0"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.25, duration: 0.5 }}
+              >
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
                   {provider.plan === 'premium' && (
-                    <span className={`inline-flex items-center gap-1 ${tc.badge} bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                    <motion.span
+                      className={`inline-flex items-center gap-1 ${tc.badge} bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground`}
+                      style={accentBg ? { backgroundColor: accentBg } : undefined}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.4, type: 'spring', stiffness: 300, damping: 15 }}
+                    >
                       <Crown className="h-3 w-3" /> DESTAQUE
-                    </span>
+                    </motion.span>
                   )}
                   {provider.levelInfo && (
                     <span className={`inline-flex items-center gap-1 ${tc.badge} px-2 py-0.5 text-xs font-medium`} style={{ backgroundColor: `${provider.levelInfo.color}20`, color: provider.levelInfo.color }}>
@@ -652,63 +674,67 @@ const ProviderProfile = () => {
                     </span>
                   )}
                 </div>
-                {provider.business_name && <p className="text-sm text-muted-foreground">{provider.business_name}</p>}
-                <p className="mt-1 text-sm font-medium" style={accentBg ? { color: accentBg } : undefined}>
+                {provider.business_name && <p className="text-sm text-muted-foreground mt-1">{provider.business_name}</p>}
+                <p className="mt-1 text-sm font-semibold" style={accentBg ? { color: accentBg } : undefined}>
                   {category || 'Categoria não informada'}
                 </p>
-                <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                <div className="mt-2 flex flex-wrap items-center justify-center sm:justify-start gap-3 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
+                    <MapPin className="h-4 w-4 text-accent" />
                     {provider.city
                       ? `${provider.neighborhood ? `${provider.neighborhood}, ` : ''}${provider.city} - ${provider.state}`
                       : 'Localização não informada'}
                   </span>
                   {provider.years_experience > 0 && (
                     <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
+                      <Clock className="h-4 w-4 text-accent" />
                       {provider.years_experience} anos exp.
                     </span>
                   )}
                 </div>
                 {reviewsEnabled && (
-                  <div className="mt-3">
+                  <div className="mt-3 flex justify-center sm:justify-start">
                     <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
                   </div>
                 )}
                 {hasSocial && (
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3 flex justify-center sm:justify-start gap-2">
                     {pageSettings.instagram_url && (
-                      <a href={pageSettings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                      <a href={pageSettings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110 inline-block">
                         <Instagram className="h-5 w-5" />
                       </a>
                     )}
                     {pageSettings.facebook_url && (
-                      <a href={pageSettings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                      <a href={pageSettings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110 inline-block">
                         <Facebook className="h-5 w-5" />
                       </a>
                     )}
                     {pageSettings.youtube_url && (
-                      <a href={pageSettings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                      <a href={pageSettings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110 inline-block">
                         <Youtube className="h-5 w-5" />
                       </a>
                     )}
                     {pageSettings.tiktok_url && (
-                      <a href={pageSettings.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors text-sm font-bold">
+                      <a href={pageSettings.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110 inline-block text-sm font-bold">
                         🎵
                       </a>
                     )}
                   </div>
                 )}
-              </div>
+              </motion.div>
             </div>
 
             {/* ── CTA Buttons ── */}
-            <div className="mt-5 flex flex-wrap gap-2">
-              {/* Primary: Solicitar Orçamento popup button */}
+            <motion.div
+              className="mt-6 flex flex-wrap justify-center sm:justify-start gap-2"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.5 }}
+            >
               <Button
                 variant="accent"
                 size="lg"
-                className={`${tc.button} gap-2`}
+                className={`${tc.button} gap-2 shadow-lg hover:shadow-xl transition-shadow`}
                 onClick={() => setLeadDialogOpen(true)}
                 style={accentBg ? { backgroundColor: accentBg } : undefined}
               >
@@ -734,8 +760,8 @@ const ProviderProfile = () => {
               }}>
                 <Copy className="h-4 w-4" /> Copiar Link
               </Button>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* ── Dynamic sections ── */}
           {visibleSections.map((sectionId) => {
