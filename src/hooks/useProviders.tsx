@@ -234,7 +234,7 @@ export function useFeaturedProviders() {
   return useQuery({
     queryKey: ['featured-providers'],
     queryFn: async () => {
-      const providers = await fetchProvidersLightweight(
+      const allProviders = await fetchProvidersLightweight(
         supabase
           .from('providers')
           .select(providerSelect)
@@ -243,13 +243,28 @@ export function useFeaturedProviders() {
           .limit(200)
       );
 
-      // Regra: imagem de serviço OU portfólio (conteúdo visual)
-      const valid = providers.filter((p) => !!p.serviceImage || !!p.hasPortfolio);
-      if (valid.length === 0) return [];
+      // Score by visual content: serviceImage + portfolio
+      const scored = allProviders
+        .filter((p) => !!p.serviceImage || !!p.hasPortfolio)
+        .map((p) => ({
+          ...p,
+          _imageScore: (p.serviceImage ? 2 : 0) + (p.hasPortfolio ? 2 : 0) + (p.photo ? 1 : 0),
+        }));
 
-      const shuffled = shuffleArray(valid);
-      const count = pickFeaturedCount(shuffled.length);
-      return shuffled.slice(0, count);
+      if (scored.length === 0) return [];
+
+      // Sort by image score desc, then shuffle within same score for variety
+      scored.sort((a, b) => b._imageScore - a._imageScore);
+
+      // Pick target count: 9 > 6 > 3
+      let target = 3;
+      if (scored.length >= 9) target = 9;
+      else if (scored.length >= 6) target = 6;
+
+      // Light shuffle within top candidates to keep variety
+      const candidates = scored.slice(0, Math.min(scored.length, target * 2));
+      const shuffled = shuffleArray(candidates);
+      return shuffled.slice(0, target).map(({ _imageScore, ...p }) => p);
     },
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
