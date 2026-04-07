@@ -76,7 +76,7 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="relative w-full bg-card"
+      className="relative w-full"
     >
       <AnimatePresence mode="wait">
         <motion.a
@@ -90,17 +90,26 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="block w-full max-h-[90px] overflow-hidden cursor-pointer"
+          className="relative block w-full max-h-[90px] overflow-hidden cursor-pointer"
         >
           {imageSrc && (
             <img
               src={imageSrc}
               alt={displayName}
-              className="w-full h-auto max-h-[90px] object-cover object-center"
+              className="w-full h-[70px] sm:h-[90px] object-cover object-center"
               loading="lazy"
+              width={1920}
+              height={512}
               onError={handleImageError}
             />
           )}
+
+          {/* Gradient overlay at bottom with sponsor name */}
+          <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-black/50 to-transparent flex items-end justify-center pb-0.5">
+            <span className="text-[9px] sm:text-[10px] font-medium tracking-wider uppercase text-white/70">
+              Patrocinado • {displayName}
+            </span>
+          </div>
         </motion.a>
       </AnimatePresence>
 
@@ -118,7 +127,7 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
 
       {/* Rotation dots */}
       {validSponsors.length > 1 && (
-        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+        <div className="absolute bottom-7 left-1/2 -translate-x-1/2 flex gap-1 z-10">
           {validSponsors.map((_, i) => (
             <span
               key={i}
