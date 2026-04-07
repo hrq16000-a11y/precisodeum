@@ -15,9 +15,12 @@ const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
   const navigate = useNavigate();
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
+  const { levelName, levelColor, accountTypeName, accountTypeColor } = usePermissions();
   const [servicesCount, setServicesCount] = useState<number | null>(null);
   const [leadsCount, setLeadsCount] = useState<number>(0);
   const [jobsCount, setJobsCount] = useState<number>(0);
+  const [portfolioCount, setPortfolioCount] = useState<number>(0);
+  const [viewsTotal, setViewsTotal] = useState<number>(0);
   const [guideOpen, setGuideOpen] = useState(true);
 
   useEffect(() => {
