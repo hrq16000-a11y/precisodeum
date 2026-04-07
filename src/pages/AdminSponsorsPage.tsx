@@ -481,7 +481,7 @@ const AdminSponsorsPage = () => {
                 <Input value={form.target_pages} onChange={(e) => setForm({ ...form, target_pages: e.target.value })} placeholder="all, home, buscar, categoria, profissional" />
                 <p className="mt-1 text-[10px] text-muted-foreground">Separe por vírgula. Use "all" para todas as páginas.</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label>Data Início</Label>
                   <Popover>
