@@ -304,22 +304,6 @@ const DashboardServicesPage = () => {
         />
       </div>
 
-      {/* Category filter tabs */}
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {CATEGORY_FILTERS.map(f => (
-          <button
-            key={f.value}
-            onClick={() => setActiveFilter(f.value)}
-            className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              activeFilter === f.value
-                ? 'bg-accent text-accent-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}
-          >
-            {f.icon} {f.label}
-          </button>
-        ))}
-      </div>
 
       {/* Service cards */}
       <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
