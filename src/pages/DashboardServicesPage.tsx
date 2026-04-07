@@ -40,7 +40,6 @@ const DashboardServicesPage = () => {
     address: '',
     working_hours: '',
     website: '',
-    category_type: 'venda',
   });
 
   useEffect(() => {
