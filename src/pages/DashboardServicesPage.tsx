@@ -151,6 +151,7 @@ const DashboardServicesPage = () => {
     } as any;
 
     let serviceId = editId;
+    const isNew = !editId;
 
     if (editId) {
       const { error } = await supabase.from('services').update(payload).eq('id', editId);
@@ -175,13 +176,19 @@ const DashboardServicesPage = () => {
       }
     }
 
-    toast.success(editId ? 'Serviço atualizado!' : 'Serviço adicionado!');
+    toast.success(editId ? 'Serviço atualizado!' : 'Serviço adicionado! Agora adicione fotos.');
     setForm({ service_name: '', description: '', whatsapp: '', service_area: '', address: '', working_hours: '', website: '' });
     setSelectedCategoryIds([]);
     setShowForm(false);
     setEditId(null);
-    fetchServices();
+    await fetchServices();
     refetchLimits();
+
+    // Auto-expand image upload for newly created service
+    if (isNew && serviceId) {
+      setJustCreatedId(serviceId);
+      setExpandedId(serviceId);
+    }
   };
 
   const handleEdit = async (s: any) => {
