@@ -17,7 +17,8 @@ interface ShowcaseSponsor {
 
 /** Full-width showcase with professional card layout */
 const AdShowcase = ({ className = '' }: { className?: string }) => {
-  const { data: sponsors = [] } = useSponsorsByPosition('showcase');
+  const { data: rawSponsors = [] } = useSponsorsByPosition('showcase');
+  const sponsors = rawSponsors as unknown as ShowcaseSponsor[];
   const tracked = useRef(new Set<string>());
   const [idx, setIdx] = useState(0);
   const touchStart = useRef<number | null>(null);
