@@ -14,6 +14,9 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
 const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
+const SponsorMidContent = lazy(() => import('@/components/sponsors/SponsorMidContent'));
+const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
 
 const ITEMS_PER_PAGE = 12;
 
