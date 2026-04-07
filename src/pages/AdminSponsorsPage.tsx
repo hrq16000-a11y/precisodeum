@@ -210,7 +210,9 @@ const AdminSponsorsPage = () => {
     setEditingId(s.id);
     setForm({
       title: s.title,
+      company_name: (s as any).company_name || '',
       image_url: s.image_url || '',
+      logo_url: (s as any).logo_url || '',
       link_url: s.link_url || '',
       position: s.position,
       active: s.active,
@@ -222,6 +224,17 @@ const AdminSponsorsPage = () => {
       max_width: (s as any).max_width || 0,
       max_height: (s as any).max_height || 0,
       target_pages: (s as any).target_pages || 'all',
+      sponsor_type: (s as any).sponsor_type || 'global',
+      short_description: (s as any).short_description || '',
+      full_description: (s as any).full_description || '',
+      phone: (s as any).phone || '',
+      whatsapp: (s as any).whatsapp || '',
+      external_link: (s as any).external_link || '',
+      linked_city: (s as any).linked_city || '',
+      linked_category: (s as any).linked_category || '',
+      plan_tier: (s as any).plan_tier || 'basic',
+      badge_type: (s as any).badge_type || 'Patrocinado',
+      status: (s as any).status || 'active',
     });
     setDialogOpen(true);
   };
