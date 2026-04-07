@@ -391,7 +391,7 @@ const AdminSponsorCrmPage = () => {
 
             {/* Table */}
             <div className="rounded-xl border border-border bg-card overflow-x-auto">
-              <Table>
+              <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patrocinador</TableHead>
@@ -453,8 +453,8 @@ const AdminSponsorCrmPage = () => {
               <h2 className="text-lg font-semibold">Vínculos Patrocinador ↔ Usuário</h2>
               <Button size="sm" onClick={() => setLinkDialog(true)}><Plus className="h-4 w-4 mr-1" /> Vincular</Button>
             </div>
-            <div className="rounded-xl border border-border bg-card">
-              <Table>
+            <div className="rounded-xl border border-border bg-card overflow-x-auto">
+              <Table className="min-w-[650px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patrocinador</TableHead>
@@ -494,8 +494,8 @@ const AdminSponsorCrmPage = () => {
               <h2 className="text-lg font-semibold">Campanhas</h2>
               <Button size="sm" onClick={() => setCampaignDialog(true)}><Plus className="h-4 w-4 mr-1" /> Nova Campanha</Button>
             </div>
-            <div className="rounded-xl border border-border bg-card">
-              <Table>
+            <div className="rounded-xl border border-border bg-card overflow-x-auto">
+              <Table className="min-w-[650px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patrocinador</TableHead>
@@ -541,8 +541,8 @@ const AdminSponsorCrmPage = () => {
               <h2 className="text-lg font-semibold">Contratos</h2>
               <Button size="sm" onClick={() => setContractDialog(true)}><Plus className="h-4 w-4 mr-1" /> Novo Contrato</Button>
             </div>
-            <div className="rounded-xl border border-border bg-card">
-              <Table>
+            <div className="rounded-xl border border-border bg-card overflow-x-auto">
+              <Table className="min-w-[650px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patrocinador</TableHead>
@@ -650,7 +650,7 @@ const AdminSponsorCrmPage = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div><Label>Início</Label><Input type="date" value={campaignForm.start_date} onChange={e => setCampaignForm(p => ({ ...p, start_date: e.target.value }))} /></div>
               <div><Label>Fim</Label><Input type="date" value={campaignForm.end_date} onChange={e => setCampaignForm(p => ({ ...p, end_date: e.target.value }))} /></div>
             </div>
@@ -681,7 +681,7 @@ const AdminSponsorCrmPage = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div><Label>Início</Label><Input type="date" value={contractForm.start_date} onChange={e => setContractForm(p => ({ ...p, start_date: e.target.value }))} /></div>
               <div><Label>Fim</Label><Input type="date" value={contractForm.end_date} onChange={e => setContractForm(p => ({ ...p, end_date: e.target.value }))} /></div>
             </div>

@@ -254,10 +254,10 @@ const AdminSponsorsPage = () => {
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Patrocinadores</h1>
-          <p className="text-sm text-muted-foreground">Gerencie banners e anúncios da plataforma</p>
+          <h1 className="font-display text-xl sm:text-2xl font-bold text-foreground">Patrocinadores</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Gerencie banners e anúncios da plataforma</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(v) => { if (!v) closeDialog(); else setDialogOpen(true); }}>
           <DialogTrigger asChild>
@@ -265,12 +265,12 @@ const AdminSponsorsPage = () => {
               <Plus className="h-4 w-4" /> Novo Patrocinador
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] overflow-y-auto w-[95vw] max-w-lg sm:max-w-xl">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Editar Patrocinador' : 'Novo Patrocinador'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(); }} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label>Título *</Label>
                   <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
@@ -280,7 +280,7 @@ const AdminSponsorsPage = () => {
                   <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label>Tipo de Patrocínio</Label>
                   <Select value={form.sponsor_type} onValueChange={(v) => setForm({ ...form, sponsor_type: v })}>
@@ -324,7 +324,7 @@ const AdminSponsorsPage = () => {
                 <Label>Descrição Completa</Label>
                 <textarea value={form.full_description} onChange={(e) => setForm({ ...form, full_description: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px]" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label>Telefone</Label>
                   <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
@@ -334,7 +334,7 @@ const AdminSponsorsPage = () => {
                   <Input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} placeholder="5511999999999" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label>Link Externo</Label>
                   <Input value={form.external_link} onChange={(e) => setForm({ ...form, external_link: e.target.value })} placeholder="https://..." />
@@ -465,7 +465,7 @@ const AdminSponsorsPage = () => {
                 </Select>
               </div>
               {form.ad_format === 'custom' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <Label>Largura máx. (px)</Label>
                     <Input type="number" value={form.max_width} onChange={(e) => setForm({ ...form, max_width: Number(e.target.value) })} placeholder="0 = sem limite" />
@@ -481,7 +481,7 @@ const AdminSponsorsPage = () => {
                 <Input value={form.target_pages} onChange={(e) => setForm({ ...form, target_pages: e.target.value })} placeholder="all, home, buscar, categoria, profissional" />
                 <p className="mt-1 text-[10px] text-muted-foreground">Separe por vírgula. Use "all" para todas as páginas.</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label>Data Início</Label>
                   <Popover>
@@ -564,13 +564,13 @@ const AdminSponsorsPage = () => {
         </div>
       )}
 
-      <div className="mt-4 rounded-xl border border-border bg-card">
+      <div className="mt-4 rounded-xl border border-border bg-card overflow-x-auto">
         {isLoading ? (
           <p className="p-6 text-muted-foreground">Carregando...</p>
         ) : paginated.length === 0 ? (
           <p className="p-6 text-center text-muted-foreground">Nenhum patrocinador encontrado.</p>
         ) : (
-          <Table>
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10"></TableHead>

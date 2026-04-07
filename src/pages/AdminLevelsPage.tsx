@@ -211,7 +211,7 @@ const AdminLevelsPage = () => {
               <Label>Descrição *</Label>
               <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descreva as permissões deste nível" rows={3} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <Label>Cor</Label>
                 <Select value={form.color} onValueChange={v => setForm(f => ({ ...f, color: v }))}>
