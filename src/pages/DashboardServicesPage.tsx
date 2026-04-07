@@ -12,17 +12,6 @@ import ServiceImageUpload from '@/components/ServiceImageUpload';
 import { handleImageError } from '@/lib/imageResolver';
 import { format } from 'date-fns';
 
-const CATEGORY_FILTERS = [
-  { label: 'Todas', value: 'all', icon: '🔥' },
-  { label: 'Venda', value: 'venda', icon: '🛒' },
-  { label: 'Compra', value: 'compra', icon: '💰' },
-  { label: 'Serviço', value: 'servico', icon: '🏠' },
-  { label: 'Troca', value: 'troca', icon: '🔄' },
-  { label: 'Aluguel', value: 'aluguel', icon: '🏢' },
-  { label: 'Doação', value: 'doacao', icon: '🎁' },
-  { label: 'Promoção', value: 'promocao', icon: '％' },
-  { label: 'Vaga de Emprego', value: 'vaga', icon: '👔' },
-];
 
 const DashboardServicesPage = () => {
   const { user, provider, profile, loading, refetchProfile } = useAuth();
@@ -33,7 +22,6 @@ const DashboardServicesPage = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('all');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [categorySearch, setCategorySearch] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -52,7 +40,6 @@ const DashboardServicesPage = () => {
     address: '',
     working_hours: '',
     website: '',
-    category_type: 'venda',
   });
 
   useEffect(() => {
@@ -227,7 +214,7 @@ const DashboardServicesPage = () => {
   };
 
   const resetForm = () => {
-    setForm({ service_name: '', description: '', price: '', whatsapp: '', service_area: '', address: '', working_hours: '', website: '', category_type: 'venda' });
+    setForm({ service_name: '', description: '', price: '', whatsapp: '', service_area: '', address: '', working_hours: '', website: '' });
     setSelectedCategoryIds([]);
     setEditId(null);
     setNewServicePhoto(null);
@@ -244,7 +231,7 @@ const DashboardServicesPage = () => {
       address: s.address || '',
       working_hours: s.working_hours || '',
       website: (s as any).website || provider?.website || '',
-      category_type: 'venda',
+      
     });
     setEditId(s.id);
     const { data } = await supabase.from('service_categories').select('category_id').eq('service_id', s.id);
@@ -315,22 +302,6 @@ const DashboardServicesPage = () => {
         />
       </div>
 
-      {/* Category filter tabs */}
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {CATEGORY_FILTERS.map(f => (
-          <button
-            key={f.value}
-            onClick={() => setActiveFilter(f.value)}
-            className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              activeFilter === f.value
-                ? 'bg-accent text-accent-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}
-          >
-            {f.icon} {f.label}
-          </button>
-        ))}
-      </div>
 
       {/* Service cards */}
       <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -393,7 +364,7 @@ const DashboardServicesPage = () => {
                     </span>
                   )}
                   <span className="flex items-center gap-0.5">
-                    <Eye className="h-3 w-3" /> 0 views
+                    <Eye className="h-3 w-3" /> {s.view_count ?? 0} views
                   </span>
                 </div>
 
@@ -457,7 +428,7 @@ const DashboardServicesPage = () => {
 
             {/* Price + Category */}
             <div className="grid grid-cols-2 gap-3">
-              <div>
+            <div>
                 <label className="mb-1 block text-sm font-medium text-foreground">Preço (R$)</label>
                 <input
                   name="price"
@@ -466,19 +437,6 @@ const DashboardServicesPage = () => {
                   placeholder="0,00"
                   className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
                 />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Categoria</label>
-                <select
-                  name="category_type"
-                  value={form.category_type}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                >
-                  {CATEGORY_FILTERS.filter(f => f.value !== 'all').map(f => (
-                    <option key={f.value} value={f.value}>{f.label}</option>
-                  ))}
-                </select>
               </div>
             </div>
 
