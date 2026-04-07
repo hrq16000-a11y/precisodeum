@@ -2174,6 +2174,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_service_view: {
+        Args: { service_id: string }
+        Returns: undefined
+      }
       increment_sponsor_click: {
         Args: { sponsor_id: string }
         Returns: undefined
