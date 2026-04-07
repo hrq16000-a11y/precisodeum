@@ -121,7 +121,7 @@ const FeaturedJobs = () => {
           {/* Hero card */}
           <Link
             to={`/vaga/${hero.slug || hero.id}`}
-            className="group relative flex flex-col justify-end overflow-hidden rounded-xl border border-border bg-gradient-to-br from-accent/10 via-card to-card p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 min-h-[280px]"
+            className="group relative flex flex-col justify-end overflow-hidden rounded-xl border border-border bg-gradient-to-br from-accent/10 via-card to-card p-5 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 min-h-[220px]"
           >
             <span className="absolute top-4 left-4 z-10">
               <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${heroType}`}>
