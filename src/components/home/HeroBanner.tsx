@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Shield, Users, Zap, Briefcase, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
@@ -8,7 +8,8 @@ import RotatingServiceText from '@/components/home/RotatingServiceText';
 import { useHeroBanners, type HeroBannerData } from '@/hooks/useHeroBanners';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
-const heroImage = '/hero-image.webp';
+const DEFAULT_BG_IMAGES = ['/hero-bg-1.jpg', '/hero-bg-2.jpg', '/hero-bg-3.jpg'];
+const BG_INTERVAL = 7000;
 
 interface HeroBannerProps {
   totalServices?: number;
@@ -73,6 +74,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
   const [showJobs, setShowJobs] = useState(false);
   const { data: banners = [] } = useHeroBanners();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [bgIndex, setBgIndex] = useState(0);
   const { city: geoCity } = useGeoCity();
 
   useEffect(() => {
@@ -89,8 +91,15 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
     return () => clearInterval(interval);
   }, [banners.length]);
 
+  // Background image rotation (independent of CMS banners)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBgIndex((prev) => (prev + 1) % DEFAULT_BG_IMAGES.length);
+    }, BG_INTERVAL);
+    return () => clearInterval(interval);
+  }, []);
+
   const activeBanner: HeroBannerData | null = banners.length > 0 ? banners[currentSlide] || banners[0] : null;
-  const bgImage = activeBanner?.image_url || heroImage;
   const overlayOpacity = activeBanner?.overlay_opacity ?? 0.8;
   const title = activeBanner?.title || 'Encontre profissionais para';
   const subtitle = activeBanner?.subtitle || '';
@@ -98,25 +107,47 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
   const ctaLink = activeBanner?.cta_link || '/cadastro';
   const textAlign = activeBanner?.text_alignment || 'center';
   const hasCustomTitle = !!activeBanner?.title;
+  const hasCmsBg = !!activeBanner?.image_url;
 
   const alignClass = textAlign === 'left' ? 'items-start text-left' : textAlign === 'right' ? 'items-end text-right' : 'items-center text-center';
 
   return (
     <section className="relative overflow-hidden py-12 md:py-28">
-      <AnimatePresence mode="wait">
+      {/* Background images with crossfade */}
+      {hasCmsBg ? (
         <motion.img
-          key={bgImage}
-          src={bgImage}
+          key={activeBanner!.image_url!}
+          src={activeBanner!.image_url!}
           alt=""
+          width={1920}
+          height={768}
           fetchPriority="high"
           decoding="async"
-          className="absolute inset-0 h-full w-full object-cover object-center scale-105"
+          className="absolute inset-0 h-full w-full object-cover object-center"
           initial={{ opacity: 0, scale: 1.1 }}
           animate={{ opacity: 1, scale: 1.05 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 1.2, ease: 'easeInOut' }}
         />
-      </AnimatePresence>
+      ) : (
+        DEFAULT_BG_IMAGES.map((src, i) => (
+          <motion.img
+            key={src}
+            src={src}
+            alt=""
+            width={1920}
+            height={768}
+            fetchPriority={i === 0 ? 'high' : 'low'}
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+            initial={false}
+            animate={{
+              opacity: i === bgIndex ? 1 : 0,
+              scale: i === bgIndex ? 1.05 : 1.1,
+            }}
+            transition={{ duration: 1.5, ease: 'easeInOut' }}
+          />
+        ))
+      )}
 
       {/* Gradient overlay */}
       <div
