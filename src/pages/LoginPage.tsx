@@ -161,7 +161,7 @@ const LoginPage = () => {
               </>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
       <Footer />
     </div>
