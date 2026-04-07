@@ -76,7 +76,8 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="relative w-full mt-2 border-b border-amber-100/60"
+      className="relative w-full"
+      style={{ marginTop: 12, paddingLeft: 12, paddingRight: 12 }}
     >
       <AnimatePresence mode="wait">
         <motion.a
@@ -93,41 +94,41 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
           transition={{ duration: 0.3 }}
           className="block w-full cursor-pointer group"
         >
-          {/* Banner image — full width */}
+          {/* Banner image — 8:1, full width, rounded */}
           {imageSrc && (
             <img
               src={imageSrc}
-              alt={displayName}
-              className="w-full h-[70px] sm:h-[90px] object-cover object-center"
+              alt={`${displayName}${current.short_description ? ' — ' + current.short_description : ''}`}
+              className="w-full object-cover object-center"
+              style={{ borderRadius: 10, aspectRatio: '8/1' }}
               loading="lazy"
-              width={1920}
-              height={512}
+              width={1600}
+              height={200}
               onError={handleImageError}
             />
           )}
-
-          {/* Text bar below image */}
-          <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 bg-gradient-to-r from-amber-50 via-white to-amber-50">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-[7px] sm:text-[8px] font-semibold tracking-widest uppercase text-amber-500/60 shrink-0">
-                Patrocinado
-              </span>
-              <span className="text-[10px] sm:text-xs font-medium text-amber-900/70 truncate">
-                {displayName}
-              </span>
-              {current.short_description && (
-                <span className="hidden sm:inline text-[10px] text-amber-700/50 truncate">
-                  — {current.short_description}
-                </span>
-              )}
-            </div>
-            <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-medium text-amber-600/50 group-hover:text-amber-700 transition-colors shrink-0">
-              <ExternalLink className="h-2.5 w-2.5" />
-              <span className="hidden sm:inline">Visitar</span>
-            </span>
-          </div>
         </motion.a>
       </AnimatePresence>
+
+      {/* Branding bar below image */}
+      <div className="flex items-center justify-between px-1 py-1 mt-1">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[7px] sm:text-[8px] font-semibold tracking-widest uppercase text-muted-foreground/50 shrink-0">
+            Patrocinado
+          </span>
+          <span className="text-[10px] sm:text-xs font-medium text-foreground/60 truncate">
+            {displayName}
+          </span>
+          {current.short_description && (
+            <span className="hidden sm:inline text-[10px] text-muted-foreground/50 truncate">
+              — {current.short_description}
+            </span>
+          )}
+        </div>
+        <span className="flex items-center gap-1 text-[9px] text-muted-foreground/40 shrink-0">
+          <ExternalLink className="h-2.5 w-2.5" />
+        </span>
+      </div>
 
       {/* Dismiss button */}
       <button
@@ -135,7 +136,7 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
           e.stopPropagation();
           setDismissed(true);
         }}
-        className="absolute top-1.5 right-2 p-0.5 rounded-full bg-black/20 text-white/60 hover:text-white transition-colors z-10"
+        className="absolute top-[16px] right-[16px] p-0.5 rounded-full bg-black/20 text-white/60 hover:text-white transition-colors z-10"
         aria-label="Fechar"
       >
         <X className="h-3 w-3" />
