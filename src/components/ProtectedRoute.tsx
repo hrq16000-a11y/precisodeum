@@ -1,28 +1,24 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  /** Profile types allowed to access this route */
   allowedTypes?: string[];
-  /** If true, requires authentication */
   requireAuth?: boolean;
 }
 
-/**
- * Protects routes by profile type.
- * Redirects clients away from provider-only pages, etc.
- */
 const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: ProtectedRouteProps) => {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (loading) return;
 
     if (requireAuth && !user) {
-      navigate('/login', { replace: true });
+      // Save the current URL so login can redirect back
+      navigate('/login', { replace: true, state: { from: location.pathname + location.search } });
       return;
     }
 
@@ -32,7 +28,7 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
         navigate('/dashboard', { replace: true });
       }
     }
-  }, [loading, user, profile, allowedTypes, requireAuth, navigate]);
+  }, [loading, user, profile, allowedTypes, requireAuth, navigate, location]);
 
   if (loading) {
     return (

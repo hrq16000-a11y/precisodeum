@@ -170,7 +170,7 @@ const SignupPage = () => {
 
   const handleGoogleSignup = async () => {
     const { error } = await lovable.auth.signInWithOAuth('google', {
-      redirect_uri: window.location.origin + '/dashboard',
+      redirect_uri: window.location.origin,
     });
     if (error) toast.error('Erro ao cadastrar com Google');
   };
