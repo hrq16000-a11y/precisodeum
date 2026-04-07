@@ -584,7 +584,7 @@ const AdminUsersCrmPage = () => {
               </CardContent>
             </Card>
 
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
           </TabsContent>
         </Tabs>
       </div>
