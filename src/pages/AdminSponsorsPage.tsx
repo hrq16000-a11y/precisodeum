@@ -313,6 +313,38 @@ const AdminSponsorsPage = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>Formato do Anúncio</Label>
+                <Select value={form.ad_format} onValueChange={(v) => setForm({ ...form, ad_format: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">Automático (detecta pela imagem)</SelectItem>
+                    <SelectItem value="leaderboard">Leaderboard (728×90)</SelectItem>
+                    <SelectItem value="rectangle">Retângulo (300×250)</SelectItem>
+                    <SelectItem value="square">Quadrado (250×250)</SelectItem>
+                    <SelectItem value="wide-banner">Banner Largo (970×90)</SelectItem>
+                    <SelectItem value="half-page">Meia Página (300×600)</SelectItem>
+                    <SelectItem value="custom">Personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {form.ad_format === 'custom' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Largura máx. (px)</Label>
+                    <Input type="number" value={form.max_width} onChange={(e) => setForm({ ...form, max_width: Number(e.target.value) })} placeholder="0 = sem limite" />
+                  </div>
+                  <div>
+                    <Label>Altura máx. (px)</Label>
+                    <Input type="number" value={form.max_height} onChange={(e) => setForm({ ...form, max_height: Number(e.target.value) })} placeholder="0 = sem limite" />
+                  </div>
+                </div>
+              )}
+              <div>
+                <Label>Páginas de exibição</Label>
+                <Input value={form.target_pages} onChange={(e) => setForm({ ...form, target_pages: e.target.value })} placeholder="all, home, buscar, categoria, profissional" />
+                <p className="mt-1 text-[10px] text-muted-foreground">Separe por vírgula. Use "all" para todas as páginas.</p>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Data Início</Label>
