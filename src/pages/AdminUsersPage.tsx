@@ -3,7 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Users, Key, Trash2, Download, CheckSquare, UserCog, Shield } from 'lucide-react';
+import { Users, Key, Trash2, Download, CheckSquare, UserCog, Shield, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +35,14 @@ const AdminUsersPage = () => {
   const [resettingPw, setResettingPw] = useState(false);
   const [deleteUser, setDeleteUser] = useState<any | null>(null);
   const [detailUser, setDetailUser] = useState<any | null>(null);
+
+  // Create user
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [createEmail, setCreateEmail] = useState('');
+  const [createPassword, setCreatePassword] = useState('');
+  const [createName, setCreateName] = useState('');
+  const [createType, setCreateType] = useState('client');
+  const [creating, setCreating] = useState(false);
 
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -262,6 +270,31 @@ const AdminUsersPage = () => {
     toast.success(`${source.length} usuário(s) exportado(s)!`);
   };
 
+  const handleCreateUser = async () => {
+    if (!createEmail.includes('@')) { toast.error('Email inválido'); return; }
+    if (createPassword.length < 6) { toast.error('Senha mínima: 6 caracteres'); return; }
+    if (createName.trim().length < 2) { toast.error('Nome mínimo: 2 caracteres'); return; }
+    setCreating(true);
+    try {
+      const res = await supabase.functions.invoke('admin-create-user', {
+        body: { email: createEmail, password: createPassword, full_name: createName, profile_type: createType },
+      });
+      if (res.error) throw res.error;
+      if (res.data?.error) throw new Error(res.data.error);
+      await logAuditAction({
+        action: 'create', resource_type: 'user', resource_id: res.data?.user_id,
+        details: { email: createEmail, profile_type: createType },
+      });
+      toast.success('Usuário criado com sucesso!');
+      setShowCreateDialog(false);
+      setCreateEmail(''); setCreatePassword(''); setCreateName(''); setCreateType('client');
+      fetchProfiles();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'Falha ao criar usuário'));
+    }
+    setCreating(false);
+  };
+
   if (loading) return <AdminLayout><p className="text-muted-foreground p-4">Carregando...</p></AdminLayout>;
 
   const stats = {
@@ -285,6 +318,9 @@ const AdminUsersPage = () => {
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gerencie todos os usuários da plataforma</p>
         </div>
+        <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+          <UserPlus className="h-4 w-4 mr-1" /> Criar Usuário
+        </Button>
       </div>
 
       <div className="mt-5"><UserStatsCards stats={stats} /></div>
@@ -431,6 +467,44 @@ const AdminUsersPage = () => {
             <Button variant="outline" onClick={() => setDeleteUser(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete}>
               <Trash2 className="h-4 w-4 mr-1" /> Desativar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" /> Criar Novo Usuário</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Nome completo</Label>
+              <Input value={createName} onChange={e => setCreateName(e.target.value)} placeholder="Nome do usuário" />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="email@exemplo.com" />
+            </div>
+            <div>
+              <Label>Senha (mín. 6 caracteres)</Label>
+              <Input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Senha inicial" />
+            </div>
+            <div>
+              <Label>Tipo de conta</Label>
+              <Select value={createType} onValueChange={setCreateType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client">Cliente</SelectItem>
+                  <SelectItem value="provider">Profissional</SelectItem>
+                  <SelectItem value="rh">Agência/RH</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancelar</Button>
+            <Button onClick={handleCreateUser} disabled={creating}>
+              {creating ? 'Criando...' : 'Criar Usuário'}
             </Button>
           </DialogFooter>
         </DialogContent>
