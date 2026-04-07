@@ -74,6 +74,17 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       status: user.status || 'active',
     });
 
+    // Fetch permissions
+    supabase.from('user_roles').select('id').eq('user_id', user.id).eq('role', 'admin')
+      .then(({ data }) => setUserIsAdmin((data || []).length > 0));
+    supabase.from('sponsor_contacts').select('id, sponsor_id').eq('user_id', user.id)
+      .then(({ data }) => {
+        setUserIsSponsor((data || []).length > 0);
+        setSelectedSponsorId((data || [])[0]?.sponsor_id || '');
+      });
+    supabase.from('sponsors').select('id, title').eq('active', true).order('title')
+      .then(({ data }) => setSponsors(data || []));
+
     // Fetch provider + related data
     supabase.from('providers').select('*, categories(name, icon)').eq('user_id', user.id).maybeSingle().then(({ data: prov }) => {
       setProvider(prov);
