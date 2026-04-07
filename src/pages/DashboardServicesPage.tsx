@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, Edit2, ChevronDown, ChevronUp, X, Search, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Edit2, ChevronDown, ChevronUp, X, Search, AlertTriangle, ImagePlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccountLimits } from '@/hooks/useAccountLimits';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +21,7 @@ const DashboardServicesPage = () => {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [categorySearch, setCategorySearch] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
   const categoryContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
