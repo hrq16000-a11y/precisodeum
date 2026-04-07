@@ -343,7 +343,7 @@ const AdminAdSlotsPage = () => {
               </Select>
             </div>
             <div><Label>Prioridade</Label><Input type="number" value={assignForm.priority} onChange={e => setAssignForm(p => ({ ...p, priority: e.target.value }))} /></div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div><Label>Início</Label><Input type="date" value={assignForm.start_date} onChange={e => setAssignForm(p => ({ ...p, start_date: e.target.value }))} /></div>
               <div><Label>Fim</Label><Input type="date" value={assignForm.end_date} onChange={e => setAssignForm(p => ({ ...p, end_date: e.target.value }))} /></div>
             </div>

@@ -149,7 +149,7 @@ const AdminBlogPage = () => {
               <div><Label>Resumo</Label><Textarea value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} rows={2} /></div>
               <div><Label>Conteúdo</Label><Textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows={10} /></div>
               <div><Label>Imagem de Capa</Label><ImageUploadField value={form.cover_image_url} onChange={(url) => setForm({ ...form, cover_image_url: url })} bucket="service-images" folder="blog" /></div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div><Label>Autor</Label><Input value={form.author_name} onChange={(e) => setForm({ ...form, author_name: e.target.value })} /></div>
                 <div><Label>URL Fonte (opcional)</Label><Input value={form.source_url} onChange={(e) => setForm({ ...form, source_url: e.target.value })} placeholder="https://..." /></div>
               </div>
