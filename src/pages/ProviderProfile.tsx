@@ -501,16 +501,27 @@ const ProviderProfile = () => {
   const renderPortfolio = () => {
     if (portfolioImages.length === 0) return null;
     return (
-      <div key="portfolio" className={`mt-6 p-6 ${tc.section}`}>
-        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Portfólio</h2>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {portfolioImages.map((url, i) => (
-            <div key={i} className="aspect-square cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]" onClick={() => openPortfolioLightbox(i)}>
-              <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
-            </div>
-          ))}
+      <motion.div key="portfolio" className={`mt-6 p-6 ${tc.section}`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
+        <div className="flex items-center gap-2 mb-4">
+          <ImageIcon className="h-5 w-5 text-accent" />
+          <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Portfólio</h2>
+          <span className="ml-auto text-xs text-muted-foreground">{portfolioImages.length} fotos</span>
         </div>
-      </div>
+        <motion.div className="grid grid-cols-2 gap-3 sm:grid-cols-3" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+          {portfolioImages.map((url, i) => (
+            <motion.div
+              key={i}
+              variants={scaleIn}
+              className="aspect-square cursor-pointer overflow-hidden rounded-xl border border-border group"
+              onClick={() => openPortfolioLightbox(i)}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" onError={handleImageError} />
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.div>
     );
   };
 
