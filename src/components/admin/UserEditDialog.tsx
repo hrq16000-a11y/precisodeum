@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,30 +34,48 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
     whatsapp: user?.whatsapp || '',
     profile_type: user?.profile_type || user?.role || 'client',
     status: user?.status || 'active',
+    level_id: user?.level_id || '',
+    department: user?.department || '',
+    account_type_id: user?.account_type_id || '',
   });
   const [saving, setSaving] = useState(false);
+  const [levels, setLevels] = useState<any[]>([]);
+  const [accountTypes, setAccountTypes] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase.from('user_levels').select('id, name, color').order('priority', { ascending: false })
+      .then(({ data }) => setLevels(data || []));
+    supabase.from('account_types').select('id, name, color').order('display_order')
+      .then(({ data }) => setAccountTypes(data || []));
+  }, []);
 
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
 
     const sanitizedWhatsapp = (form.whatsapp || '').replace(/\D/g, '');
-    const updateData = {
+    const updateData: any = {
       full_name: form.full_name,
       phone: form.phone,
       whatsapp: sanitizedWhatsapp,
       role: form.profile_type === 'rh' ? 'client' : form.profile_type,
       profile_type: form.profile_type,
       status: form.status,
+      level_id: form.level_id || null,
+      department: form.department || '',
+      account_type_id: form.account_type_id || null,
     };
 
-    // Build changes object tracking previous → new values
+    // Build changes object
     const changes: Record<string, { from: any; to: any }> = {};
     if (form.full_name !== (user.full_name || '')) changes.full_name = { from: user.full_name || '', to: form.full_name };
     if (form.phone !== (user.phone || '')) changes.phone = { from: user.phone || '', to: form.phone };
     if (sanitizedWhatsapp !== (user.whatsapp || '')) changes.whatsapp = { from: user.whatsapp || '', to: sanitizedWhatsapp };
     if (form.profile_type !== (user.profile_type || user.role || 'client')) changes.profile_type = { from: user.profile_type || user.role || 'client', to: form.profile_type };
     if (form.status !== (user.status || 'active')) changes.status = { from: user.status || 'active', to: form.status };
+    if (form.level_id !== (user.level_id || '')) changes.level_id = { from: user.level_id || '', to: form.level_id };
+    if (form.department !== (user.department || '')) changes.department = { from: user.department || '', to: form.department };
+    if (form.account_type_id !== (user.account_type_id || '')) changes.account_type_id = { from: user.account_type_id || '', to: form.account_type_id };
 
     const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id);
     setSaving(false);
@@ -65,7 +83,6 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
     if (error) {
       toast.error('Erro ao atualizar: ' + error.message);
     } else {
-      // Log audit with previous/new values
       if (Object.keys(changes).length > 0) {
         await logAuditAction({
           action: 'update',
@@ -129,6 +146,46 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Nível</Label>
+              <Select value={form.level_id || 'none'} onValueChange={v => setForm(f => ({ ...f, level_id: v === 'none' ? '' : v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {levels.map(l => (
+                    <SelectItem key={l.id} value={l.id}>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: l.color }} />
+                        {l.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Tipo de Plano</Label>
+              <Select value={form.account_type_id || 'none'} onValueChange={v => setForm(f => ({ ...f, account_type_id: v === 'none' ? '' : v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {accountTypes.map(a => (
+                    <SelectItem key={a.id} value={a.id}>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: a.color }} />
+                        {a.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <Label>Departamento</Label>
+            <Input value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} placeholder="Ex: TI, Vendas, Marketing..." />
           </div>
         </div>
         <DialogFooter>

@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_types: {
+        Row: {
+          active: boolean
+          color: string
+          created_at: string
+          description: string
+          display_order: number
+          id: string
+          max_users: number
+          name: string
+          price: number
+          resources: Json
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          description?: string
+          display_order?: number
+          id?: string
+          max_users?: number
+          name: string
+          price?: number
+          resources?: Json
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          description?: string
+          display_order?: number
+          id?: string
+          max_users?: number
+          name?: string
+          price?: number
+          resources?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ad_slot_assignments: {
         Row: {
           active: boolean
@@ -1012,11 +1054,14 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type_id: string | null
           avatar_url: string | null
           created_at: string
+          department: string | null
           email: string | null
           full_name: string
           id: string
+          level_id: string | null
           phone: string | null
           profile_type: string
           role: string
@@ -1026,11 +1071,14 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          account_type_id?: string | null
           avatar_url?: string | null
           created_at?: string
+          department?: string | null
           email?: string | null
           full_name?: string
           id: string
+          level_id?: string | null
           phone?: string | null
           profile_type?: string
           role?: string
@@ -1040,11 +1088,14 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          account_type_id?: string | null
           avatar_url?: string | null
           created_at?: string
+          department?: string | null
           email?: string | null
           full_name?: string
           id?: string
+          level_id?: string | null
           phone?: string | null
           profile_type?: string
           role?: string
@@ -1053,7 +1104,22 @@ export type Database = {
           user_ref?: string
           whatsapp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_account_type_id_fkey"
+            columns: ["account_type_id"]
+            isOneToOne: false
+            referencedRelation: "account_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "user_levels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       provider_page_settings: {
         Row: {
@@ -1967,6 +2033,39 @@ export type Database = {
           max_services?: number
           tier_key?: string
           tier_label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_levels: {
+        Row: {
+          color: string
+          created_at: string
+          description: string
+          id: string
+          name: string
+          permissions: Json
+          priority: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          permissions?: Json
+          priority?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          permissions?: Json
+          priority?: number
           updated_at?: string
         }
         Relationships: []

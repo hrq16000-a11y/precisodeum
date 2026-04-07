@@ -1,4 +1,4 @@
-import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar } from 'lucide-react';
+import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -27,6 +27,8 @@ const profileTypeIcon = (t: string) => {
 interface UserTableProps {
   users: any[];
   adminIds: Set<string>;
+  levels?: any[];
+  accountTypes?: any[];
   onEdit: (u: any) => void;
   onResetPassword: (u: any) => void;
   onBlock: (u: any) => void;
@@ -38,7 +40,7 @@ interface UserTableProps {
   onToggleSelection?: (id: string) => void;
 }
 
-const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
+const UserTable = ({ users, adminIds, levels = [], accountTypes = [], onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
   if (users.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card p-12 text-center">
@@ -54,6 +56,8 @@ const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAd
         const isAdminUser = adminIds.has(p.id);
         const type = p.profile_type || p.role || 'client';
         const phone = p.phone || p.whatsapp || '';
+        const userLevel = levels.find((l: any) => l.id === p.level_id);
+        const userAccType = accountTypes.find((a: any) => a.id === p.account_type_id);
 
         return (
           <div
@@ -137,8 +141,36 @@ const UserTable = ({ users, adminIds, onEdit, onResetPassword, onBlock, onMakeAd
                 </div>
               </div>
 
+              {/* Level & Account Type */}
+              <div className="mt-2 space-y-1 text-xs">
+                {userLevel && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">Nível:</span>
+                    <span className="inline-flex items-center gap-1 font-semibold">
+                      <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: userLevel.color }} />
+                      {userLevel.name}
+                    </span>
+                  </div>
+                )}
+                {userAccType && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">Tipo:</span>
+                    <span className="inline-flex items-center gap-1 font-semibold">
+                      <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: userAccType.color }} />
+                      {userAccType.name}
+                    </span>
+                  </div>
+                )}
+                {p.department && (
+                  <div className="flex items-center gap-1.5">
+                    <Briefcase className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground">{p.department}</span>
+                  </div>
+                )}
+              </div>
+
               {/* Badges */}
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 {isAdminUser && (
                   <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
                     👑 Admin

@@ -24,6 +24,8 @@ const AdminUsersPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [profiles, setProfiles] = useState<any[]>([]);
   const [adminIds, setAdminIds] = useState<Set<string>>(new Set());
+  const [levels, setLevels] = useState<any[]>([]);
+  const [accountTypes, setAccountTypes] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -90,10 +92,21 @@ const AdminUsersPage = () => {
       .then(({ data }) => setAdminIds(new Set((data || []).map((r: any) => r.user_id))));
   };
 
+  const fetchLevels = () => {
+    supabase.from('user_levels').select('*').order('priority', { ascending: false })
+      .then(({ data }) => setLevels(data || []));
+  };
+  const fetchAccountTypes = () => {
+    supabase.from('account_types').select('*').order('display_order')
+      .then(({ data }) => setAccountTypes(data || []));
+  };
+
   useEffect(() => {
     if (!isAdmin) return;
     fetchProfiles();
     fetchAdmins();
+    fetchLevels();
+    fetchAccountTypes();
   }, [isAdmin]);
 
   const filtered = useMemo(() => {
@@ -429,6 +442,8 @@ const AdminUsersPage = () => {
         <UserTable
           users={paginated}
           adminIds={adminIds}
+          levels={levels}
+          accountTypes={accountTypes}
           onEdit={setEditUser}
           onResetPassword={setPwUser}
           onBlock={handleBlock}
