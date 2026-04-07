@@ -280,7 +280,7 @@ const AdminSponsorsPage = () => {
                   <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label>Tipo de Patrocínio</Label>
                   <Select value={form.sponsor_type} onValueChange={(v) => setForm({ ...form, sponsor_type: v })}>
