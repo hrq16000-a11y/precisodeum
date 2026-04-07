@@ -40,6 +40,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { data: suggestions } = useSearchSuggestions();
+  const typingPlaceholder = useTypingPlaceholder(geoCity);
 
   // Request browser geolocation on first focus
   const requestGeoOnce = useCallback(() => {
