@@ -81,10 +81,27 @@ const LoginPage = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <div className="flex flex-1 items-center justify-center py-12">
-        <div className="w-full max-w-sm">
-          <div className="rounded-xl border border-border bg-card p-8 shadow-card">
-            <h1 className="text-center font-display text-2xl font-bold text-foreground">Entrar</h1>
+      <div className="flex flex-1 items-center justify-center py-12 relative overflow-hidden">
+        {/* Decorative background blobs */}
+        <div className="absolute -top-32 -left-32 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute -bottom-32 -right-32 h-64 w-64 rounded-full bg-accent/5 blur-3xl" />
+        
+        <motion.div
+          className="w-full max-w-sm relative"
+          initial={{ opacity: 0, y: 30, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+        >
+          <div className="rounded-xl border border-border bg-card p-8 shadow-card relative overflow-hidden">
+            {/* Shimmer top line */}
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-accent/40 to-transparent shimmer" />
+            
+            <motion.h1
+              className="text-center font-display text-2xl font-bold text-foreground"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >Entrar</motion.h1>
             <p className="mt-2 text-center text-sm text-muted-foreground">Acesse sua conta</p>
 
             <Button variant="outline" className="mt-6 w-full" onClick={handleGoogleLogin}>
