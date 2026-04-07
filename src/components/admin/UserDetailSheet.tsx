@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import {
   Shield, Mail, Phone, Calendar, UserCheck, Briefcase, FileText, History,
   ImageIcon, Settings, Camera, Loader2, Trash2, Plus, ExternalLink,
-  Eye, MapPin, Globe, MessageCircle, ArrowUp, ArrowDown, Upload
+  Eye, MapPin, Globe, MessageCircle, ArrowUp, ArrowDown, Upload, Key, Lock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
@@ -52,11 +53,20 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
 
   // Permissions state
   const [userIsAdmin, setUserIsAdmin] = useState(false);
+  const [userIsModerator, setUserIsModerator] = useState(false);
   const [userIsSponsor, setUserIsSponsor] = useState(false);
   const [sponsors, setSponsors] = useState<any[]>([]);
   const [selectedSponsorId, setSelectedSponsorId] = useState('');
   const [permLoading, setPermLoading] = useState(false);
 
+  // Levels & Account Types
+  const [levels, setLevels] = useState<any[]>([]);
+  const [accountTypes, setAccountTypes] = useState<any[]>([]);
+
+  // Password reset inline
+  const [showResetPw, setShowResetPw] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [resettingPw, setResettingPw] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -66,17 +76,26 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     setCurrentAvatar(user.avatar_url || '');
     setEditingProfile(false);
     setEditingProvider(false);
+    setShowResetPw(false);
+    setNewPassword('');
     setProfileForm({
       full_name: user.full_name || '',
       phone: user.phone || '',
       whatsapp: user.whatsapp || '',
       profile_type: user.profile_type || user.role || 'client',
       status: user.status || 'active',
+      level_id: user.level_id || '',
+      account_type_id: user.account_type_id || '',
+      department: user.department || '',
     });
 
     // Fetch permissions
-    supabase.from('user_roles').select('id').eq('user_id', user.id).eq('role', 'admin')
-      .then(({ data }) => setUserIsAdmin((data || []).length > 0));
+    supabase.from('user_roles').select('id, role').eq('user_id', user.id)
+      .then(({ data }) => {
+        const roles = (data || []).map((r: any) => r.role);
+        setUserIsAdmin(roles.includes('admin'));
+        setUserIsModerator(roles.includes('moderator'));
+      });
     supabase.from('sponsor_contacts').select('id, sponsor_id').eq('user_id', user.id)
       .then(({ data }) => {
         setUserIsSponsor((data || []).length > 0);
@@ -84,6 +103,12 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       });
     supabase.from('sponsors').select('id, title').eq('active', true).order('title')
       .then(({ data }) => setSponsors(data || []));
+
+    // Levels & Account Types
+    supabase.from('user_levels').select('id, name, color').order('priority', { ascending: false })
+      .then(({ data }) => setLevels(data || []));
+    supabase.from('account_types').select('id, name, color').order('display_order')
+      .then(({ data }) => setAccountTypes(data || []));
 
     // Fetch provider + related data
     supabase.from('providers').select('*, categories(name, icon)').eq('user_id', user.id).maybeSingle().then(({ data: prov }) => {
@@ -103,12 +128,10 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
           service_radius: prov.service_radius || '',
         });
 
-        // Services with images
         supabase.from('services').select('id, service_name, description, price, view_count, created_at, deleted_at, whatsapp, service_area, working_hours')
           .eq('provider_id', prov.id).order('created_at', { ascending: false }).limit(50)
           .then(({ data }) => {
             setServices(data || []);
-            // Fetch images for each service
             if (data?.length) {
               const svcIds = data.map(s => s.id);
               supabase.from('service_images').select('*').in('service_id', svcIds).order('display_order')
@@ -127,7 +150,6 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
           .eq('provider_id', prov.id).order('created_at', { ascending: false }).limit(50)
           .then(({ data }) => setLeads(data || []));
 
-        // Page settings
         supabase.from('provider_page_settings').select('*').eq('provider_id', prov.id).maybeSingle()
           .then(({ data }) => {
             setPageSettings(data);
@@ -138,7 +160,6 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
             });
           });
 
-        // Portfolio images
         supabase.storage.from('portfolio').list(user.id, { limit: 100 }).then(({ data }) => {
           if (data) {
             const filtered = data.filter(f => f.name !== '.emptyFolderPlaceholder');
@@ -190,7 +211,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     setAvatarUploading(false);
   };
 
-  // === Save Profile ===
+  // === Save Profile (with level, account_type, department) ===
   const saveProfile = async () => {
     if (!user) return;
     const { error } = await supabase.from('profiles').update({
@@ -200,6 +221,9 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       profile_type: profileForm.profile_type,
       role: profileForm.profile_type === 'rh' ? 'client' : profileForm.profile_type,
       status: profileForm.status,
+      level_id: profileForm.level_id || null,
+      account_type_id: profileForm.account_type_id || null,
+      department: profileForm.department || '',
     }).eq('id', user.id);
     if (error) { toast.error('Erro: ' + error.message); return; }
     await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: profileForm } });
@@ -231,6 +255,30 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     else { toast.success('Configurações salvas!'); }
   };
 
+  // === Password Reset Inline ===
+  const handleResetPassword = async () => {
+    if (!user || !newPassword) return;
+    if (newPassword.length < 6) { toast.error('Mínimo 6 caracteres'); return; }
+    setResettingPw(true);
+    try {
+      const res = await supabase.functions.invoke('admin-reset-password', {
+        body: { user_id: user.id, new_password: newPassword },
+      });
+      if (res.error) throw res.error;
+      if (res.data?.error) throw new Error(res.data.error);
+      await logAuditAction({
+        action: 'update', resource_type: 'user', resource_id: user.id,
+        details: { target_user_id: user.id, changes: { password: { from: '***', to: '***' } } },
+      });
+      toast.success('Senha redefinida!');
+      setShowResetPw(false);
+      setNewPassword('');
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'Falha ao redefinir'));
+    }
+    setResettingPw(false);
+  };
+
   // === Portfolio Upload ===
   const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -241,7 +289,6 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       const path = `${user.id}/${Date.now()}-${file.name}`;
       await supabase.storage.from('portfolio').upload(path, file);
     }
-    // Reload
     const { data } = await supabase.storage.from('portfolio').list(user.id, { limit: 100 });
     if (data) {
       const filtered = data.filter(f => f.name !== '.emptyFolderPlaceholder');
@@ -262,7 +309,6 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     toast.success('Imagem removida');
   };
 
-  // === Delete Service Image ===
   const deleteServiceImage = async (img: any) => {
     const urlParts = img.image_url.split('/service-images/');
     if (urlParts[1]) await supabase.storage.from('service-images').remove([decodeURIComponent(urlParts[1])]);
@@ -281,7 +327,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       block: 'Bloqueado', unblock: 'Desbloqueado', make_admin: 'Promovido',
       reset_password: 'Senha redefinida', soft_delete: 'Soft-deleted',
       bulk_active: 'Ativação em massa', bulk_inactive: 'Desativação em massa',
-      export: 'Exportação',
+      export: 'Exportação', create: 'Criado',
     };
     return map[action] || action;
   };
@@ -300,6 +346,25 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { admin: { from: false, to: true } } } });
       toast.success('Usuário promovido a admin');
       setUserIsAdmin(true);
+    }
+    setPermLoading(false);
+    onRefresh?.();
+  };
+
+  // === Toggle Moderator ===
+  const toggleModerator = async () => {
+    if (!user) return;
+    setPermLoading(true);
+    if (userIsModerator) {
+      await supabase.from('user_roles').delete().eq('user_id', user.id).eq('role', 'moderator');
+      await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { moderator: { from: true, to: false } } } });
+      toast.success('Permissão de moderador removida');
+      setUserIsModerator(false);
+    } else {
+      await supabase.from('user_roles').insert({ user_id: user.id, role: 'moderator' } as any);
+      await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { moderator: { from: false, to: true } } } });
+      toast.success('Usuário promovido a moderador');
+      setUserIsModerator(true);
     }
     setPermLoading(false);
     onRefresh?.();
@@ -334,33 +399,37 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   if (!user) return null;
 
   const initials = (user.full_name || '?')[0]?.toUpperCase();
+  const levelName = levels.find(l => l.id === user.level_id)?.name;
+  const levelColor = levels.find(l => l.id === user.level_id)?.color;
+  const accountTypeName = accountTypes.find(a => a.id === user.account_type_id)?.name;
+  const accountTypeColor = accountTypes.find(a => a.id === user.account_type_id)?.color;
 
   return (
     <Sheet open={!!user} onOpenChange={open => !open && onClose()}>
-      <SheetContent className="sm:max-w-2xl overflow-y-auto p-0">
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0">
         {/* Hero Header */}
-        <div className="relative bg-gradient-to-r from-primary/10 to-accent/10 px-6 pt-6 pb-4">
-          <div className="flex items-start gap-4">
-            {/* Avatar with upload */}
+        <div className="relative bg-gradient-to-r from-primary/10 to-accent/10 px-4 sm:px-6 pt-6 pb-4">
+          <div className="flex items-start gap-3 sm:gap-4">
             <div className="relative shrink-0">
-              <Avatar className="h-20 w-20 border-4 border-background shadow-lg">
+              <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-background shadow-lg">
                 <AvatarImage src={currentAvatar || undefined} alt={user.full_name} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">{initials}</AvatarFallback>
+                <AvatarFallback className="bg-primary text-primary-foreground text-xl sm:text-2xl font-bold">{initials}</AvatarFallback>
               </Avatar>
               <button
                 onClick={() => avatarRef.current?.click()}
                 disabled={avatarUploading}
-                className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md hover:bg-accent/90 transition-colors"
+                className="absolute bottom-0 right-0 flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md hover:bg-accent/90 transition-colors"
               >
-                {avatarUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                {avatarUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
               </button>
               <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="font-display text-xl font-bold text-foreground truncate">{user.full_name || '—'}</h2>
-              <p className="text-sm text-muted-foreground truncate">{user.email || ''}</p>
-              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <h2 className="font-display text-lg sm:text-xl font-bold text-foreground truncate">{user.full_name || '—'}</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">{user.email || ''}</p>
+              <div className="flex flex-wrap items-center gap-1 mt-1.5">
                 {isAdmin && <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">👑 Admin</Badge>}
+                {userIsModerator && <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-[10px]">🛡️ Mod</Badge>}
                 <Badge variant={user.status === 'inactive' ? 'destructive' : 'default'} className="text-[10px]">
                   {user.status === 'inactive' ? '🔴 Inativo' : '🟢 Ativo'}
                 </Badge>
@@ -368,11 +437,21 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                   {user.profile_type === 'provider' ? '🔧 Profissional' : user.profile_type === 'rh' ? '🏢 Agência' : '👤 Cliente'}
                 </Badge>
                 {provider?.plan && <Badge variant="outline" className="text-[10px]">⭐ {provider.plan}</Badge>}
+                {levelName && (
+                  <Badge variant="outline" className="text-[10px]" style={{ borderColor: levelColor, color: levelColor }}>
+                    {levelName}
+                  </Badge>
+                )}
+                {accountTypeName && (
+                  <Badge variant="outline" className="text-[10px]" style={{ borderColor: accountTypeColor, color: accountTypeColor }}>
+                    {accountTypeName}
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
           {/* Quick links */}
-          <div className="flex gap-2 mt-3">
+          <div className="flex flex-wrap gap-2 mt-3">
             {user.whatsapp && (
               <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild>
                 <a href={`https://wa.me/${(user.whatsapp || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
@@ -387,25 +466,36 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 </a>
               </Button>
             )}
+            {user.user_ref && (
+              <Badge variant="secondary" className="text-[10px] font-mono">{user.user_ref}</Badge>
+            )}
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="px-6 pt-4 pb-6">
+        <div className="px-4 sm:px-6 pt-4 pb-6">
           <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="w-full grid grid-cols-7 mb-4">
-              <TabsTrigger value="profile" className="text-xs gap-1"><UserCheck className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Perfil</span></TabsTrigger>
-              <TabsTrigger value="provider" className="text-xs gap-1"><Briefcase className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Negócio</span></TabsTrigger>
-              <TabsTrigger value="services" className="text-xs gap-1"><FileText className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Serviços</span></TabsTrigger>
-              <TabsTrigger value="portfolio" className="text-xs gap-1"><ImageIcon className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Fotos</span></TabsTrigger>
-              <TabsTrigger value="leads" className="text-xs gap-1"><MessageCircle className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Leads</span></TabsTrigger>
-              <TabsTrigger value="page" className="text-xs gap-1"><Settings className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Página</span></TabsTrigger>
-              <TabsTrigger value="audit" className="text-xs gap-1"><History className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Logs</span></TabsTrigger>
+            <TabsList className="w-full grid grid-cols-4 sm:grid-cols-7 mb-4 h-auto">
+              <TabsTrigger value="profile" className="text-xs gap-1 px-1"><UserCheck className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Perfil</span></TabsTrigger>
+              <TabsTrigger value="provider" className="text-xs gap-1 px-1"><Briefcase className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Negócio</span></TabsTrigger>
+              <TabsTrigger value="services" className="text-xs gap-1 px-1"><FileText className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Serviços</span></TabsTrigger>
+              <TabsTrigger value="portfolio" className="text-xs gap-1 px-1"><ImageIcon className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Fotos</span></TabsTrigger>
+              <TabsTrigger value="leads" className="text-xs gap-1 px-1 hidden sm:flex"><MessageCircle className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Leads</span></TabsTrigger>
+              <TabsTrigger value="page" className="text-xs gap-1 px-1 hidden sm:flex"><Settings className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Página</span></TabsTrigger>
+              <TabsTrigger value="audit" className="text-xs gap-1 px-1 hidden sm:flex"><History className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Logs</span></TabsTrigger>
             </TabsList>
+            {/* Mobile extra tabs row */}
+            <div className="sm:hidden mb-4">
+              <TabsList className="w-full grid grid-cols-3 h-auto">
+                <TabsTrigger value="leads" className="text-xs gap-1 px-1"><MessageCircle className="h-3.5 w-3.5" /> Leads</TabsTrigger>
+                <TabsTrigger value="page" className="text-xs gap-1 px-1"><Settings className="h-3.5 w-3.5" /> Página</TabsTrigger>
+                <TabsTrigger value="audit" className="text-xs gap-1 px-1"><History className="h-3.5 w-3.5" /> Logs</TabsTrigger>
+              </TabsList>
+            </div>
 
             {/* ====== PROFILE TAB ====== */}
             <TabsContent value="profile" className="space-y-4 mt-0">
-              <div className="rounded-xl border border-border p-4 space-y-3">
+              <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-foreground text-sm">Dados Pessoais</h3>
                   <Button size="sm" variant={editingProfile ? 'accent' : 'outline'} className="h-7 text-xs" onClick={() => setEditingProfile(!editingProfile)}>
@@ -455,6 +545,46 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                         </Select>
                       </div>
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Nível</Label>
+                        <Select value={profileForm.level_id || 'none'} onValueChange={v => setProfileForm({ ...profileForm, level_id: v === 'none' ? '' : v })}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhum</SelectItem>
+                            {levels.map(l => (
+                              <SelectItem key={l.id} value={l.id}>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: l.color }} />
+                                  {l.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Tipo de Plano</Label>
+                        <Select value={profileForm.account_type_id || 'none'} onValueChange={v => setProfileForm({ ...profileForm, account_type_id: v === 'none' ? '' : v })}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhum</SelectItem>
+                            {accountTypes.map(a => (
+                              <SelectItem key={a.id} value={a.id}>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+                                  {a.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Departamento</Label>
+                      <Input value={profileForm.department} onChange={e => setProfileForm({ ...profileForm, department: e.target.value })} className="h-8 text-sm" placeholder="Ex: TI, Vendas..." />
+                    </div>
                     <Button size="sm" onClick={saveProfile} className="w-full">💾 Salvar Alterações</Button>
                   </div>
                 ) : (
@@ -468,48 +598,94 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     {user.user_ref && <InfoRow icon={<Shield className="h-4 w-4" />} label="Ref" value={user.user_ref} />}
                     {user.department && <InfoRow icon={<Briefcase className="h-4 w-4" />} label="Depto" value={user.department} />}
                     {provider?.plan && <InfoRow icon={<Eye className="h-4 w-4" />} label="Plano" value={provider.plan} />}
+                    {levelName && <InfoRow icon={<ArrowUp className="h-4 w-4" />} label="Nível" value={levelName} />}
+                    {accountTypeName && <InfoRow icon={<Shield className="h-4 w-4" />} label="Tipo Conta" value={accountTypeName} />}
+                  </div>
+                )}
+              </div>
+
+              {/* Password Reset Section */}
+              <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                    <Key className="h-4 w-4" /> Senha
+                  </h3>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowResetPw(!showResetPw)}>
+                    {showResetPw ? 'Cancelar' : 'Redefinir Senha'}
+                  </Button>
+                </div>
+                {showResetPw && (
+                  <div className="flex gap-2">
+                    <Input
+                      type="password"
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                      placeholder="Nova senha (mín. 6 chars)"
+                      className="h-8 text-sm flex-1"
+                    />
+                    <Button size="sm" className="h-8 text-xs shrink-0" onClick={handleResetPassword} disabled={resettingPw || newPassword.length < 6}>
+                      {resettingPw ? <Loader2 className="h-3 w-3 animate-spin" /> : <Lock className="h-3 w-3 mr-1" />}
+                      {resettingPw ? '...' : 'Aplicar'}
+                    </Button>
                   </div>
                 )}
               </div>
 
               {/* Permissions Section */}
-              <div className="rounded-xl border border-border p-4 space-y-3">
+              <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
                 <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
-                  <Shield className="h-4 w-4" /> Permissões
+                  <Shield className="h-4 w-4" /> Permissões & Roles
                 </h3>
                 <div className="space-y-3">
                   {/* Admin Toggle */}
                   <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground">👑 Administrador</p>
-                      <p className="text-xs text-muted-foreground">Acesso total ao painel administrativo</p>
+                      <p className="text-xs text-muted-foreground">Acesso total ao painel</p>
                     </div>
                     <Button
                       size="sm"
                       variant={userIsAdmin ? 'destructive' : 'default'}
-                      className="h-8 text-xs"
+                      className="h-8 text-xs shrink-0"
                       onClick={toggleAdmin}
                       disabled={permLoading}
                     >
-                      {userIsAdmin ? 'Revogar Admin' : 'Tornar Admin'}
+                      {userIsAdmin ? 'Revogar' : 'Conceder'}
+                    </Button>
+                  </div>
+
+                  {/* Moderator Toggle */}
+                  <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">🛡️ Moderador</p>
+                      <p className="text-xs text-muted-foreground">Moderação de conteúdo e usuários</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={userIsModerator ? 'destructive' : 'default'}
+                      className="h-8 text-xs shrink-0"
+                      onClick={toggleModerator}
+                      disabled={permLoading}
+                    >
+                      {userIsModerator ? 'Revogar' : 'Conceder'}
                     </Button>
                   </div>
 
                   {/* Sponsor Toggle */}
                   <div className="rounded-lg border border-border p-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground">📢 Patrocinador</p>
                         <p className="text-xs text-muted-foreground">Acesso ao painel de patrocinadores</p>
                       </div>
                       <Button
                         size="sm"
                         variant={userIsSponsor ? 'destructive' : 'default'}
-                        className="h-8 text-xs"
+                        className="h-8 text-xs shrink-0"
                         onClick={toggleSponsor}
                         disabled={permLoading}
                       >
-                        {userIsSponsor ? 'Revogar Acesso' : 'Conceder Acesso'}
+                        {userIsSponsor ? 'Revogar' : 'Conceder'}
                       </Button>
                     </div>
                     {!userIsSponsor && (
@@ -538,7 +714,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                   Este usuário não possui perfil profissional
                 </div>
               ) : (
-                <div className="rounded-xl border border-border p-4 space-y-3">
+                <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-foreground text-sm">Dados do Negócio</h3>
                     <Button size="sm" variant={editingProvider ? 'accent' : 'outline'} className="h-7 text-xs" onClick={() => setEditingProvider(!editingProvider)}>
@@ -555,7 +731,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                         <Label className="text-xs">Descrição</Label>
                         <Textarea value={providerForm.description} onChange={e => setProviderForm({ ...providerForm, description: e.target.value })} className="text-sm min-h-[60px]" />
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         <div>
                           <Label className="text-xs">Cidade</Label>
                           <Input value={providerForm.city} onChange={e => setProviderForm({ ...providerForm, city: e.target.value })} className="h-8 text-sm" />
@@ -564,7 +740,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                           <Label className="text-xs">Estado</Label>
                           <Input value={providerForm.state} onChange={e => setProviderForm({ ...providerForm, state: e.target.value })} className="h-8 text-sm" />
                         </div>
-                        <div>
+                        <div className="col-span-2 sm:col-span-1">
                           <Label className="text-xs">Bairro</Label>
                           <Input value={providerForm.neighborhood} onChange={e => setProviderForm({ ...providerForm, neighborhood: e.target.value })} className="h-8 text-sm" />
                         </div>
@@ -647,10 +823,9 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                           </div>
                           {s.deleted_at && <Badge variant="destructive" className="text-[10px] shrink-0">Excluído</Badge>}
                         </div>
-                        {/* Service images */}
                         {imgs.length > 0 && (
                           <div className="border-t border-border p-2">
-                            <div className="grid grid-cols-4 gap-1.5">
+                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                               {imgs.map(img => (
                                 <div key={img.id} className="relative group rounded-md overflow-hidden aspect-square">
                                   <img src={img.image_url} alt="" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
@@ -674,10 +849,9 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
 
             {/* ====== PORTFOLIO / MEDIA TAB ====== */}
             <TabsContent value="portfolio" className="space-y-4 mt-0">
-              {/* Portfolio */}
-              <div className="rounded-xl border border-border p-4 space-y-3">
+              <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground text-sm">📸 Portfólio ({portfolio.length} fotos)</h3>
+                  <h3 className="font-semibold text-foreground text-sm">📸 Portfólio ({portfolio.length})</h3>
                   <label className="cursor-pointer">
                     <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild disabled={portfolioUploading}>
                       <span>{portfolioUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />} Adicionar</span>
@@ -704,9 +878,8 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 )}
               </div>
 
-              {/* All Media */}
-              <div className="rounded-xl border border-border p-4 space-y-3">
-                <h3 className="font-semibold text-foreground text-sm">🗂️ Todas as Mídias ({media.length})</h3>
+              <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
+                <h3 className="font-semibold text-foreground text-sm">🗂️ Mídias ({media.length})</h3>
                 {media.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-3">Nenhuma mídia</p>
                 ) : (
@@ -761,7 +934,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               {!provider ? (
                 <EmptyState icon={<Settings />} text="Usuário não é prestador" />
               ) : (
-                <div className="rounded-xl border border-border p-4 space-y-3">
+                <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
                   <h3 className="font-semibold text-foreground text-sm">⚙️ Configurações da Página</h3>
                   <div className="space-y-3">
                     <div>
@@ -832,10 +1005,10 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
 
 // Helper components
 const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
-  <div className="flex items-center gap-3 text-sm">
+  <div className="flex items-center gap-2 sm:gap-3 text-sm">
     <span className="text-muted-foreground shrink-0">{icon}</span>
-    <span className="text-muted-foreground text-xs w-20 shrink-0">{label}</span>
-    <span className="text-foreground text-xs break-all">{value}</span>
+    <span className="text-muted-foreground text-xs w-16 sm:w-20 shrink-0">{label}</span>
+    <span className="text-foreground text-xs break-all min-w-0">{value}</span>
   </div>
 );
 
