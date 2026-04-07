@@ -453,8 +453,8 @@ const AdminSponsorCrmPage = () => {
               <h2 className="text-lg font-semibold">Vínculos Patrocinador ↔ Usuário</h2>
               <Button size="sm" onClick={() => setLinkDialog(true)}><Plus className="h-4 w-4 mr-1" /> Vincular</Button>
             </div>
-            <div className="rounded-xl border border-border bg-card">
-              <Table>
+            <div className="rounded-xl border border-border bg-card overflow-x-auto">
+              <Table className="min-w-[650px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patrocinador</TableHead>
