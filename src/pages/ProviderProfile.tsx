@@ -781,49 +781,50 @@ const ProviderProfile = () => {
 
           {/* ── Related Providers ── */}
           {relatedProviders.length > 0 && (
-            <div className="mt-8">
+            <motion.div className="mt-8" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
               <div className="flex items-center gap-2 mb-4">
                 <Users className="h-5 w-5 text-accent" />
                 <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Profissionais Relacionados</h2>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <motion.div className="grid grid-cols-2 gap-3 sm:grid-cols-3" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                 {relatedProviders.map((rp: any) => {
                   const rpName = rp.profiles?.full_name || rp.business_name || 'Profissional';
                   const rpInitials = rpName.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
                   const rpAvatar = avatarLarge(rp.profiles?.avatar_url || rp.photo_url);
                   const rpCategory = (rp.categories as any)?.name || '';
                   return (
-                    <Link
-                      key={rp.id}
-                      to={`/profissional/${rp.slug}`}
-                      className={`group block p-4 transition-all hover:shadow-md hover:border-accent/30 ${tc.card}`}
-                    >
-                      <div className="flex flex-col items-center text-center gap-2">
-                        <Avatar className="h-14 w-14 rounded-xl ring-1 ring-border group-hover:ring-accent/30 transition-all">
-                          <AvatarImage src={rpAvatar || undefined} alt={rpName} className="rounded-xl" />
-                          <AvatarFallback className="rounded-xl bg-primary/10 text-sm font-bold text-primary">
-                            {rpInitials}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-foreground truncate">{rpName}</p>
-                          {rpCategory && <p className="text-[11px] text-accent truncate">{rpCategory}</p>}
-                          <p className="text-[11px] text-muted-foreground truncate">
-                            <MapPin className="inline h-3 w-3 mr-0.5" />{rp.city}
-                          </p>
-                          {rp.rating_avg > 0 && (
-                            <div className="flex items-center justify-center gap-1 mt-1">
-                              <Star className="h-3 w-3 fill-accent text-accent" />
-                              <span className="text-[11px] font-medium text-foreground">{Number(rp.rating_avg).toFixed(1)}</span>
-                            </div>
-                          )}
+                    <motion.div key={rp.id} variants={scaleIn} whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+                      <Link
+                        to={`/profissional/${rp.slug}`}
+                        className={`group block p-4 transition-all hover:shadow-lg hover:border-accent/30 ${tc.card}`}
+                      >
+                        <div className="flex flex-col items-center text-center gap-2">
+                          <Avatar className="h-14 w-14 rounded-xl ring-1 ring-border group-hover:ring-accent/30 transition-all">
+                            <AvatarImage src={rpAvatar || undefined} alt={rpName} className="rounded-xl" />
+                            <AvatarFallback className="rounded-xl bg-primary/10 text-sm font-bold text-primary">
+                              {rpInitials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">{rpName}</p>
+                            {rpCategory && <p className="text-[11px] text-accent truncate">{rpCategory}</p>}
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              <MapPin className="inline h-3 w-3 mr-0.5" />{rp.city}
+                            </p>
+                            {rp.rating_avg > 0 && (
+                              <div className="flex items-center justify-center gap-1 mt-1">
+                                <Star className="h-3 w-3 fill-accent text-accent" />
+                                <span className="text-[11px] font-medium text-foreground">{Number(rp.rating_avg).toFixed(1)}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </Link>
+                      </Link>
+                    </motion.div>
                   );
                 })}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           )}
 
           <Suspense fallback={null}><AdSlot slotSlug="profile-before-whatsapp" category={category} city={provider.city} state={provider.state} /></Suspense>
