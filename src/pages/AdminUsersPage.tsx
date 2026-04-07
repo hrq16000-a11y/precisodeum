@@ -471,6 +471,44 @@ const AdminUsersPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" /> Criar Novo Usuário</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Nome completo</Label>
+              <Input value={createName} onChange={e => setCreateName(e.target.value)} placeholder="Nome do usuário" />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="email@exemplo.com" />
+            </div>
+            <div>
+              <Label>Senha (mín. 6 caracteres)</Label>
+              <Input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Senha inicial" />
+            </div>
+            <div>
+              <Label>Tipo de conta</Label>
+              <Select value={createType} onValueChange={setCreateType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client">Cliente</SelectItem>
+                  <SelectItem value="provider">Profissional</SelectItem>
+                  <SelectItem value="rh">Agência/RH</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancelar</Button>
+            <Button onClick={handleCreateUser} disabled={creating}>
+              {creating ? 'Criando...' : 'Criar Usuário'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
