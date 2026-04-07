@@ -54,7 +54,7 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
 const SectionFallback = () => null;
 
 // Default section order
-const DEFAULT_ORDER = 'highlights,categories,pwa,dynamic,ad1,featured,popular,recent,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq';
+const DEFAULT_ORDER = 'urgency,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,recent,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq';
 
 const Index = () => {
   const { city: geoCity } = useGeoCity();
