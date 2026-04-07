@@ -19,12 +19,17 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-export function useTypingPlaceholder(city: string | null) {
+export function useTypingPlaceholder(city: string | null, enabled = true) {
   const [placeholder, setPlaceholder] = useState('');
   const shuffledRef = useRef(shuffle(SERVICES));
   const indexRef = useRef(0);
 
   useEffect(() => {
+    if (!enabled) {
+      setPlaceholder('');
+      return;
+    }
+
     const cityText = city || 'sua cidade';
     let charIdx = 0;
     let deleting = false;
@@ -43,7 +48,6 @@ export function useTypingPlaceholder(city: string | null) {
         charIdx++;
         setPlaceholder(full.slice(0, charIdx));
         if (charIdx >= full.length) {
-          // Pause then start deleting
           pauseTimer = setTimeout(() => {
             deleting = true;
             frameId = setTimeout(tick, 40);
@@ -57,7 +61,6 @@ export function useTypingPlaceholder(city: string | null) {
         if (charIdx <= 0) {
           deleting = false;
           indexRef.current++;
-          // Small pause before next word
           pauseTimer = setTimeout(() => {
             frameId = setTimeout(tick, 55);
           }, 400);
@@ -73,7 +76,7 @@ export function useTypingPlaceholder(city: string | null) {
       if (frameId) clearTimeout(frameId);
       if (pauseTimer) clearTimeout(pauseTimer);
     };
-  }, [city]);
+  }, [city, enabled]);
 
   return placeholder;
 }
