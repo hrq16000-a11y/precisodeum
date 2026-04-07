@@ -2,16 +2,14 @@
  * PWA Install Banner — Popup modal central
  *
  * BLINDADO: Este componente é o ÚNICO popup de instalação.
- * Ele aparece automaticamente quando o app NÃO está instalado.
- * Pode ser reaberto via PWA_OPEN_INSTALL_MODAL_EVENT de qualquer CTA.
+ * Respeita TODAS as configurações da tabela pwa_install_settings:
+ * - enabled, show_delay_seconds, min_visits, max_impressions
+ * - dismiss_cooldown_days, show_on_mobile/desktop
+ * - show_for_logged_in/visitors, show_floating_banner
  *
- * REGRAS:
- * - Aparece SEMPRE (se não instalado), sem condição de beforeinstallprompt
- * - Fechar NUNCA trava a interface (closeModal limpa estado antes do await)
- * - Sem restrição por dispositivo
- * - Sem mensagens técnicas
+ * Pode ser reaberto via PWA_OPEN_INSTALL_MODAL_EVENT de qualquer CTA.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,25 +18,71 @@ import {
   trackPwaEvent,
   PWA_OPEN_INSTALL_MODAL_EVENT,
 } from '@/hooks/usePwaInstall';
+import { useAuth } from '@/hooks/useAuth';
 
 const PwaInstallBanner = () => {
   const [show, setShow] = useState(false);
   const [source, setSource] = useState<string>('banner');
-  const { isStandalone, install } = usePwaInstallPrompt();
+  const autoShownRef = useRef(false);
+  const {
+    isStandalone,
+    install,
+    isDismissed,
+    getVisitCount,
+    getImpressionCount,
+    incrementImpressions,
+  } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
+  const { user, loading: authLoading } = useAuth();
 
-  // Auto-show on mount (if not standalone)
+  // Auto-show respecting ALL settings
   useEffect(() => {
-    if (isStandalone) return;
+    if (isStandalone || autoShownRef.current || authLoading) return;
+    if (!settings) return;
+
+    // Global kill switch
+    if (!settings.enabled) return;
+
+    // show_floating_banner controls the auto-popup
+    if (!settings.show_floating_banner) return;
+
+    // Device check
+    const isMobile = window.innerWidth < 768;
+    if (isMobile && !settings.show_on_mobile) return;
+    if (!isMobile && !settings.show_on_desktop) return;
+
+    // Auth check
+    const isLoggedIn = !!user;
+    if (isLoggedIn && !settings.show_for_logged_in) return;
+    if (!isLoggedIn && !settings.show_for_visitors) return;
+
+    // Dismiss cooldown
+    if (isDismissed(settings.dismiss_cooldown_days)) return;
+
+    // Min visits
+    const visits = getVisitCount();
+    if (visits < settings.min_visits) return;
+
+    // Max impressions (0 = unlimited)
+    const impressions = getImpressionCount();
+    if (settings.max_impressions > 0 && impressions >= settings.max_impressions) return;
+
+    // Delay from settings (in seconds)
+    const delayMs = (settings.show_delay_seconds || 5) * 1000;
 
     const timer = setTimeout(() => {
+      autoShownRef.current = true;
       setSource('banner');
       setShow(true);
+      incrementImpressions();
       trackPwaEvent('impression', 'banner');
-    }, 800);
+    }, delayMs);
 
     return () => clearTimeout(timer);
-  }, [isStandalone]);
+  }, [
+    isStandalone, settings, authLoading, user,
+    isDismissed, getVisitCount, getImpressionCount, incrementImpressions,
+  ]);
 
   // Listen for manual open from CTAs (homepage section, footer button, etc.)
   useEffect(() => {
@@ -60,6 +104,8 @@ const PwaInstallBanner = () => {
 
   const handleDismiss = () => {
     setShow(false);
+    // Persist dismiss with cooldown
+    localStorage.setItem('pwa_install_dismissed_v2', String(Date.now()));
     trackPwaEvent('dismissed', source);
   };
 
