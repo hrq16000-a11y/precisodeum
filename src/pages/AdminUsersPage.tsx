@@ -452,6 +452,7 @@ const AdminUsersPage = () => {
           adminIds={adminIds}
           levels={levels}
           accountTypes={accountTypes}
+          providersMap={providersMap}
           onEdit={setEditUser}
           onResetPassword={setPwUser}
           onBlock={handleBlock}
