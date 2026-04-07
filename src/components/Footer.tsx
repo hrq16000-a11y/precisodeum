@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { MessageCircle, Users } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, lazy, Suspense } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { useMenuItems } from '@/hooks/useMenuItems';
 
