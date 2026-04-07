@@ -214,7 +214,7 @@ const DashboardServicesPage = () => {
   };
 
   const resetForm = () => {
-    setForm({ service_name: '', description: '', price: '', whatsapp: '', service_area: '', address: '', working_hours: '', website: '', category_type: 'venda' });
+    setForm({ service_name: '', description: '', price: '', whatsapp: '', service_area: '', address: '', working_hours: '', website: '' });
     setSelectedCategoryIds([]);
     setEditId(null);
     setNewServicePhoto(null);
