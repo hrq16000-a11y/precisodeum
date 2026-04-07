@@ -41,7 +41,7 @@ const ProfileCompleteness = ({ provider, profile, servicesCount, portfolioCount 
         {checks.map((check) => (
           <div key={check.label} className="flex items-center gap-2 text-xs">
             {check.done ? (
-              <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
+              <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
             ) : (
               <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
             )}

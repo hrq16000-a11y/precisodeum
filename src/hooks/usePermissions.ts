@@ -55,21 +55,15 @@ export const usePermissions = (): UsePermissionsReturn => {
     const fetchData = async () => {
       const promises: Promise<any>[] = [];
 
-      if (profile.level_id) {
-        promises.push(
-          supabase.from('user_levels').select('name, color, permissions').eq('id', profile.level_id).single()
-        );
-      } else {
-        promises.push(Promise.resolve({ data: null }));
-      }
+      const levelPromise = profile.level_id
+        ? supabase.from('user_levels').select('name, color, permissions').eq('id', profile.level_id).single().then(r => r)
+        : Promise.resolve({ data: null });
 
-      if (profile.account_type_id) {
-        promises.push(
-          supabase.from('account_types').select('name, color').eq('id', profile.account_type_id).single()
-        );
-      } else {
-        promises.push(Promise.resolve({ data: null }));
-      }
+      const accTypePromise = profile.account_type_id
+        ? supabase.from('account_types').select('name, color').eq('id', profile.account_type_id).single().then(r => r)
+        : Promise.resolve({ data: null });
+
+      const promises = [levelPromise, accTypePromise];
 
       const [levelRes, accTypeRes] = await Promise.all(promises);
 
