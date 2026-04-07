@@ -262,3 +262,37 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 }
+
+/* Hero prefix glitch / TV scanline effect */
+@keyframes hero-scanline {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+@keyframes hero-glitch-shift {
+  0%, 100% { clip-path: inset(0 0 100% 0); }
+  20% { clip-path: inset(30% 0 40% 0); transform: translateX(-2px); }
+  40% { clip-path: inset(60% 0 10% 0); transform: translateX(3px); }
+  60% { clip-path: inset(10% 0 70% 0); transform: translateX(-1px); }
+  80% { clip-path: inset(50% 0 20% 0); transform: translateX(2px); }
+}
+
+.hero-scanline {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    hsl(var(--primary-foreground) / 0.08) 2px,
+    hsl(var(--primary-foreground) / 0.08) 4px
+  );
+  animation: hero-scanline 0.3s linear;
+}
+
+.hero-glitch-line {
+  background: hsl(var(--primary-foreground) / 0.15);
+  animation: hero-glitch-shift 0.25s steps(1) forwards;
+}
+
+.hero-glitch-flash {
+  text-shadow: 2px 0 hsl(var(--accent) / 0.6), -2px 0 hsl(var(--secondary) / 0.4);
+}
