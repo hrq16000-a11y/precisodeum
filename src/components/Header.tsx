@@ -187,8 +187,14 @@ const Header = () => {
             </nav>
           </div>
       )}
+      {/* Global top ad slot */}
+      <Suspense fallback={null}>
+        <AdSlot slotSlug="global-top" />
+      </Suspense>
     </header>
   );
 };
+
+const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
 
 export default Header;
