@@ -170,7 +170,7 @@ const Index = () => {
           (providers || []).forEach((p: any) => { providerMap[p.id] = p; });
           return data.map((s: any) => ({ ...s, provider: providerMap[s.provider_id] || null }));
         })(),
-        supabase.from('sponsors').select('id, title, image_url, link_url, tier, position, active, display_order').eq('active', true).order('display_order').then(r => r.data || []),
+        supabase.from('sponsors').select('id, title, company_name, image_url, logo_url, link_url, tier, position, active, display_order, short_description, max_width, max_height').eq('active', true).order('display_order').then(r => r.data || []),
       ]);
       return {
         topCities: citiesRes,
