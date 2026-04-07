@@ -56,7 +56,7 @@ interface Sponsor {
   clicks: number;
 }
 
-const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0, start_date: '' as string, end_date: '' as string, tier: 'basic' };
+const emptyForm = { title: '', image_url: '', link_url: '', position: 'banner', active: true, display_order: 0, start_date: '' as string, end_date: '' as string, tier: 'basic', ad_format: 'auto', max_width: 0, max_height: 0, target_pages: 'all' };
 
 const idealSizes: Record<string, { width: number; height: number; label: string }> = {
   'hero-top': { width: 970, height: 90, label: '970×90 px (Leaderboard)' },
@@ -135,6 +135,10 @@ const AdminSponsorsPage = () => {
         start_date: form.start_date || null,
         end_date: form.end_date || null,
         tier: form.tier,
+        ad_format: form.ad_format,
+        max_width: form.max_width || 0,
+        max_height: form.max_height || 0,
+        target_pages: form.target_pages || 'all',
       };
       if (editingId) {
         const { error } = await supabase.from('sponsors').update(payload).eq('id', editingId);
@@ -181,6 +185,10 @@ const AdminSponsorsPage = () => {
       start_date: s.start_date || '',
       end_date: s.end_date || '',
       tier: (s as any).tier || 'basic',
+      ad_format: (s as any).ad_format || 'auto',
+      max_width: (s as any).max_width || 0,
+      max_height: (s as any).max_height || 0,
+      target_pages: (s as any).target_pages || 'all',
     });
     setDialogOpen(true);
   };
@@ -304,6 +312,38 @@ const AdminSponsorsPage = () => {
                     <SelectItem value="premium">Premium (topo + fixo)</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label>Formato do Anúncio</Label>
+                <Select value={form.ad_format} onValueChange={(v) => setForm({ ...form, ad_format: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">Automático (detecta pela imagem)</SelectItem>
+                    <SelectItem value="leaderboard">Leaderboard (728×90)</SelectItem>
+                    <SelectItem value="rectangle">Retângulo (300×250)</SelectItem>
+                    <SelectItem value="square">Quadrado (250×250)</SelectItem>
+                    <SelectItem value="wide-banner">Banner Largo (970×90)</SelectItem>
+                    <SelectItem value="half-page">Meia Página (300×600)</SelectItem>
+                    <SelectItem value="custom">Personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {form.ad_format === 'custom' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Largura máx. (px)</Label>
+                    <Input type="number" value={form.max_width} onChange={(e) => setForm({ ...form, max_width: Number(e.target.value) })} placeholder="0 = sem limite" />
+                  </div>
+                  <div>
+                    <Label>Altura máx. (px)</Label>
+                    <Input type="number" value={form.max_height} onChange={(e) => setForm({ ...form, max_height: Number(e.target.value) })} placeholder="0 = sem limite" />
+                  </div>
+                </div>
+              )}
+              <div>
+                <Label>Páginas de exibição</Label>
+                <Input value={form.target_pages} onChange={(e) => setForm({ ...form, target_pages: e.target.value })} placeholder="all, home, buscar, categoria, profissional" />
+                <p className="mt-1 text-[10px] text-muted-foreground">Separe por vírgula. Use "all" para todas as páginas.</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
