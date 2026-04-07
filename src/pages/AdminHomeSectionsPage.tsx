@@ -6,28 +6,32 @@ import { toast } from 'sonner';
 import { LayoutList, Save, Eye, EyeOff, GripVertical, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const DEFAULT_ORDER = 'highlights,categories,pwa,dynamic,ad1,featured,popular,recent,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq';
+const DEFAULT_ORDER = 'urgency,sponsor_top,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
 
 const SECTION_LABELS: Record<string, string> = {
-  highlights: 'Destaques Rotativos',
-  categories: 'Categorias',
-  pwa: 'Instalar App (PWA)',
-  dynamic: 'Blocos Dinâmicos',
-  ad1: 'Anúncio (entre seções)',
-  featured: 'Profissionais em Destaque',
-  popular: 'Serviços Populares',
-  recent: 'Serviços Recentes',
-  ad2: 'Anúncio (meio)',
-  jobs: 'Vagas em Destaque',
-  blog: 'Blog / Notícias',
-  cities: 'Cidades',
-  cta: 'Chamada para Ação (CTA)',
-  showcase: 'Vitrine de Anúncios',
-  sponsors: 'Patrocinadores',
-  howitworks: 'Como Funciona',
-  searches: 'Buscas Populares',
-  testimonials: 'Depoimentos',
-  faq: 'Perguntas Frequentes',
+  urgency: '🔴 Banner de Urgência',
+  sponsor_top: '📢 Patrocinador Topo',
+  highlights: '🎠 Destaques Rotativos',
+  stats: '📊 Contador de Estatísticas',
+  categories: '📂 Categorias',
+  pwa: '📱 Instalar App (PWA)',
+  dynamic: '🧩 Blocos Dinâmicos',
+  ad1: '📣 Anúncio (entre seções)',
+  featured: '⭐ Profissionais em Destaque',
+  popular: '🔥 Serviços Populares',
+  recent: '🕐 Serviços Recentes',
+  ad2: '📣 Anúncio (meio)',
+  jobs: '💼 Vagas em Destaque',
+  blog: '📰 Blog / Notícias',
+  cities: '🏙️ Cidades',
+  cta: '🚀 Chamada para Ação (CTA)',
+  showcase: '🖼️ Vitrine de Anúncios',
+  sponsors: '🤝 Patrocinadores',
+  howitworks: '📋 Como Funciona',
+  searches: '🔍 Buscas Populares',
+  testimonials: '💬 Depoimentos',
+  faq: '❓ Perguntas Frequentes',
+  sponsor_cta: '📢 CTA Patrocinador (rodapé)',
 };
 
 const AdminHomeSectionsPage = () => {

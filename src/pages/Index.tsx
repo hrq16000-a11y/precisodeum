@@ -194,6 +194,7 @@ const Index = () => {
         return <UrgencyBanner key={slug} />;
       case 'sponsor_top':
         return sponsorsEnabled ? <SponsorTopBanner key={slug} city={geoCity || undefined} /> : null;
+      case 'stats':
         return <StatsCounter key={slug} />;
       case 'highlights':
         return <HighlightsCarousel key={slug} />;
