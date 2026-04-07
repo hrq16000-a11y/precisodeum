@@ -33,6 +33,7 @@ export function useSponsorAuth(redirectIfNot = true) {
   const { user, loading: authLoading } = useAuth();
   const [sponsorContact, setSponsorContact] = useState<SponsorContact | null>(null);
   const [sponsor, setSponsor] = useState<SponsorData | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -67,14 +68,21 @@ export function useSponsorAuth(redirectIfNot = true) {
       return;
     }
 
-    refetch().finally(() => setLoading(false));
+    // Check admin status in parallel with sponsor contact
+    Promise.all([
+      refetch(),
+      supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' }).then(({ data }) => {
+        setIsAdmin(!!data);
+      }),
+    ]).finally(() => setLoading(false));
   }, [user, authLoading, navigate, redirectIfNot, refetch]);
 
   useEffect(() => {
-    if (!loading && !authLoading && !sponsorContact && user && redirectIfNot) {
+    // Only redirect non-admins who aren't sponsor contacts
+    if (!loading && !authLoading && !sponsorContact && !isAdmin && user && redirectIfNot) {
       navigate('/dashboard', { replace: true });
     }
-  }, [loading, authLoading, sponsorContact, user, redirectIfNot, navigate]);
+  }, [loading, authLoading, sponsorContact, isAdmin, user, redirectIfNot, navigate]);
 
-  return { sponsorContact, sponsor, loading: loading || authLoading, user, refetch };
+  return { sponsorContact, sponsor, loading: loading || authLoading, user, isAdmin, refetch };
 }
