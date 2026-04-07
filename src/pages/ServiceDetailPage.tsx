@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MessageCircle, MapPin, ChevronRight, Clock, Globe } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { whatsappLink } from '@/lib/whatsapp';
 
 const ServiceDetailPage = () => {
@@ -64,6 +64,14 @@ const ServiceDetailPage = () => {
   }) : null, [svc, city, providerName, provSlug]);
 
   useJsonLd(ld);
+
+  // Auto-increment view_count once per page visit
+  const viewTracked = useRef(false);
+  useEffect(() => {
+    if (!svc?.id || viewTracked.current) return;
+    viewTracked.current = true;
+    (supabase.rpc as any)('increment_service_view', { service_id: svc.id });
+  }, [svc?.id]);
 
   if (isLoading) {
     return (

@@ -40,6 +40,34 @@ const THEMES = [
     preview: 'bg-white border-gray-100',
     emoji: '⚡',
   },
+  {
+    id: 'dark',
+    label: 'Dark',
+    description: 'Escuro e sofisticado',
+    preview: 'bg-gray-900 border-gray-700',
+    emoji: '🌙',
+  },
+  {
+    id: 'neon',
+    label: 'Neon',
+    description: 'Vibrante e futurista',
+    preview: 'bg-gradient-to-br from-purple-900 to-cyan-900 border-cyan-400',
+    emoji: '💜',
+  },
+  {
+    id: 'vintage',
+    label: 'Vintage',
+    description: 'Retrô e acolhedor',
+    preview: 'bg-gradient-to-br from-amber-100 to-orange-50 border-amber-400',
+    emoji: '📜',
+  },
+  {
+    id: 'natureza',
+    label: 'Natureza',
+    description: 'Tons verdes e orgânicos',
+    preview: 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-300',
+    emoji: '🌿',
+  },
 ];
 
 const ACCENT_COLORS = [
