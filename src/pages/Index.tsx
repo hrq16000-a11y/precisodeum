@@ -16,6 +16,8 @@ import FeaturedProviders from '@/components/home/FeaturedProviders';
 import RecentServices from '@/components/home/RecentServices';
 import PwaInstallSection from '@/components/home/PwaInstallSection';
 import DynamicPageBlocks from '@/components/DynamicPageBlocks';
+import StatsCounter from '@/components/home/StatsCounter';
+import UrgencyBanner from '@/components/home/UrgencyBanner';
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
@@ -52,7 +54,7 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
 const SectionFallback = () => null;
 
 // Default section order
-const DEFAULT_ORDER = 'highlights,categories,pwa,dynamic,ad1,featured,popular,recent,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq';
+const DEFAULT_ORDER = 'urgency,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,recent,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq';
 
 const Index = () => {
   const { city: geoCity } = useGeoCity();
@@ -76,6 +78,20 @@ const Index = () => {
       '@type': 'SearchAction',
       target: `${SITE_BASE_URL}/buscar?q={search_term_string}`,
       'query-input': 'required name=search_term_string',
+    },
+  });
+
+  useJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Preciso de um',
+    url: SITE_BASE_URL,
+    logo: `${SITE_BASE_URL}/placeholder.svg`,
+    sameAs: [],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'customer service',
+      availableLanguage: 'Portuguese',
     },
   });
 
@@ -170,6 +186,10 @@ const Index = () => {
   // Section renderer — maps slug to component
   const renderSection = (slug: string) => {
     switch (slug) {
+      case 'urgency':
+        return <UrgencyBanner key={slug} />;
+      case 'stats':
+        return <StatsCounter key={slug} />;
       case 'highlights':
         return <HighlightsCarousel key={slug} />;
       case 'categories':
