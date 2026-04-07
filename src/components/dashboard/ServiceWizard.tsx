@@ -7,8 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import ServiceImageUpload from '@/components/ServiceImageUpload';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import {
-  ArrowRight, ArrowLeft, Store, Camera, Phone, Upload,
-  CheckCircle2, Copy, ExternalLink, Share2, Sparkles, X, Search,
+  ArrowRight, ArrowLeft, Store, Camera, Phone,
+  CheckCircle2, Copy, ExternalLink, Share2, Sparkles, X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -22,7 +22,7 @@ interface ServiceWizardProps {
   onCancel: () => void;
 }
 
-/* ───── Hardcoded avatars grouped by segment ───── */
+/* ───── Ícones agrupados por segmento ───── */
 const AVATAR_GROUPS = [
   {
     label: 'Construção & Manutenção',
@@ -96,7 +96,6 @@ const AVATAR_GROUPS = [
 
 const ALL_AVATARS = AVATAR_GROUPS.flatMap(g => g.items);
 
-
 const STEPS = [
   { key: 'identity', label: 'Identidade', icon: Store },
   { key: 'visual', label: 'Visual', icon: Camera },
@@ -146,26 +145,12 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
     ).slice(0, 20);
   }, [categories, selectedCategoryIds, categorySearch]);
 
-  const filteredAvatars = AVATARS.filter(a =>
-    avatarFilter === 'Todos' ? true : avatarFilter === 'Masculino' ? a.gender === 'M' : a.gender === 'F'
-  );
-
-  const filteredCovers = COVERS.filter(c => coverFilter === 'Todos' || c.category === coverFilter);
-
-  const selectedCatName = useMemo(() => {
-    const cat = categories.find(c => selectedCategoryIds.includes(c.id));
-    return cat?.name || '';
-  }, [categories, selectedCategoryIds]);
-
   const providerCity = provider?.city || '';
   const providerSlug = provider?.slug || '';
   const profileUrl = `${window.location.origin}/profissional/${providerSlug}`;
 
-  /* ──── Step validation ──── */
   const canNext = () => {
     if (step === 0) return serviceName.trim().length > 0;
-    if (step === 1) return true; // visual is optional
-    if (step === 2) return true; // contact is optional
     return true;
   };
 
@@ -228,7 +213,6 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   if (showSuccess && createdServiceId) {
     return (
       <div className="mx-auto max-w-lg space-y-6 py-4">
-        {/* Progress bar */}
         <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
           <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-500" style={{ width: '100%' }} />
         </div>
@@ -309,7 +293,6 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
       {/* Step indicators */}
       <div className="flex items-center justify-between text-xs">
         {STEPS.map((s, i) => {
-          const Icon = s.icon;
           const active = i === step;
           const done = i < step;
           return (
@@ -423,24 +406,17 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                   </div>
                   <div>
                     <h3 className="font-display font-bold text-foreground">Visual do Serviço</h3>
-                    <p className="text-xs text-muted-foreground">Capa premium + ícone</p>
+                    <p className="text-xs text-muted-foreground">Escolha um ícone que represente seu serviço</p>
                   </div>
                 </div>
 
                 {/* Preview card */}
-                <div className={`relative rounded-lg overflow-hidden h-24 ${selectedCover ? '' : 'bg-muted'}`}>
-                  {selectedCover && (
-                    <div className={`absolute inset-0 bg-gradient-to-r ${COVERS.find(c => c.id === selectedCover)?.gradient || 'from-primary to-accent'}`} />
-                  )}
-                  <div className="absolute inset-0 flex items-end p-3">
-                    <div className="flex items-center gap-2">
-                      {selectedAvatar ? (
-                        <span className="text-3xl">{AVATARS.find(a => a.id === selectedAvatar)?.emoji || '🔧'}</span>
-                      ) : (
-                        <div className="h-10 w-10 rounded-full bg-background/80 flex items-center justify-center">
-                          <Store className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      )}
+                <div className="relative rounded-lg overflow-hidden h-20 bg-gradient-to-r from-primary/80 to-accent/80">
+                  <div className="absolute inset-0 flex items-center p-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-4xl">
+                        {selectedAvatar ? ALL_AVATARS.find(a => a.id === selectedAvatar)?.emoji || '🔧' : '🔧'}
+                      </span>
                       <div>
                         <p className="text-sm font-bold text-white drop-shadow">{serviceName || 'Meu Serviço'}</p>
                         <p className="text-[11px] text-white/80 drop-shadow">📍 {providerCity || 'Sua cidade'}</p>
@@ -450,76 +426,32 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                 </div>
                 <p className="text-[11px] text-muted-foreground text-center">👁 Preview ao vivo — como seus clientes verão</p>
 
-                {/* Avatar selector */}
-                <div>
-                  <p className="text-sm font-medium text-foreground mb-2">Ícone do serviço</p>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs text-muted-foreground">Filtrar:</span>
-                    {(['Todos', 'Masculino', 'Feminino'] as const).map(f => (
-                      <button
-                        key={f}
-                        onClick={() => setAvatarFilter(f)}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${avatarFilter === f ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
-                      >
-                        {f}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-5 gap-2">
-                    {filteredAvatars.map(a => (
-                      <button
-                        key={a.id}
-                        onClick={() => setSelectedAvatar(selectedAvatar === a.id ? null : a.id)}
-                        className={`relative flex flex-col items-center gap-1 rounded-lg p-2 transition-all ${selectedAvatar === a.id ? 'ring-2 ring-accent bg-accent/10 scale-105' : 'hover:bg-muted/50'}`}
-                      >
-                        <span className="text-2xl">{a.emoji}</span>
-                        <span className="text-[9px] text-muted-foreground text-center leading-tight">{a.label}</span>
-                        {selectedAvatar === a.id && (
-                          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                            <CheckCircle2 className="h-3 w-3" />
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Cover selector */}
-                <div>
-                  <p className="text-sm font-medium text-foreground mb-2">
-                    Escolha uma capa premium ({COVERS.length} opções)
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {COVER_CATEGORIES.map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => setCoverFilter(cat)}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${coverFilter === cat ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                    {filteredCovers.map(c => (
-                      <button
-                        key={c.id}
-                        onClick={() => setSelectedCover(selectedCover === c.id ? null : c.id)}
-                        className={`relative rounded-lg overflow-hidden h-20 transition-all ${selectedCover === c.id ? 'ring-2 ring-accent scale-[1.02]' : 'hover:scale-[1.01]'}`}
-                      >
-                        <div className={`absolute inset-0 bg-gradient-to-r ${c.gradient}`} />
-                        <div className="absolute bottom-1.5 left-2">
-                          <p className="text-xs font-bold text-white drop-shadow">{c.label}</p>
-                          <p className="text-[9px] text-white/70">{c.category}</p>
-                        </div>
-                        {selectedCover === c.id && (
-                          <span className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
+                {/* Grouped avatar selector */}
+                <div className="space-y-4 max-h-[340px] overflow-y-auto pr-1">
+                  {AVATAR_GROUPS.map(group => (
+                    <div key={group.label}>
+                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                        {group.label}
+                      </p>
+                      <div className="grid grid-cols-5 sm:grid-cols-6 gap-1.5">
+                        {group.items.map(a => (
+                          <button
+                            key={a.id}
+                            onClick={() => setSelectedAvatar(selectedAvatar === a.id ? null : a.id)}
+                            className={`relative flex flex-col items-center gap-0.5 rounded-lg p-2 transition-all ${selectedAvatar === a.id ? 'ring-2 ring-accent bg-accent/10 scale-105' : 'hover:bg-muted/50'}`}
+                          >
+                            <span className="text-xl">{a.emoji}</span>
+                            <span className="text-[8px] text-muted-foreground text-center leading-tight truncate w-full">{a.label}</span>
+                            {selectedAvatar === a.id && (
+                              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                                <CheckCircle2 className="h-3 w-3" />
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </>
             )}
