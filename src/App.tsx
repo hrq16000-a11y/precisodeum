@@ -94,6 +94,7 @@ const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const SitemapRedirect = lazy(() => import("./pages/SitemapRedirect"));
 const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
+const ServicesPage = lazy(() => import("./pages/ServicesPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
