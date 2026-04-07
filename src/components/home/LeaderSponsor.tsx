@@ -91,14 +91,14 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="relative flex items-center justify-center w-full min-h-[50px] max-h-[70px] sm:min-h-[70px] sm:max-h-[110px] px-3 sm:px-6 py-1 cursor-pointer group transition-transform duration-200 hover:scale-[1.01]"
+          className="relative block w-full h-[70px] sm:h-[90px] overflow-hidden cursor-pointer group transition-transform duration-200 hover:scale-[1.005]"
         >
-          {/* Banner image — contain mode, no crop, no zoom */}
+          {/* Banner image — full width, cover */}
           {imageSrc && (
             <img
               src={imageSrc}
               alt={displayName}
-              className="w-full h-full max-h-[50px] sm:max-h-[90px] object-contain object-center"
+              className="absolute inset-0 w-full h-full object-cover object-center"
               loading="lazy"
               width={1920}
               height={512}
