@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Phone, MessageCircle, AlertTriangle } from 'lucide-react';
+import { Phone, MessageCircle, AlertTriangle, Inbox } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { whatsappLink } from '@/lib/whatsapp';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccountLimits } from '@/hooks/useAccountLimits';
 import { supabase } from '@/integrations/supabase/client';
+
+const containerVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] } },
+};
 
 const DashboardLeadsPage = () => {
   const { user, provider, loading } = useAuth();
@@ -28,29 +39,40 @@ const DashboardLeadsPage = () => {
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
-  // Block access if can_receive_leads is false
   if (!limitsLoading && limits?.can_receive_leads === false) {
     return (
       <DashboardLayout>
-        <div className="flex flex-col items-center justify-center py-20 text-center">
+        <motion.div
+          className="flex flex-col items-center justify-center py-20 text-center"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
           <AlertTriangle className="h-12 w-12 text-destructive/60 mb-4" />
           <h1 className="font-display text-xl font-bold text-foreground">Leads indisponível</h1>
           <p className="mt-2 text-sm text-muted-foreground max-w-md">
             Seu tipo de conta não permite receber leads. Atualize seu plano para ter acesso.
           </p>
-        </div>
+        </motion.div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout>
-      <h1 className="font-display text-2xl font-bold text-foreground">Leads Recebidos</h1>
-      <p className="mt-1 text-sm text-muted-foreground">{leads.length} lead(s) recebido(s)</p>
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <h1 className="font-display text-2xl font-bold text-foreground">Leads Recebidos</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{leads.length} lead(s) recebido(s)</p>
+      </motion.div>
 
       {/* Limits banner */}
       {!limitsLoading && limits && remainingLeads !== null && (
-        <div className={`mt-3 rounded-lg border p-3 text-sm ${!canReceiveMoreLeads ? 'border-destructive/30 bg-destructive/5 text-destructive' : 'border-accent/20 bg-accent/5 text-foreground'}`}>
+        <motion.div
+          className={`mt-3 rounded-lg border p-3 text-sm ${!canReceiveMoreLeads ? 'border-destructive/30 bg-destructive/5 text-destructive' : 'border-accent/20 bg-accent/5 text-foreground'}`}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.4 }}
+        >
           <div className="flex items-center gap-2">
             {!canReceiveMoreLeads && <AlertTriangle className="h-4 w-4 shrink-0" />}
             <span>
@@ -59,18 +81,37 @@ const DashboardLeadsPage = () => {
                 : `${remainingLeads} de ${limits.max_leads} lead(s) restante(s) no seu plano.`}
             </span>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      <div className="mt-6 space-y-3">
+      <motion.div
+        className="mt-6 space-y-3"
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+      >
         {leads.length === 0 && (
-          <div className="rounded-xl border border-border bg-card p-12 text-center shadow-card">
+          <motion.div
+            variants={itemVariants}
+            className="rounded-xl border border-border bg-card p-12 text-center shadow-card"
+          >
+            <motion.div
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Inbox className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
+            </motion.div>
             <p className="text-foreground font-semibold">Nenhum lead recebido</p>
             <p className="mt-1 text-sm text-muted-foreground">Quando clientes solicitarem orçamento, os leads aparecerão aqui.</p>
-          </div>
+          </motion.div>
         )}
-        {leads.map(lead => (
-          <div key={lead.id} className="rounded-xl border border-border bg-card p-4 shadow-card">
+        {leads.map((lead, i) => (
+          <motion.div
+            key={lead.id}
+            variants={itemVariants}
+            whileHover={{ y: -2, scale: 1.005 }}
+            className="rounded-xl border border-border bg-card p-4 shadow-card transition-shadow hover:shadow-card-hover"
+          >
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-semibold text-foreground">{lead.client_name}</p>
@@ -83,24 +124,26 @@ const DashboardLeadsPage = () => {
                   <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline">
                     <Phone className="h-3 w-3" /> {lead.phone}
                   </a>
-                  <a
+                  <motion.a
                     href={whatsappLink(lead.phone, `Olá ${lead.client_name}, recebi sua solicitação${lead.service_needed ? ` sobre "${lead.service_needed}"` : ''}. Como posso ajudar?`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center rounded-full bg-[#25D366] p-1.5 text-white hover:bg-[#1da851] transition-colors"
                     title="Responder pelo WhatsApp"
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.9 }}
                   >
                     <MessageCircle className="h-4 w-4" />
-                  </a>
+                  </motion.a>
                 </div>
               </div>
             </div>
             <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${lead.status === 'new' ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
-              {lead.status === 'new' ? 'Novo' : lead.status}
+              {lead.status === 'new' ? '🔴 Novo' : lead.status}
             </span>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 };

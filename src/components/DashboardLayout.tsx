@@ -1,12 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/8a22c45f-f2c2-4ac8-a925-92aecd2b313b.png';
+
+const sidebarItemVariants = {
+  hidden: { opacity: 0, x: -12 },
+  show: (i: number) => ({
+    opacity: 1, x: 0,
+    transition: { delay: i * 0.04, duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] },
+  }),
+};
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
@@ -32,7 +41,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isClient = profileType === 'client';
   const isRH = profileType === 'rh';
 
-  // Build menu items based on account type
   const menuItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: true },
     { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil', show: true },
@@ -48,65 +56,125 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Mobile header */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border bg-card px-4 lg:hidden">
+      <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border glass-strong px-4 lg:hidden">
         <Link to="/" className="flex items-center"><img src={logo} alt="Preciso de um" className="h-7" /></Link>
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-foreground">
-          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <motion.button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="text-foreground p-1 rounded-lg hover:bg-muted/50 transition-colors"
+          whileTap={{ scale: 0.9 }}
+        >
+          <AnimatePresence mode="wait">
+            {sidebarOpen ? (
+              <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                <X className="h-5 w-5" />
+              </motion.div>
+            ) : (
+              <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                <Menu className="h-5 w-5" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.button>
       </div>
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-60 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
+      <aside className={`fixed inset-y-0 left-0 z-40 w-60 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
         <div className="flex h-14 shrink-0 items-center px-5 border-b border-sidebar-border">
           <Link to="/" className="flex items-center"><img src={logo} alt="Preciso de um" className="h-7 brightness-0 invert" /></Link>
         </div>
 
         {/* Account type badge */}
-        <div className="mx-3 mt-3 mb-1 shrink-0 rounded-lg bg-muted/50 px-3 py-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <motion.div
+          className="mx-3 mt-3 mb-1 shrink-0 rounded-lg bg-muted/50 px-3 py-2 relative overflow-hidden"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="absolute inset-0 shimmer opacity-30" />
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground relative">
             {isClient ? '👤 Conta Cliente' : isRH ? '🏢 Conta RH' : '🔧 Conta Profissional'}
           </p>
-        </div>
+        </motion.div>
 
         <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-1 px-3 pb-4">
-          {menuItems.map((item) => {
+          {menuItems.map((item, i) => {
             const active = location.pathname === item.path;
             return (
-              <Link
+              <motion.div
                 key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'}`}
+                custom={i}
+                variants={sidebarItemVariants}
+                initial="hidden"
+                animate="show"
               >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
+                <Link
+                  to={item.path}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:translate-x-0.5'}`}
+                >
+                  {active && (
+                    <motion.div
+                      layoutId="sidebar-active-pill"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-accent"
+                      transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                    />
+                  )}
+                  <item.icon className={`h-4 w-4 transition-transform duration-200 ${active ? 'scale-110' : ''}`} />
+                  {item.label}
+                </Link>
+              </motion.div>
             );
           })}
           {isAdmin && (
-            <Link
-              to="/admin"
-              onClick={() => setSidebarOpen(false)}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-colors mt-2 border-t border-sidebar-border pt-3"
+            <motion.div
+              custom={menuItems.length}
+              variants={sidebarItemVariants}
+              initial="hidden"
+              animate="show"
             >
-              <Shield className="h-4 w-4" />
-              Painel Admin
-            </Link>
+              <Link
+                to="/admin"
+                onClick={() => setSidebarOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-all duration-200 mt-2 border-t border-sidebar-border pt-3"
+              >
+                <Shield className="h-4 w-4" />
+                Painel Admin
+              </Link>
+            </motion.div>
           )}
         </nav>
         <div className="shrink-0 border-t border-sidebar-border p-3">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground/50" onClick={handleSignOut}>
+          <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground/50 transition-transform active:scale-95" onClick={handleSignOut}>
             <LogOut className="h-4 w-4" /> Sair
           </Button>
         </div>
       </aside>
 
       {/* Overlay */}
-      {sidebarOpen && <div className="fixed inset-0 z-30 bg-foreground/20 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            className="fixed inset-0 z-30 bg-foreground/20 lg:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Main content */}
       <main className="flex-1 pt-14 lg:ml-60 lg:pt-0">
-        <div className="p-4 pb-20 sm:p-6 sm:pb-6">{children}</div>
+        <motion.div
+          className="p-4 pb-20 sm:p-6 sm:pb-6"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+          key={location.pathname}
+        >
+          {children}
+        </motion.div>
       </main>
     </div>
   );
