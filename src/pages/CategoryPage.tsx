@@ -139,7 +139,7 @@ const CategoryPage = () => {
         )}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {paginatedProviders.map((p, i) => (
-            <>{i === 6 && <Suspense key="cat-ad" fallback={null}><AdSlot slotSlug="category-between" layout="native" category={slug} /></Suspense>}<ProviderCard key={p.id} provider={p} isFallback={isFallback} /></>
+            <>{i === 6 && <Suspense key="cat-ad" fallback={null}><AdSlot slotSlug="category-between" layout="native" category={slug} /></Suspense>}{i === 4 && <Suspense key="cat-sponsor" fallback={null}><SponsorMidContent category={slug} /></Suspense>}<ProviderCard key={p.id} provider={p} isFallback={isFallback} /></>
           ))}
         </div>
         {displayProviders.length === 0 && (
