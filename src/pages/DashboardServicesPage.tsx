@@ -231,7 +231,7 @@ const DashboardServicesPage = () => {
       address: s.address || '',
       working_hours: s.working_hours || '',
       website: (s as any).website || provider?.website || '',
-      category_type: 'venda',
+      
     });
     setEditId(s.id);
     const { data } = await supabase.from('service_categories').select('category_id').eq('service_id', s.id);
