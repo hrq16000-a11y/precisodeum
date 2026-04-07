@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const ALLOWED_BUCKETS = ["service-images", "avatars", "portfolio"];
+const ALLOWED_BUCKETS = ["service-images", "avatars", "portfolio", "sponsors"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];

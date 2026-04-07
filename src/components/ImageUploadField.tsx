@@ -30,8 +30,8 @@ const ImageUploadField = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 1024 * 1024) {
-      toast.error('Imagem deve ter no máximo 1MB');
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Imagem deve ter no máximo 5MB');
       return;
     }
 
