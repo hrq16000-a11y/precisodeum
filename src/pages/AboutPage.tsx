@@ -242,6 +242,7 @@ const AboutPage = () => {
       <Footer />
     </div>
     </PageTransition>
+  );
 };
 
 export default AboutPage;
