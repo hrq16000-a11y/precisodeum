@@ -33,44 +33,6 @@ const Footer = () => {
   const logoFooterUrl = useSettingValue('logo_footer_url');
   const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : DEFAULT_LOGO_URL;
   const [showAllSearches, setShowAllSearches] = useState(false);
-  const [showAllServices, setShowAllServices] = useState(false);
-
-  const { data: footerItems = [] } = useMenuItems('footer');
-
-  const { data: topCities = [] } = useQuery({
-    queryKey: ['footer-cities-with-services'],
-    queryFn: async () => {
-      const { data: services } = await supabase.from('services').select('provider_id');
-      if (!services || services.length === 0) return [];
-      const providerIds = [...new Set(services.map((s: any) => s.provider_id))];
-      const { data: providers } = await supabase.from('providers').select('city').in('id', providerIds);
-      if (!providers) return [];
-      const cityNames = [...new Set(providers.map((p: any) => p.city).filter(Boolean))];
-      const { data: cities } = await supabase.from('cities').select('name, slug').in('name', cityNames);
-      return shuffle(cities || []).slice(0, 3);
-    },
-    staleTime: 1000 * 60 * 30,
-  });
-
-  const { data: categories = [] } = useQuery({
-    queryKey: ['footer-categories'],
-    queryFn: async () => {
-      const { data } = await supabase.from('categories').select('name, slug').order('name').limit(20);
-      return data || [];
-    },
-    staleTime: 1000 * 60 * 30,
-  });
-
-  const randomSeoLinks = useMemo(() => {
-    if (categories.length === 0 || topCities.length === 0) return [];
-    const all = categories.flatMap((cat) =>
-      topCities.map((city) => ({ cat, city }))
-    );
-    return shuffle(all);
-  }, [categories, topCities]);
-
-  const visibleSeoLinks = showAllSearches ? randomSeoLinks : randomSeoLinks.slice(0, 4);
-  const visibleServices = showAllServices ? categories : categories.slice(0, 4);
 
   // Fallback footer links
   const fallbackFooterLinks = [
