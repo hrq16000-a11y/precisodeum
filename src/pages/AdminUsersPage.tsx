@@ -267,7 +267,7 @@ const AdminUsersPage = () => {
       )}
 
       {editUser && <UserEditDialog user={editUser} onClose={() => setEditUser(null)} onSaved={fetchProfiles} />}
-      <UserDetailSheet user={detailUser} isAdmin={adminIds.has(detailUser?.id)} onClose={() => setDetailUser(null)} />
+      <UserDetailSheet user={detailUser} isAdmin={adminIds.has(detailUser?.id)} onClose={() => setDetailUser(null)} onRefresh={fetchProfiles} />
 
       {/* Password Reset Dialog */}
       <Dialog open={!!pwUser} onOpenChange={open => !open && setPwUser(null)}>
