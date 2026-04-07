@@ -1900,66 +1900,132 @@ export type Database = {
           },
         ]
       }
+      sponsor_slot_limits: {
+        Row: {
+          context_type: string
+          context_value: string
+          created_at: string
+          id: string
+          max_slots: number
+          updated_at: string
+        }
+        Insert: {
+          context_type?: string
+          context_value?: string
+          created_at?: string
+          id?: string
+          max_slots?: number
+          updated_at?: string
+        }
+        Update: {
+          context_type?: string
+          context_value?: string
+          created_at?: string
+          id?: string
+          max_slots?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sponsors: {
         Row: {
           active: boolean
           ad_format: string
+          badge_type: string
           clicks: number
+          company_name: string
           created_at: string
           deleted_at: string | null
           display_order: number
           end_date: string | null
+          external_link: string | null
+          full_description: string
           id: string
           image_url: string | null
           impressions: number
           link_url: string | null
+          linked_category: string | null
+          linked_city: string | null
+          logo_url: string | null
           max_height: number
           max_width: number
+          phone: string | null
+          plan_tier: string
           position: string
+          short_description: string
+          sponsor_type: string
           start_date: string | null
+          status: string
           target_pages: string
           tier: string
           title: string
+          whatsapp: string | null
         }
         Insert: {
           active?: boolean
           ad_format?: string
+          badge_type?: string
           clicks?: number
+          company_name?: string
           created_at?: string
           deleted_at?: string | null
           display_order?: number
           end_date?: string | null
+          external_link?: string | null
+          full_description?: string
           id?: string
           image_url?: string | null
           impressions?: number
           link_url?: string | null
+          linked_category?: string | null
+          linked_city?: string | null
+          logo_url?: string | null
           max_height?: number
           max_width?: number
+          phone?: string | null
+          plan_tier?: string
           position?: string
+          short_description?: string
+          sponsor_type?: string
           start_date?: string | null
+          status?: string
           target_pages?: string
           tier?: string
           title: string
+          whatsapp?: string | null
         }
         Update: {
           active?: boolean
           ad_format?: string
+          badge_type?: string
           clicks?: number
+          company_name?: string
           created_at?: string
           deleted_at?: string | null
           display_order?: number
           end_date?: string | null
+          external_link?: string | null
+          full_description?: string
           id?: string
           image_url?: string | null
           impressions?: number
           link_url?: string | null
+          linked_category?: string | null
+          linked_city?: string | null
+          logo_url?: string | null
           max_height?: number
           max_width?: number
+          phone?: string | null
+          plan_tier?: string
           position?: string
+          short_description?: string
+          sponsor_type?: string
           start_date?: string | null
+          status?: string
           target_pages?: string
           tier?: string
           title?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
