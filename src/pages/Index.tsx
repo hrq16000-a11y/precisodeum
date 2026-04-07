@@ -186,7 +186,7 @@ const Index = () => {
           {citiesEnabled && topCities.length > 0 && <CitiesSection cities={topCities} />}
           {ctaEnabled && <CtaSection />}
           <AdShowcase />
-          <SponsorsSection sponsors={sponsors} />
+          {sponsorsEnabled && <SponsorsSection sponsors={sponsors} />}
           <HowItWorksSection />
           {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
             <PopularSearches categories={allCategories} cities={topCities} />
