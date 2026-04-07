@@ -9,6 +9,8 @@ import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
 import Header from '@/components/Header';
+import PageTransition from '@/components/PageTransition';
+import ParallaxSection from '@/components/ParallaxSection';
 import HeroBanner from '@/components/home/HeroBanner';
 import CategoriesGrid from '@/components/home/CategoriesGrid';
 import HighlightsCarousel from '@/components/home/HighlightsCarousel';
@@ -249,18 +251,20 @@ const Index = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
+    <PageTransition>
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
 
-      <LazyErrorBoundary>
-        <Suspense fallback={<SectionFallback />}>
-          {sectionOrder.map(renderSection)}
-          <Footer />
-          <FloatingWhatsApp />
-        </Suspense>
-      </LazyErrorBoundary>
-    </div>
+        <LazyErrorBoundary>
+          <Suspense fallback={<SectionFallback />}>
+            {sectionOrder.map(renderSection)}
+            <Footer />
+            <FloatingWhatsApp />
+          </Suspense>
+        </LazyErrorBoundary>
+      </div>
+    </PageTransition>
   );
 };
 

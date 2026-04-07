@@ -346,13 +346,17 @@ const DashboardPage = () => {
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.4, delay: 0.1 + i * 0.07, ease: 'easeOut' as const }}
-              whileHover={{ y: -5, scale: 1.04, transition: { duration: 0.2 } }}
-              className={`group rounded-2xl border border-border bg-gradient-to-br ${stat.gradient} p-4 shadow-card transition-shadow hover:shadow-card-hover relative overflow-hidden`}
+              whileHover={{ y: -6, scale: 1.05, rotateX: 2, rotateY: -3, transition: { duration: 0.25 } }}
+              className={`group rounded-2xl border border-border bg-gradient-to-br ${stat.gradient} p-4 shadow-card transition-shadow hover:shadow-card-hover relative overflow-hidden cursor-default`}
+              style={{ perspective: 800, transformStyle: 'preserve-3d' }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-              <Icon className={`h-4 w-4 ${stat.iconColor} relative`} />
+              {/* Shine sweep on hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-out" />
+              {/* Glow ring */}
+              <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-accent/20 to-primary/10 -z-10 blur-sm" />
+              <Icon className={`h-4 w-4 ${stat.iconColor} relative transition-transform duration-300 group-hover:scale-110`} />
               <div className="mt-2 relative">
-                <AnimatedCounter value={stat.value} className="font-display text-2xl font-bold text-foreground" />
+                <AnimatedCounter value={stat.value} className="font-display text-2xl font-bold text-foreground count-pop" />
               </div>
               <p className="text-[11px] text-muted-foreground relative">{stat.label}</p>
             </motion.div>

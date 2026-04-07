@@ -166,15 +166,18 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main content */}
       <main className="flex-1 pt-14 lg:ml-60 lg:pt-0">
-        <motion.div
-          className="p-4 pb-20 sm:p-6 sm:pb-6"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          key={location.pathname}
-        >
-          {children}
-        </motion.div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            className="p-4 pb-20 sm:p-6 sm:pb-6"
+            initial={{ opacity: 0, y: 16, scale: 0.995 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] }}
+            key={location.pathname}
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );

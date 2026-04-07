@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Wrench, ShieldCheck, Lightbulb, Users, Clock } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageTransition from '@/components/PageTransition';
+import ParallaxSection from '@/components/ParallaxSection';
 import { Button } from '@/components/ui/button';
 
 const fadeIn = {
@@ -71,6 +73,7 @@ const exampleProviders = [
 
 const AboutPage = () => {
   return (
+    <PageTransition>
     <div className="flex min-h-screen flex-col">
       <Header />
 
@@ -114,7 +117,7 @@ const AboutPage = () => {
       </section>
 
       {/* 5 Characteristics */}
-      <section className="bg-muted/50 py-16">
+      <ParallaxSection speed={0.12} orb orbColor="primary" className="bg-muted/50 py-16">
         <div className="container">
           <motion.div {...fadeIn} className="mb-10 text-center">
             <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
@@ -143,7 +146,7 @@ const AboutPage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </ParallaxSection>
 
       {/* Service Types */}
       <section className="py-16">
@@ -238,6 +241,7 @@ const AboutPage = () => {
 
       <Footer />
     </div>
+    </PageTransition>
   );
 };
 

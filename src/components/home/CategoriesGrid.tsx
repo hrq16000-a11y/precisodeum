@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, type MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import FadeInSection from '@/components/FadeInSection';
+import MagneticButton from '@/components/MagneticButton';
 
 interface CategoryItem {
   id: string;
@@ -61,25 +63,31 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               {visible.map((cat, i) => (
                 <FadeInSection key={cat.id} delay={i * 0.05}>
-                  <Link
-                    to={`/categoria/${cat.slug}`}
-                    className="group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 hover:border-primary/30 overflow-hidden text-center"
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:to-accent/5 transition-all duration-500" />
-                    <span className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-2xl transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary/15">
-                      {cat.icon}
-                    </span>
-                    <div className="relative">
-                      <span className="block text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                        {cat.name}
-                      </span>
-                      {cat.count > 0 && (
-                        <span className="mt-1 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
-                          {cat.count} {cat.count === 1 ? 'profissional' : 'profissionais'}
+                  <MagneticButton strength={0.15}>
+                    <Link
+                      to={`/categoria/${cat.slug}`}
+                      className="group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 hover:border-primary/30 overflow-hidden text-center"
+                    >
+                      <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:to-accent/5 transition-all duration-500" />
+                      <motion.span
+                        className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-2xl"
+                        whileHover={{ scale: 1.15, rotate: 5 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                      >
+                        {cat.icon}
+                      </motion.span>
+                      <div className="relative">
+                        <span className="block text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                          {cat.name}
                         </span>
-                      )}
-                    </div>
-                  </Link>
+                        {cat.count > 0 && (
+                          <span className="mt-1 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                            {cat.count} {cat.count === 1 ? 'profissional' : 'profissionais'}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  </MagneticButton>
                 </FadeInSection>
               ))}
             </div>
