@@ -498,9 +498,15 @@ const DashboardServicesPage = () => {
                   {s.service_area && <span>🗺️ {s.service_area}</span>}
                 </div>
               </div>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="sm" onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}>
-                  {expandedId === s.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant={expandedId === s.id ? 'accent' : 'outline'}
+                  size="sm"
+                  onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                  className="text-xs gap-1"
+                >
+                  <ImagePlus className="h-3.5 w-3.5" />
+                  Fotos
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleEdit(s)}>
                   <Edit2 className="h-4 w-4" />
