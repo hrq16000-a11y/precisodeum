@@ -50,9 +50,10 @@ const SponsorsSection = ({ sponsors }: Props) => {
   const sorted = [...visibleSponsors].sort((a, b) => (tierOrder[a.tier || 'basic'] ?? 2) - (tierOrder[b.tier || 'basic'] ?? 2));
 
   // Detect if sponsor uses a logo-style image (clearbit, small logo, etc.)
-  const isLogoStyle = (url: string | null) => {
+  const isLogoStyle = (url: string | null, companyName?: string) => {
     if (!url) return false;
-    return url.includes('logo.clearbit.com') || url.includes('logo') || url.endsWith('.svg');
+    if (companyName && companyName.trim().length > 0) return true;
+    return url.includes('logo') || url.endsWith('.svg');
   };
 
   return (
