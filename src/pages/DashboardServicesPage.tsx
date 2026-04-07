@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, Edit2, ChevronDown, ChevronUp, X, Search, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Edit2, ChevronDown, ChevronUp, X, Search, AlertTriangle, ImagePlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccountLimits } from '@/hooks/useAccountLimits';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +21,7 @@ const DashboardServicesPage = () => {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [categorySearch, setCategorySearch] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
   const categoryContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -150,6 +151,7 @@ const DashboardServicesPage = () => {
     } as any;
 
     let serviceId = editId;
+    const isNew = !editId;
 
     if (editId) {
       const { error } = await supabase.from('services').update(payload).eq('id', editId);
@@ -174,13 +176,19 @@ const DashboardServicesPage = () => {
       }
     }
 
-    toast.success(editId ? 'Serviço atualizado!' : 'Serviço adicionado!');
+    toast.success(editId ? 'Serviço atualizado!' : 'Serviço adicionado! Agora adicione fotos.');
     setForm({ service_name: '', description: '', whatsapp: '', service_area: '', address: '', working_hours: '', website: '' });
     setSelectedCategoryIds([]);
     setShowForm(false);
     setEditId(null);
-    fetchServices();
+    await fetchServices();
     refetchLimits();
+
+    // Auto-expand image upload for newly created service
+    if (isNew && serviceId) {
+      setJustCreatedId(serviceId);
+      setExpandedId(serviceId);
+    }
   };
 
   const handleEdit = async (s: any) => {
@@ -438,9 +446,18 @@ const DashboardServicesPage = () => {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="accent" onClick={handleSave}>Salvar</Button>
+            <Button variant="accent" onClick={handleSave}>
+              {editId ? 'Salvar' : 'Salvar e adicionar fotos'}
+            </Button>
             <Button variant="outline" onClick={() => { setShowForm(false); setEditId(null); setShowCategoryDropdown(false); }}>Cancelar</Button>
           </div>
+
+          {/* Image upload inline when editing */}
+          {editId && user && (
+            <div className="rounded-lg border border-border bg-muted/30 p-4">
+              <ServiceImageUpload serviceId={editId} userId={user.id} />
+            </div>
+          )}
         </div>
       )}
 
@@ -488,6 +505,12 @@ const DashboardServicesPage = () => {
 
             {expandedId === s.id && user && (
               <div className="border-t border-border p-4">
+                {justCreatedId === s.id && (
+                  <div className="mb-3 rounded-lg border border-accent/30 bg-accent/5 p-3 text-sm text-foreground flex items-center gap-2">
+                    <ImagePlus className="h-4 w-4 text-accent shrink-0" />
+                    <span><strong>Serviço criado!</strong> Adicione fotos para atrair mais clientes.</span>
+                  </div>
+                )}
                 <ServiceImageUpload serviceId={s.id} userId={user.id} />
               </div>
             )}
