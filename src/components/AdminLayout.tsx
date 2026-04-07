@@ -76,7 +76,20 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { isAdmin } = useAdmin();
+  const { hasPermission } = usePermissions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Filter menu items based on permissions (admins see everything)
+  const filteredGroups = menuGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+      if (isAdmin) return true; // Full admin sees all
+      const requiredPerm = ADMIN_ROUTE_PERMISSIONS[item.path];
+      if (!requiredPerm) return true; // No restriction
+      return hasPermission(requiredPerm);
+    }),
+  })).filter(group => group.items.length > 0);
 
   const handleSignOut = async () => {
     await signOut();
