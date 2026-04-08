@@ -32,10 +32,16 @@ const HowItWorksSection = () => {
         </FadeInSection>
 
         <div className="relative grid gap-8 md:grid-cols-3">
-          {/* Connecting line */}
+          {/* Connecting line that draws progressively */}
           {steps.length >= 2 && (
-            <div className="absolute top-10 left-[16.67%] right-[16.67%] hidden h-0.5 md:block">
-              <div className="h-full bg-gradient-to-r from-primary/10 via-accent/30 to-primary/10 rounded-full" />
+            <div className="absolute top-10 left-[16.67%] right-[16.67%] hidden h-0.5 md:block overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-primary/20 via-accent/40 to-primary/20 rounded-full origin-left"
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.2, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+              />
               <motion.div
                 className="absolute top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-accent shadow-md"
                 animate={{ left: ['0%', '100%', '0%'] }}
@@ -56,9 +62,20 @@ const HowItWorksSection = () => {
                 
                 <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 text-4xl shadow-sm ring-1 ring-primary/10 transition-all duration-300 group-hover:ring-primary/30 group-hover:shadow-md">
                   {item.icon}
+                  {/* Pulse on active step */}
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl ring-2 ring-accent/30"
+                    initial={{ opacity: 0, scale: 1 }}
+                    animate={{ opacity: [0, 0.6, 0], scale: [1, 1.15, 1.3] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: i * 0.6 }}
+                  />
                   <motion.span
                     className="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent/80 text-xs font-bold text-accent-foreground shadow-md ring-2 ring-background"
                     whileHover={{ scale: 1.2 }}
+                    initial={{ scale: 0 }}
+                    whileInView={{ scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ type: 'spring', delay: 0.3 + i * 0.15 }}
                   >
                     {item.step}
                   </motion.span>

@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
-import { DollarSign, ArrowRight, Sparkles } from 'lucide-react';
+import { DollarSign, ArrowRight, Sparkles, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { motion } from 'framer-motion';
 import FadeInSection from '@/components/FadeInSection';
 
 const problemMap: Record<string, string> = {
@@ -40,6 +41,16 @@ function shuffle<T>(arr: T[]): T[] {
   }
   return a;
 }
+
+const containerVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07 } },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.97 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] } },
+};
 
 const PopularServices = () => {
   const { data: services = [], isLoading } = useQuery({
@@ -97,20 +108,41 @@ const PopularServices = () => {
           </p>
         </FadeInSection>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-40px' }}
+        >
           {displayed.map((s: any, i: number) => {
             const problem = getServiceProblem(s.name, s.slug);
             const basePrice = Number(s.min_price) || 0;
             const maxPrice = Math.round(basePrice * 1.8);
+            const isFirst = i === 0;
 
             return (
-              <FadeInSection key={s.id} delay={i * 0.05}>
+              <motion.div key={s.id} variants={cardVariants}>
                 <Link
                   to={`/servico/${s.slug}`}
                   className="group relative flex gap-3.5 rounded-xl border border-border bg-card p-4 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 hover:border-primary/30 overflow-hidden"
                 >
-                  {/* Decorative gradient on hover */}
+                  {/* Gradient sweep on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/[0.04] to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-out" />
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-accent/[0.04] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                  {/* Badge "Mais procurado" for first item */}
+                  {isFirst && (
+                    <motion.span
+                      className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[9px] font-bold text-accent"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      <TrendingUp className="h-2.5 w-2.5" />
+                      Mais procurado
+                    </motion.span>
+                  )}
 
                   <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent/10 to-accent/20 text-xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                     {s.icon || '🔧'}
@@ -137,10 +169,10 @@ const PopularServices = () => {
                     </div>
                   </div>
                 </Link>
-              </FadeInSection>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

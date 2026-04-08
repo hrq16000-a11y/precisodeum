@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard, Search as SearchIcon } from 'lucide-react';
 import AdminGroupNav, { AdminGroupTabs } from '@/components/admin/AdminGroupNav';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -81,16 +81,21 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const { isAdmin } = useAdmin();
   const { hasPermission } = usePermissions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const filteredGroups = menuGroups.map(group => ({
-    ...group,
-    items: group.items.filter(item => {
-      if (isAdmin) return true;
-      const requiredPerm = ADMIN_ROUTE_PERMISSIONS[item.path];
-      if (!requiredPerm) return true;
-      return hasPermission(requiredPerm);
-    }),
-  })).filter(group => group.items.length > 0);
+  const [sidebarSearch, setSidebarSearch] = useState('');
+  const filteredGroups = useMemo(() => {
+    const q = sidebarSearch.trim().toLowerCase();
+    return menuGroups.map(group => ({
+      ...group,
+      items: group.items.filter(item => {
+        if (!isAdmin) {
+          const requiredPerm = ADMIN_ROUTE_PERMISSIONS[item.path];
+          if (requiredPerm && !hasPermission(requiredPerm)) return false;
+        }
+        if (q && !item.label.toLowerCase().includes(q)) return false;
+        return true;
+      }),
+    })).filter(group => group.items.length > 0);
+  }, [isAdmin, hasPermission, sidebarSearch]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -130,7 +135,20 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           </motion.div>
           <span className="font-display text-sm font-bold text-sidebar-foreground">Admin Panel</span>
         </div>
-        <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-4 px-3 pb-4">
+        {/* Sidebar Search */}
+        <div className="px-3 pt-2 pb-1">
+          <div className="relative">
+            <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/40" />
+            <input
+              type="text"
+              placeholder="Buscar menu..."
+              value={sidebarSearch}
+              onChange={(e) => setSidebarSearch(e.target.value)}
+              className="w-full rounded-lg border border-sidebar-border bg-sidebar-accent/30 pl-8 pr-3 py-1.5 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/50"
+            />
+          </div>
+        </div>
+        <nav className="flex-1 overflow-y-auto overscroll-contain mt-1 space-y-4 px-3 pb-4">
           {filteredGroups.map((group, gi) => (
             <div key={group.label}>
               <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{group.label}</p>
@@ -189,9 +207,24 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           className="flex-1 p-3 sm:p-6 max-w-full"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] }}
           key={location.pathname}
         >
+          {/* Auto Breadcrumb */}
+          {(() => {
+            const current = menuGroups.flatMap(g => g.items).find(i => i.path === location.pathname);
+            const group = menuGroups.find(g => g.items.some(i => i.path === location.pathname));
+            if (!current || !group) return null;
+            return (
+              <nav className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Link to="/admin" className="hover:text-foreground transition-colors">Admin</Link>
+                <span className="text-muted-foreground/40">/</span>
+                <span className="text-muted-foreground/60">{group.label}</span>
+                <span className="text-muted-foreground/40">/</span>
+                <span className="font-medium text-foreground">{current.label}</span>
+              </nav>
+            );
+          })()}
           <AdminGroupNav />
           {children}
         </motion.div>

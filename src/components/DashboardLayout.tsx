@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardGroupNav from '@/components/dashboard/DashboardGroupNav';
 import { supabase } from '@/integrations/supabase/client';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/8a22c45f-f2c2-4ac8-a925-92aecd2b313b.png';
@@ -24,6 +25,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingLeads, setPendingLeads] = useState(0);
   const logoUrl = useSettingValue('logo_url');
   const logo = logoUrl || DEFAULT_LOGO_URL;
 
@@ -32,6 +35,27 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' })
       .then(({ data }) => setIsAdmin(!!data));
   }, [user]);
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('notifications').select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id).eq('read', false)
+      .then(({ count }) => setUnreadCount(count ?? 0));
+  }, [user]);
+
+  // Fetch pending leads count
+  useEffect(() => {
+    if (!user || !profile) return;
+    if (profile.profile_type === 'client' || profile.profile_type === 'rh') return;
+    supabase.from('providers').select('id').eq('user_id', user.id).limit(1)
+      .then(({ data: providers }) => {
+        if (!providers?.[0]) return;
+        supabase.from('leads').select('id', { count: 'exact', head: true })
+          .eq('provider_id', providers[0].id).eq('status', 'new')
+          .then(({ count }) => setPendingLeads(count ?? 0));
+      });
+  }, [user, profile]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -43,15 +67,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isRH = profileType === 'rh';
 
   const menuItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: true },
-    { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil', show: true },
-    { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos', show: !isClient && !isRH },
-    { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina', show: !isClient && !isRH },
-    { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas', show: !isClient },
-    { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade', show: true },
-    { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes', show: true },
-    { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads', show: !isClient && !isRH },
-    { label: 'Plano', icon: CreditCard, path: '/dashboard/plano', show: !isClient && !isRH },
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: true, badge: 0 },
+    { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil', show: true, badge: 0 },
+    { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos', show: !isClient && !isRH, badge: 0 },
+    { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina', show: !isClient && !isRH, badge: 0 },
+    { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas', show: !isClient, badge: 0 },
+    { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade', show: true, badge: 0 },
+    { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes', show: true, badge: unreadCount },
+    { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads', show: !isClient && !isRH, badge: pendingLeads },
+    { label: 'Plano', icon: CreditCard, path: '/dashboard/plano', show: !isClient && !isRH, badge: 0 },
   ].filter(item => item.show);
 
   return (
@@ -121,7 +145,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     />
                   )}
                   <item.icon className={`h-4 w-4 transition-transform duration-200 ${active ? 'scale-110' : ''}`} />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-accent-foreground"
+                    >
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </motion.span>
+                  )}
                 </Link>
               </motion.div>
             );

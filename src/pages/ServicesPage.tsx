@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, DollarSign, ArrowRight, Sparkles, Filter } from 'lucide-react';
@@ -145,14 +146,17 @@ const ServicesPage = () => {
             </div>
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center">
-              <p className="text-lg font-medium text-muted-foreground">Nenhum serviço encontrado</p>
-              <p className="mt-1 text-sm text-muted-foreground">Tente buscar por outro termo</p>
-              <Button variant="outline" className="mt-4" onClick={() => { setSearch(''); setSelectedCategory(''); }}>
-                Limpar filtros
-              </Button>
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }}>
+                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-muted text-4xl">🔍</div>
+                <p className="text-lg font-medium text-muted-foreground">Nenhum serviço encontrado</p>
+                <p className="mt-1 text-sm text-muted-foreground">Tente buscar por outro termo</p>
+                <Button variant="outline" className="mt-4" onClick={() => { setSearch(''); setSelectedCategory(''); }}>
+                  Limpar filtros
+                </Button>
+              </motion.div>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <motion.div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" layout>
               {filtered.map((s, i) => (
                 <FadeInSection key={s.id} delay={i * 0.03}>
                   <Link to={`/servico/${s.slug}`} className="group block">
@@ -192,7 +196,7 @@ const ServicesPage = () => {
                   </Link>
                 </FadeInSection>
               ))}
-            </div>
+            </motion.div>
           )}
 
           {/* Total count */}

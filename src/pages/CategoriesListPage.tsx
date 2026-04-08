@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -64,27 +65,37 @@ const CategoriesListPage = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
+            <motion.div
+              className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4"
+              initial="hidden"
+              animate="show"
+              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
+            >
               {visible.map((cat) => (
-                <Link
+                <motion.div
                   key={cat.id}
-                  to={`/categoria/${cat.slug}`}
-                  className="group flex items-center gap-2.5 rounded-xl border border-border bg-card p-3 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30"
+                  variants={{ hidden: { opacity: 0, y: 16, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1 } }}
+                  transition={{ duration: 0.35 }}
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xl text-primary">
-                    {cat.icon}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                      {cat.name}
+                  <Link
+                    to={`/categoria/${cat.slug}`}
+                    className="group flex items-center gap-2.5 rounded-xl border border-border bg-card p-3 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xl text-primary">
+                      {cat.icon}
                     </span>
-                    {cat.count > 0 && (
-                      <span className="text-xs text-muted-foreground">{cat.count} profissional(is)</span>
-                    )}
-                  </div>
-                </Link>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                        {cat.name}
+                      </span>
+                      {cat.count > 0 && (
+                        <span className="text-xs text-muted-foreground">{cat.count} profissional(is)</span>
+                      )}
+                    </div>
+                  </Link>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
             {hasMore && (
               <div className="mt-6 text-center">
