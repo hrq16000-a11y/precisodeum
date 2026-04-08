@@ -263,10 +263,20 @@ const AdminAdSlotsPage = () => {
   const activeSlots = slots.filter((s: any) => s.active).length;
   const activeAssignments = assignments.filter((a: any) => a.active).length;
 
-  // Drag-and-drop state
+  // Drag-and-drop state for visual map
   const dragItem = useRef<{ id: string; pageType: string } | null>(null);
   const dragOverItem = useRef<{ id: string; pageType: string } | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  // Drag-and-drop state for slots list tab
+  const dragSlotItem = useRef<string | null>(null);
+  const dragSlotOverItem = useRef<string | null>(null);
+  const [dragSlotOverId, setDragSlotOverId] = useState<string | null>(null);
+
+  // Drag-and-drop state for assignments within a slot
+  const dragAssignItem = useRef<{ id: string; slotId: string } | null>(null);
+  const dragAssignOverItem = useRef<{ id: string; slotId: string } | null>(null);
+  const [dragAssignOverId, setDragAssignOverId] = useState<string | null>(null);
 
   const reorderMutation = useMutation({
     mutationFn: async (reorderedSlots: { id: string; display_order: number }[]) => {
@@ -282,6 +292,21 @@ const AdminAdSlotsPage = () => {
     },
   });
 
+  const reorderAssignmentsMutation = useMutation({
+    mutationFn: async (reordered: { id: string; priority: number }[]) => {
+      await Promise.all(
+        reordered.map(a =>
+          supabase.from('ad_slot_assignments' as any).update({ priority: a.priority } as any).eq('id', a.id)
+        )
+      );
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-ad-assignments'] });
+      toast.success('Prioridade atualizada!');
+    },
+  });
+
+  // Visual map DnD handlers
   const handleDragStart = useCallback((id: string, pageType: string) => {
     dragItem.current = { id, pageType };
   }, []);
@@ -315,6 +340,66 @@ const AdminAdSlotsPage = () => {
     dragItem.current = null;
     dragOverItem.current = null;
   }, [slotsByPage, reorderMutation]);
+
+  // Slots list tab DnD handlers
+  const handleSlotDragStart = useCallback((id: string) => {
+    dragSlotItem.current = id;
+  }, []);
+
+  const handleSlotDragEnter = useCallback((id: string) => {
+    dragSlotOverItem.current = id;
+    setDragSlotOverId(id);
+  }, []);
+
+  const handleSlotDragEnd = useCallback(() => {
+    setDragSlotOverId(null);
+    if (!dragSlotItem.current || !dragSlotOverItem.current || dragSlotItem.current === dragSlotOverItem.current) {
+      dragSlotItem.current = null;
+      dragSlotOverItem.current = null;
+      return;
+    }
+    const sorted = [...filteredSlots].sort((a: any, b: any) => a.display_order - b.display_order);
+    const fromIdx = sorted.findIndex((s: any) => s.id === dragSlotItem.current);
+    const toIdx = sorted.findIndex((s: any) => s.id === dragSlotOverItem.current);
+    if (fromIdx === -1 || toIdx === -1) { dragSlotItem.current = null; dragSlotOverItem.current = null; return; }
+    const [moved] = sorted.splice(fromIdx, 1);
+    sorted.splice(toIdx, 0, moved);
+    reorderMutation.mutate(sorted.map((s: any, i: number) => ({ id: s.id, display_order: i })));
+    dragSlotItem.current = null;
+    dragSlotOverItem.current = null;
+  }, [filteredSlots, reorderMutation]);
+
+  // Assignment DnD handlers
+  const handleAssignDragStart = useCallback((id: string, slotId: string) => {
+    dragAssignItem.current = { id, slotId };
+  }, []);
+
+  const handleAssignDragEnter = useCallback((id: string, slotId: string) => {
+    dragAssignOverItem.current = { id, slotId };
+    setDragAssignOverId(id);
+  }, []);
+
+  const handleAssignDragEnd = useCallback(() => {
+    setDragAssignOverId(null);
+    if (!dragAssignItem.current || !dragAssignOverItem.current) return;
+    if (dragAssignItem.current.slotId !== dragAssignOverItem.current.slotId) {
+      dragAssignItem.current = null; dragAssignOverItem.current = null; return;
+    }
+    const slotId = dragAssignItem.current.slotId;
+    const slotAssigns = assignments.filter((a: any) => a.slot_id === slotId).sort((a: any, b: any) => (b.priority || 0) - (a.priority || 0));
+    const fromIdx = slotAssigns.findIndex((a: any) => a.id === dragAssignItem.current!.id);
+    const toIdx = slotAssigns.findIndex((a: any) => a.id === dragAssignOverItem.current!.id);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) {
+      dragAssignItem.current = null; dragAssignOverItem.current = null; return;
+    }
+    const [moved] = slotAssigns.splice(fromIdx, 1);
+    slotAssigns.splice(toIdx, 0, moved);
+    // Higher index = lower priority; reverse so first item gets highest priority
+    const updates = slotAssigns.map((a: any, i: number) => ({ id: a.id, priority: slotAssigns.length - i }));
+    reorderAssignmentsMutation.mutate(updates);
+    dragAssignItem.current = null;
+    dragAssignOverItem.current = null;
+  }, [assignments, reorderAssignmentsMutation]);
 
   if (adminLoading) return <AdminLayout><div className="h-8 w-1/3 animate-pulse rounded-lg bg-muted" /></AdminLayout>;
   if (!isAdmin) { navigate('/'); return null; }
