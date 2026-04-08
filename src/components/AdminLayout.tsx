@@ -26,7 +26,7 @@ const menuGroups = [
       { label: 'CRM Usuários', icon: Target, path: '/admin/crm-usuarios' },
       { label: 'Serviços', icon: Package, path: '/admin/servicos' },
       { label: 'Leads', icon: FileText, path: '/admin/leads' },
-      { label: 'Planos & Regras', icon: Crown, path: '/admin/planos-regras' },
+      { label: 'Planos & Regras', icon: Crown, path: '/admin/regras' },
       { label: 'Comunidade', icon: Users2, path: '/admin/comunidade' },
     ],
   },
