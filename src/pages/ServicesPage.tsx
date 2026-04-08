@@ -196,7 +196,7 @@ const ServicesPage = () => {
                   </Link>
                 </FadeInSection>
               ))}
-            </div>
+            </motion.div>
           )}
 
           {/* Total count */}
