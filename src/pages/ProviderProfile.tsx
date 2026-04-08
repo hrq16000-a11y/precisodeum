@@ -905,6 +905,17 @@ const ProviderProfile = () => {
                   <TrustBadge icon={Shield} text="Perfil verificado" delay={0.5} />
                   {provider.years_experience >= 3 && <TrustBadge icon={Award} text="Experiente" delay={0.6} />}
                   {provider.review_count >= 3 && <TrustBadge icon={ThumbsUp} text="Recomendado" delay={0.7} />}
+                  {provider.response_time && (
+                    <motion.span
+                      className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-1 text-[11px] font-medium text-blue-600"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.8, type: 'spring', stiffness: 300, damping: 20 }}
+                    >
+                      <Zap className="h-3 w-3" />
+                      Responde em {provider.response_time}
+                    </motion.span>
+                  )}
                 </div>
 
                 {hasSocial && (
