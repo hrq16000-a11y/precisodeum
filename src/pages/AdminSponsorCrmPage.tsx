@@ -567,6 +567,12 @@ const AdminSponsorCrmPage = () => {
                       <TableCell>{c.company_name || '—'}</TableCell>
                       <TableCell className="text-xs">{c.email || '—'}</TableCell>
                       <TableCell className="text-xs">{c.phone || '—'}</TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={() => { setPermContact(c); setPermDialog(true); }}>
+                          <Settings2 className="h-3 w-3" />
+                          {Object.values(c.permissions || {}).filter(Boolean).length}/{Object.keys(PERM_LABELS).length}
+                        </Button>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm" onClick={() => unlinkMutation.mutate(c.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
