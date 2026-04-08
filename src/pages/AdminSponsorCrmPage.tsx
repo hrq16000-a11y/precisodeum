@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { format, differenceInDays } from 'date-fns';
 import {
   Megaphone, Users, FileText, StickyNote, AlertTriangle, Eye, MousePointerClick,
-  Plus, Trash2, Search, Filter, Calendar, TrendingUp, ArrowRight
+  Plus, Trash2, Search, Filter, Calendar, TrendingUp, ArrowRight, Settings2
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────
