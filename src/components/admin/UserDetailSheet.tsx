@@ -1026,4 +1026,74 @@ const EmptyState = ({ icon, text }: { icon: React.ReactNode; text: string }) => 
   </div>
 );
 
+// ====== Per-user permissions panel ======
+const PERM_LABELS: Record<string, string> = {
+  dashboard: 'Dashboard',
+  profile: 'Meu Perfil',
+  services: 'Serviços',
+  my_page: 'Minha Página',
+  jobs: 'Vagas',
+  community: 'Comunidade',
+  notifications: 'Notificações',
+  leads: 'Leads',
+  plan: 'Plano',
+  reviews: 'Avaliações',
+  admin_panel: 'Painel Admin',
+  sponsor_panel: 'Painel Patrocinador',
+};
+
+const DEFAULT_USER_PERMS: Record<string, boolean> = {
+  dashboard: true, profile: true, services: true, my_page: true,
+  jobs: true, community: true, notifications: true, leads: true,
+  plan: true, reviews: true, admin_panel: true, sponsor_panel: true,
+};
+
+const UserPermissionsPanel = ({ user, onRefresh }: { user: any; onRefresh?: () => void }) => {
+  const [perms, setPerms] = useState<Record<string, boolean>>(DEFAULT_USER_PERMS);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    const p = user.permissions as Record<string, boolean> | null;
+    setPerms({ ...DEFAULT_USER_PERMS, ...(p || {}) });
+  }, [user?.id, user?.permissions]);
+
+  const toggle = (key: string) => setPerms(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const save = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase.from('profiles').update({ permissions: perms } as any).eq('id', user.id);
+    if (error) toast.error('Erro ao salvar permissões');
+    else {
+      toast.success('Permissões atualizadas');
+      await logAuditAction({ userId: user.id, action: 'update_permissions', resourceType: 'user', resourceId: user.id, details: { permissions: perms } });
+      onRefresh?.();
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="rounded-xl border border-border p-3 sm:p-4 space-y-4">
+      <div className="flex items-center gap-2 mb-1">
+        <Lock className="h-4 w-4 text-primary" />
+        <h3 className="font-semibold text-foreground text-sm">Permissões de Acesso</h3>
+      </div>
+      <p className="text-xs text-muted-foreground">Controle quais seções este usuário pode acessar no painel.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {Object.entries(PERM_LABELS).map(([key, label]) => (
+          <div key={key} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+            <span className="text-sm text-foreground">{label}</span>
+            <Switch checked={perms[key] ?? true} onCheckedChange={() => toggle(key)} />
+          </div>
+        ))}
+      </div>
+      <Button size="sm" onClick={save} disabled={saving} className="w-full">
+        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        💾 Salvar Permissões
+      </Button>
+    </div>
+  );
+};
+
 export default UserDetailSheet;
