@@ -263,6 +263,59 @@ const AdminAdSlotsPage = () => {
   const activeSlots = slots.filter((s: any) => s.active).length;
   const activeAssignments = assignments.filter((a: any) => a.active).length;
 
+  // Drag-and-drop state
+  const dragItem = useRef<{ id: string; pageType: string } | null>(null);
+  const dragOverItem = useRef<{ id: string; pageType: string } | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  const reorderMutation = useMutation({
+    mutationFn: async (reorderedSlots: { id: string; display_order: number }[]) => {
+      await Promise.all(
+        reorderedSlots.map(s =>
+          supabase.from('ad_slots' as any).update({ display_order: s.display_order } as any).eq('id', s.id)
+        )
+      );
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-ad-slots'] });
+      toast.success('Ordem atualizada!');
+    },
+  });
+
+  const handleDragStart = useCallback((id: string, pageType: string) => {
+    dragItem.current = { id, pageType };
+  }, []);
+
+  const handleDragEnter = useCallback((id: string, pageType: string) => {
+    dragOverItem.current = { id, pageType };
+    setDragOverId(id);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDragOverId(null);
+    if (!dragItem.current || !dragOverItem.current) return;
+    if (dragItem.current.pageType !== dragOverItem.current.pageType) {
+      dragItem.current = null;
+      dragOverItem.current = null;
+      return;
+    }
+    const pageType = dragItem.current.pageType;
+    const pageSlots = [...(slotsByPage[pageType] || [])].sort((a: any, b: any) => a.display_order - b.display_order);
+    const fromIdx = pageSlots.findIndex((s: any) => s.id === dragItem.current!.id);
+    const toIdx = pageSlots.findIndex((s: any) => s.id === dragOverItem.current!.id);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) {
+      dragItem.current = null;
+      dragOverItem.current = null;
+      return;
+    }
+    const [moved] = pageSlots.splice(fromIdx, 1);
+    pageSlots.splice(toIdx, 0, moved);
+    const updates = pageSlots.map((s: any, i: number) => ({ id: s.id, display_order: i }));
+    reorderMutation.mutate(updates);
+    dragItem.current = null;
+    dragOverItem.current = null;
+  }, [slotsByPage, reorderMutation]);
+
   if (adminLoading) return <AdminLayout><div className="h-8 w-1/3 animate-pulse rounded-lg bg-muted" /></AdminLayout>;
   if (!isAdmin) { navigate('/'); return null; }
 
