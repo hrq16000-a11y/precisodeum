@@ -555,6 +555,7 @@ const AdminSponsorCrmPage = () => {
                     <TableHead>Empresa</TableHead>
                     <TableHead>E-mail</TableHead>
                     <TableHead>Telefone</TableHead>
+                    <TableHead>Permissões</TableHead>
                     <TableHead className="text-right">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
