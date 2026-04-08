@@ -108,6 +108,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="flex items-center gap-2">
           <Shield className="h-4 w-4 text-destructive" />
           <span className="font-display text-sm font-bold text-foreground">Admin</span>
+          <AdminMobileStats />
         </div>
         <motion.button
           onClick={() => setSidebarOpen(!sidebarOpen)}
