@@ -400,23 +400,31 @@ const AdminAdSlotsPage = () => {
                       const SlotIcon = visual?.icon || LayoutGrid;
                       const slotAssigns = assignments.filter((a: any) => a.slot_id === slot.id);
                       const occupiedCount = slotAssigns.filter((a: any) => a.active).length;
+                      const isDragOver = dragOverId === slot.id;
 
                       return (
                         <div
                           key={slot.id}
-                          className={`group relative rounded-lg border-2 transition-all cursor-pointer hover:shadow-md ${
+                          draggable
+                          onDragStart={() => handleDragStart(slot.id, pageType)}
+                          onDragEnter={() => handleDragEnter(slot.id, pageType)}
+                          onDragOver={e => e.preventDefault()}
+                          onDragEnd={handleDragEnd}
+                          className={`group relative rounded-lg border-2 transition-all cursor-grab active:cursor-grabbing ${
+                            isDragOver ? 'ring-2 ring-primary/50 scale-[1.01]' : ''
+                          } ${
                             slot.active
                               ? occupiedCount > 0
                                 ? 'border-green-400 bg-green-50/50 dark:bg-green-950/20'
                                 : 'border-amber-300 bg-amber-50/50 dark:bg-amber-950/20'
                               : 'border-muted bg-muted/40 opacity-50'
                           } px-4 py-3`}
-                          onClick={() => openEditSlot(slot)}
                         >
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-3 min-w-0">
+                              <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                               <SlotIcon className={`h-5 w-5 shrink-0 ${visual?.color || 'text-muted-foreground'}`} />
-                              <div className="min-w-0">
+                              <div className="min-w-0" onClick={() => openEditSlot(slot)}>
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-semibold text-sm text-foreground">{slot.name}</span>
                                   <code className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">{slot.slug}</code>
