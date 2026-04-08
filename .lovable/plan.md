@@ -1,57 +1,53 @@
 
 
-# Correção de Perfis e Atribuição Automática de Nível/Tipo de Conta
+# Ajustar Permissões Padrão de admin_panel e sponsor_panel
 
 ## Contexto
 
-- 3 perfis sem `level_id` nem `account_type_id`
-- O trigger `handle_new_user()` atual não atribui `level_id` nem `account_type_id`
-- IDs necessários:
-  - `level_id` "Usuário" = `716c417b-fdc8-4121-879b-abcd8f0a216f`
-  - `account_type_id` "Trial" = `50a97ea2-c43e-472f-b6f2-4dd180379cad`
+Todos os perfis atualmente têm `admin_panel: true` e `sponsor_panel: true` no JSONB `permissions`, incluindo usuários comuns. Isso permite que qualquer pessoa veja itens de menu administrativo (mesmo que RLS bloqueie os dados).
+
+- **5 admins** identificados na tabela `user_roles`: `d80784da`, `44aa54b7`, `3c8c1e5e`, `065424cb`, `b65902b8`
+- **0 patrocinadores** vinculados em `sponsor_contacts`
+- Todos os demais (~50+ perfis) devem ter `admin_panel: false` e `sponsor_panel: false`
 
 ## Plano
 
-### 1. Corrigir os 3 perfis existentes (via insert tool — UPDATE)
+### 1. Migração — Alterar o DEFAULT da coluna `permissions`
 
-Atualizar os 3 perfis que estão com `level_id` e `account_type_id` nulos:
-- `eb5e6b5a-4bd5-4f4f-9673-0e3a41d318ab` (Leonardo)
-- `5e388e94-4ead-4af4-abef-edc1c3062458` (Neto)
-- `137a3865-f488-4c84-b660-bdb3d652487e` (Glenio)
-
-Setar `level_id = '716c417b-...'` e `account_type_id = '50a97ea2-...'` para todos.
-
-### 2. Atualizar o trigger `handle_new_user()` (via migração)
-
-Modificar a função para incluir `level_id` e `account_type_id` no INSERT do perfil:
+Mudar o valor padrão da coluna JSONB `permissions` na tabela `profiles` para que `admin_panel` e `sponsor_panel` sejam `false`:
 
 ```sql
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name, email, avatar_url, level_id, account_type_id)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data ->> 'full_name', ''),
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', ''),
-    '716c417b-fdc8-4121-879b-abcd8f0a216f',
-    '50a97ea2-c43e-472f-b6f2-4dd180379cad'
-  );
-  RETURN NEW;
-END;
-$$;
+ALTER TABLE public.profiles 
+ALTER COLUMN permissions 
+SET DEFAULT '{"jobs":true,"plan":true,"leads":true,"my_page":true,"profile":true,"reviews":true,"services":true,"community":true,"dashboard":true,"admin_panel":false,"notifications":true,"sponsor_panel":false}'::jsonb;
 ```
 
-Isso garante que todo novo cadastro receba automaticamente nível "Usuário" e tipo de conta "Trial".
+### 2. UPDATE — Corrigir perfis existentes não-admin
+
+Atualizar todos os perfis que **não** são admin para ter `admin_panel: false` e `sponsor_panel: false`:
+
+```sql
+UPDATE public.profiles
+SET permissions = permissions || '{"admin_panel": false, "sponsor_panel": false}'::jsonb
+WHERE id NOT IN (
+  SELECT user_id FROM user_roles WHERE role = 'admin'
+);
+```
+
+### 3. Atualizar o trigger `handle_new_user()`
+
+Garantir que o trigger use o novo default (com `admin_panel: false` e `sponsor_panel: false`). Como o trigger faz INSERT sem especificar `permissions`, ele já herdará o novo DEFAULT da coluna — **nenhuma alteração no trigger é necessária**.
 
 ### Resultado
 
-- Os 3 perfis órfãos ficam corrigidos imediatamente
-- Todo futuro cadastro (email ou OAuth) já nasce com nível e plano atribuídos
-- Nenhuma alteração de código frontend necessária
+- Novos cadastros nascem com `admin_panel: false` e `sponsor_panel: false`
+- Perfis existentes não-admin perdem acesso visual ao painel admin e sponsor
+- Os 5 admins mantêm `admin_panel: true` e `sponsor_panel: true`
+- Nenhuma alteração de código frontend necessária (o hook `usePermissions` já verifica esses campos)
+
+## Detalhes técnicos
+
+- **Arquivo afetado**: nenhum (apenas banco de dados)
+- **1 migração** para alterar o DEFAULT da coluna
+- **1 UPDATE** via insert tool para corrigir dados existentes
 
