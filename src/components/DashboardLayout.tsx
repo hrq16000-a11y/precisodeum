@@ -145,7 +145,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     />
                   )}
                   <item.icon className={`h-4 w-4 transition-transform duration-200 ${active ? 'scale-110' : ''}`} />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-accent-foreground"
+                    >
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </motion.span>
+                  )}
                 </Link>
               </motion.div>
             );
