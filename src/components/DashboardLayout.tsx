@@ -36,6 +36,27 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       .then(({ data }) => setIsAdmin(!!data));
   }, [user]);
 
+  // Fetch unread notifications count
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('notifications').select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id).eq('read', false)
+      .then(({ count }) => setUnreadCount(count ?? 0));
+  }, [user]);
+
+  // Fetch pending leads count
+  useEffect(() => {
+    if (!user || !profile) return;
+    if (profile.profile_type === 'client' || profile.profile_type === 'rh') return;
+    supabase.from('providers').select('id').eq('user_id', user.id).limit(1)
+      .then(({ data: providers }) => {
+        if (!providers?.[0]) return;
+        supabase.from('leads').select('id', { count: 'exact', head: true })
+          .eq('provider_id', providers[0].id).eq('status', 'new')
+          .then(({ count }) => setPendingLeads(count ?? 0));
+      });
+  }, [user, profile]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
