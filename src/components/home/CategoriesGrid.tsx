@@ -1,11 +1,9 @@
-import { useMemo, useRef, type MouseEvent } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import FadeInSection from '@/components/FadeInSection';
-import MagneticButton from '@/components/MagneticButton';
 
 interface CategoryItem {
   id: string;
@@ -20,8 +18,20 @@ interface Props {
   isLoading: boolean;
 }
 
-const HOME_COUNT_MOBILE = 6;
 const HOME_COUNT_DESKTOP = 8;
+
+const container = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.1 },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] } },
+};
 
 const CategoriesGrid = ({ categories, isLoading }: Props) => {
   const visible = useMemo(() => {
@@ -41,65 +51,92 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
   }, [categories.length]);
 
   return (
-    <section className="py-10">
+    <section className="py-12">
       <div className="container">
-        <FadeInSection className="mb-6 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-8 text-center"
+        >
+          <span className="inline-block rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent mb-2">
+            🔍 Categorias
+          </span>
           <h2 className="font-display text-xl font-bold text-foreground md:text-2xl">
             Encontre Profissionais por Categoria
           </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
             Escolha a categoria do serviço que você precisa
           </p>
-        </FadeInSection>
+        </motion.div>
 
         {isLoading ? (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 rounded-xl" />
+              <Skeleton key={i} className="h-28 rounded-2xl" />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              {visible.map((cat, i) => (
-                <FadeInSection key={cat.id} delay={i * 0.05}>
-                  <MagneticButton strength={0.15}>
-                    <Link
-                      to={`/categoria/${cat.slug}`}
-                      className="group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 hover:border-primary/30 overflow-hidden text-center"
+            <motion.div
+              variants={container}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-60px' }}
+              className="grid grid-cols-2 gap-3 md:grid-cols-4"
+            >
+              {visible.map((cat) => (
+                <motion.div key={cat.id} variants={item}>
+                  <Link
+                    to={`/categoria/${cat.slug}`}
+                    className="group relative flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1.5 hover:border-accent/40 overflow-hidden text-center"
+                  >
+                    {/* Hover gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500 rounded-2xl" />
+                    
+                    {/* Accent bar top */}
+                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-accent/0 to-transparent group-hover:via-accent transition-all duration-500" />
+                    
+                    <motion.span
+                      className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 text-2xl group-hover:from-primary/15 group-hover:to-accent/15 transition-colors duration-300"
+                      whileHover={{ scale: 1.15, rotate: 8 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 15 }}
                     >
-                      <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:to-accent/5 transition-all duration-500" />
-                      <motion.span
-                        className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-2xl"
-                        whileHover={{ scale: 1.15, rotate: 5 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-                      >
-                        {cat.icon}
-                      </motion.span>
-                      <div className="relative">
-                        <span className="block text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                          {cat.name}
-                        </span>
-                        {cat.count > 0 && (
-                          <span className="mt-1 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
-                            {cat.count} {cat.count === 1 ? 'profissional' : 'profissionais'}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                  </MagneticButton>
-                </FadeInSection>
+                      {cat.icon}
+                    </motion.span>
+                    <div className="relative">
+                      <span className="block text-sm font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2">
+                        {cat.name}
+                      </span>
+                      {cat.count > 0 && (
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="mt-1.5 inline-block rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-bold text-accent"
+                        >
+                          {cat.count} {cat.count === 1 ? 'profissional' : 'profissionais'}
+                        </motion.span>
+                      )}
+                    </div>
+                  </Link>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
-            <FadeInSection delay={0.3} className="mt-5 text-center">
-              <Button variant="outline" size="sm" className="gap-1.5 rounded-full" asChild>
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="mt-6 text-center"
+            >
+              <Button variant="outline" size="sm" className="gap-1.5 rounded-full hover:bg-accent hover:text-accent-foreground transition-colors" asChild>
                 <Link to="/categorias">
                   Ver Todas as Categorias
                   <ChevronRight className="h-3 w-3" />
                 </Link>
               </Button>
-            </FadeInSection>
+            </motion.div>
           </>
         )}
       </div>
