@@ -1699,6 +1699,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          permissions: Json
           phone: string | null
           role: string
           sponsor_id: string
@@ -1711,6 +1712,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          permissions?: Json
           phone?: string | null
           role?: string
           sponsor_id: string
@@ -1723,6 +1725,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          permissions?: Json
           phone?: string | null
           role?: string
           sponsor_id?: string

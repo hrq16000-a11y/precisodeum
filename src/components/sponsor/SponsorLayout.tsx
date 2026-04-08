@@ -4,22 +4,26 @@ import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Meg
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+import { useSponsorAuth, type SponsorPermissionKey } from '@/hooks/useSponsorAuth';
 
-const sponsorMenu = [
+const sponsorMenu: { label: string; icon: any; path: string; permKey?: SponsorPermissionKey }[] = [
   { label: 'Visão Geral', icon: LayoutDashboard, path: '/sponsor-panel' },
-  { label: 'Meus Banners', icon: Image, path: '/sponsor-panel/banners' },
-  { label: 'Campanhas', icon: Megaphone, path: '/sponsor-panel/campanhas' },
-  { label: 'Métricas', icon: BarChart3, path: '/sponsor-panel/metricas' },
-  { label: 'Contratos', icon: FileText, path: '/sponsor-panel/contratos' },
-  { label: 'Notificações', icon: Bell, path: '/sponsor-panel/notificacoes' },
-  { label: 'Meus Dados', icon: Settings, path: '/sponsor-panel/dados' },
+  { label: 'Meus Banners', icon: Image, path: '/sponsor-panel/banners', permKey: 'banners' },
+  { label: 'Campanhas', icon: Megaphone, path: '/sponsor-panel/campanhas', permKey: 'campanhas' },
+  { label: 'Métricas', icon: BarChart3, path: '/sponsor-panel/metricas', permKey: 'metricas' },
+  { label: 'Contratos', icon: FileText, path: '/sponsor-panel/contratos', permKey: 'contratos' },
+  { label: 'Notificações', icon: Bell, path: '/sponsor-panel/notificacoes', permKey: 'notificacoes' },
+  { label: 'Meus Dados', icon: Settings, path: '/sponsor-panel/dados', permKey: 'dados' },
 ];
 
 const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { hasSponsorPermission, isAdmin } = useSponsorAuth(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const visibleMenu = sponsorMenu.filter(item => !item.permKey || hasSponsorPermission(item.permKey));
 
   const handleSignOut = async () => {
     await signOut();
@@ -47,7 +51,7 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
           <Badge variant="secondary" className="ml-auto text-[10px]">CRM</Badge>
         </div>
         <nav className="mt-2 space-y-0.5 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 56px - 80px)' }}>
-          {sponsorMenu.map((item) => {
+          {visibleMenu.map((item) => {
             const active = location.pathname === item.path;
             return (
               <Link

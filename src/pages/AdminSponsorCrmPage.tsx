@@ -12,13 +12,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { format, differenceInDays } from 'date-fns';
 import {
   Megaphone, Users, FileText, StickyNote, AlertTriangle, Eye, MousePointerClick,
-  Plus, Trash2, Search, Filter, Calendar, TrendingUp, ArrowRight
+  Plus, Trash2, Search, Filter, Calendar, TrendingUp, ArrowRight, Settings2
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -126,6 +127,18 @@ const AdminSponsorCrmPage = () => {
 
   const [noteDialog, setNoteDialog] = useState(false);
   const [noteForm, setNoteForm] = useState({ sponsor_id: '', content: '' });
+
+  const [permDialog, setPermDialog] = useState(false);
+  const [permContact, setPermContact] = useState<any>(null);
+
+  const PERM_LABELS: Record<string, string> = {
+    banners: 'Meus Banners',
+    campanhas: 'Campanhas',
+    metricas: 'Métricas',
+    contratos: 'Contratos',
+    notificacoes: 'Notificações',
+    dados: 'Meus Dados',
+  };
 
   // ─── Mutations ────────────────────────────────────────────────────
   const linkMutation = useMutation({
@@ -248,7 +261,19 @@ const AdminSponsorCrmPage = () => {
     },
   });
 
-  // ─── Sponsor select helper ───────────────────────────────────────
+  const updatePermMutation = useMutation({
+    mutationFn: async ({ id, permissions }: { id: string; permissions: any }) => {
+      const { error } = await supabase.from('sponsor_contacts' as any).update({ permissions } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-sponsor-contacts'] });
+      toast.success('Permissões atualizadas!');
+    },
+    onError: () => toast.error('Erro ao atualizar permissões'),
+  });
+
+
   const SponsorSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger><SelectValue placeholder="Selecionar patrocinador" /></SelectTrigger>
@@ -507,9 +532,14 @@ const AdminSponsorCrmPage = () => {
                       <p className="text-xs text-muted-foreground mt-0.5">{c.contact_name || '—'} • {c.company_name || '—'}</p>
                       <p className="text-xs text-muted-foreground">{c.email || '—'} • {c.phone || '—'}</p>
                     </div>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => unlinkMutation.mutate(c.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setPermContact(c); setPermDialog(true); }}>
+                        <Settings2 className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => unlinkMutation.mutate(c.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -525,6 +555,7 @@ const AdminSponsorCrmPage = () => {
                     <TableHead>Empresa</TableHead>
                     <TableHead>E-mail</TableHead>
                     <TableHead>Telefone</TableHead>
+                    <TableHead>Permissões</TableHead>
                     <TableHead className="text-right">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -536,6 +567,12 @@ const AdminSponsorCrmPage = () => {
                       <TableCell>{c.company_name || '—'}</TableCell>
                       <TableCell className="text-xs">{c.email || '—'}</TableCell>
                       <TableCell className="text-xs">{c.phone || '—'}</TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={() => { setPermContact(c); setPermDialog(true); }}>
+                          <Settings2 className="h-3 w-3" />
+                          {Object.values(c.permissions || {}).filter(Boolean).length}/{Object.keys(PERM_LABELS).length}
+                        </Button>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm" onClick={() => unlinkMutation.mutate(c.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -544,7 +581,7 @@ const AdminSponsorCrmPage = () => {
                     </TableRow>
                   ))}
                   {contacts.length === 0 && (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum vínculo.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum vínculo.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -816,6 +853,51 @@ const AdminSponsorCrmPage = () => {
               <Button type="submit" disabled={noteMutation.isPending}>Salvar</Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Permissions Dialog ──────────────────────────────────── */}
+      <Dialog open={permDialog} onOpenChange={setPermDialog}>
+        <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4" /> Permissões do Painel
+            </DialogTitle>
+          </DialogHeader>
+          {permContact && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Controle quais seções <strong>{permContact.contact_name || 'este contato'}</strong> pode acessar no painel de patrocinador.
+              </p>
+              <div className="space-y-3">
+                {Object.entries(PERM_LABELS).map(([key, label]) => {
+                  const perms = permContact.permissions || {};
+                  const enabled = perms[key] !== false;
+                  return (
+                    <div key={key} className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+                      <span className="text-sm font-medium">{label}</span>
+                      <Switch
+                        checked={enabled}
+                        onCheckedChange={(checked) => {
+                          const newPerms = { ...(permContact.permissions || {}), [key]: checked };
+                          setPermContact({ ...permContact, permissions: newPerms });
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setPermDialog(false)}>Cancelar</Button>
+                <Button onClick={() => {
+                  updatePermMutation.mutate({ id: permContact.id, permissions: permContact.permissions });
+                  setPermDialog(false);
+                }}>
+                  Salvar Permissões
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </AdminLayout>
