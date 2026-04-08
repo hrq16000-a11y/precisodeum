@@ -207,9 +207,24 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           className="flex-1 p-3 sm:p-6 max-w-full"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] }}
           key={location.pathname}
         >
+          {/* Auto Breadcrumb */}
+          {(() => {
+            const current = menuGroups.flatMap(g => g.items).find(i => i.path === location.pathname);
+            const group = menuGroups.find(g => g.items.some(i => i.path === location.pathname));
+            if (!current || !group) return null;
+            return (
+              <nav className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Link to="/admin" className="hover:text-foreground transition-colors">Admin</Link>
+                <span className="text-muted-foreground/40">/</span>
+                <span className="text-muted-foreground/60">{group.label}</span>
+                <span className="text-muted-foreground/40">/</span>
+                <span className="font-medium text-foreground">{current.label}</span>
+              </nav>
+            );
+          })()}
           <AdminGroupNav />
           {children}
         </motion.div>
