@@ -1,4 +1,4 @@
-import { useEffect, useRef, memo } from 'react';
+import { useEffect, useRef, useMemo, memo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { handleImageError } from '@/lib/imageResolver';
 
