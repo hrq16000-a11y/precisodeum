@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -156,12 +157,19 @@ const SearchPage = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <div className="container py-6">
-        {/* Search bar + Geo */}
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1"><SearchBar variant="compact" /></div>
-          <GeoLocationChip />
-        </div>
+      
+      {/* Search header with gradient background */}
+      <section className="relative bg-gradient-to-b from-muted/80 to-background pb-2 pt-6 overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div className="container relative">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="flex-1"><SearchBar variant="compact" /></div>
+            <GeoLocationChip />
+          </motion.div>
 
         {/* Quick category chips */}
         {!query && suggestionChips.length > 0 && (
@@ -170,7 +178,7 @@ const SearchPage = () => {
               <Badge
                 key={chip.value}
                 variant={selectedCategory === chip.value ? 'default' : 'outline'}
-                className="cursor-pointer text-xs"
+                className="cursor-pointer text-xs transition-all hover:scale-105"
                 onClick={() => { setSelectedCategory(selectedCategory === chip.value ? '' : chip.value); setPage(1); }}
               >
                 {chip.label}
@@ -178,7 +186,10 @@ const SearchPage = () => {
             ))}
           </div>
         )}
+        </div>
+      </section>
 
+      <div className="container py-6">
         <div className="flex flex-col gap-6 lg:flex-row">
           {/* Filters sidebar */}
           <aside className="w-full shrink-0 lg:w-64">
