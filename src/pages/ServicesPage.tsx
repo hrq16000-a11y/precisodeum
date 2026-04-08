@@ -171,9 +171,10 @@ const ServicesPage = () => {
               </motion.div>
             </div>
           ) : (
-            <motion.div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" layout>
+            <motion.div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" layout transition={{ duration: 0.3, ease: 'easeInOut' }}>
+              <AnimatePresence mode="popLayout">
               {filtered.map((s, i) => (
-                <FadeInSection key={s.id} delay={i * 0.03}>
+                <motion.div key={s.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>
                   <Link to={`/servico/${s.slug}`} className="group block">
                     <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 hover:border-accent/30">
                       {/* Gradient hover bg */}
