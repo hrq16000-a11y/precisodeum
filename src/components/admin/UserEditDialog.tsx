@@ -9,12 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
 
-const PROFILE_TYPE_OPTIONS = [
-  { value: 'client', label: 'Cliente' },
-  { value: 'provider', label: 'Profissional' },
-  { value: 'rh', label: 'Agência / RH' },
-];
-
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Ativo' },
   { value: 'inactive', label: 'Inativo' },
@@ -41,12 +35,18 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
   const [saving, setSaving] = useState(false);
   const [levels, setLevels] = useState<any[]>([]);
   const [accountTypes, setAccountTypes] = useState<any[]>([]);
+  const [profileTypeOptions, setProfileTypeOptions] = useState<any[]>([]);
 
   useEffect(() => {
-    supabase.from('user_levels').select('id, name, color').order('priority', { ascending: false })
-      .then(({ data }) => setLevels(data || []));
-    supabase.from('account_types').select('id, name, color').order('display_order')
-      .then(({ data }) => setAccountTypes(data || []));
+    Promise.all([
+      supabase.from('user_levels').select('id, name, color').order('priority', { ascending: false }),
+      supabase.from('account_types').select('id, name, color').order('display_order'),
+      supabase.from('profile_type_settings' as any).select('profile_key, label, color, icon, active').eq('active', true).order('display_order'),
+    ]).then(([levelsRes, accountRes, profileRes]) => {
+      setLevels(levelsRes.data || []);
+      setAccountTypes(accountRes.data || []);
+      setProfileTypeOptions((profileRes.data as any[]) || []);
+    });
   }, []);
 
   const handleSave = async () => {
@@ -66,7 +66,6 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
       account_type_id: form.account_type_id || null,
     };
 
-    // Build changes object
     const changes: Record<string, { from: any; to: any }> = {};
     if (form.full_name !== (user.full_name || '')) changes.full_name = { from: user.full_name || '', to: form.full_name };
     if (form.phone !== (user.phone || '')) changes.phone = { from: user.phone || '', to: form.phone };
@@ -125,13 +124,25 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Tipo de conta</Label>
+              <Label>Tipo de Cadastro</Label>
               <Select value={form.profile_type} onValueChange={v => setForm(f => ({ ...f, profile_type: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {PROFILE_TYPE_OPTIONS.map(o => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
+                  {profileTypeOptions.length > 0
+                    ? profileTypeOptions.map((o: any) => (
+                        <SelectItem key={o.profile_key} value={o.profile_key}>
+                          <div className="flex items-center gap-2">
+                            <span>{o.icon}</span>
+                            {o.label}
+                          </div>
+                        </SelectItem>
+                      ))
+                    : <>
+                        <SelectItem value="client">Cliente</SelectItem>
+                        <SelectItem value="provider">Profissional</SelectItem>
+                        <SelectItem value="rh">Agência / RH</SelectItem>
+                      </>
+                  }
                 </SelectContent>
               </Select>
             </div>

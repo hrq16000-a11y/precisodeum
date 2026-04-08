@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Users, Check, X, Edit2, Plus, Trash2, Save } from 'lucide-react';
+import { Users, Check, X, Edit2, Plus, Trash2, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,14 @@ interface ProfileType {
   active: boolean;
 }
 
+interface UserBreakdown {
+  profile_type: string;
+  level_id: string | null;
+  account_type_id: string | null;
+  status: string;
+  total: number;
+}
+
 const emptyForm = (): Omit<ProfileType, 'id'> => ({
   profile_key: '',
   label: '',
@@ -51,10 +59,11 @@ const emptyForm = (): Omit<ProfileType, 'id'> => ({
 
 const ProfileTypesTab = () => {
   const [profileTypes, setProfileTypes] = useState<ProfileType[]>([]);
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [breakdowns, setBreakdowns] = useState<UserBreakdown[]>([]);
   const [tierRules, setTierRules] = useState<any[]>([]);
   const [levels, setLevels] = useState<any[]>([]);
   const [accountTypes, setAccountTypes] = useState<any[]>([]);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   const [showDialog, setShowDialog] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -63,9 +72,8 @@ const ProfileTypesTab = () => {
   const [newCap, setNewCap] = useState('');
 
   const fetchAll = async () => {
-    const [{ data: pts }, { data: profiles }, { data: tiers }, { data: lvls }, { data: ats }] = await Promise.all([
+    const [{ data: pts }, { data: tiers }, { data: lvls }, { data: ats }] = await Promise.all([
       supabase.from('profile_type_settings' as any).select('*').order('display_order'),
-      supabase.from('profiles').select('profile_type'),
       supabase.from('tier_rules' as any).select('*').order('tier_key'),
       supabase.from('user_levels').select('id, name, color, priority').order('priority', { ascending: false }),
       supabase.from('account_types').select('id, name, color, price').order('display_order'),
@@ -75,9 +83,30 @@ const ProfileTypesTab = () => {
     setLevels(lvls || []);
     setAccountTypes(ats || []);
 
-    const c: Record<string, number> = {};
-    (profiles || []).forEach((p: any) => { c[p.profile_type] = (c[p.profile_type] || 0) + 1; });
-    setCounts(c);
+    // Fetch detailed user breakdown
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('profile_type, level_id, account_type_id, status');
+    
+    if (profiles) {
+      const map = new Map<string, UserBreakdown>();
+      profiles.forEach((p: any) => {
+        const key = `${p.profile_type}|${p.level_id || 'null'}|${p.account_type_id || 'null'}|${p.status}`;
+        const existing = map.get(key);
+        if (existing) {
+          existing.total += 1;
+        } else {
+          map.set(key, {
+            profile_type: p.profile_type,
+            level_id: p.level_id,
+            account_type_id: p.account_type_id,
+            status: p.status,
+            total: 1,
+          });
+        }
+      });
+      setBreakdowns(Array.from(map.values()));
+    }
   };
 
   useEffect(() => { fetchAll(); }, []);
@@ -167,16 +196,27 @@ const ProfileTypesTab = () => {
     setForm(f => ({ ...f, capabilities: f.capabilities.filter((_, i) => i !== idx) }));
   };
 
-  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const toggleExpand = (id: string) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const totalUsers = breakdowns.reduce((a, b) => a + b.total, 0);
   const getTier = (key: string) => tierRules.find((t: any) => t.tier_key === key);
   const getLevel = (id: string | null) => levels.find((l: any) => l.id === id);
   const getAccountType = (id: string | null) => accountTypes.find((a: any) => a.id === id);
+
+  const getUsersForType = (profileKey: string) => breakdowns.filter(b => b.profile_type === profileKey);
+  const getUserCountForType = (profileKey: string) => getUsersForType(profileKey).reduce((a, b) => a + b.total, 0);
 
   return (
     <>
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-muted-foreground">
-          {total} usuário(s) · {profileTypes.length} tipo(s) de cadastro
+          {totalUsers} usuário(s) · {profileTypes.length} tipo(s) de cadastro
         </p>
         <Button onClick={openCreate} size="sm"><Plus className="h-4 w-4 mr-1" /> Novo Tipo</Button>
       </div>
@@ -186,8 +226,22 @@ const ProfileTypesTab = () => {
           const tier = getTier(pt.tier_key);
           const level = getLevel(pt.default_level_id);
           const acType = getAccountType(pt.default_account_type_id);
-          const count = counts[pt.profile_key] || 0;
+          const count = getUserCountForType(pt.profile_key);
           const caps = Array.isArray(pt.capabilities) ? pt.capabilities : [];
+          const userBreakdown = getUsersForType(pt.profile_key);
+          const isExpanded = expandedCards.has(pt.id);
+
+          // Group breakdown by level and plan
+          const byLevel = new Map<string, number>();
+          const byPlan = new Map<string, number>();
+          const byStatus = new Map<string, number>();
+          userBreakdown.forEach(b => {
+            const levelName = getLevel(b.level_id)?.name || 'Sem nível';
+            const planName = getAccountType(b.account_type_id)?.name || 'Sem plano';
+            byLevel.set(levelName, (byLevel.get(levelName) || 0) + b.total);
+            byPlan.set(planName, (byPlan.get(planName) || 0) + b.total);
+            byStatus.set(b.status, (byStatus.get(b.status) || 0) + b.total);
+          });
 
           return (
             <Card key={pt.id} className={`relative overflow-hidden ${!pt.active ? 'opacity-50' : ''}`}>
@@ -222,9 +276,78 @@ const ProfileTypesTab = () => {
                   <span className="text-sm font-bold text-foreground">{count}</span>
                   <span className="text-xs text-muted-foreground">usuário(s)</span>
                   <span className="text-xs text-muted-foreground ml-auto font-semibold">
-                    {total > 0 ? Math.round((count / total) * 100) : 0}%
+                    {totalUsers > 0 ? Math.round((count / totalUsers) * 100) : 0}%
                   </span>
                 </div>
+
+                {/* User breakdown toggle */}
+                {count > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-between text-xs text-muted-foreground mb-2 h-7"
+                    onClick={() => toggleExpand(pt.id)}
+                  >
+                    <span>Detalhamento dos usuários</span>
+                    {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  </Button>
+                )}
+
+                {isExpanded && count > 0 && (
+                  <div className="mb-3 space-y-2 border border-border rounded-lg p-3 bg-muted/20">
+                    {/* By Plan */}
+                    <div>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Por Plano</span>
+                      <div className="mt-1 space-y-1">
+                        {Array.from(byPlan.entries()).map(([name, qty]) => {
+                          const at = accountTypes.find((a: any) => a.name === name);
+                          return (
+                            <div key={name} className="flex items-center justify-between text-xs">
+                              <span className="flex items-center gap-1.5">
+                                {at && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: at.color }} />}
+                                {name}
+                              </span>
+                              <span className="font-semibold text-foreground">{qty}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {/* By Level */}
+                    <div>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Por Nível</span>
+                      <div className="mt-1 space-y-1">
+                        {Array.from(byLevel.entries()).map(([name, qty]) => {
+                          const lv = levels.find((l: any) => l.name === name);
+                          return (
+                            <div key={name} className="flex items-center justify-between text-xs">
+                              <span className="flex items-center gap-1.5">
+                                {lv && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: lv.color }} />}
+                                {name}
+                              </span>
+                              <span className="font-semibold text-foreground">{qty}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {/* By Status */}
+                    <div>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Por Status</span>
+                      <div className="mt-1 space-y-1">
+                        {Array.from(byStatus.entries()).map(([status, qty]) => (
+                          <div key={status} className="flex items-center justify-between text-xs">
+                            <span className="flex items-center gap-1.5">
+                              <div className={`h-2 w-2 rounded-full ${status === 'active' ? 'bg-green-500' : 'bg-red-400'}`} />
+                              {status === 'active' ? 'Ativo' : 'Inativo'}
+                            </span>
+                            <span className="font-semibold text-foreground">{qty}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Defaults */}
                 <div className="grid grid-cols-2 gap-2 mb-3">
@@ -286,7 +409,6 @@ const ProfileTypesTab = () => {
             <DialogTitle>{editingId ? 'Editar Tipo de Cadastro' : 'Novo Tipo de Cadastro'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Basic info */}
             <div className="grid grid-cols-4 gap-3">
               <div>
                 <Label>Ícone</Label>
@@ -390,14 +512,14 @@ const ProfileTypesTab = () => {
 
             {/* Capabilities */}
             <div className="border-t border-border pt-4">
-              <h3 className="text-sm font-bold text-foreground mb-3">Permissões / Recursos</h3>
+              <h3 className="text-sm font-bold text-foreground mb-3">Permissões / Capacidades</h3>
               <div className="space-y-1.5 mb-3">
-                {form.capabilities.map((cap, idx) => (
-                  <div key={idx} className="flex items-center gap-2 rounded-lg border border-border px-3 py-1.5">
-                    <Switch checked={cap.enabled} onCheckedChange={() => toggleCap(idx)} />
+                {form.capabilities.map((cap, i) => (
+                  <div key={i} className="flex items-center gap-2 bg-muted/30 rounded px-2 py-1">
+                    <Switch checked={cap.enabled} onCheckedChange={() => toggleCap(i)} />
                     <span className={`text-sm flex-1 ${cap.enabled ? 'text-foreground' : 'text-muted-foreground line-through'}`}>{cap.label}</span>
-                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => removeCap(idx)}>
-                      <Trash2 className="h-3 w-3 text-destructive" />
+                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive" onClick={() => removeCap(i)}>
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 ))}
@@ -406,13 +528,11 @@ const ProfileTypesTab = () => {
                 <Input
                   value={newCap}
                   onChange={e => setNewCap(e.target.value)}
-                  placeholder="Nova permissão (ex: Publicar vagas)"
-                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCapability())}
+                  placeholder="Nova capacidade..."
                   className="flex-1"
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCapability())}
                 />
-                <Button size="sm" variant="outline" onClick={addCapability} disabled={!newCap.trim()}>
-                  <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
-                </Button>
+                <Button size="sm" variant="outline" onClick={addCapability}><Plus className="h-3.5 w-3.5" /></Button>
               </div>
             </div>
           </div>
@@ -420,8 +540,7 @@ const ProfileTypesTab = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDialog(false)}>Cancelar</Button>
             <Button onClick={handleSave} disabled={saving}>
-              <Save className="h-4 w-4 mr-1" />
-              {saving ? 'Salvando...' : editingId ? 'Salvar' : 'Criar'}
+              <Save className="h-4 w-4 mr-1" /> {saving ? 'Salvando...' : editingId ? 'Salvar' : 'Criar'}
             </Button>
           </DialogFooter>
         </DialogContent>

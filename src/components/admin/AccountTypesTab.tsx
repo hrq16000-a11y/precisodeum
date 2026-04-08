@@ -42,20 +42,31 @@ const AccountTypesTab = () => {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [typeCounts, setTypeCounts] = useState<Record<string, number>>({});
+  const [typeByProfile, setTypeByProfile] = useState<Record<string, Record<string, number>>>({});
+  const [profileTypeSettings, setProfileTypeSettings] = useState<any[]>([]);
 
   const fetchData = async () => {
-    const [{ data: typesData }, { data: profiles }, { data: resources }] = await Promise.all([
+    const [{ data: typesData }, { data: profiles }, { data: resources }, { data: pts }] = await Promise.all([
       supabase.from('account_types').select('*').order('display_order'),
-      supabase.from('profiles').select('account_type_id'),
+      supabase.from('profiles').select('account_type_id, profile_type'),
       supabase.from('plan_resources').select('name').eq('active', true).order('display_order'),
+      supabase.from('profile_type_settings' as any).select('profile_key, label, color, default_account_type_id').order('display_order'),
     ]);
     setTypes(typesData || []);
     setResourceOptions((resources || []).map((r: any) => r.name));
+    setProfileTypeSettings((pts as any[]) || []);
+
     const counts: Record<string, number> = {};
+    const byProfile: Record<string, Record<string, number>> = {};
     (profiles || []).forEach((p: any) => {
-      if (p.account_type_id) counts[p.account_type_id] = (counts[p.account_type_id] || 0) + 1;
+      if (p.account_type_id) {
+        counts[p.account_type_id] = (counts[p.account_type_id] || 0) + 1;
+        if (!byProfile[p.account_type_id]) byProfile[p.account_type_id] = {};
+        byProfile[p.account_type_id][p.profile_type] = (byProfile[p.account_type_id][p.profile_type] || 0) + 1;
+      }
     });
     setTypeCounts(counts);
+    setTypeByProfile(byProfile);
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -74,17 +85,21 @@ const AccountTypesTab = () => {
     if (editingId) {
       const { error } = await supabase.from('account_types').update(payload).eq('id', editingId);
       if (error) toast.error('Erro: ' + error.message);
-      else { await logAuditAction({ action: 'update', resource_type: 'account_type', resource_id: editingId, details: payload }); toast.success('Tipo de conta atualizado!'); }
+      else { await logAuditAction({ action: 'update', resource_type: 'account_type', resource_id: editingId, details: payload }); toast.success('Plano atualizado!'); }
     } else {
       const { error } = await supabase.from('account_types').insert(payload);
       if (error) toast.error('Erro: ' + error.message);
-      else { await logAuditAction({ action: 'create', resource_type: 'account_type', details: payload }); toast.success('Tipo de conta criado!'); }
+      else { await logAuditAction({ action: 'create', resource_type: 'account_type', details: payload }); toast.success('Plano criado!'); }
     }
     setSaving(false); setShowDialog(false); fetchData();
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Deseja excluir este tipo de conta?')) return;
+    if (typeCounts[id] > 0) {
+      toast.error(`Este plano possui ${typeCounts[id]} usuário(s) vinculado(s). Remova os vínculos antes de excluir.`);
+      return;
+    }
+    if (!confirm('Deseja excluir este plano?')) return;
     const { error } = await supabase.from('account_types').delete().eq('id', id);
     if (error) toast.error('Erro: ' + error.message);
     else { await logAuditAction({ action: 'delete', resource_type: 'account_type', resource_id: id }); toast.success('Excluído!'); fetchData(); }
@@ -92,16 +107,29 @@ const AccountTypesTab = () => {
 
   const toggleResource = (r: string) => setForm(f => ({ ...f, resources: f.resources.includes(r) ? f.resources.filter(x => x !== r) : [...f.resources, r] }));
 
+  const getProfileLabel = (key: string) => {
+    const pt = profileTypeSettings.find((p: any) => p.profile_key === key);
+    return pt?.label || key;
+  };
+
+  const getProfileColor = (key: string) => {
+    const pt = profileTypeSettings.find((p: any) => p.profile_key === key);
+    return pt?.color || '#6b7280';
+  };
+
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-muted-foreground">{types.length} tipo(s) de conta cadastrado(s)</p>
-        <Button onClick={openCreate} size="sm"><Plus className="h-4 w-4 mr-1" /> Novo Tipo</Button>
+        <p className="text-sm text-muted-foreground">{types.length} plano(s) cadastrado(s)</p>
+        <Button onClick={openCreate} size="sm"><Plus className="h-4 w-4 mr-1" /> Novo Plano</Button>
       </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {types.map(t => {
           const resources = Array.isArray(t.resources) ? t.resources : [];
+          const profileBreakdown = typeByProfile[t.id] || {};
+          const defaultFor = profileTypeSettings.filter((pt: any) => pt.default_account_type_id === t.id);
+
           return (
             <Card key={t.id} className="relative overflow-hidden">
               <div className="h-1.5" style={{ backgroundColor: t.color }} />
@@ -123,11 +151,41 @@ const AccountTypesTab = () => {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{t.description || '—'}</p>
+
                 <div className="mt-3 flex items-center gap-4 text-sm">
                   <span className="flex items-center gap-1 text-muted-foreground"><Users className="h-3.5 w-3.5" /> Até {t.max_users}</span>
                   <span className="font-semibold text-foreground">R$ {Number(t.price).toFixed(2)}/mês</span>
-                  <span className="text-xs text-muted-foreground">({typeCounts[t.id] || 0} em uso)</span>
                 </div>
+
+                {/* Users by profile type */}
+                <div className="mt-3 border-t border-border pt-2">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
+                    {typeCounts[t.id] || 0} usuário(s) vinculado(s)
+                  </span>
+                  {Object.keys(profileBreakdown).length > 0 && (
+                    <div className="mt-1 space-y-0.5">
+                      {Object.entries(profileBreakdown).map(([profileType, qty]) => (
+                        <div key={profileType} className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1.5">
+                            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: getProfileColor(profileType) }} />
+                            {getProfileLabel(profileType)}
+                          </span>
+                          <span className="font-semibold text-foreground">{qty}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {defaultFor.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {defaultFor.map((pt: any) => (
+                        <Badge key={pt.profile_key} variant="outline" className="text-[9px]" style={{ borderColor: pt.color, color: pt.color }}>
+                          Padrão: {pt.label}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="mt-3 flex flex-wrap gap-1">
                   {resources.slice(0, 4).map((r: string) => (
                     <Badge key={r} variant="outline" className="text-[10px]" style={{ borderColor: t.color, color: t.color }}>{r}</Badge>
@@ -143,7 +201,7 @@ const AccountTypesTab = () => {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Editar Tipo de Conta' : 'Novo Tipo de Conta'}</DialogTitle>
+            <DialogTitle>{editingId ? 'Editar Plano' : 'Novo Plano'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div><Label>Nome *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ex: Enterprise" /></div>
