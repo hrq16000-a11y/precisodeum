@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Crown, Star, MapPin, MessageCircle } from 'lucide-react';
+import { ArrowRight, Crown, Star, MapPin, MessageCircle, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import type { DbProvider } from '@/hooks/useProviders';
 import { whatsappLink } from '@/lib/whatsapp';
-import FadeInSection from '@/components/FadeInSection';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import AdNativeCard from '@/components/ads/AdNativeCard';
@@ -16,10 +16,19 @@ interface Props {
   isLoading: boolean;
 }
 
-const AD_INTERVAL = 4; // Insert a native ad every N cards
+const AD_INTERVAL = 4;
+
+const container = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+};
+
+const cardVariant = {
+  hidden: { opacity: 0, y: 28, scale: 0.96 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as const } },
+};
 
 const FeaturedProviders = ({ providers, isLoading }: Props) => {
-  // Build items list interleaving native ads
   const items: ({ type: 'provider'; data: DbProvider; index: number } | { type: 'ad'; adIndex: number })[] = [];
   let adCounter = 0;
   providers.forEach((p, i) => {
@@ -30,61 +39,81 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
   });
 
   return (
-    <section className="bg-muted/50 py-12">
-      <div className="container">
-        <FadeInSection className="mb-8 flex items-end justify-between">
+    <section className="relative py-14 overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-muted/50 via-background to-muted/50" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+      
+      <div className="container relative">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-8 flex flex-col items-center text-center md:flex-row md:items-end md:justify-between md:text-left"
+        >
           <div>
-            <span className="inline-block rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent mb-2">
-              ⭐ Destaque
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent mb-3">
+              <Sparkles className="h-3 w-3" /> Destaque
             </span>
             <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
               Profissionais em Destaque
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">Os mais bem avaliados da plataforma</p>
           </div>
-          <Button variant="ghost" size="sm" className="hidden text-primary md:flex" asChild>
+          <Button variant="ghost" size="sm" className="hidden text-accent md:flex mt-4 md:mt-0" asChild>
             <Link to="/buscar">Ver todos <ArrowRight className="h-4 w-4" /></Link>
           </Button>
-        </FadeInSection>
+        </motion.div>
 
         {isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-64 rounded-xl" />
+              <Skeleton key={i} className="h-72 rounded-2xl" />
             ))}
           </div>
         ) : providers.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground">Nenhum profissional em destaque ainda.</p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <motion.div
+            variants={container}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {items.map((item, idx) => {
               if (item.type === 'ad') {
                 return (
-                  <FadeInSection key={`ad-${item.adIndex}`} delay={idx * 0.05}>
+                  <motion.div key={`ad-${item.adIndex}`} variants={cardVariant}>
                     <AdNativeCard sponsorIndex={item.adIndex} className="h-full" />
-                  </FadeInSection>
+                  </motion.div>
                 );
               }
               return (
-                <FadeInSection key={item.data.id} delay={idx * 0.05}>
+                <motion.div key={item.data.id} variants={cardVariant}>
                   <ProviderCardFeatured provider={item.data} />
-                </FadeInSection>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
 
-        <FadeInSection delay={0.3} className="mt-6 text-center md:hidden">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 }}
+          className="mt-8 text-center md:hidden"
+        >
           <Button variant="outline" className="rounded-full" asChild>
             <Link to="/buscar">Ver todos os profissionais</Link>
           </Button>
-        </FadeInSection>
+        </motion.div>
       </div>
     </section>
   );
 };
 
-/** Inline featured card with tracking */
 function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
   const impressionRef = useCardImpression(p.id, p.slug, 'featured');
   const displayName = p.name || p.businessName || p.category || 'Profissional';
@@ -93,31 +122,41 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
   const reviewCount = p.reviewCount ?? 0;
 
   return (
-    <div
+    <motion.div
       ref={impressionRef}
-      className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 h-full"
+      whileHover={{ y: -6 }}
+      transition={{ duration: 0.25 }}
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow duration-300 hover:shadow-xl h-full"
     >
-      <div className="h-1 bg-gradient-to-r from-accent via-secondary to-accent" />
+      {/* Premium accent bar */}
+      <div className="h-1 bg-gradient-to-r from-accent via-amber-400 to-accent" />
+      
       <div className="flex flex-1 flex-col p-5">
         <div className="flex gap-4">
-          <Avatar className="h-14 w-14 shrink-0 ring-2 ring-accent/20">
-            <AvatarImage src={displayPhoto || undefined} alt={displayName} />
-            <AvatarFallback className="bg-primary/10 text-2xl">
-              {p.categoryIcon || '🔧'}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar className="h-16 w-16 shrink-0 ring-2 ring-accent/20 transition-transform duration-300 group-hover:scale-105">
+              <AvatarImage src={displayPhoto || undefined} alt={displayName} />
+              <AvatarFallback className="bg-accent/10 text-2xl">
+                {p.categoryIcon || '🔧'}
+              </AvatarFallback>
+            </Avatar>
+            <motion.div
+              animate={{ rotate: [0, 15, -15, 0] }}
+              transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
+              className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md"
+            >
+              <Crown className="h-3 w-3" />
+            </motion.div>
+          </div>
           <div className="min-w-0 flex-1">
             <Link
               to={`/profissional/${p.slug}`}
               className="block"
               onClick={() => trackProfileClick(p.id, p.slug, 'featured')}
             >
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-primary transition-colors">
-                  {displayName}
-                </h3>
-                <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent animate-pulse" aria-label="Destaque" />
-              </div>
+              <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
+                {displayName}
+              </h3>
             </Link>
             {p.category && (
               <p className="mt-0.5 text-sm font-medium text-accent">{p.category}</p>
@@ -131,34 +170,34 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
           </div>
         </div>
 
-        {(rating > 0 || reviewCount > 0) ? (
+        {(rating > 0 || reviewCount > 0) && (
           <div className="mt-3 flex items-center gap-2">
             <div className="flex items-center gap-0.5">
               {[1, 2, 3, 4, 5].map(star => (
                 <Star
                   key={star}
-                  className={`h-3.5 w-3.5 ${star <= Math.round(rating) ? 'fill-accent text-accent' : 'text-muted-foreground/30'}`}
+                  className={`h-3.5 w-3.5 ${star <= Math.round(rating) ? 'fill-accent text-accent' : 'text-muted-foreground/20'}`}
                 />
               ))}
             </div>
-            <span className="text-xs font-semibold text-foreground">{rating > 0 ? rating.toFixed(1) : '—'}</span>
+            <span className="text-xs font-bold text-foreground">{rating > 0 ? rating.toFixed(1) : '—'}</span>
             {reviewCount > 0 && (
-              <span className="text-[11px] text-muted-foreground">({reviewCount} {reviewCount === 1 ? 'avaliação' : 'avaliações'})</span>
+              <span className="text-[11px] text-muted-foreground">({reviewCount})</span>
             )}
           </div>
-        ) : null}
+        )}
 
-        {p.yearsExperience > 0 ? (
+        {p.yearsExperience > 0 && (
           <Badge variant="secondary" className="mt-2 w-fit text-[10px]">
             {p.yearsExperience}+ anos de experiência
           </Badge>
-        ) : null}
+        )}
 
         <div className="flex-1" />
 
         <div className="mt-4 flex gap-2">
           {p.whatsapp && (
-            <Button variant="accent" size="sm" className="flex-1" asChild>
+            <Button variant="accent" size="sm" className="flex-1 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" asChild>
               <a
                 href={whatsappLink(p.whatsapp, `Olá! Vi seu perfil "${displayName}" no Preciso de um e gostaria de mais informações.`)}
                 target="_blank"
@@ -169,7 +208,7 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
               </a>
             </Button>
           )}
-          <Button variant="outline" size="sm" className={p.whatsapp ? '' : 'flex-1'} asChild>
+          <Button variant="outline" size="sm" className={`transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] ${p.whatsapp ? '' : 'flex-1'}`} asChild>
             <Link
               to={`/profissional/${p.slug}`}
               onClick={() => trackProfileClick(p.id, p.slug, 'featured')}
@@ -179,7 +218,7 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
