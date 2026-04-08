@@ -1,77 +1,57 @@
 
 
-# Evolucao de Aperfeicoamentos — Plataforma Completa
+# Correção de Perfis e Atribuição Automática de Nível/Tipo de Conta
 
-## Resumo
+## Contexto
 
-Melhorias visuais, interativas e de UX em 4 frentes: Home, Admin, Dashboard do Prestador e Paginas de Listagem. Foco em polish premium, micro-interacoes e consistencia visual.
+- 3 perfis sem `level_id` nem `account_type_id`
+- O trigger `handle_new_user()` atual não atribui `level_id` nem `account_type_id`
+- IDs necessários:
+  - `level_id` "Usuário" = `716c417b-fdc8-4121-879b-abcd8f0a216f`
+  - `account_type_id` "Trial" = `50a97ea2-c43e-472f-b6f2-4dd180379cad`
 
----
+## Plano
 
-## 1. Home — Secoes com Visual Premium
+### 1. Corrigir os 3 perfis existentes (via insert tool — UPDATE)
 
-**PopularServices**: Adicionar `motion` com stagger nos cards, efeito de gradient-sweep no hover, e badge animado "Mais procurado" no primeiro item.
+Atualizar os 3 perfis que estão com `level_id` e `account_type_id` nulos:
+- `eb5e6b5a-4bd5-4f4f-9673-0e3a41d318ab` (Leonardo)
+- `5e388e94-4ead-4af4-abef-edc1c3062458` (Neto)
+- `137a3865-f488-4c84-b660-bdb3d652487e` (Glenio)
 
-**TestimonialsSection**: Implementar auto-play com swipe (timer de 5s), transicao com `AnimatePresence` entre paginas, e avatar com gradiente dinamico baseado no rating.
+Setar `level_id = '716c417b-...'` e `account_type_id = '50a97ea2-...'` para todos.
 
-**HowItWorksSection**: Adicionar animacao de conexao sequencial (linha que "desenha" progressivamente entre os passos usando motion path), e efeito de pulse no step ativo.
+### 2. Atualizar o trigger `handle_new_user()` (via migração)
 
-**FaqSection**: Melhorar a transicao do accordion com spring animation em vez de max-height CSS, e adicionar icone de categoria nas perguntas quando disponivel.
+Modificar a função para incluir `level_id` e `account_type_id` no INSERT do perfil:
 
-**Footer**: Redesenhar com grid mais limpo, adicionar efeito de hover nos links do ecossistema (underline animado), badge "Novo" nos links recentes, e animacao de entrada suave ao entrar no viewport.
+```sql
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, email, avatar_url, level_id, account_type_id)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data ->> 'full_name', ''),
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', ''),
+    '716c417b-fdc8-4121-879b-abcd8f0a216f',
+    '50a97ea2-c43e-472f-b6f2-4dd180379cad'
+  );
+  RETURN NEW;
+END;
+$$;
+```
 
----
+Isso garante que todo novo cadastro receba automaticamente nível "Usuário" e tipo de conta "Trial".
 
-## 2. Dashboard do Prestador — Metricas e Engajamento
+### Resultado
 
-**Stat Cards 3D**: Aprimorar os cards com efeito de reflexo (shine sweep) mais pronunciado e tooltip com tendencia (ex: "+12% esta semana").
-
-**Quick Actions Bar**: Criar uma barra de acoes rapidas no topo do dashboard com botoes: "Criar Servico", "Ver Minha Pagina", "Responder Leads" — com contadores em tempo real.
-
-**Welcome Banner Inteligente**: Mostrar mensagem contextual baseada na hora do dia e status do perfil (ex: "Boa noite! Voce tem 3 leads pendentes").
-
-**Sidebar Enhancement**: Adicionar contador de notificacoes nao lidas no item "Notificacoes" e badge de leads pendentes no item "Leads".
-
----
-
-## 3. Painel Admin — UX e Navegabilidade
-
-**Sidebar Search**: Adicionar campo de busca rapida no topo da sidebar admin para filtrar itens do menu instantaneamente.
-
-**Breadcrumb Automatico**: Adicionar breadcrumb no topo do conteudo principal baseado na rota atual e nos grupos do menu.
-
-**Quick Stats no Header**: Mostrar mini-badges com contadores (total usuarios, prestadores pendentes, leads hoje) no header mobile do admin.
-
----
-
-## 4. Paginas de Listagem — Cards e Filtros
-
-**CategoriesListPage**: Adicionar animacoes de entrada staggered com `motion`, badge com contagem de prestadores, e hover com preview de subcategorias.
-
-**ServicesPage**: Implementar grid animado com `layout` transitions ao filtrar, empty state mais visual com ilustracao, e skeleton com shimmer effect.
-
-**MobileBottomNav**: Adicionar indicador ativo animado (dot ou pill que se move entre os itens com `layoutId`), e haptic-like scale feedback no toque.
-
----
-
-## Detalhes Tecnicos
-
-- Todas as animacoes usam `framer-motion` (ja instalado)
-- Componentes existentes como `FadeInSection`, `GlassCard`, `AnimatedCounter` serao reutilizados
-- Nenhuma nova dependencia necessaria
-- Nenhuma alteracao de banco de dados
-- Nenhuma alteracao de rotas
-
-### Arquivos a modificar:
-- `src/components/home/PopularServices.tsx`
-- `src/components/home/TestimonialsSection.tsx`
-- `src/components/home/HowItWorksSection.tsx`
-- `src/components/home/FaqSection.tsx`
-- `src/components/Footer.tsx`
-- `src/pages/DashboardPage.tsx`
-- `src/components/DashboardLayout.tsx`
-- `src/components/AdminLayout.tsx`
-- `src/pages/CategoriesListPage.tsx`
-- `src/pages/ServicesPage.tsx`
-- `src/components/MobileBottomNav.tsx`
+- Os 3 perfis órfãos ficam corrigidos imediatamente
+- Todo futuro cadastro (email ou OAuth) já nasce com nível e plano atribuídos
+- Nenhuma alteração de código frontend necessária
 
