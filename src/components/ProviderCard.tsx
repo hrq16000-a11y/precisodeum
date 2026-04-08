@@ -93,9 +93,9 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                   <BadgeCheck className="h-3 w-3" /> Perfil Completo
                 </span>
               )}
-              {provider.responseTime && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
-                  <Clock className="h-3 w-3" /> {provider.responseTime}
+              {(provider as any).response_time && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
+                  <Clock className="h-3 w-3" /> {(provider as any).response_time}
                 </span>
               )}
               {isFallback && (
