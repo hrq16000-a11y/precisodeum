@@ -532,9 +532,14 @@ const AdminSponsorCrmPage = () => {
                       <p className="text-xs text-muted-foreground mt-0.5">{c.contact_name || '—'} • {c.company_name || '—'}</p>
                       <p className="text-xs text-muted-foreground">{c.email || '—'} • {c.phone || '—'}</p>
                     </div>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => unlinkMutation.mutate(c.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setPermContact(c); setPermDialog(true); }}>
+                        <Settings2 className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => unlinkMutation.mutate(c.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
