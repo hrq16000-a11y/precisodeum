@@ -974,6 +974,11 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               )}
             </TabsContent>
 
+            {/* ====== PERMISSIONS TAB ====== */}
+            <TabsContent value="perms" className="space-y-4 mt-0">
+              <UserPermissionsPanel user={user} onRefresh={onRefresh} />
+            </TabsContent>
+
             {/* ====== AUDIT TAB ====== */}
             <TabsContent value="audit" className="space-y-2 mt-0">
               {auditLogs.length === 0 ? (
