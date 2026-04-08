@@ -81,7 +81,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const { isAdmin } = useAdmin();
   const { hasPermission } = usePermissions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
+  const [sidebarSearch, setSidebarSearch] = useState('');
   const filteredGroups = menuGroups.map(group => ({
     ...group,
     items: group.items.filter(item => {
