@@ -3,6 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
+export type SponsorPermissionKey = 'banners' | 'campanhas' | 'metricas' | 'contratos' | 'notificacoes' | 'dados';
+
+export interface SponsorPermissions {
+  banners: boolean;
+  campanhas: boolean;
+  metricas: boolean;
+  contratos: boolean;
+  notificacoes: boolean;
+  dados: boolean;
+}
+
+const ALL_PERMISSIONS: SponsorPermissions = {
+  banners: true,
+  campanhas: true,
+  metricas: true,
+  contratos: true,
+  notificacoes: true,
+  dados: true,
+};
+
 interface SponsorContact {
   id: string;
   user_id: string;
@@ -12,6 +32,7 @@ interface SponsorContact {
   email: string | null;
   phone: string | null;
   role: string;
+  permissions: SponsorPermissions;
 }
 
 interface SponsorData {
