@@ -51,7 +51,7 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
           <Badge variant="secondary" className="ml-auto text-[10px]">CRM</Badge>
         </div>
         <nav className="mt-2 space-y-0.5 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 56px - 80px)' }}>
-          {sponsorMenu.map((item) => {
+          {visibleMenu.map((item) => {
             const active = location.pathname === item.path;
             return (
               <Link
