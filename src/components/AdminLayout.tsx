@@ -135,7 +135,20 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           </motion.div>
           <span className="font-display text-sm font-bold text-sidebar-foreground">Admin Panel</span>
         </div>
-        <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-4 px-3 pb-4">
+        {/* Sidebar Search */}
+        <div className="px-3 pt-2 pb-1">
+          <div className="relative">
+            <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/40" />
+            <input
+              type="text"
+              placeholder="Buscar menu..."
+              value={sidebarSearch}
+              onChange={(e) => setSidebarSearch(e.target.value)}
+              className="w-full rounded-lg border border-sidebar-border bg-sidebar-accent/30 pl-8 pr-3 py-1.5 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/50"
+            />
+          </div>
+        </div>
+        <nav className="flex-1 overflow-y-auto overscroll-contain mt-1 space-y-4 px-3 pb-4">
           {filteredGroups.map((group, gi) => (
             <div key={group.label}>
               <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{group.label}</p>
