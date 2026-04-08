@@ -156,7 +156,7 @@ const ServicesPage = () => {
               </motion.div>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <motion.div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" layout>
               {filtered.map((s, i) => (
                 <FadeInSection key={s.id} delay={i * 0.03}>
                   <Link to={`/servico/${s.slug}`} className="group block">
