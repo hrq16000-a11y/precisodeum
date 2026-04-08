@@ -210,8 +210,9 @@ const ServicesPage = () => {
                       </div>
                     </div>
                   </Link>
-                </FadeInSection>
+                </motion.div>
               ))}
+              </AnimatePresence>
             </motion.div>
           )}
 
