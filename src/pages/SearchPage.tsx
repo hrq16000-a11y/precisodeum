@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
