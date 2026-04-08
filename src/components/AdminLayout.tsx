@@ -82,15 +82,20 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const { hasPermission } = usePermissions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState('');
-  const filteredGroups = menuGroups.map(group => ({
-    ...group,
-    items: group.items.filter(item => {
-      if (isAdmin) return true;
-      const requiredPerm = ADMIN_ROUTE_PERMISSIONS[item.path];
-      if (!requiredPerm) return true;
-      return hasPermission(requiredPerm);
-    }),
-  })).filter(group => group.items.length > 0);
+  const filteredGroups = useMemo(() => {
+    const q = sidebarSearch.trim().toLowerCase();
+    return menuGroups.map(group => ({
+      ...group,
+      items: group.items.filter(item => {
+        if (!isAdmin) {
+          const requiredPerm = ADMIN_ROUTE_PERMISSIONS[item.path];
+          if (requiredPerm && !hasPermission(requiredPerm)) return false;
+        }
+        if (q && !item.label.toLowerCase().includes(q)) return false;
+        return true;
+      }),
+    })).filter(group => group.items.length > 0);
+  }, [isAdmin, hasPermission, sidebarSearch]);
 
   const handleSignOut = async () => {
     await signOut();
