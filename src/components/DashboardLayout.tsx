@@ -24,6 +24,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
+  const { hasProfilePermission } = usePermissions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -68,15 +69,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isRH = profileType === 'rh';
 
   const menuItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: true, badge: 0 },
-    { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil', show: true, badge: 0 },
-    { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos', show: !isClient && !isRH, badge: 0 },
-    { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina', show: !isClient && !isRH, badge: 0 },
-    { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas', show: !isClient, badge: 0 },
-    { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade', show: true, badge: 0 },
-    { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes', show: true, badge: unreadCount },
-    { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads', show: !isClient && !isRH, badge: pendingLeads },
-    { label: 'Plano', icon: CreditCard, path: '/dashboard/plano', show: !isClient && !isRH, badge: 0 },
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: hasProfilePermission('dashboard'), badge: 0 },
+    { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil', show: hasProfilePermission('profile'), badge: 0 },
+    { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos', show: !isClient && !isRH && hasProfilePermission('services'), badge: 0 },
+    { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina', show: !isClient && !isRH && hasProfilePermission('my_page'), badge: 0 },
+    { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas', show: !isClient && hasProfilePermission('jobs'), badge: 0 },
+    { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade', show: hasProfilePermission('community'), badge: 0 },
+    { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes', show: hasProfilePermission('notifications'), badge: unreadCount },
+    { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads', show: !isClient && !isRH && hasProfilePermission('leads'), badge: pendingLeads },
+    { label: 'Plano', icon: CreditCard, path: '/dashboard/plano', show: !isClient && !isRH && hasProfilePermission('plan'), badge: 0 },
   ].filter(item => item.show);
 
   return (
