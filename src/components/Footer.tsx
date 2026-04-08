@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MessageCircle, Users } from 'lucide-react';
 import { useMemo, lazy, Suspense } from 'react';
+import { motion } from 'framer-motion';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { useMenuItems } from '@/hooks/useMenuItems';
 
@@ -14,7 +15,7 @@ const ecosystemLinks = [
   { name: 'Preciso de um Técnico', url: 'https://www.precisodeumtecnico.com' },
   { name: 'Encontre um Profissional', url: 'https://www.encontreumprofissional.com.br' },
   { name: 'Preciso de um Profissional', url: 'https://www.precisodeumprofissional.com.br' },
-  { name: 'TamoNaWeb', url: 'https://www.TamoNaWeb.com.br' },
+  { name: 'TamoNaWeb', url: 'https://www.TamoNaWeb.com.br', isNew: true },
 ];
 
 const footerTaglines = [
@@ -33,6 +34,16 @@ const footerTaglines = [
   { headline: 'Os melhores profissionais estão aqui.', sub: 'Encontre e fale direto com quem resolve.' },
   { headline: 'Os melhores profissionais estão aqui.', sub: 'Simples, rápido e direto ao profissional.' },
 ];
+
+const containerVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
 
 const Footer = () => {
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
@@ -56,10 +67,16 @@ const Footer = () => {
 
   return (
     <footer className="border-t border-border bg-primary text-primary-foreground">
-      <div className="container py-12">
+      <motion.div
+        className="container py-12"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: '-60px' }}
+      >
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
-          <div className="sm:col-span-2 lg:col-span-1">
+          <motion.div variants={itemVariants} className="sm:col-span-2 lg:col-span-1">
             <Link to="/">
               <img src={logoVertical} alt="Preciso de um" className="mb-4 h-12 w-auto max-w-[220px] object-contain" width="133" height="48" />
             </Link>
@@ -67,21 +84,21 @@ const Footer = () => {
             <p className="text-sm leading-relaxed text-primary-foreground/70">
               {tagline.sub}
             </p>
-          </div>
+          </motion.div>
 
           {/* Dynamic Footer Nav */}
-          <div>
+          <motion.div variants={itemVariants}>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Profissionais</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
               {footerNavLinks.map((item: any) => (
                 <li key={item.id || item.url}>
                   {item.open_in_new_tab || item.url?.startsWith('http') ? (
-                    <a href={item.url} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary-foreground">
+                    <a href={item.url} target="_blank" rel="noopener noreferrer" className="story-link transition-colors hover:text-primary-foreground">
                       {item.icon && <span className="mr-1">{item.icon}</span>}
                       {item.label}
                     </a>
                   ) : (
-                    <Link to={item.url} className="transition-colors hover:text-primary-foreground">
+                    <Link to={item.url} className="story-link transition-colors hover:text-primary-foreground">
                       {item.icon && <span className="mr-1">{item.icon}</span>}
                       {item.label}
                     </Link>
@@ -89,24 +106,27 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
 
           {/* Ecossistema */}
-          <div>
+          <motion.div variants={itemVariants}>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Ecossistema</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
               {ecosystemLinks.map((link) => (
                 <li key={link.url}>
-                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary-foreground">
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="story-link inline-flex items-center gap-1.5 transition-colors hover:text-primary-foreground">
                     {link.name}
+                    {(link as any).isNew && (
+                      <span className="rounded-full bg-accent/20 px-1.5 py-0.5 text-[8px] font-bold uppercase text-accent">Novo</span>
+                    )}
                   </a>
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
 
           {/* Suporte */}
-          <div>
+          <motion.div variants={itemVariants}>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Suporte</h4>
             <ul className="space-y-3 text-sm text-primary-foreground/70">
               <li>
@@ -134,7 +154,7 @@ const Footer = () => {
                 </li>
               )}
             </ul>
-          </div>
+          </motion.div>
         </div>
 
         <PwaFooterInstall />
@@ -155,11 +175,10 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Global footer ad slot */}
         <Suspense fallback={null}>
           <AdSlot slotSlug="global-footer" layout="inline" className="mt-6 border-t border-primary-foreground/10 pt-6" />
         </Suspense>
-      </div>
+      </motion.div>
     </footer>
   );
 };

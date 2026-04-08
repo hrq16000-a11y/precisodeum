@@ -1,14 +1,13 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Search, LayoutGrid, User, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 
 const MobileBottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
 
-  // Don't show on admin, login, signup, or dashboard (has its own nav)
   const hiddenPaths = ['/admin', '/login', '/cadastro', '/reset-password', '/dashboard', '/sponsor-panel'];
   const shouldHide = hiddenPaths.some(p => location.pathname.startsWith(p));
   if (shouldHide) return null;
@@ -27,7 +26,6 @@ const MobileBottomNav = () => {
 
   return (
     <>
-      {/* Spacer */}
       <div className="h-14 md:hidden" />
 
       <nav
@@ -41,32 +39,41 @@ const MobileBottomNav = () => {
 
             if (item.isWhatsApp) {
               return (
-                <button
+                <motion.button
                   key={i}
                   onClick={item.action}
                   className="flex flex-col items-center justify-center px-2 py-0.5"
                   style={{ color: '#25D366' }}
+                  whileTap={{ scale: 0.85 }}
                 >
                   <Icon className="h-[17px] w-[17px]" />
                   <span className="mt-0.5 text-[9px] font-medium">WhatsApp</span>
-                </button>
+                </motion.button>
               );
             }
 
             return (
-              <button
+              <motion.button
                 key={i}
                 onClick={() => {
                   if (item.action) { item.action(); }
                   else if (item.path) { navigate(item.path); }
                 }}
-                className={`relative flex flex-col items-center justify-center px-2 py-0.5 transition-colors ${
-                  isActive ? 'text-accent' : 'text-muted-foreground'
-                }`}
+                className="relative flex flex-col items-center justify-center px-2 py-0.5 transition-colors text-muted-foreground"
+                whileTap={{ scale: 0.85 }}
               >
-                <Icon className="h-[17px] w-[17px]" />
-                <span className="mt-0.5 text-[9px] font-medium">{item.label}</span>
-              </button>
+                {isActive && (
+                  <motion.div
+                    layoutId="mobile-nav-indicator"
+                    className="absolute -top-1 h-0.5 w-6 rounded-full bg-accent"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <Icon className={`h-[17px] w-[17px] transition-colors ${isActive ? 'text-accent' : ''}`} />
+                <span className={`mt-0.5 text-[9px] font-medium transition-colors ${isActive ? 'text-accent' : ''}`}>
+                  {item.label}
+                </span>
+              </motion.button>
             );
           })}
         </div>
