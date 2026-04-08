@@ -70,7 +70,7 @@ const ProfileTypesTab = () => {
       supabase.from('user_levels').select('id, name, color, priority').order('priority', { ascending: false }),
       supabase.from('account_types').select('id, name, color, price').order('display_order'),
     ]);
-    setProfileTypes((pts as ProfileType[]) || []);
+    setProfileTypes((pts as unknown as ProfileType[]) || []);
     setTierRules(tiers || []);
     setLevels(lvls || []);
     setAccountTypes(ats || []);
