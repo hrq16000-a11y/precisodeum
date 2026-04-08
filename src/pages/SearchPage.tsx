@@ -178,7 +178,7 @@ const SearchPage = () => {
               <Badge
                 key={chip.value}
                 variant={selectedCategory === chip.value ? 'default' : 'outline'}
-                className="cursor-pointer text-xs"
+                className="cursor-pointer text-xs transition-all hover:scale-105"
                 onClick={() => { setSelectedCategory(selectedCategory === chip.value ? '' : chip.value); setPage(1); }}
               >
                 {chip.label}
@@ -186,7 +186,10 @@ const SearchPage = () => {
             ))}
           </div>
         )}
+        </div>
+      </section>
 
+      <div className="container py-6">
         <div className="flex flex-col gap-6 lg:flex-row">
           {/* Filters sidebar */}
           <aside className="w-full shrink-0 lg:w-64">
