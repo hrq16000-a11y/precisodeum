@@ -263,10 +263,20 @@ const AdminAdSlotsPage = () => {
   const activeSlots = slots.filter((s: any) => s.active).length;
   const activeAssignments = assignments.filter((a: any) => a.active).length;
 
-  // Drag-and-drop state
+  // Drag-and-drop state for visual map
   const dragItem = useRef<{ id: string; pageType: string } | null>(null);
   const dragOverItem = useRef<{ id: string; pageType: string } | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  // Drag-and-drop state for slots list tab
+  const dragSlotItem = useRef<string | null>(null);
+  const dragSlotOverItem = useRef<string | null>(null);
+  const [dragSlotOverId, setDragSlotOverId] = useState<string | null>(null);
+
+  // Drag-and-drop state for assignments within a slot
+  const dragAssignItem = useRef<{ id: string; slotId: string } | null>(null);
+  const dragAssignOverItem = useRef<{ id: string; slotId: string } | null>(null);
+  const [dragAssignOverId, setDragAssignOverId] = useState<string | null>(null);
 
   const reorderMutation = useMutation({
     mutationFn: async (reorderedSlots: { id: string; display_order: number }[]) => {
@@ -282,6 +292,21 @@ const AdminAdSlotsPage = () => {
     },
   });
 
+  const reorderAssignmentsMutation = useMutation({
+    mutationFn: async (reordered: { id: string; priority: number }[]) => {
+      await Promise.all(
+        reordered.map(a =>
+          supabase.from('ad_slot_assignments' as any).update({ priority: a.priority } as any).eq('id', a.id)
+        )
+      );
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-ad-assignments'] });
+      toast.success('Prioridade atualizada!');
+    },
+  });
+
+  // Visual map DnD handlers
   const handleDragStart = useCallback((id: string, pageType: string) => {
     dragItem.current = { id, pageType };
   }, []);
@@ -315,6 +340,66 @@ const AdminAdSlotsPage = () => {
     dragItem.current = null;
     dragOverItem.current = null;
   }, [slotsByPage, reorderMutation]);
+
+  // Slots list tab DnD handlers
+  const handleSlotDragStart = useCallback((id: string) => {
+    dragSlotItem.current = id;
+  }, []);
+
+  const handleSlotDragEnter = useCallback((id: string) => {
+    dragSlotOverItem.current = id;
+    setDragSlotOverId(id);
+  }, []);
+
+  const handleSlotDragEnd = useCallback(() => {
+    setDragSlotOverId(null);
+    if (!dragSlotItem.current || !dragSlotOverItem.current || dragSlotItem.current === dragSlotOverItem.current) {
+      dragSlotItem.current = null;
+      dragSlotOverItem.current = null;
+      return;
+    }
+    const sorted = [...filteredSlots].sort((a: any, b: any) => a.display_order - b.display_order);
+    const fromIdx = sorted.findIndex((s: any) => s.id === dragSlotItem.current);
+    const toIdx = sorted.findIndex((s: any) => s.id === dragSlotOverItem.current);
+    if (fromIdx === -1 || toIdx === -1) { dragSlotItem.current = null; dragSlotOverItem.current = null; return; }
+    const [moved] = sorted.splice(fromIdx, 1);
+    sorted.splice(toIdx, 0, moved);
+    reorderMutation.mutate(sorted.map((s: any, i: number) => ({ id: s.id, display_order: i })));
+    dragSlotItem.current = null;
+    dragSlotOverItem.current = null;
+  }, [filteredSlots, reorderMutation]);
+
+  // Assignment DnD handlers
+  const handleAssignDragStart = useCallback((id: string, slotId: string) => {
+    dragAssignItem.current = { id, slotId };
+  }, []);
+
+  const handleAssignDragEnter = useCallback((id: string, slotId: string) => {
+    dragAssignOverItem.current = { id, slotId };
+    setDragAssignOverId(id);
+  }, []);
+
+  const handleAssignDragEnd = useCallback(() => {
+    setDragAssignOverId(null);
+    if (!dragAssignItem.current || !dragAssignOverItem.current) return;
+    if (dragAssignItem.current.slotId !== dragAssignOverItem.current.slotId) {
+      dragAssignItem.current = null; dragAssignOverItem.current = null; return;
+    }
+    const slotId = dragAssignItem.current.slotId;
+    const slotAssigns = assignments.filter((a: any) => a.slot_id === slotId).sort((a: any, b: any) => (b.priority || 0) - (a.priority || 0));
+    const fromIdx = slotAssigns.findIndex((a: any) => a.id === dragAssignItem.current!.id);
+    const toIdx = slotAssigns.findIndex((a: any) => a.id === dragAssignOverItem.current!.id);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) {
+      dragAssignItem.current = null; dragAssignOverItem.current = null; return;
+    }
+    const [moved] = slotAssigns.splice(fromIdx, 1);
+    slotAssigns.splice(toIdx, 0, moved);
+    // Higher index = lower priority; reverse so first item gets highest priority
+    const updates = slotAssigns.map((a: any, i: number) => ({ id: a.id, priority: slotAssigns.length - i }));
+    reorderAssignmentsMutation.mutate(updates);
+    dragAssignItem.current = null;
+    dragAssignOverItem.current = null;
+  }, [assignments, reorderAssignmentsMutation]);
 
   if (adminLoading) return <AdminLayout><div className="h-8 w-1/3 animate-pulse rounded-lg bg-muted" /></AdminLayout>;
   if (!isAdmin) { navigate('/'); return null; }
@@ -511,15 +596,25 @@ const AdminAdSlotsPage = () => {
             </div>
 
             <div className="space-y-4">
-              {filteredSlots.map((slot: any) => {
-                const slotAssignments = assignments.filter((a: any) => a.slot_id === slot.id);
+              {filteredSlots.sort((a: any, b: any) => a.display_order - b.display_order).map((slot: any) => {
+                const slotAssignments = assignments.filter((a: any) => a.slot_id === slot.id).sort((a: any, b: any) => (b.priority || 0) - (a.priority || 0));
                 const visual = SLOT_VISUAL_MAP[slot.slug];
+                const isSlotDragOver = dragSlotOverId === slot.id;
 
                 return (
-                  <Card key={slot.id} className={!slot.active ? 'opacity-60' : ''}>
+                  <Card
+                    key={slot.id}
+                    draggable
+                    onDragStart={() => handleSlotDragStart(slot.id)}
+                    onDragEnter={() => handleSlotDragEnter(slot.id)}
+                    onDragOver={e => e.preventDefault()}
+                    onDragEnd={handleSlotDragEnd}
+                    className={`transition-all cursor-grab active:cursor-grabbing ${!slot.active ? 'opacity-60' : ''} ${isSlotDragOver ? 'ring-2 ring-primary/50 scale-[1.005]' : ''}`}
+                  >
                     <CardHeader className="pb-2">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2 flex-wrap">
+                          <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/50 hover:text-muted-foreground transition-colors" />
                           <CardTitle className="text-sm">{slot.name}</CardTitle>
                           <Badge className={`text-[10px] ${PAGE_TYPE_COLORS[slot.page_type] || ''}`}>{slot.page_type}</Badge>
                           <code className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{slot.slug}</code>
@@ -545,9 +640,19 @@ const AdminAdSlotsPage = () => {
                             const key = `${a.sponsor_id}__${slot.slug}`;
                             const m = metricsSummary.get(key);
                             const sponsorImg = getSponsorImage(a.sponsor_id);
+                            const isAssignDragOver = dragAssignOverId === a.id;
                             return (
-                              <div key={a.id} className="flex flex-col gap-2 rounded-lg border border-border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                              <div
+                                key={a.id}
+                                draggable
+                                onDragStart={e => { e.stopPropagation(); handleAssignDragStart(a.id, slot.id); }}
+                                onDragEnter={e => { e.stopPropagation(); handleAssignDragEnter(a.id, slot.id); }}
+                                onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+                                onDragEnd={e => { e.stopPropagation(); handleAssignDragEnd(); }}
+                                className={`flex flex-col gap-2 rounded-lg border border-border px-3 py-2 sm:flex-row sm:items-center sm:justify-between cursor-grab active:cursor-grabbing transition-all ${isAssignDragOver ? 'ring-2 ring-accent/50 scale-[1.01]' : ''}`}
+                              >
                                 <div className="flex items-center gap-2 flex-wrap">
+                                  <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 hover:text-muted-foreground transition-colors" />
                                   {sponsorImg && <img src={sponsorImg} alt="" className="h-6 w-6 rounded object-cover" />}
                                   <span className="text-sm font-medium">{getSponsorTitle(a.sponsor_id)}</span>
                                   <Badge variant={a.active ? 'default' : 'secondary'} className="text-[10px]">
