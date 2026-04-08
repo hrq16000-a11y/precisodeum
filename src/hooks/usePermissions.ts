@@ -143,7 +143,7 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/admin/menus': 'manage_settings',
   '/admin/modulos': 'manage_settings',
   '/admin/backup': 'manage_settings',
-  '/admin/planos-regras': 'manage_billing',
+  '/admin/regras': 'manage_billing',
   '/admin/estatisticas': 'view_reports',
   '/admin/auditoria': 'view_reports',
 };

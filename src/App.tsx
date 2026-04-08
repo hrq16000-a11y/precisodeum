@@ -220,7 +220,7 @@ const App = () => {
                 <Route path="/admin/lixeira" element={<AdminTrashPage />} />
                 <Route path="/admin/hero-banners" element={<AdminHeroBannersPage />} />
                 <Route path="/admin/pwa" element={<AdminPwaPage />} />
-                <Route path="/admin/planos-regras" element={<AdminTierRulesPage />} />
+                <Route path="/admin/regras" element={<AdminTierRulesPage />} />
                 <Route path="/admin/midia" element={<AdminMediaPage />} />
                 <Route path="/admin/servicos" element={<AdminServicesPage />} />
                 <Route path="/admin/leads" element={<AdminLeadsPage />} />
