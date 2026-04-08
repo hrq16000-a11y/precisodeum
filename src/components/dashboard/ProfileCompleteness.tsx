@@ -1,5 +1,6 @@
 import { CheckCircle2, Circle, AlertCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { motion } from 'framer-motion';
 
 interface ProfileCompletenessProps {
   provider: any;
@@ -23,34 +24,44 @@ const ProfileCompleteness = ({ provider, profile, servicesCount, portfolioCount 
   const doneCount = checks.filter(c => c.done).length;
   const percentage = Math.round((doneCount / checks.length) * 100);
 
+  // Smart tip based on what's missing
+  const firstMissing = checks.find(c => !c.done);
+  const tip = firstMissing
+    ? `Dica: Complete "${firstMissing.label}" para melhorar seu ranking.`
+    : '🎉 Perfil 100% completo! Você está no topo dos resultados.';
+
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-          {percentage === 100 ? (
-          <CheckCircle2 className="h-4 w-4 text-primary" />
-          ) : (
-            <AlertCircle className="h-4 w-4 text-accent" />
-          )}
-          Completude do Perfil
-        </h3>
-        <span className="text-sm font-bold text-foreground">{percentage}%</span>
-      </div>
-      <Progress value={percentage} className="h-2 mb-4" />
+    <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-        {checks.map((check) => (
-          <div key={check.label} className="flex items-center gap-2 text-xs">
+        {checks.map((check, i) => (
+          <motion.div
+            key={check.label}
+            className="flex items-center gap-2 text-xs"
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.04 }}
+          >
             {check.done ? (
               <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
             ) : (
               <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
             )}
-            <span className={check.done ? 'text-muted-foreground' : 'text-foreground font-medium'}>
+            <span className={check.done ? 'text-muted-foreground line-through decoration-muted-foreground/30' : 'text-foreground font-medium'}>
               {check.label}
             </span>
-          </div>
+          </motion.div>
         ))}
       </div>
+      {percentage < 100 && (
+        <motion.p
+          className="mt-3 rounded-lg bg-accent/5 px-3 py-2 text-[11px] text-accent font-medium"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          💡 {tip}
+        </motion.p>
+      )}
     </div>
   );
 };
