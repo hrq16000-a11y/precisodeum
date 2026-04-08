@@ -67,15 +67,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isRH = profileType === 'rh';
 
   const menuItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: true },
-    { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil', show: true },
-    { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos', show: !isClient && !isRH },
-    { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina', show: !isClient && !isRH },
-    { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas', show: !isClient },
-    { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade', show: true },
-    { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes', show: true },
-    { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads', show: !isClient && !isRH },
-    { label: 'Plano', icon: CreditCard, path: '/dashboard/plano', show: !isClient && !isRH },
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: true, badge: 0 },
+    { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil', show: true, badge: 0 },
+    { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos', show: !isClient && !isRH, badge: 0 },
+    { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina', show: !isClient && !isRH, badge: 0 },
+    { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas', show: !isClient, badge: 0 },
+    { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade', show: true, badge: 0 },
+    { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes', show: true, badge: unreadCount },
+    { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads', show: !isClient && !isRH, badge: pendingLeads },
+    { label: 'Plano', icon: CreditCard, path: '/dashboard/plano', show: !isClient && !isRH, badge: 0 },
   ].filter(item => item.show);
 
   return (
