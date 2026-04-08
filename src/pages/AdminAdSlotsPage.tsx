@@ -596,15 +596,25 @@ const AdminAdSlotsPage = () => {
             </div>
 
             <div className="space-y-4">
-              {filteredSlots.map((slot: any) => {
-                const slotAssignments = assignments.filter((a: any) => a.slot_id === slot.id);
+              {filteredSlots.sort((a: any, b: any) => a.display_order - b.display_order).map((slot: any) => {
+                const slotAssignments = assignments.filter((a: any) => a.slot_id === slot.id).sort((a: any, b: any) => (b.priority || 0) - (a.priority || 0));
                 const visual = SLOT_VISUAL_MAP[slot.slug];
+                const isSlotDragOver = dragSlotOverId === slot.id;
 
                 return (
-                  <Card key={slot.id} className={!slot.active ? 'opacity-60' : ''}>
+                  <Card
+                    key={slot.id}
+                    draggable
+                    onDragStart={() => handleSlotDragStart(slot.id)}
+                    onDragEnter={() => handleSlotDragEnter(slot.id)}
+                    onDragOver={e => e.preventDefault()}
+                    onDragEnd={handleSlotDragEnd}
+                    className={`transition-all cursor-grab active:cursor-grabbing ${!slot.active ? 'opacity-60' : ''} ${isSlotDragOver ? 'ring-2 ring-primary/50 scale-[1.005]' : ''}`}
+                  >
                     <CardHeader className="pb-2">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2 flex-wrap">
+                          <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/50 hover:text-muted-foreground transition-colors" />
                           <CardTitle className="text-sm">{slot.name}</CardTitle>
                           <Badge className={`text-[10px] ${PAGE_TYPE_COLORS[slot.page_type] || ''}`}>{slot.page_type}</Badge>
                           <code className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{slot.slug}</code>
@@ -630,9 +640,19 @@ const AdminAdSlotsPage = () => {
                             const key = `${a.sponsor_id}__${slot.slug}`;
                             const m = metricsSummary.get(key);
                             const sponsorImg = getSponsorImage(a.sponsor_id);
+                            const isAssignDragOver = dragAssignOverId === a.id;
                             return (
-                              <div key={a.id} className="flex flex-col gap-2 rounded-lg border border-border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                              <div
+                                key={a.id}
+                                draggable
+                                onDragStart={e => { e.stopPropagation(); handleAssignDragStart(a.id, slot.id); }}
+                                onDragEnter={e => { e.stopPropagation(); handleAssignDragEnter(a.id, slot.id); }}
+                                onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+                                onDragEnd={e => { e.stopPropagation(); handleAssignDragEnd(); }}
+                                className={`flex flex-col gap-2 rounded-lg border border-border px-3 py-2 sm:flex-row sm:items-center sm:justify-between cursor-grab active:cursor-grabbing transition-all ${isAssignDragOver ? 'ring-2 ring-accent/50 scale-[1.01]' : ''}`}
+                              >
                                 <div className="flex items-center gap-2 flex-wrap">
+                                  <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 hover:text-muted-foreground transition-colors" />
                                   {sponsorImg && <img src={sponsorImg} alt="" className="h-6 w-6 rounded object-cover" />}
                                   <span className="text-sm font-medium">{getSponsorTitle(a.sponsor_id)}</span>
                                   <Badge variant={a.active ? 'default' : 'secondary'} className="text-[10px]">
