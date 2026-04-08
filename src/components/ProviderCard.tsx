@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, MessageCircle, Crown, BadgeCheck } from 'lucide-react';
+import { MapPin, MessageCircle, Crown, BadgeCheck, Clock } from 'lucide-react';
 import { usePrefetchProvider, usePrefetchHandlers } from '@/hooks/usePrefetch';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
@@ -41,12 +41,17 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       viewport={{ once: true, margin: '-30px' }}
       transition={{ duration: 0.45, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
       whileHover={{ y: -4 }}
-      className={`group flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-shadow duration-300 hover:shadow-card-hover ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`}
+      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-shadow duration-300 hover:shadow-card-hover ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`}
       {...handlers}
     >
-      <div className="flex flex-1 flex-col p-5">
+      {/* Hover gradient glow */}
+      <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500 rounded-xl" />
+      {/* Shine sweep */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-out" />
+
+      <div className="flex flex-1 flex-col p-5 relative">
         <div className="flex gap-4">
-           <Avatar className="h-14 w-14 shrink-0 transition-transform duration-300 group-hover:scale-105">
+           <Avatar className="h-14 w-14 shrink-0 transition-transform duration-300 group-hover:scale-105 ring-2 ring-transparent group-hover:ring-accent/20">
             <AvatarImage src={displayPhoto || undefined} alt={displayName} loading="lazy" decoding="async" onError={handleImageError} />
             <AvatarFallback className="bg-primary/10 text-2xl">
               {provider.categoryIcon || '🔧'}
@@ -82,16 +87,23 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 {locationText}
               </div>
             )}
-            {hasImages && (
-              <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
-                <BadgeCheck className="h-3 w-3" /> Perfil Completo
-              </span>
-            )}
-            {isFallback && (
-              <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                <MapPin className="h-3 w-3" /> Atende sua região
-              </span>
-            )}
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              {hasImages && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
+                  <BadgeCheck className="h-3 w-3" /> Perfil Completo
+                </span>
+              )}
+              {provider.responseTime && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                  <Clock className="h-3 w-3" /> {provider.responseTime}
+                </span>
+              )}
+              {isFallback && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                  <MapPin className="h-3 w-3" /> Atende sua região
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
