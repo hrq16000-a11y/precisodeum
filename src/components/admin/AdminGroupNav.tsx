@@ -41,6 +41,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Leads', icon: 'FileText', path: '/admin/leads' },
       { label: 'Planos & Regras', icon: 'Crown', path: '/admin/planos-regras' },
       { label: 'Comunidade', icon: 'Users2', path: '/admin/comunidade' },
+      { label: 'Cidades', icon: 'MapPin', path: '/admin/cidades' },
     ],
   },
   {
