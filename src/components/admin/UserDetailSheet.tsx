@@ -1067,7 +1067,7 @@ const UserPermissionsPanel = ({ user, onRefresh }: { user: any; onRefresh?: () =
     if (error) toast.error('Erro ao salvar permissões');
     else {
       toast.success('Permissões atualizadas');
-      await logAuditAction({ userId: user.id, action: 'update_permissions', resourceType: 'user', resourceId: user.id, details: { permissions: perms } });
+      await logAuditAction({ action: 'update_permissions', resource_type: 'user', resource_id: user.id, details: { permissions: perms } });
       onRefresh?.();
     }
     setSaving(false);
