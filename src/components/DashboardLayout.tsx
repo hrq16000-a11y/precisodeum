@@ -25,6 +25,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingLeads, setPendingLeads] = useState(0);
   const logoUrl = useSettingValue('logo_url');
   const logo = logoUrl || DEFAULT_LOGO_URL;
 

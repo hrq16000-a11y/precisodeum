@@ -260,12 +260,21 @@ const DashboardPage = () => {
     { icon: Megaphone, value: jobsCount, label: jobsCount === 0 ? 'Nenhuma vaga' : 'Vagas', gradient: 'from-indigo-500/10 to-indigo-600/5', iconColor: 'text-indigo-500' },
   ];
 
+  // Welcome banner contextual greeting
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+  const pendingLeads = leadsCount;
+
   return (
     <DashboardLayout>
-      {/* Enhanced header with gradient */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative">
-        <div className="absolute -top-4 -left-4 -right-4 h-28 bg-gradient-to-br from-accent/5 via-primary/3 to-transparent rounded-3xl -z-10" />
-        <div className="flex items-center gap-3">
+      {/* Welcome Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative rounded-2xl bg-gradient-to-br from-accent/8 via-primary/5 to-transparent border border-accent/10 p-4 overflow-hidden"
+      >
+        <div className="absolute inset-0 shimmer opacity-10" />
+        <div className="relative flex items-center gap-3">
           <motion.div
             className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-accent/20 to-primary/20"
             animate={{ rotate: [0, 5, -5, 0] }}
@@ -273,38 +282,65 @@ const DashboardPage = () => {
           >
             <Zap className="h-5 w-5 text-accent" />
           </motion.div>
-          <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">
-              Olá, {profile?.full_name?.split(' ')[0] || 'Profissional'}!
+          <div className="flex-1 min-w-0">
+            <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">
+              {greeting}, {profile?.full_name?.split(' ')[0] || 'Profissional'}!
             </h1>
-            <div className="flex flex-wrap items-center gap-2 mt-0.5">
-              <p className="text-sm text-muted-foreground">Seu painel profissional</p>
-              {levelName && (
-                <motion.span
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                  style={{ backgroundColor: `${levelColor}20`, color: levelColor }}
-                >
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: levelColor }} />
-                  {levelName}
-                </motion.span>
-              )}
-              {accountTypeName && (
-                <motion.span
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold"
-                  style={{ borderColor: `${accountTypeColor}40`, color: accountTypeColor }}
-                >
-                  {accountTypeName}
-                </motion.span>
-              )}
-            </div>
+            <p className="text-sm text-muted-foreground">
+              {pendingLeads > 0
+                ? `Você tem ${pendingLeads} lead${pendingLeads !== 1 ? 's' : ''} pendente${pendingLeads !== 1 ? 's' : ''}`
+                : 'Seu painel profissional'}
+            </p>
+          </div>
+          <div className="hidden sm:flex items-center gap-2">
+            {levelName && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                style={{ backgroundColor: `${levelColor}20`, color: levelColor }}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: levelColor }} />
+                {levelName}
+              </motion.span>
+            )}
+            {accountTypeName && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 }}
+                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold"
+                style={{ borderColor: `${accountTypeColor}40`, color: accountTypeColor }}
+              >
+                {accountTypeName}
+              </motion.span>
+            )}
           </div>
         </div>
+      </motion.div>
+
+      {/* Quick Actions Bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="mt-3 flex flex-wrap gap-2"
+      >
+        <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs" onClick={() => navigate('/dashboard/servicos')}>
+          <PlusCircle className="h-3.5 w-3.5" /> Criar Serviço
+        </Button>
+        {provider?.slug && (
+          <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs" onClick={() => navigate(`/profissional/${provider.slug}`)}>
+            <Eye className="h-3.5 w-3.5" /> Ver Minha Página
+          </Button>
+        )}
+        {pendingLeads > 0 && (
+          <Button variant="accent" size="sm" className="rounded-full gap-1.5 text-xs" onClick={() => navigate('/dashboard/leads')}>
+            <MessageSquare className="h-3.5 w-3.5" /> Responder Leads
+            <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent-foreground/20 text-[9px] font-bold">{pendingLeads}</span>
+          </Button>
+        )}
       </motion.div>
 
       {/* Dominant CTA when no services */}
