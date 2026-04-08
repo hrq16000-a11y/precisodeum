@@ -1175,14 +1175,46 @@ const ProviderProfile = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Floating WhatsApp */}
+      {/* Sticky CTA bar for mobile */}
+      {effectiveWhatsApp && (
+        <motion.div
+          className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/95 backdrop-blur-lg p-3 flex gap-2 md:hidden"
+          style={{ zIndex: 999, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
+          initial={{ y: 100 }}
+          animate={{ y: 0 }}
+          transition={{ delay: 1.5, type: 'spring', stiffness: 300, damping: 25 }}
+        >
+          <Button
+            variant="accent"
+            size="sm"
+            className="flex-1 gap-1.5 shadow-lg text-xs"
+            onClick={() => setLeadDialogOpen(true)}
+            style={accentBg ? { backgroundColor: accentBg } : undefined}
+          >
+            <Send className="h-3.5 w-3.5" />
+            {pageSettings.cta_text}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-1.5 text-xs border-[#25D366]/30"
+            asChild
+          >
+            <a href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)} target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="h-3.5 w-3.5 text-[#25D366]" /> WhatsApp
+            </a>
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Floating WhatsApp — desktop only */}
       {effectiveWhatsApp && (
         <motion.a
           href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed right-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg"
-          style={{ zIndex: 9999, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}
+          className="fixed right-4 hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg"
+          style={{ zIndex: 9999, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
           aria-label="WhatsApp"
           whileHover={{ scale: 1.15 }}
           whileTap={{ scale: 0.9 }}
