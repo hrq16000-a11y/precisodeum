@@ -74,6 +74,30 @@ const menuGroups = [
   },
 ];
 
+const AdminMobileStats = () => {
+  const [stats, setStats] = useState({ users: 0, providers: 0, leads: 0 });
+  useEffect(() => {
+    Promise.all([
+      supabase.from('profiles').select('id', { count: 'exact', head: true }),
+      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'new'),
+    ]).then(([u, p, l]) => setStats({ users: u.count ?? 0, providers: p.count ?? 0, leads: l.count ?? 0 }));
+  }, []);
+  return (
+    <div className="flex items-center gap-1.5 ml-2">
+      {[
+        { label: 'U', value: stats.users, color: 'bg-blue-500/15 text-blue-600' },
+        { label: 'P', value: stats.providers, color: 'bg-amber-500/15 text-amber-600' },
+        { label: 'L', value: stats.leads, color: 'bg-emerald-500/15 text-emerald-600' },
+      ].map(s => (
+        <span key={s.label} className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${s.color}`}>
+          {s.label}{s.value > 99 ? '99+' : s.value}
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
