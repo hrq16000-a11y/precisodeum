@@ -1007,6 +1007,39 @@ export type Database = {
           },
         ]
       }
+      plan_resources: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          display_order: number
+          icon: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       popular_services: {
         Row: {
           active: boolean
