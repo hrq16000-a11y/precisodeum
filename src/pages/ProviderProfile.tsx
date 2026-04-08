@@ -905,6 +905,17 @@ const ProviderProfile = () => {
                   <TrustBadge icon={Shield} text="Perfil verificado" delay={0.5} />
                   {provider.years_experience >= 3 && <TrustBadge icon={Award} text="Experiente" delay={0.6} />}
                   {provider.review_count >= 3 && <TrustBadge icon={ThumbsUp} text="Recomendado" delay={0.7} />}
+                  {provider.response_time && (
+                    <motion.span
+                      className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-1 text-[11px] font-medium text-blue-600"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.8, type: 'spring', stiffness: 300, damping: 20 }}
+                    >
+                      <Zap className="h-3 w-3" />
+                      Responde em {provider.response_time}
+                    </motion.span>
+                  )}
                 </div>
 
                 {hasSocial && (
@@ -1175,14 +1186,46 @@ const ProviderProfile = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Floating WhatsApp */}
+      {/* Sticky CTA bar for mobile */}
+      {effectiveWhatsApp && (
+        <motion.div
+          className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/95 backdrop-blur-lg p-3 flex gap-2 md:hidden"
+          style={{ zIndex: 999, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
+          initial={{ y: 100 }}
+          animate={{ y: 0 }}
+          transition={{ delay: 1.5, type: 'spring', stiffness: 300, damping: 25 }}
+        >
+          <Button
+            variant="accent"
+            size="sm"
+            className="flex-1 gap-1.5 shadow-lg text-xs"
+            onClick={() => setLeadDialogOpen(true)}
+            style={accentBg ? { backgroundColor: accentBg } : undefined}
+          >
+            <Send className="h-3.5 w-3.5" />
+            {pageSettings.cta_text}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-1.5 text-xs border-[#25D366]/30"
+            asChild
+          >
+            <a href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)} target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="h-3.5 w-3.5 text-[#25D366]" /> WhatsApp
+            </a>
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Floating WhatsApp — desktop only */}
       {effectiveWhatsApp && (
         <motion.a
           href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed right-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg"
-          style={{ zIndex: 9999, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}
+          className="fixed right-4 hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg"
+          style={{ zIndex: 9999, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
           aria-label="WhatsApp"
           whileHover={{ scale: 1.15 }}
           whileTap={{ scale: 0.9 }}
