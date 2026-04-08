@@ -1,4 +1,4 @@
-import { useEffect, useRef, memo } from 'react';
+import { useEffect, useRef, useMemo, memo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { handleImageError } from '@/lib/imageResolver';
 
@@ -80,21 +80,26 @@ const SponsorsSection = ({ sponsors }: Props) => {
   );
   const tracked = useRef(new Set<string>());
 
+  // Shuffle and pick 3
+  const displayed = useMemo(() => {
+    const arr = [...visibleSponsors];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, 3);
+  }, [visibleSponsors]);
+
   useEffect(() => {
-    visibleSponsors.forEach((s) => {
+    displayed.forEach((s) => {
       if (!tracked.current.has(s.id)) {
         tracked.current.add(s.id);
         trackMetric(s.id, 'impression');
       }
     });
-  }, [visibleSponsors]);
+  }, [displayed]);
 
-  if (visibleSponsors.length === 0) return null;
-
-  const tierOrder: Record<string, number> = { premium: 0, destaque: 1, basic: 2 };
-  const sorted = [...visibleSponsors].sort(
-    (a, b) => (tierOrder[a.tier || 'basic'] ?? 2) - (tierOrder[b.tier || 'basic'] ?? 2)
-  );
+  if (displayed.length === 0) return null;
 
   return (
     <section className="py-8">
@@ -107,8 +112,8 @@ const SponsorsSection = ({ sponsors }: Props) => {
             Publicidade
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {sorted.map((sponsor) => (
+        <div className="grid grid-cols-3 gap-3">
+          {displayed.map((sponsor) => (
             <SponsorCard key={sponsor.id} sponsor={sponsor} />
           ))}
         </div>
