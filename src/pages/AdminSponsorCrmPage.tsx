@@ -855,6 +855,51 @@ const AdminSponsorCrmPage = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* ─── Permissions Dialog ──────────────────────────────────── */}
+      <Dialog open={permDialog} onOpenChange={setPermDialog}>
+        <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4" /> Permissões do Painel
+            </DialogTitle>
+          </DialogHeader>
+          {permContact && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Controle quais seções <strong>{permContact.contact_name || 'este contato'}</strong> pode acessar no painel de patrocinador.
+              </p>
+              <div className="space-y-3">
+                {Object.entries(PERM_LABELS).map(([key, label]) => {
+                  const perms = permContact.permissions || {};
+                  const enabled = perms[key] !== false;
+                  return (
+                    <div key={key} className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+                      <span className="text-sm font-medium">{label}</span>
+                      <Switch
+                        checked={enabled}
+                        onCheckedChange={(checked) => {
+                          const newPerms = { ...(permContact.permissions || {}), [key]: checked };
+                          setPermContact({ ...permContact, permissions: newPerms });
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setPermDialog(false)}>Cancelar</Button>
+                <Button onClick={() => {
+                  updatePermMutation.mutate({ id: permContact.id, permissions: permContact.permissions });
+                  setPermDialog(false);
+                }}>
+                  Salvar Permissões
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
