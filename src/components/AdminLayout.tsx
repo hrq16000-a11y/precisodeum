@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard, Search as SearchIcon } from 'lucide-react';
 import AdminGroupNav, { AdminGroupTabs } from '@/components/admin/AdminGroupNav';
@@ -74,6 +75,30 @@ const menuGroups = [
   },
 ];
 
+const AdminMobileStats = () => {
+  const [stats, setStats] = useState({ users: 0, providers: 0, leads: 0 });
+  useEffect(() => {
+    Promise.all([
+      supabase.from('profiles').select('id', { count: 'exact', head: true }),
+      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'new'),
+    ]).then(([u, p, l]) => setStats({ users: u.count ?? 0, providers: p.count ?? 0, leads: l.count ?? 0 }));
+  }, []);
+  return (
+    <div className="flex items-center gap-1.5 ml-2">
+      {[
+        { label: 'U', value: stats.users, color: 'bg-blue-500/15 text-blue-600' },
+        { label: 'P', value: stats.providers, color: 'bg-amber-500/15 text-amber-600' },
+        { label: 'L', value: stats.leads, color: 'bg-emerald-500/15 text-emerald-600' },
+      ].map(s => (
+        <span key={s.label} className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${s.color}`}>
+          {s.label}{s.value > 99 ? '99+' : s.value}
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -108,6 +133,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="flex items-center gap-2">
           <Shield className="h-4 w-4 text-destructive" />
           <span className="font-display text-sm font-bold text-foreground">Admin</span>
+          <AdminMobileStats />
         </div>
         <motion.button
           onClick={() => setSidebarOpen(!sidebarOpen)}
