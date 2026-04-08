@@ -261,7 +261,19 @@ const AdminSponsorCrmPage = () => {
     },
   });
 
-  // ─── Sponsor select helper ───────────────────────────────────────
+  const updatePermMutation = useMutation({
+    mutationFn: async ({ id, permissions }: { id: string; permissions: any }) => {
+      const { error } = await supabase.from('sponsor_contacts' as any).update({ permissions } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-sponsor-contacts'] });
+      toast.success('Permissões atualizadas!');
+    },
+    onError: () => toast.error('Erro ao atualizar permissões'),
+  });
+
+
   const SponsorSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger><SelectValue placeholder="Selecionar patrocinador" /></SelectTrigger>
