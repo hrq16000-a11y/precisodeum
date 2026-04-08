@@ -4,15 +4,16 @@ import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Meg
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+import { useSponsorAuth, type SponsorPermissionKey } from '@/hooks/useSponsorAuth';
 
-const sponsorMenu = [
+const sponsorMenu: { label: string; icon: any; path: string; permKey?: SponsorPermissionKey }[] = [
   { label: 'Visão Geral', icon: LayoutDashboard, path: '/sponsor-panel' },
-  { label: 'Meus Banners', icon: Image, path: '/sponsor-panel/banners' },
-  { label: 'Campanhas', icon: Megaphone, path: '/sponsor-panel/campanhas' },
-  { label: 'Métricas', icon: BarChart3, path: '/sponsor-panel/metricas' },
-  { label: 'Contratos', icon: FileText, path: '/sponsor-panel/contratos' },
-  { label: 'Notificações', icon: Bell, path: '/sponsor-panel/notificacoes' },
-  { label: 'Meus Dados', icon: Settings, path: '/sponsor-panel/dados' },
+  { label: 'Meus Banners', icon: Image, path: '/sponsor-panel/banners', permKey: 'banners' },
+  { label: 'Campanhas', icon: Megaphone, path: '/sponsor-panel/campanhas', permKey: 'campanhas' },
+  { label: 'Métricas', icon: BarChart3, path: '/sponsor-panel/metricas', permKey: 'metricas' },
+  { label: 'Contratos', icon: FileText, path: '/sponsor-panel/contratos', permKey: 'contratos' },
+  { label: 'Notificações', icon: Bell, path: '/sponsor-panel/notificacoes', permKey: 'notificacoes' },
+  { label: 'Meus Dados', icon: Settings, path: '/sponsor-panel/dados', permKey: 'dados' },
 ];
 
 const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
