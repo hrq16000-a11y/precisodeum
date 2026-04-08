@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +20,7 @@ import { format } from 'date-fns';
 import {
   LayoutGrid, Plus, Trash2, Link2, Eye, MousePointerClick, Search,
   Pencil, Monitor, PanelTop, PanelBottom, Columns, Image as ImageIcon,
-  FileText, Briefcase, Home, Users, Globe, MapPin, ArrowUpDown
+  FileText, Briefcase, Home, Users, Globe, MapPin, ArrowUpDown, GripVertical
 } from 'lucide-react';
 
 /* ─── Slot illustration metadata ─── */
@@ -263,6 +263,59 @@ const AdminAdSlotsPage = () => {
   const activeSlots = slots.filter((s: any) => s.active).length;
   const activeAssignments = assignments.filter((a: any) => a.active).length;
 
+  // Drag-and-drop state
+  const dragItem = useRef<{ id: string; pageType: string } | null>(null);
+  const dragOverItem = useRef<{ id: string; pageType: string } | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  const reorderMutation = useMutation({
+    mutationFn: async (reorderedSlots: { id: string; display_order: number }[]) => {
+      await Promise.all(
+        reorderedSlots.map(s =>
+          supabase.from('ad_slots' as any).update({ display_order: s.display_order } as any).eq('id', s.id)
+        )
+      );
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-ad-slots'] });
+      toast.success('Ordem atualizada!');
+    },
+  });
+
+  const handleDragStart = useCallback((id: string, pageType: string) => {
+    dragItem.current = { id, pageType };
+  }, []);
+
+  const handleDragEnter = useCallback((id: string, pageType: string) => {
+    dragOverItem.current = { id, pageType };
+    setDragOverId(id);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDragOverId(null);
+    if (!dragItem.current || !dragOverItem.current) return;
+    if (dragItem.current.pageType !== dragOverItem.current.pageType) {
+      dragItem.current = null;
+      dragOverItem.current = null;
+      return;
+    }
+    const pageType = dragItem.current.pageType;
+    const pageSlots = [...(slotsByPage[pageType] || [])].sort((a: any, b: any) => a.display_order - b.display_order);
+    const fromIdx = pageSlots.findIndex((s: any) => s.id === dragItem.current!.id);
+    const toIdx = pageSlots.findIndex((s: any) => s.id === dragOverItem.current!.id);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) {
+      dragItem.current = null;
+      dragOverItem.current = null;
+      return;
+    }
+    const [moved] = pageSlots.splice(fromIdx, 1);
+    pageSlots.splice(toIdx, 0, moved);
+    const updates = pageSlots.map((s: any, i: number) => ({ id: s.id, display_order: i }));
+    reorderMutation.mutate(updates);
+    dragItem.current = null;
+    dragOverItem.current = null;
+  }, [slotsByPage, reorderMutation]);
+
   if (adminLoading) return <AdminLayout><div className="h-8 w-1/3 animate-pulse rounded-lg bg-muted" /></AdminLayout>;
   if (!isAdmin) { navigate('/'); return null; }
 
@@ -347,23 +400,31 @@ const AdminAdSlotsPage = () => {
                       const SlotIcon = visual?.icon || LayoutGrid;
                       const slotAssigns = assignments.filter((a: any) => a.slot_id === slot.id);
                       const occupiedCount = slotAssigns.filter((a: any) => a.active).length;
+                      const isDragOver = dragOverId === slot.id;
 
                       return (
                         <div
                           key={slot.id}
-                          className={`group relative rounded-lg border-2 transition-all cursor-pointer hover:shadow-md ${
+                          draggable
+                          onDragStart={() => handleDragStart(slot.id, pageType)}
+                          onDragEnter={() => handleDragEnter(slot.id, pageType)}
+                          onDragOver={e => e.preventDefault()}
+                          onDragEnd={handleDragEnd}
+                          className={`group relative rounded-lg border-2 transition-all cursor-grab active:cursor-grabbing ${
+                            isDragOver ? 'ring-2 ring-primary/50 scale-[1.01]' : ''
+                          } ${
                             slot.active
                               ? occupiedCount > 0
                                 ? 'border-green-400 bg-green-50/50 dark:bg-green-950/20'
                                 : 'border-amber-300 bg-amber-50/50 dark:bg-amber-950/20'
                               : 'border-muted bg-muted/40 opacity-50'
                           } px-4 py-3`}
-                          onClick={() => openEditSlot(slot)}
                         >
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-3 min-w-0">
+                              <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                               <SlotIcon className={`h-5 w-5 shrink-0 ${visual?.color || 'text-muted-foreground'}`} />
-                              <div className="min-w-0">
+                              <div className="min-w-0" onClick={() => openEditSlot(slot)}>
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-semibold text-sm text-foreground">{slot.name}</span>
                                   <code className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">{slot.slug}</code>
