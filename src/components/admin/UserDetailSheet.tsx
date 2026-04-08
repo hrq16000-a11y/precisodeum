@@ -475,19 +475,21 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
         {/* Tabs */}
         <div className="px-4 sm:px-6 pt-4 pb-6">
           <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="w-full grid grid-cols-4 sm:grid-cols-7 mb-4 h-auto">
+            <TabsList className="w-full grid grid-cols-4 sm:grid-cols-8 mb-4 h-auto">
               <TabsTrigger value="profile" className="text-xs gap-1 px-1"><UserCheck className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Perfil</span></TabsTrigger>
               <TabsTrigger value="provider" className="text-xs gap-1 px-1"><Briefcase className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Negócio</span></TabsTrigger>
               <TabsTrigger value="services" className="text-xs gap-1 px-1"><FileText className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Serviços</span></TabsTrigger>
               <TabsTrigger value="portfolio" className="text-xs gap-1 px-1"><ImageIcon className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Fotos</span></TabsTrigger>
               <TabsTrigger value="leads" className="text-xs gap-1 px-1 hidden sm:flex"><MessageCircle className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Leads</span></TabsTrigger>
+              <TabsTrigger value="perms" className="text-xs gap-1 px-1 hidden sm:flex"><Lock className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Permissões</span></TabsTrigger>
               <TabsTrigger value="page" className="text-xs gap-1 px-1 hidden sm:flex"><Settings className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Página</span></TabsTrigger>
               <TabsTrigger value="audit" className="text-xs gap-1 px-1 hidden sm:flex"><History className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Logs</span></TabsTrigger>
             </TabsList>
             {/* Mobile extra tabs row */}
             <div className="sm:hidden mb-4">
-              <TabsList className="w-full grid grid-cols-3 h-auto">
+              <TabsList className="w-full grid grid-cols-4 h-auto">
                 <TabsTrigger value="leads" className="text-xs gap-1 px-1"><MessageCircle className="h-3.5 w-3.5" /> Leads</TabsTrigger>
+                <TabsTrigger value="perms" className="text-xs gap-1 px-1"><Lock className="h-3.5 w-3.5" /> Perm.</TabsTrigger>
                 <TabsTrigger value="page" className="text-xs gap-1 px-1"><Settings className="h-3.5 w-3.5" /> Página</TabsTrigger>
                 <TabsTrigger value="audit" className="text-xs gap-1 px-1"><History className="h-3.5 w-3.5" /> Logs</TabsTrigger>
               </TabsList>
