@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +20,7 @@ import { format } from 'date-fns';
 import {
   LayoutGrid, Plus, Trash2, Link2, Eye, MousePointerClick, Search,
   Pencil, Monitor, PanelTop, PanelBottom, Columns, Image as ImageIcon,
-  FileText, Briefcase, Home, Users, Globe, MapPin, ArrowUpDown
+  FileText, Briefcase, Home, Users, Globe, MapPin, ArrowUpDown, GripVertical
 } from 'lucide-react';
 
 /* ─── Slot illustration metadata ─── */
