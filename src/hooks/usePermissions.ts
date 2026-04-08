@@ -12,6 +12,21 @@ export interface UserPermissions {
   manage_billing: boolean;
 }
 
+export interface ProfilePermissions {
+  dashboard: boolean;
+  profile: boolean;
+  services: boolean;
+  my_page: boolean;
+  jobs: boolean;
+  community: boolean;
+  notifications: boolean;
+  leads: boolean;
+  plan: boolean;
+  reviews: boolean;
+  admin_panel: boolean;
+  sponsor_panel: boolean;
+}
+
 const DEFAULT_PERMISSIONS: UserPermissions = {
   create_users: false,
   edit_users: false,
@@ -22,19 +37,37 @@ const DEFAULT_PERMISSIONS: UserPermissions = {
   manage_billing: false,
 };
 
+const DEFAULT_PROFILE_PERMISSIONS: ProfilePermissions = {
+  dashboard: true,
+  profile: true,
+  services: true,
+  my_page: true,
+  jobs: true,
+  community: true,
+  notifications: true,
+  leads: true,
+  plan: true,
+  reviews: true,
+  admin_panel: true,
+  sponsor_panel: true,
+};
+
 interface UsePermissionsReturn {
   permissions: UserPermissions;
+  profilePermissions: ProfilePermissions;
   levelName: string;
   levelColor: string;
   accountTypeName: string;
   accountTypeColor: string;
   loading: boolean;
   hasPermission: (key: keyof UserPermissions) => boolean;
+  hasProfilePermission: (key: keyof ProfilePermissions) => boolean;
 }
 
 export const usePermissions = (): UsePermissionsReturn => {
   const { profile } = useAuth();
   const [permissions, setPermissions] = useState<UserPermissions>(DEFAULT_PERMISSIONS);
+  const [profilePermissions, setProfilePermissions] = useState<ProfilePermissions>(DEFAULT_PROFILE_PERMISSIONS);
   const [levelName, setLevelName] = useState('');
   const [levelColor, setLevelColor] = useState('');
   const [accountTypeName, setAccountTypeName] = useState('');
@@ -44,6 +77,7 @@ export const usePermissions = (): UsePermissionsReturn => {
   useEffect(() => {
     if (!profile) {
       setPermissions(DEFAULT_PERMISSIONS);
+      setProfilePermissions(DEFAULT_PROFILE_PERMISSIONS);
       setLevelName('');
       setLevelColor('');
       setAccountTypeName('');
@@ -51,6 +85,10 @@ export const usePermissions = (): UsePermissionsReturn => {
       setLoading(false);
       return;
     }
+
+    // Read profile-level permissions
+    const pp = (profile.permissions as ProfilePermissions) || DEFAULT_PROFILE_PERMISSIONS;
+    setProfilePermissions({ ...DEFAULT_PROFILE_PERMISSIONS, ...pp });
 
     const fetchData = async () => {
       const levelPromise = profile.level_id
@@ -86,11 +124,12 @@ export const usePermissions = (): UsePermissionsReturn => {
     };
 
     fetchData();
-  }, [profile?.level_id, profile?.account_type_id]);
+  }, [profile?.level_id, profile?.account_type_id, profile?.permissions]);
 
   const hasPermission = (key: keyof UserPermissions) => permissions[key] === true;
+  const hasProfilePermission = (key: keyof ProfilePermissions) => profilePermissions[key] !== false;
 
-  return { permissions, levelName, levelColor, accountTypeName, accountTypeColor, loading, hasPermission };
+  return { permissions, profilePermissions, levelName, levelColor, accountTypeName, accountTypeColor, loading, hasPermission, hasProfilePermission };
 };
 
 // Map admin paths to required permissions

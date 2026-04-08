@@ -475,19 +475,21 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
         {/* Tabs */}
         <div className="px-4 sm:px-6 pt-4 pb-6">
           <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="w-full grid grid-cols-4 sm:grid-cols-7 mb-4 h-auto">
+            <TabsList className="w-full grid grid-cols-4 sm:grid-cols-8 mb-4 h-auto">
               <TabsTrigger value="profile" className="text-xs gap-1 px-1"><UserCheck className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Perfil</span></TabsTrigger>
               <TabsTrigger value="provider" className="text-xs gap-1 px-1"><Briefcase className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Negócio</span></TabsTrigger>
               <TabsTrigger value="services" className="text-xs gap-1 px-1"><FileText className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Serviços</span></TabsTrigger>
               <TabsTrigger value="portfolio" className="text-xs gap-1 px-1"><ImageIcon className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Fotos</span></TabsTrigger>
               <TabsTrigger value="leads" className="text-xs gap-1 px-1 hidden sm:flex"><MessageCircle className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Leads</span></TabsTrigger>
+              <TabsTrigger value="perms" className="text-xs gap-1 px-1 hidden sm:flex"><Lock className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Permissões</span></TabsTrigger>
               <TabsTrigger value="page" className="text-xs gap-1 px-1 hidden sm:flex"><Settings className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Página</span></TabsTrigger>
               <TabsTrigger value="audit" className="text-xs gap-1 px-1 hidden sm:flex"><History className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Logs</span></TabsTrigger>
             </TabsList>
             {/* Mobile extra tabs row */}
             <div className="sm:hidden mb-4">
-              <TabsList className="w-full grid grid-cols-3 h-auto">
+              <TabsList className="w-full grid grid-cols-4 h-auto">
                 <TabsTrigger value="leads" className="text-xs gap-1 px-1"><MessageCircle className="h-3.5 w-3.5" /> Leads</TabsTrigger>
+                <TabsTrigger value="perms" className="text-xs gap-1 px-1"><Lock className="h-3.5 w-3.5" /> Perm.</TabsTrigger>
                 <TabsTrigger value="page" className="text-xs gap-1 px-1"><Settings className="h-3.5 w-3.5" /> Página</TabsTrigger>
                 <TabsTrigger value="audit" className="text-xs gap-1 px-1"><History className="h-3.5 w-3.5" /> Logs</TabsTrigger>
               </TabsList>
@@ -972,6 +974,11 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               )}
             </TabsContent>
 
+            {/* ====== PERMISSIONS TAB ====== */}
+            <TabsContent value="perms" className="space-y-4 mt-0">
+              <UserPermissionsPanel user={user} onRefresh={onRefresh} />
+            </TabsContent>
+
             {/* ====== AUDIT TAB ====== */}
             <TabsContent value="audit" className="space-y-2 mt-0">
               {auditLogs.length === 0 ? (
@@ -1018,5 +1025,75 @@ const EmptyState = ({ icon, text }: { icon: React.ReactNode; text: string }) => 
     {text}
   </div>
 );
+
+// ====== Per-user permissions panel ======
+const PERM_LABELS: Record<string, string> = {
+  dashboard: 'Dashboard',
+  profile: 'Meu Perfil',
+  services: 'Serviços',
+  my_page: 'Minha Página',
+  jobs: 'Vagas',
+  community: 'Comunidade',
+  notifications: 'Notificações',
+  leads: 'Leads',
+  plan: 'Plano',
+  reviews: 'Avaliações',
+  admin_panel: 'Painel Admin',
+  sponsor_panel: 'Painel Patrocinador',
+};
+
+const DEFAULT_USER_PERMS: Record<string, boolean> = {
+  dashboard: true, profile: true, services: true, my_page: true,
+  jobs: true, community: true, notifications: true, leads: true,
+  plan: true, reviews: true, admin_panel: true, sponsor_panel: true,
+};
+
+const UserPermissionsPanel = ({ user, onRefresh }: { user: any; onRefresh?: () => void }) => {
+  const [perms, setPerms] = useState<Record<string, boolean>>(DEFAULT_USER_PERMS);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    const p = user.permissions as Record<string, boolean> | null;
+    setPerms({ ...DEFAULT_USER_PERMS, ...(p || {}) });
+  }, [user?.id, user?.permissions]);
+
+  const toggle = (key: string) => setPerms(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const save = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase.from('profiles').update({ permissions: perms } as any).eq('id', user.id);
+    if (error) toast.error('Erro ao salvar permissões');
+    else {
+      toast.success('Permissões atualizadas');
+      await logAuditAction({ action: 'update_permissions', resource_type: 'user', resource_id: user.id, details: { permissions: perms } });
+      onRefresh?.();
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="rounded-xl border border-border p-3 sm:p-4 space-y-4">
+      <div className="flex items-center gap-2 mb-1">
+        <Lock className="h-4 w-4 text-primary" />
+        <h3 className="font-semibold text-foreground text-sm">Permissões de Acesso</h3>
+      </div>
+      <p className="text-xs text-muted-foreground">Controle quais seções este usuário pode acessar no painel.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {Object.entries(PERM_LABELS).map(([key, label]) => (
+          <div key={key} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+            <span className="text-sm text-foreground">{label}</span>
+            <Switch checked={perms[key] ?? true} onCheckedChange={() => toggle(key)} />
+          </div>
+        ))}
+      </div>
+      <Button size="sm" onClick={save} disabled={saving} className="w-full">
+        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        💾 Salvar Permissões
+      </Button>
+    </div>
+  );
+};
 
 export default UserDetailSheet;
