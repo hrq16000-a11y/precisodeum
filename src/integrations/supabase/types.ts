@@ -1085,6 +1085,75 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_type_settings: {
+        Row: {
+          active: boolean
+          capabilities: Json
+          color: string
+          created_at: string
+          default_account_type_id: string | null
+          default_level_id: string | null
+          description: string
+          display_order: number
+          icon: string
+          id: string
+          label: string
+          profile_key: string
+          role: string
+          tier_key: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          capabilities?: Json
+          color?: string
+          created_at?: string
+          default_account_type_id?: string | null
+          default_level_id?: string | null
+          description?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          label: string
+          profile_key: string
+          role?: string
+          tier_key?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          capabilities?: Json
+          color?: string
+          created_at?: string
+          default_account_type_id?: string | null
+          default_level_id?: string | null
+          description?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          label?: string
+          profile_key?: string
+          role?: string
+          tier_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_type_settings_default_account_type_id_fkey"
+            columns: ["default_account_type_id"]
+            isOneToOne: false
+            referencedRelation: "account_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_type_settings_default_level_id_fkey"
+            columns: ["default_level_id"]
+            isOneToOne: false
+            referencedRelation: "user_levels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_type_id: string | null
