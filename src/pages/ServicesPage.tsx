@@ -141,7 +141,22 @@ const ServicesPage = () => {
           {isLoading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 9 }).map((_, i) => (
-                <Skeleton key={i} className="h-48 rounded-xl" />
+                <div key={i} className="relative overflow-hidden rounded-xl border border-border bg-card p-5 h-48">
+                  <div className="flex items-start gap-4">
+                    <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/4" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-2/3" />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-[shimmer_2s_infinite] -translate-x-full" />
+                </div>
               ))}
             </div>
           ) : filtered.length === 0 ? (
