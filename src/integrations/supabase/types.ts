@@ -1062,6 +1062,7 @@ export type Database = {
           full_name: string
           id: string
           level_id: string | null
+          permissions: Json
           phone: string | null
           profile_type: string
           role: string
@@ -1079,6 +1080,7 @@ export type Database = {
           full_name?: string
           id: string
           level_id?: string | null
+          permissions?: Json
           phone?: string | null
           profile_type?: string
           role?: string
@@ -1096,6 +1098,7 @@ export type Database = {
           full_name?: string
           id?: string
           level_id?: string | null
+          permissions?: Json
           phone?: string | null
           profile_type?: string
           role?: string
