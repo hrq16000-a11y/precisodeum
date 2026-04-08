@@ -131,9 +131,9 @@ const AdminCitiesPage = () => {
 
   // ── Stats ──
   const stateGroups = useMemo(() => {
-    const map = new Map<string, number>();
-    cities.forEach(c => map.set(c.state, (map.get(c.state) || 0) + 1));
-    return [...map.entries()].sort((a, b) => b[1] - a[1]);
+    const map: Record<string, number> = {};
+    cities.forEach(c => { map[c.state] = (map[c.state] || 0) + 1; });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [cities]);
 
   const missingCapitals = useMemo(() => {
