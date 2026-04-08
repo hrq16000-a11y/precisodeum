@@ -128,6 +128,18 @@ const AdminSponsorCrmPage = () => {
   const [noteDialog, setNoteDialog] = useState(false);
   const [noteForm, setNoteForm] = useState({ sponsor_id: '', content: '' });
 
+  const [permDialog, setPermDialog] = useState(false);
+  const [permContact, setPermContact] = useState<any>(null);
+
+  const PERM_LABELS: Record<string, string> = {
+    banners: 'Meus Banners',
+    campanhas: 'Campanhas',
+    metricas: 'Métricas',
+    contratos: 'Contratos',
+    notificacoes: 'Notificações',
+    dados: 'Meus Dados',
+  };
+
   // ─── Mutations ────────────────────────────────────────────────────
   const linkMutation = useMutation({
     mutationFn: async () => {
