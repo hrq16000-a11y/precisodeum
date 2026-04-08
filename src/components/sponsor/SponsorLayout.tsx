@@ -20,7 +20,10 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { hasSponsorPermission, isAdmin } = useSponsorAuth(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const visibleMenu = sponsorMenu.filter(item => !item.permKey || hasSponsorPermission(item.permKey));
 
   const handleSignOut = async () => {
     await signOut();
