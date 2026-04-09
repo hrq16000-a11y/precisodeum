@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getPositionConfig } from '@/config/sponsorPositions';
 
 export interface SponsorFull {
   id: string;
@@ -29,50 +30,48 @@ export interface SponsorFull {
   clicks: number;
 }
 
-function isDateValid(s: SponsorFull): boolean {
+function isDateValid(s: { start_date?: string | null; end_date?: string | null }): boolean {
   const now = new Date().toISOString().split('T')[0];
   if (s.start_date && s.start_date > now) return false;
   if (s.end_date && s.end_date < now) return false;
   return true;
 }
 
-/** Fetch sponsors by the new sponsor_type (global/city/category) */
-export function useSponsorsByType(type: 'global' | 'city' | 'category', contextValue?: string) {
-  return useQuery({
-    queryKey: ['sponsors-typed', type, contextValue],
-    queryFn: async () => {
-      let query = supabase
-        .from('sponsors')
-        .select('*')
-        .eq('active', true)
-        .eq('sponsor_type', type)
-        .order('display_order');
-
-      if (type === 'city' && contextValue) {
-        query = query.eq('linked_city', contextValue);
-      }
-      if (type === 'category' && contextValue) {
-        query = query.eq('linked_category', contextValue);
-      }
-
-      const { data } = await query;
-      return ((data || []) as unknown as SponsorFull[]).filter(isDateValid).filter(s => s.status === 'active');
-    },
-    staleTime: 1000 * 60 * 5,
-  });
+function hasImage(s: { image_url?: string | null; logo_url?: string | null }): boolean {
+  return Boolean(s.image_url || s.logo_url);
 }
 
-/** Fetch all active sponsors for smart placement */
-export function useAllActiveSponsors() {
+/**
+ * Central hook — single source of truth for fetching sponsors by position.
+ * Applies all rules from POSITION_CONFIG automatically:
+ * - date validation
+ * - status = 'active'
+ * - requiresImage filtering
+ * - maxItems limit
+ * - ordered by display_order
+ */
+export function useSponsorsBySlot(position: string) {
+  const config = getPositionConfig(position);
+
   return useQuery({
-    queryKey: ['sponsors-all-active'],
+    queryKey: ['sponsors-slot', position],
     queryFn: async () => {
       const { data } = await supabase
         .from('sponsors')
         .select('*')
         .eq('active', true)
+        .eq('position', position)
         .order('display_order');
-      return ((data || []) as unknown as SponsorFull[]).filter(isDateValid).filter(s => s.status === 'active');
+
+      let results = ((data || []) as unknown as SponsorFull[])
+        .filter(s => s.status === 'active')
+        .filter(isDateValid);
+
+      if (config.requiresImage) {
+        results = results.filter(hasImage);
+      }
+
+      return results.slice(0, config.maxItems);
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -95,10 +94,12 @@ export function useSponsorSlotLimits() {
 /** Calculate remaining slots for a given context */
 export function useRemainingSlots(type: 'global' | 'city' | 'category', contextValue?: string) {
   const { data: limits } = useSponsorSlotLimits();
-  const { data: sponsors } = useSponsorsByType(type, contextValue);
+  // For remaining slots we fetch by position mapped from type
+  const position = type === 'global' ? 'hero-top' : type === 'city' ? 'sidebar' : 'card';
+  const { data: sponsors } = useSponsorsBySlot(position);
 
-  const limit = limits?.find(l => 
-    l.context_type === type && 
+  const limit = limits?.find(l =>
+    l.context_type === type &&
     (l.context_value === (contextValue || '') || l.context_value === '_default')
   );
 
