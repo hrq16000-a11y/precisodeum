@@ -87,7 +87,7 @@ const SponsorsSection = ({ sponsors }: Props) => {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
-    return arr.slice(0, 3);
+    return arr.slice(0, 6);
   }, [visibleSponsors]);
 
   useEffect(() => {
@@ -112,7 +112,7 @@ const SponsorsSection = ({ sponsors }: Props) => {
             Publicidade
           </span>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {displayed.map((sponsor) => (
             <SponsorCard key={sponsor.id} sponsor={sponsor} />
           ))}
