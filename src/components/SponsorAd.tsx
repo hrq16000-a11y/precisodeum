@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
+import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
+import { getPositionConfig } from '@/config/sponsorPositions';
 import SponsorImage from '@/components/SponsorImage';
 
 interface SponsorAdProps {
@@ -8,24 +10,15 @@ interface SponsorAdProps {
   layout?: 'horizontal' | 'vertical' | 'inline';
 }
 
-function weightedShuffle<T extends { id: string; tier?: string }>(items: T[]): T[] {
-  const weighted = items.flatMap((s) => {
-    const tier = s.tier || 'basic';
-    const weight = tier === 'premium' ? 5 : tier === 'destaque' ? 3 : 1;
-    return Array(weight).fill(s);
-  });
-  const shuffled = weighted.sort(() => Math.random() - 0.5);
-  const seen = new Set<string>();
-  return shuffled.filter((s) => {
-    if (seen.has(s.id)) return false;
-    seen.add(s.id);
-    return true;
-  });
-}
-
 const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorAdProps) => {
   const { data: rawSponsors = [], trackImpression, trackClick } = useSponsorsBySlot(position);
-  const sponsors = useMemo(() => weightedShuffle(rawSponsors), [rawSponsors]);
+  const config = getPositionConfig(position);
+
+  const sponsors = useMemo(
+    () => rankAndOptimise(rawSponsors, { maxItems: config.maxItems }),
+    [rawSponsors, config.maxItems],
+  );
+
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -39,10 +32,16 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
   useEffect(() => {
     if (sponsors.length === 0) return;
     if (layout === 'vertical' || layout === 'inline') {
-      sponsors.forEach((s) => trackImpression(s.id));
+      sponsors.forEach((s) => {
+        trackImpression(s.id);
+        recordImpression(s.id);
+      });
     } else {
       const s = sponsors[currentIndex];
-      if (s) trackImpression(s.id);
+      if (s) {
+        trackImpression(s.id);
+        recordImpression(s.id);
+      }
     }
   }, [sponsors, currentIndex, layout, trackImpression]);
 

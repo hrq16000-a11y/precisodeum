@@ -1,6 +1,10 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { cleanupFrequencyData } from "@/lib/sponsorRanking";
+
+// Clean stale frequency-cap data from previous sessions
+cleanupFrequencyData();
 
 // Guard: unregister service workers in preview/iframe contexts
 const isInIframe = (() => {

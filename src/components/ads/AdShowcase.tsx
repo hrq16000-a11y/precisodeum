@@ -1,16 +1,26 @@
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { handleImageError } from '@/lib/imageResolver';
 import { ExternalLink } from 'lucide-react';
+import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
+import { getPositionConfig } from '@/config/sponsorPositions';
 
 /** Full-width showcase with professional card layout */
 const AdShowcase = ({ className = '' }: { className?: string }) => {
-  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot('showcase');
+  const { data: rawSponsors = [], trackImpression, trackClick } = useSponsorsBySlot('showcase');
+  const config = getPositionConfig('showcase');
+  const sponsors = useMemo(
+    () => rankAndOptimise(rawSponsors, { maxItems: config.maxItems }),
+    [rawSponsors, config.maxItems],
+  );
   const [idx, setIdx] = useState(0);
   const touchStart = useRef<number | null>(null);
 
   useEffect(() => {
-    sponsors.forEach(s => trackImpression(s.id));
+    sponsors.forEach(s => {
+      trackImpression(s.id);
+      recordImpression(s.id);
+    });
   }, [sponsors, trackImpression]);
 
   useEffect(() => {

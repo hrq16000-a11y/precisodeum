@@ -1,6 +1,8 @@
 import { useEffect, useMemo, memo } from 'react';
 import { handleImageError } from '@/lib/imageResolver';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
+import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
+import { getPositionConfig } from '@/config/sponsorPositions';
 
 const SponsorCard = memo(({ sponsor, onClickTrack }: { sponsor: any; onClickTrack: (id: string) => void }) => {
   const isPremium = sponsor.tier === 'premium';
@@ -46,19 +48,18 @@ SponsorCard.displayName = 'SponsorCard';
 /** Self-contained: fetches position=card sponsors internally */
 const SponsorsSection = () => {
   const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot('card');
+  const config = getPositionConfig('card');
 
-  // Shuffle for variety
-  const displayed = useMemo(() => {
-    const arr = [...sponsors];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  }, [sponsors]);
+  const displayed = useMemo(
+    () => rankAndOptimise(sponsors, { maxItems: config.maxItems }),
+    [sponsors, config.maxItems],
+  );
 
   useEffect(() => {
-    displayed.forEach((s) => trackImpression(s.id));
+    displayed.forEach((s) => {
+      trackImpression(s.id);
+      recordImpression(s.id);
+    });
   }, [displayed, trackImpression]);
 
   if (displayed.length === 0) return null;

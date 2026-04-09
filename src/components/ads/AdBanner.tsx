@@ -1,5 +1,7 @@
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
+import { getPositionConfig } from '@/config/sponsorPositions';
 
 interface AdBannerProps {
   position: string;
@@ -9,7 +11,12 @@ interface AdBannerProps {
 }
 
 const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBannerProps) => {
-  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot(position);
+  const { data: rawSponsors = [], trackImpression, trackClick } = useSponsorsBySlot(position);
+  const config = getPositionConfig(position);
+  const sponsors = useMemo(
+    () => rankAndOptimise(rawSponsors, { maxItems: config.maxItems }),
+    [rawSponsors, config.maxItems],
+  );
   const [idx, setIdx] = useState(0);
   const touchStart = useRef<number | null>(null);
 
@@ -21,7 +28,10 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
 
   useEffect(() => {
     const s = sponsors[idx];
-    if (s) trackImpression(s.id);
+    if (s) {
+      trackImpression(s.id);
+      recordImpression(s.id);
+    }
   }, [sponsors, idx, trackImpression]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
