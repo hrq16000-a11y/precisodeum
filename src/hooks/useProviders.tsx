@@ -271,6 +271,35 @@ export function useFeaturedProviders() {
   });
 }
 
+/**
+ * Normalize a city/state string for fuzzy comparison.
+ * Removes accents, lowercases, strips hyphens/spaces.
+ */
+function normalizeCityName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[-_\s]+/g, '')
+    .trim();
+}
+
+/** Check if provider matches city/state context */
+function matchesGeoContext(provider: DbProvider, cityNorm: string): boolean {
+  if (!cityNorm) return true;
+  const pCity = normalizeCityName(provider.city);
+  const pState = normalizeCityName(provider.state);
+  // Exact city match
+  if (pCity === cityNorm) return true;
+  // City contains search or search contains city (e.g. "sao paulo" vs "são paulo")
+  if (pCity.includes(cityNorm) || cityNorm.includes(pCity)) return true;
+  // State match (e.g. searching "SP" or "sao-paulo" matching state)
+  if (pState === cityNorm || pState.includes(cityNorm)) return true;
+  return false;
+}
+
+const MIN_LOCAL_RESULTS = 3;
+
 export function filterAndRankProviders(
   providers: DbProvider[],
   query: string,
@@ -288,9 +317,6 @@ export function filterAndRankProviders(
     results = results.filter((p) => p.categorySlug === categorySlug);
   }
 
-  // BUSCA GLOBAL: cidade é usada para RANKING, NÃO como filtro
-  // Resultados da mesma cidade aparecem primeiro, mas não excluem outras
-
   if (query) {
     const lq = query.toLowerCase();
     const terms = lq.split(/\s+/).filter(Boolean);
@@ -307,15 +333,31 @@ export function filterAndRankProviders(
     );
   }
 
+  const cityNorm = city ? normalizeCityName(city) : '';
+
+  // Smart city filtering: filter by city when context exists,
+  // but fall back to global + ranking if too few local results
+  if (cityNorm) {
+    const localResults = results.filter((p) => matchesGeoContext(p, cityNorm));
+    const otherResults = results.filter((p) => !matchesGeoContext(p, cityNorm));
+
+    if (localResults.length >= MIN_LOCAL_RESULTS) {
+      // Enough local results — show only local
+      results = localResults;
+    } else {
+      // Few local results — show local first, then others
+      results = [...localResults, ...otherResults];
+    }
+  }
+
   const planPriority: Record<string, number> = { premium: 0, pro: 1, free: 2 };
-  const cityLower = city?.toLowerCase() || '';
 
   results.sort((a, b) => {
-    // 1. City proximity ranking (same city first, NOT a filter)
-    if (cityLower) {
-      const aCity = a.city.toLowerCase() === cityLower ? 0 : 1;
-      const bCity = b.city.toLowerCase() === cityLower ? 0 : 1;
-      if (aCity !== bCity) return aCity - bCity;
+    // 1. City match first (for fallback/expanded results)
+    if (cityNorm) {
+      const aLocal = matchesGeoContext(a, cityNorm) ? 0 : 1;
+      const bLocal = matchesGeoContext(b, cityNorm) ? 0 : 1;
+      if (aLocal !== bLocal) return aLocal - bLocal;
     }
     // 2. Visual content priority
     const aImg = a.serviceImage || a.hasPortfolio ? 0 : 1;
