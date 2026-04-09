@@ -80,17 +80,15 @@ const StatsCounter = () => {
   const { data } = useQuery({
     queryKey: ['home-stats-counter'],
     queryFn: async () => {
-      const [providers, services, cities, reviews] = await Promise.all([
+      const [providers, services, cities] = await Promise.all([
         supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
         supabase.from('services').select('id', { count: 'exact', head: true }),
         supabase.from('cities').select('id', { count: 'exact', head: true }),
-        supabase.from('reviews').select('id', { count: 'exact', head: true }),
       ]);
       return {
         providers: providers.count || 0,
         services: services.count || 0,
         cities: cities.count || 0,
-        reviews: reviews.count || 0,
       };
     },
     staleTime: 1000 * 60 * 10,
