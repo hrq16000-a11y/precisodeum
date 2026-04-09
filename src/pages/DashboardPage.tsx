@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap } from 'lucide-react';
+import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap, Camera, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
@@ -10,6 +10,9 @@ import { useSettingValue } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
 import LeadsChart from '@/components/dashboard/LeadsChart';
+import RecentActivity from '@/components/dashboard/RecentActivity';
+import ConversionInsights from '@/components/dashboard/ConversionInsights';
+import WelcomeHero from '@/components/dashboard/WelcomeHero';
 import { usePermissions } from '@/hooks/usePermissions';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import GlassCard from '@/components/ui/GlassCard';
