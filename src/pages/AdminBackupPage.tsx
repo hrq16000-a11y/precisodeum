@@ -1425,10 +1425,37 @@ const StorageBackupSection = () => {
       </div>
 
       {scanned && (
-        <div className="mt-4 text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{files.length}</span> arquivos encontrados
-          {' · '}
-          <span className="font-semibold text-foreground">{totalSizeKB > 1024 ? `${(totalSizeKB / 1024).toFixed(1)} MB` : `${totalSizeKB} KB`}</span> total
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">{files.length}</span> arquivos encontrados
+            {' · '}
+            <span className="font-semibold text-foreground">{totalSizeKB > 1024 ? `${(totalSizeKB / 1024).toFixed(1)} MB` : `${totalSizeKB} KB`}</span> total
+          </div>
+          {files.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={selectAllFiles} className="text-xs">
+                <CheckSquare className="mr-1 h-3 w-3" />
+                {files.every(f => selectedFiles.has(getFileKey(f))) ? 'Desmarcar todos' : 'Selecionar todos'}
+              </Button>
+              {selectedFiles.size > 0 && (
+                <Button variant="accent" size="sm" onClick={downloadSelectedAsZip} disabled={downloadingSelected}>
+                  {downloadingSelected ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Download className="mr-1 h-3 w-3" />}
+                  Baixar selecionados ({selectedFiles.size})
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Download progress */}
+      {downloadProgress && (
+        <div className="mt-3 space-y-1">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Baixando arquivos...</span>
+            <span>{downloadProgress.processed}/{downloadProgress.total}</span>
+          </div>
+          <Progress value={downloadProgress.total > 0 ? (downloadProgress.processed / downloadProgress.total) * 100 : 0} className="h-2" />
         </div>
       )}
 
@@ -1439,56 +1466,91 @@ const StorageBackupSection = () => {
             if (!bucketFiles) return null;
             const bucketKey = `bucket-${bucket.id}`;
             const isExpanded = expandedFolders.has(bucketKey);
-            const fileCount = Object.values(bucketFiles).reduce((s, arr) => s + arr.length, 0);
+            const allBucketFiles = files.filter(f => f.bucket === bucket.id);
+            const fileCount = allBucketFiles.length;
+            const allBucketSelected = fileCount > 0 && allBucketFiles.every(f => selectedFiles.has(getFileKey(f)));
+            const someBucketSelected = allBucketFiles.some(f => selectedFiles.has(getFileKey(f)));
 
             return (
               <div key={bucket.id} className="rounded-lg border border-border bg-background">
-                <button
-                  onClick={() => toggleFolder(bucketKey)}
-                  className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors rounded-lg"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{bucket.icon}</span>
-                    <span className="font-bold text-sm text-foreground">{bucket.label}</span>
-                    <span className="text-xs text-muted-foreground">({fileCount} arquivos)</span>
+                <div className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors rounded-lg">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Checkbox
+                      checked={allBucketSelected ? true : someBucketSelected ? 'indeterminate' : false}
+                      onCheckedChange={() => toggleBucketSelection(bucket.id)}
+                      className="shrink-0"
+                    />
+                    <button onClick={() => toggleFolder(bucketKey)} className="flex items-center gap-2 flex-1">
+                      <span className="text-xl">{bucket.icon}</span>
+                      <span className="font-bold text-sm text-foreground">{bucket.label}</span>
+                      <span className="text-xs text-muted-foreground">({fileCount} arquivos)</span>
+                    </button>
                   </div>
-                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => downloadBucketAsZip(bucket.id)} disabled={downloadingSelected} title="Baixar bucket inteiro">
+                      <Download className="h-3 w-3" />
+                    </Button>
+                    <button onClick={() => toggleFolder(bucketKey)}>
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
 
                 {isExpanded && (
                   <div className="px-3 pb-3 space-y-2">
                     {Object.entries(bucketFiles).sort(([a], [b]) => a.localeCompare(b)).map(([folder, folderFiles]) => {
                       const folderKey = `${bucket.id}/${folder}`;
                       const isFolderExpanded = expandedFolders.has(folderKey);
+                      const allFolderSelected = folderFiles.every(f => selectedFiles.has(getFileKey(f)));
+                      const someFolderSelected = folderFiles.some(f => selectedFiles.has(getFileKey(f)));
 
                       return (
                         <div key={folderKey} className="rounded-md border border-border/50 bg-muted/30">
-                          <button
-                            onClick={() => toggleFolder(folderKey)}
-                            className="w-full flex items-center justify-between p-2 hover:bg-muted/50 transition-colors rounded-md"
-                          >
-                            <div className="flex items-center gap-2">
-                              <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-xs font-medium text-foreground">{folder === '/' ? '(raiz)' : folder}</span>
-                              <span className="text-xs text-muted-foreground">({folderFiles.length})</span>
+                          <div className="flex items-center justify-between p-2 hover:bg-muted/50 transition-colors rounded-md">
+                            <div className="flex items-center gap-2 flex-1">
+                              <Checkbox
+                                checked={allFolderSelected ? true : someFolderSelected ? 'indeterminate' : false}
+                                onCheckedChange={() => toggleFolderSelection(bucket.id, folder)}
+                                className="shrink-0"
+                              />
+                              <button onClick={() => toggleFolder(folderKey)} className="flex items-center gap-2 flex-1">
+                                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-xs font-medium text-foreground">{folder === '/' ? '(raiz)' : folder}</span>
+                                <span className="text-xs text-muted-foreground">({folderFiles.length})</span>
+                              </button>
                             </div>
-                            {isFolderExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                          </button>
+                            <div className="flex items-center gap-1">
+                              <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={() => downloadFolderAsZip(bucket.id, folder)} disabled={downloadingSelected} title="Baixar pasta">
+                                <Download className="h-3 w-3" />
+                              </Button>
+                              <button onClick={() => toggleFolder(folderKey)}>
+                                {isFolderExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                              </button>
+                            </div>
+                          </div>
 
                           {isFolderExpanded && (
                             <div className="px-2 pb-2 space-y-1">
-                              {folderFiles.map((f, i) => (
-                                <div key={i} className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-background transition-colors">
-                                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                                    <img src={f.url} alt="" className="h-8 w-8 rounded object-cover shrink-0 border border-border" onError={e => (e.currentTarget.style.display = 'none')} />
-                                    <span className="truncate text-foreground">{f.name}</span>
-                                    <span className="text-muted-foreground shrink-0">{f.size > 1024 * 1024 ? `${(f.size / 1024 / 1024).toFixed(1)}MB` : `${Math.round(f.size / 1024)}KB`}</span>
+                              {folderFiles.map((f, i) => {
+                                const fKey = getFileKey(f);
+                                return (
+                                  <div key={i} className={`flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-background transition-colors ${selectedFiles.has(fKey) ? 'bg-accent/10' : ''}`}>
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                      <Checkbox
+                                        checked={selectedFiles.has(fKey)}
+                                        onCheckedChange={() => toggleFileSelection(f)}
+                                        className="shrink-0"
+                                      />
+                                      <img src={f.url} alt="" className="h-8 w-8 rounded object-cover shrink-0 border border-border" onError={e => (e.currentTarget.style.display = 'none')} />
+                                      <span className="truncate text-foreground">{f.name}</span>
+                                      <span className="text-muted-foreground shrink-0">{f.size > 1024 * 1024 ? `${(f.size / 1024 / 1024).toFixed(1)}MB` : `${Math.round(f.size / 1024)}KB`}</span>
+                                    </div>
+                                    <a href={f.url} target="_blank" rel="noopener noreferrer" className="shrink-0 ml-2 text-accent hover:text-accent/80">
+                                      <ExternalLink className="h-3 w-3" />
+                                    </a>
                                   </div>
-                                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="shrink-0 ml-2 text-accent hover:text-accent/80">
-                                    <ExternalLink className="h-3 w-3" />
-                                  </a>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
                         </div>
