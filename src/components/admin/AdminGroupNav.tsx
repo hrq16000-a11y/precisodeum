@@ -29,6 +29,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
     label: 'Geral',
     items: [
       { label: 'Visão Geral', icon: 'LayoutDashboard', path: '/admin' },
+      { label: 'Executivo', icon: 'BarChart3', path: '/admin/overview' },
     ],
   },
   {
