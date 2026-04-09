@@ -242,8 +242,9 @@ const DashboardServicesPage = () => {
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from('services').delete().eq('id', id);
-    toast.success('Anúncio removido');
+    if (!window.confirm('Tem certeza que deseja excluir este anúncio? Ele será movido para a lixeira.')) return;
+    await supabase.from('services').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+    toast.success('Anúncio movido para a lixeira');
     fetchServices();
   };
 

@@ -141,7 +141,7 @@ const SignupPage = () => {
 
       if (accountType === 'provider') {
         const slug = `${form.fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${form.city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
-        await supabase.from('providers').insert({
+        const { data: providerData } = await supabase.from('providers').insert({
           user_id: data.user.id,
           business_name: form.businessName || null,
           description: form.description,
@@ -152,7 +152,17 @@ const SignupPage = () => {
           category_id: form.categoryId || null,
           slug,
           status: 'pending',
-        });
+        }).select('id').single();
+
+        // Auto-create trial subscription for admin visibility
+        if (providerData?.id) {
+          await supabase.from('subscriptions').insert({
+            provider_id: providerData.id,
+            plan: 'trial',
+            status: 'trial',
+            starts_at: new Date().toISOString(),
+          });
+        }
       }
     }
 

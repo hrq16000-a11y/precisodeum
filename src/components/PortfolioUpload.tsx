@@ -11,6 +11,26 @@ interface PortfolioUploadProps {
 
 const MAX_PORTFOLIO_IMAGES = 20;
 
+const insertMediaRecord = async (userId: string, fileName: string, publicUrl: string, fileSize: number) => {
+  const { data: profile } = await supabase.from('profiles').select('user_ref').eq('id', userId).single();
+  await supabase.from('media').insert({
+    storage_path: `portfolio/${userId}/${fileName}`,
+    public_url: publicUrl,
+    original_name: fileName,
+    mime_type: 'image/jpeg',
+    entity_type: 'portfolio',
+    entity_ref: userId,
+    user_ref: profile?.user_ref || 'unlinked',
+    size_original: fileSize,
+    is_active: true,
+  } as any);
+};
+
+const deactivateMediaRecord = async (userId: string, fileName: string) => {
+  const storagePath = `portfolio/${userId}/${fileName}`;
+  await supabase.from('media').update({ is_active: false } as any).eq('storage_path', storagePath);
+};
+
 const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
   const [images, setImages] = useState<{ name: string; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -54,9 +74,15 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
         toast.error(`${file.name}: máximo 5MB`);
         continue;
       }
-      const path = `${userId}/${Date.now()}-${file.name}`;
+      const fileName = `${Date.now()}-${file.name}`;
+      const path = `${userId}/${fileName}`;
       const { error } = await supabase.storage.from('portfolio').upload(path, file);
-      if (error) toast.error(`Erro: ${file.name}`);
+      if (error) {
+        toast.error(`Erro: ${file.name}`);
+      } else {
+        const publicUrl = supabase.storage.from('portfolio').getPublicUrl(path).data.publicUrl;
+        await insertMediaRecord(userId, fileName, publicUrl, file.size);
+      }
     }
     await loadImages();
     setUploading(false);
@@ -66,6 +92,7 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
 
   const handleDelete = async (name: string) => {
     await supabase.storage.from('portfolio').remove([`${userId}/${name}`]);
+    await deactivateMediaRecord(userId, name);
     setImages((prev) => prev.filter((i) => i.name !== name));
     toast.success('Imagem removida');
   };
