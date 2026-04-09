@@ -241,10 +241,11 @@ const AdminPage = () => {
         <AdminQuickActions />
       </div>
 
-      {/* Health Monitor + Platform Pulse */}
-      <div className="mt-5 grid gap-4 grid-cols-1 lg:grid-cols-2">
+      {/* Health Monitor + Platform Pulse + Growth */}
+      <div className="mt-5 grid gap-4 grid-cols-1 lg:grid-cols-3">
         <AdminHealthMonitor />
         <AdminPlatformPulse />
+        <AdminGrowthChart />
       </div>
 
       {/* Pending queues */}
