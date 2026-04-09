@@ -155,7 +155,7 @@ const Index03 = () => {
           <PopularServices />
 
           {/* Recent Services */}
-          <RecentServices />
+          <RecentServices services={recentServices} />
 
           {/* Ad 2 */}
           <AdBanner position="mid-content" className="container mx-auto px-4" />
