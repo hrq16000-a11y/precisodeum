@@ -1,24 +1,12 @@
-import { useSponsorsByPosition } from '@/components/SponsorAd';
+import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { handleImageError } from '@/lib/imageResolver';
 import { ExternalLink } from 'lucide-react';
 
-interface ShowcaseSponsor {
-  id: string;
-  title: string;
-  company_name?: string;
-  short_description?: string;
-  image_url: string | null;
-  link_url: string | null;
-  position: string;
-  tier?: string;
-}
-
 /** Full-width showcase with professional card layout */
 const AdShowcase = ({ className = '' }: { className?: string }) => {
-  const { data: rawSponsors = [] } = useSponsorsByPosition('showcase');
-  const sponsors = rawSponsors as unknown as ShowcaseSponsor[];
+  const { data: sponsors = [] } = useSponsorsBySlot('showcase');
   const tracked = useRef(new Set<string>());
   const [idx, setIdx] = useState(0);
   const touchStart = useRef<number | null>(null);
@@ -57,7 +45,6 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
     supabase.rpc('increment_sponsor_click', { sponsor_id: id } as any);
   };
 
-  // Determine grid layout based on count
   const gridCols = sponsors.length === 1
     ? 'grid-cols-1'
     : sponsors.length === 2
@@ -79,7 +66,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
 
         {/* Desktop: professional grid */}
         <div className={`hidden sm:grid ${gridCols} gap-4`}>
-          {sponsors.slice(0, 6).map((s) => (
+          {sponsors.map((s) => (
             <a
               key={s.id}
               href={s.link_url || '#'}
@@ -88,7 +75,6 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
               onClick={() => handleClick(s.id)}
               className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5"
             >
-              {/* Image area — fixed aspect ratio, no gaps */}
               <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted/20">
                 {s.image_url ? (
                   <img
@@ -103,15 +89,12 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
                     <span className="text-2xl font-bold text-muted-foreground/50">{s.title}</span>
                   </div>
                 )}
-                {/* Tier badge */}
                 {s.tier === 'premium' && (
                   <span className="absolute top-2 left-2 rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold text-accent-foreground shadow-sm">
                     Premium
                   </span>
                 )}
               </div>
-
-              {/* Info bar */}
               <div className="flex items-center justify-between border-t border-border/60 px-3 py-2.5">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-foreground">

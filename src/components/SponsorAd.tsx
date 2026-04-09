@@ -1,19 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import SponsorImage from '@/components/SponsorImage';
-
-interface Sponsor {
-  id: string;
-  title: string;
-  image_url: string | null;
-  logo_url?: string | null;
-  link_url: string | null;
-  position: string;
-  tier?: string;
-  start_date?: string | null;
-  end_date?: string | null;
-}
 
 interface SponsorAdProps {
   position: string;
@@ -21,9 +9,9 @@ interface SponsorAdProps {
   layout?: 'horizontal' | 'vertical' | 'inline';
 }
 
-function weightedShuffle(sponsors: Sponsor[]): Sponsor[] {
-  const weighted = sponsors.flatMap((s) => {
-    const tier = (s as any).tier || 'basic';
+function weightedShuffle<T extends { id: string; tier?: string }>(items: T[]): T[] {
+  const weighted = items.flatMap((s) => {
+    const tier = s.tier || 'basic';
     const weight = tier === 'premium' ? 5 : tier === 'destaque' ? 3 : 1;
     return Array(weight).fill(s);
   });
@@ -36,27 +24,6 @@ function weightedShuffle(sponsors: Sponsor[]): Sponsor[] {
   });
 }
 
-export function useSponsorsByPosition(position: string) {
-  return useQuery({
-    queryKey: ['sponsors', position],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('sponsors')
-        .select('*')
-        .eq('active', true)
-        .eq('position', position)
-        .order('display_order');
-      const now = new Date().toISOString().split('T')[0];
-      return ((data || []) as Sponsor[]).filter((s: any) => {
-        if (s.start_date && s.start_date > now) return false;
-        if (s.end_date && s.end_date < now) return false;
-        return true;
-      });
-    },
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
 function trackImpression(id: string) {
   supabase.rpc('increment_sponsor_impression', { sponsor_id: id } as any).then(() => {});
 }
@@ -66,7 +33,7 @@ function trackClick(id: string) {
 }
 
 const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorAdProps) => {
-  const { data: rawSponsors = [] } = useSponsorsByPosition(position);
+  const { data: rawSponsors = [] } = useSponsorsBySlot(position);
   const sponsors = useMemo(() => weightedShuffle(rawSponsors), [rawSponsors]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const tracked = useRef(new Set<string>());
@@ -99,7 +66,7 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
 
   if (sponsors.length === 0) return null;
 
-  const handleClick = (s: Sponsor) => {
+  const handleClick = (s: { id: string }) => {
     trackClick(s.id);
   };
 
@@ -108,7 +75,6 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
       <div className={`space-y-3 ${className}`}>
         {sponsors.map((s) => {
           const visualSrc = s.logo_url || s.image_url;
-
           return (
             <a
               key={s.id}
@@ -135,7 +101,6 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
       <div className={`flex flex-wrap items-center justify-center gap-4 ${className}`}>
         {sponsors.map((s) => {
           const visualSrc = s.logo_url || s.image_url;
-
           return (
             <a
               key={s.id}

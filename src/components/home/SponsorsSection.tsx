@@ -1,25 +1,7 @@
 import { useEffect, useRef, useMemo, memo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { handleImageError } from '@/lib/imageResolver';
-
-interface Sponsor {
-  id: string;
-  title: string;
-  company_name?: string;
-  image_url: string | null;
-  logo_url?: string | null;
-  link_url: string | null;
-  position: string;
-  tier?: string;
-  ad_format?: string;
-  max_width?: number;
-  max_height?: number;
-  short_description?: string;
-}
-
-interface Props {
-  sponsors: Sponsor[];
-}
+import { useSponsorsBySlot } from '@/hooks/useSponsors';
 
 function trackMetric(sponsorId: string, eventType: 'impression' | 'click') {
   supabase.rpc('track_sponsor_metric', {
@@ -30,10 +12,9 @@ function trackMetric(sponsorId: string, eventType: 'impression' | 'click') {
   } as any).then(() => {});
 }
 
-const SponsorCard = memo(({ sponsor }: { sponsor: Sponsor }) => {
+const SponsorCard = memo(({ sponsor }: { sponsor: any }) => {
   const isPremium = sponsor.tier === 'premium';
   const visualSrc = sponsor.logo_url || sponsor.image_url;
-  const usesOfficialLogo = Boolean(sponsor.logo_url);
 
   if (!visualSrc) return null;
 
@@ -72,21 +53,20 @@ const SponsorCard = memo(({ sponsor }: { sponsor: Sponsor }) => {
 
 SponsorCard.displayName = 'SponsorCard';
 
-const SponsorsSection = ({ sponsors }: Props) => {
-  const visibleSponsors = sponsors.filter(
-    (s) => Boolean(s.logo_url || s.image_url)
-  );
+/** Self-contained: fetches position=card sponsors internally */
+const SponsorsSection = () => {
+  const { data: sponsors = [] } = useSponsorsBySlot('card');
   const tracked = useRef(new Set<string>());
 
-  // Shuffle and pick 3
+  // Shuffle for variety
   const displayed = useMemo(() => {
-    const arr = [...visibleSponsors];
+    const arr = [...sponsors];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
-    return arr.slice(0, 6);
-  }, [visibleSponsors]);
+    return arr;
+  }, [sponsors]);
 
   useEffect(() => {
     displayed.forEach((s) => {

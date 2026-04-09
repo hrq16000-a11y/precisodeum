@@ -1,22 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSponsorsByType } from '@/hooks/useSponsors';
+import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import SponsorPremiumCard from './SponsorPremiumCard';
 
 interface Props {
-  city?: string;
-  category?: string;
   className?: string;
 }
 
 /** Sticky sidebar widget for desktop - shows contextual sponsors */
-const SponsorSidebarWidget = ({ city, category, className = '' }: Props) => {
-  const { data: globalSponsors = [] } = useSponsorsByType('global');
-  const { data: citySponsors = [] } = useSponsorsByType('city', city);
-  const { data: catSponsors = [] } = useSponsorsByType('category', category);
+const SponsorSidebarWidget = ({ className = '' }: Props) => {
+  const { data: sponsors = [] } = useSponsorsBySlot('sidebar');
   const tracked = useRef(new Set<string>());
-
-  const sponsors = [...globalSponsors, ...citySponsors, ...catSponsors].slice(0, 3);
 
   useEffect(() => {
     sponsors.forEach(s => {
