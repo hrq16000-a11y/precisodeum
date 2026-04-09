@@ -118,8 +118,6 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
   const animatedServices = useCountUp(totalServices || 0);
   const animatedJobs = useCountUp(totalJobs || 0);
   const [showJobs, setShowJobs] = useState(false);
-  const { data: banners = [] } = useHeroBanners();
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [bgIndex, setBgIndex] = useState(0);
   const { city: geoCity } = useGeoCity();
 
@@ -129,33 +127,13 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
     return () => clearInterval(interval);
   }, [totalJobs]);
 
-  useEffect(() => {
-    if (banners.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % banners.length);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [banners.length]);
-
-  // Background image rotation (independent of CMS banners)
+  // Background image rotation
   useEffect(() => {
     const interval = setInterval(() => {
       setBgIndex((prev) => (prev + 1) % DEFAULT_BG_IMAGES.length);
     }, BG_INTERVAL);
     return () => clearInterval(interval);
   }, []);
-
-  const activeBanner: HeroBannerData | null = banners.length > 0 ? banners[currentSlide] || banners[0] : null;
-  const overlayOpacity = activeBanner?.overlay_opacity ?? 0.8;
-  const title = activeBanner?.title || 'Encontre um';
-  const subtitle = activeBanner?.subtitle || '';
-  const ctaText = activeBanner?.cta_text || 'Cadastrar agora';
-  const ctaLink = activeBanner?.cta_link || '/cadastro';
-  const textAlign = activeBanner?.text_alignment || 'center';
-  const hasCustomTitle = !!activeBanner?.title;
-  const hasCmsBg = !!activeBanner?.image_url;
-
-  const alignClass = textAlign === 'left' ? 'items-start text-left' : textAlign === 'right' ? 'items-end text-right' : 'items-center text-center';
 
   return (
     <section className="relative overflow-hidden py-12 md:py-28">
