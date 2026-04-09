@@ -343,7 +343,7 @@ const DashboardPage = () => {
       </AnimatePresence>
 
       {/* Stats with animated counters and gradient cards */}
-      <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-5">
+      <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         {statCards.map((stat, i) => {
           const Icon = stat.icon;
           return (
