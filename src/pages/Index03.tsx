@@ -78,6 +78,39 @@ const Index03 = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  const { data: recentServices = [] } = useQuery({
+    queryKey: ['index03-recent-services'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('services')
+        .select('id, service_name, service_area, created_at, provider_id, category_id, categories(name, slug, icon)')
+        .order('created_at', { ascending: false })
+        .limit(6);
+      if (!data || data.length === 0) return [];
+      const providerIds = [...new Set(data.map((s: any) => s.provider_id))];
+      const { data: providers } = await supabase.from('providers').select('id, city, state').in('id', providerIds);
+      const providerMap: Record<string, any> = {};
+      (providers || []).forEach((p: any) => { providerMap[p.id] = p; });
+      return data.map((s: any) => ({ ...s, provider: providerMap[s.provider_id] || null }));
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: topCities = [] } = useQuery({
+    queryKey: ['index03-cities'],
+    queryFn: async () => {
+      const { data: services } = await supabase.from('services').select('provider_id');
+      if (!services || services.length === 0) return [];
+      const providerIds = [...new Set(services.map((s: any) => s.provider_id))];
+      const { data: providers } = await supabase.from('providers').select('city').in('id', providerIds);
+      if (!providers) return [];
+      const cityNames = [...new Set(providers.map((p: any) => p.city).filter(Boolean))];
+      const { data: cities } = await supabase.from('cities').select('name, slug, state').in('name', cityNames);
+      return (cities || []).slice(0, 6);
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
   const heroTopSponsors = sponsors.filter((s: any) => s.position === 'hero-top' && (s.image_url || s.logo_url));
 
   return (
