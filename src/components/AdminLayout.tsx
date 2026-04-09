@@ -237,20 +237,26 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                         {group.items.map((item) => {
                           const active = location.pathname === item.path;
                           return (
-                            <Link
+                           <Link
                               key={item.path}
                               to={item.path}
                               onClick={() => setSidebarOpen(false)}
-                              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:translate-x-0.5'}`}
+                              className={`group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'}`}
                             >
                               {active && (
                                 <motion.div
                                   layoutId="admin-sidebar-active"
-                                  className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-accent"
+                                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-accent"
                                   transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
                                 />
                               )}
-                              <item.icon className={`h-4 w-4 shrink-0 transition-transform duration-200 ${active ? 'scale-110' : ''}`} />
+                              <motion.div
+                                animate={active ? { scale: 1.1 } : { scale: 1 }}
+                                transition={{ duration: 0.2 }}
+                                className="shrink-0"
+                              >
+                                <item.icon className={`h-4 w-4 ${active ? 'text-accent' : 'group-hover:text-sidebar-foreground'}`} />
+                              </motion.div>
                               <span className="truncate">{item.label}</span>
                             </Link>
                           );

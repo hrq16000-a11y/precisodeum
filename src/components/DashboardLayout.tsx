@@ -108,8 +108,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-60 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
-        <div className="flex h-14 shrink-0 items-center px-5 border-b border-sidebar-border">
+        <div className="flex h-14 shrink-0 items-center justify-between px-5 border-b border-sidebar-border">
           <Link to="/" className="flex items-center"><img src={logo} alt="Preciso de um" className="h-7 brightness-0 invert" /></Link>
+          <Link to="/" className="text-[9px] text-sidebar-foreground/30 hover:text-sidebar-foreground/50 transition-colors font-medium">← Site</Link>
         </div>
 
         {/* User info card */}
@@ -160,7 +161,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           )}
         </motion.div>
 
-        <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-1 px-3 pb-4">
+        <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-0.5 px-3 pb-4">
           {menuItems.map((item, i) => {
             const active = location.pathname === item.path;
             return (
@@ -174,22 +175,27 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 <Link
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:translate-x-0.5'}`}
+                  className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'}`}
                 >
                   {active && (
                     <motion.div
                       layoutId="sidebar-active-pill"
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-accent"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-accent"
                       transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
                     />
                   )}
-                  <item.icon className={`h-4 w-4 transition-transform duration-200 ${active ? 'scale-110' : ''}`} />
+                  <motion.div
+                    animate={active ? { scale: 1.15, rotate: [0, -5, 5, 0] } : { scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <item.icon className={`h-4 w-4 ${active ? 'text-accent' : 'group-hover:text-sidebar-foreground'}`} />
+                  </motion.div>
                   <span className="flex-1">{item.label}</span>
                   {item.badge > 0 && (
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-accent-foreground"
+                      className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent px-1.5 text-[9px] font-bold text-accent-foreground shadow-sm"
                     >
                       {item.badge > 99 ? '99+' : item.badge}
                     </motion.span>
