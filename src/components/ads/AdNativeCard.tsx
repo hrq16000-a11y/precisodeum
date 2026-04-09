@@ -1,4 +1,4 @@
-import { useSponsorsByPosition } from '@/components/SponsorAd';
+import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Megaphone } from 'lucide-react';
@@ -10,10 +10,10 @@ interface AdNativeCardProps {
 }
 
 const AdNativeCard = ({ sponsorIndex = 0, className = '' }: AdNativeCardProps) => {
-  const { data: sponsors = [] } = useSponsorsByPosition('native');
+  const { data: sponsors = [] } = useSponsorsBySlot('native');
   const tracked = useRef(new Set<string>());
 
-  const sponsor = sponsors[sponsorIndex % sponsors.length];
+  const sponsor = sponsors[sponsorIndex % (sponsors.length || 1)];
   const visualSrc = sponsor?.logo_url || sponsor?.image_url;
 
   useEffect(() => {

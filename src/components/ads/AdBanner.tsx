@@ -1,4 +1,4 @@
-import { useSponsorsByPosition } from '@/components/SponsorAd';
+import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import SponsorImage from '@/components/SponsorImage';
@@ -20,7 +20,7 @@ function trackMetric(id: string, slotSlug: string, eventType: 'impression' | 'cl
 }
 
 const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBannerProps) => {
-  const { data: sponsors = [] } = useSponsorsByPosition(position);
+  const { data: sponsors = [] } = useSponsorsBySlot(position);
   const [idx, setIdx] = useState(0);
   const tracked = useRef(new Set<string>());
   const touchStart = useRef<number | null>(null);
