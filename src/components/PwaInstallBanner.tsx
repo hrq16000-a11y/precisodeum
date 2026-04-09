@@ -35,7 +35,7 @@ const PwaInstallBanner = () => {
   const { data: settings } = usePwaSettings();
   const { user, loading: authLoading } = useAuth();
 
-  // Auto-show respecting ALL settings
+  // Auto-show respecting ALL settings + scroll 50% OR delay trigger
   useEffect(() => {
     if (isStandalone || autoShownRef.current || authLoading) return;
     if (!settings) return;
@@ -67,18 +67,34 @@ const PwaInstallBanner = () => {
     const impressions = getImpressionCount();
     if (settings.max_impressions > 0 && impressions >= settings.max_impressions) return;
 
-    // Delay from settings (in seconds)
-    const delayMs = (settings.show_delay_seconds || 5) * 1000;
-
-    const timer = setTimeout(() => {
+    const triggerShow = () => {
+      if (autoShownRef.current) return;
       autoShownRef.current = true;
       setSource('banner');
       setShow(true);
       incrementImpressions();
       trackPwaEvent('impression', 'banner');
-    }, delayMs);
+    };
 
-    return () => clearTimeout(timer);
+    // Trigger 1: Delay from settings (in seconds)
+    const delayMs = (settings.show_delay_seconds || 5) * 1000;
+    const timer = setTimeout(triggerShow, delayMs);
+
+    // Trigger 2: Scroll past 50% of the page
+    const onScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight > 0 && scrollTop / docHeight >= 0.5) {
+        triggerShow();
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('scroll', onScroll);
+    };
   }, [
     isStandalone, settings, authLoading, user,
     isDismissed, getVisitCount, getImpressionCount, incrementImpressions,
