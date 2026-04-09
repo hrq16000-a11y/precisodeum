@@ -164,20 +164,30 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
   return (
     <section className={`py-6 ${className}`}>
       <div className="container">
-        <div className="rounded-xl bg-muted/30 p-4">
+        <div className="rounded-xl bg-muted/30 p-4 overflow-hidden">
           <span className="mb-2 block text-center text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
           <a
             href={current.link_url || '#'}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => handleClick(current)}
-            className="block text-center transition-opacity hover:opacity-80"
+            className="block transition-opacity hover:opacity-80"
             title={current.title}
           >
             {currentVisualSrc ? (
-              <SponsorImage src={currentVisualSrc} alt={current.title} containerClassName="mx-auto max-w-[300px] rounded-lg" />
+              <img
+                src={currentVisualSrc}
+                alt={current.title}
+                className="w-full object-cover object-center"
+                style={{ aspectRatio: '8/1', borderRadius: 10 }}
+                width={1600}
+                height={200}
+                loading="lazy"
+              />
             ) : (
-              <span className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground">{current.title}</span>
+              <div className="flex items-center justify-center bg-card" style={{ aspectRatio: '8/1' }}>
+                <span className="text-sm font-medium text-muted-foreground">{current.title}</span>
+              </div>
             )}
           </a>
           {sponsors.length > 1 && (

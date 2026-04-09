@@ -204,20 +204,30 @@ const AdSlot = ({ slotSlug, className = '', layout = 'banner', category, city, s
   return (
     <section className={`py-4 ${className}`}>
       <div className="container mx-auto px-4">
-        <div className="rounded-xl bg-muted/30 p-3">
+        <div className="rounded-xl bg-muted/30 p-3 overflow-hidden">
           <span className="mb-2 block text-center text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
           <a
             href={current.link_url || '#'}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => handleClick(current)}
-            className="block text-center transition-opacity hover:opacity-80"
+            className="block transition-opacity hover:opacity-80"
             title={current.title}
           >
             {current.image_url ? (
-              <SponsorImage src={current.image_url} alt={current.title} containerClassName="mx-auto rounded-lg" />
+              <img
+                src={current.image_url}
+                alt={current.title}
+                className="w-full object-cover object-center"
+                style={{ aspectRatio: '8/1', borderRadius: 10 }}
+                width={1600}
+                height={200}
+                loading="lazy"
+              />
             ) : (
-              <span className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground">{current.title}</span>
+              <div className="flex items-center justify-center bg-card" style={{ aspectRatio: '8/1' }}>
+                <span className="text-sm font-medium text-muted-foreground">{current.title}</span>
+              </div>
             )}
           </a>
           {sponsors.length > 1 && (
