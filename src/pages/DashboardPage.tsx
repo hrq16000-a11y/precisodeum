@@ -274,58 +274,18 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout>
-      {/* Welcome Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative rounded-2xl bg-gradient-to-br from-accent/8 via-primary/5 to-transparent border border-accent/10 p-4 overflow-hidden"
-      >
-        <div className="absolute inset-0 shimmer opacity-10" />
-        <div className="relative flex items-center gap-3">
-          <motion.div
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-accent/20 to-primary/20"
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <Zap className="h-5 w-5 text-accent" />
-          </motion.div>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">
-              {greeting}, {profile?.full_name?.split(' ')[0] || 'Profissional'}!
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {pendingLeads > 0
-                ? `Você tem ${pendingLeads} lead${pendingLeads !== 1 ? 's' : ''} pendente${pendingLeads !== 1 ? 's' : ''}`
-                : 'Seu painel profissional'}
-            </p>
-          </div>
-          <div className="hidden sm:flex items-center gap-2">
-            {levelName && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 }}
-                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                style={{ backgroundColor: `${levelColor}20`, color: levelColor }}
-              >
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: levelColor }} />
-                {levelName}
-              </motion.span>
-            )}
-            {accountTypeName && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4 }}
-                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold"
-                style={{ borderColor: `${accountTypeColor}40`, color: accountTypeColor }}
-              >
-                {accountTypeName}
-              </motion.span>
-            )}
-          </div>
-        </div>
-      </motion.div>
+      {/* Enhanced Welcome Hero */}
+      <WelcomeHero
+        greeting={greeting}
+        name={profile?.full_name?.split(' ')[0] || 'Profissional'}
+        pendingLeads={pendingLeads}
+        levelName={levelName}
+        levelColor={levelColor}
+        accountTypeName={accountTypeName}
+        accountTypeColor={accountTypeColor}
+        memberSince={profile?.created_at}
+        plan={provider?.plan}
+      />
 
       {/* Quick Actions Bar */}
       <motion.div
@@ -342,6 +302,9 @@ const DashboardPage = () => {
             <Eye className="h-3.5 w-3.5" /> Ver Minha Página
           </Button>
         )}
+        <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs" onClick={() => navigate('/dashboard/minha-pagina')}>
+          <Layout className="h-3.5 w-3.5" /> Personalizar
+        </Button>
         {pendingLeads > 0 && (
           <Button variant="accent" size="sm" className="rounded-full gap-1.5 text-xs" onClick={() => navigate('/dashboard/leads')}>
             <MessageSquare className="h-3.5 w-3.5" /> Responder Leads
