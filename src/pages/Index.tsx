@@ -1,4 +1,4 @@
-import { lazy as reactLazy, Suspense, memo, Component, ReactNode, type ComponentType, useMemo } from 'react';
+import { lazy as reactLazy, Suspense, memo, Component, ReactNode, type ComponentType, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
