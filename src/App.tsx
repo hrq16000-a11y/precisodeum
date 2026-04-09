@@ -175,6 +175,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <CurtainReveal />
           <ScrollToTop />
           <AuthProvider>
             <OAuthRedirectHandler />
