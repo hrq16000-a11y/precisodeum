@@ -188,7 +188,7 @@ const HeroBanner = ({}: HeroBannerProps) => {
           transition={{ duration: 0.5, delay: 0.35 }}
           className="mt-4 md:mt-6 w-full max-w-2xl"
         >
-          <div className="rounded-2xl bg-background/85 p-2 ring-1 ring-primary-foreground/10 shadow-card animate-glow-ring">
+          <div className="animate-glow-ring rounded-full">
             <SearchBar />
           </div>
           <motion.div
