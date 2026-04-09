@@ -152,7 +152,7 @@ const CityPage = () => {
       </section>
 
       <Suspense fallback={null}><SponsorLeaderBanner /></Suspense>
-      <Suspense fallback={null}><SponsorTopBanner city={city!.name} /></Suspense>
+      <Suspense fallback={null}><SponsorTopBanner /></Suspense>
 
       <div className="container py-8">
         <p className="mb-6 text-sm text-muted-foreground">

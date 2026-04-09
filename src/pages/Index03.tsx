@@ -127,7 +127,7 @@ const Index03 = () => {
           {heroTopSponsors.length > 0 && <LeaderSponsor sponsors={heroTopSponsors as any} />}
 
           {/* Sponsor Top Banner */}
-          <SponsorTopBanner city={geoCity || undefined} />
+          <SponsorTopBanner />
 
           {/* Stats */}
           <StatsCounter />

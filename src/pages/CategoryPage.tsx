@@ -196,7 +196,7 @@ const CategoryPage = () => {
       </section>
 
       <Suspense fallback={null}><SponsorLeaderBanner /></Suspense>
-      <Suspense fallback={null}><SponsorTopBanner category={slug} /></Suspense>
+      <Suspense fallback={null}><SponsorTopBanner /></Suspense>
       <Suspense fallback={null}><AdSlot slotSlug="category-top" category={slug} /></Suspense>
 
       <div className="container py-8">
