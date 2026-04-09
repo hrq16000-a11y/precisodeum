@@ -1,86 +1,28 @@
 
 
-## Bug: Cadastro de Profissional Quebrado — Diagnóstico e Plano de Correção
+## Plano: Lista de busca com ordem aleatória e animações premium
 
-### Root Cause
+### O que muda
 
-The RLS policy **"Users can update own profile"** has a `WITH CHECK` clause that **prevents users from changing their own `profile_type` and `role`**:
+A lista de sugestões da barra de busca terá os itens em **ordem aleatória** (embaralhados) cada vez que aparecer, e cada item entrará com **animações staggered** (escalonadas) para um efeito sofisticado e atrativo.
 
-```sql
-WITH CHECK: (auth.uid() = id) 
-  AND (profile_type = (SELECT p.profile_type FROM profiles p WHERE p.id = auth.uid()))
-  AND (role = (SELECT p.role FROM profiles p WHERE p.id = auth.uid()))
-```
+### Alterações em `src/components/SearchBar.tsx`
 
-This means the profile update at signup (line 136-140 of `SignupPage.tsx`) that tries to change `profile_type` from `'client'` to `'provider'` is **silently rejected by RLS**. The user is created, but always remains a `client`.
+1. **Shuffle dos itens trending** --- ao montar a lista de trending (sem query), embaralhar o array com Fisher-Yates para que a ordem mude a cada abertura do dropdown.
 
-The same issue affects `ProfileTypeChooser` and `ProfileTypeSwitcher` — any attempt by a user to change their own type is blocked.
+2. **Animações staggered nos itens** --- cada item da lista recebe um `style` com `animation` CSS inline usando delay incremental (`i * 60ms`), criando um efeito cascata onde cada item desliza suavemente para dentro com fade e leve translação.
 
-### Fix Strategy
+3. **Efeito de entrada no container** --- o dropdown inteiro recebe uma animação de `scale-in` + `fade-in` sutil ao abrir.
 
-Two changes, both surgical:
+4. **Micro-interação no hover** --- cada item ganha um efeito de escala sutil (`scale(1.01)`) e transição de cor de fundo com gradiente suave ao passar o mouse.
 
-**1. Update the `handle_new_user()` trigger** to read `profile_type` from `raw_user_meta_data` during account creation, so the profile is created with the correct type from the start.
+5. **Ícone com brilho** --- o ícone/emoji de cada item recebe um fundo com gradiente sutil e uma sombra colorida leve para dar sofisticação.
 
-**2. Relax the RLS `WITH CHECK`** on the "Users can update own profile" policy to allow users to change `profile_type` and `role` (removing the self-referencing subquery constraint). This unblocks `ProfileTypeSwitcher` and `ProfileTypeChooser` as well.
+6. **Badge de tipo com cor contextual** --- os badges "Popular", "Categoria", "Serviço", "Cidade" ganham cores distintas por tipo (accent para popular, azul para categoria, etc).
 
-**3. Update `SignupPage.tsx`** to pass `profile_type` in user metadata so the trigger picks it up.
+### Detalhes técnicos
 
-### Technical Details
-
-**Migration 1 — Update `handle_new_user()` trigger:**
-```sql
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
-AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name, email, avatar_url, level_id, account_type_id, profile_type, role)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data ->> 'full_name', ''),
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', ''),
-    '716c417b-fdc8-4121-879b-abcd8f0a216f',
-    '50a97ea2-c43e-472f-b6f2-4dd180379cad',
-    COALESCE(NULLIF(NEW.raw_user_meta_data ->> 'profile_type', ''), 'client'),
-    CASE 
-      WHEN NEW.raw_user_meta_data ->> 'profile_type' = 'rh' THEN 'client'
-      WHEN NEW.raw_user_meta_data ->> 'profile_type' IS NOT NULL THEN NEW.raw_user_meta_data ->> 'profile_type'
-      ELSE 'client'
-    END
-  );
-  RETURN NEW;
-END;
-$$;
-```
-
-**Migration 2 — Fix RLS policy:**
-```sql
-DROP POLICY "Users can update own profile" ON profiles;
-CREATE POLICY "Users can update own profile" ON profiles
-  FOR UPDATE TO authenticated
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
-```
-
-**Code change — `SignupPage.tsx` (line ~118):**
-Pass `profile_type` in signup metadata:
-```typescript
-options: {
-  data: { full_name: form.fullName, profile_type_chosen: true, profile_type: accountType },
-  emailRedirectTo: window.location.origin,
-},
-```
-
-### What This Fixes
-- New signups as "Profissional" or "RH" will have the correct type from creation
-- `ProfileTypeSwitcher` (dashboard) will work again
-- `ProfileTypeChooser` (social login onboarding) will work again
-- No existing data or RLS on other tables is affected
-
-### What Stays Unchanged
-- All 50 tables with RLS enabled
-- Admin policies (admins can still update any profile)
-- The `auto_migrate_profile_type()` trigger continues working
-- Provider record creation logic in SignupPage stays as-is
+- Animação CSS inline via `style={{ animationDelay }}` com keyframe `suggestion-slide-in` adicionado ao `index.css`
+- Shuffle feito com `useMemo` usando seed baseado no estado `isOpen` para re-embaralhar ao reabrir
+- Sem dependência nova --- apenas CSS e lógica de array
 
