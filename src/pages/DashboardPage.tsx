@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
+import AvatarReminder from '@/components/dashboard/AvatarReminder';
 import LeadsChart from '@/components/dashboard/LeadsChart';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import ConversionInsights from '@/components/dashboard/ConversionInsights';
@@ -290,6 +291,11 @@ const DashboardPage = () => {
         plan={provider?.plan}
         avatarUrl={profile?.avatar_url || undefined}
       />
+
+      {/* Avatar Reminder */}
+      <div className="mt-4">
+        <AvatarReminder avatarUrl={profile?.avatar_url} />
+      </div>
 
       {/* Quick Actions Bar */}
       <QuickStatsBar pendingLeads={pendingLeads} providerSlug={provider?.slug} />
