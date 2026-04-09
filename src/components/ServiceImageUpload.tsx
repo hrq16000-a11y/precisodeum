@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ImagePlus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleImageError } from '@/lib/imageResolver';
+import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils';
 
 interface ServiceImage {
   id: string;
@@ -33,46 +34,14 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
     fetchImages();
   }, [serviceId]);
 
-  /** Get user_ref for media table */
-  const getUserRef = async (): Promise<string | null> => {
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('user_ref')
-        .eq('id', userId)
-        .maybeSingle();
-      return data?.user_ref || null;
-    } catch {
-      return null;
-    }
-  };
-
-  /** Insert into media table (additive, non-blocking) */
-  const insertMedia = async (publicUrl: string, storagePath: string, file: File) => {
-    try {
-      const userRef = await getUserRef();
-      await supabase.from('media').insert({
-        user_ref: userRef,
-        entity_type: 'service',
-        entity_ref: serviceId,
-        original_name: file.name,
-        storage_path: storagePath,
-        public_url: publicUrl,
-        mime_type: file.type || 'image/jpeg',
-        size_original: file.size,
-        is_active: true,
-      });
-    } catch {
-      // Non-blocking: media insert failure should not break upload
-    }
-  };
-
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     setUploading(true);
     try {
+      const { userRef } = await resolveIdentity(userId);
+
       for (const file of Array.from(files)) {
         if (file.size > 5 * 1024 * 1024) {
           toast.error(`${file.name} excede 5MB`);
@@ -103,8 +72,19 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
           display_order: maxOrder,
         });
 
-        // Also insert into media table (additive, non-blocking)
-        await insertMedia(urlData.publicUrl, `service-images/${path}`, file);
+        // Idempotent media upsert
+        if (userRef) {
+          await upsertMedia({
+            storagePath: `service-images/${path}`,
+            publicUrl: urlData.publicUrl,
+            originalName: file.name,
+            mimeType: file.type || 'image/jpeg',
+            entityType: 'service',
+            entityRef: serviceId,
+            userRef,
+            sizeOriginal: file.size,
+          });
+        }
       }
 
       toast.success('Imagens enviadas!');
@@ -118,20 +98,17 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
   };
 
   const handleDelete = async (img: ServiceImage) => {
-    // Extract path from URL
     const urlParts = img.image_url.split('/service-images/');
     if (urlParts[1]) {
       await supabase.storage.from('service-images').remove([decodeURIComponent(urlParts[1])]);
     }
     await supabase.from('service_images').delete().eq('id', img.id);
 
-    // Also deactivate in media table (non-blocking)
-    try {
-      await supabase
-        .from('media')
-        .update({ is_active: false })
-        .eq('public_url', img.image_url);
-    } catch {}
+    // Deactivate in media table with audit
+    await deactivateMedia(
+      urlParts[1] ? `service-images/${decodeURIComponent(urlParts[1])}` : img.image_url,
+      'service'
+    );
 
     toast.success('Imagem removida');
     fetchImages();
@@ -142,7 +119,6 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
     const swapIndex = direction === 'up' ? index - 1 : index + 1;
     if (swapIndex < 0 || swapIndex >= newImages.length) return;
 
-    // Swap display_order
     const tempOrder = newImages[index].display_order;
     newImages[index].display_order = newImages[swapIndex].display_order;
     newImages[swapIndex].display_order = tempOrder;

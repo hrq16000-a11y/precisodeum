@@ -3,6 +3,7 @@ import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils';
 
 interface PortfolioUploadProps {
   userId: string;
@@ -10,26 +11,6 @@ interface PortfolioUploadProps {
 }
 
 const MAX_PORTFOLIO_IMAGES = 20;
-
-const insertMediaRecord = async (userId: string, fileName: string, publicUrl: string, fileSize: number) => {
-  const { data: profile } = await supabase.from('profiles').select('user_ref').eq('id', userId).single();
-  await supabase.from('media').insert({
-    storage_path: `portfolio/${userId}/${fileName}`,
-    public_url: publicUrl,
-    original_name: fileName,
-    mime_type: 'image/jpeg',
-    entity_type: 'portfolio',
-    entity_ref: userId,
-    user_ref: profile?.user_ref || 'unlinked',
-    size_original: fileSize,
-    is_active: true,
-  } as any);
-};
-
-const deactivateMediaRecord = async (userId: string, fileName: string) => {
-  const storagePath = `portfolio/${userId}/${fileName}`;
-  await supabase.from('media').update({ is_active: false } as any).eq('storage_path', storagePath);
-};
 
 const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
   const [images, setImages] = useState<{ name: string; url: string }[]>([]);
@@ -69,6 +50,10 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
     }
 
     setUploading(true);
+
+    // Resolve identity once for all uploads
+    const { userRef } = await resolveIdentity(userId);
+
     for (const file of filesToUpload) {
       if (file.size > 5 * 1024 * 1024) {
         toast.error(`${file.name}: máximo 5MB`);
@@ -79,9 +64,18 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
       const { error } = await supabase.storage.from('portfolio').upload(path, file);
       if (error) {
         toast.error(`Erro: ${file.name}`);
-      } else {
+      } else if (userRef) {
         const publicUrl = supabase.storage.from('portfolio').getPublicUrl(path).data.publicUrl;
-        await insertMediaRecord(userId, fileName, publicUrl, file.size);
+        await upsertMedia({
+          storagePath: `portfolio/${userId}/${fileName}`,
+          publicUrl,
+          originalName: fileName,
+          mimeType: file.type || 'image/jpeg',
+          entityType: 'portfolio',
+          entityRef: providerId,
+          userRef,
+          sizeOriginal: file.size,
+        });
       }
     }
     await loadImages();
@@ -92,7 +86,7 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
 
   const handleDelete = async (name: string) => {
     await supabase.storage.from('portfolio').remove([`${userId}/${name}`]);
-    await deactivateMediaRecord(userId, name);
+    await deactivateMedia(`portfolio/${userId}/${name}`, 'portfolio');
     setImages((prev) => prev.filter((i) => i.name !== name));
     toast.success('Imagem removida');
   };
