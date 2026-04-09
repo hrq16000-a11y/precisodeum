@@ -140,7 +140,7 @@ const HeroBanner = ({}: HeroBannerProps) => {
   }, []);
 
   return (
-    <section className="relative overflow-hidden py-8 md:py-20 min-h-[320px] md:min-h-[480px]">
+    <section className="relative min-h-[320px] overflow-visible py-8 md:min-h-[480px] md:overflow-hidden md:py-20">
       {/* Background images with crossfade */}
       {DEFAULT_BG_IMAGES.map((src, i) => (
         <img
