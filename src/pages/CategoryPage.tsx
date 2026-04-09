@@ -218,7 +218,7 @@ const CategoryPage = () => {
           {paginatedProviders.map((p, i) => (
             <motion.div key={p.id} variants={fadeUp}>
               {i === 6 && <Suspense fallback={null}><AdSlot slotSlug="category-between" layout="native" category={slug} /></Suspense>}
-              {i === 4 && <Suspense fallback={null}><SponsorMidContent category={slug} /></Suspense>}
+              {i === 4 && <Suspense fallback={null}><SponsorMidContent /></Suspense>}
               <ProviderCard provider={p} isFallback={isFallback} index={i} />
             </motion.div>
           ))}
