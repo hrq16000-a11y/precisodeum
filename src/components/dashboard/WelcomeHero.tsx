@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ArrowRight, Sparkles, Crown } from 'lucide-react';
+import { Calendar, ArrowRight, Sparkles, Crown, Shield, Flame } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -14,16 +14,22 @@ interface WelcomeHeroProps {
   accountTypeColor?: string;
   memberSince?: string;
   plan?: string;
+  avatarUrl?: string;
 }
 
 const WelcomeHero = ({
   greeting, name, pendingLeads,
   levelName, levelColor,
   accountTypeName, accountTypeColor,
-  memberSince, plan,
+  memberSince, plan, avatarUrl,
 }: WelcomeHeroProps) => {
   const navigate = useNavigate();
   const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
+
+  // Days as member
+  const memberDays = memberSince
+    ? Math.floor((Date.now() - new Date(memberSince).getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
 
   return (
     <motion.div
@@ -34,6 +40,7 @@ const WelcomeHero = ({
       {/* Background gradient mesh */}
       <div className="absolute inset-0 bg-gradient-to-br from-accent/8 via-primary/5 to-transparent" />
       <div className="absolute top-0 right-0 w-48 h-48 bg-accent/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
 
       <div className="relative p-4 sm:p-5">
         {/* Top row: date + badges */}
@@ -46,6 +53,12 @@ const WelcomeHero = ({
           >
             <Calendar className="h-3 w-3" />
             <span className="capitalize">{today}</span>
+            {memberDays > 0 && (
+              <>
+                <span className="text-muted-foreground/30">·</span>
+                <span className="text-[10px]">{memberDays} dias na plataforma</span>
+              </>
+            )}
           </motion.div>
 
           <div className="flex items-center gap-1.5">
@@ -54,7 +67,7 @@ const WelcomeHero = ({
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3 }}
-                className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400"
+                className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/20"
               >
                 <Crown className="h-2.5 w-2.5" /> Premium
               </motion.span>
@@ -87,15 +100,26 @@ const WelcomeHero = ({
 
         {/* Main greeting */}
         <div className="flex items-center gap-3">
-          <motion.div
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 shadow-sm"
-            animate={{ rotate: [0, 3, -3, 0] }}
-            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <Sparkles className="h-5 w-5 text-accent" />
-          </motion.div>
+          {avatarUrl ? (
+            <motion.img
+              src={avatarUrl}
+              alt={name}
+              className="h-12 w-12 rounded-2xl object-cover shadow-sm border-2 border-accent/20"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+            />
+          ) : (
+            <motion.div
+              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 shadow-sm"
+              animate={{ rotate: [0, 3, -3, 0] }}
+              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Sparkles className="h-5 w-5 text-accent" />
+            </motion.div>
+          )}
           <div className="flex-1 min-w-0">
-            <h1 className="font-display text-xl sm:text-2xl font-bold text-foreground">
+            <h1 className="font-display text-xl sm:text-2xl font-bold text-foreground leading-tight">
               {greeting}, {name}!
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -105,9 +129,9 @@ const WelcomeHero = ({
                   animate={{ opacity: 1 }}
                   className="inline-flex items-center gap-1"
                 >
-                  Você tem{' '}
+                  <Flame className="h-3.5 w-3.5 text-accent" />
                   <span className="font-semibold text-accent">{pendingLeads}</span>{' '}
-                  lead{pendingLeads !== 1 ? 's' : ''} aguardando resposta
+                  lead{pendingLeads !== 1 ? 's' : ''} aguardando
                   <button
                     onClick={() => navigate('/dashboard/leads')}
                     className="ml-1 inline-flex items-center gap-0.5 text-accent font-semibold hover:underline"
