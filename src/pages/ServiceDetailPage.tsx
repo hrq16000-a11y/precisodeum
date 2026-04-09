@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { serviceImageThumb } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
 import { useQuery } from '@tanstack/react-query';
@@ -98,17 +99,12 @@ const ServiceDetailPage = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <nav className="container py-3 text-sm text-muted-foreground">
-        <Link to="/" className="hover:text-foreground">Início</Link>
-        {catInfo?.slug && (
-          <>
-            <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/categoria/${catInfo.slug}`} className="hover:text-foreground">{catInfo.name}</Link>
-          </>
-        )}
-        <ChevronRight className="mx-1 inline h-3 w-3" />
-        <span className="text-foreground">{svc.service_name}</span>
-      </nav>
+      <div className="container py-3">
+        <Breadcrumbs items={[
+          ...(catInfo?.slug ? [{ label: catInfo.name, url: `/categoria/${catInfo.slug}` }] : []),
+          { label: svc.service_name },
+        ]} />
+      </div>
 
       <main className="flex-1">
         <div className="container py-6">

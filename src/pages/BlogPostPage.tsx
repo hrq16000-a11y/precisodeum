@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, ArrowLeft, ExternalLink, User, Newspaper } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 /** Strip HTML tags and decode common entities */
 function stripHtmlTags(rawHtml: string): string {
@@ -78,12 +79,14 @@ const BlogPostPage = () => {
       <Header />
 
       <main className="container max-w-3xl flex-1 px-4 py-6 sm:py-8">
-        {/* Back button */}
-        <Button variant="ghost" size="sm" asChild className="mb-4 -ml-2">
-          <Link to="/blog">
-            <ArrowLeft className="mr-1 h-4 w-4" /> Voltar ao Blog
-          </Link>
-        </Button>
+        {/* Breadcrumbs */}
+        <Breadcrumbs
+          items={[
+            { label: 'Blog', url: '/blog' },
+            ...(post ? [{ label: post.title }] : []),
+          ]}
+          className="mb-4"
+        />
 
         {isLoading ? (
           <div className="space-y-4">

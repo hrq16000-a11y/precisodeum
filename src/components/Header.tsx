@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
@@ -22,6 +23,9 @@ const Header = () => {
   const logo = logoUrl || DEFAULT_LOGO_URL;
   const { city: geoCity, temp: geoTemp } = useGeoCity();
   const headerRef = useRef<HTMLElement>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { data: headerItems = [] } = useMenuItems('header');
   const { data: mobileItems = [] } = useMenuItems('mobile');
@@ -58,6 +62,22 @@ const Header = () => {
     await signOut();
     navigate('/');
   };
+
+  // Inline search handlers
+  const handleSearchSubmit = useCallback((e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/buscar?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchOpen(false);
+      setSearchQuery('');
+    }
+  }, [searchQuery, navigate]);
+
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchOpen]);
 
   const fallbackHeaderLinks = [
     { label: 'Buscar', url: '/buscar' },
@@ -157,7 +177,29 @@ const Header = () => {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/buscar')} className="hover:bg-accent/10">
+          <AnimatePresence>
+            {searchOpen && (
+              <motion.form
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 200, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                onSubmit={handleSearchSubmit}
+                className="overflow-hidden"
+              >
+                <Input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar serviços..."
+                  className="h-8 text-sm"
+                  onBlur={() => { if (!searchQuery) setSearchOpen(false); }}
+                  onKeyDown={(e) => { if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery(''); } }}
+                />
+              </motion.form>
+            )}
+          </AnimatePresence>
+          <Button variant="ghost" size="sm" onClick={() => searchOpen ? handleSearchSubmit() : setSearchOpen(true)} className="hover:bg-accent/10">
             <Search className="h-4 w-4" />
           </Button>
           <NotificationBell />

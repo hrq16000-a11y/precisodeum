@@ -1,13 +1,14 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Search, LayoutGrid, User, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MobileBottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-
+  const { unreadCount } = useNotifications();
   const hiddenPaths = ['/admin', '/login', '/cadastro', '/reset-password', '/dashboard', '/sponsor-panel'];
   const shouldHide = hiddenPaths.some(p => location.pathname.startsWith(p));
   if (shouldHide) return null;
@@ -96,6 +97,16 @@ const MobileBottomNav = () => {
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 >
                   <Icon className={`h-[18px] w-[18px] transition-colors duration-200 ${isActive ? 'text-accent' : ''}`} />
+                  {/* Notification badge on Profile tab */}
+                  {item.label === 'Perfil' && unreadCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-0.5 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-destructive px-0.5 text-[8px] font-bold text-destructive-foreground"
+                    >
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </motion.span>
+                  )}
                 </motion.div>
 
                 <AnimatePresence>
