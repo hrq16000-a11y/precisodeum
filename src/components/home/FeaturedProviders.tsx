@@ -128,6 +128,8 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
       transition={{ duration: 0.25 }}
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow duration-300 hover:shadow-xl h-full"
     >
+      {/* Shine sweep */}
+      <div className="card-shine-sweep pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent" style={{ left: '-100%', width: '50%' }} />
       {/* Premium accent bar */}
       <div className="h-1 bg-gradient-to-r from-accent via-amber-400 to-accent" />
       
