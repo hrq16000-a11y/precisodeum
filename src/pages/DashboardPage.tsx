@@ -13,8 +13,9 @@ import LeadsChart from '@/components/dashboard/LeadsChart';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import ConversionInsights from '@/components/dashboard/ConversionInsights';
 import WelcomeHero from '@/components/dashboard/WelcomeHero';
+import QuickStatsBar from '@/components/dashboard/QuickStatsBar';
+import StatCardGrid from '@/components/dashboard/StatCardGrid';
 import { usePermissions } from '@/hooks/usePermissions';
-import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
 
