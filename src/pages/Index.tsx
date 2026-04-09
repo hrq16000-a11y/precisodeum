@@ -32,7 +32,7 @@ const BlogHighlight = lazy(() => import('@/components/home/BlogHighlight'));
 const CitiesSection = lazy(() => import('@/components/home/CitiesSection'));
 const CtaSection = lazy(() => import('@/components/home/CtaSection'));
 const SponsorsSection = lazy(() => import('@/components/home/SponsorsSection'));
-const LeaderSponsor = lazy(() => import('@/components/home/LeaderSponsor'));
+const SponsorLeaderBanner = lazy(() => import('@/components/sponsors/SponsorLeaderBanner'));
 const HowItWorksSection = lazy(() => import('@/components/home/HowItWorksSection'));
 const TestimonialsSection = lazy(() => import('@/components/home/TestimonialsSection'));
 const FaqSection = lazy(() => import('@/components/home/FaqSection'));
