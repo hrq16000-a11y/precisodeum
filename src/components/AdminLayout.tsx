@@ -232,7 +232,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 min-w-0 overflow-x-hidden pt-14 lg:ml-60 lg:pt-0 flex flex-col">
+      <main className="flex-1 min-w-0 overflow-x-hidden pt-14 lg:ml-64 lg:pt-0 flex flex-col">
         <AdminGroupTabs />
         <motion.div
           className="flex-1 p-3 sm:p-6 max-w-full"
