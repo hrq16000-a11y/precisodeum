@@ -188,6 +188,7 @@ const App = () => {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/cadastro" element={<SignupPage />} />
                 <Route path="/vagas" element={<JobsPage />} />
+                <Route path="/quero-ser-patrocinador" element={<SponsorLandingPage />} />
                 <Route path="/vaga/:slug" element={<JobDetailPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/perfil" element={<DashboardProfilePage />} />
