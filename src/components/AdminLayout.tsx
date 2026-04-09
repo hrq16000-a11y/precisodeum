@@ -109,6 +109,12 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const { hasPermission } = usePermissions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState('');
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (label: string) => {
+    setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
+  };
+
   const filteredGroups = useMemo(() => {
     const q = sidebarSearch.trim().toLowerCase();
     return menuGroups.map(group => ({
@@ -131,7 +137,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border glass-strong px-4 lg:hidden">
+      <TopLoadingBar />
         <div className="flex items-center gap-2">
           <Shield className="h-4 w-4 text-destructive" />
           <span className="font-display text-sm font-bold text-foreground">Admin</span>
