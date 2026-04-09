@@ -197,7 +197,7 @@ const HeroBanner = ({}: HeroBannerProps) => {
           <p className="text-sm text-primary-foreground/80">
             <Link to="/dashboard/vagas" className="font-semibold text-secondary hover:underline underline-offset-2">Cadastre uma vaga / oportunidade →</Link>
           </p>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
