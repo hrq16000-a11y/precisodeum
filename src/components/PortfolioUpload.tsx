@@ -93,7 +93,7 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {images.map((img) => (
             <div key={img.name} className="group relative aspect-square overflow-hidden rounded-lg border border-border">
-              <img src={img.url} alt="Portfolio" className="h-full w-full object-cover" />
+              <img src={img.url} alt="Portfolio" loading="lazy" className="h-full w-full object-cover" />
               <button
                 onClick={() => handleDelete(img.name)}
                 className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
