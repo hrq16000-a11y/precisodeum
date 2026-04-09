@@ -12,6 +12,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
 import AdminHealthMonitor from '@/components/admin/AdminHealthMonitor';
 import AdminQuickActions from '@/components/admin/AdminQuickActions';
+import AdminPlatformPulse from '@/components/admin/AdminPlatformPulse';
 
 interface Stats {
   totalProviders: number;
@@ -239,9 +240,10 @@ const AdminPage = () => {
         <AdminQuickActions />
       </div>
 
-      {/* Health Monitor */}
-      <div className="mt-5">
+      {/* Health Monitor + Platform Pulse */}
+      <div className="mt-5 grid gap-4 grid-cols-1 lg:grid-cols-2">
         <AdminHealthMonitor />
+        <AdminPlatformPulse />
       </div>
 
       {/* Pending queues */}
