@@ -250,7 +250,7 @@ const AdminSponsorLeadsPage = () => {
           </Table>
         </div>
 
-        <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+        {totalPages > 1 && <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />}
 
         {/* Edit Dialog */}
         <Dialog open={editDialog} onOpenChange={setEditDialog}>

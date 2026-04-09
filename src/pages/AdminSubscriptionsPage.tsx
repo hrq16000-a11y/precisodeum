@@ -195,7 +195,7 @@ const AdminSubscriptionsPage = () => {
           </Table>
         </div>
 
-        <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+        {totalPages > 1 && <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />}
       </div>
     </AdminLayout>
   );

@@ -42,6 +42,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Serviços', icon: 'Package', path: '/admin/servicos' },
       { label: 'Leads', icon: 'FileText', path: '/admin/leads' },
       { label: 'Planos & Regras', icon: 'Crown', path: '/admin/regras' },
+      { label: 'Assinaturas', icon: 'CreditCard', path: '/admin/assinaturas' },
       { label: 'Comunidade', icon: 'Users2', path: '/admin/comunidade' },
       { label: 'Cidades', icon: 'MapPin', path: '/admin/cidades' },
     ],
@@ -69,6 +70,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
     items: [
       { label: 'Patrocinadores', icon: 'Megaphone', path: '/admin/patrocinadores' },
       { label: 'CRM Comercial', icon: 'HandshakeIcon', path: '/admin/crm-patrocinadores' },
+      { label: 'Leads Comerciais', icon: 'FileText', path: '/admin/leads-patrocinadores' },
       { label: 'Slots Anúncios', icon: 'LayoutGrid', path: '/admin/slots-anuncios' },
       { label: 'Estatísticas', icon: 'BarChart3', path: '/admin/estatisticas' },
     ],
