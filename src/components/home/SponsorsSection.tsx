@@ -74,9 +74,7 @@ SponsorCard.displayName = 'SponsorCard';
 
 const SponsorsSection = ({ sponsors }: Props) => {
   const visibleSponsors = sponsors.filter(
-    (s) =>
-      (s.position === 'banner' || s.position === 'card' || s.position === 'featured') &&
-      Boolean(s.logo_url || s.image_url)
+    (s) => Boolean(s.logo_url || s.image_url)
   );
   const tracked = useRef(new Set<string>());
 
