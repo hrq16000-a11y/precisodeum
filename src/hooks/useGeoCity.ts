@@ -55,29 +55,36 @@ async function fetchGeoFromEdge(): Promise<{ city: string | null; state: string 
 }
 
 async function fetchGeoFromIpApi(): Promise<{ city: string | null; state: string | null; lat: number | null; lon: number | null }> {
-  const r = await fetch('https://ipapi.co/json/');
-  if (!r.ok) throw new Error(`ipapi ${r.status}`);
-  const d = await r.json();
-  return { city: d?.city || null, state: d?.region || null, lat: d?.latitude || null, lon: d?.longitude || null };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const r = await fetch('https://ipapi.co/json/', { signal: controller.signal });
+    if (!r.ok) throw new Error(`ipapi ${r.status}`);
+    const d = await r.json();
+    return { city: d?.city || null, state: d?.region || null, lat: d?.latitude || null, lon: d?.longitude || null };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function fetchGeoFromIpWho(): Promise<{ city: string | null; state: string | null; lat: number | null; lon: number | null }> {
-  const r = await fetch('https://ipwho.is/');
-  if (!r.ok) throw new Error(`ipwho ${r.status}`);
-  const d = await r.json();
-  if (!d?.success) throw new Error('ipwho failed');
-  return { city: d?.city || null, state: d?.region || null, lat: d?.latitude || null, lon: d?.longitude || null };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const r = await fetch('https://ipwho.is/', { signal: controller.signal });
+    if (!r.ok) throw new Error(`ipwho ${r.status}`);
+    const d = await r.json();
+    if (!d?.success) throw new Error('ipwho failed');
+    return { city: d?.city || null, state: d?.region || null, lat: d?.latitude || null, lon: d?.longitude || null };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
-async function fetchGeoFromFreeIpApi(): Promise<{ city: string | null; state: string | null; lat: number | null; lon: number | null }> {
-  const r = await fetch('https://freeipapi.com/api/json');
-  if (!r.ok) throw new Error(`freeipapi ${r.status}`);
-  const d = await r.json();
-  return { city: d?.cityName || null, state: d?.regionName || null, lat: d?.latitude || null, lon: d?.longitude || null };
-}
+// freeipapi removed — causes CORS errors in browsers
 
 async function fetchGeoWithFallback() {
-  const apis = [fetchGeoFromIpApi, fetchGeoFromIpWho, fetchGeoFromFreeIpApi];
+  const apis = [fetchGeoFromIpApi, fetchGeoFromIpWho];
   for (const apiFn of apis) {
     try {
       const result = await apiFn();

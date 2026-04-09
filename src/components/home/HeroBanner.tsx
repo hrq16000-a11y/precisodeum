@@ -124,17 +124,18 @@ const HeroBanner = ({}: HeroBannerProps) => {
   }, []);
 
   return (
-    <section className="relative overflow-hidden py-8 md:py-20">
+    <section className="relative overflow-hidden py-8 md:py-20 min-h-[320px] md:min-h-[480px]">
       {/* Background images with crossfade */}
       {DEFAULT_BG_IMAGES.map((src, i) => (
         <img
           key={src}
           src={src}
-          alt=""
+          alt="Profissionais de serviços"
           width={1920}
           height={768}
           fetchPriority={i === 0 ? 'high' : 'low'}
-          decoding="async"
+          loading={i === 0 ? 'eager' : 'lazy'}
+          decoding={i === 0 ? 'sync' : 'async'}
           className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[1500ms] ease-in-out ${i === bgIndex ? 'opacity-100 hero-img-cinematic' : 'opacity-0'}`}
         />
       ))}
