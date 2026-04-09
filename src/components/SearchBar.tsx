@@ -190,20 +190,20 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   const hasQuery = query.trim().length > 0;
 
   const suggestionsDropdown = isOpen && filteredSuggestions.length > 0 ? (
-    <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[60vh] overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card shadow-xl">
+    <div className="absolute left-0 right-0 top-full z-[100] mt-1 max-h-[50vh] overflow-y-auto overscroll-contain rounded-xl border border-border bg-background shadow-2xl backdrop-blur-none isolate">
       {!hasQuery && (
-        <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+        <div className="flex items-center gap-2 border-b border-border px-4 py-2">
           <Sparkles className="h-3.5 w-3.5 text-accent" />
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Buscas em alta</span>
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Buscas em alta</span>
         </div>
       )}
-      <div className="py-1">
+      <div className="py-0.5">
         {filteredSuggestions.map((s, i) => (
           <button
             key={`${s.type}-${s.label}-${i}`}
             type="button"
-            className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-accent/10 ${
-              i === highlightIdx ? 'bg-accent/10' : ''
+            className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-muted/60 ${
+              i === highlightIdx ? 'bg-muted/60' : ''
             }`}
             onMouseDown={(e) => {
               e.preventDefault();
@@ -211,24 +211,18 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
             }}
             onMouseEnter={() => setHighlightIdx(i)}
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-base">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-sm">
               {s.icon || '🔧'}
             </span>
-            <div className="min-w-0 flex-1">
-              <span className="font-medium text-foreground">{s.label}</span>
-              {s.extra && <span className="ml-2 text-xs text-muted-foreground">· {s.extra}</span>}
-            </div>
-            <span className="hidden sm:inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-              {typeIcon(s.type)}
-              {typeLabel[s.type]}
-            </span>
+            <span className="min-w-0 flex-1 font-medium text-foreground truncate">{s.label}</span>
+            <span className="shrink-0 text-[10px] text-muted-foreground">{typeLabel[s.type]}</span>
           </button>
         ))}
       </div>
       {hasQuery && (
         <button
           type="button"
-          className="flex w-full items-center gap-2 border-t border-border px-4 py-2.5 text-sm text-accent font-medium hover:bg-accent/5 transition-colors"
+          className="flex w-full items-center gap-2 border-t border-border px-4 py-2.5 text-sm text-accent font-medium hover:bg-muted/40 transition-colors"
           onMouseDown={(e) => {
             e.preventDefault();
             handleSearch();
