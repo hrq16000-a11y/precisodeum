@@ -57,6 +57,20 @@ const AvatarUpload = ({ userId, currentUrl, initials, onUploaded }: AvatarUpload
       const publicUrl = data.url;
       await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId);
 
+      // Sync with media table
+      const { data: profile } = await supabase.from('profiles').select('user_ref').eq('id', userId).single();
+      await supabase.from('media').insert({
+        storage_path: `avatars/${userId}/${file.name}`,
+        public_url: publicUrl,
+        original_name: file.name,
+        mime_type: file.type || 'image/jpeg',
+        entity_type: 'profile',
+        entity_ref: userId,
+        user_ref: profile?.user_ref || 'unlinked',
+        size_original: file.size,
+        is_active: true,
+      } as any);
+
       onUploaded(publicUrl);
       toast.success('Foto atualizada!');
     } catch {
