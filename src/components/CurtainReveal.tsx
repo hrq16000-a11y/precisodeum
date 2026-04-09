@@ -2,13 +2,25 @@ import { useState, useEffect } from 'react';
 
 /**
  * Cinematic split-curtain reveal overlay that plays once per session.
- * After the animation completes, the component unmounts entirely.
+ * Only shows for standalone PWA mode (installed app), never on browser.
  */
 const SESSION_KEY = 'curtain_played';
+
+const isStandalone = () => {
+  try {
+    return (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (navigator as any).standalone === true
+    );
+  } catch {
+    return false;
+  }
+};
 
 const CurtainReveal = () => {
   const [show, setShow] = useState(() => {
     try {
+      if (!isStandalone()) return false;
       return !sessionStorage.getItem(SESSION_KEY);
     } catch {
       return false;
@@ -26,11 +38,8 @@ const CurtainReveal = () => {
 
   return (
     <div className="curtain-reveal pointer-events-none fixed inset-0 z-[9998]" aria-hidden>
-      {/* Left curtain */}
       <div className="curtain-left absolute inset-y-0 left-0 w-1/2 bg-primary" />
-      {/* Right curtain */}
       <div className="curtain-right absolute inset-y-0 right-0 w-1/2 bg-primary" />
-      {/* Shimmer sweep */}
       <div className="entrance-sweep absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/20 to-transparent" />
     </div>
   );
