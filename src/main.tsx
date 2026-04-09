@@ -7,7 +7,8 @@ import { cleanupFrequencyData } from "@/lib/sponsorRanking";
 cleanupFrequencyData();
 
 // ── Auto-clear caches after every new deploy ──
-const BUILD_VERSION = __BUILD_TIMESTAMP__;
+// @ts-ignore — injected by Vite define config at build time
+const BUILD_VERSION: string = __BUILD_TIMESTAMP__;
 const STORED_VERSION_KEY = 'app-build-version';
 
 const storedVersion = localStorage.getItem(STORED_VERSION_KEY);
