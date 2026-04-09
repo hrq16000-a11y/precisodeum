@@ -1,6 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
+import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
+import { getPositionConfig } from '@/config/sponsorPositions';
 import SponsorPremiumCard from './SponsorPremiumCard';
 
 interface Props {
@@ -9,10 +11,18 @@ interface Props {
 
 /** Premium sponsor cards for page tops — shows sponsors with position=featured */
 const SponsorTopBanner = ({ className = '' }: Props) => {
-  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot('featured');
+  const { data: rawSponsors = [], trackImpression, trackClick } = useSponsorsBySlot('featured');
+  const config = getPositionConfig('featured');
+  const sponsors = useMemo(
+    () => rankAndOptimise(rawSponsors, { maxItems: config.maxItems }),
+    [rawSponsors, config.maxItems],
+  );
 
   useEffect(() => {
-    sponsors.forEach((s) => trackImpression(s.id));
+    sponsors.forEach((s) => {
+      trackImpression(s.id);
+      recordImpression(s.id);
+    });
   }, [sponsors, trackImpression]);
 
   if (sponsors.length === 0) return null;

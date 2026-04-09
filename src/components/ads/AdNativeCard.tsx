@@ -1,7 +1,9 @@
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Megaphone } from 'lucide-react';
 import SponsorImage from '@/components/SponsorImage';
+import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
+import { getPositionConfig } from '@/config/sponsorPositions';
 
 interface AdNativeCardProps {
   sponsorIndex?: number;
@@ -9,13 +11,21 @@ interface AdNativeCardProps {
 }
 
 const AdNativeCard = ({ sponsorIndex = 0, className = '' }: AdNativeCardProps) => {
-  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot('native');
+  const { data: rawSponsors = [], trackImpression, trackClick } = useSponsorsBySlot('native');
+  const config = getPositionConfig('native');
+  const sponsors = useMemo(
+    () => rankAndOptimise(rawSponsors, { maxItems: config.maxItems }),
+    [rawSponsors, config.maxItems],
+  );
 
   const sponsor = sponsors[sponsorIndex % (sponsors.length || 1)];
   const visualSrc = sponsor?.logo_url || sponsor?.image_url;
 
   useEffect(() => {
-    if (sponsor) trackImpression(sponsor.id);
+    if (sponsor) {
+      trackImpression(sponsor.id);
+      recordImpression(sponsor.id);
+    }
   }, [sponsor, trackImpression]);
 
   if (!sponsor) return null;

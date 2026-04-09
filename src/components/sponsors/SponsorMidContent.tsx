@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
+import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
+import { getPositionConfig } from '@/config/sponsorPositions';
 import SponsorPremiumCard from './SponsorPremiumCard';
 
 interface Props {
@@ -8,10 +10,18 @@ interface Props {
 
 /** Inline sponsor cards inserted between content lists — shows sponsors with position=mid-content */
 const SponsorMidContent = ({ className = '' }: Props) => {
-  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot('mid-content');
+  const { data: rawSponsors = [], trackImpression, trackClick } = useSponsorsBySlot('mid-content');
+  const config = getPositionConfig('mid-content');
+  const sponsors = useMemo(
+    () => rankAndOptimise(rawSponsors, { maxItems: config.maxItems }),
+    [rawSponsors, config.maxItems],
+  );
 
   useEffect(() => {
-    sponsors.forEach((s) => trackImpression(s.id));
+    sponsors.forEach((s) => {
+      trackImpression(s.id);
+      recordImpression(s.id);
+    });
   }, [sponsors, trackImpression]);
 
   if (sponsors.length === 0) return null;
