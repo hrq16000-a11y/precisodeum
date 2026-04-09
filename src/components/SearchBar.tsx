@@ -142,7 +142,8 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
       .forEach(c => results.push({ label: c.name, type: 'city', extra: c.state, slug: c.slug }));
 
     return results.slice(0, 7);
-  }, [query, suggestions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, suggestions, openCount]);
 
   const [searchError, setSearchError] = useState('');
 
@@ -191,6 +192,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   const handleFocus = () => {
     setIsFocused(true);
     setIsOpen(true);
+    setOpenCount(c => c + 1);
     requestGeoOnce();
   };
 
@@ -215,34 +217,39 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
 
   const suggestionsDropdown = isOpen && filteredSuggestions.length > 0 ? (
     <div
-      className="absolute left-0 right-0 top-full z-[100] mt-1 max-h-[50vh] overflow-y-auto overscroll-contain rounded-xl border border-border bg-background shadow-2xl isolate touch-pan-y"
+      className="absolute left-0 right-0 top-full z-[100] mt-1 max-h-[50vh] overflow-y-auto overscroll-contain rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl isolate touch-pan-y animate-scale-in"
       style={{ WebkitOverflowScrolling: 'touch' }}
     >
       {!hasQuery && (
-        <div className="flex items-center gap-2 border-b border-border px-4 py-2">
-          <Sparkles className="h-3.5 w-3.5 text-accent" />
+        <div className="flex items-center gap-2 border-b border-border/40 px-4 py-2.5">
+          <Sparkles className="h-3.5 w-3.5 text-accent animate-pulse" />
           <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Buscas em alta</span>
         </div>
       )}
-      <div className="py-0.5">
+      <div className="py-1">
         {filteredSuggestions.map((s, i) => (
           <button
             key={`${s.type}-${s.label}-${i}`}
             type="button"
-            className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-muted/60 ${
-              i === highlightIdx ? 'bg-muted/60' : ''
+            className={`suggestion-item flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-all duration-200 hover:bg-accent/5 hover:scale-[1.01] active:scale-[0.99] ${
+              i === highlightIdx ? 'bg-accent/8' : ''
             }`}
+            style={{
+              animation: 'suggestion-slide-in 0.35s ease-out forwards',
+              animationDelay: `${i * 60}ms`,
+              opacity: 0,
+            }}
             onClick={() => handleSelectSuggestion(s)}
             onMouseEnter={() => setHighlightIdx(i)}
           >
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-sm">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent/10 to-primary/10 text-sm shadow-sm ring-1 ring-accent/10 transition-transform duration-200 group-hover:scale-110">
               {s.icon || '🔧'}
             </span>
             <div className="min-w-0 flex-1">
-              <span className="block truncate font-medium text-foreground">{s.label}</span>
-              {s.extra && <span className="block truncate text-xs text-muted-foreground">{s.extra}</span>}
+              <span className="block truncate font-semibold text-foreground">{s.label}</span>
+              {s.extra && <span className="block truncate text-xs text-muted-foreground/80">{s.extra}</span>}
             </div>
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${badgeColors[s.type] || 'bg-muted text-muted-foreground'}`}>
               {typeIcon(s.type)}
               {typeLabel[s.type]}
             </span>
@@ -252,7 +259,12 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
       {hasQuery && (
         <button
           type="button"
-          className="flex w-full items-center gap-2 border-t border-border px-4 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-muted/40"
+          className="flex w-full items-center gap-2 border-t border-border/40 px-4 py-3 text-sm font-semibold text-accent transition-all duration-200 hover:bg-accent/5"
+          style={{
+            animation: 'suggestion-slide-in 0.35s ease-out forwards',
+            animationDelay: `${filteredSuggestions.length * 60}ms`,
+            opacity: 0,
+          }}
           onClick={() => handleSearch()}
         >
           <Search className="h-4 w-4" />
