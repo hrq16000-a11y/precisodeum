@@ -29,6 +29,9 @@ const TIER_WEIGHT: Record<string, number> = {
 /** How much CTR influences the final score (0 = pure tier, 1 = equal influence) */
 const CTR_FACTOR = 0.3;
 
+/** Maximum boost applied to PRO sponsors for guaranteed delivery */
+const MAX_PRO_BOOST = 2;
+
 /** Minimum impressions before CTR is considered reliable */
 const MIN_IMPRESSIONS_FOR_CTR = 100;
 
@@ -82,7 +85,46 @@ export function computeScore(s: SponsorFull): ScoredSponsor {
     MAX_EFFECTIVE_CTR,
   );
 
-  const score = tierWeight + effectiveCtr * CTR_FACTOR * 10;
+  const baseScore = tierWeight + effectiveCtr * CTR_FACTOR * 10;
+
+  // PRO boost: dynamic priority for guaranteed-delivery sponsors
+  let proBoost = 0;
+  if (
+    s.plan === 'pro' &&
+    s.guaranteed_impressions != null &&
+    s.guaranteed_impressions > 0
+  ) {
+    const delivered = s.delivered_impressions ?? 0;
+    const remaining = s.guaranteed_impressions - delivered;
+
+    if (remaining > 0) {
+      // Delivery boost: proportional to remaining (max 1.5)
+      const deliveryBoost = Math.min(
+        1.5,
+        (remaining / s.guaranteed_impressions) * 1.5,
+      );
+
+      // Pacing boost: +0.5 if behind expected delivery schedule
+      let pacingBoost = 0;
+      if (s.campaign_start && s.campaign_end) {
+        const now = Date.now();
+        const start = new Date(s.campaign_start).getTime();
+        const end = new Date(s.campaign_end).getTime();
+        const duration = end - start;
+        if (duration > 0 && now >= start && now <= end) {
+          const progress = Math.max(0, Math.min(1, (now - start) / duration));
+          const expected = progress * s.guaranteed_impressions;
+          if (delivered < expected) {
+            pacingBoost = 0.5;
+          }
+        }
+      }
+
+      proBoost = Math.min(MAX_PRO_BOOST, deliveryBoost + pacingBoost);
+    }
+  }
+
+  const score = baseScore + proBoost;
 
   return { ...s, _score: score, _ctr: effectiveCtr };
 }

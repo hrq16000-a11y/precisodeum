@@ -66,6 +66,40 @@ Deno.serve(async (req) => {
 
     await supabase.from("sponsor_notifications").insert(notifRows);
 
+    // Flag PRO sponsors with under-delivery for compensation
+    const { error: compErr } = await supabase
+      .from("sponsors")
+      .update({ needs_compensation: true })
+      .eq("plan", "pro")
+      .eq("needs_compensation", false)
+      .lt("campaign_end", now)
+      .not("guaranteed_impressions", "is", null);
+
+    // The above targets all expired PRO sponsors; we refine by checking
+    // delivered < guaranteed via a raw filter isn't possible with PostgREST,
+    // so we do a secondary check
+    if (!compErr) {
+      const { data: proCandidates } = await supabase
+        .from("sponsors")
+        .select("id, delivered_impressions, guaranteed_impressions")
+        .eq("plan", "pro")
+        .eq("needs_compensation", true)
+        .not("guaranteed_impressions", "is", null);
+
+      if (proCandidates) {
+        const falsePositives = proCandidates
+          .filter((s) => (s.delivered_impressions ?? 0) >= (s.guaranteed_impressions ?? 0))
+          .map((s) => s.id);
+
+        if (falsePositives.length > 0) {
+          await supabase
+            .from("sponsors")
+            .update({ needs_compensation: false })
+            .in("id", falsePositives);
+        }
+      }
+    }
+
     console.log(`Deactivated ${ids.length} expired sponsors:`, expired.map((s) => s.title));
 
     return new Response(
