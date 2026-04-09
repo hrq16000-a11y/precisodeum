@@ -1,144 +1,86 @@
-# Perfeito. Aqui está a **versão final do plano de reestruturação de categorias**, já com todas as melhorias aplicadas, pronta para execução:
-
----
-
-# **Reestruturação Hierárquica de Categorias – Versão Final**
-
-## **Situação Atual**
-
-- 159 categorias ativas, quase todas sem `parent_id` (flat).
-- Apenas 1 subcategoria existente (“Segurança eletrônica”).
-- Nenhuma categoria-pai (macro) existe no banco.
-- Sistema suporta hierarquia via `parent_id` sem alterações de código.
-
----
-
-## **Fase 1 — Criar 7 Categorias Macro (Parent)**
 
 
-| Macro                  | Slug                   | Ícone | Status |
-| ---------------------- | ---------------------- | ----- | ------ |
-| Serviços Domésticos    | servicos-domesticos    | 🏠    | Ativo  |
-| Serviços Técnicos      | servicos-tecnicos      | ⚡     | Ativo  |
-| Construção e Reforma   | construcao-e-reforma   | 🏗️   | Ativo  |
-| Saúde e Estética       | saude-e-estetica       | 💆    | Ativo  |
-| Transporte e Logística | transporte-e-logistica | 🚚    | Ativo  |
-| Alimentação e Eventos  | alimentacao-e-eventos  | 🍽️   | Ativo  |
-| Negócios e Consultoria | negocios-e-consultoria | 💼    | Ativo  |
+## Bug: Cadastro de Profissional Quebrado — Diagnóstico e Plano de Correção
 
+### Root Cause
 
----
+The RLS policy **"Users can update own profile"** has a `WITH CHECK` clause that **prevents users from changing their own `profile_type` and `role`**:
 
-## **Fase 2 — Vincular Subcategorias Existentes às Macros**
+```sql
+WITH CHECK: (auth.uid() = id) 
+  AND (profile_type = (SELECT p.profile_type FROM profiles p WHERE p.id = auth.uid()))
+  AND (role = (SELECT p.role FROM profiles p WHERE p.id = auth.uid()))
+```
 
-Atualizar `parent_id` das categorias existentes para apontar à macro correspondente.  
-**Observações:** subdivisão refinada para SEO e filtros internos.
+This means the profile update at signup (line 136-140 of `SignupPage.tsx`) that tries to change `profile_type` from `'client'` to `'provider'` is **silently rejected by RLS**. The user is created, but always remains a `client`.
 
-**Serviços Domésticos:**
+The same issue affects `ProfileTypeChooser` and `ProfileTypeSwitcher` — any attempt by a user to change their own type is blocked.
 
-- Marido de Aluguel, Cozinheira, Babá, Cuidador de Idosos, Diarista, Limpeza Residencial, Passadeira
+### Fix Strategy
 
-**Serviços Técnicos:**
+Two changes, both surgical:
 
-- Eletricista: Residencial / Comercial
-- Encanador: Hidráulico / Industrial
-- Assistência Técnica, Ar-condicionado, Antenista, Técnico em Celular, Informática / Suporte TI
+**1. Update the `handle_new_user()` trigger** to read `profile_type` from `raw_user_meta_data` during account creation, so the profile is created with the correct type from the start.
 
-**Construção e Reforma:**
+**2. Relax the RLS `WITH CHECK`** on the "Users can update own profile" policy to allow users to change `profile_type` and `role` (removing the self-referencing subquery constraint). This unblocks `ProfileTypeSwitcher` and `ProfileTypeChooser` as well.
 
-- Carpinteiro, Pintor, Gesseiro, Azulejista, Pedreiro, Construção Civil, Impermeabilização, Drywall
+**3. Update `SignupPage.tsx`** to pass `profile_type` in user metadata so the trigger picks it up.
 
-**Saúde e Estética:**
+### Technical Details
 
-- Dentista, Fisioterapeuta, Esteticista, Acupunturista, Cabeleireiro, Barbeiro, Manicure
+**Migration 1 — Update `handle_new_user()` trigger:**
+```sql
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, email, avatar_url, level_id, account_type_id, profile_type, role)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data ->> 'full_name', ''),
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', ''),
+    '716c417b-fdc8-4121-879b-abcd8f0a216f',
+    '50a97ea2-c43e-472f-b6f2-4dd180379cad',
+    COALESCE(NULLIF(NEW.raw_user_meta_data ->> 'profile_type', ''), 'client'),
+    CASE 
+      WHEN NEW.raw_user_meta_data ->> 'profile_type' = 'rh' THEN 'client'
+      WHEN NEW.raw_user_meta_data ->> 'profile_type' IS NOT NULL THEN NEW.raw_user_meta_data ->> 'profile_type'
+      ELSE 'client'
+    END
+  );
+  RETURN NEW;
+END;
+$$;
+```
 
-**Transporte e Logística:**
+**Migration 2 — Fix RLS policy:**
+```sql
+DROP POLICY "Users can update own profile" ON profiles;
+CREATE POLICY "Users can update own profile" ON profiles
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
+```
 
-- Entregador, Caminhoneiro, Fretista, Guincheiro, Motorista, Motoboy
+**Code change — `SignupPage.tsx` (line ~118):**
+Pass `profile_type` in signup metadata:
+```typescript
+options: {
+  data: { full_name: form.fullName, profile_type_chosen: true, profile_type: accountType },
+  emailRedirectTo: window.location.origin,
+},
+```
 
-**Alimentação e Eventos:**
+### What This Fixes
+- New signups as "Profissional" or "RH" will have the correct type from creation
+- `ProfileTypeSwitcher` (dashboard) will work again
+- `ProfileTypeChooser` (social login onboarding) will work again
+- No existing data or RLS on other tables is affected
 
-- Buffet: Casamento / Corporativo, Churrasqueiro, Confeiteiro, Bartender, Cerimonialista, Decorador de Festas, DJ: Casamento / Festa / Corporativo, Chef / Cozinheiro
+### What Stays Unchanged
+- All 50 tables with RLS enabled
+- Admin policies (admins can still update any profile)
+- The `auto_migrate_profile_type()` trigger continues working
+- Provider record creation logic in SignupPage stays as-is
 
-**Negócios e Consultoria:**
-
-- Advogado, Contador, Consultor de RH, Consultoria Empresarial, Marketing Digital
-
----
-
-## **Fase 3 — Atualizar Ícones das Categorias Existentes**
-
-- Padronizar ícones das subcategorias:
-  - Eletricista → ⚡
-  - Acupunturista → 🪡
-  - Cabeleireiro / Esteticista → 💇 / 💆
-  - Chef / Cozinheiro → 👨‍🍳
-  - Guincheiro → 🚚
-- Garantir ícones únicos e consistentes para UX.
-
----
-
-## **Fase 4 — Criar Categorias Novas que Não Existem**
-
-
-| Categoria                | Slug                    | Ícone | Macro                  | Status |
-| ------------------------ | ----------------------- | ----- | ---------------------- | ------ |
-| Eletricista Residencial  | eletricista-residencial | ⚡     | Serviços Técnicos      | Ativo  |
-| Eletricista Comercial    | eletricista-comercial   | ⚡     | Serviços Técnicos      | Ativo  |
-| Informática / Suporte TI | informatica-suporte-ti  | 💻    | Serviços Técnicos      | Ativo  |
-| Esteticista              | esteticista             | 💆    | Saúde e Estética       | Ativo  |
-| Decorador de Festas      | decorador-de-festas     | 🎉    | Alimentação e Eventos  | Ativo  |
-| Guincheiro               | guincheiro              | 🚚    | Transporte e Logística | Ativo  |
-| Chef / Cozinheiro        | chef-cozinheiro         | 👨‍🍳 | Alimentação e Eventos  | Ativo  |
-| Consultor de RH          | consultor-de-rh         | 💼    | Negócios e Consultoria | Ativo  |
-| Cozinheiro Profissional  | cozinheiro-profissional | 👨‍🍳 | Alimentação e Eventos  | Ativo  |
-
-
----
-
-## **Fase 5 — Renomeações e Ajustes SEO**
-
-
-| Atual                    | Novo                     | Slug Atualizado        |
-| ------------------------ | ------------------------ | ---------------------- |
-| Consultoria de Marketing | Marketing Digital        | marketing-digital      |
-| Suporte de TI            | Informática / Suporte TI | informatica-suporte-ti |
-
-
----
-
-## **Fase 6 — Auditoria e Observações**
-
-- Verificar categorias órfãs ou redundantes antes de updates.
-- Cada categoria/subcategoria terá **status e observação** para manutenção futura.
-- Todos os slugs e ícones padronizados para consistência visual e SEO.
-- Inclusão de subdivisões estratégicas para filtros e palavras-chave.
-
----
-
-## **Fase 7 — Impacto no Código**
-
-- Nenhuma alteração de código necessária.
-- `AdminCategoriesPage` já suporta macro → sub.
-- `CategoriesListPage` e `CategoryCard` funcionam normalmente.
-
----
-
-## **Fase 8 — Execução Estimada**
-
-- **INSERTs Macros:** 7
-- **INSERTs Novas Categorias:** 9
-- **UPDATE parent_id:** ~150
-- **UPDATE Ícones/Nomes/Slugs:** ~30
-
-**Todos via ferramenta de dados**, sem migração de schema.
-
----
-
-✅ **Resultado Final:** Sistema hierárquico completo, padronizado, SEO-friendly, pronto para operação e manutenção futura.
-
----
-
-Se você quiser, posso já gerar **uma tabela completa pronta para importar no banco**, incluindo **parent_id, slug, ícone, status e observações** para todas as 159 categorias existentes + novas, tudo padronizado.
-
-Quer que eu faça isso agora?
