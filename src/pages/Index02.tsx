@@ -127,7 +127,7 @@ const Index02 = () => {
           <BlogHighlight />
           {topCities.length > 0 && <CitiesSection cities={topCities} />}
           <CtaSection />
-          <SponsorsSection sponsors={sponsors} />
+          <SponsorsSection />
           <HowItWorksSection />
           {allCategories.length > 0 && topCities.length > 0 && (
             <PopularSearches />

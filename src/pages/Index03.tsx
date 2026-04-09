@@ -177,7 +177,7 @@ const Index03 = () => {
           <AdShowcase />
 
           {/* Sponsors */}
-          <SponsorsSection sponsors={sponsors} />
+          <SponsorsSection />
 
           {/* How It Works */}
           <HowItWorksSection />
