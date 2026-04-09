@@ -12,24 +12,14 @@ clientsClaim();
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
-// ── Auto-clear ALL caches every 24 hours ──
-const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
+// ── Force full cache purge on every new SW version ──
+const CACHE_VERSION = 'v2-' + Date.now();
 const CACHE_TS_KEY = 'sw-cache-born';
 
-async function purgeAllCachesIfExpired() {
+async function purgeAllCaches() {
   try {
-    const ts = await (await caches.open('sw-meta')).match(CACHE_TS_KEY);
-    const born = ts ? Number(await ts.text()) : 0;
-    const now = Date.now();
-    if (born && now - born < CACHE_MAX_AGE_MS) return; // still fresh
-
-    // Delete every cache except sw-meta
     const names = await caches.keys();
-    await Promise.all(names.filter(n => n !== 'sw-meta').map(n => caches.delete(n)));
-
-    // Reset timestamp
-    const meta = await caches.open('sw-meta');
-    await meta.put(CACHE_TS_KEY, new Response(String(now)));
+    await Promise.all(names.map(n => caches.delete(n)));
   } catch (_) { /* silent */ }
 }
 
