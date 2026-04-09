@@ -41,16 +41,16 @@ const PAGE_SIZE = 20;
 
 /* ─── Visual position map ─── */
 const POSITION_MAP: Record<string, { icon: any; color: string; size: string; where: string }> = {
-  'hero-top':          { icon: PanelTop,  color: 'text-red-500',    size: '970×90 px',   where: 'Faixa no topo de todas as páginas' },
-  'between-sections':  { icon: Columns,   color: 'text-blue-500',   size: '728×90 px',   where: 'Entre seções da homepage' },
-  'mid-content':       { icon: Monitor,   color: 'text-purple-500', size: '728×90 px',   where: 'Meio do conteúdo principal' },
-  sidebar:             { icon: Columns,   color: 'text-teal-500',   size: '300×250 px',  where: 'Coluna lateral (desktop)' },
-  native:              { icon: ImageIcon, color: 'text-cyan-500',   size: '600×400 px',  where: 'Card nativo intercalado em listagens' },
-  showcase:            { icon: Star,      color: 'text-amber-500',  size: '600×450 px',  where: 'Carrossel de destaques na home' },
-  banner:              { icon: PanelTop,  color: 'text-green-500',  size: '1200×300 px', where: 'Banner geral (múltiplas páginas)' },
-  card:                { icon: ImageIcon, color: 'text-indigo-500', size: '600×400 px',  where: 'Grid de cards em listagens' },
-  featured:            { icon: Crown,     color: 'text-orange-500', size: '800×450 px',  where: 'Posição de destaque premium' },
-  footer:              { icon: Columns,   color: 'text-gray-500',   size: '728×90 px',   where: 'Acima do rodapé global' },
+  'hero-top':          { icon: PanelTop,  color: 'text-red-500',    size: '1600×200 px (8:1)', where: 'Faixa LeaderSponsor no topo (home, categoria, cidade)' },
+  'featured':          { icon: Crown,     color: 'text-orange-500', size: 'Card premium',     where: 'Cards de destaque premium (topo de páginas)' },
+  'card':              { icon: ImageIcon, color: 'text-indigo-500', size: '600×400 px',       where: 'Seção "Parceiros & Patrocinadores" (grid de cards)' },
+  'banner':            { icon: PanelTop,  color: 'text-green-500',  size: '1600×200 px (8:1)', where: 'Banner 8:1 em páginas internas (busca, vagas, blog)' },
+  'between-sections':  { icon: Columns,   color: 'text-blue-500',   size: '1600×200 px (8:1)', where: 'Entre seções da homepage' },
+  'mid-content':       { icon: Monitor,   color: 'text-purple-500', size: 'Card inline',      where: 'Cards entre listagens de conteúdo' },
+  'showcase':          { icon: Star,      color: 'text-amber-500',  size: '600×450 px',       where: 'Carrossel de destaques na home' },
+  'sidebar':           { icon: Columns,   color: 'text-teal-500',   size: '300×250 px',       where: 'Coluna lateral (desktop)' },
+  'native':            { icon: ImageIcon, color: 'text-cyan-500',   size: '600×400 px',       where: 'Card nativo intercalado em listagens' },
+  'footer':            { icon: Columns,   color: 'text-gray-500',   size: '728×90 px',        where: 'Acima do rodapé global' },
 };
 
 const TIER_CONFIG: Record<string, { label: string; color: string; icon: any }> = {

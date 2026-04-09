@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { useSponsorsByType } from '@/hooks/useSponsors';
+import { useSponsorsByPosition } from '@/components/SponsorAd';
 import SponsorPremiumCard from './SponsorPremiumCard';
 
 interface Props {
@@ -10,30 +10,23 @@ interface Props {
   className?: string;
 }
 
-/** Premium sponsor banner for page tops - shows global sponsors + contextual */
-const SponsorTopBanner = ({ city, category, className = '' }: Props) => {
-  const { data: globalSponsors = [] } = useSponsorsByType('global');
-  const { data: citySponsors = [] } = useSponsorsByType('city', city);
-  const { data: catSponsors = [] } = useSponsorsByType('category', category);
+/** Premium sponsor cards for page tops — shows sponsors with position=featured */
+const SponsorTopBanner = ({ className = '' }: Props) => {
+  const { data: sponsors = [] } = useSponsorsByPosition('featured');
   const tracked = useRef(new Set<string>());
 
-  // Merge: global first (premium), then contextual
-  const sponsors = [
-    ...globalSponsors.filter(s => s.plan_tier === 'premium'),
-    ...citySponsors.slice(0, 2),
-    ...catSponsors.slice(0, 2),
-  ].slice(0, 3);
+  const visible = sponsors.filter(s => (s as any).image_url || (s as any).logo_url).slice(0, 3);
 
   useEffect(() => {
-    sponsors.forEach(s => {
+    visible.forEach((s: any) => {
       if (!tracked.current.has(s.id)) {
         tracked.current.add(s.id);
         supabase.rpc('increment_sponsor_impression', { sponsor_id: s.id } as any);
       }
     });
-  }, [sponsors]);
+  }, [visible]);
 
-  if (sponsors.length === 0) return null;
+  if (visible.length === 0) return null;
 
   return (
     <section className={`py-4 ${className}`}>
@@ -43,14 +36,14 @@ const SponsorTopBanner = ({ city, category, className = '' }: Props) => {
           <div className="flex-1 h-px bg-border" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {sponsors.map((s, i) => (
+          {visible.map((s: any, i: number) => (
             <motion.div
               key={s.id}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1, duration: 0.4, ease: "easeOut" as const }}
             >
-              <SponsorPremiumCard sponsor={s} compact={sponsors.length > 1} />
+              <SponsorPremiumCard sponsor={s} compact={visible.length > 1} />
             </motion.div>
           ))}
         </div>
