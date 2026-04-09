@@ -10,6 +10,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ModuleBoundary from "./components/ModuleBoundary";
 import MobileBottomNav from "./components/MobileBottomNav";
+import BackToTopButton from "./components/BackToTopButton";
 import ProfileTypeChooser from "./components/ProfileTypeChooser";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -274,6 +275,7 @@ const App = () => {
               </Routes>
             </Suspense>
             <MobileBottomNav />
+            <BackToTopButton />
             <CookieConsent />
             <PwaInstallBanner />
             <TypeSelectionGate />
