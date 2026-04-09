@@ -121,9 +121,14 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         >
           <div className="flex items-center gap-2.5">
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="" className="h-9 w-9 rounded-xl object-cover border border-sidebar-border/50" />
+              <div className="relative shrink-0">
+                <img src={profile.avatar_url} alt="" className="h-9 w-9 rounded-xl object-cover border border-sidebar-border/50" />
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border-2 border-sidebar" />
+                </span>
+              </div>
             ) : (
-              <div className="h-9 w-9 rounded-xl bg-accent/20 flex items-center justify-center text-accent text-sm font-bold">
+              <div className="h-9 w-9 rounded-xl bg-accent/20 flex items-center justify-center text-accent text-sm font-bold shrink-0">
                 {(profile?.full_name || 'U')[0].toUpperCase()}
               </div>
             )}
@@ -134,6 +139,25 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               </p>
             </div>
           </div>
+          {/* Mini progress bar for profile completeness (providers only) */}
+          {!isClient && !isRH && (
+            <div className="mt-2">
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[9px] text-sidebar-foreground/40">Perfil</span>
+                {unreadCount > 0 && (
+                  <span className="text-[9px] font-bold text-accent">{unreadCount} nova{unreadCount !== 1 ? 's' : ''}</span>
+                )}
+              </div>
+              <div className="h-1 rounded-full bg-sidebar-border/50 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-accent"
+                  initial={{ width: 0 }}
+                  animate={{ width: '60%' }}
+                  transition={{ delay: 0.5, duration: 0.8, ease: 'easeOut' }}
+                />
+              </div>
+            </div>
+          )}
         </motion.div>
 
         <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-1 px-3 pb-4">

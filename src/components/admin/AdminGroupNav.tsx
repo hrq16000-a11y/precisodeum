@@ -1,6 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, Megaphone, Globe, HelpCircle, Wrench, Sparkles,
   ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Smartphone, Crown,
