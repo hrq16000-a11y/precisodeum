@@ -193,6 +193,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/40" />
             <input
               type="text"
+              data-admin-search
               placeholder="Buscar menu..."
               value={sidebarSearch}
               onChange={(e) => setSidebarSearch(e.target.value)}

@@ -13,6 +13,7 @@ import ProgressRing from '@/components/ui/ProgressRing';
 import AdminHealthMonitor from '@/components/admin/AdminHealthMonitor';
 import AdminQuickActions from '@/components/admin/AdminQuickActions';
 import AdminPlatformPulse from '@/components/admin/AdminPlatformPulse';
+import AdminGrowthChart from '@/components/admin/AdminGrowthChart';
 
 interface Stats {
   totalProviders: number;
