@@ -29,6 +29,9 @@ const TIER_WEIGHT: Record<string, number> = {
 /** How much CTR influences the final score (0 = pure tier, 1 = equal influence) */
 const CTR_FACTOR = 0.3;
 
+/** Maximum boost applied to PRO sponsors for guaranteed delivery */
+const MAX_PRO_BOOST = 2;
+
 /** Minimum impressions before CTR is considered reliable */
 const MIN_IMPRESSIONS_FOR_CTR = 100;
 
