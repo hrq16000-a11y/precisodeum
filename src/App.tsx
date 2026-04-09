@@ -135,12 +135,12 @@ const queryClient = new QueryClient({
       gcTime: 1000 * 60 * 30,
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
-      refetchOnMount: true,
+      refetchOnMount: false,
       retry: (failureCount, error) => {
-        if (isTransientNetworkError(error)) return failureCount < 4;
-        return failureCount < 2;
+        if (isTransientNetworkError(error)) return failureCount < 3;
+        return failureCount < 1;
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 6000),
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     },
   },
 });
