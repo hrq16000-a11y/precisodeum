@@ -266,7 +266,7 @@ const Index = () => {
     <PageTransition>
       <div className="flex min-h-screen flex-col">
         <Header />
-        <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
+        <HeroBanner />
 
         <LazyErrorBoundary>
           <Suspense fallback={<SectionFallback />}>
