@@ -292,6 +292,11 @@ const DashboardPage = () => {
         avatarUrl={profile?.avatar_url || undefined}
       />
 
+      {/* Avatar Reminder */}
+      <div className="mt-4">
+        <AvatarReminder avatarUrl={profile?.avatar_url} />
+      </div>
+
       {/* Quick Actions Bar */}
       <QuickStatsBar pendingLeads={pendingLeads} providerSlug={provider?.slug} />
 
