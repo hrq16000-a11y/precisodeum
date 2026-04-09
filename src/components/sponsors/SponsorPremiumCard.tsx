@@ -33,7 +33,7 @@ const SponsorPremiumCard = ({ sponsor, compact = false, onClickTrack }: Props) =
     >
       {/* Badge */}
       <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5">
-        <BadgeCheck className="h-3 w-3 text-primary" />
+        <BadgeCheck className="h-3 w-3 text-primary icon-interactive" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
           {sponsor.badge_type || 'Patrocinado'}
         </span>
@@ -77,7 +77,7 @@ const SponsorPremiumCard = ({ sponsor, compact = false, onClickTrack }: Props) =
             onClick={handleClick}
           >
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="h-3.5 w-3.5" />
+              <MessageCircle className="h-3.5 w-3.5 icon-cta" />
               WhatsApp
             </a>
           </Button>
@@ -91,7 +91,7 @@ const SponsorPremiumCard = ({ sponsor, compact = false, onClickTrack }: Props) =
             onClick={handleClick}
           >
             <a href={sponsor.external_link || sponsor.link_url || '#'} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-3.5 w-3.5" />
+              <ExternalLink className="h-3.5 w-3.5 icon-cta" />
               Ver mais
             </a>
           </Button>

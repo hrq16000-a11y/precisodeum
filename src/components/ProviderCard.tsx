@@ -130,7 +130,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 rel="noopener noreferrer"
                 onClick={() => trackWhatsAppClick(provider.id, provider.slug, trackingSource)}
               >
-                <MessageCircle className="h-4 w-4" /> WhatsApp
+                <MessageCircle className="h-4 w-4 icon-cta icon-bounce" aria-hidden="true" /> WhatsApp
               </a>
             </Button>
           )}
