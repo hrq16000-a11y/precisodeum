@@ -155,15 +155,19 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         </motion.button>
       </div>
 
-      <aside className={`fixed inset-y-0 left-0 z-40 w-60 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
+      <aside className={`fixed inset-y-0 left-0 z-40 w-64 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
         <div className="flex h-14 shrink-0 items-center gap-2 px-5 border-b border-sidebar-border">
-          <motion.div animate={{ rotate: [0, 5, -5, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
-            <Shield className="h-4 w-4 text-destructive" />
+          <motion.div
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/10"
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Shield className="h-3.5 w-3.5 text-destructive" />
           </motion.div>
           <span className="font-display text-sm font-bold text-sidebar-foreground">Admin Panel</span>
         </div>
         {/* Sidebar Search */}
-        <div className="px-3 pt-2 pb-1">
+        <div className="px-3 pt-2.5 pb-1.5">
           <div className="relative">
             <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/40" />
             <input
@@ -171,7 +175,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               placeholder="Buscar menu..."
               value={sidebarSearch}
               onChange={(e) => setSidebarSearch(e.target.value)}
-              className="w-full rounded-lg border border-sidebar-border bg-sidebar-accent/30 pl-8 pr-3 py-1.5 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/50"
+              className="w-full rounded-xl border border-sidebar-border bg-sidebar-accent/30 pl-8 pr-3 py-2 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-colors"
             />
           </div>
         </div>
@@ -228,7 +232,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 min-w-0 overflow-x-hidden pt-14 lg:ml-60 lg:pt-0 flex flex-col">
+      <main className="flex-1 min-w-0 overflow-x-hidden pt-14 lg:ml-64 lg:pt-0 flex flex-col">
         <AdminGroupTabs />
         <motion.div
           className="flex-1 p-3 sm:p-6 max-w-full"

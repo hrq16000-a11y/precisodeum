@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
+import AdminHealthMonitor from '@/components/admin/AdminHealthMonitor';
+import AdminQuickActions from '@/components/admin/AdminQuickActions';
 
 interface Stats {
   totalProviders: number;
@@ -231,6 +233,16 @@ const AdminPage = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Quick Actions */}
+      <div className="mt-5">
+        <AdminQuickActions />
+      </div>
+
+      {/* Health Monitor */}
+      <div className="mt-5">
+        <AdminHealthMonitor />
+      </div>
 
       {/* Pending queues */}
       <AnimatePresence>
