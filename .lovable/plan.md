@@ -1,106 +1,31 @@
+# Manter exatamente a implementação atual baseada em position como fonte única de verdade, sem alterar estrutura, nomes ou funcionamento existente.
 
+Aplicar apenas os seguintes aprimoramentos:
 
-# Centralizar Sistema de Patrocinadores — Fonte Única de Verdade
+Centralizar tracking
 
-## Problema Atual
+Mover toda lógica de impression e click para o hook useSponsorsBySlot, com deduplicação interna.
 
-O sistema possui **duas camadas de dados paralelas** e **lógica dispersa** em cada componente:
+Utilizar track_sponsor_metric como padrão.
 
-- `useSponsorsByPosition` (em `SponsorAd.tsx`) — filtra por `position`
-- `useSponsorsByType` (em `useSponsors.ts`) — filtra por `sponsor_type` (global/city/category)
-- Cada componente define seus próprios limites hardcoded (`slice(0, 2)`, `slice(0, 3)`, `slice(0, 6)`)
-- `POSITION_MAP` existe apenas no admin, sem compartilhamento com o frontend
-- `SponsorSidebarWidget` ainda usa `useSponsorsByType` ao invés de `position`
+As funções trackImpression e trackClick devem ser retornadas pelo hook de forma opcional e fácil de consumir, podendo ser repassadas como callback para componentes sem exigir refatoração estrutural.
 
-## Solução
+Evitar dependência direta de window
 
-### 1. Criar configuração central compartilhada
+Garantir que page_path seja obtido de forma segura (com fallback), evitando dependência direta de window.location quando não disponível.
 
-Novo arquivo: `src/config/sponsorPositions.ts`
+Corrigir useRemainingSlots
 
-Contém o **POSITION_CONFIG** — mapa único usado tanto pelo admin quanto pelo frontend:
+Substituir valores hardcoded por leitura de POSITION_CONFIG, mantendo consistência com o restante do sistema.
 
-```text
-position       | layout    | maxItems | aspect   | requiresImage | where
-─────────────────────────────────────────────────────────────────────────
-hero-top       | banner    | 3        | 8:1      | true          | Faixa topo
-featured       | card-grid | 3        | card     | true          | Cards destaque
-card           | card-grid | 6        | 5:3      | true          | Parceiros grid
-banner         | banner    | 3        | 8:1      | true          | Banner interno
-between-sections| banner   | 2        | 8:1      | true          | Entre seções
-mid-content    | card-grid | 2        | card     | true          | Cards inline
-showcase       | carousel  | 6        | 4:3      | true          | Carrossel home
-sidebar        | vertical  | 3        | 300x250  | false         | Lateral desktop
-native         | card      | 1        | card     | true          | Card nativo
-footer         | banner    | 1        | 728x90   | true          | Acima rodapé
-```
+Evitar expansão futura de mapeamentos manuais fora do config.
 
-Cada entrada inclui: `position`, `label`, `description`, `layout`, `maxItems`, `dimensions`, `requiresImage`, `icon`, `color`.
+Suporte opcional a segmentação futura
 
-### 2. Criar hook central `useSponsorsBySlot`
+Permitir parâmetros opcionais (city, category) no hook, sem alterar o comportamento atual quando não utilizados.
 
-Novo hook em `src/hooks/useSponsors.ts` que substitui tanto `useSponsorsByPosition` quanto `useSponsorsByType`:
+Garantir consistência total
 
-- Recebe `position` como parâmetro
-- Busca do banco filtrando por `position` + `active` + `status`
-- Aplica validação de datas automaticamente
-- Aplica `requiresImage` do config (filtra sponsors sem imagem se necessário)
-- Aplica `maxItems` do config (sem `slice` hardcoded nos componentes)
-- Ordena por `display_order`
-- Retorna dados prontos para renderização
+Todas as regras (limites, ordem, requiresImage, etc.) devem vir exclusivamente de POSITION_CONFIG, sem duplicações.
 
-A função `useSponsorsByPosition` existente em `SponsorAd.tsx` será movida para `useSponsors.ts` e refatorada para usar o config central.
-
-### 3. Refatorar componentes para usar o hook central
-
-Cada componente passa a importar de `useSponsors.ts` e **remove toda lógica local** de filtragem/limite:
-
-| Componente | Antes | Depois |
-|---|---|---|
-| `SponsorTopBanner` | `useSponsorsByPosition('featured')` + `slice(0,3)` | `useSponsorsBySlot('featured')` — limite vem do config |
-| `SponsorMidContent` | `useSponsorsByPosition('mid-content')` + `slice(0,2)` | `useSponsorsBySlot('mid-content')` |
-| `SponsorSidebarWidget` | 3x `useSponsorsByType` + `slice(0,3)` | `useSponsorsBySlot('sidebar')` |
-| `SponsorLeaderBanner` | `useSponsorsByPosition('hero-top')` + filter manual | `useSponsorsBySlot('hero-top')` |
-| `SponsorsSection` | recebe props + `slice(0,6)` | `useSponsorsBySlot('card')` internamente (auto-suficiente) |
-| `SponsorAd` | `useSponsorsByPosition` interno | `useSponsorsBySlot(position)` |
-| `AdBanner` | `useSponsorsByPosition(position)` | `useSponsorsBySlot(position)` |
-| `AdShowcase` | `useSponsorsByPosition('showcase')` | `useSponsorsBySlot('showcase')` |
-| `AdNativeCard` | `useSponsorsByPosition('native')` | `useSponsorsBySlot('native')` |
-
-### 4. Admin usa o mesmo config
-
-`AdminSponsorsPage.tsx` importa `POSITION_CONFIG` de `sponsorPositions.ts` ao invés de manter seu próprio `POSITION_MAP`. Os selects, wireframe e tooltips passam a ler do config central.
-
-### 5. Limpeza
-
-- Remover `useSponsorsByType` e `useSponsorsByPosition` duplicados
-- Remover `useAllActiveSponsors` (substituído pelo hook por posição)
-- Manter `useSponsorSlotLimits` e `useRemainingSlots` como estão (escassez)
-- Exportar o `POSITION_CONFIG` para que qualquer parte do sistema possa consultá-lo
-
-## Arquivos alterados
-
-| Arquivo | Ação |
-|---|---|
-| `src/config/sponsorPositions.ts` | **Criar** — config central |
-| `src/hooks/useSponsors.ts` | **Reescrever** — hook único `useSponsorsBySlot` |
-| `src/components/SponsorAd.tsx` | Remover `useSponsorsByPosition`, usar hook central |
-| `src/components/sponsors/SponsorTopBanner.tsx` | Usar hook central, remover slice |
-| `src/components/sponsors/SponsorMidContent.tsx` | Usar hook central, remover slice |
-| `src/components/sponsors/SponsorSidebarWidget.tsx` | Usar hook central, remover `useSponsorsByType` |
-| `src/components/sponsors/SponsorLeaderBanner.tsx` | Usar hook central |
-| `src/components/home/SponsorsSection.tsx` | Auto-suficiente com hook central, remover slice |
-| `src/components/ads/AdBanner.tsx` | Usar hook central |
-| `src/components/ads/AdShowcase.tsx` | Usar hook central |
-| `src/components/ads/AdNativeCard.tsx` | Usar hook central |
-| `src/pages/AdminSponsorsPage.tsx` | Importar POSITION_CONFIG do config central |
-| `src/pages/Index.tsx` | Simplificar — SponsorsSection busca seus próprios dados |
-
-## O que NAO muda
-
-- Schema do banco de dados (nenhuma migração)
-- RLS policies
-- Tracking de impressões/cliques (mantido nos componentes)
-- Componentes visuais (`SponsorPremiumCard`, `LeaderSponsor`, `SponsorImage`)
-- Index02 / Index03 (congelados, ajuste mínimo de import)
-
+Não alterar nenhuma outra lógica, estrutura ou comportamento existente. Apenas aplicar essas melhorias de forma incremental e segura.
