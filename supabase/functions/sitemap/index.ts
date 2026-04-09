@@ -22,38 +22,77 @@ Deno.serve(async (req) => {
     { data: cities },
     { data: providers },
     { data: services },
+    { data: blogPosts },
+    { data: jobs },
+    { data: institutionalPages },
+    { data: popularServices },
   ] = await Promise.all([
-    supabase.from('categories').select('slug, created_at'),
+    supabase.from('categories').select('slug, created_at').is('deleted_at', null),
     supabase.from('cities').select('slug, created_at'),
     supabase.from('providers').select('slug, updated_at').eq('status', 'approved').not('slug', 'is', null),
-    supabase.from('services').select('id, created_at, provider_id'),
+    supabase.from('services').select('id, created_at, provider_id').is('deleted_at', null),
+    supabase.from('blog_posts').select('slug, updated_at').eq('published', true).is('deleted_at', null),
+    supabase.from('jobs').select('slug, updated_at').eq('status', 'active').eq('approval_status', 'approved').is('deleted_at', null),
+    supabase.from('institutional_pages').select('slug, updated_at').eq('published', true),
+    supabase.from('popular_services').select('slug, updated_at').eq('active', true),
   ]);
 
   let urls = '';
 
-  // 1. Homepage - priority 1.0
+  // 1. Homepage
   urls += url(siteUrl, '/', today, 'daily', '1.0');
 
   // 2. Static pages
   urls += url(siteUrl, '/buscar', today, 'daily', '0.8');
+  urls += url(siteUrl, '/categorias', today, 'weekly', '0.8');
+  urls += url(siteUrl, '/cidades', today, 'weekly', '0.8');
+  urls += url(siteUrl, '/servicos', today, 'weekly', '0.7');
+  urls += url(siteUrl, '/vagas', today, 'daily', '0.7');
+  urls += url(siteUrl, '/blog', today, 'daily', '0.7');
+  urls += url(siteUrl, '/faq', today, 'monthly', '0.5');
   urls += url(siteUrl, '/sobre', today, 'monthly', '0.3');
+  urls += url(siteUrl, '/privacidade', today, 'yearly', '0.2');
+  urls += url(siteUrl, '/termos', today, 'yearly', '0.2');
+  urls += url(siteUrl, '/cookies', today, 'yearly', '0.2');
 
-  // 3. Categories - priority 0.9
+  // 3. Categories
   for (const cat of categories || []) {
     urls += url(siteUrl, `/categoria/${cat.slug}`, lastmod(cat.created_at), 'daily', '0.9');
   }
 
-  // 4. Providers - priority 0.7
+  // 4. Providers
   for (const p of providers || []) {
     urls += url(siteUrl, `/profissional/${p.slug}`, lastmod(p.updated_at), 'weekly', '0.7');
   }
 
-  // 5. Cities - priority 0.8
+  // 5. Cities
   for (const city of cities || []) {
     urls += url(siteUrl, `/cidade/${city.slug}`, lastmod(city.created_at), 'weekly', '0.8');
   }
 
-  // 6. SEO programmatic pages: category + city
+  // 6. Blog posts
+  for (const post of blogPosts || []) {
+    urls += url(siteUrl, `/blog/${post.slug}`, lastmod(post.updated_at), 'weekly', '0.6');
+  }
+
+  // 7. Jobs
+  for (const job of jobs || []) {
+    if (job.slug) {
+      urls += url(siteUrl, `/vagas/${job.slug}`, lastmod(job.updated_at), 'daily', '0.6');
+    }
+  }
+
+  // 8. Institutional pages
+  for (const page of institutionalPages || []) {
+    urls += url(siteUrl, `/p/${page.slug}`, lastmod(page.updated_at), 'monthly', '0.4');
+  }
+
+  // 9. Popular services
+  for (const svc of popularServices || []) {
+    urls += url(siteUrl, `/servico-popular/${svc.slug}`, lastmod(svc.updated_at), 'weekly', '0.6');
+  }
+
+  // 10. SEO programmatic pages: category + city
   for (const cat of categories || []) {
     for (const city of cities || []) {
       urls += url(siteUrl, `/${cat.slug}-${city.slug}`, today, 'weekly', '0.6');

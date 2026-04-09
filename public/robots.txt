@@ -7,6 +7,7 @@ Disallow: /cadastro
 Disallow: /dashboard/
 Disallow: /reset-password
 
+# Search Engines
 User-agent: Googlebot
 Allow: /
 
@@ -19,4 +20,38 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+# AI Chatbots & Agents
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
 Sitemap: https://precisodeum.com.br/sitemap.xml
+
+# AI content guide
+# https://precisodeum.com.br/llms.txt
