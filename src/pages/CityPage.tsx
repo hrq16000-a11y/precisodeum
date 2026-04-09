@@ -12,15 +12,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import ProviderCard from '@/components/ProviderCard';
-import PaginationControls from '@/components/PaginationControls';
-import SearchBar from '@/components/SearchBar';
-import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/integrations/supabase/client';
-import { ChevronRight } from 'lucide-react';
-import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 const SponsorLeaderBanner = lazy(() => import('@/components/sponsors/SponsorLeaderBanner'));
 const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
