@@ -191,7 +191,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
     if (!isOpen || filteredSuggestions.length === 0) return null;
     const hasQuery = query.trim().length > 0;
     return (
-      <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-border bg-card shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+      <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[60vh] overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
         {!hasQuery && (
           <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
             <Sparkles className="h-3.5 w-3.5 text-accent" />
