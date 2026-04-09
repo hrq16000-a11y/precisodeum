@@ -111,18 +111,9 @@ const FloatingDots = () => (
   </div>
 );
 
-const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
-  const animatedServices = useCountUp(totalServices || 0);
-  const animatedJobs = useCountUp(totalJobs || 0);
-  const [showJobs, setShowJobs] = useState(false);
+const HeroBanner = ({}: HeroBannerProps) => {
   const [bgIndex, setBgIndex] = useState(0);
   const { city: geoCity } = useGeoCity();
-
-  useEffect(() => {
-    if (!totalJobs || totalJobs <= 0) return;
-    const interval = setInterval(() => setShowJobs((v) => !v), 5000);
-    return () => clearInterval(interval);
-  }, [totalJobs]);
 
   // Background image rotation
   useEffect(() => {
@@ -133,7 +124,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
   }, []);
 
   return (
-    <section className="relative overflow-hidden py-12 md:py-28">
+    <section className="relative overflow-hidden py-8 md:py-20">
       {/* Background images with crossfade */}
       {DEFAULT_BG_IMAGES.map((src, i) => (
         <img
