@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { ReactNode } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 
 interface FadeInSectionProps {
   children: ReactNode;
@@ -18,18 +18,19 @@ const directionMap = {
   none: { x: 0, y: 0 },
 };
 
-const FadeInSection = ({
+const FadeInSection = forwardRef<HTMLDivElement, FadeInSectionProps>(({
   children,
   className = '',
   delay = 0,
   direction = 'up',
   duration = 0.6,
   scale = false,
-}: FadeInSectionProps) => {
+}, ref) => {
   const offset = directionMap[direction];
 
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, ...offset, ...(scale ? { scale: 0.95 } : {}) }}
       whileInView={{ opacity: 1, x: 0, y: 0, ...(scale ? { scale: 1 } : {}) }}
       viewport={{ once: true, margin: '-60px' }}
@@ -39,6 +40,8 @@ const FadeInSection = ({
       {children}
     </motion.div>
   );
-};
+});
+
+FadeInSection.displayName = 'FadeInSection';
 
 export default FadeInSection;
