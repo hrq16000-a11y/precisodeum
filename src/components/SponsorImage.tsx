@@ -80,6 +80,7 @@ const SponsorImage = ({
           onLoad={onLoad}
           onError={handleImageError}
           loading="lazy"
+          data-no-reveal
           className={cn(
             'absolute inset-0 block h-full w-full rounded-2xl object-contain object-center transition-opacity duration-300',
             loaded ? 'opacity-100' : 'opacity-0',
