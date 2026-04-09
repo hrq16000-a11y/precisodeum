@@ -197,12 +197,8 @@ const Index = () => {
         return heroBannersEnabled ? <CmsBannersCarousel key={slug} /> : null;
       case 'urgency':
         return <UrgencyBanner key={slug} />;
-      case 'leader_sponsor': {
-        const heroTopSponsors = sponsors.filter(s => s.position === 'hero-top' && (s.image_url || s.logo_url));
-        return sponsorsEnabled && heroTopSponsors.length > 0
-          ? <LeaderSponsor key={slug} sponsors={heroTopSponsors as any} />
-          : null;
-      }
+      case 'leader_sponsor':
+        return sponsorsEnabled ? <SponsorLeaderBanner key={slug} /> : null;
       case 'sponsor_top':
         return sponsorsEnabled ? <SponsorTopBanner key={slug} /> : null;
       case 'stats':
