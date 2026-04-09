@@ -108,6 +108,7 @@ const TermsPage = lazy(() => import("./pages/TermsPage"));
 const CookiesPage = lazy(() => import("./pages/CookiesPage"));
 const SponsorLandingPage = lazy(() => import("./pages/SponsorLandingPage"));
 const SponsorSlotsPage = lazy(() => import("./pages/SponsorSlotsPage"));
+const SponsorContractPage = lazy(() => import("./pages/SponsorContractPage"));
 
 import CookieConsent from "./components/CookieConsent";
 import PwaInstallBanner from "./components/PwaInstallBanner";
