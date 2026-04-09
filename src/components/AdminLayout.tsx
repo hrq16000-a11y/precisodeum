@@ -187,35 +187,64 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             />
           </div>
         </div>
-        <nav className="flex-1 overflow-y-auto overscroll-contain mt-1 space-y-4 px-3 pb-4">
-          {filteredGroups.map((group, gi) => (
-            <div key={group.label}>
-              <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{group.label}</p>
-              <div className="space-y-0.5">
-                {group.items.map((item, ii) => {
-                  const active = location.pathname === item.path;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:translate-x-0.5'}`}
+        <nav className="flex-1 overflow-y-auto overscroll-contain mt-1 space-y-1 px-3 pb-4">
+          {filteredGroups.map((group) => {
+            const isCollapsed = !!collapsedGroups[group.label] && !sidebarSearch;
+            const hasActiveItem = group.items.some(item => item.path === location.pathname);
+            return (
+              <div key={group.label}>
+                <button
+                  onClick={() => toggleGroup(group.label)}
+                  className="flex w-full items-center justify-between mb-0.5 px-3 py-1.5 rounded-lg hover:bg-sidebar-accent/30 transition-colors group"
+                >
+                  <span className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${hasActiveItem ? 'text-accent' : 'text-sidebar-foreground/40 group-hover:text-sidebar-foreground/60'}`}>
+                    {group.label}
+                  </span>
+                  <motion.div
+                    animate={{ rotate: isCollapsed ? -90 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronDown className="h-3 w-3 text-sidebar-foreground/30" />
+                  </motion.div>
+                </button>
+                <AnimatePresence initial={false}>
+                  {!isCollapsed && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      className="overflow-hidden"
                     >
-                      {active && (
-                        <motion.div
-                          layoutId="admin-sidebar-active"
-                          className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-accent"
-                          transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-                        />
-                      )}
-                      <item.icon className={`h-4 w-4 shrink-0 transition-transform duration-200 ${active ? 'scale-110' : ''}`} />
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  );
-                })}
+                      <div className="space-y-0.5 pb-2">
+                        {group.items.map((item) => {
+                          const active = location.pathname === item.path;
+                          return (
+                            <Link
+                              key={item.path}
+                              to={item.path}
+                              onClick={() => setSidebarOpen(false)}
+                              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:translate-x-0.5'}`}
+                            >
+                              {active && (
+                                <motion.div
+                                  layoutId="admin-sidebar-active"
+                                  className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-accent"
+                                  transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                                />
+                              )}
+                              <item.icon className={`h-4 w-4 shrink-0 transition-transform duration-200 ${active ? 'scale-110' : ''}`} />
+                              <span className="truncate">{item.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </nav>
         <div className="shrink-0 border-t border-sidebar-border p-3 space-y-1">
           <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-sidebar-foreground/70 transition-transform active:scale-95" asChild>
