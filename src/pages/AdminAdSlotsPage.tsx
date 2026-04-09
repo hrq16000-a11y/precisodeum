@@ -62,6 +62,145 @@ const PAGE_TYPE_COLORS: Record<string, string> = {
   blog: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
 };
 
+/* ═══ Slot Limits Sub-Component ═══ */
+const SlotLimitsTab = () => {
+  const qc = useQueryClient();
+  const [limitDialog, setLimitDialog] = useState(false);
+  const [editLimitId, setEditLimitId] = useState<string | null>(null);
+  const [limitForm, setLimitForm] = useState({ context_type: 'global', context_value: '', max_slots: '3' });
+
+  const { data: limits = [] } = useQuery({
+    queryKey: ['admin-slot-limits'],
+    queryFn: async () => {
+      const { data } = await supabase.from('sponsor_slot_limits' as any).select('*').order('context_type');
+      return (data || []) as any[];
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        context_type: limitForm.context_type,
+        context_value: limitForm.context_value.trim(),
+        max_slots: Number(limitForm.max_slots) || 3,
+      };
+      if (editLimitId) {
+        const { error } = await supabase.from('sponsor_slot_limits' as any).update(payload as any).eq('id', editLimitId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('sponsor_slot_limits' as any).insert(payload as any);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-slot-limits'] });
+      toast.success(editLimitId ? 'Limite atualizado!' : 'Limite criado!');
+      setLimitDialog(false); setEditLimitId(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from('sponsor_slot_limits' as any).delete().eq('id', id);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-slot-limits'] });
+      toast.success('Limite removido');
+    },
+  });
+
+  const CONTEXT_TYPES = [
+    { value: 'global', label: 'Global' },
+    { value: 'city', label: 'Por Cidade' },
+    { value: 'category', label: 'Por Categoria' },
+    { value: 'page', label: 'Por Página' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">Gerencie limites de patrocinadores por contexto (global, cidade, categoria, página)</p>
+        </div>
+        <Button size="sm" onClick={() => { setEditLimitId(null); setLimitForm({ context_type: 'global', context_value: '', max_slots: '3' }); setLimitDialog(true); }}>
+          <Plus className="h-4 w-4 mr-1" /> Novo Limite
+        </Button>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Valor</TableHead>
+              <TableHead className="text-right">Máx. Slots</TableHead>
+              <TableHead className="w-24">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {limits.map((l: any) => (
+              <TableRow key={l.id}>
+                <TableCell>
+                  <Badge variant="outline" className="text-xs">{CONTEXT_TYPES.find(c => c.value === l.context_type)?.label || l.context_type}</Badge>
+                </TableCell>
+                <TableCell className="text-sm">{l.context_value || '—'}</TableCell>
+                <TableCell className="text-right font-bold">{l.max_slots}</TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      setEditLimitId(l.id);
+                      setLimitForm({ context_type: l.context_type, context_value: l.context_value || '', max_slots: String(l.max_slots) });
+                      setLimitDialog(true);
+                    }}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => {
+                      if (confirm('Remover este limite?')) deleteMutation.mutate(l.id);
+                    }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {limits.length === 0 && (
+              <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhum limite configurado</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={limitDialog} onOpenChange={v => { if (!v) { setLimitDialog(false); setEditLimitId(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{editLimitId ? 'Editar Limite' : 'Novo Limite'}</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); saveMutation.mutate(); }} className="space-y-4">
+            <div>
+              <Label>Tipo de Contexto</Label>
+              <Select value={limitForm.context_type} onValueChange={v => setLimitForm(f => ({ ...f, context_type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CONTEXT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {limitForm.context_type !== 'global' && (
+              <div>
+                <Label>Valor (nome da cidade/categoria/página)</Label>
+                <Input value={limitForm.context_value} onChange={e => setLimitForm(f => ({ ...f, context_value: e.target.value }))} placeholder="Ex: São Paulo" />
+              </div>
+            )}
+            <div>
+              <Label>Máximo de Slots</Label>
+              <Input type="number" min="1" value={limitForm.max_slots} onChange={e => setLimitForm(f => ({ ...f, max_slots: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setLimitDialog(false)}>Cancelar</Button>
+              <Button type="submit" disabled={saveMutation.isPending}>Salvar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
 const AdminAdSlotsPage = () => {
   const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
