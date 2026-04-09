@@ -264,9 +264,19 @@ const Index = () => {
         <Header />
         <HeroBanner />
 
+        {sectionOrder.map(slug => {
+          const section = renderSection(slug);
+          if (!section) return null;
+          return (
+            <LazyErrorBoundary key={slug}>
+              <Suspense fallback={<SectionFallback />}>
+                {section}
+              </Suspense>
+            </LazyErrorBoundary>
+          );
+        })}
         <LazyErrorBoundary>
           <Suspense fallback={<SectionFallback />}>
-            {sectionOrder.map(renderSection)}
             <Footer />
             <FloatingWhatsApp />
           </Suspense>
