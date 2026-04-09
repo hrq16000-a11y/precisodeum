@@ -243,12 +243,18 @@ const AdminMediaPage = () => {
 
   const compressSingle = async (bucket: string, filePath: string) => {
     try {
-      const { error } = await supabase.functions.invoke('optimize-image', {
+      const { data, error } = await supabase.functions.invoke('optimize-image', {
         body: { bucket, path: filePath },
       });
       if (error) throw error;
-      toast.success('Imagem otimizada com sucesso');
+      if (data?.optimized) {
+        toast.success(data.message || 'Imagem otimizada com sucesso');
+      } else {
+        toast.info(data?.message || 'Arquivo já está otimizado');
+      }
       scanOversized();
+      fetchMedia();
+      fetchStats();
     } catch (err: any) {
       toast.error('Erro ao comprimir: ' + (err.message || ''));
     }
