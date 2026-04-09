@@ -94,30 +94,14 @@ const StatsCounter = () => {
     staleTime: 1000 * 60 * 10,
   });
 
-  const values = data || { providers: 0, services: 0, cities: 0, reviews: 0 };
+  const values = data || { providers: 0, services: 0, cities: 0 };
 
   return (
-    <section className="relative overflow-hidden py-12">
-      {/* Background decoration */}
+    <section className="relative overflow-hidden py-6">
       <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-background to-muted/30" />
-      <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
 
       <div className="container relative">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mb-8 text-center"
-        >
-          <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary mb-2">
-            📊 Números da Plataforma
-          </span>
-          <h2 className="font-display text-xl font-bold text-foreground md:text-2xl">
-            Crescendo a cada dia
-          </h2>
-        </motion.div>
-        
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-3 gap-3">
           {stats.map((stat, i) => (
             <StatItem key={stat.key} stat={stat} value={values[stat.key]} index={i} />
           ))}
