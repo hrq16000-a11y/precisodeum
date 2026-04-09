@@ -6,18 +6,23 @@ import { cleanupFrequencyData } from "@/lib/sponsorRanking";
 // Clean stale frequency-cap data from previous sessions
 cleanupFrequencyData();
 
-// Force-clear all caches on startup to ensure fresh content
-if ('caches' in window) {
-  caches.keys().then(names => {
-    names.forEach(name => caches.delete(name));
-  });
-}
+// ── Auto-clear caches after every new deploy ──
+const BUILD_VERSION = __BUILD_TIMESTAMP__;
+const STORED_VERSION_KEY = 'app-build-version';
 
-// Unregister all service workers to force re-fetch
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(registrations => {
-    registrations.forEach(r => r.unregister());
-  });
+const storedVersion = localStorage.getItem(STORED_VERSION_KEY);
+if (storedVersion !== String(BUILD_VERSION)) {
+  // New version detected — purge everything
+  if ('caches' in window) {
+    caches.keys().then(names => names.forEach(n => caches.delete(n)));
+  }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(r => r.unregister());
+    });
+  }
+  localStorage.setItem(STORED_VERSION_KEY, String(BUILD_VERSION));
+  console.log('[Cache] New build detected, caches cleared.');
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
