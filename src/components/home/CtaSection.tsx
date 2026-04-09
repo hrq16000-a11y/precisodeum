@@ -84,7 +84,7 @@ const CtaSection = () => {
                         className="relative mt-5 inline-block"
                       >
                         <Button variant="accent" size="lg" className="rounded-full shadow-md" asChild>
-                          <Link to={block.button_link}>{block.button_text} <ArrowRight className="h-4 w-4" /></Link>
+                          <Link to={block.button_link}>{block.button_text} <ArrowRight className="h-4 w-4 icon-cta" /></Link>
                         </Button>
                       </motion.div>
                     </div>
