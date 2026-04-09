@@ -69,13 +69,19 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
 
   // Close dropdown on outside click
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler, { passive: true });
+
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
   }, []);
 
   // Build suggestions based on query
@@ -190,7 +196,10 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   const hasQuery = query.trim().length > 0;
 
   const suggestionsDropdown = isOpen && filteredSuggestions.length > 0 ? (
-    <div className="absolute left-0 right-0 top-full z-[100] mt-1 max-h-[50vh] overflow-y-auto overscroll-contain rounded-xl border border-border bg-background shadow-2xl backdrop-blur-none isolate">
+    <div
+      className="absolute left-0 right-0 top-full z-[100] mt-1 max-h-[50vh] overflow-y-auto overscroll-contain rounded-xl border border-border bg-background shadow-2xl isolate touch-pan-y"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+    >
       {!hasQuery && (
         <div className="flex items-center gap-2 border-b border-border px-4 py-2">
           <Sparkles className="h-3.5 w-3.5 text-accent" />
@@ -205,28 +214,28 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
             className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-muted/60 ${
               i === highlightIdx ? 'bg-muted/60' : ''
             }`}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              handleSelectSuggestion(s);
-            }}
+            onClick={() => handleSelectSuggestion(s)}
             onMouseEnter={() => setHighlightIdx(i)}
           >
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-sm">
               {s.icon || '🔧'}
             </span>
-            <span className="min-w-0 flex-1 font-medium text-foreground truncate">{s.label}</span>
-            <span className="shrink-0 text-[10px] text-muted-foreground">{typeLabel[s.type]}</span>
+            <div className="min-w-0 flex-1">
+              <span className="block truncate font-medium text-foreground">{s.label}</span>
+              {s.extra && <span className="block truncate text-xs text-muted-foreground">{s.extra}</span>}
+            </div>
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              {typeIcon(s.type)}
+              {typeLabel[s.type]}
+            </span>
           </button>
         ))}
       </div>
       {hasQuery && (
         <button
           type="button"
-          className="flex w-full items-center gap-2 border-t border-border px-4 py-2.5 text-sm text-accent font-medium hover:bg-muted/40 transition-colors"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            handleSearch();
-          }}
+          className="flex w-full items-center gap-2 border-t border-border px-4 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-muted/40"
+          onClick={() => handleSearch()}
         >
           <Search className="h-4 w-4" />
           Buscar por "{query}"
