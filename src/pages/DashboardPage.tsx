@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap } from 'lucide-react';
+import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap, Camera, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
@@ -10,6 +10,9 @@ import { useSettingValue } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
 import LeadsChart from '@/components/dashboard/LeadsChart';
+import RecentActivity from '@/components/dashboard/RecentActivity';
+import ConversionInsights from '@/components/dashboard/ConversionInsights';
+import WelcomeHero from '@/components/dashboard/WelcomeHero';
 import { usePermissions } from '@/hooks/usePermissions';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import GlassCard from '@/components/ui/GlassCard';
@@ -25,6 +28,7 @@ const DashboardPage = () => {
   const [jobsCount, setJobsCount] = useState<number>(0);
   const [portfolioCount, setPortfolioCount] = useState<number>(0);
   const [viewsTotal, setViewsTotal] = useState<number>(0);
+  const [reviewCount, setReviewCount] = useState<number>(0);
   const [guideOpen, setGuideOpen] = useState(true);
 
   useEffect(() => {
@@ -40,13 +44,15 @@ const DashboardPage = () => {
       supabase.from('services').select('id, view_count', { count: 'exact' }).eq('provider_id', provider.id),
       supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
       supabase.storage.from('portfolio').list(`${provider.user_id}`, { limit: 100 }),
-    ]).then(([sRes, lRes, pRes]) => {
+      supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
+    ]).then(([sRes, lRes, pRes, rRes]) => {
       setServicesCount(sRes.count ?? 0);
       setLeadsCount(lRes.count ?? 0);
       const files = (pRes.data || []).filter(f => f.name !== '.emptyFolderPlaceholder');
       setPortfolioCount(files.length);
       const totalViews = (sRes.data || []).reduce((acc: number, s: any) => acc + (s.view_count || 0), 0);
       setViewsTotal(totalViews);
+      setReviewCount(rRes.count ?? 0);
     });
   }, [provider]);
 
@@ -256,7 +262,8 @@ const DashboardPage = () => {
     { icon: Briefcase, value: servicesCount ?? 0, label: servicesCount === 0 ? 'Nenhum serviço' : 'Serviços', gradient: 'from-blue-500/10 to-blue-600/5', iconColor: 'text-blue-500' },
     { icon: MessageSquare, value: leadsCount, label: leadsCount === 0 ? 'Nenhum lead' : 'Leads', gradient: 'from-purple-500/10 to-purple-600/5', iconColor: 'text-purple-500' },
     { icon: TrendingUp, value: viewsTotal, label: viewsTotal === 0 ? 'Sem visualizações' : 'Visualizações', gradient: 'from-emerald-500/10 to-emerald-600/5', iconColor: 'text-emerald-500' },
-    { icon: Star, value: provider?.rating_avg ? Number(provider.rating_avg).toFixed(1) : '0', label: !provider?.rating_avg || Number(provider.rating_avg) === 0 ? 'Sem avaliações' : 'Avaliação', gradient: 'from-amber-500/10 to-amber-600/5', iconColor: 'text-amber-500' },
+    { icon: Star, value: provider?.rating_avg ? Number(provider.rating_avg).toFixed(1) : '0', label: !provider?.rating_avg || Number(provider.rating_avg) === 0 ? 'Sem avaliações' : `${reviewCount} avaliação${reviewCount !== 1 ? 'ões' : ''}`, gradient: 'from-amber-500/10 to-amber-600/5', iconColor: 'text-amber-500' },
+    { icon: Camera, value: portfolioCount, label: portfolioCount === 0 ? 'Sem fotos' : 'Portfólio', gradient: 'from-pink-500/10 to-pink-600/5', iconColor: 'text-pink-500' },
     { icon: Megaphone, value: jobsCount, label: jobsCount === 0 ? 'Nenhuma vaga' : 'Vagas', gradient: 'from-indigo-500/10 to-indigo-600/5', iconColor: 'text-indigo-500' },
   ];
 
@@ -267,58 +274,18 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout>
-      {/* Welcome Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative rounded-2xl bg-gradient-to-br from-accent/8 via-primary/5 to-transparent border border-accent/10 p-4 overflow-hidden"
-      >
-        <div className="absolute inset-0 shimmer opacity-10" />
-        <div className="relative flex items-center gap-3">
-          <motion.div
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-accent/20 to-primary/20"
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <Zap className="h-5 w-5 text-accent" />
-          </motion.div>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">
-              {greeting}, {profile?.full_name?.split(' ')[0] || 'Profissional'}!
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {pendingLeads > 0
-                ? `Você tem ${pendingLeads} lead${pendingLeads !== 1 ? 's' : ''} pendente${pendingLeads !== 1 ? 's' : ''}`
-                : 'Seu painel profissional'}
-            </p>
-          </div>
-          <div className="hidden sm:flex items-center gap-2">
-            {levelName && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 }}
-                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                style={{ backgroundColor: `${levelColor}20`, color: levelColor }}
-              >
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: levelColor }} />
-                {levelName}
-              </motion.span>
-            )}
-            {accountTypeName && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4 }}
-                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold"
-                style={{ borderColor: `${accountTypeColor}40`, color: accountTypeColor }}
-              >
-                {accountTypeName}
-              </motion.span>
-            )}
-          </div>
-        </div>
-      </motion.div>
+      {/* Enhanced Welcome Hero */}
+      <WelcomeHero
+        greeting={greeting}
+        name={profile?.full_name?.split(' ')[0] || 'Profissional'}
+        pendingLeads={pendingLeads}
+        levelName={levelName}
+        levelColor={levelColor}
+        accountTypeName={accountTypeName}
+        accountTypeColor={accountTypeColor}
+        memberSince={profile?.created_at}
+        plan={provider?.plan}
+      />
 
       {/* Quick Actions Bar */}
       <motion.div
@@ -335,6 +302,9 @@ const DashboardPage = () => {
             <Eye className="h-3.5 w-3.5" /> Ver Minha Página
           </Button>
         )}
+        <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs" onClick={() => navigate('/dashboard/minha-pagina')}>
+          <Layout className="h-3.5 w-3.5" /> Personalizar
+        </Button>
         {pendingLeads > 0 && (
           <Button variant="accent" size="sm" className="rounded-full gap-1.5 text-xs" onClick={() => navigate('/dashboard/leads')}>
             <MessageSquare className="h-3.5 w-3.5" /> Responder Leads
@@ -373,7 +343,7 @@ const DashboardPage = () => {
       </AnimatePresence>
 
       {/* Stats with animated counters and gradient cards */}
-      <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-5">
+      <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         {statCards.map((stat, i) => {
           const Icon = stat.icon;
           return (
@@ -400,7 +370,7 @@ const DashboardPage = () => {
         })}
       </div>
 
-      {/* Profile Completeness Ring + Leads Chart */}
+      {/* Analytics Grid: Completeness + Chart + Conversion + Activity */}
       {provider && (
         <div className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
           <GlassCard variant="gradient" hoverEffect={false} delay={0.3}>
@@ -424,8 +394,21 @@ const DashboardPage = () => {
               />
             </div>
           </GlassCard>
+
           <GlassCard variant="default" hoverEffect={false} delay={0.4}>
             <LeadsChart providerId={provider.id} />
+          </GlassCard>
+
+          <GlassCard variant="default" hoverEffect={false} delay={0.5}>
+            <ConversionInsights views={viewsTotal} leads={leadsCount} services={servicesCount ?? 0} />
+          </GlassCard>
+
+          <GlassCard variant="bordered" hoverEffect={false} delay={0.6}>
+            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-accent" />
+              Atividade Recente
+            </h3>
+            <RecentActivity providerId={provider.id} />
           </GlassCard>
         </div>
       )}
