@@ -193,6 +193,8 @@ const Index = () => {
   // Section renderer — maps slug to component
   const renderSection = (slug: string) => {
     switch (slug) {
+      case 'cms_banners':
+        return heroBannersEnabled ? <CmsBannersCarousel key={slug} /> : null;
       case 'urgency':
         return <UrgencyBanner key={slug} />;
       case 'leader_sponsor': {
