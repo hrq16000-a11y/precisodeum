@@ -151,6 +151,7 @@ const CityPage = () => {
         </div>
       </section>
 
+      <Suspense fallback={null}><SponsorLeaderBanner /></Suspense>
       <Suspense fallback={null}><SponsorTopBanner city={city!.name} /></Suspense>
 
       <div className="container py-8">

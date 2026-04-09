@@ -195,6 +195,7 @@ const CategoryPage = () => {
         </motion.div>
       </section>
 
+      <Suspense fallback={null}><SponsorLeaderBanner /></Suspense>
       <Suspense fallback={null}><SponsorTopBanner category={slug} /></Suspense>
       <Suspense fallback={null}><AdSlot slotSlug="category-top" category={slug} /></Suspense>
 
