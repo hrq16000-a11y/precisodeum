@@ -1,7 +1,9 @@
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { handleImageError } from '@/lib/imageResolver';
 import { ExternalLink } from 'lucide-react';
+import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
+import { getPositionConfig } from '@/config/sponsorPositions';
 
 /** Full-width showcase with professional card layout */
 const AdShowcase = ({ className = '' }: { className?: string }) => {
