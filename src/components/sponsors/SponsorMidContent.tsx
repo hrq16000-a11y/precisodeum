@@ -1,5 +1,4 @@
-import { useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import SponsorPremiumCard from './SponsorPremiumCard';
 
@@ -9,17 +8,11 @@ interface Props {
 
 /** Inline sponsor cards inserted between content lists — shows sponsors with position=mid-content */
 const SponsorMidContent = ({ className = '' }: Props) => {
-  const { data: sponsors = [] } = useSponsorsBySlot('mid-content');
-  const tracked = useRef(new Set<string>());
+  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot('mid-content');
 
   useEffect(() => {
-    sponsors.forEach((s) => {
-      if (!tracked.current.has(s.id)) {
-        tracked.current.add(s.id);
-        supabase.rpc('increment_sponsor_impression', { sponsor_id: s.id } as any);
-      }
-    });
-  }, [sponsors]);
+    sponsors.forEach((s) => trackImpression(s.id));
+  }, [sponsors, trackImpression]);
 
   if (sponsors.length === 0) return null;
 
@@ -27,7 +20,7 @@ const SponsorMidContent = ({ className = '' }: Props) => {
     <div className={`py-3 ${className}`}>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {sponsors.map((s) => (
-          <SponsorPremiumCard key={s.id} sponsor={s} compact />
+          <SponsorPremiumCard key={s.id} sponsor={s} compact onClickTrack={trackClick} />
         ))}
       </div>
     </div>

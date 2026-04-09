@@ -1,5 +1,4 @@
-import { useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import SponsorPremiumCard from './SponsorPremiumCard';
 
@@ -9,17 +8,11 @@ interface Props {
 
 /** Sticky sidebar widget for desktop - shows contextual sponsors */
 const SponsorSidebarWidget = ({ className = '' }: Props) => {
-  const { data: sponsors = [] } = useSponsorsBySlot('sidebar');
-  const tracked = useRef(new Set<string>());
+  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot('sidebar');
 
   useEffect(() => {
-    sponsors.forEach(s => {
-      if (!tracked.current.has(s.id)) {
-        tracked.current.add(s.id);
-        supabase.rpc('increment_sponsor_impression', { sponsor_id: s.id } as any);
-      }
-    });
-  }, [sponsors]);
+    sponsors.forEach(s => trackImpression(s.id));
+  }, [sponsors, trackImpression]);
 
   if (sponsors.length === 0) return null;
 
@@ -27,7 +20,7 @@ const SponsorSidebarWidget = ({ className = '' }: Props) => {
     <div className={`sticky top-24 space-y-3 ${className}`}>
       <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">Patrocinadores</span>
       {sponsors.map((s) => (
-        <SponsorPremiumCard key={s.id} sponsor={s} compact />
+        <SponsorPremiumCard key={s.id} sponsor={s} compact onClickTrack={trackClick} />
       ))}
     </div>
   );

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getPositionConfig } from '@/config/sponsorPositions';
 
@@ -41,6 +42,14 @@ function hasImage(s: { image_url?: string | null; logo_url?: string | null }): b
   return Boolean(s.image_url || s.logo_url);
 }
 
+function getPagePath(): string {
+  try {
+    return window.location.pathname;
+  } catch {
+    return '/';
+  }
+}
+
 /**
  * Central hook — single source of truth for fetching sponsors by position.
  * Applies all rules from POSITION_CONFIG automatically:
@@ -49,19 +58,35 @@ function hasImage(s: { image_url?: string | null; logo_url?: string | null }): b
  * - requiresImage filtering
  * - maxItems limit
  * - ordered by display_order
+ *
+ * Returns centralized trackImpression / trackClick with internal deduplication.
+ * Optional filters for future city/category segmentation.
  */
-export function useSponsorsBySlot(position: string) {
+export function useSponsorsBySlot(
+  position: string,
+  filters?: { city?: string; category?: string }
+) {
   const config = getPositionConfig(position);
+  const impressionSet = useRef(new Set<string>());
 
-  return useQuery({
-    queryKey: ['sponsors-slot', position],
+  const query = useQuery({
+    queryKey: ['sponsors-slot', position, filters?.city ?? '', filters?.category ?? ''],
     queryFn: async () => {
-      const { data } = await supabase
+      let q = supabase
         .from('sponsors')
         .select('*')
         .eq('active', true)
         .eq('position', position)
         .order('display_order');
+
+      if (filters?.city) {
+        q = q.eq('linked_city', filters.city);
+      }
+      if (filters?.category) {
+        q = q.eq('linked_category', filters.category);
+      }
+
+      const { data } = await q;
 
       let results = ((data || []) as unknown as SponsorFull[])
         .filter(s => s.status === 'active')
@@ -75,6 +100,32 @@ export function useSponsorsBySlot(position: string) {
     },
     staleTime: 1000 * 60 * 5,
   });
+
+  const trackImpression = useCallback((id: string) => {
+    if (impressionSet.current.has(id)) return;
+    impressionSet.current.add(id);
+    supabase.rpc('track_sponsor_metric', {
+      _sponsor_id: id,
+      _slot_slug: position,
+      _event_type: 'impression',
+      _page_path: getPagePath(),
+    } as any).then(() => {});
+  }, [position]);
+
+  const trackClick = useCallback((id: string) => {
+    supabase.rpc('track_sponsor_metric', {
+      _sponsor_id: id,
+      _slot_slug: position,
+      _event_type: 'click',
+      _page_path: getPagePath(),
+    } as any).then(() => {});
+  }, [position]);
+
+  return {
+    ...query,
+    trackImpression,
+    trackClick,
+  };
 }
 
 /** Fetch slot limits for scarcity display */
@@ -94,8 +145,8 @@ export function useSponsorSlotLimits() {
 /** Calculate remaining slots for a given context */
 export function useRemainingSlots(type: 'global' | 'city' | 'category', contextValue?: string) {
   const { data: limits } = useSponsorSlotLimits();
-  // For remaining slots we fetch by position mapped from type
   const position = type === 'global' ? 'hero-top' : type === 'city' ? 'sidebar' : 'card';
+  const config = getPositionConfig(position);
   const { data: sponsors } = useSponsorsBySlot(position);
 
   const limit = limits?.find(l =>
@@ -103,7 +154,7 @@ export function useRemainingSlots(type: 'global' | 'city' | 'category', contextV
     (l.context_value === (contextValue || '') || l.context_value === '_default')
   );
 
-  const maxSlots = limit?.max_slots ?? (type === 'global' ? 1 : 3);
+  const maxSlots = limit?.max_slots ?? config.maxItems;
   const currentCount = sponsors?.length ?? 0;
   const remaining = Math.max(0, maxSlots - currentCount);
 

@@ -1,17 +1,18 @@
 import { motion } from 'framer-motion';
 import { BadgeCheck, ExternalLink, MessageCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { SponsorFull } from '@/hooks/useSponsors';
 import { Button } from '@/components/ui/button';
 
 interface Props {
   sponsor: SponsorFull;
   compact?: boolean;
+  /** Optional centralized click tracker from parent hook */
+  onClickTrack?: (id: string) => void;
 }
 
-const SponsorPremiumCard = ({ sponsor, compact = false }: Props) => {
+const SponsorPremiumCard = ({ sponsor, compact = false, onClickTrack }: Props) => {
   const handleClick = () => {
-    supabase.rpc('increment_sponsor_click', { sponsor_id: sponsor.id } as any);
+    onClickTrack?.(sponsor.id);
   };
 
   const whatsappUrl = sponsor.whatsapp

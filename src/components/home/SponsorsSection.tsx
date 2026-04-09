@@ -1,18 +1,8 @@
-import { useEffect, useRef, useMemo, memo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useMemo, memo } from 'react';
 import { handleImageError } from '@/lib/imageResolver';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
 
-function trackMetric(sponsorId: string, eventType: 'impression' | 'click') {
-  supabase.rpc('track_sponsor_metric', {
-    _sponsor_id: sponsorId,
-    _slot_slug: 'home-sponsors',
-    _event_type: eventType,
-    _page_path: window.location.pathname,
-  } as any).then(() => {});
-}
-
-const SponsorCard = memo(({ sponsor }: { sponsor: any }) => {
+const SponsorCard = memo(({ sponsor, onClickTrack }: { sponsor: any; onClickTrack: (id: string) => void }) => {
   const isPremium = sponsor.tier === 'premium';
   const visualSrc = sponsor.logo_url || sponsor.image_url;
 
@@ -23,7 +13,7 @@ const SponsorCard = memo(({ sponsor }: { sponsor: any }) => {
       href={sponsor.link_url || '#'}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() => trackMetric(sponsor.id, 'click')}
+      onClick={() => onClickTrack(sponsor.id)}
       className="group relative block overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
     >
       {isPremium && (
@@ -55,8 +45,7 @@ SponsorCard.displayName = 'SponsorCard';
 
 /** Self-contained: fetches position=card sponsors internally */
 const SponsorsSection = () => {
-  const { data: sponsors = [] } = useSponsorsBySlot('card');
-  const tracked = useRef(new Set<string>());
+  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot('card');
 
   // Shuffle for variety
   const displayed = useMemo(() => {
@@ -69,13 +58,8 @@ const SponsorsSection = () => {
   }, [sponsors]);
 
   useEffect(() => {
-    displayed.forEach((s) => {
-      if (!tracked.current.has(s.id)) {
-        tracked.current.add(s.id);
-        trackMetric(s.id, 'impression');
-      }
-    });
-  }, [displayed]);
+    displayed.forEach((s) => trackImpression(s.id));
+  }, [displayed, trackImpression]);
 
   if (displayed.length === 0) return null;
 
@@ -92,7 +76,7 @@ const SponsorsSection = () => {
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {displayed.map((sponsor) => (
-            <SponsorCard key={sponsor.id} sponsor={sponsor} />
+            <SponsorCard key={sponsor.id} sponsor={sponsor} onClickTrack={trackClick} />
           ))}
         </div>
       </div>

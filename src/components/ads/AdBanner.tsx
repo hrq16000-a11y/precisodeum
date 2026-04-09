@@ -1,7 +1,5 @@
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import SponsorImage from '@/components/SponsorImage';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 interface AdBannerProps {
   position: string;
@@ -10,19 +8,9 @@ interface AdBannerProps {
   sticky?: boolean;
 }
 
-function trackMetric(id: string, slotSlug: string, eventType: 'impression' | 'click') {
-  supabase.rpc('track_sponsor_metric', {
-    _sponsor_id: id,
-    _slot_slug: slotSlug,
-    _event_type: eventType,
-    _page_path: window.location.pathname,
-  } as any).then(() => {});
-}
-
 const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBannerProps) => {
-  const { data: sponsors = [] } = useSponsorsBySlot(position);
+  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot(position);
   const [idx, setIdx] = useState(0);
-  const tracked = useRef(new Set<string>());
   const touchStart = useRef<number | null>(null);
 
   useEffect(() => {
@@ -33,11 +21,8 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
 
   useEffect(() => {
     const s = sponsors[idx];
-    if (s && !tracked.current.has(s.id)) {
-      tracked.current.add(s.id);
-      trackMetric(s.id, `position-${position}`, 'impression');
-    }
-  }, [sponsors, idx, position]);
+    if (s) trackImpression(s.id);
+  }, [sponsors, idx, trackImpression]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStart.current = e.touches[0].clientX;
@@ -72,7 +57,7 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
           href={current.link_url || '#'}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => trackMetric(current.id, `position-${position}`, 'click')}
+          onClick={() => trackClick(current.id)}
           className="block transition-opacity hover:opacity-95"
         >
           {current.image_url ? (

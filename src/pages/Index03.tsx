@@ -22,7 +22,7 @@ import BlogHighlight from '@/components/home/BlogHighlight';
 import CitiesSection from '@/components/home/CitiesSection';
 import CtaSection from '@/components/home/CtaSection';
 import SponsorsSection from '@/components/home/SponsorsSection';
-import LeaderSponsor from '@/components/home/LeaderSponsor';
+import SponsorLeaderBanner from '@/components/sponsors/SponsorLeaderBanner';
 import HowItWorksSection from '@/components/home/HowItWorksSection';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
 import FaqSection from '@/components/home/FaqSection';
@@ -124,7 +124,7 @@ const Index03 = () => {
           <UrgencyBanner />
 
           {/* Leader Sponsor */}
-          {heroTopSponsors.length > 0 && <LeaderSponsor sponsors={heroTopSponsors as any} />}
+          <SponsorLeaderBanner />
 
           {/* Sponsor Top Banner */}
           <SponsorTopBanner />
