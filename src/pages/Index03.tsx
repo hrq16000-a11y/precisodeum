@@ -124,7 +124,7 @@ const Index03 = () => {
           <UrgencyBanner />
 
           {/* Leader Sponsor */}
-          {heroTopSponsors.length > 0 && <LeaderSponsor sponsors={heroTopSponsors as any} />}
+          <SponsorLeaderBanner />
 
           {/* Sponsor Top Banner */}
           <SponsorTopBanner />
