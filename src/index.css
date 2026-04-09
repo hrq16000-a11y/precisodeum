@@ -556,3 +556,17 @@
   animation: glow-ring 3s ease-in-out infinite;
 }
 
+/* ── Lazy image reveal ── */
+img[loading="lazy"] {
+  opacity: 0;
+  filter: blur(8px);
+  transform: scale(1.02);
+  transition: opacity 0.7s ease-out, filter 0.7s ease-out, transform 0.7s ease-out;
+}
+
+img[loading="lazy"].img-revealed {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
