@@ -2040,14 +2040,18 @@ export type Database = {
           active: boolean
           ad_format: string
           badge_type: string
+          campaign_end: string | null
+          campaign_start: string | null
           clicks: number
           company_name: string
           created_at: string
           deleted_at: string | null
+          delivered_impressions: number
           display_order: number
           end_date: string | null
           external_link: string | null
           full_description: string
+          guaranteed_impressions: number | null
           id: string
           image_url: string | null
           impressions: number
@@ -2057,7 +2061,9 @@ export type Database = {
           logo_url: string | null
           max_height: number
           max_width: number
+          needs_compensation: boolean
           phone: string | null
+          plan: string
           plan_tier: string
           position: string
           short_description: string
@@ -2073,14 +2079,18 @@ export type Database = {
           active?: boolean
           ad_format?: string
           badge_type?: string
+          campaign_end?: string | null
+          campaign_start?: string | null
           clicks?: number
           company_name?: string
           created_at?: string
           deleted_at?: string | null
+          delivered_impressions?: number
           display_order?: number
           end_date?: string | null
           external_link?: string | null
           full_description?: string
+          guaranteed_impressions?: number | null
           id?: string
           image_url?: string | null
           impressions?: number
@@ -2090,7 +2100,9 @@ export type Database = {
           logo_url?: string | null
           max_height?: number
           max_width?: number
+          needs_compensation?: boolean
           phone?: string | null
+          plan?: string
           plan_tier?: string
           position?: string
           short_description?: string
@@ -2106,14 +2118,18 @@ export type Database = {
           active?: boolean
           ad_format?: string
           badge_type?: string
+          campaign_end?: string | null
+          campaign_start?: string | null
           clicks?: number
           company_name?: string
           created_at?: string
           deleted_at?: string | null
+          delivered_impressions?: number
           display_order?: number
           end_date?: string | null
           external_link?: string | null
           full_description?: string
+          guaranteed_impressions?: number | null
           id?: string
           image_url?: string | null
           impressions?: number
@@ -2123,7 +2139,9 @@ export type Database = {
           logo_url?: string | null
           max_height?: number
           max_width?: number
+          needs_compensation?: boolean
           phone?: string | null
+          plan?: string
           plan_tier?: string
           position?: string
           short_description?: string
