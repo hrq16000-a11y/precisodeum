@@ -204,7 +204,7 @@ const Index = () => {
           : null;
       }
       case 'sponsor_top':
-        return sponsorsEnabled ? <SponsorTopBanner key={slug} city={geoCity || undefined} /> : null;
+        return sponsorsEnabled ? <SponsorTopBanner key={slug} /> : null;
       case 'stats':
         return <StatsCounter key={slug} />;
       case 'highlights':
@@ -245,8 +245,12 @@ const Index = () => {
         return ctaEnabled ? <CtaSection key={slug} /> : null;
       case 'showcase':
         return <AdShowcase key={slug} />;
-      case 'sponsors':
-        return sponsorsEnabled ? <SponsorsSection key={slug} sponsors={sponsors} /> : null;
+      case 'sponsors': {
+        const cardSponsors = sponsors.filter(s => s.position === 'card');
+        return sponsorsEnabled && cardSponsors.length > 0
+          ? <SponsorsSection key={slug} sponsors={cardSponsors as any} />
+          : null;
+      }
       case 'howitworks':
         return howItWorksEnabled ? <HowItWorksSection key={slug} /> : null;
       case 'searches':
