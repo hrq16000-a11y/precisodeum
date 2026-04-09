@@ -29,11 +29,29 @@ const TRENDING_QUERIES = [
   'Marceneiro',
 ];
 
+// Fisher-Yates shuffle
+const shuffleArray = <T,>(arr: T[]): T[] => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+const badgeColors: Record<string, string> = {
+  popular: 'bg-accent/15 text-accent',
+  category: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+  service: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+  city: 'bg-purple-500/15 text-purple-600 dark:text-purple-400',
+};
+
 const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   const { city: geoCity, setCity } = useGeoCity();
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(-1);
+  const [openCount, setOpenCount] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
