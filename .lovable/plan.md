@@ -1,28 +1,70 @@
 
 
-## Plano: Lista de busca com ordem aleatória e animações premium
+## Plano: Indexação 100% — Buscadores, Chatbots e IAs
 
-### O que muda
+### Problema atual
 
-A lista de sugestões da barra de busca terá os itens em **ordem aleatória** (embaralhados) cada vez que aparecer, e cada item entrará com **animações staggered** (escalonadas) para um efeito sofisticado e atrativo.
+O site é uma SPA (React) que renderiza todo o conteúdo via JavaScript. Crawlers tradicionais (Google, Bing) conseguem executar JS, mas **chatbots de IA** (ChatGPT, Perplexity, Claude, etc.) e alguns crawlers secundários **não executam JavaScript** — eles leem apenas o HTML estático inicial, que hoje está praticamente vazio (`<div id="root"></div>`).
 
-### Alterações em `src/components/SearchBar.tsx`
+Além disso, faltam sinais padronizados para IAs: `llms.txt`, headers de permissão e meta tags específicas.
 
-1. **Shuffle dos itens trending** --- ao montar a lista de trending (sem query), embaralhar o array com Fisher-Yates para que a ordem mude a cada abertura do dropdown.
+### O que será feito
 
-2. **Animações staggered nos itens** --- cada item da lista recebe um `style` com `animation` CSS inline usando delay incremental (`i * 60ms`), criando um efeito cascata onde cada item desliza suavemente para dentro com fade e leve translação.
+#### 1. Arquivo `public/llms.txt` — Guia para IAs
+Criar um arquivo padrão `llms.txt` (proposta em adoção por ChatGPT, Perplexity e outros) na raiz do site com:
+- Nome e descrição do site
+- URLs principais e estrutura de conteúdo
+- Instruções de como navegar o site
+- Links para sitemap e categorias
 
-3. **Efeito de entrada no container** --- o dropdown inteiro recebe uma animação de `scale-in` + `fade-in` sutil ao abrir.
+#### 2. Arquivo `public/.well-known/ai-plugin.json`
+Criar manifesto padrão para plugins de IA com metadados do site, facilitando descoberta por agentes.
 
-4. **Micro-interação no hover** --- cada item ganha um efeito de escala sutil (`scale(1.01)`) e transição de cor de fundo com gradiente suave ao passar o mouse.
+#### 3. Meta tags para crawlers de IA no `index.html`
+Adicionar ao `<head>`:
+- `<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">` — permissões máximas
+- `<meta name="ai-content-declaration" content="human-created">` — declaração de conteúdo
+- Tags Open Graph adicionais (`og:locale`, `og:url`)
 
-5. **Ícone com brilho** --- o ícone/emoji de cada item recebe um fundo com gradiente sutil e uma sombra colorida leve para dar sofisticação.
+#### 4. Atualizar `robots.txt` para incluir crawlers de IA
+Adicionar regras explícitas para:
+- `GPTBot` (ChatGPT)
+- `ChatGPT-User`
+- `Google-Extended` (Gemini/Bard)
+- `PerplexityBot`
+- `ClaudeBot` (Anthropic)
+- `Bytespider` (TikTok)
+- `CCBot` (Common Crawl)
+- Referência ao `llms.txt`
 
-6. **Badge de tipo com cor contextual** --- os badges "Popular", "Categoria", "Serviço", "Cidade" ganham cores distintas por tipo (accent para popular, azul para categoria, etc).
+#### 5. Sitemap: adicionar páginas estáticas faltantes
+Atualizar a edge function `sitemap` para incluir:
+- `/blog` e posts individuais (`/blog/:slug`)
+- `/faq`, `/servicos`, `/cidades`, `/categorias`
+- `/vagas` e vagas individuais
+- `/privacidade`, `/termos`, `/cookies`
+- Páginas institucionais (`/p/:slug`)
+
+#### 6. SSR-like: Noscript fallback no `index.html`
+Adicionar dentro de `<noscript>` no `<body>` um bloco com texto descritivo do site, links para categorias e informações básicas. Isso garante que crawlers que não executam JS encontrem **conteúdo textual real** em vez de uma página vazia.
+
+#### 7. JSON-LD global no `index.html`
+Adicionar schema `WebSite` e `Organization` diretamente no HTML estático (não dependendo de JS) para que crawlers vejam dados estruturados imediatamente.
+
+### Arquivos modificados/criados
+
+| Arquivo | Ação |
+|---|---|
+| `public/llms.txt` | Criar |
+| `public/.well-known/ai-plugin.json` | Criar |
+| `public/robots.txt` | Atualizar |
+| `index.html` | Atualizar (meta tags, noscript, JSON-LD) |
+| `supabase/functions/sitemap/index.ts` | Atualizar (mais URLs) |
 
 ### Detalhes técnicos
 
-- Animação CSS inline via `style={{ animationDelay }}` com keyframe `suggestion-slide-in` adicionado ao `index.css`
-- Shuffle feito com `useMemo` usando seed baseado no estado `isOpen` para re-embaralhar ao reabrir
-- Sem dependência nova --- apenas CSS e lógica de array
+- O `llms.txt` segue a especificação emergente usada por ChatGPT Browse e Perplexity
+- O noscript fallback não afeta usuários normais (só aparece sem JS)
+- O JSON-LD estático no HTML é duplicado propositalmente — crawlers sem JS o leem do HTML, crawlers com JS o atualizam via React
+- O sitemap passa a cobrir ~100% das rotas públicas do site
 
