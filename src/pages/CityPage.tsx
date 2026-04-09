@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
+const SponsorLeaderBanner = lazy(() => import('@/components/sponsors/SponsorLeaderBanner'));
 const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
 const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
 
@@ -150,6 +151,7 @@ const CityPage = () => {
         </div>
       </section>
 
+      <Suspense fallback={null}><SponsorLeaderBanner /></Suspense>
       <Suspense fallback={null}><SponsorTopBanner city={city!.name} /></Suspense>
 
       <div className="container py-8">

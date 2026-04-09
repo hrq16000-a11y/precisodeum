@@ -17,6 +17,7 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
 const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+const SponsorLeaderBanner = lazy(() => import('@/components/sponsors/SponsorLeaderBanner'));
 const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
 const SponsorMidContent = lazy(() => import('@/components/sponsors/SponsorMidContent'));
 const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
@@ -194,6 +195,7 @@ const CategoryPage = () => {
         </motion.div>
       </section>
 
+      <Suspense fallback={null}><SponsorLeaderBanner /></Suspense>
       <Suspense fallback={null}><SponsorTopBanner category={slug} /></Suspense>
       <Suspense fallback={null}><AdSlot slotSlug="category-top" category={slug} /></Suspense>
 
