@@ -16,6 +16,7 @@ import ConversionInsights from '@/components/dashboard/ConversionInsights';
 import WelcomeHero from '@/components/dashboard/WelcomeHero';
 import QuickStatsBar from '@/components/dashboard/QuickStatsBar';
 import StatCardGrid from '@/components/dashboard/StatCardGrid';
+import DashboardTipOfDay from '@/components/dashboard/DashboardTipOfDay';
 import { usePermissions } from '@/hooks/usePermissions';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
@@ -367,6 +368,15 @@ const DashboardPage = () => {
             </h3>
             <RecentActivity providerId={provider.id} />
           </GlassCard>
+
+          <div className="lg:col-span-2">
+            <DashboardTipOfDay
+              servicesCount={servicesCount ?? 0}
+              portfolioCount={portfolioCount}
+              leadsCount={leadsCount}
+              reviewCount={reviewCount}
+            />
+          </div>
         </div>
       )}
 

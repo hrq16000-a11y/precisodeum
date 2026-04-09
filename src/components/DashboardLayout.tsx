@@ -9,6 +9,7 @@ import DashboardGroupNav from '@/components/dashboard/DashboardGroupNav';
 import { supabase } from '@/integrations/supabase/client';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useSettingValue } from '@/hooks/useSiteSettings';
+import TopLoadingBar from '@/components/ui/TopLoadingBar';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/8a22c45f-f2c2-4ac8-a925-92aecd2b313b.png';
 
@@ -82,6 +83,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="flex min-h-screen bg-background">
+      <TopLoadingBar />
       {/* Mobile header */}
       <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border glass-strong px-4 lg:hidden">
         <Link to="/" className="flex items-center"><img src={logo} alt="Preciso de um" className="h-7" /></Link>
