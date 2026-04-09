@@ -155,14 +155,30 @@ const SignupPage = () => {
           status: 'pending',
         }).select('id').single();
 
-        // Auto-create trial subscription for admin visibility
+        // Auto-create trial subscription (idempotent: skip if already exists)
         if (providerData?.id) {
-          await supabase.from('subscriptions').insert({
-            provider_id: providerData.id,
-            plan: 'trial',
-            status: 'trial',
-            starts_at: new Date().toISOString(),
-          });
+          const { data: existingSub } = await supabase
+            .from('subscriptions')
+            .select('id')
+            .eq('provider_id', providerData.id)
+            .in('status', ['trial', 'active'])
+            .maybeSingle();
+
+          if (!existingSub) {
+            await supabase.from('subscriptions').insert({
+              provider_id: providerData.id,
+              plan: 'trial',
+              status: 'trial',
+              starts_at: new Date().toISOString(),
+            });
+
+            logAuditAction({
+              action: 'subscription_created',
+              resource_type: 'subscription',
+              resource_id: providerData.id,
+              details: { plan: 'trial' },
+            }).catch(() => {});
+          }
         }
       }
     }
