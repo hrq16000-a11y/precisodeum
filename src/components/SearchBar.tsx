@@ -277,41 +277,41 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   }
 
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-xl">
-      <form onSubmit={handleSearch}>
-        <div
-          className={`flex items-center gap-2 rounded-full bg-card p-2 pl-5 transition-all duration-300 ${
-            isFocused
-              ? 'shadow-lg ring-2 ring-accent/20'
-              : 'shadow-card-hover'
-          }`}
-        >
-          <Search className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isFocused ? 'text-accent' : 'text-muted-foreground'}`} />
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder={typingPlaceholder || "O que você precisa? Ex: eletricista, pintor..."}
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setSearchError(''); setIsOpen(true); }}
-            onFocus={handleFocus}
-            onBlur={() => setIsFocused(false)}
-            onKeyDown={handleKeyDown}
-            className="min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/60 outline-none"
-            autoComplete="off"
-          />
-          {query && (
-            <button type="button" onClick={() => { setQuery(''); inputRef.current?.focus(); }} className="text-muted-foreground hover:text-foreground mr-1">
-              <X className="h-4 w-4" />
-            </button>
-          )}
-          <Button type="submit" variant="hero" size="lg" className="rounded-full px-6">
-            Buscar
-          </Button>
-        </div>
-      </form>
-      {searchError && <p className="mt-2 text-center text-xs text-destructive">{searchError}</p>}
-      {suggestionsDropdown}
-    </div>
+      <div ref={wrapperRef} className="relative z-40 w-full max-w-xl">
+        <form onSubmit={handleSearch}>
+          <div
+            className={`flex items-center gap-2 rounded-full bg-card p-2 pl-5 transition-all duration-300 ${
+              isFocused
+                ? 'shadow-lg ring-2 ring-accent/20'
+                : 'shadow-card-hover'
+            }`}
+          >
+            <Search className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isFocused ? 'text-accent' : 'text-muted-foreground'}`} />
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder={typingPlaceholder || "O que você precisa? Ex: eletricista, pintor..."}
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setSearchError(''); setIsOpen(true); }}
+              onFocus={handleFocus}
+              onBlur={() => setIsFocused(false)}
+              onKeyDown={handleKeyDown}
+              className="min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/60 outline-none"
+              autoComplete="off"
+            />
+            {query && (
+              <button type="button" onClick={() => { setQuery(''); inputRef.current?.focus(); }} className="mr-1 text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            <Button type="submit" variant="hero" size="lg" className="rounded-full px-6">
+              Buscar
+            </Button>
+          </div>
+        </form>
+        {searchError && <p className="mt-2 text-center text-xs text-destructive">{searchError}</p>}
+        {suggestionsDropdown}
+      </div>
   );
 };
 

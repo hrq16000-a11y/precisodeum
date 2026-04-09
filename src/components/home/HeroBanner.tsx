@@ -178,7 +178,7 @@ const HeroBanner = ({}: HeroBannerProps) => {
           </h1>
         </div>
 
-        <div className="mt-4 md:mt-6 w-full max-w-2xl">
+        <div className="relative z-30 mt-4 w-full max-w-2xl md:mt-6">
           <div className="animate-glow-ring rounded-full">
             <SearchBar />
           </div>
@@ -188,12 +188,12 @@ const HeroBanner = ({}: HeroBannerProps) => {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
+        <div className="relative z-10 mt-4 flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
           <p className="text-sm text-primary-foreground/80">
             Cadastre seus serviços gratuitamente.{' '}
             <Link to="/cadastro" className="font-semibold text-secondary hover:underline underline-offset-2">Cadastrar agora →</Link>
           </p>
-          <span className="hidden sm:inline text-primary-foreground/40">|</span>
+          <span className="hidden text-primary-foreground/40 sm:inline">|</span>
           <p className="text-sm text-primary-foreground/80">
             <Link to="/dashboard/vagas" className="font-semibold text-secondary hover:underline underline-offset-2">Cadastre uma vaga / oportunidade →</Link>
           </p>
