@@ -78,12 +78,16 @@ function useSlotSponsors(slotSlug: string, category?: string, city?: string, sta
   });
 }
 
+function getPagePath(): string {
+  try { return window.location.pathname; } catch { return '/'; }
+}
+
 function trackMetric(sponsorId: string, slotSlug: string, eventType: 'impression' | 'click') {
   supabase.rpc('track_sponsor_metric', {
     _sponsor_id: sponsorId,
     _slot_slug: slotSlug,
     _event_type: eventType,
-    _page_path: window.location.pathname,
+    _page_path: getPagePath(),
   } as any).then(() => {});
 }
 
