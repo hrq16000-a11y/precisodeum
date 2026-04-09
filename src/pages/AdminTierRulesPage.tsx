@@ -21,7 +21,22 @@ interface TierRule {
   max_leads: number;
   can_create_services: boolean;
   can_receive_leads: boolean;
+  max_ads: number;
+  max_slots: number;
+  can_access_crm: boolean;
+  can_access_reports: boolean;
+  can_access_featured: boolean;
+  ranking_priority: number;
+  search_boost: number;
 }
+
+const DEFAULT_NEW: Omit<TierRule, 'id'> = {
+  tier_key: '', tier_label: '', max_services: 0, max_leads: 0,
+  can_create_services: false, can_receive_leads: false,
+  max_ads: 0, max_slots: 0, can_access_crm: false,
+  can_access_reports: false, can_access_featured: false,
+  ranking_priority: 0, search_boost: 0,
+};
 
 const AdminTierRulesPage = () => {
   const { isAdmin, loading } = useAdmin();
@@ -30,7 +45,7 @@ const AdminTierRulesPage = () => {
   const [fetching, setFetching] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
-  const [newRule, setNewRule] = useState({ tier_key: '', tier_label: '', max_services: 0, max_leads: 0, can_create_services: false, can_receive_leads: false });
+  const [newRule, setNewRule] = useState<Omit<TierRule, 'id'>>(DEFAULT_NEW);
 
   const fetchRules = async () => {
     const { data } = await supabase.from('tier_rules' as any).select('*').order('tier_key');
@@ -51,6 +66,13 @@ const AdminTierRulesPage = () => {
         max_leads: rule.max_leads,
         can_create_services: rule.can_create_services,
         can_receive_leads: rule.can_receive_leads,
+        max_ads: rule.max_ads,
+        max_slots: rule.max_slots,
+        can_access_crm: rule.can_access_crm,
+        can_access_reports: rule.can_access_reports,
+        can_access_featured: rule.can_access_featured,
+        ranking_priority: rule.ranking_priority,
+        search_boost: rule.search_boost,
         updated_at: new Date().toISOString(),
       })
       .eq('id', rule.id);
@@ -66,12 +88,9 @@ const AdminTierRulesPage = () => {
   const handleCreate = async () => {
     if (!newRule.tier_key.trim()) { toast.error('Chave do tier é obrigatória'); return; }
     const { error } = await (supabase.from('tier_rules' as any) as any).insert({
+      ...newRule,
       tier_key: newRule.tier_key.toLowerCase().replace(/\s+/g, '_'),
       tier_label: newRule.tier_label || newRule.tier_key,
-      max_services: newRule.max_services,
-      max_leads: newRule.max_leads,
-      can_create_services: newRule.can_create_services,
-      can_receive_leads: newRule.can_receive_leads,
     });
     if (error) {
       toast.error('Erro: ' + error.message);
@@ -79,7 +98,7 @@ const AdminTierRulesPage = () => {
       toast.success('Novo tier criado!');
       logAction({ action: 'create', resource_type: 'tier_rules', details: { tier_key: newRule.tier_key } });
       setShowNew(false);
-      setNewRule({ tier_key: '', tier_label: '', max_services: 0, max_leads: 0, can_create_services: false, can_receive_leads: false });
+      setNewRule(DEFAULT_NEW);
       fetchRules();
     }
   };
@@ -150,6 +169,8 @@ const AdminTierRulesPage = () => {
                       {rule.max_services === -1 ? 'Serviços ilimitados' : `${rule.max_services} serviço(s)`}
                       {' · '}
                       {rule.max_leads === -1 ? 'Leads ilimitados' : `${rule.max_leads} lead(s)`}
+                      {' · '}
+                      Prioridade: {rule.ranking_priority} · Boost: {rule.search_boost}
                     </CardDescription>
                   </div>
                   <div className="flex gap-1">
@@ -164,49 +185,64 @@ const AdminTierRulesPage = () => {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 space-y-4">
+                {/* Row 1: Core limits */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <Label className="text-xs">Nome do tier</Label>
-                    <Input
-                      value={rule.tier_label}
-                      onChange={e => updateLocal(rule.id, 'tier_label', e.target.value)}
-                      className="mt-1"
-                    />
+                    <Input value={rule.tier_label} onChange={e => updateLocal(rule.id, 'tier_label', e.target.value)} className="mt-1" />
                   </div>
                   <div>
                     <Label className="text-xs">Máx. Serviços</Label>
-                    <Input
-                      type="number"
-                      value={rule.max_services}
-                      onChange={e => updateLocal(rule.id, 'max_services', parseInt(e.target.value) || 0)}
-                      className="mt-1"
-                    />
+                    <Input type="number" value={rule.max_services} onChange={e => updateLocal(rule.id, 'max_services', parseInt(e.target.value) || 0)} className="mt-1" />
                   </div>
                   <div>
                     <Label className="text-xs">Máx. Leads</Label>
-                    <Input
-                      type="number"
-                      value={rule.max_leads}
-                      onChange={e => updateLocal(rule.id, 'max_leads', parseInt(e.target.value) || 0)}
-                      className="mt-1"
-                    />
+                    <Input type="number" value={rule.max_leads} onChange={e => updateLocal(rule.id, 'max_leads', parseInt(e.target.value) || 0)} className="mt-1" />
                   </div>
-                  <div className="space-y-3 pt-1">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={rule.can_create_services}
-                        onCheckedChange={v => updateLocal(rule.id, 'can_create_services', v)}
-                      />
-                      <Label className="text-xs">Criar serviços</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={rule.can_receive_leads}
-                        onCheckedChange={v => updateLocal(rule.id, 'can_receive_leads', v)}
-                      />
-                      <Label className="text-xs">Receber leads</Label>
-                    </div>
+                  <div>
+                    <Label className="text-xs">Máx. Anúncios</Label>
+                    <Input type="number" value={rule.max_ads} onChange={e => updateLocal(rule.id, 'max_ads', parseInt(e.target.value) || 0)} className="mt-1" />
+                  </div>
+                </div>
+
+                {/* Row 2: SaaS controls */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label className="text-xs">Máx. Slots</Label>
+                    <Input type="number" value={rule.max_slots} onChange={e => updateLocal(rule.id, 'max_slots', parseInt(e.target.value) || 0)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Prioridade Ranking</Label>
+                    <Input type="number" value={rule.ranking_priority} onChange={e => updateLocal(rule.id, 'ranking_priority', parseInt(e.target.value) || 0)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Search Boost</Label>
+                    <Input type="number" value={rule.search_boost} onChange={e => updateLocal(rule.id, 'search_boost', parseInt(e.target.value) || 0)} className="mt-1" />
+                  </div>
+                </div>
+
+                {/* Row 3: Toggle permissions */}
+                <div className="flex flex-wrap gap-x-6 gap-y-2 pt-1">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={rule.can_create_services} onCheckedChange={v => updateLocal(rule.id, 'can_create_services', v)} />
+                    <Label className="text-xs">Criar serviços</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={rule.can_receive_leads} onCheckedChange={v => updateLocal(rule.id, 'can_receive_leads', v)} />
+                    <Label className="text-xs">Receber leads</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={rule.can_access_crm} onCheckedChange={v => updateLocal(rule.id, 'can_access_crm', v)} />
+                    <Label className="text-xs">Acesso CRM</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={rule.can_access_reports} onCheckedChange={v => updateLocal(rule.id, 'can_access_reports', v)} />
+                    <Label className="text-xs">Relatórios</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={rule.can_access_featured} onCheckedChange={v => updateLocal(rule.id, 'can_access_featured', v)} />
+                    <Label className="text-xs">Destaque</Label>
                   </div>
                 </div>
               </CardContent>
@@ -216,30 +252,50 @@ const AdminTierRulesPage = () => {
 
         {/* New Tier Dialog */}
         <Dialog open={showNew} onOpenChange={setShowNew}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Criar Novo Tier</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
-              <div>
-                <Label>Chave (ex: enterprise)</Label>
-                <Input value={newRule.tier_key} onChange={e => setNewRule(n => ({ ...n, tier_key: e.target.value }))} placeholder="chave_unica" />
-              </div>
-              <div>
-                <Label>Nome de exibição</Label>
-                <Input value={newRule.tier_label} onChange={e => setNewRule(n => ({ ...n, tier_label: e.target.value }))} placeholder="Enterprise" />
-              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Máx. Serviços</Label>
+                  <Label>Chave (ex: enterprise)</Label>
+                  <Input value={newRule.tier_key} onChange={e => setNewRule(n => ({ ...n, tier_key: e.target.value }))} placeholder="chave_unica" />
+                </div>
+                <div>
+                  <Label>Nome de exibição</Label>
+                  <Input value={newRule.tier_label} onChange={e => setNewRule(n => ({ ...n, tier_label: e.target.value }))} placeholder="Enterprise" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <Label className="text-xs">Máx. Serviços</Label>
                   <Input type="number" value={newRule.max_services} onChange={e => setNewRule(n => ({ ...n, max_services: parseInt(e.target.value) || 0 }))} />
                 </div>
                 <div>
-                  <Label>Máx. Leads</Label>
+                  <Label className="text-xs">Máx. Leads</Label>
                   <Input type="number" value={newRule.max_leads} onChange={e => setNewRule(n => ({ ...n, max_leads: parseInt(e.target.value) || 0 }))} />
                 </div>
+                <div>
+                  <Label className="text-xs">Máx. Anúncios</Label>
+                  <Input type="number" value={newRule.max_ads} onChange={e => setNewRule(n => ({ ...n, max_ads: parseInt(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <Label className="text-xs">Máx. Slots</Label>
+                  <Input type="number" value={newRule.max_slots} onChange={e => setNewRule(n => ({ ...n, max_slots: parseInt(e.target.value) || 0 }))} />
+                </div>
               </div>
-              <div className="flex gap-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Prioridade Ranking</Label>
+                  <Input type="number" value={newRule.ranking_priority} onChange={e => setNewRule(n => ({ ...n, ranking_priority: parseInt(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <Label className="text-xs">Search Boost</Label>
+                  <Input type="number" value={newRule.search_boost} onChange={e => setNewRule(n => ({ ...n, search_boost: parseInt(e.target.value) || 0 }))} />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-4">
                 <div className="flex items-center gap-2">
                   <Switch checked={newRule.can_create_services} onCheckedChange={v => setNewRule(n => ({ ...n, can_create_services: v }))} />
                   <Label className="text-xs">Criar serviços</Label>
@@ -247,6 +303,18 @@ const AdminTierRulesPage = () => {
                 <div className="flex items-center gap-2">
                   <Switch checked={newRule.can_receive_leads} onCheckedChange={v => setNewRule(n => ({ ...n, can_receive_leads: v }))} />
                   <Label className="text-xs">Receber leads</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={newRule.can_access_crm} onCheckedChange={v => setNewRule(n => ({ ...n, can_access_crm: v }))} />
+                  <Label className="text-xs">CRM</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={newRule.can_access_reports} onCheckedChange={v => setNewRule(n => ({ ...n, can_access_reports: v }))} />
+                  <Label className="text-xs">Relatórios</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={newRule.can_access_featured} onCheckedChange={v => setNewRule(n => ({ ...n, can_access_featured: v }))} />
+                  <Label className="text-xs">Destaque</Label>
                 </div>
               </div>
             </div>

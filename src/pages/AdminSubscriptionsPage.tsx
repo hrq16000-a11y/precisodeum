@@ -3,18 +3,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Search, Download, CreditCard, Clock, CheckCircle2, XCircle, DollarSign, TrendingUp, RefreshCcw, Ban, Pause } from 'lucide-react';
+import { Search, Download, CreditCard, Clock, CheckCircle2, XCircle, DollarSign, TrendingUp, RefreshCcw, Ban, Pause, ArrowUpDown, ArrowDownRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/hooks/useAdmin';
 import { logAuditAction } from '@/hooks/useAuditLog';
+import { syncSubscriptionToProfile } from '@/hooks/useSubscriptionSync';
 import PaginationControls from '@/components/PaginationControls';
 import { toast } from 'sonner';
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInDays, subDays } from 'date-fns';
 
 const PAGE_SIZE = 20;
 
@@ -24,13 +26,6 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = 
   canceled: { label: 'Cancelada', color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300', icon: Ban },
   trial: { label: 'Trial', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300', icon: Clock },
   suspended: { label: 'Suspensa', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300', icon: Pause },
-};
-
-const PLAN_MAP: Record<string, { label: string; price: number }> = {
-  free: { label: 'Gratuito', price: 0 },
-  basic: { label: 'Básico', price: 49.90 },
-  premium: { label: 'Premium', price: 99.90 },
-  pro: { label: 'Pro', price: 199.90 },
 };
 
 const AdminSubscriptionsPage = () => {
@@ -55,11 +50,26 @@ const AdminSubscriptionsPage = () => {
     },
   });
 
+  const { data: accountTypes = [] } = useQuery({
+    queryKey: ['admin-account-types-subs'],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data } = await supabase.from('account_types').select('id, name, price, color').order('price');
+      return (data || []) as any[];
+    },
+  });
+
   const providerMap = useMemo(() => {
     const m: Record<string, any> = {};
     providers.forEach((p: any) => { m[p.id] = p; });
     return m;
   }, [providers]);
+
+  const atMap = useMemo(() => {
+    const m: Record<string, any> = {};
+    accountTypes.forEach((a: any) => { m[a.id] = a; });
+    return m;
+  }, [accountTypes]);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -67,6 +77,7 @@ const AdminSubscriptionsPage = () => {
   const [page, setPage] = useState(1);
   const [detailDialog, setDetailDialog] = useState(false);
   const [detailItem, setDetailItem] = useState<any>(null);
+  const [upgradeAccountTypeId, setUpgradeAccountTypeId] = useState<string>('');
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -91,45 +102,67 @@ const AdminSubscriptionsPage = () => {
     return map;
   }, [subscriptions]);
 
-  // ── MRR Calculation ──
-  const mrrData = useMemo(() => {
+  // ── MRR + LTV + Churn ──
+  const metrics = useMemo(() => {
     let totalMrr = 0;
     const byPlan: Record<string, { count: number; revenue: number }> = {};
+    let activeCount = 0;
+
     subscriptions.forEach((s: any) => {
       if (s.status === 'active' || s.status === 'trial') {
-        const planInfo = PLAN_MAP[s.plan] || { price: 0 };
-        totalMrr += planInfo.price;
-        if (!byPlan[s.plan]) byPlan[s.plan] = { count: 0, revenue: 0 };
-        byPlan[s.plan].count++;
-        byPlan[s.plan].revenue += planInfo.price;
+        const at = s.account_type_id ? atMap[s.account_type_id] : null;
+        const price = at?.price || 0;
+        totalMrr += price;
+        activeCount++;
+        const planKey = at?.name || s.plan || 'free';
+        if (!byPlan[planKey]) byPlan[planKey] = { count: 0, revenue: 0 };
+        byPlan[planKey].count++;
+        byPlan[planKey].revenue += price;
       }
     });
-    return { totalMrr, byPlan };
-  }, [subscriptions]);
+
+    const thirtyDaysAgo = subDays(new Date(), 30);
+    const canceledRecent = subscriptions.filter((s: any) => s.status === 'canceled' && new Date(s.created_at) >= thirtyDaysAgo).length;
+    const totalForChurn = subscriptions.length || 1;
+    const churnRate = ((canceledRecent / totalForChurn) * 100).toFixed(1);
+
+    // Simple LTV = ARPU * avg lifetime (months)
+    const arpu = activeCount > 0 ? totalMrr / activeCount : 0;
+    const avgLifetimeMonths = 12; // simplified assumption
+    const ltv = arpu * avgLifetimeMonths;
+
+    return { totalMrr, byPlan, churnRate, ltv, activeCount };
+  }, [subscriptions, atMap]);
 
   // ── Actions ──
   const changeStatusMutation = useMutation({
-    mutationFn: async ({ id, newStatus, plan }: { id: string; newStatus: string; plan?: string }) => {
+    mutationFn: async ({ id, newStatus, plan, accountTypeId }: { id: string; newStatus: string; plan?: string; accountTypeId?: string }) => {
+      const sub = subscriptions.find((s: any) => s.id === id);
       const update: any = { status: newStatus };
+
       if (newStatus === 'active' && plan) {
-        // Renew: set new end date 30 days from now
         update.starts_at = new Date().toISOString();
         update.ends_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       }
+
+      if (accountTypeId) {
+        update.account_type_id = accountTypeId;
+      }
+
       const { error } = await supabase.from('subscriptions' as any).update(update).eq('id', id);
       if (error) throw error;
-      const actionMap: Record<string, string> = {
-        active: 'subscription_created',
-        canceled: 'subscription_canceled',
-        suspended: 'update',
-        expired: 'update',
-      };
-      await logAuditAction({
-        action: 'update',
-        resource_type: 'subscription',
-        resource_id: id,
-        details: { action_type: actionMap[newStatus] || 'update', new_status: newStatus },
-      });
+
+      // Auto-sync profile
+      if (sub) {
+        await syncSubscriptionToProfile({
+          subscriptionId: id,
+          providerId: sub.provider_id,
+          newStatus,
+          newAccountTypeId: accountTypeId || sub.account_type_id,
+          previousStatus: sub.status,
+          previousAccountTypeId: sub.account_type_id,
+        });
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-subscriptions'] });
@@ -141,10 +174,11 @@ const AdminSubscriptionsPage = () => {
 
   const exportCsv = () => {
     const rows = filtered.length > 0 ? filtered : subscriptions;
-    const csv = ['Prestador,Plano,Status,Início,Fim,Criado em'].concat(
+    const csv = ['Prestador,Plano,Tipo Conta,Status,Início,Fim,Criado em'].concat(
       rows.map((s: any) => {
         const p = providerMap[s.provider_id];
-        return `"${p?.business_name || s.provider_id}","${s.plan}","${s.status}","${s.starts_at}","${s.ends_at || ''}","${s.created_at}"`;
+        const at = s.account_type_id ? atMap[s.account_type_id] : null;
+        return `"${p?.business_name || s.provider_id}","${s.plan}","${at?.name || ''}","${s.status}","${s.starts_at}","${s.ends_at || ''}","${s.created_at}"`;
       })
     ).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -170,27 +204,49 @@ const AdminSubscriptionsPage = () => {
         </div>
 
         {/* MRR + KPIs */}
-        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-          {/* MRR Card */}
-          <Card className="col-span-2 sm:col-span-1 lg:col-span-2 border-primary/30 bg-primary/5">
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
+          <Card className="col-span-2 border-primary/30 bg-primary/5">
             <CardContent className="pt-3 pb-2">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp className="h-4 w-4 text-primary" />
                 <span className="text-[10px] font-semibold text-primary uppercase">MRR</span>
               </div>
               <p className="text-2xl font-bold text-foreground">
-                R$ {mrrData.totalMrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {metrics.totalMrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
               <div className="flex flex-wrap gap-1 mt-1">
-                {Object.entries(mrrData.byPlan).map(([plan, info]) => (
+                {Object.entries(metrics.byPlan).map(([plan, info]) => (
                   <Badge key={plan} variant="outline" className="text-[9px]">
-                    {PLAN_MAP[plan]?.label || plan}: {info.count} (R$ {info.revenue.toFixed(0)})
+                    {plan}: {info.count} (R$ {info.revenue.toFixed(0)})
                   </Badge>
                 ))}
               </div>
             </CardContent>
           </Card>
-          {Object.entries(STATUS_MAP).map(([key, { label, icon: Icon }]) => (
+
+          <Card>
+            <CardContent className="pt-3 pb-2">
+              <div className="flex items-center gap-1.5 mb-1">
+                <ArrowDownRight className="h-3.5 w-3.5 text-destructive" />
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase">Churn</span>
+              </div>
+              <p className="text-lg font-bold text-foreground">{metrics.churnRate}%</p>
+              <p className="text-[9px] text-muted-foreground">30 dias</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-3 pb-2">
+              <div className="flex items-center gap-1.5 mb-1">
+                <DollarSign className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase">LTV Est.</span>
+              </div>
+              <p className="text-lg font-bold text-foreground">R$ {metrics.ltv.toFixed(0)}</p>
+              <p className="text-[9px] text-muted-foreground">12m estimado</p>
+            </CardContent>
+          </Card>
+
+          {Object.entries(STATUS_MAP).slice(0, 4).map(([key, { label, icon: Icon }]) => (
             <Card key={key}>
               <CardContent className="pt-3 pb-2 flex items-center gap-2.5">
                 <div className="rounded-lg bg-primary/10 p-1.5"><Icon className="h-4 w-4 text-primary" /></div>
@@ -218,15 +274,6 @@ const AdminSubscriptionsPage = () => {
               ))}
             </SelectContent>
           </Select>
-          <Select value={planFilter} onValueChange={v => { setPlanFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos Planos</SelectItem>
-              {Object.entries(PLAN_MAP).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Table */}
@@ -235,7 +282,7 @@ const AdminSubscriptionsPage = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Prestador</TableHead>
-                <TableHead>Plano</TableHead>
+                <TableHead>Tipo Conta</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden sm:table-cell">Início</TableHead>
                 <TableHead className="hidden sm:table-cell">Fim</TableHead>
@@ -246,6 +293,7 @@ const AdminSubscriptionsPage = () => {
             <TableBody>
               {paginated.map((s: any) => {
                 const prov = providerMap[s.provider_id];
+                const at = s.account_type_id ? atMap[s.account_type_id] : null;
                 const daysLeft = s.ends_at ? differenceInDays(new Date(s.ends_at), new Date()) : null;
                 return (
                   <TableRow key={s.id}>
@@ -253,7 +301,9 @@ const AdminSubscriptionsPage = () => {
                       <p className="font-medium text-sm">{prov?.business_name || prov?.slug || s.provider_id.slice(0, 8)}</p>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-xs">{PLAN_MAP[s.plan]?.label || s.plan}</Badge>
+                      <Badge variant="outline" className="text-xs" style={at?.color ? { borderColor: at.color, color: at.color } : undefined}>
+                        {at?.name || s.plan}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge className={`text-[10px] ${STATUS_MAP[s.status]?.color || ''}`}>
@@ -274,11 +324,9 @@ const AdminSubscriptionsPage = () => {
                       ) : '∞'}
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-0.5">
-                        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { setDetailItem(s); setDetailDialog(true); }}>
-                          Detalhes
-                        </Button>
-                      </div>
+                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { setDetailItem(s); setUpgradeAccountTypeId(s.account_type_id || ''); setDetailDialog(true); }}>
+                        Detalhes
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
@@ -298,25 +346,46 @@ const AdminSubscriptionsPage = () => {
             <DialogHeader><DialogTitle>Detalhes da Assinatura</DialogTitle></DialogHeader>
             {detailItem && (() => {
               const prov = providerMap[detailItem.provider_id];
+              const at = detailItem.account_type_id ? atMap[detailItem.account_type_id] : null;
               const daysLeft = detailItem.ends_at ? differenceInDays(new Date(detailItem.ends_at), new Date()) : null;
               return (
                 <div className="space-y-4">
                   <div className="rounded-lg border p-3 space-y-2 text-sm">
                     <p className="font-semibold">{prov?.business_name || prov?.slug || detailItem.provider_id.slice(0, 8)}</p>
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div><span className="text-muted-foreground">Plano:</span> <Badge variant="outline">{PLAN_MAP[detailItem.plan]?.label || detailItem.plan}</Badge></div>
+                      <div><span className="text-muted-foreground">Tipo Conta:</span> <Badge variant="outline">{at?.name || 'Não vinculado'}</Badge></div>
                       <div><span className="text-muted-foreground">Status:</span> <Badge className={STATUS_MAP[detailItem.status]?.color}>{STATUS_MAP[detailItem.status]?.label || detailItem.status}</Badge></div>
                       <div><span className="text-muted-foreground">Início:</span> {format(new Date(detailItem.starts_at), 'dd/MM/yyyy')}</div>
                       <div><span className="text-muted-foreground">Fim:</span> {detailItem.ends_at ? format(new Date(detailItem.ends_at), 'dd/MM/yyyy') : '—'}</div>
-                      <div><span className="text-muted-foreground">Valor mensal:</span> R$ {(PLAN_MAP[detailItem.plan]?.price || 0).toFixed(2)}</div>
-                      <div><span className="text-muted-foreground">Dias restantes:</span> {daysLeft !== null ? (daysLeft > 0 ? `${daysLeft}` : 'Vencida') : '∞'}</div>
+                      <div><span className="text-muted-foreground">Valor:</span> R$ {(at?.price || 0).toFixed(2)}/mês</div>
+                      <div><span className="text-muted-foreground">Dias:</span> {daysLeft !== null ? (daysLeft > 0 ? `${daysLeft}` : 'Vencida') : '∞'}</div>
                     </div>
+                  </div>
+
+                  {/* Upgrade/Downgrade selector */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold flex items-center gap-1"><ArrowUpDown className="h-3.5 w-3.5" /> Alterar Tipo de Conta</Label>
+                    <Select value={upgradeAccountTypeId} onValueChange={setUpgradeAccountTypeId}>
+                      <SelectTrigger><SelectValue placeholder="Selecionar tipo..." /></SelectTrigger>
+                      <SelectContent>
+                        {accountTypes.map((at: any) => (
+                          <SelectItem key={at.id} value={at.id}>
+                            {at.name} — R$ {Number(at.price).toFixed(2)}/mês
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
                     {detailItem.status !== 'active' && (
-                      <Button size="sm" className="flex-1" onClick={() => changeStatusMutation.mutate({ id: detailItem.id, newStatus: 'active', plan: detailItem.plan })} disabled={changeStatusMutation.isPending}>
+                      <Button size="sm" className="flex-1" onClick={() => changeStatusMutation.mutate({ id: detailItem.id, newStatus: 'active', plan: detailItem.plan, accountTypeId: upgradeAccountTypeId || undefined })} disabled={changeStatusMutation.isPending}>
                         <RefreshCcw className="h-3.5 w-3.5 mr-1" /> Renovar
+                      </Button>
+                    )}
+                    {detailItem.status === 'active' && upgradeAccountTypeId && upgradeAccountTypeId !== detailItem.account_type_id && (
+                      <Button size="sm" className="flex-1" onClick={() => changeStatusMutation.mutate({ id: detailItem.id, newStatus: 'active', accountTypeId: upgradeAccountTypeId })} disabled={changeStatusMutation.isPending}>
+                        <ArrowUpDown className="h-3.5 w-3.5 mr-1" /> Alterar Plano
                       </Button>
                     )}
                     {detailItem.status === 'active' && (
@@ -326,7 +395,7 @@ const AdminSubscriptionsPage = () => {
                     )}
                     {detailItem.status !== 'canceled' && (
                       <Button size="sm" variant="destructive" className="flex-1" onClick={() => {
-                        if (confirm('Cancelar esta assinatura?')) changeStatusMutation.mutate({ id: detailItem.id, newStatus: 'canceled' });
+                        if (confirm('Cancelar esta assinatura? O perfil será rebaixado automaticamente.')) changeStatusMutation.mutate({ id: detailItem.id, newStatus: 'canceled' });
                       }} disabled={changeStatusMutation.isPending}>
                         <Ban className="h-3.5 w-3.5 mr-1" /> Cancelar
                       </Button>
