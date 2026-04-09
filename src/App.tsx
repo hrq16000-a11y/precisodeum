@@ -192,6 +192,7 @@ const App = () => {
                 <Route path="/vagas" element={<JobsPage />} />
                 <Route path="/quero-ser-patrocinador" element={<SponsorLandingPage />} />
                 <Route path="/espacos-patrocinio" element={<SponsorSlotsPage />} />
+                <Route path="/contrato-patrocinio" element={<SponsorContractPage />} />
                 <Route path="/vaga/:slug" element={<JobDetailPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/perfil" element={<DashboardProfilePage />} />
