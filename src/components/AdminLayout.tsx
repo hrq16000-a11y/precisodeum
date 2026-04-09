@@ -130,6 +130,19 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     })).filter(group => group.items.length > 0);
   }, [isAdmin, hasPermission, sidebarSearch]);
 
+  // Keyboard shortcut: Cmd+K to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        const input = document.querySelector<HTMLInputElement>('[data-admin-search]');
+        input?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
