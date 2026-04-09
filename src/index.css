@@ -412,3 +412,12 @@
 .hero-glitch-flash {
   text-shadow: 2px 0 hsl(var(--accent) / 0.6), -2px 0 hsl(var(--secondary) / 0.4);
 }
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.2s ease-in-out infinite;
+}
