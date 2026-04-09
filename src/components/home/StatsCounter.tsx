@@ -40,7 +40,6 @@ const stats = [
   { key: 'providers', label: 'Profissionais', icon: Users, suffix: '+', gradient: 'from-blue-500 to-cyan-500' },
   { key: 'services', label: 'Serviços', icon: Briefcase, suffix: '+', gradient: 'from-accent to-amber-500' },
   { key: 'cities', label: 'Cidades', icon: MapPin, suffix: '+', gradient: 'from-emerald-500 to-teal-500' },
-  { key: 'reviews', label: 'Avaliações', icon: Star, suffix: '+', gradient: 'from-purple-500 to-pink-500' },
 ] as const;
 
 const StatItem = memo(({ stat, value, index }: { stat: typeof stats[number]; value: number; index: number }) => {
