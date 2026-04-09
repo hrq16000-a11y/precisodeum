@@ -169,7 +169,7 @@ function SlotAvailability({ positionKey }: { positionKey: string }) {
       {remaining === 0 ? (
         <Badge variant="destructive" className="text-xs">Esgotado</Badge>
       ) : remaining <= 1 ? (
-        <Badge className="bg-amber-500/20 text-amber-700 text-xs border-amber-300">
+        <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-400 text-xs border border-amber-300">
           Última vaga!
         </Badge>
       ) : (
