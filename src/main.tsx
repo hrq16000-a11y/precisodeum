@@ -6,22 +6,17 @@ import { cleanupFrequencyData } from "@/lib/sponsorRanking";
 // Clean stale frequency-cap data from previous sessions
 cleanupFrequencyData();
 
-// Guard: unregister service workers in preview/iframe contexts
-const isInIframe = (() => {
-  try {
-    return window.self !== window.top;
-  } catch (e) {
-    return true;
-  }
-})();
+// Force-clear all caches on startup to ensure fresh content
+if ('caches' in window) {
+  caches.keys().then(names => {
+    names.forEach(name => caches.delete(name));
+  });
+}
 
-const isPreviewHost =
-  window.location.hostname.includes("id-preview--") ||
-  window.location.hostname.includes("lovableproject.com");
-
-if (isPreviewHost || isInIframe) {
-  navigator.serviceWorker?.getRegistrations().then((registrations) => {
-    registrations.forEach((r) => r.unregister());
+// Unregister all service workers to force re-fetch
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    registrations.forEach(r => r.unregister());
   });
 }
 
