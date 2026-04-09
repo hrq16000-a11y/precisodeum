@@ -165,8 +165,8 @@ export default function SponsorLandingPage() {
             animate={{ scale: 1, opacity: 1 }}
             className="text-center max-w-lg"
           >
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="w-10 h-10 text-green-600" />
+            <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 className="w-10 h-10 text-accent" />
             </div>
             <h1 className="text-3xl font-bold text-foreground mb-4">Obrigado!</h1>
             <p className="text-lg text-muted-foreground mb-8">
