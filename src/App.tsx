@@ -128,6 +128,7 @@ const SponsorDataPage = lazy(() => import("./pages/sponsor/SponsorDataPage"));
 
 // Cinematic loading fallback
 import CinematicLoader from './components/CinematicLoader';
+import CurtainReveal from './components/CurtainReveal';
 
 const PageFallback = () => <CinematicLoader />;
 
