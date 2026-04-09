@@ -97,6 +97,70 @@
   }
 }
 
+@layer components {
+  /* ── Icon system: base + states + micro-interactions ── */
+
+  .icon-base {
+    @apply transition-all duration-150 ease-out;
+  }
+
+  /* State: hover – subtle color lift */
+  .icon-state-hover {
+    color: hsl(var(--accent));
+  }
+
+  /* State: active – pressed feel */
+  .icon-state-active {
+    @apply scale-95;
+  }
+
+  /* State: disabled – dimmed */
+  .icon-state-disabled {
+    @apply opacity-40 pointer-events-none;
+  }
+
+  /* State: loading – spin */
+  .icon-state-loading {
+    animation: icon-spin 0.8s linear infinite;
+  }
+
+  /* Signature micro-interaction: parent-hover triggers icon lift */
+  .icon-interactive {
+    @apply transition-all duration-150 ease-out;
+  }
+  .group:hover .icon-interactive,
+  .icon-interactive:hover {
+    transform: translateY(-1px);
+    color: hsl(var(--accent));
+  }
+
+  /* CTA icon emphasis – pair with buttons for conversion */
+  .icon-cta {
+    @apply transition-transform duration-150 ease-out;
+  }
+  .group:hover .icon-cta,
+  button:hover .icon-cta,
+  a:hover .icon-cta {
+    transform: translateX(2px);
+  }
+
+  /* Icon bounce for attention-grabbing CTAs (WhatsApp, etc.) */
+  .icon-bounce {
+    animation: icon-nudge 2s ease-in-out infinite;
+  }
+}
+
+@keyframes icon-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes icon-nudge {
+  0%, 100% { transform: translateY(0); }
+  15% { transform: translateY(-2px); }
+  30% { transform: translateY(0); }
+}
+
 @layer utilities {
   .text-gradient {
     @apply bg-clip-text text-transparent;
