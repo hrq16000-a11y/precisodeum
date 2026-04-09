@@ -65,6 +65,171 @@ interface City { id: string; name: string; slug: string; state: string; created_
 
 const emptyForm = { name: '', slug: '', state: '' };
 
+/* ═══ Neighborhoods Sub-Component ═══ */
+const NeighborhoodsTab = ({ cities, isAdmin }: { cities: City[]; isAdmin: boolean }) => {
+  const qc = useQueryClient();
+  const [nhSearch, setNhSearch] = useState('');
+  const [nhCityFilter, setNhCityFilter] = useState('all');
+  const [nhDialog, setNhDialog] = useState(false);
+  const [nhEditId, setNhEditId] = useState<string | null>(null);
+  const [nhForm, setNhForm] = useState({ name: '', slug: '', city_id: '' });
+
+  const { data: neighborhoods = [], isLoading: nhLoading } = useQuery({
+    queryKey: ['admin-neighborhoods-full'],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data } = await supabase.from('neighborhoods').select('*').order('name');
+      return (data || []) as any[];
+    },
+  });
+
+  const autoSlugNh = (name: string) => name.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+  const cityMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    cities.forEach(c => { m[c.id] = c.name; });
+    return m;
+  }, [cities]);
+
+  const filteredNh = useMemo(() => {
+    const q = nhSearch.toLowerCase();
+    return neighborhoods.filter((n: any) => {
+      if (nhCityFilter !== 'all' && n.city_id !== nhCityFilter) return false;
+      if (q && !n.name.toLowerCase().includes(q) && !n.slug.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [neighborhoods, nhSearch, nhCityFilter]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = { name: nhForm.name.trim(), slug: nhForm.slug.trim() || autoSlugNh(nhForm.name), city_id: nhForm.city_id };
+      if (!payload.name || !payload.city_id) throw new Error('Nome e cidade são obrigatórios');
+      if (nhEditId) {
+        const { error } = await supabase.from('neighborhoods').update(payload).eq('id', nhEditId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('neighborhoods').insert(payload);
+        if (error) throw error;
+      }
+      await logAuditAction({ action: nhEditId ? 'update' : 'create', resource_type: 'neighborhood', details: payload });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-neighborhoods-full'] });
+      qc.invalidateQueries({ queryKey: ['admin-neighborhood-counts'] });
+      toast.success(nhEditId ? 'Bairro atualizado!' : 'Bairro criado!');
+      setNhDialog(false); setNhEditId(null); setNhForm({ name: '', slug: '', city_id: '' });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('neighborhoods').delete().eq('id', id);
+      if (error) throw error;
+      await logAuditAction({ action: 'delete', resource_type: 'neighborhood', resource_id: id });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-neighborhoods-full'] });
+      qc.invalidateQueries({ queryKey: ['admin-neighborhood-counts'] });
+      toast.success('Bairro removido');
+    },
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2 items-center justify-between">
+        <div className="flex flex-wrap gap-2 items-center">
+          <div className="relative flex-1 min-w-[180px] max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Buscar bairro..." className="pl-9" value={nhSearch} onChange={e => setNhSearch(e.target.value)} />
+          </div>
+          <Select value={nhCityFilter} onValueChange={setNhCityFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Todas as cidades" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as cidades</SelectItem>
+              {cities.map(c => <SelectItem key={c.id} value={c.id}>{c.name} ({c.state})</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button size="sm" onClick={() => { setNhEditId(null); setNhForm({ name: '', slug: '', city_id: '' }); setNhDialog(true); }}>
+          <Plus className="h-4 w-4 mr-1" /> Novo Bairro
+        </Button>
+      </div>
+
+      <p className="text-sm text-muted-foreground">{filteredNh.length} bairro(s) encontrado(s) de {neighborhoods.length} total</p>
+
+      <div className="rounded-xl border border-border overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40">
+            <tr>
+              <th className="text-left px-3 py-2 font-medium text-muted-foreground text-xs">Bairro</th>
+              <th className="text-left px-3 py-2 font-medium text-muted-foreground text-xs hidden sm:table-cell">Slug</th>
+              <th className="text-left px-3 py-2 font-medium text-muted-foreground text-xs">Cidade</th>
+              <th className="text-right px-3 py-2 font-medium text-muted-foreground text-xs w-24">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {filteredNh.slice(0, 100).map((n: any) => (
+              <tr key={n.id} className="hover:bg-muted/20">
+                <td className="px-3 py-2 font-medium">{n.name}</td>
+                <td className="px-3 py-2 text-muted-foreground text-xs hidden sm:table-cell">/{n.slug}</td>
+                <td className="px-3 py-2 text-xs">
+                  <Badge variant="outline" className="text-[10px]">{cityMap[n.city_id] || n.city_id.slice(0, 8)}</Badge>
+                </td>
+                <td className="px-3 py-2 text-right">
+                  <div className="flex items-center justify-end gap-0.5">
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => {
+                      setNhEditId(n.id); setNhForm({ name: n.name, slug: n.slug, city_id: n.city_id }); setNhDialog(true);
+                    }}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => {
+                      if (confirm(`Excluir "${n.name}"?`)) deleteMutation.mutate(n.id);
+                    }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {filteredNh.length === 0 && (
+              <tr><td colSpan={4} className="text-center py-8 text-muted-foreground text-sm">Nenhum bairro encontrado</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      {filteredNh.length > 100 && <p className="text-xs text-muted-foreground text-center">Mostrando 100 de {filteredNh.length} bairros. Use os filtros para refinar.</p>}
+
+      <Dialog open={nhDialog} onOpenChange={v => { if (!v) { setNhDialog(false); setNhEditId(null); } }}>
+        <DialogContent className="w-[95vw] max-w-md">
+          <DialogHeader><DialogTitle>{nhEditId ? 'Editar Bairro' : 'Novo Bairro'}</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); saveMutation.mutate(); }} className="space-y-4">
+            <div><Label>Nome *</Label>
+              <Input value={nhForm.name} onChange={e => {
+                const name = e.target.value;
+                setNhForm(f => ({ ...f, name, slug: nhEditId ? f.slug : autoSlugNh(name) }));
+              }} required />
+            </div>
+            <div><Label>Slug</Label>
+              <Input value={nhForm.slug} onChange={e => setNhForm(f => ({ ...f, slug: e.target.value }))} placeholder="gerado automaticamente" />
+            </div>
+            <div><Label>Cidade *</Label>
+              <Select value={nhForm.city_id} onValueChange={v => setNhForm(f => ({ ...f, city_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecionar cidade" /></SelectTrigger>
+                <SelectContent>
+                  {cities.map(c => <SelectItem key={c.id} value={c.id}>{c.name} ({c.state})</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setNhDialog(false)}>Cancelar</Button>
+              <Button type="submit" disabled={saveMutation.isPending}>Salvar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
 const AdminCitiesPage = () => {
   const { isAdmin, loading: adminLoading } = useAdmin();
   const qc = useQueryClient();
@@ -306,6 +471,7 @@ const AdminCitiesPage = () => {
         <Tabs defaultValue="list" className="space-y-4">
           <TabsList className="h-auto gap-1">
             <TabsTrigger value="list">📋 Lista</TabsTrigger>
+            <TabsTrigger value="neighborhoods">🏘️ Bairros</TabsTrigger>
             <TabsTrigger value="states">🗺️ Por Estado</TabsTrigger>
           </TabsList>
 
@@ -454,6 +620,11 @@ const AdminCitiesPage = () => {
                 {totalPages > 1 && <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />}
               </>
             )}
+          </TabsContent>
+
+          {/* ═══ NEIGHBORHOODS TAB ═══ */}
+          <TabsContent value="neighborhoods" className="space-y-4">
+            <NeighborhoodsTab cities={cities} isAdmin={isAdmin} />
           </TabsContent>
 
           {/* ═══ BY STATE TAB ═══ */}
