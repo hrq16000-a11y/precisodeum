@@ -170,44 +170,25 @@ const HeroBanner = ({}: HeroBannerProps) => {
       <FloatingDots />
 
       <div className="container relative z-10 flex flex-col items-center text-center hero-entrance">
-        <motion.div
-          initial={{ opacity: 0, y: 30, filter: 'blur(8px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ duration: 0.7, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
-        >
+        <div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-primary-foreground sm:text-4xl md:text-5xl lg:text-6xl drop-shadow-sm">
             <HeroPrefixRotator />
             <br />
             <RotatingServiceText />
           </h1>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20, filter: 'blur(6px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ duration: 0.5, delay: 0.35 }}
-          className="mt-4 md:mt-6 w-full max-w-2xl"
-        >
+        <div className="mt-4 md:mt-6 w-full max-w-2xl">
           <div className="animate-glow-ring rounded-full">
             <SearchBar />
           </div>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mt-3 flex items-center justify-center gap-2 text-xs text-primary-foreground/70"
-          >
+          <div className="mt-3 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">
             <MapPin className="h-3.5 w-3.5 text-secondary" />
             <span>{geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.55, duration: 0.5 }}
-          className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:gap-4"
-        >
+        <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
           <p className="text-sm text-primary-foreground/80">
             Cadastre seus serviços gratuitamente.{' '}
             <Link to="/cadastro" className="font-semibold text-secondary hover:underline underline-offset-2">Cadastrar agora →</Link>
