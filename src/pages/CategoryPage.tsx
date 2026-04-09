@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ChevronRight, Users, MapPin } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import ProviderCard from '@/components/ProviderCard';
 import PaginationControls from '@/components/PaginationControls';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';
@@ -140,13 +141,13 @@ const CategoryPage = () => {
           className="container relative text-center"
         >
           {/* Breadcrumb */}
-          <nav className="mb-4 flex items-center justify-center gap-1 text-xs text-primary-foreground/60">
-            <Link to="/" className="hover:text-primary-foreground transition-colors">Início</Link>
-            <ChevronRight className="h-3 w-3" />
-            <Link to="/categorias" className="hover:text-primary-foreground transition-colors">Categorias</Link>
-            <ChevronRight className="h-3 w-3" />
-            <span className="text-primary-foreground font-medium">{category.name}</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: 'Categorias', url: '/categorias' },
+              { label: category.name },
+            ]}
+            className="justify-center text-primary-foreground/60 mb-4"
+          />
           
           <motion.span
             initial={{ scale: 0.5, opacity: 0 }}

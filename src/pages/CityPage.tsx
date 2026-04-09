@@ -7,6 +7,16 @@ import Footer from '@/components/Footer';
 import ProviderCard from '@/components/ProviderCard';
 import PaginationControls from '@/components/PaginationControls';
 import SearchBar from '@/components/SearchBar';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
+import { ChevronRight } from 'lucide-react';
+import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import ProviderCard from '@/components/ProviderCard';
+import PaginationControls from '@/components/PaginationControls';
+import SearchBar from '@/components/SearchBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight } from 'lucide-react';
@@ -135,11 +145,12 @@ const CityPage = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <nav className="container py-3 text-sm text-muted-foreground">
-        <Link to="/" className="hover:text-foreground">Início</Link>
-        <ChevronRight className="mx-1 inline h-3 w-3" />
-        <span className="text-foreground">{city!.name}</span>
-      </nav>
+      <div className="container py-3">
+        <Breadcrumbs items={[
+          { label: 'Cidades', url: '/cidades' },
+          { label: city!.name },
+        ]} />
+      </div>
 
       <section className="bg-hero py-12">
         <div className="container text-center">
