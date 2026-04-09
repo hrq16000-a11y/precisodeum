@@ -169,7 +169,7 @@ const HeroBanner = ({}: HeroBannerProps) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
-          className="mt-6 md:mt-10 w-full max-w-2xl"
+          className="mt-4 md:mt-6 w-full max-w-2xl"
         >
           <div className="rounded-2xl bg-background/85 p-2 ring-1 ring-primary-foreground/10 shadow-card">
             <SearchBar />
