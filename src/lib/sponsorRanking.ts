@@ -77,8 +77,10 @@ export function computeScore(s: SponsorFull): ScoredSponsor {
   const clicks = s.clicks ?? 0;
 
   const rawCtr = impressions > 0 ? clicks / impressions : 0;
-  const effectiveCtr =
-    impressions >= MIN_IMPRESSIONS_FOR_CTR ? rawCtr : COLD_START_CTR;
+  const effectiveCtr = Math.min(
+    impressions >= MIN_IMPRESSIONS_FOR_CTR ? rawCtr : COLD_START_CTR,
+    MAX_EFFECTIVE_CTR,
+  );
 
   const score = tierWeight + effectiveCtr * CTR_FACTOR * 10;
 
