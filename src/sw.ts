@@ -23,15 +23,12 @@ async function purgeAllCaches() {
   } catch (_) { /* silent */ }
 }
 
-// Run on activation and periodically
+// Run on activation — purge everything for fresh start
 self.addEventListener('activate', (event) => {
-  event.waitUntil(purgeAllCachesIfExpired());
+  event.waitUntil(purgeAllCaches());
 });
 
-// Check cache age on every fetch
-self.addEventListener('fetch', () => {
-  purgeAllCachesIfExpired();
-});
+// No need to purge on every fetch anymore
 
 // ── API: always network-first, short cache (5 min) ──
 registerRoute(
