@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
+import AdminHealthMonitor from '@/components/admin/AdminHealthMonitor';
+import AdminQuickActions from '@/components/admin/AdminQuickActions';
 
 interface Stats {
   totalProviders: number;
