@@ -130,6 +130,19 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     })).filter(group => group.items.length > 0);
   }, [isAdmin, hasPermission, sidebarSearch]);
 
+  // Keyboard shortcut: Cmd+K to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        const input = document.querySelector<HTMLInputElement>('[data-admin-search]');
+        input?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -180,11 +193,15 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/40" />
             <input
               type="text"
+              data-admin-search
               placeholder="Buscar menu..."
               value={sidebarSearch}
               onChange={(e) => setSidebarSearch(e.target.value)}
-              className="w-full rounded-xl border border-sidebar-border bg-sidebar-accent/30 pl-8 pr-3 py-2 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-colors"
+              className="w-full rounded-xl border border-sidebar-border bg-sidebar-accent/30 pl-8 pr-12 py-2 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-colors"
             />
+            <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded-md border border-sidebar-border/50 bg-sidebar-accent/20 px-1.5 py-0.5 text-[9px] text-sidebar-foreground/30 font-mono">
+              ⌘K
+            </kbd>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto overscroll-contain mt-1 space-y-1 px-3 pb-4">

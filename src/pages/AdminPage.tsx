@@ -13,6 +13,7 @@ import ProgressRing from '@/components/ui/ProgressRing';
 import AdminHealthMonitor from '@/components/admin/AdminHealthMonitor';
 import AdminQuickActions from '@/components/admin/AdminQuickActions';
 import AdminPlatformPulse from '@/components/admin/AdminPlatformPulse';
+import AdminGrowthChart from '@/components/admin/AdminGrowthChart';
 
 interface Stats {
   totalProviders: number;
@@ -240,10 +241,11 @@ const AdminPage = () => {
         <AdminQuickActions />
       </div>
 
-      {/* Health Monitor + Platform Pulse */}
-      <div className="mt-5 grid gap-4 grid-cols-1 lg:grid-cols-2">
+      {/* Health Monitor + Platform Pulse + Growth */}
+      <div className="mt-5 grid gap-4 grid-cols-1 lg:grid-cols-3">
         <AdminHealthMonitor />
         <AdminPlatformPulse />
+        <AdminGrowthChart />
       </div>
 
       {/* Pending queues */}
