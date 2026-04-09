@@ -28,6 +28,7 @@ const DashboardPage = () => {
   const [jobsCount, setJobsCount] = useState<number>(0);
   const [portfolioCount, setPortfolioCount] = useState<number>(0);
   const [viewsTotal, setViewsTotal] = useState<number>(0);
+  const [reviewCount, setReviewCount] = useState<number>(0);
   const [guideOpen, setGuideOpen] = useState(true);
 
   useEffect(() => {
