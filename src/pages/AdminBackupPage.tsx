@@ -915,6 +915,165 @@ const StorageBackupSection = () => {
   const [zipImporting, setZipImporting] = useState(false);
   const [importMode, setImportMode] = useState<'replace' | 'preserve'>('replace');
   const [zipProgress, setZipProgress] = useState<{ processed: number; total: number; status?: string } | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [downloadingSelected, setDownloadingSelected] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<{ processed: number; total: number } | null>(null);
+
+  const getFileKey = (f: StorageFile) => `${f.bucket}/${f.folder === '/' ? '' : f.folder + '/'}${f.name}`;
+
+  const toggleFileSelection = (f: StorageFile) => {
+    setSelectedFiles(prev => {
+      const next = new Set(prev);
+      const key = getFileKey(f);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleFolderSelection = (bucketId: string, folder: string) => {
+    const folderFiles = files.filter(f => f.bucket === bucketId && f.folder === folder);
+    setSelectedFiles(prev => {
+      const next = new Set(prev);
+      const allSelected = folderFiles.every(f => next.has(getFileKey(f)));
+      folderFiles.forEach(f => {
+        if (allSelected) next.delete(getFileKey(f)); else next.add(getFileKey(f));
+      });
+      return next;
+    });
+  };
+
+  const toggleBucketSelection = (bucketId: string) => {
+    const bucketFiles = files.filter(f => f.bucket === bucketId);
+    setSelectedFiles(prev => {
+      const next = new Set(prev);
+      const allSelected = bucketFiles.every(f => next.has(getFileKey(f)));
+      bucketFiles.forEach(f => {
+        if (allSelected) next.delete(getFileKey(f)); else next.add(getFileKey(f));
+      });
+      return next;
+    });
+  };
+
+  const selectAllFiles = () => {
+    setSelectedFiles(prev => {
+      const allSelected = files.every(f => prev.has(getFileKey(f)));
+      if (allSelected) return new Set();
+      return new Set(files.map(f => getFileKey(f)));
+    });
+  };
+
+  const downloadSelectedAsZip = async () => {
+    if (selectedFiles.size === 0) { toast.error('Nenhum arquivo selecionado'); return; }
+    setDownloadingSelected(true);
+    setDownloadProgress({ processed: 0, total: selectedFiles.size });
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      const selected = files.filter(f => selectedFiles.has(getFileKey(f)));
+      let processed = 0;
+
+      for (const f of selected) {
+        try {
+          const res = await fetch(f.url);
+          if (!res.ok) { processed++; setDownloadProgress({ processed, total: selected.length }); continue; }
+          const blob = await res.blob();
+          const path = f.folder === '/' ? `${f.bucket}/${f.name}` : `${f.bucket}/${f.folder}/${f.name}`;
+          zip.file(path, blob);
+        } catch { /* skip */ }
+        processed++;
+        setDownloadProgress({ processed, total: selected.length });
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `storage-selecionados-${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${selected.length} arquivo(s) baixado(s) em ZIP`);
+      await logAuditAction({ action: 'download_storage_selection', resource_type: 'storage', details: { count: selected.length } });
+    } catch (err: any) {
+      toast.error('Erro ao gerar ZIP: ' + (err.message || ''));
+    }
+    setDownloadingSelected(false);
+    setDownloadProgress(null);
+  };
+
+  const downloadFolderAsZip = async (bucketId: string, folder: string) => {
+    const folderFiles = files.filter(f => f.bucket === bucketId && f.folder === folder);
+    if (folderFiles.length === 0) { toast.error('Pasta vazia'); return; }
+    setDownloadingSelected(true);
+    setDownloadProgress({ processed: 0, total: folderFiles.length });
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      let processed = 0;
+
+      for (const f of folderFiles) {
+        try {
+          const res = await fetch(f.url);
+          if (!res.ok) { processed++; setDownloadProgress({ processed, total: folderFiles.length }); continue; }
+          const blob = await res.blob();
+          const path = folder === '/' ? `${bucketId}/${f.name}` : `${bucketId}/${folder}/${f.name}`;
+          zip.file(path, blob);
+        } catch { /* skip */ }
+        processed++;
+        setDownloadProgress({ processed, total: folderFiles.length });
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      const folderName = folder === '/' ? bucketId : `${bucketId}-${folder.replace(/\//g, '-')}`;
+      a.download = `${folderName}-${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${folderFiles.length} arquivo(s) da pasta baixado(s)`);
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || ''));
+    }
+    setDownloadingSelected(false);
+    setDownloadProgress(null);
+  };
+
+  const downloadBucketAsZip = async (bucketId: string) => {
+    const bucketFiles = files.filter(f => f.bucket === bucketId);
+    if (bucketFiles.length === 0) { toast.error('Bucket vazio'); return; }
+    setDownloadingSelected(true);
+    setDownloadProgress({ processed: 0, total: bucketFiles.length });
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      let processed = 0;
+
+      for (const f of bucketFiles) {
+        try {
+          const res = await fetch(f.url);
+          if (!res.ok) { processed++; setDownloadProgress({ processed, total: bucketFiles.length }); continue; }
+          const blob = await res.blob();
+          const path = f.folder === '/' ? `${bucketId}/${f.name}` : `${bucketId}/${f.folder}/${f.name}`;
+          zip.file(path, blob);
+        } catch { /* skip */ }
+        processed++;
+        setDownloadProgress({ processed, total: bucketFiles.length });
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${bucketId}-${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${bucketFiles.length} arquivo(s) do bucket baixado(s)`);
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || ''));
+    }
+    setDownloadingSelected(false);
+    setDownloadProgress(null);
+  };
 
   const scanBuckets = async () => {
     setLoading(true);
