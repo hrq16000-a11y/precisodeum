@@ -2199,6 +2199,7 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          account_type_id: string | null
           created_at: string
           ends_at: string | null
           id: string
@@ -2208,6 +2209,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          account_type_id?: string | null
           created_at?: string
           ends_at?: string | null
           id?: string
@@ -2217,6 +2219,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          account_type_id?: string | null
           created_at?: string
           ends_at?: string | null
           id?: string
@@ -2226,6 +2229,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "subscriptions_account_type_id_fkey"
+            columns: ["account_type_id"]
+            isOneToOne: false
+            referencedRelation: "account_types"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "subscriptions_provider_id_fkey"
             columns: ["provider_id"]
@@ -2237,34 +2247,55 @@ export type Database = {
       }
       tier_rules: {
         Row: {
+          can_access_crm: boolean
+          can_access_featured: boolean
+          can_access_reports: boolean
           can_create_services: boolean
           can_receive_leads: boolean
           created_at: string
           id: string
+          max_ads: number
           max_leads: number
           max_services: number
+          max_slots: number
+          ranking_priority: number
+          search_boost: number
           tier_key: string
           tier_label: string
           updated_at: string
         }
         Insert: {
+          can_access_crm?: boolean
+          can_access_featured?: boolean
+          can_access_reports?: boolean
           can_create_services?: boolean
           can_receive_leads?: boolean
           created_at?: string
           id?: string
+          max_ads?: number
           max_leads?: number
           max_services?: number
+          max_slots?: number
+          ranking_priority?: number
+          search_boost?: number
           tier_key: string
           tier_label?: string
           updated_at?: string
         }
         Update: {
+          can_access_crm?: boolean
+          can_access_featured?: boolean
+          can_access_reports?: boolean
           can_create_services?: boolean
           can_receive_leads?: boolean
           created_at?: string
           id?: string
+          max_ads?: number
           max_leads?: number
           max_services?: number
+          max_slots?: number
+          ranking_priority?: number
+          search_boost?: number
           tier_key?: string
           tier_label?: string
           updated_at?: string
@@ -2354,11 +2385,18 @@ export type Database = {
       account_limits_view: {
         Row: {
           account_tier: string | null
+          can_access_crm: boolean | null
+          can_access_featured: boolean | null
+          can_access_reports: boolean | null
           can_create_services: boolean | null
           can_receive_leads: boolean | null
           email: string | null
+          max_ads: number | null
           max_leads: number | null
           max_services: number | null
+          max_slots: number | null
+          ranking_priority: number | null
+          search_boost: number | null
           user_ref: string | null
         }
         Relationships: []
