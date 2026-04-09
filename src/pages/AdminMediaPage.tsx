@@ -282,7 +282,6 @@ const AdminMediaPage = () => {
     fetchMedia();
     fetchStats();
   };
-  };
 
   if (adminLoading || !isAdmin) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
 
