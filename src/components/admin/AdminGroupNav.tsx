@@ -78,6 +78,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Menus', icon: 'MenuIcon', path: '/admin/menus' },
       { label: 'Config.', icon: 'Shield', path: '/admin/configuracoes' },
       { label: 'Auditoria', icon: 'ScrollText', path: '/admin/auditoria' },
+      { label: 'Auditoria Ref', icon: 'Shield', path: '/admin/auditoria-ref' },
       { label: 'Mídia', icon: 'FileImage', path: '/admin/midia' },
       { label: 'PWA', icon: 'Smartphone', path: '/admin/pwa' },
       { label: 'Módulos', icon: 'Blocks', path: '/admin/modulos' },

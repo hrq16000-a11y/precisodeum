@@ -66,6 +66,7 @@ const menuGroups = [
       { label: 'Menus', icon: Menu, path: '/admin/menus' },
       { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
       { label: 'Trilha de Auditoria', icon: ScrollText, path: '/admin/auditoria' },
+      { label: 'Auditoria Ref', icon: Shield, path: '/admin/auditoria-ref' },
       { label: 'Mídia & Arquivos', icon: FileImage, path: '/admin/midia' },
       { label: 'Instalar App (PWA)', icon: Smartphone, path: '/admin/pwa' },
       { label: 'Módulos', icon: Blocks, path: '/admin/modulos' },
