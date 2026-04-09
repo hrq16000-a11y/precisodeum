@@ -187,61 +187,59 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
     popular: 'Popular',
   };
 
-  const SuggestionsDropdown = () => {
-    if (!isOpen || filteredSuggestions.length === 0) return null;
-    const hasQuery = query.trim().length > 0;
-    return (
-      <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[60vh] overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
-        {!hasQuery && (
-          <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
-            <Sparkles className="h-3.5 w-3.5 text-accent" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Buscas em alta</span>
-          </div>
-        )}
-        <div className="py-1">
-          {filteredSuggestions.map((s, i) => (
-            <button
-              key={`${s.type}-${s.label}-${i}`}
-              type="button"
-              className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-accent/10 ${
-                i === highlightIdx ? 'bg-accent/10' : ''
-              }`}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                handleSelectSuggestion(s);
-              }}
-              onMouseEnter={() => setHighlightIdx(i)}
-            >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-base">
-                {s.icon || '🔧'}
-              </span>
-              <div className="min-w-0 flex-1">
-                <span className="font-medium text-foreground">{s.label}</span>
-                {s.extra && <span className="ml-2 text-xs text-muted-foreground">· {s.extra}</span>}
-              </div>
-              <span className="hidden sm:inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                {typeIcon(s.type)}
-                {typeLabel[s.type]}
-              </span>
-            </button>
-          ))}
+  const hasQuery = query.trim().length > 0;
+
+  const suggestionsDropdown = isOpen && filteredSuggestions.length > 0 ? (
+    <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[60vh] overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card shadow-xl">
+      {!hasQuery && (
+        <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+          <Sparkles className="h-3.5 w-3.5 text-accent" />
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Buscas em alta</span>
         </div>
-        {hasQuery && (
+      )}
+      <div className="py-1">
+        {filteredSuggestions.map((s, i) => (
           <button
+            key={`${s.type}-${s.label}-${i}`}
             type="button"
-            className="flex w-full items-center gap-2 border-t border-border px-4 py-2.5 text-sm text-accent font-medium hover:bg-accent/5 transition-colors"
+            className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-accent/10 ${
+              i === highlightIdx ? 'bg-accent/10' : ''
+            }`}
             onMouseDown={(e) => {
               e.preventDefault();
-              handleSearch();
+              handleSelectSuggestion(s);
             }}
+            onMouseEnter={() => setHighlightIdx(i)}
           >
-            <Search className="h-4 w-4" />
-            Buscar por "{query}"
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-base">
+              {s.icon || '🔧'}
+            </span>
+            <div className="min-w-0 flex-1">
+              <span className="font-medium text-foreground">{s.label}</span>
+              {s.extra && <span className="ml-2 text-xs text-muted-foreground">· {s.extra}</span>}
+            </div>
+            <span className="hidden sm:inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              {typeIcon(s.type)}
+              {typeLabel[s.type]}
+            </span>
           </button>
-        )}
+        ))}
       </div>
-    );
-  };
+      {hasQuery && (
+        <button
+          type="button"
+          className="flex w-full items-center gap-2 border-t border-border px-4 py-2.5 text-sm text-accent font-medium hover:bg-accent/5 transition-colors"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            handleSearch();
+          }}
+        >
+          <Search className="h-4 w-4" />
+          Buscar por "{query}"
+        </button>
+      )}
+    </div>
+  ) : null;
 
   if (variant === 'compact') {
     return (
@@ -270,7 +268,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
           <Button type="submit" variant="accent" size="sm">Buscar</Button>
         </form>
         {searchError && <p className="mt-1 text-xs text-destructive">{searchError}</p>}
-        <SuggestionsDropdown />
+        {suggestionsDropdown}
       </div>
     );
   }
@@ -309,7 +307,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
         </div>
       </form>
       {searchError && <p className="mt-2 text-center text-xs text-destructive">{searchError}</p>}
-      <SuggestionsDropdown />
+      {suggestionsDropdown}
     </div>
   );
 };
