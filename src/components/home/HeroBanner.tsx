@@ -184,7 +184,7 @@ const HeroBanner = ({}: HeroBannerProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.45 }}
-          className="mt-6 flex flex-col items-center gap-2 sm:flex-row sm:gap-4"
+          className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:gap-4"
         >
           <p className="text-sm text-primary-foreground/80">
             Cadastre seus serviços gratuitamente.{' '}
@@ -194,39 +194,6 @@ const HeroBanner = ({}: HeroBannerProps) => {
           <p className="text-sm text-primary-foreground/80">
             <Link to="/dashboard/vagas" className="font-semibold text-secondary hover:underline underline-offset-2">Cadastre uma vaga / oportunidade →</Link>
           </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-primary-foreground/80"
-        >
-          <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
-            {showJobs && totalJobs && totalJobs > 0 ? (
-              <>
-                <Briefcase className="h-3.5 w-3.5 text-secondary" />
-                <span className="font-semibold tabular-nums">{animatedJobs.toLocaleString('pt-BR')}</span> vagas
-              </>
-            ) : totalServices && totalServices > 0 ? (
-              <>
-                <Shield className="h-3.5 w-3.5 text-secondary" />
-                <span className="font-semibold tabular-nums">{animatedServices.toLocaleString('pt-BR')}</span> serviços
-              </>
-            ) : (
-              <>
-                <Shield className="h-3.5 w-3.5 text-secondary" />
-                Verificados
-              </>
-            )}
-          </span>
-          <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
-            <Users className="h-3.5 w-3.5 text-secondary" />
-            Os melhores Profissionais
-          </span>
-          <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
-            <Zap className="h-3.5 w-3.5 text-secondary" /> Resposta rápida
-          </span>
         </motion.div>
       </div>
     </section>
