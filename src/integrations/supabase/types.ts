@@ -1894,6 +1894,48 @@ export type Database = {
           },
         ]
       }
+      sponsor_leads: {
+        Row: {
+          cnpj: string
+          company_name: string
+          contract_accepted: boolean
+          created_at: string
+          email: string
+          id: string
+          notes: string | null
+          phone: string
+          plan: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj: string
+          company_name: string
+          contract_accepted?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          notes?: string | null
+          phone: string
+          plan?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string
+          company_name?: string
+          contract_accepted?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          notes?: string | null
+          phone?: string
+          plan?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sponsor_metrics: {
         Row: {
           count: number
