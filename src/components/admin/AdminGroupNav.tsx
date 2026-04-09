@@ -102,6 +102,18 @@ function findCurrentGroup(pathname: string) {
 export const AdminGroupTabs = () => {
   const location = useLocation();
   const currentGroup = findCurrentGroup(location.pathname);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      (supabase.from('jobs').select('id', { count: 'exact', head: true }) as any).eq('approval_status', 'pending'),
+    ]).then(([p, j]) => setPendingCount((p.count ?? 0) + (j.count ?? 0)));
+  }, []);
+
+  const groupBadges: Record<string, number> = {
+    'Gestão': pendingCount,
+  };
 
   return (
     <div className="border-b border-border bg-muted/30">
@@ -110,17 +122,25 @@ export const AdminGroupTabs = () => {
           {menuGroups.map((group) => {
             const active = currentGroup?.label === group.label;
             const firstPath = group.items[0].path;
+            const badge = groupBadges[group.label] || 0;
             return (
               <Link
                 key={group.label}
                 to={firstPath}
-                className={`whitespace-nowrap rounded-md px-3 py-1.5 text-[11px] font-semibold transition-all duration-200 shrink-0 ${
+                className={`relative whitespace-nowrap rounded-md px-3 py-1.5 text-[11px] font-semibold transition-all duration-200 shrink-0 ${
                   active
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
                 {group.label}
+                {badge > 0 && (
+                  <span className={`ml-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+                    active ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-accent text-accent-foreground'
+                  }`}>
+                    {badge > 99 ? '99+' : badge}
+                  </span>
+                )}
               </Link>
             );
           })}
