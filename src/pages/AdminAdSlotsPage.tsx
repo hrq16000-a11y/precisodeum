@@ -447,6 +447,7 @@ const AdminAdSlotsPage = () => {
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="visual">📍 Mapa Visual</TabsTrigger>
             <TabsTrigger value="slots">⚙️ Slots & Atribuições</TabsTrigger>
+            <TabsTrigger value="limits">🔒 Limites</TabsTrigger>
             <TabsTrigger value="metrics">📊 Métricas</TabsTrigger>
           </TabsList>
 
@@ -699,6 +700,11 @@ const AdminAdSlotsPage = () => {
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          {/* ====== LIMITS TAB ====== */}
+          <TabsContent value="limits" className="space-y-4">
+            <SlotLimitsTab />
           </TabsContent>
 
           {/* ====== METRICS TAB ====== */}
