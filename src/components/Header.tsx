@@ -159,7 +159,16 @@ const Header = () => {
       <div className="container flex h-14 items-center justify-between md:h-16">
         <div className="flex items-center gap-3">
           <Link to="/" className="flex items-center">
-            <img src={logo} alt="Preciso de um - Profissionais Confiáveis Perto de Você" className="h-10 md:h-12 drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] object-contain" width="166" height="48" />
+            <motion.img
+              src={logo}
+              alt="Preciso de um - Profissionais Confiáveis Perto de Você"
+              className="h-10 md:h-12 drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] object-contain"
+              width="166"
+              height="48"
+              initial={{ opacity: 0, filter: 'brightness(2) blur(6px)' }}
+              animate={{ opacity: 1, filter: 'brightness(1) blur(0px)' }}
+              transition={{ duration: 1.2, ease: [0.25, 0.1, 0.25, 1] }}
+            />
           </Link>
           <GeoBadge className="hidden sm:inline-flex" />
         </div>
