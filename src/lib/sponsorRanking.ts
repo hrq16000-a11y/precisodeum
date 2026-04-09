@@ -27,19 +27,22 @@ const TIER_WEIGHT: Record<string, number> = {
 };
 
 /** How much CTR influences the final score (0 = pure tier, 1 = equal influence) */
-const CTR_FACTOR = 0.6;
+const CTR_FACTOR = 0.3;
 
 /** Minimum impressions before CTR is considered reliable */
-const MIN_IMPRESSIONS_FOR_CTR = 20;
+const MIN_IMPRESSIONS_FOR_CTR = 100;
 
 /** Default CTR assumed for new sponsors (cold-start floor) */
-const COLD_START_CTR = 0.02;
+const COLD_START_CTR = 0.01;
+
+/** Maximum effective CTR used in scoring (prevents outlier CTR from dominating) */
+const MAX_EFFECTIVE_CTR = 0.15;
 
 /** Maximum share of total display slots a single sponsor can take (0-1) */
 const MAX_DOMINANCE_SHARE = 0.5;
 
 /** Session frequency cap: max times same sponsor shown per session */
-const SESSION_FREQ_CAP = 6;
+const SESSION_FREQ_CAP = 10;
 
 /** LocalStorage key prefix for frequency tracking */
 const FREQ_STORAGE_KEY = 'sp_freq_';
@@ -74,8 +77,10 @@ export function computeScore(s: SponsorFull): ScoredSponsor {
   const clicks = s.clicks ?? 0;
 
   const rawCtr = impressions > 0 ? clicks / impressions : 0;
-  const effectiveCtr =
-    impressions >= MIN_IMPRESSIONS_FOR_CTR ? rawCtr : COLD_START_CTR;
+  const effectiveCtr = Math.min(
+    impressions >= MIN_IMPRESSIONS_FOR_CTR ? rawCtr : COLD_START_CTR,
+    MAX_EFFECTIVE_CTR,
+  );
 
   const score = tierWeight + effectiveCtr * CTR_FACTOR * 10;
 
