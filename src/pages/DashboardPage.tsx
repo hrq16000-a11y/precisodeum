@@ -287,6 +287,7 @@ const DashboardPage = () => {
         accountTypeColor={accountTypeColor}
         memberSince={profile?.created_at}
         plan={provider?.plan}
+        avatarUrl={profile?.avatar_url || undefined}
       />
 
       {/* Quick Actions Bar */}
