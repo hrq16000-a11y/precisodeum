@@ -57,10 +57,7 @@ const HeroPrefixRotator = () => {
   );
 };
 
-interface HeroBannerProps {
-  totalServices?: number;
-  totalJobs?: number;
-}
+interface HeroBannerProps {}
 
 function useCountUp(target: number, duration = 1500) {
   const [count, setCount] = useState(0);
@@ -114,18 +111,9 @@ const FloatingDots = () => (
   </div>
 );
 
-const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
-  const animatedServices = useCountUp(totalServices || 0);
-  const animatedJobs = useCountUp(totalJobs || 0);
-  const [showJobs, setShowJobs] = useState(false);
+const HeroBanner = ({}: HeroBannerProps) => {
   const [bgIndex, setBgIndex] = useState(0);
   const { city: geoCity } = useGeoCity();
-
-  useEffect(() => {
-    if (!totalJobs || totalJobs <= 0) return;
-    const interval = setInterval(() => setShowJobs((v) => !v), 5000);
-    return () => clearInterval(interval);
-  }, [totalJobs]);
 
   // Background image rotation
   useEffect(() => {
@@ -136,7 +124,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
   }, []);
 
   return (
-    <section className="relative overflow-hidden py-12 md:py-28">
+    <section className="relative overflow-hidden py-8 md:py-20">
       {/* Background images with crossfade */}
       {DEFAULT_BG_IMAGES.map((src, i) => (
         <img
@@ -181,7 +169,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
-          className="mt-6 md:mt-10 w-full max-w-2xl"
+          className="mt-4 md:mt-6 w-full max-w-2xl"
         >
           <div className="rounded-2xl bg-background/85 p-2 ring-1 ring-primary-foreground/10 shadow-card">
             <SearchBar />
@@ -196,7 +184,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.45 }}
-          className="mt-6 flex flex-col items-center gap-2 sm:flex-row sm:gap-4"
+          className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:gap-4"
         >
           <p className="text-sm text-primary-foreground/80">
             Cadastre seus serviços gratuitamente.{' '}
@@ -206,39 +194,6 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           <p className="text-sm text-primary-foreground/80">
             <Link to="/dashboard/vagas" className="font-semibold text-secondary hover:underline underline-offset-2">Cadastre uma vaga / oportunidade →</Link>
           </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-primary-foreground/80"
-        >
-          <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
-            {showJobs && totalJobs && totalJobs > 0 ? (
-              <>
-                <Briefcase className="h-3.5 w-3.5 text-secondary" />
-                <span className="font-semibold tabular-nums">{animatedJobs.toLocaleString('pt-BR')}</span> vagas
-              </>
-            ) : totalServices && totalServices > 0 ? (
-              <>
-                <Shield className="h-3.5 w-3.5 text-secondary" />
-                <span className="font-semibold tabular-nums">{animatedServices.toLocaleString('pt-BR')}</span> serviços
-              </>
-            ) : (
-              <>
-                <Shield className="h-3.5 w-3.5 text-secondary" />
-                Verificados
-              </>
-            )}
-          </span>
-          <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
-            <Users className="h-3.5 w-3.5 text-secondary" />
-            Os melhores Profissionais
-          </span>
-          <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
-            <Zap className="h-3.5 w-3.5 text-secondary" /> Resposta rápida
-          </span>
         </motion.div>
       </div>
     </section>

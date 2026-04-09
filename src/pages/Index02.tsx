@@ -113,7 +113,7 @@ const Index02 = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
+      <HeroBanner />
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
       <PwaInstallSection />
       <HighlightsCarousel />

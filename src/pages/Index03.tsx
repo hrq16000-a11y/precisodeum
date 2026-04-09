@@ -117,7 +117,7 @@ const Index03 = () => {
     <PageTransition>
       <div className="flex min-h-screen flex-col">
         <Header />
-        <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
+        <HeroBanner />
 
         <Suspense fallback={null}>
           {/* Urgency — sempre visível */}
