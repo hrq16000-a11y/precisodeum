@@ -1,181 +1,167 @@
-# Plano PRO para Patrocinadores — Garantia de Entrega
-
-## Resumo
-
-Adicionar campos de campanha PRO na tabela `sponsors`, criar boost dinâmico no ranking engine, e incrementar `delivered_impressions` via tracking existente — tudo sem alterar hooks, componentes ou structure de slots.
-
-## 1. Migração de banco (nova coluna na tabela sponsors)
-
-Adicionar 5 colunas à tabela `sponsors`:
-
-```sql
-ALTER TABLE public.sponsors
-  ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 'basic',
-  ADD COLUMN IF NOT EXISTS guaranteed_impressions integer DEFAULT NULL,
-  ADD COLUMN IF NOT EXISTS delivered_impressions integer NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS campaign_start timestamptz DEFAULT NULL,
-  ADD COLUMN IF NOT EXISTS campaign_end timestamptz DEFAULT NULL,
-  ADD COLUMN IF NOT EXISTS needs_compensation boolean NOT NULL DEFAULT false;
-```
-
-Atualizar a função `track_sponsor_metric` para incrementar `delivered_impressions` quando `plan = 'pro'` e `event_type = 'impression'`:
-
-```sql
-CREATE OR REPLACE FUNCTION public.track_sponsor_metric(...)
--- Adicionar ao bloco IF _event_type = 'impression':
-  UPDATE public.sponsors 
-  SET delivered_impressions = delivered_impressions + 1 
-  WHERE id = _sponsor_id AND plan = 'pro';
-```
-
-Criar função de compensação (chamada pelo cron `expire-sponsors` existente):
-
-```sql
--- Marcar sponsors PRO com under-delivery quando campanha expira
-UPDATE public.sponsors 
-SET needs_compensation = true 
-WHERE plan = 'pro' 
-  AND campaign_end < NOW() 
-  AND delivered_impressions < guaranteed_impressions 
-  AND needs_compensation = false;
-```
-
-## 2. Atualizar interface `SponsorFull` (`src/hooks/useSponsors.ts`)
-
-Adicionar os novos campos ao tipo:
-
-```typescript
-export interface SponsorFull {
-  // ... campos existentes ...
-  plan: string;                        // 'basic' | 'premium' | 'pro'
-  guaranteed_impressions: number | null;
-  delivered_impressions: number;
-  campaign_start: string | null;
-  campaign_end: string | null;
-  needs_compensation: boolean;
-}
-```
-
-Nenhuma outra alteração no hook.
-
-## 3. Boost PRO no ranking engine (`src/lib/sponsorRanking.ts`)
-
-Adicionar constante e função de boost:
-
-```typescript
-const MAX_PRO_BOOST = 3;
-```
-
-No `computeScore`, após calcular `score` base, adicionar:
-
-```typescript
-let proBoost = 0;
-if (s.plan === 'pro' && s.guaranteed_impressions && s.guaranteed_impressions > 0) {
-  const remaining = s.guaranteed_impressions - (s.delivered_impressions ?? 0);
-  
-  if (remaining > 0) {
-    // Delivery boost: proporcional ao que falta entregar
-    const deliveryBoost = Math.min(2, (remaining / s.guaranteed_impressions) * 2);
-    
-    // Pacing boost: se está atrasado na entrega
-    let pacingBoost = 0;
-    if (s.campaign_start && s.campaign_end) {
-      const now = Date.now();
-      const start = new Date(s.campaign_start).getTime();
-      const end = new Date(s.campaign_end).getTime();
-      const duration = end - start;
-      if (duration > 0 && now >= start && now <= end) {
-        const progress = (now - start) / duration;
-        const expected = progress * s.guaranteed_impressions;
-        if ((s.delivered_impressions ?? 0) < expected) {
-          pacingBoost = 1;
-        }
-      }
-    }
-    
-    proBoost = Math.min(MAX_PRO_BOOST, deliveryBoost + pacingBoost);
-  }
-}
-
-const finalScore = score + proBoost;
-```
-
-Sem remover nenhuma lógica existente (tier, CTR, randomização, frequency cap).
-
-## 4. Edge Function `expire-sponsors` — flag de compensação
-
-Adicionar ao final da edge function existente a query de marcação de `needs_compensation` para sponsors PRO expirados com under-delivery.
-
-## 5. Admin — visibilidade (sem novo painel)
-
-Nenhuma alteração no admin agora. Os novos campos (`plan`, `guaranteed_impressions`, etc.) serão editáveis via formulário existente de sponsors quando o admin editar um registro. O campo `needs_compensation` aparecerá como indicador visual.
-
----
-
-## Arquivos alterados
 
 
-| Arquivo                                       | Mudança                                              |
-| --------------------------------------------- | ---------------------------------------------------- |
-| `supabase/migrations/` (nova)                 | Adicionar colunas + atualizar `track_sponsor_metric` |
-| `src/hooks/useSponsors.ts`                    | Expandir interface `SponsorFull` (6 campos)          |
-| `src/lib/sponsorRanking.ts`                   | Adicionar PRO boost no `computeScore`                |
-| `supabase/functions/expire-sponsors/index.ts` | Adicionar marcação `needs_compensation`              |
+Plano de Correção — Etapas Detalhadas
 
+Etapa 1 — Sincronizar user_ref dos providers e services
 
-## O que NÃO muda
+Objetivo: Corrigir divergências de user_ref e preencher valores ausentes.
 
-- POSITION_CONFIG, hooks, componentes de renderização
-- Lógica de tier weight, CTR, randomização, frequency cap, anti-dominance
-- Schema de `sponsor_metrics`, tracking centralizado
-- Layout/visual de qualquer componente
+SQL sugerido com validação:
 
-&nbsp;
+SQL
 
-&nbsp;
+-- Verificar providers divergentes
 
-Refinar sistema PRO sem alterar estrutura existente:
+SELECT [p.id](http://p.id) AS provider_id, p.user_ref AS provider_ref, pr.user_ref AS profile_ref
 
-&nbsp;
+FROM providers p
 
-1. Reduzir agressividade do boost:
+JOIN profiles pr ON [pr.id](http://pr.id) = p.user_id
 
-- deliveryBoost max = 1.5
+WHERE p.user_ref != pr.user_ref;
 
-- pacingBoost = 0.5
+-- Atualizar providers
 
-- MAX_PRO_BOOST = 2
+UPDATE providers p
 
-&nbsp;
+SET user_ref = pr.user_ref
 
-2. Garantir segurança matemática:
+FROM profiles pr
 
-- Validar guaranteed_impressions > 0 antes de qualquer divisão
+WHERE [pr.id](http://pr.id) = p.user_id AND p.user_ref != pr.user_ref;
 
-&nbsp;
+-- Verificar services sem user_ref
 
-3. Ajustar cálculo de progresso:
+SELECT [s.id](http://s.id) AS service_id
 
-- Aplicar clamp entre 0 e 1:
+FROM services s
 
-  progress = Math.max(0, Math.min(1, (now - start) / duration))
+WHERE s.user_ref IS NULL;
 
-&nbsp;
+-- Atualizar services
 
-4. Validar tracking de impressões:
+UPDATE services s
 
-- Garantir que delivered_impressions não seja inflado por refresh
+SET user_ref = pr.user_ref
 
-- Se necessário, adicionar deduplicação básica (session ou tempo mínimo)
+FROM providers p
 
-&nbsp;
+JOIN profiles pr ON [pr.id](http://pr.id) = p.user_id
 
-Não alterar:
+WHERE s.provider_id = [p.id](http://p.id) AND s.user_ref IS NULL;
 
-- ranking base
+Melhoria sugerida: Rodar SELECT antes do UPDATE para validação e prevenção de erros.
 
-- estrutura de slots
+Etapa 2 — Adicionar triggers na tabela media
 
-- hooks
+Objetivo: Garantir consistência automática de user_ref na tabela media.
 
-- CTR logic
+Sugestão de triggers:
+
+SQL
+
+CREATE OR REPLACE FUNCTION set_user_ref_media()
+
+RETURNS trigger AS $$
+
+BEGIN
+
+    IF NEW.user_ref IS NULL THEN
+
+        SELECT pr.user_ref INTO NEW.user_ref
+
+        FROM profiles pr
+
+        WHERE [pr.id](http://pr.id) = NEW.user_id;
+
+    END IF;
+
+    RETURN NEW;
+
+END;
+
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_set_user_ref_media
+
+BEFORE INSERT ON media
+
+FOR EACH ROW
+
+EXECUTE FUNCTION set_user_ref_media();
+
+CREATE TRIGGER trg_prevent_user_ref_update_media
+
+BEFORE UPDATE OF user_ref ON media
+
+FOR EACH ROW
+
+EXECUTE FUNCTION prevent_user_ref_update();
+
+Etapa 3 — Melhorar o trigger set_user_ref nos providers
+
+Problema atual: Cada tabela gera user_ref independente, quebrando a identidade global.
+
+Solução: Criar função padronizada copy_user_ref_from_profile() para copiar o user_ref do profile via user_id e atualizar triggers de providers, services e leads.
+
+SQL
+
+CREATE OR REPLACE FUNCTION copy_user_ref_from_profile()
+
+RETURNS trigger AS $$
+
+BEGIN
+
+    SELECT pr.user_ref INTO NEW.user_ref
+
+    FROM profiles pr
+
+    WHERE [pr.id](http://pr.id) = NEW.user_id;
+
+    IF NEW.user_ref IS NULL THEN
+
+        RAISE EXCEPTION 'user_ref não encontrado para user_id %', NEW.user_id;
+
+    END IF;
+
+    RETURN NEW;
+
+END;
+
+$$ LANGUAGE plpgsql;
+
+-- Exemplo: trigger providers
+
+CREATE TRIGGER trg_set_user_ref_providers
+
+BEFORE INSERT ON providers
+
+FOR EACH ROW
+
+EXECUTE FUNCTION copy_user_ref_from_profile();
+
+Melhorias adicionais:
+
+Substituir triggers atuais em services e leads para usar a mesma função.
+
+Garantir que novos registros não gerem user_ref aleatório.
+
+Detalhes técnicos finais
+
+Migração 1 — Correção de dados existentes: UPDATE nos 7 providers + 2 services.
+
+Migração 2 — Novos triggers:
+
+trg_set_user_ref_media e trg_prevent_user_ref_update_media na tabela media.
+
+Função copy_user_ref_from_profile() para triggers de providers, services e leads.
+
+Arquivos a editar: Nenhum — todas correções via SQL.
+
+Recomendações:
+
+Rodar backup completo antes de aplicar.
+
+Validar após migração com SELECTs de conferência.
+
+Testar inserções novas para garantir consistência.
