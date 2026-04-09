@@ -78,7 +78,7 @@ const Footer = () => {
           {/* Brand */}
           <motion.div variants={itemVariants} className="sm:col-span-2 lg:col-span-1">
             <Link to="/">
-              <img src={logoVertical} alt="Preciso de um" className="mb-4 h-12 w-auto max-w-[220px] object-contain" width="133" height="48" />
+              <img src={logoVertical} alt="Preciso de um" className="mb-4 h-12 w-auto max-w-[220px] object-contain" width="133" height="48" loading="lazy" />
             </Link>
             <p className="text-sm font-semibold text-primary-foreground/90 mb-1">{tagline.headline}</p>
             <p className="text-sm leading-relaxed text-primary-foreground/70">
