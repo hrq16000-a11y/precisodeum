@@ -112,6 +112,7 @@ const Index = () => {
   const ctaEnabled = useFeatureEnabled('module_cta');
   const citiesEnabled = useFeatureEnabled('module_cities');
   const sponsorsEnabled = useFeatureEnabled('module_sponsors');
+  const heroBannersEnabled = useFeatureEnabled('module_hero_banners');
 
   // Section order from admin
   const sectionsOrderRaw = useSettingValue('homepage_sections_order');
