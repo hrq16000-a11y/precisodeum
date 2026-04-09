@@ -77,7 +77,7 @@ const SponsorPremiumCard = ({ sponsor, compact = false, onClickTrack }: Props) =
             onClick={handleClick}
           >
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="h-3.5 w-3.5" />
+              <MessageCircle className="h-3.5 w-3.5 icon-cta" />
               WhatsApp
             </a>
           </Button>
