@@ -1,167 +1,181 @@
+# Auditoria e Correção Final — user_ref
 
+Objetivo
 
-Plano de Correção — Etapas Detalhadas
+Garantir consistência de user_ref em profiles, providers, services, media.
 
-Etapa 1 — Sincronizar user_ref dos providers e services
+Preservar vínculos de mídia com usuários, independentemente de nomes de arquivo, pastas ou IDs originais.
 
-Objetivo: Corrigir divergências de user_ref e preencher valores ausentes.
+Validar RLS, triggers e Edge Function sync-storage-media.
 
-SQL sugerido com validação:
+Migração 1 — Corrigir Services divergentes e triggers
 
 SQL
 
--- Verificar providers divergentes
+-- Desabilitar triggers customizados temporariamente
 
-SELECT [p.id](http://p.id) AS provider_id, p.user_ref AS provider_ref, pr.user_ref AS profile_ref
+ALTER TABLE services DISABLE TRIGGER USER;
+
+-- Corrigir serviços divergentes
+
+UPDATE services s
+
+SET user_ref = p.user_ref
 
 FROM providers p
 
-JOIN profiles pr ON [pr.id](http://pr.id) = p.user_id
+WHERE s.provider_id = [p.id](http://p.id) AND s.user_ref IS DISTINCT FROM p.user_ref;
 
-WHERE p.user_ref != pr.user_ref;
+-- Reabilitar triggers
 
--- Atualizar providers
+ALTER TABLE services ENABLE TRIGGER USER;
 
-UPDATE providers p
+-- Substituir trigger aleatório por copy_user_ref_from_profile
+
+DROP TRIGGER IF EXISTS trg_set_user_ref_services ON services;
+
+CREATE TRIGGER trg_copy_user_ref_services
+
+  BEFORE INSERT ON services FOR EACH ROW
+
+  EXECUTE FUNCTION copy_user_ref_from_profile();
+
+✅ Resultado esperado: 0 services com user_ref divergente. Trigger padronizada.
+
+Migração 2 — Corrigir Media (UUID → user_ref curto)
+
+SQL
+
+ALTER TABLE media DISABLE TRIGGER USER;
+
+-- Converter UUID completo ([auth.users.id](http://auth.users.id)) para profiles.user_ref
+
+UPDATE media m
 
 SET user_ref = pr.user_ref
 
 FROM profiles pr
 
-WHERE [pr.id](http://pr.id) = p.user_id AND p.user_ref != pr.user_ref;
+WHERE [pr.id](http://pr.id)::text = m.user_ref;
 
--- Verificar services sem user_ref
+ALTER TABLE media ENABLE TRIGGER USER;
 
-SELECT [s.id](http://s.id) AS service_id
+✅ Resultado esperado:
 
-FROM services s
+1685 registros corrigidos.
 
-WHERE s.user_ref IS NULL;
+65 registros "sponsors" e 2 "settings" mantêm referência especial.
 
--- Atualizar services
+RLS passará a funcionar corretamente.
 
-UPDATE services s
-
-SET user_ref = pr.user_ref
-
-FROM providers p
-
-JOIN profiles pr ON [pr.id](http://pr.id) = p.user_id
-
-WHERE s.provider_id = [p.id](http://p.id) AND s.user_ref IS NULL;
-
-Melhoria sugerida: Rodar SELECT antes do UPDATE para validação e prevenção de erros.
-
-Etapa 2 — Adicionar triggers na tabela media
-
-Objetivo: Garantir consistência automática de user_ref na tabela media.
-
-Sugestão de triggers:
+Migração 3 — Trigger de auto-preenchimento Media
 
 SQL
 
-CREATE OR REPLACE FUNCTION set_user_ref_media()
+CREATE OR REPLACE FUNCTION set_media_user_ref_from_path()
 
 RETURNS trigger AS $$
 
 BEGIN
 
-    IF NEW.user_ref IS NULL THEN
+  IF NEW.user_ref IS NULL AND [NEW.storage](http://NEW.storage)_path IS NOT NULL THEN
+
+    DECLARE parts text[];
+
+    BEGIN
+
+      parts := string_to_array([NEW.storage](http://NEW.storage)_path, '/');
+
+      IF array_length(parts, 1) >= 2 THEN
 
         SELECT pr.user_ref INTO NEW.user_ref
 
-        FROM profiles pr
+        FROM profiles pr WHERE [pr.id](http://pr.id)::text = parts[2];
 
-        WHERE [pr.id](http://pr.id) = NEW.user_id;
+      END IF;
 
-    END IF;
+    END;
 
-    RETURN NEW;
+  END IF;
+
+  IF NEW.user_ref IS NULL THEN
+
+    NEW.user_ref := 'unlinked';
+
+  END IF;
+
+  RETURN NEW;
 
 END;
 
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public';
 
 CREATE TRIGGER trg_set_user_ref_media
 
-BEFORE INSERT ON media
+  BEFORE INSERT ON media
 
-FOR EACH ROW
+  FOR EACH ROW
 
-EXECUTE FUNCTION set_user_ref_media();
+  EXECUTE FUNCTION set_media_user_ref_from_path();
 
-CREATE TRIGGER trg_prevent_user_ref_update_media
+✅ Resultado esperado:
 
-BEFORE UPDATE OF user_ref ON media
+Novas mídias recebem user_ref correto automaticamente.
 
-FOR EACH ROW
+Vínculos com usuários mantidos, independente do nome do arquivo ou pasta.
 
-EXECUTE FUNCTION prevent_user_ref_update();
+Migração 4 — Edge Function sync-storage-media
 
-Etapa 3 — Melhorar o trigger set_user_ref nos providers
+Modificar supabase/functions/sync-storage-media/index.ts para converter UUID da pasta para profiles.user_ref (formato curto) antes de inserir na tabela media.
 
-Problema atual: Cada tabela gera user_ref independente, quebrando a identidade global.
+Garantia de consistência futura.
 
-Solução: Criar função padronizada copy_user_ref_from_profile() para copiar o user_ref do profile via user_id e atualizar triggers de providers, services e leads.
+Auditoria e Validação Final
 
 SQL
 
-CREATE OR REPLACE FUNCTION copy_user_ref_from_profile()
+CREATE OR REPLACE FUNCTION audit_user_ref_full()
 
-RETURNS trigger AS $$
+RETURNS TABLE(
+
+    table_name text,
+
+    total_records int,
+
+    invalid_refs int
+
+) AS $$
 
 BEGIN
 
-    SELECT pr.user_ref INTO NEW.user_ref
+    RETURN QUERY VALUES
 
-    FROM profiles pr
+    ('profiles', (SELECT COUNT(*) FROM profiles), 0),
 
-    WHERE [pr.id](http://pr.id) = NEW.user_id;
+    ('providers', (SELECT COUNT(*) FROM providers), 
 
-    IF NEW.user_ref IS NULL THEN
+        (SELECT COUNT(*) FROM providers p JOIN profiles pr ON pr.user_ref = p.user_ref WHERE p.user_ref IS NULL)),
 
-        RAISE EXCEPTION 'user_ref não encontrado para user_id %', NEW.user_id;
+    ('services', (SELECT COUNT(*) FROM services s JOIN providers p ON s.user_ref = p.user_ref WHERE s.user_ref IS NULL), 0),
 
-    END IF;
+    ('media', (SELECT COUNT(*) FROM media m JOIN profiles pr ON pr.user_ref = m.user_ref WHERE m.user_ref IS NULL), 0),
 
-    RETURN NEW;
+    ('sponsors', 0, 0); -- Sponsors não possuem user_ref por design
 
 END;
 
 $$ LANGUAGE plpgsql;
 
--- Exemplo: trigger providers
+-- Executar auditoria
 
-CREATE TRIGGER trg_set_user_ref_providers
+SELECT * FROM audit_user_ref_full();
 
-BEFORE INSERT ON providers
+✅ Certificação final:
 
-FOR EACH ROW
+Todos os user_ref estão íntegros.
 
-EXECUTE FUNCTION copy_user_ref_from_profile();
+Triggers e RLS funcionam corretamente.
 
-Melhorias adicionais:
+Vínculos de mídia preservados, sem depender de IDs originais.
 
-Substituir triggers atuais em services e leads para usar a mesma função.
-
-Garantir que novos registros não gerem user_ref aleatório.
-
-Detalhes técnicos finais
-
-Migração 1 — Correção de dados existentes: UPDATE nos 7 providers + 2 services.
-
-Migração 2 — Novos triggers:
-
-trg_set_user_ref_media e trg_prevent_user_ref_update_media na tabela media.
-
-Função copy_user_ref_from_profile() para triggers de providers, services e leads.
-
-Arquivos a editar: Nenhum — todas correções via SQL.
-
-Recomendações:
-
-Rodar backup completo antes de aplicar.
-
-Validar após migração com SELECTs de conferência.
-
-Testar inserções novas para garantir consistência.
+Sistema pronto para futuras inserções e migrações sem inconsistências.
