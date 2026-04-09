@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Search, LayoutGrid, User, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const MobileBottomNav = () => {
   const location = useLocation();
@@ -26,13 +26,13 @@ const MobileBottomNav = () => {
 
   return (
     <>
-      <div className="h-14 md:hidden" />
+      <div className="h-16 md:hidden" />
 
       <nav
-        className="fixed bottom-0 left-0 right-0 border-t border-border/60 bg-card/95 backdrop-blur-lg supports-[backdrop-filter]:bg-card/85 md:hidden"
+        className="fixed bottom-0 left-0 right-0 border-t border-border/40 bg-card/90 backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 md:hidden"
         style={{ zIndex: 1000, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="flex items-center justify-around px-1 py-1">
+        <div className="flex items-center justify-around px-2 py-1.5">
           {items.map((item, i) => {
             const Icon = item.icon;
             const isActive = item.active;
@@ -42,12 +42,17 @@ const MobileBottomNav = () => {
                 <motion.button
                   key={i}
                   onClick={item.action}
-                  className="flex flex-col items-center justify-center px-2 py-0.5"
+                  className="relative flex flex-col items-center justify-center w-14 py-1"
                   style={{ color: '#25D366' }}
                   whileTap={{ scale: 0.85 }}
                 >
-                  <Icon className="h-[17px] w-[17px]" />
-                  <span className="mt-0.5 text-[9px] font-medium">WhatsApp</span>
+                  <motion.div
+                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#25D366]/10"
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    <Icon className="h-[18px] w-[18px]" />
+                  </motion.div>
+                  <span className="mt-0.5 text-[9px] font-semibold">WhatsApp</span>
                 </motion.button>
               );
             }
@@ -59,20 +64,56 @@ const MobileBottomNav = () => {
                   if (item.action) { item.action(); }
                   else if (item.path) { navigate(item.path); }
                 }}
-                className="relative flex flex-col items-center justify-center px-2 py-0.5 transition-colors text-muted-foreground"
+                className="relative flex flex-col items-center justify-center w-14 py-1 transition-colors text-muted-foreground"
                 whileTap={{ scale: 0.85 }}
               >
+                {/* Active background glow */}
+                <AnimatePresence>
+                  {isActive && (
+                    <motion.div
+                      layoutId="mobile-nav-bg"
+                      className="absolute top-0.5 h-8 w-8 rounded-xl bg-accent/10"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    />
+                  )}
+                </AnimatePresence>
+
+                {/* Top indicator pill */}
                 {isActive && (
                   <motion.div
                     layoutId="mobile-nav-indicator"
-                    className="absolute -top-1 h-0.5 w-6 rounded-full bg-accent"
+                    className="absolute -top-1.5 h-0.5 w-8 rounded-full bg-accent"
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   />
                 )}
-                <Icon className={`h-[17px] w-[17px] transition-colors ${isActive ? 'text-accent' : ''}`} />
-                <span className={`mt-0.5 text-[9px] font-medium transition-colors ${isActive ? 'text-accent' : ''}`}>
-                  {item.label}
-                </span>
+
+                <motion.div
+                  className="relative z-10 flex h-8 w-8 items-center justify-center"
+                  animate={isActive ? { scale: 1.1 } : { scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                >
+                  <Icon className={`h-[18px] w-[18px] transition-colors duration-200 ${isActive ? 'text-accent' : ''}`} />
+                </motion.div>
+
+                <AnimatePresence>
+                  {isActive ? (
+                    <motion.span
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      className="mt-0 text-[9px] font-bold text-accent"
+                    >
+                      {item.label}
+                    </motion.span>
+                  ) : (
+                    <span className="mt-0 text-[9px] font-medium">
+                      {item.label}
+                    </span>
+                  )}
+                </AnimatePresence>
               </motion.button>
             );
           })}
