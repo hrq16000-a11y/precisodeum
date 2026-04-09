@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ArrowRight, Sparkles, Crown, Shield, Flame } from 'lucide-react';
+import { Calendar, ArrowRight, Sparkles, Crown, Shield, Flame, Sun, Moon, CloudSun, Zap, Target } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -17,6 +17,15 @@ interface WelcomeHeroProps {
   avatarUrl?: string;
 }
 
+const motivationalPhrases = [
+  'Cada lead é uma oportunidade de brilhar! ✨',
+  'Profissionais ativos recebem mais destaque 🚀',
+  'Seu próximo cliente pode estar procurando agora 🔍',
+  'Consistência é a chave do sucesso profissional 💪',
+  'Mantenha seu perfil atualizado para mais visibilidade 📈',
+  'Bons profissionais são encontrados, não procurados 🎯',
+];
+
 const WelcomeHero = ({
   greeting, name, pendingLeads,
   levelName, levelColor,
@@ -25,11 +34,25 @@ const WelcomeHero = ({
 }: WelcomeHeroProps) => {
   const navigate = useNavigate();
   const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
+  const hour = new Date().getHours();
+
+  // Time-based icon
+  const TimeIcon = hour < 12 ? Sun : hour < 18 ? CloudSun : Moon;
 
   // Days as member
   const memberDays = memberSince
     ? Math.floor((Date.now() - new Date(memberSince).getTime()) / (1000 * 60 * 60 * 24))
     : 0;
+
+  // Day-based motivational phrase
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+  const phrase = motivationalPhrases[dayOfYear % motivationalPhrases.length];
+
+  // Milestone badges
+  const milestones = [];
+  if (memberDays >= 365) milestones.push({ label: '1+ ano', icon: '🏆' });
+  else if (memberDays >= 180) milestones.push({ label: '6+ meses', icon: '⭐' });
+  else if (memberDays >= 30) milestones.push({ label: '1+ mês', icon: '🌟' });
 
   return (
     <motion.div
@@ -51,7 +74,7 @@ const WelcomeHero = ({
             transition={{ delay: 0.2 }}
             className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
           >
-            <Calendar className="h-3 w-3" />
+            <TimeIcon className="h-3 w-3 text-accent" />
             <span className="capitalize">{today}</span>
             {memberDays > 0 && (
               <>
@@ -61,7 +84,18 @@ const WelcomeHero = ({
             )}
           </motion.div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            {milestones.map(m => (
+              <motion.span
+                key={m.label}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.25 }}
+                className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary"
+              >
+                {m.icon} {m.label}
+              </motion.span>
+            ))}
             {plan === 'premium' && (
               <motion.span
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -101,14 +135,21 @@ const WelcomeHero = ({
         {/* Main greeting */}
         <div className="flex items-center gap-3">
           {avatarUrl ? (
-            <motion.img
-              src={avatarUrl}
-              alt={name}
-              className="h-12 w-12 rounded-2xl object-cover shadow-sm border-2 border-accent/20"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 }}
-            />
+            <motion.div className="relative shrink-0">
+              <motion.img
+                src={avatarUrl}
+                alt={name}
+                className="h-12 w-12 rounded-2xl object-cover shadow-sm border-2 border-accent/20"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+              />
+              {/* Online indicator */}
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-2 border-card" />
+              </span>
+            </motion.div>
           ) : (
             <motion.div
               className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 shadow-sm"
@@ -145,6 +186,17 @@ const WelcomeHero = ({
             </p>
           </div>
         </div>
+
+        {/* Motivational phrase bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mt-3 rounded-xl bg-accent/5 border border-accent/10 px-3 py-2 flex items-center gap-2"
+        >
+          <Target className="h-3.5 w-3.5 text-accent shrink-0" />
+          <p className="text-[11px] text-muted-foreground font-medium">{phrase}</p>
+        </motion.div>
       </div>
     </motion.div>
   );

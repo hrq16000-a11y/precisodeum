@@ -183,8 +183,11 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               placeholder="Buscar menu..."
               value={sidebarSearch}
               onChange={(e) => setSidebarSearch(e.target.value)}
-              className="w-full rounded-xl border border-sidebar-border bg-sidebar-accent/30 pl-8 pr-3 py-2 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-colors"
+              className="w-full rounded-xl border border-sidebar-border bg-sidebar-accent/30 pl-8 pr-12 py-2 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-colors"
             />
+            <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded-md border border-sidebar-border/50 bg-sidebar-accent/20 px-1.5 py-0.5 text-[9px] text-sidebar-foreground/30 font-mono">
+              ⌘K
+            </kbd>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto overscroll-contain mt-1 space-y-1 px-3 pb-4">
