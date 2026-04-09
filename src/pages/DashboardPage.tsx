@@ -290,30 +290,7 @@ const DashboardPage = () => {
       />
 
       {/* Quick Actions Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="mt-3 flex flex-wrap gap-2"
-      >
-        <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs" onClick={() => navigate('/dashboard/servicos')}>
-          <PlusCircle className="h-3.5 w-3.5" /> Criar Serviço
-        </Button>
-        {provider?.slug && (
-          <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs" onClick={() => navigate(`/profissional/${provider.slug}`)}>
-            <Eye className="h-3.5 w-3.5" /> Ver Minha Página
-          </Button>
-        )}
-        <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs" onClick={() => navigate('/dashboard/minha-pagina')}>
-          <Layout className="h-3.5 w-3.5" /> Personalizar
-        </Button>
-        {pendingLeads > 0 && (
-          <Button variant="accent" size="sm" className="rounded-full gap-1.5 text-xs" onClick={() => navigate('/dashboard/leads')}>
-            <MessageSquare className="h-3.5 w-3.5" /> Responder Leads
-            <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent-foreground/20 text-[9px] font-bold">{pendingLeads}</span>
-          </Button>
-        )}
-      </motion.div>
+      <QuickStatsBar pendingLeads={pendingLeads} providerSlug={provider?.slug} />
 
       {/* Dominant CTA when no services */}
       <AnimatePresence>
@@ -344,32 +321,9 @@ const DashboardPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Stats with animated counters and gradient cards */}
-      <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-        {statCards.map((stat, i) => {
-          const Icon = stat.icon;
-          return (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.1 + i * 0.07, ease: 'easeOut' as const }}
-              whileHover={{ y: -6, scale: 1.05, rotateX: 2, rotateY: -3, transition: { duration: 0.25 } }}
-              className={`group rounded-2xl border border-border bg-gradient-to-br ${stat.gradient} p-4 shadow-card transition-shadow hover:shadow-card-hover relative overflow-hidden cursor-default`}
-              style={{ perspective: 800, transformStyle: 'preserve-3d' }}
-            >
-              {/* Shine sweep on hover */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-out" />
-              {/* Glow ring */}
-              <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-accent/20 to-primary/10 -z-10 blur-sm" />
-              <Icon className={`h-4 w-4 ${stat.iconColor} relative transition-transform duration-300 group-hover:scale-110`} />
-              <div className="mt-2 relative">
-                <AnimatedCounter value={stat.value} className="font-display text-2xl font-bold text-foreground count-pop" />
-              </div>
-              <p className="text-[11px] text-muted-foreground relative">{stat.label}</p>
-            </motion.div>
-          );
-        })}
+      {/* Stats with animated counters */}
+      <div className="mt-5">
+        <StatCardGrid cards={statCards} />
       </div>
 
       {/* Analytics Grid: Completeness + Chart + Conversion + Activity */}
