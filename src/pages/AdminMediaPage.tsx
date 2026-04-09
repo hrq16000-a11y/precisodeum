@@ -243,12 +243,18 @@ const AdminMediaPage = () => {
 
   const compressSingle = async (bucket: string, filePath: string) => {
     try {
-      const { error } = await supabase.functions.invoke('optimize-image', {
+      const { data, error } = await supabase.functions.invoke('optimize-image', {
         body: { bucket, path: filePath },
       });
       if (error) throw error;
-      toast.success('Imagem otimizada com sucesso');
+      if (data?.optimized) {
+        toast.success(data.message || 'Imagem otimizada com sucesso');
+      } else {
+        toast.info(data?.message || 'Arquivo já está otimizado');
+      }
       scanOversized();
+      fetchMedia();
+      fetchStats();
     } catch (err: any) {
       toast.error('Erro ao comprimir: ' + (err.message || ''));
     }
@@ -257,21 +263,25 @@ const AdminMediaPage = () => {
   const compressAll = async () => {
     if (!oversizedFiles.length) return;
     setBatchCompressing(true);
-    let ok = 0, fail = 0;
+    let ok = 0, fail = 0, skipped = 0;
     for (const f of oversizedFiles) {
       try {
-        const { error } = await supabase.functions.invoke('optimize-image', {
+        const { data, error } = await supabase.functions.invoke('optimize-image', {
           body: { bucket: f.bucket, path: f.file },
         });
         if (error) throw error;
-        ok++;
+        if (data?.optimized) ok++;
+        else skipped++;
       } catch {
         fail++;
       }
     }
-    toast.success(`${ok} otimizada(s), ${fail} erro(s)`);
+    toast.success(`${ok} otimizada(s), ${skipped} já otimizada(s), ${fail} erro(s)`);
     setBatchCompressing(false);
     scanOversized();
+    fetchMedia();
+    fetchStats();
+  };
   };
 
   if (adminLoading || !isAdmin) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
