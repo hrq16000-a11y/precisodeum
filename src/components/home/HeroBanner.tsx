@@ -57,10 +57,7 @@ const HeroPrefixRotator = () => {
   );
 };
 
-interface HeroBannerProps {
-  totalServices?: number;
-  totalJobs?: number;
-}
+interface HeroBannerProps {}
 
 function useCountUp(target: number, duration = 1500) {
   const [count, setCount] = useState(0);
