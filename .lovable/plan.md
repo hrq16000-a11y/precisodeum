@@ -1,40 +1,144 @@
+# Perfeito. Aqui está a **versão final do plano de reestruturação de categorias**, já com todas as melhorias aplicadas, pronta para execução:
+
+---
+
+# **Reestruturação Hierárquica de Categorias – Versão Final**
+
+## **Situação Atual**
+
+- 159 categorias ativas, quase todas sem `parent_id` (flat).
+- Apenas 1 subcategoria existente (“Segurança eletrônica”).
+- Nenhuma categoria-pai (macro) existe no banco.
+- Sistema suporta hierarquia via `parent_id` sem alterações de código.
+
+---
+
+## **Fase 1 — Criar 7 Categorias Macro (Parent)**
 
 
-# Auditoria de Categorias e Correções
+| Macro                  | Slug                   | Ícone | Status |
+| ---------------------- | ---------------------- | ----- | ------ |
+| Serviços Domésticos    | servicos-domesticos    | 🏠    | Ativo  |
+| Serviços Técnicos      | servicos-tecnicos      | ⚡     | Ativo  |
+| Construção e Reforma   | construcao-e-reforma   | 🏗️   | Ativo  |
+| Saúde e Estética       | saude-e-estetica       | 💆    | Ativo  |
+| Transporte e Logística | transporte-e-logistica | 🚚    | Ativo  |
+| Alimentação e Eventos  | alimentacao-e-eventos  | 🍽️   | Ativo  |
+| Negócios e Consultoria | negocios-e-consultoria | 💼    | Ativo  |
 
-## Resultado da Auditoria
 
-### Duplicatas encontradas
+---
 
-| Categoria | Slug A (tem providers) | Slug B (sem providers) | Ação |
-|---|---|---|---|
-| Técnico em Eletrônica | `tecnico-eletronica` (1 provider) | `tecnico-em-eletronica` (0) | Mover provider → slug B, deletar slug A |
-| Técnico em Celular | `tecnico-celular` (1 provider) | `tecnico-em-celular` (0) | Mover provider → slug B, deletar slug A |
+## **Fase 2 — Vincular Subcategorias Existentes às Macros**
 
-### Possíveis redundâncias (nomes similares, sem duplicata exata)
-- "Instalador de Piso" / "Instalador de Pisos" — slugs diferentes, ambos válidos
-- "Dedetização" / "Dedetizador" — contextos diferentes (serviço vs profissional)
-- "Cozinheira" / "Cozinheiro" / "Cozinheira Doméstica" — variações válidas
+Atualizar `parent_id` das categorias existentes para apontar à macro correspondente.  
+**Observações:** subdivisão refinada para SEO e filtros internos.
 
-### Categoria faltante
-- **Eletrodomésticos — Conserto** não existe no banco
+**Serviços Domésticos:**
 
-## Plano de Execução
+- Marido de Aluguel, Cozinheira, Babá, Cuidador de Idosos, Diarista, Limpeza Residencial, Passadeira
 
-### 1. Criar categoria "Eletrodomésticos — Conserto"
-- INSERT na tabela `categories`: name = `Eletrodomésticos — Conserto`, slug = `eletrodomesticos-conserto`, icon = `🔌`
-- Sem parent_id (categoria macro)
+**Serviços Técnicos:**
 
-### 2. Corrigir duplicata "Técnico em Eletrônica"
-- UPDATE provider com `category_id = 747d5370...` (tecnico-eletronica) → apontar para `4539f6e6...` (tecnico-em-eletronica)
-- Soft-delete a entrada duplicada (`747d5370...`) com `deleted_at = now()`
+- Eletricista: Residencial / Comercial
+- Encanador: Hidráulico / Industrial
+- Assistência Técnica, Ar-condicionado, Antenista, Técnico em Celular, Informática / Suporte TI
 
-### 3. Corrigir duplicata "Técnico em Celular"
-- UPDATE provider com `category_id = cb18ed67...` (tecnico-celular) → apontar para `27dd5d75...` (tecnico-em-celular)
-- Soft-delete a entrada duplicada (`cb18ed67...`) com `deleted_at = now()`
+**Construção e Reforma:**
 
-### Detalhes técnicos
-- Todas operações via ferramenta de inserção/update (não migração, pois são dados)
-- Nenhum arquivo de código precisa ser alterado
-- Total: 1 INSERT + 2 UPDATEs de providers + 2 UPDATEs de categories (soft-delete)
+- Carpinteiro, Pintor, Gesseiro, Azulejista, Pedreiro, Construção Civil, Impermeabilização, Drywall
 
+**Saúde e Estética:**
+
+- Dentista, Fisioterapeuta, Esteticista, Acupunturista, Cabeleireiro, Barbeiro, Manicure
+
+**Transporte e Logística:**
+
+- Entregador, Caminhoneiro, Fretista, Guincheiro, Motorista, Motoboy
+
+**Alimentação e Eventos:**
+
+- Buffet: Casamento / Corporativo, Churrasqueiro, Confeiteiro, Bartender, Cerimonialista, Decorador de Festas, DJ: Casamento / Festa / Corporativo, Chef / Cozinheiro
+
+**Negócios e Consultoria:**
+
+- Advogado, Contador, Consultor de RH, Consultoria Empresarial, Marketing Digital
+
+---
+
+## **Fase 3 — Atualizar Ícones das Categorias Existentes**
+
+- Padronizar ícones das subcategorias:
+  - Eletricista → ⚡
+  - Acupunturista → 🪡
+  - Cabeleireiro / Esteticista → 💇 / 💆
+  - Chef / Cozinheiro → 👨‍🍳
+  - Guincheiro → 🚚
+- Garantir ícones únicos e consistentes para UX.
+
+---
+
+## **Fase 4 — Criar Categorias Novas que Não Existem**
+
+
+| Categoria                | Slug                    | Ícone | Macro                  | Status |
+| ------------------------ | ----------------------- | ----- | ---------------------- | ------ |
+| Eletricista Residencial  | eletricista-residencial | ⚡     | Serviços Técnicos      | Ativo  |
+| Eletricista Comercial    | eletricista-comercial   | ⚡     | Serviços Técnicos      | Ativo  |
+| Informática / Suporte TI | informatica-suporte-ti  | 💻    | Serviços Técnicos      | Ativo  |
+| Esteticista              | esteticista             | 💆    | Saúde e Estética       | Ativo  |
+| Decorador de Festas      | decorador-de-festas     | 🎉    | Alimentação e Eventos  | Ativo  |
+| Guincheiro               | guincheiro              | 🚚    | Transporte e Logística | Ativo  |
+| Chef / Cozinheiro        | chef-cozinheiro         | 👨‍🍳 | Alimentação e Eventos  | Ativo  |
+| Consultor de RH          | consultor-de-rh         | 💼    | Negócios e Consultoria | Ativo  |
+| Cozinheiro Profissional  | cozinheiro-profissional | 👨‍🍳 | Alimentação e Eventos  | Ativo  |
+
+
+---
+
+## **Fase 5 — Renomeações e Ajustes SEO**
+
+
+| Atual                    | Novo                     | Slug Atualizado        |
+| ------------------------ | ------------------------ | ---------------------- |
+| Consultoria de Marketing | Marketing Digital        | marketing-digital      |
+| Suporte de TI            | Informática / Suporte TI | informatica-suporte-ti |
+
+
+---
+
+## **Fase 6 — Auditoria e Observações**
+
+- Verificar categorias órfãs ou redundantes antes de updates.
+- Cada categoria/subcategoria terá **status e observação** para manutenção futura.
+- Todos os slugs e ícones padronizados para consistência visual e SEO.
+- Inclusão de subdivisões estratégicas para filtros e palavras-chave.
+
+---
+
+## **Fase 7 — Impacto no Código**
+
+- Nenhuma alteração de código necessária.
+- `AdminCategoriesPage` já suporta macro → sub.
+- `CategoriesListPage` e `CategoryCard` funcionam normalmente.
+
+---
+
+## **Fase 8 — Execução Estimada**
+
+- **INSERTs Macros:** 7
+- **INSERTs Novas Categorias:** 9
+- **UPDATE parent_id:** ~150
+- **UPDATE Ícones/Nomes/Slugs:** ~30
+
+**Todos via ferramenta de dados**, sem migração de schema.
+
+---
+
+✅ **Resultado Final:** Sistema hierárquico completo, padronizado, SEO-friendly, pronto para operação e manutenção futura.
+
+---
+
+Se você quiser, posso já gerar **uma tabela completa pronta para importar no banco**, incluindo **parent_id, slug, ícone, status e observações** para todas as 159 categorias existentes + novas, tudo padronizado.
+
+Quer que eu faça isso agora?
