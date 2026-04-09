@@ -2522,6 +2522,14 @@ export type Database = {
       }
     }
     Functions: {
+      audit_user_ref_full: {
+        Args: never
+        Returns: {
+          invalid_refs: number
+          table_name: string
+          total_records: number
+        }[]
+      }
       get_rss_import_headers: { Args: never; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
