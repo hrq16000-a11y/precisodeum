@@ -1,113 +1,127 @@
 
 
-## Auditoria Completa — Cobertura do Painel Administrativo
+## Plano: Evolução SaaS Multi-Camadas — Sistema Operacional Completo
 
-### Metodologia
-Cruzamento de todas as 49 tabelas do banco de dados com as 39 páginas administrativas, verificando cobertura CRUD, presença no menu de navegação e funcionalidade de backup/exportação.
+### Diagnóstico do Estado Atual
 
----
+O sistema ja possui:
+- **Tabelas core**: `profiles`, `providers`, `account_types`, `user_levels`, `user_roles`, `tier_rules`, `plan_resources`, `subscriptions`, `user_tags`
+- **Views**: `account_model_view`, `account_limits_view`, `user_master_view`
+- **Hook de limites**: `useAccountLimits` (funcional, lê tier e verifica limites)
+- **Admin existente**: 5 abas em `/admin/tipos-conta` (Profile Types, Account Types, Levels, Tier Rules, Plan Resources)
+- **Assinaturas**: Pagina funcional com MRR, mas desconectada de account_types
+- **Audit**: Funcional mas com tipos de evento limitados
+- **Lacuna principal**: Nenhum dashboard executivo unificado; subscriptions nao vinculam a account_type; nao existe upgrade/downgrade automatico; tier_rules tem poucos campos
 
-### Resultado Geral: 92% de cobertura
-
-O painel administrativo cobre a grande maioria das tabelas e funcionalidades. Foram identificadas **4 lacunas** que precisam de correção:
-
----
-
-### LACUNAS ENCONTRADAS
-
-#### 1. `sponsor_leads` — SEM página admin (CRÍTICO)
-- Leads de patrocinadores submetidos via `/quero-ser-patrocinador` são inseridos na tabela `sponsor_leads`, mas **não existe nenhuma página administrativa** para visualizar, gerenciar ou responder esses leads comerciais.
-- **Impacto**: O admin não tem como ver quem quer ser patrocinador.
-- **Solução**: Criar página `/admin/leads-patrocinadores` com listagem, filtros por status, edição e ações (aprovar, rejeitar, contactar).
-
-#### 2. `neighborhoods` (Bairros) — CRUD ausente
-- A tabela `neighborhoods` é referenciada na página de Cidades apenas como **contagem** (quantos bairros cada cidade tem), mas não existe interface para **criar, editar ou excluir bairros**.
-- **Impacto**: Bairros só podem ser gerenciados via banco de dados direto.
-- **Solução**: Adicionar aba "Bairros" dentro de `/admin/cidades` com CRUD completo (nome, slug, cidade vinculada).
-
-#### 3. `sponsor_slot_limits` — SEM gestão admin
-- A tabela existe no banco mas não é referenciada em nenhuma página admin.
-- **Impacto**: Limites de slots por posição/cidade não são gerenciáveis.
-- **Solução**: Integrar gestão de limites dentro de `/admin/slots-anuncios` como seção ou aba.
-
-#### 4. `subscriptions` — SEM página admin dedicada
-- A tabela `subscriptions` (assinaturas de prestadores) aparece apenas no backup, mas não possui tela para visualizar ou gerenciar assinaturas ativas/expiradas.
-- **Impacto**: Sem visibilidade do status de pagamento dos prestadores.
-- **Solução**: Criar página `/admin/assinaturas` ou integrar como aba em `/admin/prestadores`.
+### Implementacoes (6 blocos)
 
 ---
 
-### O QUE ESTÁ 100% COBERTO (35 tabelas/funcionalidades)
+#### 1. Expandir `tier_rules` com campos de controle SaaS
+**Migracao SQL** — adicionar colunas a `tier_rules`:
+- `max_ads` (integer, default 0)
+- `max_slots` (integer, default 0)
+- `can_access_crm` (boolean, default false)
+- `can_access_reports` (boolean, default false)
+- `can_access_featured` (boolean, default false)
+- `ranking_priority` (integer, default 0)
+- `search_boost` (integer, default 0)
 
-| Tabela | Página Admin | CRUD |
-|---|---|---|
-| `profiles` | `/admin/usuarios` + `/admin/crm-usuarios` | Leitura, Edição, Permissões, Reset senha |
-| `providers` | `/admin/prestadores` | CRUD + Aprovação + Bulk |
-| `services` | `/admin/servicos` | CRUD completo |
-| `service_categories` | Gerenciado via serviços | Automático |
-| `service_images` | Gerenciado via serviços | Automático |
-| `leads` | `/admin/leads` | CRUD + Filtros |
-| `reviews` | `/admin/avaliacoes` | CRUD + Moderação |
-| `categories` | `/admin/categorias` | CRUD completo |
-| `cities` | `/admin/cidades` | CRUD + Import + Bulk |
-| `jobs` | `/admin/vagas` | CRUD + Aprovação |
-| `blog_posts` | `/admin/blog` | CRUD + Publicação |
-| `faqs` | `/admin/faq` | CRUD completo |
-| `highlights` | `/admin/destaques` | CRUD completo |
-| `popular_services` | `/admin/servicos-populares` | CRUD completo |
-| `community_links` | `/admin/comunidade` | CRUD completo |
-| `hero_banners` | `/admin/hero-banners` | CRUD + Agendamento |
-| `sponsors` | `/admin/patrocinadores` | CRUD + Métricas |
-| `sponsor_contacts` | `/admin/patrocinadores` | CRUD + Permissões |
-| `sponsor_campaigns` | `/admin/patrocinadores` + `/admin/crm-patrocinadores` | CRUD |
-| `sponsor_contracts` | `/admin/patrocinadores` + `/admin/crm-patrocinadores` | CRUD |
-| `sponsor_notes` | `/admin/patrocinadores` + `/admin/crm-patrocinadores` | CRUD |
-| `sponsor_metrics` | `/admin/patrocinadores` (métricas) | Leitura |
-| `ad_slots` | `/admin/slots-anuncios` | CRUD completo |
-| `ad_slot_assignments` | `/admin/slots-anuncios` | CRUD completo |
-| `page_blocks` | `/admin/blocos` | CRUD completo |
-| `institutional_pages` | `/admin/paginas` | CRUD completo |
-| `menu_items` | `/admin/menus` | CRUD + Reordenar |
-| `home_steps` | `/admin/como-funciona` | CRUD completo |
-| `home_testimonials` | `/admin/depoimentos` | CRUD completo |
-| `home_cta_blocks` | `/admin/cta-blocos` | CRUD completo |
-| `site_settings` | `/admin/configuracoes` | Edição completa |
-| `profile_type_settings` | `/admin/tipos-conta` | CRUD completo |
-| `account_types` | `/admin/tipos-conta` | CRUD completo |
-| `tier_rules` | `/admin/regras` | CRUD completo |
-| `user_levels` | `/admin/niveis` | CRUD completo |
-| `user_roles` | `/admin/usuarios` | Edição |
-| `plan_resources` | `/admin/regras` | CRUD completo |
-| `user_tags` | `/admin/crm-usuarios` | CRUD completo |
-| `media` | `/admin/midia` | Biblioteca + Bulk |
-| `audit_log` | `/admin/auditoria` | Leitura |
-| `pwa_install_settings` | `/admin/pwa` | Edição |
-| `pwa_install_events` | `/admin/pwa` | Leitura |
-| `notifications` | Dashboard (usuário) | Automático |
-| `push_subscriptions` | Sistema | Automático |
-| `provider_page_settings` | Dashboard (prestador) | Automático |
+Atualizar `account_limits_view` para expor os novos campos.
+
+Atualizar `AdminTierRulesPage.tsx` para exibir e editar os novos campos no formulario existente.
 
 ---
 
-### TABELAS AUXILIARES (sem necessidade de admin dedicado)
-- `sponsor_notifications` — gerenciadas pelo painel do patrocinador
-- `sponsor_metrics` — dados automáticos de tracking
+#### 2. Vincular `subscriptions` a `account_type_id`
+**Migracao SQL** — adicionar coluna:
+- `account_type_id` (uuid, nullable, references account_types)
+
+Atualizar `AdminSubscriptionsPage.tsx`:
+- Mostrar nome do plano (account_type) vinculado
+- Ao renovar/criar, selecionar account_type
+- Historico de mudancas de plano (registrado via audit_log)
+- Adicionar campos de LTV basico e churn rate nos KPIs
 
 ---
 
-### Plano de Correção
+#### 3. Hook `useResourceGate` — Engine de permissoes por plano
+Criar `src/hooks/useResourceGate.ts`:
+- Centraliza verificacao: dado um recurso (ex: `can_access_crm`, `max_services`), consulta `useAccountLimits` + `usePermissions` e retorna `{ allowed: boolean, reason?: string }`
+- Usado em qualquer componente para bloquear acoes baseado no plano/nivel
+- Integra com `tier_rules` expandido
 
-#### Arquivos a criar/editar:
+---
 
-1. **Criar `src/pages/AdminSponsorLeadsPage.tsx`** — CRUD completo para `sponsor_leads` com filtros (status, data), edição inline e ações de contato
-2. **Editar `src/pages/AdminCitiesPage.tsx`** — Adicionar aba "Bairros" com CRUD para `neighborhoods` (criar, editar, excluir, vincular a cidade)
-3. **Editar `src/pages/AdminAdSlotsPage.tsx`** — Adicionar seção de gestão de `sponsor_slot_limits`
-4. **Criar `src/pages/AdminSubscriptionsPage.tsx`** — Listagem de assinaturas com filtros por status e prestador
-5. **Editar `src/App.tsx`** — Adicionar rotas `/admin/leads-patrocinadores` e `/admin/assinaturas`
-6. **Editar `src/components/admin/AdminGroupNav.tsx`** e **`src/components/AdminLayout.tsx`** — Adicionar os novos itens no menu de navegação
+#### 4. Dashboard Executivo `/admin/overview`
+Criar `src/pages/AdminOverviewPage.tsx`:
+- **Usuarios por tipo** (client/provider/rh) — PieChart
+- **MRR** — puxado de subscriptions ativas x account_types.price
+- **Conversao de leads** — leads novos vs convertidos (30 dias)
+- **Uso de recursos** — servicos criados vs limite por plano
+- **Ocupacao de slots** — ad_slot_assignments ativos vs ad_slots.max_ads
+- **Performance patrocinadores** — top 5 por CTR
+- **Churn rate** — subscriptions canceladas / total (30 dias)
+- Cards KPI no topo, graficos Recharts abaixo
+- Rota: `/admin/overview`, adicionada ao AdminGroupNav no grupo "Geral"
 
-### Detalhes técnicos
-- Todas as novas páginas seguirão o padrão existente: `useAdmin()` para verificação de acesso, `AdminLayout` como wrapper, `useQuery`/`useMutation` para dados, `logAuditAction` para auditoria, `BulkActionsBar` para ações em massa
-- Nenhuma tabela ou schema existente será alterada
-- Novas rotas serão adicionadas sem impacto nas existentes
+---
+
+#### 5. Automacao de upgrade/downgrade
+Criar `src/hooks/useSubscriptionSync.ts`:
+- Quando admin altera subscription (plano/status), automaticamente:
+  - Atualiza `profiles.account_type_id` para o novo account_type
+  - Se cancelado/expirado: rebaixa para account_type "Trial/Free"
+  - Registra audit_log com `plan_upgraded` ou `plan_downgraded`
+- Integrado no `AdminSubscriptionsPage` via mutation
+
+Atualizar `AdminSubscriptionsPage.tsx`:
+- Dialog de upgrade/downgrade com selecao de account_type
+- Ao mudar status para canceled: auto-rebaixa
+
+---
+
+#### 6. Auditoria expandida + integracao entre modulos
+Expandir `logAuditAction` com tipos padronizados:
+- `user_updated`, `role_changed`, `plan_upgraded`, `plan_downgraded`, `resource_used`, `lead_converted`, `subscription_changed`, `slot_updated`
+
+Garantir que todas as paginas admin existentes usem os tipos corretos (revisao pontual nos arquivos que ja chamam `logAuditAction`).
+
+---
+
+### Arquivos a criar/editar
+
+| Arquivo | Acao |
+|---|---|
+| `src/pages/AdminOverviewPage.tsx` | Criar — Dashboard executivo |
+| `src/hooks/useResourceGate.ts` | Criar — Engine de permissoes |
+| `src/hooks/useSubscriptionSync.ts` | Criar — Logica upgrade/downgrade |
+| `src/pages/AdminTierRulesPage.tsx` | Editar — Novos campos SaaS |
+| `src/pages/AdminSubscriptionsPage.tsx` | Editar — Vincular account_type, LTV, churn, upgrade/downgrade |
+| `src/hooks/useAuditLog.ts` | Editar — Novos tipos de evento |
+| `src/components/admin/AdminGroupNav.tsx` | Editar — Adicionar Overview |
+| `src/App.tsx` | Editar — Rota /admin/overview |
+
+### Migracoes SQL
+
+1. `ALTER TABLE tier_rules ADD COLUMN max_ads integer NOT NULL DEFAULT 0, ADD COLUMN max_slots integer NOT NULL DEFAULT 0, ADD COLUMN can_access_crm boolean NOT NULL DEFAULT false, ADD COLUMN can_access_reports boolean NOT NULL DEFAULT false, ADD COLUMN can_access_featured boolean NOT NULL DEFAULT false, ADD COLUMN ranking_priority integer NOT NULL DEFAULT 0, ADD COLUMN search_boost integer NOT NULL DEFAULT 0;`
+
+2. `ALTER TABLE subscriptions ADD COLUMN account_type_id uuid REFERENCES account_types(id);`
+
+3. Atualizar `account_limits_view` para incluir novos campos de `tier_rules`.
+
+### O que NAO sera alterado
+- Schemas existentes (apenas extensao com novas colunas)
+- Padrao de componentes (AdminLayout, useAdmin, useQuery)
+- UI existente (sem redesign)
+- Tabelas consolidadas (profiles, providers, etc.)
+- RLS policies existentes (novas colunas herdam policies da tabela)
+
+### Resultado esperado
+- Todo usuario tem tipo + nivel + role + plano vinculados
+- Recursos controlados por regra dinamica (tier_rules expandido)
+- Upgrade/downgrade altera permissoes automaticamente
+- Dashboard executivo com MRR, churn, conversao, ocupacao
+- Auditoria cobre todas as acoes criticas com tipos padronizados
+- Zero dependencia de banco manual para operacoes
 
