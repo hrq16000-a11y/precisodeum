@@ -11,6 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ModuleBoundary from "./components/ModuleBoundary";
 import MobileBottomNav from "./components/MobileBottomNav";
 import BackToTopButton from "./components/BackToTopButton";
+import ScrollProgressBar from "./components/ui/ScrollProgressBar";
 import ProfileTypeChooser from "./components/ProfileTypeChooser";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -274,6 +275,7 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
+            <ScrollProgressBar />
             <MobileBottomNav />
             <BackToTopButton />
             <CookieConsent />

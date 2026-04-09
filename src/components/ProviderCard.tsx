@@ -47,7 +47,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       {/* Hover gradient glow */}
       <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500 rounded-xl" />
       {/* Shine sweep */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-out" />
+      <div className="card-shine-sweep pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent" style={{ left: '-100%', width: '50%' }} />
 
       <div className="flex flex-1 flex-col p-5 relative">
         <div className="flex gap-4">

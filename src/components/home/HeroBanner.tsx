@@ -86,28 +86,44 @@ function useCountUp(target: number, duration = 1500) {
 /* Floating decorative dots */
 const FloatingDots = () => (
   <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-    {[...Array(5)].map((_, i) => (
+    {[...Array(8)].map((_, i) => (
       <motion.div
         key={i}
-        className="absolute rounded-full bg-secondary/20"
+        className="absolute rounded-full"
         style={{
-          width: 6 + i * 4,
-          height: 6 + i * 4,
-          left: `${15 + i * 18}%`,
-          top: `${20 + (i % 3) * 25}%`,
+          width: 4 + i * 3,
+          height: 4 + i * 3,
+          left: `${10 + i * 12}%`,
+          top: `${15 + (i % 4) * 20}%`,
+          background: i % 2 === 0
+            ? 'hsl(var(--secondary) / 0.25)'
+            : 'hsl(var(--primary-foreground) / 0.15)',
         }}
         animate={{
-          y: [0, -20, 0],
-          opacity: [0.3, 0.6, 0.3],
+          y: [0, -24 - i * 4, 0],
+          x: [0, (i % 2 === 0 ? 8 : -8), 0],
+          opacity: [0.2, 0.6, 0.2],
+          scale: [1, 1.2, 1],
         }}
         transition={{
-          duration: 4 + i,
+          duration: 5 + i * 0.8,
           repeat: Infinity,
           ease: 'easeInOut',
-          delay: i * 0.7,
+          delay: i * 0.5,
         }}
       />
     ))}
+    {/* Subtle geometric shapes */}
+    <motion.div
+      className="absolute right-[10%] top-[25%] h-16 w-16 rounded-lg border border-primary-foreground/10 rotate-45"
+      animate={{ rotate: [45, 90, 45], scale: [1, 1.1, 1] }}
+      transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+    />
+    <motion.div
+      className="absolute left-[8%] bottom-[20%] h-10 w-10 rounded-full border border-secondary/20"
+      animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.5, 0.2] }}
+      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+    />
   </div>
 );
 
