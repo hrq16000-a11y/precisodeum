@@ -64,7 +64,7 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="relative rounded-2xl bg-muted/10 shadow-card">
+      <div className="relative rounded-2xl bg-muted/10 shadow-card overflow-hidden">
         <span className="absolute left-2 top-1.5 z-20 rounded-md bg-background/70 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-muted-foreground/60 backdrop-blur-sm">
           Anúncio
         </span>
@@ -76,9 +76,17 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
           className="block transition-opacity hover:opacity-95"
         >
           {current.image_url ? (
-            <SponsorImage src={current.image_url} alt={current.title} />
+            <img
+              src={current.image_url}
+              alt={current.title}
+              className="w-full object-cover object-center"
+              style={{ aspectRatio: '8/1', borderRadius: 10 }}
+              width={1600}
+              height={200}
+              loading="lazy"
+            />
           ) : (
-            <div className="flex items-center justify-center bg-muted/20 p-4 min-h-[60px]">
+            <div className="flex items-center justify-center bg-muted/20 p-4" style={{ aspectRatio: '8/1' }}>
               <span className="text-sm font-medium text-muted-foreground">{current.title}</span>
             </div>
           )}

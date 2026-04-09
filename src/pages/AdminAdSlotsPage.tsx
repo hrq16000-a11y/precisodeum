@@ -25,23 +25,23 @@ import {
 
 /* ─── Slot illustration metadata ─── */
 const SLOT_VISUAL_MAP: Record<string, { icon: any; color: string; size: string; preview: string }> = {
-  'global-top':               { icon: PanelTop,    color: 'text-red-500',    size: '1200×90 px (leaderboard)', preview: 'Faixa larga no topo de todas as páginas, acima do conteúdo' },
-  'below-header':             { icon: PanelTop,    color: 'text-orange-500', size: '1200×90 px (leaderboard)', preview: 'Logo abaixo do menu de navegação, visível em todas as páginas' },
-  'home-between':             { icon: Columns,     color: 'text-blue-500',   size: '728×90 px (banner)', preview: 'Faixa horizontal entre seções da homepage (ex: após Categorias)' },
-  'home-mid':                 { icon: ImageIcon,   color: 'text-purple-500', size: '728×200 px (nativo)', preview: 'Card nativo integrado no meio da homepage, aparência de conteúdo' },
-  'home-footer':              { icon: PanelBottom,  color: 'text-green-500',  size: '728×90 px (banner)', preview: 'Banner acima do rodapé da homepage' },
-  'jobs-top':                 { icon: Briefcase,   color: 'text-amber-500',  size: '728×90 px (banner)', preview: 'Banner no topo da listagem de vagas' },
+  'global-top':               { icon: PanelTop,    color: 'text-red-500',    size: '1600×200 px (8:1)', preview: 'Faixa larga no topo de todas as páginas, acima do conteúdo' },
+  'below-header':             { icon: PanelTop,    color: 'text-orange-500', size: '1600×200 px (8:1)', preview: 'Logo abaixo do menu de navegação, visível em todas as páginas' },
+  'home-between':             { icon: Columns,     color: 'text-blue-500',   size: '1600×200 px (8:1)', preview: 'Faixa horizontal entre seções da homepage (ex: após Categorias)' },
+  'home-mid':                 { icon: ImageIcon,   color: 'text-purple-500', size: '300×250 px (nativo)', preview: 'Card nativo integrado no meio da homepage, aparência de conteúdo' },
+  'home-footer':              { icon: PanelBottom,  color: 'text-green-500',  size: '1600×200 px (8:1)', preview: 'Banner acima do rodapé da homepage' },
+  'jobs-top':                 { icon: Briefcase,   color: 'text-amber-500',  size: '1600×200 px (8:1)', preview: 'Banner no topo da listagem de vagas' },
   'jobs-between':             { icon: FileText,    color: 'text-cyan-500',   size: '300×250 px (card)', preview: 'Card nativo intercalado entre vagas listadas (a cada 5 itens)' },
   'jobs-sidebar':             { icon: Columns,     color: 'text-teal-500',   size: '300×600 px (half-page)', preview: 'Coluna lateral direita na página de vagas (desktop)' },
-  'profile-top':              { icon: Users,       color: 'text-indigo-500', size: '728×90 px (banner)', preview: 'Banner horizontal no topo do perfil do profissional' },
+  'profile-top':              { icon: Users,       color: 'text-indigo-500', size: '1600×200 px (8:1)', preview: 'Banner horizontal no topo do perfil do profissional' },
   'profile-after-desc':       { icon: FileText,    color: 'text-sky-500',    size: '300×250 px (retângulo)', preview: 'Retângulo após a descrição do profissional' },
-  'profile-between-services': { icon: Columns,     color: 'text-violet-500', size: '728×90 px (banner)', preview: 'Faixa entre os serviços listados no perfil' },
+  'profile-between-services': { icon: Columns,     color: 'text-violet-500', size: '1600×200 px (8:1)', preview: 'Faixa entre os serviços listados no perfil' },
   'profile-before-whatsapp':  { icon: Monitor,     color: 'text-emerald-500',size: '300×100 px (inline)', preview: 'Banner compacto acima do botão de WhatsApp' },
-  'profile-footer':           { icon: PanelBottom,  color: 'text-rose-500',   size: '728×90 px (banner)', preview: 'Banner no rodapé da página do profissional' },
-  'category-top':             { icon: Home,        color: 'text-amber-600',  size: '728×90 px (banner)', preview: 'Banner no topo da listagem de categoria' },
+  'profile-footer':           { icon: PanelBottom,  color: 'text-rose-500',   size: '1600×200 px (8:1)', preview: 'Banner no rodapé da página do profissional' },
+  'category-top':             { icon: Home,        color: 'text-amber-600',  size: '1600×200 px (8:1)', preview: 'Banner no topo da listagem de categoria' },
   'category-between':         { icon: FileText,    color: 'text-lime-600',   size: '300×250 px (card)', preview: 'Card nativo intercalado entre profissionais da categoria' },
   'sidebar':                  { icon: Columns,     color: 'text-blue-600',   size: '300×600 px (half-page)', preview: 'Sidebar lateral em páginas de conteúdo (blog, serviços)' },
-  'global-footer':            { icon: PanelBottom,  color: 'text-gray-500',   size: '1200×90 px (leaderboard)', preview: 'Faixa acima do rodapé global, visível em todas as páginas' },
+  'global-footer':            { icon: PanelBottom,  color: 'text-gray-500',   size: '1600×200 px (8:1)', preview: 'Faixa acima do rodapé global, visível em todas as páginas' },
 };
 
 const PAGE_TYPES = [
