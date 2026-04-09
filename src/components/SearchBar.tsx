@@ -118,7 +118,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
           slug: cat?.slug,
         };
       });
-      return trending;
+      return shuffleArray(trending);
     }
 
     const results: Suggestion[] = [];
