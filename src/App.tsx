@@ -76,6 +76,7 @@ const AdminMediaPage = lazy(() => import("./pages/AdminMediaPage"));
 const AdminServicesPage = lazy(() => import("./pages/AdminServicesPage"));
 const AdminLeadsPage = lazy(() => import("./pages/AdminLeadsPage"));
 const AdminModulesPage = lazy(() => import("./pages/AdminModulesPage"));
+const AdminUserRefAuditPage = lazy(() => import("./pages/AdminUserRefAuditPage"));
 const AdminBlocksPage = lazy(() => import("./pages/AdminBlocksPage"));
 const AdminInstitutionalPagesPage = lazy(() => import("./pages/AdminInstitutionalPagesPage"));
 const AdminMenuPage = lazy(() => import("./pages/AdminMenuPage"));
@@ -235,6 +236,7 @@ const App = () => {
                 <Route path="/admin/servicos" element={<AdminServicesPage />} />
                 <Route path="/admin/leads" element={<AdminLeadsPage />} />
                 <Route path="/admin/modulos" element={<AdminModulesPage />} />
+                <Route path="/admin/auditoria-ref" element={<AdminUserRefAuditPage />} />
                 <Route path="/admin/blocos" element={<AdminBlocksPage />} />
                 <Route path="/admin/paginas" element={<AdminInstitutionalPagesPage />} />
                 <Route path="/admin/menus" element={<AdminMenuPage />} />
