@@ -168,7 +168,7 @@ const Index03 = () => {
           <BlogHighlight />
 
           {/* Cities */}
-          <CitiesSection />
+          <CitiesSection cities={topCities} />
 
           {/* CTA */}
           <CtaSection />
