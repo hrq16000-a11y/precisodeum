@@ -18,6 +18,15 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // Build a map of profile UUID → short user_ref
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('id, user_ref');
+    const profileRefMap = new Map<string, string>();
+    for (const p of (profilesData || [])) {
+      profileRefMap.set(p.id, p.user_ref);
+    }
+
     // Get all existing storage_path from media table
     const { data: existingMedia } = await supabase
       .from('media')
@@ -72,12 +81,14 @@ Deno.serve(async (req) => {
           else if (bucket === 'service-images') entityType = 'service';
           else if (bucket === 'portfolio') entityType = 'portfolio';
 
-          // Extract user_ref from folder structure if possible
+          // Extract user_ref: convert folder UUID to short profile user_ref
           let userRef: string | null = null;
           const parts = filePath.split('/');
           if (parts.length > 1) {
-            // Folder name might be user_ref
-            userRef = parts[0];
+            const folderName = parts[0];
+            // Try to resolve UUID folder to short user_ref
+            const resolved = profileRefMap.get(folderName);
+            userRef = resolved || folderName;
           }
 
           newEntries.push({
