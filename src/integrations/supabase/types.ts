@@ -277,24 +277,30 @@ export type Database = {
       cities: {
         Row: {
           created_at: string
+          ibge_code: string | null
           id: string
           name: string
           slug: string
           state: string
+          state_uf: string | null
         }
         Insert: {
           created_at?: string
+          ibge_code?: string | null
           id?: string
           name: string
           slug: string
           state?: string
+          state_uf?: string | null
         }
         Update: {
           created_at?: string
+          ibge_code?: string | null
           id?: string
           name?: string
           slug?: string
           state?: string
+          state_uf?: string | null
         }
         Relationships: []
       }
@@ -906,6 +912,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cities"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "neighborhoods_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "city_provider_stats"
+            referencedColumns: ["city_id"]
           },
         ]
       }
@@ -2197,6 +2210,30 @@ export type Database = {
         }
         Relationships: []
       }
+      states: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          region: string
+          uf: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          region?: string
+          uf: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          region?: string
+          uf?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           account_type_id: string | null
@@ -2411,6 +2448,17 @@ export type Database = {
           plan: string | null
           profile_type: string | null
           user_ref: string | null
+        }
+        Relationships: []
+      }
+      city_provider_stats: {
+        Row: {
+          city_id: string | null
+          city_name: string | null
+          city_slug: string | null
+          has_active_providers: boolean | null
+          providers_count: number | null
+          state_uf: string | null
         }
         Relationships: []
       }
