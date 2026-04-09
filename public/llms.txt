@@ -1,0 +1,59 @@
+# Preciso de um — Marketplace de Serviços Profissionais
+
+> Preciso de um é uma plataforma brasileira que conecta pessoas a profissionais confiáveis em diversas áreas de serviço, como eletricistas, encanadores, técnicos, pintores e muito mais.
+
+## Sobre o site
+- Nome: Preciso de um
+- URL: https://precisodeum.com.br
+- Idioma: Português (Brasil)
+- Tipo: Marketplace de serviços profissionais
+- Região: Brasil
+
+## Estrutura de conteúdo
+
+### Páginas principais
+- /                     → Página inicial com busca, categorias e profissionais em destaque
+- /buscar               → Busca avançada de profissionais por categoria, cidade e palavra-chave
+- /categorias           → Lista de todas as categorias de serviço disponíveis
+- /cidades              → Lista de todas as cidades atendidas
+- /servicos             → Lista de serviços oferecidos na plataforma
+- /vagas                → Vagas de emprego e oportunidades de trabalho
+- /blog                 → Blog com dicas, tutoriais e novidades
+- /faq                  → Perguntas frequentes
+
+### Páginas de conteúdo dinâmico
+- /categoria/{slug}         → Profissionais filtrados por categoria (ex: /categoria/eletricista)
+- /cidade/{slug}            → Profissionais filtrados por cidade (ex: /cidade/sao-paulo)
+- /profissional/{slug}      → Perfil completo de um profissional
+- /servico/{id}             → Detalhes de um serviço específico
+- /blog/{slug}              → Artigo individual do blog
+- /vagas/{slug}             → Detalhes de uma vaga de emprego
+- /{categoria}-{cidade}     → Páginas programáticas de SEO (ex: /eletricista-sao-paulo)
+
+### Páginas institucionais
+- /sobre                → Sobre a plataforma
+- /privacidade           → Política de privacidade
+- /termos                → Termos de uso
+- /cookies               → Política de cookies
+- /p/{slug}              → Páginas institucionais dinâmicas
+
+## Como funciona
+1. O usuário busca um profissional por categoria ou cidade
+2. Visualiza perfis com avaliações, portfólio e informações de contato
+3. Entra em contato diretamente via WhatsApp ou telefone
+4. Após o serviço, pode avaliar o profissional
+
+## Dados disponíveis
+- Categorias de serviço com ícones e descrições
+- Profissionais com perfil completo, avaliações e portfólio
+- Cidades e bairros atendidos
+- Blog com artigos sobre serviços e dicas
+- Vagas de emprego no setor de serviços
+- FAQs e depoimentos de clientes
+
+## Sitemap
+https://precisodeum.com.br/sitemap.xml
+
+## Contato
+- Site: https://precisodeum.com.br
+- WhatsApp: disponível no site
