@@ -33,7 +33,7 @@ const SponsorPremiumCard = ({ sponsor, compact = false, onClickTrack }: Props) =
     >
       {/* Badge */}
       <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5">
-        <BadgeCheck className="h-3 w-3 text-primary" />
+        <BadgeCheck className="h-3 w-3 text-primary icon-interactive" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
           {sponsor.badge_type || 'Patrocinado'}
         </span>
