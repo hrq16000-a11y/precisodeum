@@ -108,7 +108,6 @@ const MobileBottomNav = () => {
                     </motion.span>
                   )}
                 </motion.div>
-                </motion.div>
 
                 <AnimatePresence>
                   {isActive ? (
