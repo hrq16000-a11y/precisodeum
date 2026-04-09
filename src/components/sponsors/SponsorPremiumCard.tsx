@@ -91,7 +91,7 @@ const SponsorPremiumCard = ({ sponsor, compact = false, onClickTrack }: Props) =
             onClick={handleClick}
           >
             <a href={sponsor.external_link || sponsor.link_url || '#'} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-3.5 w-3.5" />
+              <ExternalLink className="h-3.5 w-3.5 icon-cta" />
               Ver mais
             </a>
           </Button>
