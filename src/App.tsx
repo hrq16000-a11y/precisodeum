@@ -107,6 +107,7 @@ const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const CookiesPage = lazy(() => import("./pages/CookiesPage"));
 const SponsorLandingPage = lazy(() => import("./pages/SponsorLandingPage"));
+const SponsorSlotsPage = lazy(() => import("./pages/SponsorSlotsPage"));
 
 import CookieConsent from "./components/CookieConsent";
 import PwaInstallBanner from "./components/PwaInstallBanner";
@@ -189,6 +190,7 @@ const App = () => {
                 <Route path="/cadastro" element={<SignupPage />} />
                 <Route path="/vagas" element={<JobsPage />} />
                 <Route path="/quero-ser-patrocinador" element={<SponsorLandingPage />} />
+                <Route path="/espacos-patrocinio" element={<SponsorSlotsPage />} />
                 <Route path="/vaga/:slug" element={<JobDetailPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/perfil" element={<DashboardProfilePage />} />
