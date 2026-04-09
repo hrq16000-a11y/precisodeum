@@ -234,6 +234,16 @@ const AdminPage = () => {
         </div>
       </motion.div>
 
+      {/* Quick Actions */}
+      <div className="mt-5">
+        <AdminQuickActions />
+      </div>
+
+      {/* Health Monitor */}
+      <div className="mt-5">
+        <AdminHealthMonitor />
+      </div>
+
       {/* Pending queues */}
       <AnimatePresence>
         {hasPending && (
