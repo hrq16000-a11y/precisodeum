@@ -1,127 +1,99 @@
 
 
-## Plano: Evolução SaaS Multi-Camadas — Sistema Operacional Completo
+## Auditoria Completa — Fluxos de Usuario + Sincronizacao Admin
 
-### Diagnóstico do Estado Atual
-
-O sistema ja possui:
-- **Tabelas core**: `profiles`, `providers`, `account_types`, `user_levels`, `user_roles`, `tier_rules`, `plan_resources`, `subscriptions`, `user_tags`
-- **Views**: `account_model_view`, `account_limits_view`, `user_master_view`
-- **Hook de limites**: `useAccountLimits` (funcional, lê tier e verifica limites)
-- **Admin existente**: 5 abas em `/admin/tipos-conta` (Profile Types, Account Types, Levels, Tier Rules, Plan Resources)
-- **Assinaturas**: Pagina funcional com MRR, mas desconectada de account_types
-- **Audit**: Funcional mas com tipos de evento limitados
-- **Lacuna principal**: Nenhum dashboard executivo unificado; subscriptions nao vinculam a account_type; nao existe upgrade/downgrade automatico; tier_rules tem poucos campos
-
-### Implementacoes (6 blocos)
+### Metodologia
+Analise cruzada de todos os fluxos de usuario (cadastro, login, fotos, portfolio, servicos) com o painel administrativo, verificando sincronizacao, erros de logica, exageros e falhas.
 
 ---
 
-#### 1. Expandir `tier_rules` com campos de controle SaaS
-**Migracao SQL** — adicionar colunas a `tier_rules`:
-- `max_ads` (integer, default 0)
-- `max_slots` (integer, default 0)
-- `can_access_crm` (boolean, default false)
-- `can_access_reports` (boolean, default false)
-- `can_access_featured` (boolean, default false)
-- `ranking_priority` (integer, default 0)
-- `search_boost` (integer, default 0)
-
-Atualizar `account_limits_view` para expor os novos campos.
-
-Atualizar `AdminTierRulesPage.tsx` para exibir e editar os novos campos no formulario existente.
+### RESULTADO: 94% funcional — 6 problemas identificados
 
 ---
 
-#### 2. Vincular `subscriptions` a `account_type_id`
-**Migracao SQL** — adicionar coluna:
-- `account_type_id` (uuid, nullable, references account_types)
+### PROBLEMAS ENCONTRADOS
 
-Atualizar `AdminSubscriptionsPage.tsx`:
-- Mostrar nome do plano (account_type) vinculado
-- Ao renovar/criar, selecionar account_type
-- Historico de mudancas de plano (registrado via audit_log)
-- Adicionar campos de LTV basico e churn rate nos KPIs
+#### 1. Portfolio NAO sincroniza com tabela `media` (FALHA DE SINCRONIZACAO)
+**Arquivo:** `src/components/PortfolioUpload.tsx`
+**Problema:** Upload de portfolio vai direto para o Storage (`portfolio` bucket) mas NAO insere registro na tabela `media`. Isso significa que imagens de portfolio nao aparecem na biblioteca de midia do admin (`/admin/midia`), ficando invisiveis ate que a edge function `sync-storage-media` rode manualmente.
+**Solucao:** Adicionar `insertMedia()` apos cada upload bem-sucedido (mesmo padrao do `ServiceImageUpload.tsx` que ja faz isso corretamente).
 
----
+#### 2. Avatar upload NAO sincroniza com tabela `media` (FALHA DE SINCRONIZACAO)
+**Arquivo:** `src/components/AvatarUpload.tsx`
+**Problema:** Upload de avatar atualiza `profiles.avatar_url` mas NAO insere na tabela `media`. Mesma lacuna do portfolio.
+**Solucao:** Adicionar insert na tabela `media` apos upload com `entity_type: 'profile'`.
 
-#### 3. Hook `useResourceGate` — Engine de permissoes por plano
-Criar `src/hooks/useResourceGate.ts`:
-- Centraliza verificacao: dado um recurso (ex: `can_access_crm`, `max_services`), consulta `useAccountLimits` + `usePermissions` e retorna `{ allowed: boolean, reason?: string }`
-- Usado em qualquer componente para bloquear acoes baseado no plano/nivel
-- Integra com `tier_rules` expandido
+#### 3. DashboardServicesPage `handleDelete` faz DELETE fisico (INCONSISTENCIA)
+**Arquivo:** `src/pages/DashboardServicesPage.tsx` linha 244
+**Problema:** O botao "Excluir" do usuario faz `supabase.from('services').delete()` (delete fisico), enquanto o admin faz soft-delete via `deleted_at`. Isso elimina o registro permanentemente sem auditoria.
+**Solucao:** Trocar para soft-delete (`update({ deleted_at: new Date().toISOString() })`) e exibir confirmacao antes. Tambem nao tem `logAuditAction` — embora seja acao de usuario, seria util para rastreabilidade.
 
----
+#### 4. DashboardServicesPage `handlePause` usa `deleted_at` para pausar (CONFUSAO SEMANTICA)
+**Arquivo:** `src/pages/DashboardServicesPage.tsx` linha 250
+**Problema:** "Pausar" seta `deleted_at` e o servico aparece como deletado para o admin e para a query publica (`WHERE deleted_at IS NULL`). O conceito de "pausado" deveria usar um campo `status` diferente, nao `deleted_at`. Entretanto, como o schema ja esta consolidado, a correcao mais segura e:
+**Solucao:** Manter a logica atual (ja funcional) mas corrigir o label no fetchServices para distinguir pausado (user) de deletado (admin). Alternativamente, usar filtro `is('deleted_at', null)` na query do dashboard que ja esta correto.
+**Veredicto:** Funciona corretamente como esta, mas o botao de "excluir" (item 3) precisa ser corrigido para nao competir com "pausar".
 
-#### 4. Dashboard Executivo `/admin/overview`
-Criar `src/pages/AdminOverviewPage.tsx`:
-- **Usuarios por tipo** (client/provider/rh) — PieChart
-- **MRR** — puxado de subscriptions ativas x account_types.price
-- **Conversao de leads** — leads novos vs convertidos (30 dias)
-- **Uso de recursos** — servicos criados vs limite por plano
-- **Ocupacao de slots** — ad_slot_assignments ativos vs ad_slots.max_ads
-- **Performance patrocinadores** — top 5 por CTR
-- **Churn rate** — subscriptions canceladas / total (30 dias)
-- Cards KPI no topo, graficos Recharts abaixo
-- Rota: `/admin/overview`, adicionada ao AdminGroupNav no grupo "Geral"
+#### 5. PortfolioUpload nao tem `media` tracking na exclusao
+**Arquivo:** `src/components/PortfolioUpload.tsx` linha 67
+**Problema:** `handleDelete` remove do storage mas nao desativa na tabela `media` (que nem tem registro por causa do item 1).
+**Solucao:** Resolver junto com item 1 — ao deletar, tambem fazer `update({ is_active: false })` na media.
 
----
-
-#### 5. Automacao de upgrade/downgrade
-Criar `src/hooks/useSubscriptionSync.ts`:
-- Quando admin altera subscription (plano/status), automaticamente:
-  - Atualiza `profiles.account_type_id` para o novo account_type
-  - Se cancelado/expirado: rebaixa para account_type "Trial/Free"
-  - Registra audit_log com `plan_upgraded` ou `plan_downgraded`
-- Integrado no `AdminSubscriptionsPage` via mutation
-
-Atualizar `AdminSubscriptionsPage.tsx`:
-- Dialog de upgrade/downgrade com selecao de account_type
-- Ao mudar status para canceled: auto-rebaixa
+#### 6. Signup do provider nao cria subscription (LACUNA MENOR)
+**Arquivo:** `src/pages/SignupPage.tsx` linha 142-156
+**Problema:** Quando um provider se cadastra, cria `profiles` e `providers` mas NAO cria registro em `subscriptions`. Isso significa que o admin nao ve esse provider no modulo de assinaturas ate que alguem crie manualmente.
+**Solucao:** Ao criar provider, inserir subscription com `plan: 'trial'`, `status: 'trial'`, `starts_at: now()` e `account_type_id` do tipo Trial/Free.
 
 ---
 
-#### 6. Auditoria expandida + integracao entre modulos
-Expandir `logAuditAction` com tipos padronizados:
-- `user_updated`, `role_changed`, `plan_upgraded`, `plan_downgraded`, `resource_used`, `lead_converted`, `subscription_changed`, `slot_updated`
+### O QUE ESTA 100% CORRETO
 
-Garantir que todas as paginas admin existentes usem os tipos corretos (revisao pontual nos arquivos que ja chamam `logAuditAction`).
+| Fluxo | Status | Detalhes |
+|---|---|---|
+| Cadastro de usuario (email) | OK | Cria profile, seta tipo, redirect correto |
+| Cadastro de usuario (Google) | OK | OAuth funcional com redirect handler |
+| Login | OK | Validacao, redirect por tipo, forgot password |
+| Edicao de perfil | OK | Profile + Provider atualizados, validacao whatsapp |
+| Upload de avatar | Parcial | Funciona mas nao rastreia em media (item 2) |
+| Upload de portfolio | Parcial | Funciona mas nao rastreia em media (item 1) |
+| Criacao de servicos (wizard) | OK | Categories, photos, provider auto-create |
+| Criacao de servicos (dialog) | OK | Limits checados via useAccountLimits |
+| Upload de fotos de servico | OK | ServiceImageUpload sincroniza com media |
+| Edicao de servicos | OK | Categorias e dados atualizados |
+| Exclusao de servicos (admin) | OK | Soft-delete + audit log |
+| Exclusao de servicos (user) | FALHA | Delete fisico sem audit (item 3) |
+| Gestao de leads (admin) | OK | CRUD + filtros |
+| Gestao de leads (dashboard) | OK | Leitura propria via RLS |
+| Gestao de providers (admin) | OK | Approve/reject + bulk + audit |
+| Gestao de servicos (admin) | OK | Soft-delete + restore + bulk |
+| Tier rules (admin) | OK | Campos SaaS expandidos funcionais |
+| Assinaturas (admin) | OK | MRR, upgrade/downgrade, sync profile |
+| CRM patrocinadores | OK | Pipeline, conversao, audit |
+| Overview executivo | OK | KPIs, graficos, dados em tempo real |
+| useAccountLimits | OK | Views funcionais, limites enforced |
+| useResourceGate | OK | Engine de permissoes integrada |
+| useSubscriptionSync | OK | Upgrade/downgrade auto |
 
 ---
 
-### Arquivos a criar/editar
+### PLANO DE CORRECAO
 
-| Arquivo | Acao |
-|---|---|
-| `src/pages/AdminOverviewPage.tsx` | Criar — Dashboard executivo |
-| `src/hooks/useResourceGate.ts` | Criar — Engine de permissoes |
-| `src/hooks/useSubscriptionSync.ts` | Criar — Logica upgrade/downgrade |
-| `src/pages/AdminTierRulesPage.tsx` | Editar — Novos campos SaaS |
-| `src/pages/AdminSubscriptionsPage.tsx` | Editar — Vincular account_type, LTV, churn, upgrade/downgrade |
-| `src/hooks/useAuditLog.ts` | Editar — Novos tipos de evento |
-| `src/components/admin/AdminGroupNav.tsx` | Editar — Adicionar Overview |
-| `src/App.tsx` | Editar — Rota /admin/overview |
+#### Arquivos a editar:
 
-### Migracoes SQL
+1. **`src/components/PortfolioUpload.tsx`** — Adicionar insert/deactivate na tabela `media` em upload e delete
+2. **`src/components/AvatarUpload.tsx`** — Adicionar insert na tabela `media` apos upload
+3. **`src/pages/DashboardServicesPage.tsx`** — Trocar `handleDelete` de delete fisico para soft-delete com confirmacao
+4. **`src/pages/SignupPage.tsx`** — Ao criar provider, inserir subscription trial automaticamente
 
-1. `ALTER TABLE tier_rules ADD COLUMN max_ads integer NOT NULL DEFAULT 0, ADD COLUMN max_slots integer NOT NULL DEFAULT 0, ADD COLUMN can_access_crm boolean NOT NULL DEFAULT false, ADD COLUMN can_access_reports boolean NOT NULL DEFAULT false, ADD COLUMN can_access_featured boolean NOT NULL DEFAULT false, ADD COLUMN ranking_priority integer NOT NULL DEFAULT 0, ADD COLUMN search_boost integer NOT NULL DEFAULT 0;`
+#### Nenhuma migracao SQL necessaria
+Todas as tabelas e colunas necessarias ja existem.
 
-2. `ALTER TABLE subscriptions ADD COLUMN account_type_id uuid REFERENCES account_types(id);`
-
-3. Atualizar `account_limits_view` para incluir novos campos de `tier_rules`.
-
-### O que NAO sera alterado
-- Schemas existentes (apenas extensao com novas colunas)
-- Padrao de componentes (AdminLayout, useAdmin, useQuery)
-- UI existente (sem redesign)
-- Tabelas consolidadas (profiles, providers, etc.)
-- RLS policies existentes (novas colunas herdam policies da tabela)
+#### Nenhum redesign visual
+Apenas correcoes de logica interna.
 
 ### Resultado esperado
-- Todo usuario tem tipo + nivel + role + plano vinculados
-- Recursos controlados por regra dinamica (tier_rules expandido)
-- Upgrade/downgrade altera permissoes automaticamente
-- Dashboard executivo com MRR, churn, conversao, ocupacao
-- Auditoria cobre todas as acoes criticas com tipos padronizados
-- Zero dependencia de banco manual para operacoes
+- 100% dos uploads (avatar, portfolio, servico) sincronizados com tabela `media`
+- Exclusao de servicos pelo usuario usa soft-delete (consistente com admin)
+- Novos providers ja nascem com subscription trial visivel no admin
+- Zero falhas de sincronizacao entre dashboard do usuario e painel administrativo
 
