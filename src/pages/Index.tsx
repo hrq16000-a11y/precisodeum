@@ -42,6 +42,7 @@ const AdShowcase = lazy(() => import('@/components/ads/AdShowcase'));
 const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
 const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
 const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
+const CmsBannersCarousel = lazy(() => import('@/components/home/CmsBannersCarousel'));
 
 const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
@@ -59,7 +60,7 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
 const SectionFallback = () => null;
 
 // Default section order
-const DEFAULT_ORDER = 'urgency,leader_sponsor,sponsor_top,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
+const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
 
 const Index = () => {
   const { city: geoCity } = useGeoCity();
@@ -111,6 +112,7 @@ const Index = () => {
   const ctaEnabled = useFeatureEnabled('module_cta');
   const citiesEnabled = useFeatureEnabled('module_cities');
   const sponsorsEnabled = useFeatureEnabled('module_sponsors');
+  const heroBannersEnabled = useFeatureEnabled('module_hero_banners');
 
   // Section order from admin
   const sectionsOrderRaw = useSettingValue('homepage_sections_order');
@@ -191,6 +193,8 @@ const Index = () => {
   // Section renderer — maps slug to component
   const renderSection = (slug: string) => {
     switch (slug) {
+      case 'cms_banners':
+        return heroBannersEnabled ? <CmsBannersCarousel key={slug} /> : null;
       case 'urgency':
         return <UrgencyBanner key={slug} />;
       case 'leader_sponsor': {
