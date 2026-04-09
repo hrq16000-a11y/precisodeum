@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/hooks/useAdmin';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
-import { Download, Database, Loader2, FileJson, FileSpreadsheet, Copy, Code, ChevronDown, ChevronUp, Image, FolderOpen, ExternalLink, Upload, Archive, ShieldCheck } from 'lucide-react';
+import { Download, Database, Loader2, FileJson, FileSpreadsheet, Copy, Code, ChevronDown, ChevronUp, Image, FolderOpen, ExternalLink, Upload, Archive, ShieldCheck, CheckSquare } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -915,6 +916,165 @@ const StorageBackupSection = () => {
   const [zipImporting, setZipImporting] = useState(false);
   const [importMode, setImportMode] = useState<'replace' | 'preserve'>('replace');
   const [zipProgress, setZipProgress] = useState<{ processed: number; total: number; status?: string } | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [downloadingSelected, setDownloadingSelected] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<{ processed: number; total: number } | null>(null);
+
+  const getFileKey = (f: StorageFile) => `${f.bucket}/${f.folder === '/' ? '' : f.folder + '/'}${f.name}`;
+
+  const toggleFileSelection = (f: StorageFile) => {
+    setSelectedFiles(prev => {
+      const next = new Set(prev);
+      const key = getFileKey(f);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleFolderSelection = (bucketId: string, folder: string) => {
+    const folderFiles = files.filter(f => f.bucket === bucketId && f.folder === folder);
+    setSelectedFiles(prev => {
+      const next = new Set(prev);
+      const allSelected = folderFiles.every(f => next.has(getFileKey(f)));
+      folderFiles.forEach(f => {
+        if (allSelected) next.delete(getFileKey(f)); else next.add(getFileKey(f));
+      });
+      return next;
+    });
+  };
+
+  const toggleBucketSelection = (bucketId: string) => {
+    const bucketFiles = files.filter(f => f.bucket === bucketId);
+    setSelectedFiles(prev => {
+      const next = new Set(prev);
+      const allSelected = bucketFiles.every(f => next.has(getFileKey(f)));
+      bucketFiles.forEach(f => {
+        if (allSelected) next.delete(getFileKey(f)); else next.add(getFileKey(f));
+      });
+      return next;
+    });
+  };
+
+  const selectAllFiles = () => {
+    setSelectedFiles(prev => {
+      const allSelected = files.every(f => prev.has(getFileKey(f)));
+      if (allSelected) return new Set();
+      return new Set(files.map(f => getFileKey(f)));
+    });
+  };
+
+  const downloadSelectedAsZip = async () => {
+    if (selectedFiles.size === 0) { toast.error('Nenhum arquivo selecionado'); return; }
+    setDownloadingSelected(true);
+    setDownloadProgress({ processed: 0, total: selectedFiles.size });
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      const selected = files.filter(f => selectedFiles.has(getFileKey(f)));
+      let processed = 0;
+
+      for (const f of selected) {
+        try {
+          const res = await fetch(f.url);
+          if (!res.ok) { processed++; setDownloadProgress({ processed, total: selected.length }); continue; }
+          const blob = await res.blob();
+          const path = f.folder === '/' ? `${f.bucket}/${f.name}` : `${f.bucket}/${f.folder}/${f.name}`;
+          zip.file(path, blob);
+        } catch { /* skip */ }
+        processed++;
+        setDownloadProgress({ processed, total: selected.length });
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `storage-selecionados-${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${selected.length} arquivo(s) baixado(s) em ZIP`);
+      await logAuditAction({ action: 'download_storage_selection', resource_type: 'storage', details: { count: selected.length } });
+    } catch (err: any) {
+      toast.error('Erro ao gerar ZIP: ' + (err.message || ''));
+    }
+    setDownloadingSelected(false);
+    setDownloadProgress(null);
+  };
+
+  const downloadFolderAsZip = async (bucketId: string, folder: string) => {
+    const folderFiles = files.filter(f => f.bucket === bucketId && f.folder === folder);
+    if (folderFiles.length === 0) { toast.error('Pasta vazia'); return; }
+    setDownloadingSelected(true);
+    setDownloadProgress({ processed: 0, total: folderFiles.length });
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      let processed = 0;
+
+      for (const f of folderFiles) {
+        try {
+          const res = await fetch(f.url);
+          if (!res.ok) { processed++; setDownloadProgress({ processed, total: folderFiles.length }); continue; }
+          const blob = await res.blob();
+          const path = folder === '/' ? `${bucketId}/${f.name}` : `${bucketId}/${folder}/${f.name}`;
+          zip.file(path, blob);
+        } catch { /* skip */ }
+        processed++;
+        setDownloadProgress({ processed, total: folderFiles.length });
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      const folderName = folder === '/' ? bucketId : `${bucketId}-${folder.replace(/\//g, '-')}`;
+      a.download = `${folderName}-${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${folderFiles.length} arquivo(s) da pasta baixado(s)`);
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || ''));
+    }
+    setDownloadingSelected(false);
+    setDownloadProgress(null);
+  };
+
+  const downloadBucketAsZip = async (bucketId: string) => {
+    const bucketFiles = files.filter(f => f.bucket === bucketId);
+    if (bucketFiles.length === 0) { toast.error('Bucket vazio'); return; }
+    setDownloadingSelected(true);
+    setDownloadProgress({ processed: 0, total: bucketFiles.length });
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      let processed = 0;
+
+      for (const f of bucketFiles) {
+        try {
+          const res = await fetch(f.url);
+          if (!res.ok) { processed++; setDownloadProgress({ processed, total: bucketFiles.length }); continue; }
+          const blob = await res.blob();
+          const path = f.folder === '/' ? `${bucketId}/${f.name}` : `${bucketId}/${f.folder}/${f.name}`;
+          zip.file(path, blob);
+        } catch { /* skip */ }
+        processed++;
+        setDownloadProgress({ processed, total: bucketFiles.length });
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${bucketId}-${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${bucketFiles.length} arquivo(s) do bucket baixado(s)`);
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || ''));
+    }
+    setDownloadingSelected(false);
+    setDownloadProgress(null);
+  };
 
   const scanBuckets = async () => {
     setLoading(true);
@@ -1265,10 +1425,37 @@ const StorageBackupSection = () => {
       </div>
 
       {scanned && (
-        <div className="mt-4 text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{files.length}</span> arquivos encontrados
-          {' · '}
-          <span className="font-semibold text-foreground">{totalSizeKB > 1024 ? `${(totalSizeKB / 1024).toFixed(1)} MB` : `${totalSizeKB} KB`}</span> total
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">{files.length}</span> arquivos encontrados
+            {' · '}
+            <span className="font-semibold text-foreground">{totalSizeKB > 1024 ? `${(totalSizeKB / 1024).toFixed(1)} MB` : `${totalSizeKB} KB`}</span> total
+          </div>
+          {files.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={selectAllFiles} className="text-xs">
+                <CheckSquare className="mr-1 h-3 w-3" />
+                {files.every(f => selectedFiles.has(getFileKey(f))) ? 'Desmarcar todos' : 'Selecionar todos'}
+              </Button>
+              {selectedFiles.size > 0 && (
+                <Button variant="accent" size="sm" onClick={downloadSelectedAsZip} disabled={downloadingSelected}>
+                  {downloadingSelected ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Download className="mr-1 h-3 w-3" />}
+                  Baixar selecionados ({selectedFiles.size})
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Download progress */}
+      {downloadProgress && (
+        <div className="mt-3 space-y-1">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Baixando arquivos...</span>
+            <span>{downloadProgress.processed}/{downloadProgress.total}</span>
+          </div>
+          <Progress value={downloadProgress.total > 0 ? (downloadProgress.processed / downloadProgress.total) * 100 : 0} className="h-2" />
         </div>
       )}
 
@@ -1279,56 +1466,91 @@ const StorageBackupSection = () => {
             if (!bucketFiles) return null;
             const bucketKey = `bucket-${bucket.id}`;
             const isExpanded = expandedFolders.has(bucketKey);
-            const fileCount = Object.values(bucketFiles).reduce((s, arr) => s + arr.length, 0);
+            const allBucketFiles = files.filter(f => f.bucket === bucket.id);
+            const fileCount = allBucketFiles.length;
+            const allBucketSelected = fileCount > 0 && allBucketFiles.every(f => selectedFiles.has(getFileKey(f)));
+            const someBucketSelected = allBucketFiles.some(f => selectedFiles.has(getFileKey(f)));
 
             return (
               <div key={bucket.id} className="rounded-lg border border-border bg-background">
-                <button
-                  onClick={() => toggleFolder(bucketKey)}
-                  className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors rounded-lg"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{bucket.icon}</span>
-                    <span className="font-bold text-sm text-foreground">{bucket.label}</span>
-                    <span className="text-xs text-muted-foreground">({fileCount} arquivos)</span>
+                <div className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors rounded-lg">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Checkbox
+                      checked={allBucketSelected ? true : someBucketSelected ? 'indeterminate' : false}
+                      onCheckedChange={() => toggleBucketSelection(bucket.id)}
+                      className="shrink-0"
+                    />
+                    <button onClick={() => toggleFolder(bucketKey)} className="flex items-center gap-2 flex-1">
+                      <span className="text-xl">{bucket.icon}</span>
+                      <span className="font-bold text-sm text-foreground">{bucket.label}</span>
+                      <span className="text-xs text-muted-foreground">({fileCount} arquivos)</span>
+                    </button>
                   </div>
-                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => downloadBucketAsZip(bucket.id)} disabled={downloadingSelected} title="Baixar bucket inteiro">
+                      <Download className="h-3 w-3" />
+                    </Button>
+                    <button onClick={() => toggleFolder(bucketKey)}>
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
 
                 {isExpanded && (
                   <div className="px-3 pb-3 space-y-2">
                     {Object.entries(bucketFiles).sort(([a], [b]) => a.localeCompare(b)).map(([folder, folderFiles]) => {
                       const folderKey = `${bucket.id}/${folder}`;
                       const isFolderExpanded = expandedFolders.has(folderKey);
+                      const allFolderSelected = folderFiles.every(f => selectedFiles.has(getFileKey(f)));
+                      const someFolderSelected = folderFiles.some(f => selectedFiles.has(getFileKey(f)));
 
                       return (
                         <div key={folderKey} className="rounded-md border border-border/50 bg-muted/30">
-                          <button
-                            onClick={() => toggleFolder(folderKey)}
-                            className="w-full flex items-center justify-between p-2 hover:bg-muted/50 transition-colors rounded-md"
-                          >
-                            <div className="flex items-center gap-2">
-                              <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-xs font-medium text-foreground">{folder === '/' ? '(raiz)' : folder}</span>
-                              <span className="text-xs text-muted-foreground">({folderFiles.length})</span>
+                          <div className="flex items-center justify-between p-2 hover:bg-muted/50 transition-colors rounded-md">
+                            <div className="flex items-center gap-2 flex-1">
+                              <Checkbox
+                                checked={allFolderSelected ? true : someFolderSelected ? 'indeterminate' : false}
+                                onCheckedChange={() => toggleFolderSelection(bucket.id, folder)}
+                                className="shrink-0"
+                              />
+                              <button onClick={() => toggleFolder(folderKey)} className="flex items-center gap-2 flex-1">
+                                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-xs font-medium text-foreground">{folder === '/' ? '(raiz)' : folder}</span>
+                                <span className="text-xs text-muted-foreground">({folderFiles.length})</span>
+                              </button>
                             </div>
-                            {isFolderExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                          </button>
+                            <div className="flex items-center gap-1">
+                              <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={() => downloadFolderAsZip(bucket.id, folder)} disabled={downloadingSelected} title="Baixar pasta">
+                                <Download className="h-3 w-3" />
+                              </Button>
+                              <button onClick={() => toggleFolder(folderKey)}>
+                                {isFolderExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                              </button>
+                            </div>
+                          </div>
 
                           {isFolderExpanded && (
                             <div className="px-2 pb-2 space-y-1">
-                              {folderFiles.map((f, i) => (
-                                <div key={i} className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-background transition-colors">
-                                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                                    <img src={f.url} alt="" className="h-8 w-8 rounded object-cover shrink-0 border border-border" onError={e => (e.currentTarget.style.display = 'none')} />
-                                    <span className="truncate text-foreground">{f.name}</span>
-                                    <span className="text-muted-foreground shrink-0">{f.size > 1024 * 1024 ? `${(f.size / 1024 / 1024).toFixed(1)}MB` : `${Math.round(f.size / 1024)}KB`}</span>
+                              {folderFiles.map((f, i) => {
+                                const fKey = getFileKey(f);
+                                return (
+                                  <div key={i} className={`flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-background transition-colors ${selectedFiles.has(fKey) ? 'bg-accent/10' : ''}`}>
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                      <Checkbox
+                                        checked={selectedFiles.has(fKey)}
+                                        onCheckedChange={() => toggleFileSelection(f)}
+                                        className="shrink-0"
+                                      />
+                                      <img src={f.url} alt="" className="h-8 w-8 rounded object-cover shrink-0 border border-border" onError={e => (e.currentTarget.style.display = 'none')} />
+                                      <span className="truncate text-foreground">{f.name}</span>
+                                      <span className="text-muted-foreground shrink-0">{f.size > 1024 * 1024 ? `${(f.size / 1024 / 1024).toFixed(1)}MB` : `${Math.round(f.size / 1024)}KB`}</span>
+                                    </div>
+                                    <a href={f.url} target="_blank" rel="noopener noreferrer" className="shrink-0 ml-2 text-accent hover:text-accent/80">
+                                      <ExternalLink className="h-3 w-3" />
+                                    </a>
                                   </div>
-                                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="shrink-0 ml-2 text-accent hover:text-accent/80">
-                                    <ExternalLink className="h-3 w-3" />
-                                  </a>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
                         </div>
