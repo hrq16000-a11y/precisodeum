@@ -486,3 +486,73 @@
   animation: subtle-bounce 2s ease-in-out infinite;
 }
 
+/* ── Page entrance curtain reveal ── */
+@keyframes curtain-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+@keyframes curtain-right {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}
+
+.curtain-reveal .curtain-left {
+  animation: curtain-left 0.7s cubic-bezier(0.77, 0, 0.18, 1) 0.15s forwards;
+}
+.curtain-reveal .curtain-right {
+  animation: curtain-right 0.7s cubic-bezier(0.77, 0, 0.18, 1) 0.15s forwards;
+}
+
+/* ── Entrance shimmer sweep ── */
+@keyframes entrance-sweep {
+  0% { transform: translateX(-100%) skewX(-15deg); opacity: 0.7; }
+  60% { opacity: 0.4; }
+  100% { transform: translateX(200%) skewX(-15deg); opacity: 0; }
+}
+
+.entrance-sweep {
+  animation: entrance-sweep 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards;
+}
+
+/* ── Staggered reveal for hero children ── */
+@keyframes hero-child-rise {
+  0% { opacity: 0; transform: translateY(30px) scale(0.96); filter: blur(6px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.hero-entrance > *:nth-child(1) { animation: hero-child-rise 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s both; }
+.hero-entrance > *:nth-child(2) { animation: hero-child-rise 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.35s both; }
+.hero-entrance > *:nth-child(3) { animation: hero-child-rise 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s both; }
+.hero-entrance > *:nth-child(4) { animation: hero-child-rise 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.65s both; }
+
+/* ── Blur-in for sections ── */
+@keyframes blur-in {
+  0% { opacity: 0; filter: blur(12px); transform: translateY(20px); }
+  100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+
+.animate-blur-in {
+  animation: blur-in 0.6s ease-out both;
+}
+
+/* ── Typewriter cursor blink ── */
+@keyframes blink-caret {
+  0%, 100% { border-color: transparent; }
+  50% { border-color: hsl(var(--accent)); }
+}
+
+.animate-caret {
+  border-right: 2px solid;
+  animation: blink-caret 0.8s step-end infinite;
+}
+
+/* ── Glow ring pulse for hero search ── */
+@keyframes glow-ring {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--secondary) / 0.3); }
+  50% { box-shadow: 0 0 24px 6px hsl(var(--secondary) / 0.15); }
+}
+
+.animate-glow-ring {
+  animation: glow-ring 3s ease-in-out infinite;
+}
+
