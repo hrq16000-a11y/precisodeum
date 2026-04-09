@@ -29,6 +29,12 @@ export interface SponsorFull {
   end_date: string | null;
   impressions: number;
   clicks: number;
+  plan: string;
+  guaranteed_impressions: number | null;
+  delivered_impressions: number;
+  campaign_start: string | null;
+  campaign_end: string | null;
+  needs_compensation: boolean;
 }
 
 function isDateValid(s: { start_date?: string | null; end_date?: string | null }): boolean {
