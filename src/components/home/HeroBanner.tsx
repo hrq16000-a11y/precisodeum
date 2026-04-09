@@ -138,37 +138,24 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
   return (
     <section className="relative overflow-hidden py-12 md:py-28">
       {/* Background images with crossfade */}
-      {hasCmsBg ? (
+      {DEFAULT_BG_IMAGES.map((src, i) => (
         <img
-          key={activeBanner!.image_url!}
-          src={activeBanner!.image_url!}
+          key={src}
+          src={src}
           alt=""
           width={1920}
           height={768}
-          fetchPriority="high"
+          fetchPriority={i === 0 ? 'high' : 'low'}
           decoding="async"
-          className="absolute inset-0 h-full w-full object-cover object-center hero-img-cinematic"
+          className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[1500ms] ease-in-out ${i === bgIndex ? 'opacity-100 hero-img-cinematic' : 'opacity-0'}`}
         />
-      ) : (
-        DEFAULT_BG_IMAGES.map((src, i) => (
-          <img
-            key={src}
-            src={src}
-            alt=""
-            width={1920}
-            height={768}
-            fetchPriority={i === 0 ? 'high' : 'low'}
-            decoding="async"
-            className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[1500ms] ease-in-out ${i === bgIndex ? 'opacity-100 hero-img-cinematic' : 'opacity-0'}`}
-          />
-        ))
-      )}
+      ))}
 
       {/* Gradient overlay */}
       <div
         className="absolute inset-0"
         style={{
-          background: `linear-gradient(135deg, hsl(var(--primary) / ${overlayOpacity}) 0%, hsl(var(--primary) / ${Math.max(overlayOpacity - 0.15, 0.4)}) 100%)`,
+          background: `linear-gradient(135deg, hsl(var(--primary) / 0.8) 0%, hsl(var(--primary) / 0.65) 100%)`,
         }}
       />
 
@@ -177,33 +164,18 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
 
       <FloatingDots />
 
-      <div className={`container relative z-10 flex flex-col ${alignClass}`}>
+      <div className="container relative z-10 flex flex-col items-center text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-primary-foreground sm:text-4xl md:text-5xl lg:text-6xl drop-shadow-sm">
-            {hasCustomTitle ? title : (
-              <>
-                <HeroPrefixRotator />
-                <br />
-                <RotatingServiceText />
-              </>
-            )}
+            <HeroPrefixRotator />
+            <br />
+            <RotatingServiceText />
           </h1>
         </motion.div>
-
-        {subtitle && (
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="mt-4 text-base text-primary-foreground/80 md:text-lg max-w-2xl leading-relaxed"
-          >
-            {subtitle}
-          </motion.p>
-        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -228,7 +200,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
         >
           <p className="text-sm text-primary-foreground/80">
             Cadastre seus serviços gratuitamente.{' '}
-            <Link to={ctaLink} className="font-semibold text-secondary hover:underline underline-offset-2">{ctaText} →</Link>
+            <Link to="/cadastro" className="font-semibold text-secondary hover:underline underline-offset-2">Cadastrar agora →</Link>
           </p>
           <span className="hidden sm:inline text-primary-foreground/40">|</span>
           <p className="text-sm text-primary-foreground/80">
@@ -268,18 +240,6 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
             <Zap className="h-3.5 w-3.5 text-secondary" /> Resposta rápida
           </span>
         </motion.div>
-
-        {banners.length > 1 && (
-          <div className="mt-6 flex gap-2">
-            {banners.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentSlide(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${i === currentSlide ? 'w-8 bg-secondary' : 'w-2 bg-primary-foreground/40 hover:bg-primary-foreground/60'}`}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </section>
   );
