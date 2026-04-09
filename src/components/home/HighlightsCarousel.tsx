@@ -69,6 +69,7 @@ const HighlightsCarousel = () => {
                   src={h.image_url!}
                   alt={h.title}
                   className="w-full h-40 sm:h-56 md:h-64 object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
