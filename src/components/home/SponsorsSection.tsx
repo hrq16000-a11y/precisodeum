@@ -87,7 +87,7 @@ const SponsorsSection = ({ sponsors }: Props) => {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
-    return arr.slice(0, 3);
+    return arr.slice(0, 6);
   }, [visibleSponsors]);
 
   useEffect(() => {
