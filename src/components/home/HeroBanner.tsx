@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
-import { useHeroBanners, type HeroBannerData } from '@/hooks/useHeroBanners';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
 const DEFAULT_BG_IMAGES = [
