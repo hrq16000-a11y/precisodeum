@@ -69,7 +69,6 @@ const menuGroups = [
       { label: 'Mídia & Arquivos', icon: FileImage, path: '/admin/midia' },
       { label: 'Instalar App (PWA)', icon: Smartphone, path: '/admin/pwa' },
       { label: 'Módulos', icon: Blocks, path: '/admin/modulos' },
-      { label: 'Auditoria Ref', icon: Shield, path: '/admin/auditoria-ref' },
       { label: 'Backup & Export', icon: Database, path: '/admin/backup' },
       { label: 'Lixeira', icon: Trash2, path: '/admin/lixeira' },
     ],
