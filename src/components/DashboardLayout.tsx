@@ -110,17 +110,28 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <Link to="/" className="flex items-center"><img src={logo} alt="Preciso de um" className="h-7 brightness-0 invert" /></Link>
         </div>
 
-        {/* Account type badge */}
+        {/* User info card */}
         <motion.div
-          className="mx-3 mt-3 mb-1 shrink-0 rounded-lg bg-muted/50 px-3 py-2 relative overflow-hidden"
+          className="mx-3 mt-3 mb-1 shrink-0 rounded-xl bg-sidebar-accent/30 p-3 relative overflow-hidden"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="absolute inset-0 shimmer opacity-30" />
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground relative">
-            {isClient ? '👤 Conta Cliente' : isRH ? '🏢 Conta RH' : '🔧 Conta Profissional'}
-          </p>
+          <div className="flex items-center gap-2.5">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" className="h-9 w-9 rounded-xl object-cover border border-sidebar-border/50" />
+            ) : (
+              <div className="h-9 w-9 rounded-xl bg-accent/20 flex items-center justify-center text-accent text-sm font-bold">
+                {(profile?.full_name || 'U')[0].toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-sidebar-foreground truncate">{profile?.full_name || 'Usuário'}</p>
+              <p className="text-[10px] text-sidebar-foreground/50 truncate">
+                {isClient ? '👤 Cliente' : isRH ? '🏢 RH' : '🔧 Profissional'}
+              </p>
+            </div>
+          </div>
         </motion.div>
 
         <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-1 px-3 pb-4">
