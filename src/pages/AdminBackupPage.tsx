@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/hooks/useAdmin';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
-import { Download, Database, Loader2, FileJson, FileSpreadsheet, Copy, Code, ChevronDown, ChevronUp, Image, FolderOpen, ExternalLink, Upload, Archive, ShieldCheck } from 'lucide-react';
+import { Download, Database, Loader2, FileJson, FileSpreadsheet, Copy, Code, ChevronDown, ChevronUp, Image, FolderOpen, ExternalLink, Upload, Archive, ShieldCheck, CheckSquare } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
