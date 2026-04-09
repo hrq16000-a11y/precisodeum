@@ -1,6 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { supabase } from '@/integrations/supabase/client';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import SponsorPremiumCard from './SponsorPremiumCard';
 
@@ -10,17 +9,11 @@ interface Props {
 
 /** Premium sponsor cards for page tops — shows sponsors with position=featured */
 const SponsorTopBanner = ({ className = '' }: Props) => {
-  const { data: sponsors = [] } = useSponsorsBySlot('featured');
-  const tracked = useRef(new Set<string>());
+  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot('featured');
 
   useEffect(() => {
-    sponsors.forEach((s) => {
-      if (!tracked.current.has(s.id)) {
-        tracked.current.add(s.id);
-        supabase.rpc('increment_sponsor_impression', { sponsor_id: s.id } as any);
-      }
-    });
-  }, [sponsors]);
+    sponsors.forEach((s) => trackImpression(s.id));
+  }, [sponsors, trackImpression]);
 
   if (sponsors.length === 0) return null;
 
@@ -39,7 +32,7 @@ const SponsorTopBanner = ({ className = '' }: Props) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1, duration: 0.4, ease: "easeOut" as const }}
             >
-              <SponsorPremiumCard sponsor={s} compact={sponsors.length > 1} />
+              <SponsorPremiumCard sponsor={s} compact={sponsors.length > 1} onClickTrack={trackClick} />
             </motion.div>
           ))}
         </div>

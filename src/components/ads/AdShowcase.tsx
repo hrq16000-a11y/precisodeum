@@ -1,24 +1,17 @@
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { handleImageError } from '@/lib/imageResolver';
 import { ExternalLink } from 'lucide-react';
 
 /** Full-width showcase with professional card layout */
 const AdShowcase = ({ className = '' }: { className?: string }) => {
-  const { data: sponsors = [] } = useSponsorsBySlot('showcase');
-  const tracked = useRef(new Set<string>());
+  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot('showcase');
   const [idx, setIdx] = useState(0);
   const touchStart = useRef<number | null>(null);
 
   useEffect(() => {
-    sponsors.forEach(s => {
-      if (!tracked.current.has(s.id)) {
-        tracked.current.add(s.id);
-        supabase.rpc('increment_sponsor_impression', { sponsor_id: s.id } as any).then(() => {});
-      }
-    });
-  }, [sponsors]);
+    sponsors.forEach(s => trackImpression(s.id));
+  }, [sponsors, trackImpression]);
 
   useEffect(() => {
     if (sponsors.length <= 1) return;
@@ -40,10 +33,6 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
   }, [sponsors.length]);
 
   if (sponsors.length === 0) return null;
-
-  const handleClick = (id: string) => {
-    supabase.rpc('increment_sponsor_click', { sponsor_id: id } as any);
-  };
 
   const gridCols = sponsors.length === 1
     ? 'grid-cols-1'
@@ -72,7 +61,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
               href={s.link_url || '#'}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => handleClick(s.id)}
+              onClick={() => trackClick(s.id)}
               className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5"
             >
               <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted/20">
@@ -126,7 +115,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
                   href={current.link_url || '#'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => handleClick(current.id)}
+                  onClick={() => trackClick(current.id)}
                   className="group block overflow-hidden rounded-xl border border-border bg-card shadow-sm"
                 >
                   <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted/20">

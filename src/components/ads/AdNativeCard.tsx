@@ -1,6 +1,5 @@
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
-import { useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
 import { Megaphone } from 'lucide-react';
 import SponsorImage from '@/components/SponsorImage';
 
@@ -10,18 +9,14 @@ interface AdNativeCardProps {
 }
 
 const AdNativeCard = ({ sponsorIndex = 0, className = '' }: AdNativeCardProps) => {
-  const { data: sponsors = [] } = useSponsorsBySlot('native');
-  const tracked = useRef(new Set<string>());
+  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot('native');
 
   const sponsor = sponsors[sponsorIndex % (sponsors.length || 1)];
   const visualSrc = sponsor?.logo_url || sponsor?.image_url;
 
   useEffect(() => {
-    if (sponsor && !tracked.current.has(sponsor.id)) {
-      tracked.current.add(sponsor.id);
-      supabase.rpc('increment_sponsor_impression', { sponsor_id: sponsor.id } as any).then(() => {});
-    }
-  }, [sponsor]);
+    if (sponsor) trackImpression(sponsor.id);
+  }, [sponsor, trackImpression]);
 
   if (!sponsor) return null;
 
@@ -30,9 +25,7 @@ const AdNativeCard = ({ sponsorIndex = 0, className = '' }: AdNativeCardProps) =
       href={sponsor.link_url || '#'}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() => {
-        supabase.rpc('increment_sponsor_click', { sponsor_id: sponsor.id } as any).then(() => {});
-      }}
+      onClick={() => trackClick(sponsor.id)}
       className={`group min-w-0 overflow-hidden rounded-xl border border-accent/20 bg-accent/5 p-4 shadow-card transition-all hover:shadow-lg hover:border-accent/40 ${className}`}
     >
       <span className="mb-2 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">

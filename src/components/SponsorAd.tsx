@@ -1,5 +1,4 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useMemo, useState } from 'react';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import SponsorImage from '@/components/SponsorImage';
 
@@ -24,19 +23,10 @@ function weightedShuffle<T extends { id: string; tier?: string }>(items: T[]): T
   });
 }
 
-function trackImpression(id: string) {
-  supabase.rpc('increment_sponsor_impression', { sponsor_id: id } as any).then(() => {});
-}
-
-function trackClick(id: string) {
-  supabase.rpc('increment_sponsor_click', { sponsor_id: id } as any).then(() => {});
-}
-
 const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorAdProps) => {
-  const { data: rawSponsors = [] } = useSponsorsBySlot(position);
+  const { data: rawSponsors = [], trackImpression, trackClick } = useSponsorsBySlot(position);
   const sponsors = useMemo(() => weightedShuffle(rawSponsors), [rawSponsors]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const tracked = useRef(new Set<string>());
 
   useEffect(() => {
     if (sponsors.length <= 1) return;
@@ -49,26 +39,14 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
   useEffect(() => {
     if (sponsors.length === 0) return;
     if (layout === 'vertical' || layout === 'inline') {
-      sponsors.forEach((s) => {
-        if (!tracked.current.has(s.id)) {
-          tracked.current.add(s.id);
-          trackImpression(s.id);
-        }
-      });
+      sponsors.forEach((s) => trackImpression(s.id));
     } else {
       const s = sponsors[currentIndex];
-      if (s && !tracked.current.has(s.id)) {
-        tracked.current.add(s.id);
-        trackImpression(s.id);
-      }
+      if (s) trackImpression(s.id);
     }
-  }, [sponsors, currentIndex, layout]);
+  }, [sponsors, currentIndex, layout, trackImpression]);
 
   if (sponsors.length === 0) return null;
-
-  const handleClick = (s: { id: string }) => {
-    trackClick(s.id);
-  };
 
   if (layout === 'vertical') {
     return (
@@ -81,7 +59,7 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
               href={s.link_url || '#'}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => handleClick(s)}
+              onClick={() => trackClick(s.id)}
               className="block rounded-xl bg-card p-3 shadow-card transition-all hover:shadow-card-hover"
             >
               <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
@@ -107,7 +85,7 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
               href={s.link_url || '#'}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => handleClick(s)}
+              onClick={() => trackClick(s.id)}
               className="opacity-60 transition-opacity hover:opacity-100"
               title={s.title}
             >
@@ -135,7 +113,7 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
             href={current.link_url || '#'}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => handleClick(current)}
+            onClick={() => trackClick(current.id)}
             className="block transition-opacity hover:opacity-80"
             title={current.title}
           >

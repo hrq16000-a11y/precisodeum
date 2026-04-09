@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState, memo, useCallback } from 'react';
+import { useEffect, useState, memo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { handleImageError } from '@/lib/imageResolver';
 
 interface LeaderSponsorData {
@@ -18,35 +17,24 @@ interface LeaderSponsorData {
 
 interface Props {
   sponsors: LeaderSponsorData[];
-}
-
-function trackMetric(sponsorId: string, eventType: 'impression' | 'click') {
-  supabase.rpc('track_sponsor_metric', {
-    _sponsor_id: sponsorId,
-    _slot_slug: 'leader-sponsor',
-    _event_type: eventType,
-    _page_path: window.location.pathname,
-  } as any).then(() => {});
+  /** Centralized click tracker from parent hook */
+  onClickTrack?: (id: string) => void;
+  /** Centralized impression tracker from parent hook */
+  onImpressionTrack?: (id: string) => void;
 }
 
 const ROTATION_MS = 5000;
 
-const LeaderSponsor = memo(({ sponsors }: Props) => {
+const LeaderSponsor = memo(({ sponsors, onClickTrack, onImpressionTrack }: Props) => {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [dismissed, setDismissed] = useState(false);
-  const tracked = useRef(new Set<string>());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const validSponsors = sponsors.filter(s => s.image_url || s.logo_url);
 
   useEffect(() => {
-    validSponsors.forEach(s => {
-      if (!tracked.current.has(s.id)) {
-        tracked.current.add(s.id);
-        trackMetric(s.id, 'impression');
-      }
-    });
-  }, [validSponsors]);
+    validSponsors.forEach(s => onImpressionTrack?.(s.id));
+  }, [validSponsors, onImpressionTrack]);
 
   useEffect(() => {
     if (validSponsors.length <= 1) return;
@@ -59,8 +47,8 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
   }, [validSponsors.length]);
 
   const handleClick = useCallback((id: string) => {
-    trackMetric(id, 'click');
-  }, []);
+    onClickTrack?.(id);
+  }, [onClickTrack]);
 
   if (validSponsors.length === 0 || dismissed) return null;
 
@@ -94,7 +82,6 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
           transition={{ duration: 0.3 }}
           className="block w-full cursor-pointer group"
         >
-          {/* Banner image — 8:1, full width, rounded */}
           {imageSrc && (
             <img
               src={imageSrc}
@@ -110,7 +97,6 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
         </motion.a>
       </AnimatePresence>
 
-      {/* Branding bar below image */}
       <div className="flex items-center justify-between px-1 py-1 mt-1">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-[7px] sm:text-[8px] font-semibold tracking-widest uppercase text-muted-foreground/50 shrink-0">
@@ -130,7 +116,6 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
         </span>
       </div>
 
-      {/* Dismiss button */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -142,7 +127,6 @@ const LeaderSponsor = memo(({ sponsors }: Props) => {
         <X className="h-3 w-3" />
       </button>
 
-      {/* Rotation dots */}
       {validSponsors.length > 1 && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1 z-10">
           {validSponsors.map((_, i) => (
