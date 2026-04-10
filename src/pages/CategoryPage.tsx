@@ -19,10 +19,10 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
 const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
-const SponsorLeaderBanner = lazy(() => import('@/components/sponsors/SponsorLeaderBanner'));
-const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
-const SponsorMidContent = lazy(() => import('@/components/sponsors/SponsorMidContent'));
-const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
+const SponsorLeaderBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorLeaderBanner')));
+const SponsorTopBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorTopBanner')));
+const SponsorMidContent = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorMidContent')));
+const SponsorFooterCTA = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorFooterCTA')));
 
 const ITEMS_PER_PAGE = 12;
 
