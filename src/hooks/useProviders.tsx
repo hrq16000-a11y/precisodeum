@@ -516,8 +516,63 @@ export function filterAndRankProviders(
     results = results.filter((p) => p.categorySlug === categorySlug);
   }
 
+  // --- Geo Intelligence: detect geographic intent inside query ---
+  let effectiveCity = city;
+  let effectiveState = state;
+  let effectiveLat = userLat;
+  let effectiveLon = userLon;
+  let textualQuery = query;
+
   if (query) {
-    const lq = query.toLowerCase();
+    const queryNorm = normalize(query);
+
+    // 1. Full query is a metro region? e.g. "Região Metropolitana de Curitiba"
+    const metroFromQuery = resolveMetroRegion(queryNorm);
+    if (metroFromQuery) {
+      const poleCoords = getCityCoords(metroFromQuery.pole);
+      effectiveCity = metroFromQuery.pole;
+      effectiveState = metroFromQuery.state;
+      if (poleCoords) {
+        effectiveLat = poleCoords.lat;
+        effectiveLon = poleCoords.lon;
+      }
+      textualQuery = ''; // pure geo query, no text filter
+    }
+    // 2. Full query is a known city? e.g. "Curitiba"
+    else if (getCityCoords(queryNorm)) {
+      const coords = getCityCoords(queryNorm)!;
+      effectiveCity = queryNorm;
+      effectiveLat = coords.lat;
+      effectiveLon = coords.lon;
+      textualQuery = '';
+    }
+    // 3. Mixed query: "encanador Curitiba" — try to extract city token
+    else {
+      const rawTokens = query.trim().split(/\s+/);
+      // Try progressively longer suffixes (right-to-left) for multi-word cities
+      let bestCityMatch = '';
+      let bestCityIdx = -1;
+      for (let i = rawTokens.length - 1; i >= 0; i--) {
+        const candidate = rawTokens.slice(i).join(' ');
+        const candidateNorm = normalize(candidate);
+        if (getCityCoords(candidateNorm)) {
+          bestCityMatch = candidateNorm;
+          bestCityIdx = i;
+        }
+      }
+      if (bestCityMatch && bestCityIdx > 0) {
+        const coords = getCityCoords(bestCityMatch)!;
+        effectiveCity = bestCityMatch;
+        effectiveLat = coords.lat;
+        effectiveLon = coords.lon;
+        textualQuery = rawTokens.slice(0, bestCityIdx).join(' ');
+      }
+    }
+  }
+
+  // Apply textual filter only with non-geo terms
+  if (textualQuery) {
+    const lq = textualQuery.toLowerCase();
     const terms = lq.split(/\s+/).filter(Boolean);
     results = results.filter((p) =>
       terms.every((term) =>
@@ -532,7 +587,7 @@ export function filterAndRankProviders(
     );
   }
 
-  const ctx = buildGeoContext(city, state, userLat, userLon);
+  const ctx = buildGeoContext(effectiveCity, effectiveState, effectiveLat, effectiveLon);
   // Override radius if explicitly provided
   if (radiusKm) (ctx as any).radius = radiusKm;
 
