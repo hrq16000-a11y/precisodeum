@@ -19,7 +19,14 @@ type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
   reactLazy(() => importWithRetry(importer));
 
-// Lazy load below-the-fold sections
+// Lazy load all non-critical sections
+const UrgencyBanner = lazy(() => import('@/components/home/UrgencyBanner'));
+const CategoriesGrid = lazy(() => import('@/components/home/CategoriesGrid'));
+const HighlightsCarousel = lazy(() => import('@/components/home/HighlightsCarousel'));
+const FeaturedProviders = lazy(() => import('@/components/home/FeaturedProviders'));
+const StatsCounter = lazy(() => import('@/components/home/StatsCounter'));
+const PwaInstallSection = lazy(() => import('@/components/home/PwaInstallSection'));
+const DynamicPageBlocks = lazy(() => import('@/components/DynamicPageBlocks'));
 const PopularServices = lazy(() => import('@/components/home/PopularServices'));
 const FeaturedJobs = lazy(() => import('@/components/home/FeaturedJobs'));
 const BlogHighlight = lazy(() => import('@/components/home/BlogHighlight'));
