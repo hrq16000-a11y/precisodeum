@@ -2465,6 +2465,140 @@ export type Database = {
         }
         Relationships: []
       }
+      ui_bottom_nav_config: {
+        Row: {
+          animation_duration: number
+          animation_type: string
+          background_color: string
+          blur: boolean
+          border_color: string
+          created_at: string
+          height: number
+          hidden_paths: Json
+          id: string
+          is_active: boolean
+          layout_type: string
+          mobile_only: boolean
+          padding: number
+          shadow: boolean
+          updated_at: string
+        }
+        Insert: {
+          animation_duration?: number
+          animation_type?: string
+          background_color?: string
+          blur?: boolean
+          border_color?: string
+          created_at?: string
+          height?: number
+          hidden_paths?: Json
+          id?: string
+          is_active?: boolean
+          layout_type?: string
+          mobile_only?: boolean
+          padding?: number
+          shadow?: boolean
+          updated_at?: string
+        }
+        Update: {
+          animation_duration?: number
+          animation_type?: string
+          background_color?: string
+          blur?: boolean
+          border_color?: string
+          created_at?: string
+          height?: number
+          hidden_paths?: Json
+          id?: string
+          is_active?: boolean
+          layout_type?: string
+          mobile_only?: boolean
+          padding?: number
+          shadow?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ui_bottom_nav_items: {
+        Row: {
+          action_type: string
+          active_color: string
+          animation: string
+          background_color: string
+          badge: string
+          badge_color: string
+          border_radius: string
+          config_id: string
+          created_at: string
+          external_url: string
+          icon: string
+          icon_active: string
+          id: string
+          is_active: boolean
+          label: string
+          order_index: number
+          requires_auth: boolean
+          route_path: string
+          size: string
+          text_color: string
+          updated_at: string
+        }
+        Insert: {
+          action_type?: string
+          active_color?: string
+          animation?: string
+          background_color?: string
+          badge?: string
+          badge_color?: string
+          border_radius?: string
+          config_id: string
+          created_at?: string
+          external_url?: string
+          icon?: string
+          icon_active?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          order_index?: number
+          requires_auth?: boolean
+          route_path?: string
+          size?: string
+          text_color?: string
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          active_color?: string
+          animation?: string
+          background_color?: string
+          badge?: string
+          badge_color?: string
+          border_radius?: string
+          config_id?: string
+          created_at?: string
+          external_url?: string
+          icon?: string
+          icon_active?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          order_index?: number
+          requires_auth?: boolean
+          route_path?: string
+          size?: string
+          text_color?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ui_bottom_nav_items_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "ui_bottom_nav_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_levels: {
         Row: {
           color: string
