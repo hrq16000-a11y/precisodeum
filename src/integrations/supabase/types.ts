@@ -1098,6 +1098,91 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_albums: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          description: string
+          display_order: number
+          id: string
+          name: string
+          provider_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string
+          display_order?: number
+          id?: string
+          name?: string
+          provider_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string
+          display_order?: number
+          id?: string
+          name?: string
+          provider_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_albums_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolio_photos: {
+        Row: {
+          album_id: string
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string
+          original_name: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          album_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url: string
+          original_name?: string
+          storage_path?: string
+          user_id: string
+        }
+        Update: {
+          album_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string
+          original_name?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_photos_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "portfolio_albums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_type_settings: {
         Row: {
           active: boolean
