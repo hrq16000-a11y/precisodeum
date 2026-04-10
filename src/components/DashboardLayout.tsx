@@ -78,6 +78,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas', show: !isClient && hasProfilePermission('jobs'), badge: 0 },
     { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade', show: hasProfilePermission('community'), badge: 0 },
     { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes', show: hasProfilePermission('notifications'), badge: unreadCount },
+    { label: 'Chat', icon: MessageSquare, path: '/dashboard/chat', show: !isClient, badge: 0 },
     { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads', show: !isClient && !isRH && hasProfilePermission('leads'), badge: pendingLeads },
     { label: 'Plano', icon: CreditCard, path: '/dashboard/plano', show: !isClient && !isRH && hasProfilePermission('plan'), badge: 0 },
   ].filter(item => item.show);

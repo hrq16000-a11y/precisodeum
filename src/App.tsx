@@ -96,6 +96,8 @@ const AdminSponsorLeadsPage = lazy(() => import("./pages/AdminSponsorLeadsPage")
 const AdminSubscriptionsPage = lazy(() => import("./pages/AdminSubscriptionsPage"));
 const AdminOverviewPage = lazy(() => import("./pages/AdminOverviewPage"));
 const AdminNotificationsPage = lazy(() => import("./pages/AdminNotificationsPage"));
+const AdminChatPage = lazy(() => import("./pages/AdminChatPage"));
+const DashboardChatPage = lazy(() => import("./pages/DashboardChatPage"));
 const InstitutionalPage = lazy(() => import("./pages/InstitutionalPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
@@ -226,6 +228,7 @@ const App = () => {
                 <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/comunidade" element={<DashboardCommunityPage />} />
                 <Route path="/dashboard/notificacoes" element={<DashboardNotificationsPage />} />
+                <Route path="/dashboard/chat" element={<DashboardChatPage />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
                 <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
@@ -269,6 +272,7 @@ const App = () => {
                 <Route path="/admin/assinaturas" element={<AdminSubscriptionsPage />} />
                 <Route path="/admin/overview" element={<AdminOverviewPage />} />
                 <Route path="/admin/notificacoes" element={<AdminNotificationsPage />} />
+                <Route path="/admin/chat" element={<AdminChatPage />} />
                 <Route path="/admin/boosts" element={<AdminBoostsPage />} />
                 <Route path="/admin/barra-inferior" element={<AdminBottomNavPage />} />
                 <Route path="/blog" element={<BlogPage />} />
