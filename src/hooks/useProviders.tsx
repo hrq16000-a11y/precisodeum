@@ -214,12 +214,16 @@ async function fetchProvidersLightweight(query: any) {
     );
 
     // Hybrid score
+    // Capped content score (anti-abuse)
+    const photoScore = Math.min(photoCount, 20) * 2;
+    const albumScore = Math.min(albumCount, 5) * 5;
     const contentScore =
       (rawPhoto ? 10 : 0) +
       (svcCount >= 1 ? 2 : 0) +
       (svcCount >= 3 ? 3 : 0) +
-      (photoCount * 2) +
-      (albumCount * 5);
+      photoScore +
+      albumScore +
+      (svcCount > 0 && photoCount > 0 ? 5 : 0);
     const boostScore = boostMap[p.id] || 0;
     const impressions7d = impressionMap[p.id] || 0;
     const fairnessPenalty = Math.log(1 + impressions7d) * rankConfig.fairnessPen;
@@ -280,13 +284,10 @@ export function useCategoriesWithCount() {
   });
 }
 
-const FEATURED_SCORE_THRESHOLD = 5;
-
 export function useFeaturedProviders() {
   return useQuery({
     queryKey: ['featured-providers'],
     queryFn: async () => {
-      // Fetch all approved providers — featured is now score-based
       const allProviders = await fetchProvidersLightweight(
         supabase
           .from('providers')
@@ -295,25 +296,22 @@ export function useFeaturedProviders() {
           .limit(500)
       );
 
-      // Filter by finalScore threshold (hybrid: content + boost - fairness)
+      if (allProviders.length === 0) return [];
+
+      // Sort by hybrid score desc — featured = top of ranking, no fixed threshold
       const scored = allProviders
         .map((p) => ({
           ...p,
           _totalScore: (p as any)._finalScore || (p as any)._contentScore || 0,
         }))
-        .filter(p => p._totalScore >= FEATURED_SCORE_THRESHOLD);
-
-      if (scored.length === 0) return [];
-
-      // Sort by hybrid score desc
-      scored.sort((a, b) => b._totalScore - a._totalScore);
+        .sort((a, b) => b._totalScore - a._totalScore);
 
       // Pick target count: 9 > 6 > 3
       let target = 3;
       if (scored.length >= 9) target = 9;
       else if (scored.length >= 6) target = 6;
 
-      // Light shuffle within top candidates to keep variety
+      // Take top candidates, light shuffle for variety
       const candidates = scored.slice(0, Math.min(scored.length, target * 2));
       const shuffled = shuffleArray(candidates);
       return shuffled.slice(0, target).map(({ _totalScore, _contentScore, _finalScore, _boostScore, ...p }: any) => p);
