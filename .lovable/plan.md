@@ -1,46 +1,50 @@
 
 
-## Aplicar parametrizações do cadastro na página /dashboard/perfil
+## Correção: Geolocalização de Busca Funcionando Sem Margem de Erro
 
-### Problema
-A página `DashboardProfilePage.tsx` usa campos de texto livre para cidade/estado e um `<select>` simples para categoria, sem as melhorias aplicadas ao cadastro: seletor inteligente de cidade (IBGE + GPS), categoria hierárquica com "Outro", CNPJ, validações robustas e lat/lon.
+### Problema Raiz
+1. **100% dos providers existentes têm `latitude`/`longitude` NULL** — a busca por distância (Haversine) nunca é usada
+2. Sem coordenadas, o fallback por nome falha porque "Região Metropolitana de Curitiba" ≠ "São José dos Pinhais"
+3. O `extractCoreCity` extrai "curitiba" mas não faz match com "saojosedospinhais"
 
-### Mudanças no arquivo `src/pages/DashboardProfilePage.tsx`
+### Solução (3 frentes)
 
-**1. Seletor inteligente de cidade (igual ao cadastro)**
-- Importar `fetchAllMunicipalities`, `geocodeCity`, `reverseGeocode`, `normalize` de `geoUtils`
-- Substituir inputs de cidade/estado por busca com autocomplete + botão "Usar minha localização"
-- Estado fica readonly (auto-preenchido pela seleção)
-- Adicionar `latitude`, `longitude` ao form state (pré-populados do provider existente)
+**1. Backfill de coordenadas dos providers existentes (edge function)**
+- Criar uma edge function `backfill-provider-coords` que:
+  - Busca todos os providers com `latitude IS NULL`
+  - Para cada um, usa a API Nominatim (gratuita) para geocodificar `city + state + Brasil`
+  - Atualiza `latitude`, `longitude` e `ibge_code` no banco
+  - Processa em lotes com delay (1 req/s para respeitar rate limit do Nominatim)
+- Botão no admin para disparar o backfill
 
-**2. Categoria hierárquica com "Outro"**
-- Substituir `<select>` por busca com árvore macro/sub (mesma lógica do cadastro)
-- Adicionar `category_custom` ao form state (pré-populado do provider)
-- Chip visual para categoria selecionada com botão de remoção
+**2. Garantir coordenadas no cadastro (já implementado, mas validar)**
+- Já salva lat/lon no signup e perfil — apenas garantir que o campo é obrigatório antes do submit (bloqueando cadastro sem cidade selecionada do IBGE)
 
-**3. Campo CNPJ opcional**
-- Adicionar `cnpj` ao form state (pré-populado do provider)
-- Input com máscara `XX.XXX.XXX/XXXX-XX`
-- Validação: se preenchido, deve ter 14 dígitos
-
-**4. Validações robustas no handleSave**
-- Telefone: mínimo 10 dígitos
-- Categoria: `category_id` OU `category_custom` obrigatório (para providers)
-- Cidade/estado: devem vir de seleção válida (limpar se input mudar)
-- CNPJ: exatamente 14 dígitos se preenchido
-- Lat/lon: fallback `geocodeCity` se ausente mas cidade selecionada
-- Spinner + disable botão durante save
-
-**5. Salvar campos extras no submit**
-- Incluir `category_custom`, `cnpj` (sanitizado), `latitude`, `longitude` nos updates/inserts do provider
-
-**6. Pré-popular campos do provider existente**
-- `category_custom`, `cnpj`, `latitude`, `longitude` no useEffect que carrega dados
+**3. Melhorar fallback de nome para casos sem coordenadas**
+- Enquanto o backfill não rodar, melhorar `matchesGeoContext`:
+  - Quando o user city contém "região metropolitana", fazer match por **estado** (mesmo UF = local)
+  - Isso garante que "Região Metropolitana de Curitiba" + PR encontra providers de "São José dos Pinhais, PR"
 
 ### Arquivos afetados
+
 | Arquivo | Ação |
 |---|---|
-| `src/pages/DashboardProfilePage.tsx` | Editar (seletor cidade, categoria, CNPJ, validações) |
+| `supabase/functions/backfill-provider-coords/index.ts` | Criar (edge function de geocodificação em lote) |
+| `src/hooks/useProviders.tsx` | Editar (melhorar fallback região metropolitana → match por estado) |
+| `src/pages/AdminProvidersPage.tsx` | Editar (botão para disparar backfill) |
 
-Nenhuma migração necessária — `category_custom` e `cnpj` já existem na tabela `providers`.
+### Detalhe técnico do fallback melhorado
 
+```text
+matchesGeoContext():
+  Se userCity contém "regiaometropolitana":
+    → extrair estado do user (ex: PR)
+    → Se provider.state === userState → match = true
+    
+  Isso cobre 100% dos casos de região metropolitana
+  até que as coordenadas existam para usar Haversine
+```
+
+### Resultado esperado
+- Imediatamente: providers de PR aparecem ao buscar "Região Metropolitana de Curitiba"
+- Após backfill: busca por distância real (100km) funciona para todos
