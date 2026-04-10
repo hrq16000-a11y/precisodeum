@@ -12,6 +12,7 @@ import { useSeoHead } from '@/hooks/useSeoHead';
 import { User, Briefcase, Building2, ArrowRight, ArrowLeft, CheckCircle2, Search, LocateFixed, Loader2, MapPin } from 'lucide-react';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import { fetchAllMunicipalities, geocodeCity, reverseGeocode, normalize, type CityResult } from '@/lib/geoUtils';
+import { useAuth } from '@/hooks/useAuth';
 
 const ACCOUNT_TYPES = [
   {
