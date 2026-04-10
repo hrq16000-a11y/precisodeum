@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { normalizeCityName, matchesGeoContext } from '@/hooks/useProviders';
 import { motion } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -441,7 +442,7 @@ const SearchPage = () => {
                       transition={{ duration: 0.35 }}
                       layout
                     >
-                      <ProviderCard provider={p} isFallback={false} />
+                      <ProviderCard provider={p} isFallback={!!effectiveCity && !matchesGeoContext(p, normalizeCityName(effectiveCity), geoState ? normalizeCityName(geoState) : undefined)} />
                     </motion.div>
                   ))}
                 </motion.div>
