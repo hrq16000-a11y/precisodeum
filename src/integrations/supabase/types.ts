@@ -274,6 +274,128 @@ export type Database = {
           },
         ]
       }
+      chat_conversations: {
+        Row: {
+          blocked: boolean
+          blocked_by: string | null
+          created_at: string
+          id: string
+          last_message_at: string | null
+          last_message_text: string | null
+          participant_a: string
+          participant_b: string
+          unread_count_a: number
+          unread_count_b: number
+          updated_at: string
+        }
+        Insert: {
+          blocked?: boolean
+          blocked_by?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_text?: string | null
+          participant_a: string
+          participant_b: string
+          unread_count_a?: number
+          unread_count_b?: number
+          updated_at?: string
+        }
+        Update: {
+          blocked?: boolean
+          blocked_by?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_text?: string | null
+          participant_a?: string
+          participant_b?: string
+          unread_count_a?: number
+          unread_count_b?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          image_url: string | null
+          read: boolean
+          sender_id: string
+        }
+        Insert: {
+          content?: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          read?: boolean
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          read?: boolean
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_settings: {
+        Row: {
+          allow_images: boolean
+          allowed_profile_types: Json
+          blocked_message: string
+          created_at: string
+          enabled: boolean
+          id: string
+          max_message_length: number
+          min_portfolio_albums: number
+          min_services: number
+          updated_at: string
+          welcome_message: string
+        }
+        Insert: {
+          allow_images?: boolean
+          allowed_profile_types?: Json
+          blocked_message?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          max_message_length?: number
+          min_portfolio_albums?: number
+          min_services?: number
+          updated_at?: string
+          welcome_message?: string
+        }
+        Update: {
+          allow_images?: boolean
+          allowed_profile_types?: Json
+          blocked_message?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          max_message_length?: number
+          min_portfolio_albums?: number
+          min_services?: number
+          updated_at?: string
+          welcome_message?: string
+        }
+        Relationships: []
+      }
       cities: {
         Row: {
           created_at: string
