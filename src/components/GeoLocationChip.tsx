@@ -1,73 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MapPin, ChevronDown, Check, Loader2, LocateFixed, SlidersHorizontal } from 'lucide-react';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { fetchAllMunicipalities, geocodeCity, normalize, type CityResult } from '@/lib/geoUtils';
 
 interface GeoLocationChipProps {
   variant?: 'default' | 'hero';
-}
-
-interface CityResult {
-  name: string;
-  state: string;
-}
-
-// IBGE API: all 5,570 Brazilian municipalities
-let ibgeCachePromise: Promise<CityResult[]> | null = null;
-
-function fetchAllMunicipalities(): Promise<CityResult[]> {
-  if (ibgeCachePromise) return ibgeCachePromise;
-  ibgeCachePromise = fetch(
-    'https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome'
-  )
-    .then((res) => {
-      if (!res.ok) throw new Error('IBGE API error');
-      return res.json();
-    })
-    .then((data: any[]) =>
-      data
-        .map((m) => ({
-          name: (m.nome || '') as string,
-          state: (m.microrregiao?.mesorregiao?.UF?.sigla || '') as string,
-        }))
-        .filter((c) => c.name && c.state)
-    )
-    .catch(() => {
-      ibgeCachePromise = null;
-      return [] as CityResult[];
-    });
-  return ibgeCachePromise;
-}
-
-let geocodeCache = new Map<string, { latitude: number | null; longitude: number | null }>();
-
-async function geocodeCity(name: string, state: string) {
-  const key = `${name}|${state}`;
-  if (geocodeCache.has(key)) return geocodeCache.get(key)!;
-
-  const query = encodeURIComponent(`${name}, ${state}, Brasil`);
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br&q=${query}`);
-    if (!res.ok) throw new Error('geocode failed');
-    const data = await res.json();
-    const result = {
-      latitude: data?.[0]?.lat ? Number(data[0].lat) : null,
-      longitude: data?.[0]?.lon ? Number(data[0].lon) : null,
-    };
-    geocodeCache.set(key, result);
-    return result;
-  } catch {
-    const result = { latitude: null, longitude: null };
-    geocodeCache.set(key, result);
-    return result;
-  }
-}
-
-function normalize(s: string | undefined | null) {
-  if (!s) return '';
-  return s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
 }
 
 const RADIUS_OPTIONS = [5, 10, 30, 50, 100];
