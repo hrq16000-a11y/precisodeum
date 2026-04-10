@@ -48,6 +48,14 @@ const NotificationItem = ({
         {notification.title}
       </p>
       <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{notification.message}</p>
+      {(notification as any).image_url && (
+        <img src={(notification as any).image_url} alt="" className="mt-1.5 rounded-md max-h-24 object-cover" />
+      )}
+      {(notification as any).video_url && (
+        <a href={(notification as any).video_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[10px] text-primary hover:underline">
+          🎬 Ver vídeo
+        </a>
+      )}
       <p className="mt-1 text-[10px] text-muted-foreground/70">
         {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: ptBR })}
       </p>
