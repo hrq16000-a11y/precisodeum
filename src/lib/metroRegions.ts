@@ -4,15 +4,10 @@
  *
  * Used for precise geo-matching: "Região Metropolitana de Curitiba"
  * matches São José dos Pinhais but NOT Londrina.
+ *
+ * All member names are pre-normalized via normalize().
  */
-
-function n(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[-_\s]+/g, '');
-}
+import { normalize } from './normalize';
 
 interface MetroRegion {
   pole: string;        // normalized pole city
@@ -27,13 +22,13 @@ const METRO_REGIONS: MetroRegion[] = [
     members: [
       'curitiba', 'saojosedospinhais', 'colombo', 'araucaria', 'pinhais',
       'campolargo', 'almirantetamandare', 'piraquara', 'fazendariogrande',
-      'campinagrandedosul', 'quatro barras', 'quatrobarras', 'bocaiuvadosul',
-      'itaperucu', 'riobraodosul', 'riobrancodosul', 'mandirituba',
-      'contendA', 'contenda', 'balsamova', 'balsanova', 'lapa', 'tijucasdosul',
-      'adrianopolis', 'agudosdosul', 'campomagro', 'campodomourao',
-      'cerroazul', 'doutor_ulysses', 'doutorulysses', 'piendosul', 'pien',
-      'quitandinha', 'tunasdoparana', 'tunasdo parana',
-    ].map(n),
+      'campinagrandedosul', 'quatrobarras', 'bocaiuvadosul',
+      'itaperucu', 'riobrancodosul', 'mandirituba',
+      'contenda', 'balsanova', 'lapa', 'tijucasdosul',
+      'adrianopolis', 'agudosdosul', 'campomagro',
+      'cerroazul', 'doutorulysses', 'pien',
+      'quitandinha', 'tunasdoparana',
+    ],
   },
   {
     pole: 'saopaulo',
@@ -41,15 +36,15 @@ const METRO_REGIONS: MetroRegion[] = [
     members: [
       'saopaulo', 'guarulhos', 'osasco', 'saobernardodocampo', 'santoandre',
       'saocaetanodosul', 'diadema', 'maua', 'suzano', 'taboaodaserra',
-      'barueri', 'carapicuiba', 'cotia', 'embudasartes', 'embu',
-      'francodarocha', 'francodaro', 'itaquaquecetuba', 'itapevi',
-      'mogidascruzes', 'ferrazdevasconcelos', 'poadearaujo', 'poa',
-      'ribeiraopires', 'rioGrandedaserrA', 'riograndedaserra', 'santana de parnaiba',
+      'barueri', 'carapicuiba', 'cotia', 'embudasartes',
+      'francodarocha', 'itaquaquecetuba', 'itapevi',
+      'mogidascruzes', 'ferrazdevasconcelos', 'poa',
+      'ribeiraopires', 'riograndedaserra',
       'santanadeparnaiba', 'jandira', 'caieiras', 'mairipora',
       'aruja', 'biritibamirim', 'salesopolis', 'guararema',
-      'vargem grande paulista', 'vargemgrandepaulista', 'juquitiba', 'saolourençodaserra',
-      'saolourencodaserra', 'itapecerica_daserra', 'itapecerica', 'itapecericadaserra',
-    ].map(n),
+      'vargemgrandepaulista', 'juquitiba', 'saolourencodaserra',
+      'itapecericadaserra',
+    ],
   },
   {
     pole: 'riodejaneiro',
@@ -59,19 +54,19 @@ const METRO_REGIONS: MetroRegion[] = [
       'belfordroxo', 'saojoaodemeriti', 'mesquita', 'nilopolis', 'queimados',
       'mage', 'itaborai', 'marica', 'guapimirim', 'tangua', 'cachoeirasdemacacu',
       'itaguai', 'seropedica', 'japeri', 'paracambi', 'mangaratiba',
-    ].map(n),
+    ],
   },
   {
     pole: 'belohorizonte',
     state: 'MG',
     members: [
       'belohorizonte', 'contagem', 'betim', 'ribeiraodasneves', 'santaluzia',
-      'ibirite', 'sabara', 'vespasiano', 'novaLima', 'novalima', 'raposos',
-      'caete', 'pedro leopoldo', 'pedroleopoldo', 'lagoasanta', 'confins',
-      'matozinhos', 'esmeraldas', 'florestal', 'rioAcima', 'rioacima',
-      'saojosedalapa', 'jaboticatubas', 'itaguaradamata', 'taquaracu de minas',
-      'taquaracudeminas', 'baldim', 'brumadinhos', 'brumadinho',
-    ].map(n),
+      'ibirite', 'sabara', 'vespasiano', 'novalima', 'raposos',
+      'caete', 'pedroleopoldo', 'lagoasanta', 'confins',
+      'matozinhos', 'esmeraldas', 'florestal', 'rioacima',
+      'saojosedalapa', 'jaboticatubas', 'itaguaradamata',
+      'taquaracudeminas', 'baldim', 'brumadinho',
+    ],
   },
   {
     pole: 'portoalegre',
@@ -79,21 +74,21 @@ const METRO_REGIONS: MetroRegion[] = [
     members: [
       'portoalegre', 'canoas', 'gravatai', 'viamao', 'novohamburgo',
       'saoleopoldo', 'alvorada', 'cachoeirinha', 'sapucaiadosul', 'esteio',
-      'guaiba', 'eldoradodosul', 'triunfo', 'charqueadas', 'saojeron',
-      'saojeronimo', 'montenegro', 'ivoti', 'dois irmaos', 'doisirmaos',
-      'estanciavelha', 'campo bom', 'campobom', 'portao', 'sapiranga',
+      'guaiba', 'eldoradodosul', 'triunfo', 'charqueadas',
+      'saojeronimo', 'montenegro', 'ivoti', 'doisirmaos',
+      'estanciavelha', 'campobom', 'portao', 'sapiranga',
       'ararica', 'novasantarita', 'igrejinha',
-    ].map(n),
+    ],
   },
   {
     pole: 'recife',
     state: 'PE',
     members: [
       'recife', 'jaboataodosguararapes', 'olinda', 'paulista', 'camaragibe',
-      'cabodeagostinho', 'abreu e lima', 'abreuelima', 'igarassu',
-      'itapissuma', 'itamaraca', 'ilhadeitamaraca', 'ipojuca', 'moreno',
-      'saolourençodamata', 'saolourencodamata', 'aracoiaba',
-    ].map(n),
+      'cabodeagostinho', 'abreuelima', 'igarassu',
+      'itapissuma', 'ilhadeitamaraca', 'ipojuca', 'moreno',
+      'saolourencodamata', 'aracoiaba',
+    ],
   },
   {
     pole: 'fortaleza',
@@ -102,28 +97,28 @@ const METRO_REGIONS: MetroRegion[] = [
       'fortaleza', 'caucaia', 'maracanau', 'maranguape', 'pacatuba',
       'eusebio', 'aquiraz', 'horizonte', 'itaitinga', 'guaiuba',
       'chorozinho', 'pacajus', 'cascavel', 'pindoretama', 'saogoncalodoamarante',
-    ].map(n),
+    ],
   },
   {
     pole: 'salvador',
     state: 'BA',
     members: [
-      'salvador', 'camacari', 'laurodefreitas', 'simoesfilho', 'simoefilho',
-      'candeias', 'diasdavila', 'madre de deus', 'madrededeus',
-      'saofranciscode conte', 'saofranciscodoconde', 'veracruz', 'itaparica',
-      'pojuca', 'saoSebastiaodopassé', 'saosebastiaodopasse',
-    ].map(n),
+      'salvador', 'camacari', 'laurodefreitas', 'simoesfilho',
+      'candeias', 'diasdavila', 'madrededeus',
+      'saofranciscodoconde', 'veracruz', 'itaparica',
+      'pojuca', 'saosebastiaodopasse',
+    ],
   },
   {
     pole: 'goiania',
     state: 'GO',
     members: [
       'goiania', 'aparecidadegoiania', 'trindade', 'senadorcanedo',
-      'goianira', 'neropolis', 'inhumas', 'bonfinopolis', 'abadia de goias',
+      'goianira', 'neropolis', 'inhumas', 'bonfinopolis',
       'abadiadegoias', 'aragoiania', 'hidrolandia', 'goianapolis',
-      'santo antonio de goias', 'santoantoniodegoias', 'caldazinha',
+      'santoantoniodegoias', 'caldazinha',
       'caturai', 'taquaraldegoias',
-    ].map(n),
+    ],
   },
   {
     pole: 'vitoria',
@@ -131,7 +126,7 @@ const METRO_REGIONS: MetroRegion[] = [
     members: [
       'vitoria', 'vilavelha', 'serra', 'cariacica', 'viana', 'guarapari',
       'fundao',
-    ].map(n),
+    ],
   },
   {
     pole: 'florianopolis',
@@ -139,10 +134,9 @@ const METRO_REGIONS: MetroRegion[] = [
     members: [
       'florianopolis', 'saojose', 'palhoca', 'biguacu', 'santoantoniodelisboa',
       'governadorcelsoramos', 'aguasmornas', 'angelina', 'anitapolis',
-      'antoniocarlos', 'rancho queimado', 'ranchoqueimado',
-      'santoamarodaimperatriz', 'saopedrodeAlcantara', 'saopedrodeAlcantarA',
-      'saopedrodealcantara',
-    ].map(n),
+      'antoniocarlos', 'ranchoqueimado',
+      'santoamarodaimperatriz', 'saopedrodealcantara',
+    ],
   },
   {
     pole: 'belem',
@@ -150,63 +144,61 @@ const METRO_REGIONS: MetroRegion[] = [
     members: [
       'belem', 'ananindeua', 'marituba', 'benevides', 'santabarbaradopara',
       'santaisabeldopara',
-    ].map(n),
+    ],
   },
   {
     pole: 'natal',
     state: 'RN',
     members: [
-      'natal', 'parnamirim', 'saogoncalodoamarante', 'macaiba', 'ceara-mirim',
-      'cearamirim', 'extremoz', 'niziafloresta', 'saojosedemipibU',
-      'saojosedemipibu', 'monte alegre', 'montealegre', 'veracruz',
-    ].map(n),
+      'natal', 'parnamirim', 'saogoncalodoamarante', 'macaiba',
+      'cearamirim', 'extremoz', 'niziafloresta',
+      'saojosedemipibu', 'montealegre', 'veracruz',
+    ],
   },
   {
     pole: 'saoluis',
     state: 'MA',
     members: [
       'saoluis', 'saojosederibamar', 'pacodolumiar', 'raposa', 'alcantara',
-    ].map(n),
+    ],
   },
   {
     pole: 'joaopessoa',
     state: 'PB',
     members: [
-      'joaopessoa', 'santarita', 'bayeux', 'cabedelo', 'condE',
+      'joaopessoa', 'santarita', 'bayeux', 'cabedelo',
       'conde', 'lucena', 'cruzdoespiritosanto',
-    ].map(n),
+    ],
   },
   {
     pole: 'maceio',
     state: 'AL',
     members: [
-      'maceio', 'rioLargo', 'riolargo', 'marechaldeodoro', 'satuba',
-      'paripueira', 'barradeSantoantonio', 'barradesantoantonio',
-      'pilar', 'santaLuziadoNorte', 'santaluziadonorte', 'coqueiroseco',
-    ].map(n),
+      'maceio', 'riolargo', 'marechaldeodoro', 'satuba',
+      'paripueira', 'barradesantoantonio',
+      'pilar', 'santaluziadonorte', 'coqueiroseco',
+    ],
   },
   {
     pole: 'cuiaba',
     state: 'MT',
     members: [
-      'cuiaba', 'varzeagrande', 'nossasenhoradolivramento', 'santoantoniodoleverguer',
+      'cuiaba', 'varzeagrande', 'nossasenhoradolivramento',
       'santoantoniodeleverguer', 'acorizal', 'chapadadosguimaraes',
-    ].map(n),
+    ],
   },
   {
     pole: 'campogrande',
     state: 'MS',
     members: [
-      'campogrande', 'terenos', 'sidrolandia', 'novaalvorada dosul',
-      'novaalvoradadosul', 'ribas do rio pardo', 'ribasdo riopardo',
-      'ribasdoriopardo', 'jaraguari',
-    ].map(n),
+      'campogrande', 'terenos', 'sidrolandia',
+      'novaalvoradadosul', 'ribasdoriopardo', 'jaraguari',
+    ],
   },
 ];
 
-// Build a lookup: normalizedPole → MetroRegion
+// Build lookups
 const _poleMap: Record<string, MetroRegion> = {};
-// Build a lookup: normalizedMember → list of metro regions it belongs to
 const _memberMap: Record<string, MetroRegion[]> = {};
 
 METRO_REGIONS.forEach((mr) => {
@@ -217,25 +209,14 @@ METRO_REGIONS.forEach((mr) => {
   });
 });
 
-/**
- * Given a normalized city name extracted from a "Região Metropolitana de X"
- * pattern, find the metro region whose pole matches.
- */
 export function findMetroByPole(poleCityNorm: string): MetroRegion | null {
   return _poleMap[poleCityNorm] || null;
 }
 
-/**
- * Check if a provider city (normalized) is a member of a given metro region.
- */
 export function isMemberOfMetro(providerCityNorm: string, metro: MetroRegion): boolean {
   return metro.members.includes(providerCityNorm);
 }
 
-/**
- * Known regional pattern aliases that map to a specific metro pole.
- * E.g. "baixadafluminense" → riodejaneiro, "regiaodoabc" → saopaulo
- */
 const REGIONAL_ALIASES: Record<string, string> = {
   baixadafluminense: 'riodejaneiro',
   baixadasantista: 'santos',
@@ -257,12 +238,7 @@ const REGIONAL_ALIASES: Record<string, string> = {
   grandesaoluis: 'saoluis',
 };
 
-/**
- * Try to resolve a normalized geo string to a metro region.
- * Handles: "regiaometropolitanade..." , "grande..." , regional aliases.
- */
 export function resolveMetroRegion(normalizedGeo: string, stateNorm?: string): MetroRegion | null {
-  // 1. "regiaometropolitanade..." pattern
   const rmPrefix = 'regiaometropolitanade';
   if (normalizedGeo.startsWith(rmPrefix)) {
     const pole = normalizedGeo.slice(rmPrefix.length);
@@ -270,7 +246,6 @@ export function resolveMetroRegion(normalizedGeo: string, stateNorm?: string): M
     if (found) return found;
   }
 
-  // Also handle without "de": "regiaometropolitanacuritiba"
   const rmPrefix2 = 'regiaometropolitana';
   if (normalizedGeo.startsWith(rmPrefix2) && !normalizedGeo.startsWith(rmPrefix)) {
     const pole = normalizedGeo.slice(rmPrefix2.length);
@@ -278,23 +253,20 @@ export function resolveMetroRegion(normalizedGeo: string, stateNorm?: string): M
     if (found) return found;
   }
 
-  // 2. "grande..." pattern
   if (normalizedGeo.startsWith('grande')) {
     const pole = normalizedGeo.slice(6);
     const found = findMetroByPole(pole);
     if (found) return found;
   }
 
-  // 3. Regional aliases
   const alias = REGIONAL_ALIASES[normalizedGeo];
   if (alias) {
     return findMetroByPole(alias) || null;
   }
 
-  // 4. Direct pole match (user typed a city that is a metro pole)
   if (stateNorm) {
     const found = findMetroByPole(normalizedGeo);
-    if (found && n(found.state) === stateNorm) return found;
+    if (found && normalize(found.state) === stateNorm) return found;
   }
 
   return null;
