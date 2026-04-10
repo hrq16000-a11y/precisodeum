@@ -474,7 +474,24 @@ function normalizeCityName(name: string): string {
   return normalize(name);
 }
 
-export { normalizeCityName, matchesGeoContext as matchesGeoContextFn };
+// Backward-compatible wrapper for external callers using old signature
+function matchesGeoContextCompat(
+  provider: DbProvider,
+  cityNorm: string,
+  stateNorm?: string,
+  userLat?: number | null,
+  userLon?: number | null,
+  radiusKm?: number,
+): boolean {
+  const ctx = buildGeoContext(cityNorm, stateNorm, userLat, userLon);
+  if (radiusKm) (ctx as any).radius = radiusKm;
+  const pCityNorm = normalize(provider.city);
+  const pStateNorm = normalize(provider.state);
+  const provCoords = resolveProviderCoords(provider);
+  return matchesGeoContext(pCityNorm, pStateNorm, provCoords, ctx);
+}
+
+export { normalizeCityName, matchesGeoContextCompat as matchesGeoContext };
 
 const MIN_LOCAL_RESULTS = 3;
 
