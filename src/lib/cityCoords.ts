@@ -268,4 +268,12 @@ export function getCityCoords(city: string): { lat: number; lon: number } | null
   return result;
 }
 
+/**
+ * Check if a normalized string is a recognized city (CITY_COORDS or IBGE national index).
+ * Does NOT require coordinates — just validates the city name exists.
+ */
+export function isRecognizedCity(normCity: string): boolean {
+  return normCity in CITY_COORDS || isKnownCity(normCity);
+}
+
 export { CITY_COORDS };
