@@ -1,19 +1,57 @@
-import { useState, useRef, useEffect } from 'react';
-import { MapPin, ChevronDown, Check } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { MapPin, ChevronDown, Check, Loader2 } from 'lucide-react';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { useSearchSuggestions } from '@/hooks/useProviders';
 
 interface GeoLocationChipProps {
   variant?: 'default' | 'hero';
+}
+
+interface CityResult {
+  name: string;
+  state: string;
+}
+
+// IBGE API: all 5,570 Brazilian municipalities
+let ibgeCachePromise: Promise<CityResult[]> | null = null;
+
+function fetchAllMunicipalities(): Promise<CityResult[]> {
+  if (ibgeCachePromise) return ibgeCachePromise;
+  ibgeCachePromise = fetch(
+    'https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome'
+  )
+    .then((res) => {
+      if (!res.ok) throw new Error('IBGE API error');
+      return res.json();
+    })
+    .then((data: any[]) =>
+      data.map((m) => ({
+        name: m.nome as string,
+        state: m.microrregiao?.mesorregiao?.UF?.sigla as string,
+      }))
+    )
+    .catch(() => {
+      ibgeCachePromise = null;
+      return [] as CityResult[];
+    });
+  return ibgeCachePromise;
+}
+
+// Normalize for accent-insensitive search
+function normalize(s: string) {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 }
 
 const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
   const { city, state, setCity } = useGeoCity();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [allCities, setAllCities] = useState<CityResult[]>([]);
+  const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { data: suggestions } = useSearchSuggestions();
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -24,18 +62,32 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
   }, []);
 
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 50);
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 50);
+      if (allCities.length === 0) {
+        setLoading(true);
+        fetchAllMunicipalities().then((cities) => {
+          setAllCities(cities);
+          setLoading(false);
+        });
+      }
+    }
   }, [open]);
 
   const displayText = city ? `${city}${state ? `, ${state}` : ''}` : 'Definir localização';
 
-  const filteredCities = (suggestions?.cities || [])
-    .filter((c) => {
-      if (!search.trim()) return true;
-      const q = search.toLowerCase();
-      return c.name.toLowerCase().includes(q) || c.state.toLowerCase().includes(q);
-    })
-    .slice(0, 8);
+  const filteredCities = useCallback(() => {
+    if (!search.trim()) return allCities.slice(0, 12);
+    const q = normalize(search);
+    const terms = q.split(/\s+/).filter(Boolean);
+    return allCities
+      .filter((c) => {
+        const cityNorm = normalize(c.name);
+        const stateNorm = normalize(c.state);
+        return terms.every((t) => cityNorm.includes(t) || stateNorm.includes(t));
+      })
+      .slice(0, 12);
+  }, [search, allCities])();
 
   const handleSelect = (name: string, st: string) => {
     setCity(name, st);
@@ -60,24 +112,33 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1.5 w-64 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+        <div className="absolute left-0 top-full z-50 mt-1.5 w-72 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
           <div className="border-b border-border p-2">
             <input
               ref={inputRef}
               type="text"
-              placeholder="Buscar cidade..."
+              placeholder="Digite o nome da cidade..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
           </div>
-          <div className="max-h-48 overflow-y-auto p-1">
-            {filteredCities.length === 0 && (
+          <div className="max-h-56 overflow-y-auto p-1">
+            {loading && (
+              <div className="flex items-center justify-center gap-2 px-3 py-4">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Carregando municípios...</span>
+              </div>
+            )}
+            {!loading && filteredCities.length === 0 && search.trim() && (
               <p className="px-3 py-2 text-xs text-muted-foreground">Nenhuma cidade encontrada</p>
             )}
-            {filteredCities.map((c) => (
+            {!loading && filteredCities.length === 0 && !search.trim() && allCities.length === 0 && (
+              <p className="px-3 py-2 text-xs text-muted-foreground">Erro ao carregar cidades. Tente novamente.</p>
+            )}
+            {filteredCities.map((c, i) => (
               <button
-                key={c.slug}
+                key={`${c.name}-${c.state}-${i}`}
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault();
@@ -88,7 +149,7 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
                 <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className="flex-1 truncate font-medium text-foreground">{c.name}</span>
                 <span className="text-xs text-muted-foreground">{c.state}</span>
-                {city === c.name && <Check className="h-3.5 w-3.5 text-accent" />}
+                {city === c.name && state === c.state && <Check className="h-3.5 w-3.5 text-accent" />}
               </button>
             ))}
           </div>
