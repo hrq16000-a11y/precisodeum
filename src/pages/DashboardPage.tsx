@@ -21,6 +21,8 @@ import DashboardTipOfDay from '@/components/dashboard/DashboardTipOfDay';
 import { usePermissions } from '@/hooks/usePermissions';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
+import ServiceWizard from '@/components/dashboard/ServiceWizard';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
