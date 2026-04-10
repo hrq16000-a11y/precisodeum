@@ -7,7 +7,7 @@ import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useSettingValue } from '@/hooks/useSiteSettings';
+import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
 import AvatarReminder from '@/components/dashboard/AvatarReminder';
@@ -28,6 +28,7 @@ const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
   const navigate = useNavigate();
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
+  const wizardEnabled = useFeatureEnabled('enable_service_wizard_onboarding');
   const { levelName, levelColor, accountTypeName, accountTypeColor } = usePermissions();
   const [servicesCount, setServicesCount] = useState<number | null>(null);
   const [leadsCount, setLeadsCount] = useState<number>(0);
