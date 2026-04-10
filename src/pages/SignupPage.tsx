@@ -76,7 +76,7 @@ const SignupPage = () => {
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
   const [form, setForm] = useState({
     fullName: '', email: '', phone: '', password: '',
-    businessName: '', categoryId: '', categoryName: '', city: '', state: '', whatsapp: '', description: '',
+    businessName: '', categoryId: '', categoryName: '', city: '', state: '', description: '',
   });
   const navigate = useNavigate();
 
