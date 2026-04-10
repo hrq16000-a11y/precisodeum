@@ -853,32 +853,30 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
             {/* ====== PORTFOLIO / MEDIA TAB ====== */}
             <TabsContent value="portfolio" className="space-y-4 mt-0">
               <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground text-sm">📸 Portfólio ({portfolio.length})</h3>
-                  <label className="cursor-pointer">
-                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild disabled={portfolioUploading}>
-                      <span>{portfolioUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />} Adicionar</span>
-                    </Button>
-                    <input type="file" accept="image/*" multiple className="hidden" onChange={handlePortfolioUpload} />
-                  </label>
-                </div>
+                <h3 className="font-semibold text-foreground text-sm">📸 Portfólio ({portfolio.length} {portfolio.length === 1 ? 'álbum' : 'álbuns'} • {totalPortfolioPhotos} fotos)</h3>
                 {portfolio.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-3">Nenhuma foto no portfólio</p>
+                  <p className="text-xs text-muted-foreground text-center py-3">Nenhum álbum no portfólio</p>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {portfolio.map(img => (
-                      <div key={img.name} className="relative group aspect-square rounded-lg overflow-hidden border border-border">
-                        <img src={img.url} alt="" className="h-full w-full object-cover" loading="lazy" />
-                        <button
-                          onClick={() => deletePortfolioImage(img.name)}
-                          className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
+                  <div className="space-y-4">
+                    {portfolio.map(album => (
+                      <div key={album.id}>
+                        <p className="text-xs font-medium text-foreground mb-1.5">{album.name} ({album.photos.length})</p>
+                        {album.photos.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Sem fotos</p>
+                        ) : (
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {album.photos.map(photo => (
+                              <div key={photo.id} className="relative group aspect-square rounded-lg overflow-hidden border border-border">
+                                <img src={photo.image_url} alt={photo.name} className="h-full w-full object-cover" loading="lazy" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
+                <p className="text-[10px] text-muted-foreground">Gerenciado pelo profissional em Dashboard → Portfólio</p>
               </div>
 
               <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
