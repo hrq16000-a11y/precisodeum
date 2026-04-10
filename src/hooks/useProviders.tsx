@@ -2,12 +2,9 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
-import { calculateDistanceKm, hasCoordinates } from '@/lib/geoDistance';
-import { getCityCoords, isRecognizedCity } from '@/lib/cityCoords';
-import { resolveMetroRegion, isMemberOfMetro } from '@/lib/metroRegions';
 import { normalize } from '@/lib/normalize';
-import { extractUFFromQuery, isUF, getUFCapital } from '@/lib/ufIndex';
-import { lookupCity } from '@/lib/citiesIndex';
+import GeoEngine from '@/lib/geoEngine';
+import type { GeoIntent } from '@/lib/geoEngine';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
@@ -338,137 +335,10 @@ export function useFeaturedProviders() {
   });
 }
 
-// --- Geo Intelligence v3 ---
+// --- GEO Intelligence v5: delegated to GeoEngine ---
 
-const CAPITALS = new Set([
-  'saopaulo','riodejaneiro','brasilia','salvador','fortaleza','belohorizonte',
-  'manaus','curitiba','recife','portoalegre','belem','goiania',
-  'saoluis','maceio','natal','teresina','campogrande','joaopessoa',
-  'aracaju','cuiaba','florianopolis','palmas','macapa','boavista','riobranco',
-  'vitoria','portovelho',
-]);
-
-function isCapital(cityNorm: string): boolean {
-  return CAPITALS.has(cityNorm);
-}
-
-function resolveProviderCoords(provider: DbProvider): { lat: number; lon: number } | null {
-  if (hasCoordinates(provider.latitude, provider.longitude)) {
-    return { lat: provider.latitude!, lon: provider.longitude! };
-  }
-  return getCityCoords(provider.city);
-}
-
-function dynamicRadius(cityNorm: string, metroDetected: boolean): number {
-  if (metroDetected) return 100;
-  if (isCapital(cityNorm)) return 120;
-  return 60;
-}
-
-/**
- * Extract the core city name from geo-detected strings like
- * "Região Metropolitana de Curitiba" → "curitiba"
- * "Grande São Paulo" → "saopaulo"
- */
-function extractCoreCity(cityNorm: string): string {
-  if (cityNorm.startsWith('regiaometropolitanade')) {
-    return cityNorm.slice('regiaometropolitanade'.length);
-  }
-  if (cityNorm.startsWith('regiaometropolitana')) {
-    return cityNorm.slice('regiaometropolitana'.length);
-  }
-  if (cityNorm.startsWith('grande')) {
-    return cityNorm.slice(6);
-  }
-  return cityNorm;
-}
-
-interface GeoContext {
-  cityNorm: string;
-  stateNorm: string;
-  coreCity: string;
-  userCoords: { latitude: number; longitude: number } | null;
-  metro: ReturnType<typeof resolveMetroRegion>;
-  radius: number;
-}
-
-function buildGeoContext(
-  city: string, state?: string,
-  userLat?: number | null, userLon?: number | null,
-): GeoContext {
-  const cityNorm = normalize(city);
-  const stateNorm = normalize(state);
-  const coreCity = extractCoreCity(cityNorm);
-  const metro = cityNorm ? resolveMetroRegion(cityNorm, stateNorm || undefined) : null;
-  const userCoords = hasCoordinates(userLat, userLon)
-    ? { latitude: userLat!, longitude: userLon! }
-    : null;
-  const radius = dynamicRadius(coreCity || cityNorm, !!metro);
-  return { cityNorm, stateNorm, coreCity, userCoords, metro, radius };
-}
-
-function matchesGeoContext(
-  pCityNorm: string,
-  pStateNorm: string,
-  provCoords: { lat: number; lon: number } | null,
-  ctx: GeoContext,
-): boolean {
-  if (!ctx.cityNorm && !ctx.stateNorm) return true;
-
-  // Layer 1: Haversine with dynamic radius
-  if (ctx.userCoords && provCoords) {
-    const dist = calculateDistanceKm(
-      ctx.userCoords,
-      { latitude: provCoords.lat, longitude: provCoords.lon },
-    );
-    if (dist <= ctx.radius) return true;
-  }
-
-  // Layer 2: Metro region membership (blocks non-members)
-  if (ctx.metro) {
-    return isMemberOfMetro(pCityNorm, ctx.metro) || pCityNorm === ctx.coreCity;
-  }
-
-  // Layer 3: Fuzzy city name match
-  if (ctx.cityNorm) {
-    if (pCityNorm === ctx.cityNorm) return true;
-    if (pCityNorm.includes(ctx.cityNorm) || ctx.cityNorm.includes(pCityNorm)) return true;
-    if (ctx.coreCity !== ctx.cityNorm) {
-      if (pCityNorm === ctx.coreCity) return true;
-      if (pCityNorm.includes(ctx.coreCity) || ctx.coreCity.includes(pCityNorm)) return true;
-    }
-  }
-
-  // Layer 4: Same state fallback (only if no metro detected)
-  if (ctx.stateNorm && pStateNorm === ctx.stateNorm) return true;
-
-  return false;
-}
-
-function geoScore(
-  pCityNorm: string,
-  pStateNorm: string,
-  provCoords: { lat: number; lon: number } | null,
-  ctx: GeoContext,
-): number {
-  let score = 0;
-
-  if (pCityNorm === (ctx.coreCity || ctx.cityNorm)) score += 100;
-
-  if (ctx.metro && isMemberOfMetro(pCityNorm, ctx.metro)) score += 70;
-
-  if (ctx.userCoords && provCoords) {
-    const d = calculateDistanceKm(
-      ctx.userCoords,
-      { latitude: provCoords.lat, longitude: provCoords.lon },
-    );
-    if (d <= 30) score += 50;
-    else if (d <= 80) score += 30;
-  }
-
-  if (pStateNorm === ctx.stateNorm) score += 10;
-
-  return score;
+function resolveProviderCoords(provider: DbProvider) {
+  return GeoEngine.resolveProviderCoords(provider);
 }
 
 // Keep backward compat export
@@ -485,12 +355,13 @@ function matchesGeoContextCompat(
   userLon?: number | null,
   radiusKm?: number,
 ): boolean {
-  const ctx = buildGeoContext(cityNorm, stateNorm, userLat, userLon);
+  const intent = GeoEngine.resolve('', cityNorm, stateNorm);
+  const ctx = GeoEngine.buildGeoContext(intent, userLat, userLon);
   if (radiusKm) (ctx as any).radius = radiusKm;
   const pCityNorm = normalize(provider.city);
   const pStateNorm = normalize(provider.state);
   const provCoords = resolveProviderCoords(provider);
-  return matchesGeoContext(pCityNorm, pStateNorm, provCoords, ctx);
+  return GeoEngine.matchesGeoContext(pCityNorm, pStateNorm, provCoords, ctx);
 }
 
 export { normalizeCityName, matchesGeoContextCompat as matchesGeoContext };
@@ -518,122 +389,11 @@ export function filterAndRankProviders(
     results = results.filter((p) => p.categorySlug === categorySlug);
   }
 
-  // --- GEO Intelligence v4: detect geographic intent inside query ---
-  let effectiveCity = city;
-  let effectiveState = state;
-  let effectiveLat = userLat;
-  let effectiveLon = userLon;
-  let textualQuery = query;
+  // --- GEO v5: resolve intent via GeoEngine ---
+  const intent: GeoIntent = GeoEngine.resolve(query, city, state);
 
-  if (query) {
-    let workingQuery = query.trim();
-    let detectedUF: string | undefined;
-
-    // 0. Extract UF from query end: "Curitiba PR", "São Paulo/SP"
-    const ufResult = extractUFFromQuery(workingQuery);
-    if (ufResult) {
-      detectedUF = ufResult.uf;
-      workingQuery = ufResult.queryWithoutUF;
-    }
-
-    const queryNorm = normalize(workingQuery);
-
-    // 1. Full query is a UF only? e.g. "SP", "RJ"
-    if (!queryNorm && detectedUF) {
-      // Query was just a UF like "SP"
-      const capital = getUFCapital(detectedUF);
-      if (capital) {
-        effectiveCity = capital;
-        effectiveState = detectedUF.toUpperCase();
-        const coords = getCityCoords(capital);
-        if (coords) { effectiveLat = coords.lat; effectiveLon = coords.lon; }
-      }
-      textualQuery = '';
-    } else if (isUF(queryNorm) && !detectedUF) {
-      // Bare UF in query: "sp", "rj"
-      const capital = getUFCapital(queryNorm);
-      if (capital) {
-        effectiveCity = capital;
-        effectiveState = queryNorm.toUpperCase();
-        const coords = getCityCoords(capital);
-        if (coords) { effectiveLat = coords.lat; effectiveLon = coords.lon; }
-      }
-      textualQuery = '';
-    }
-    // 2. Full query is a metro region? e.g. "Região Metropolitana de Curitiba"
-    else {
-      const metroFromQuery = resolveMetroRegion(queryNorm, detectedUF);
-      if (metroFromQuery) {
-        const poleCoords = getCityCoords(metroFromQuery.pole);
-        effectiveCity = metroFromQuery.pole;
-        effectiveState = metroFromQuery.state;
-        if (poleCoords) { effectiveLat = poleCoords.lat; effectiveLon = poleCoords.lon; }
-        textualQuery = '';
-      }
-      // 3. Full query is a known city?
-      else if (getCityCoords(queryNorm) || isRecognizedCity(queryNorm)) {
-        const coords = getCityCoords(queryNorm);
-        const cityEntry = lookupCity(queryNorm, detectedUF);
-        effectiveCity = queryNorm;
-        if (cityEntry) effectiveState = cityEntry.state;
-        else if (detectedUF) effectiveState = detectedUF.toUpperCase();
-        if (coords) { effectiveLat = coords.lat; effectiveLon = coords.lon; }
-        textualQuery = '';
-      }
-      // 4. Sliding window: detect city/metro anywhere in query
-      else {
-        const rawTokens = workingQuery.trim().split(/\s+/);
-        let bestMatch = '';
-        let bestStart = -1;
-        let bestEnd = -1;
-        let bestIsMetro = false;
-
-        // Try longest candidates first (greedy)
-        for (let len = rawTokens.length; len >= 1; len--) {
-          for (let i = 0; i <= rawTokens.length - len; i++) {
-            const candidate = rawTokens.slice(i, i + len).join(' ');
-            const candidateNorm = normalize(candidate);
-
-            // Check metro region
-            const metro = resolveMetroRegion(candidateNorm, detectedUF);
-            if (metro) {
-              bestMatch = metro.pole;
-              bestStart = i;
-              bestEnd = i + len;
-              bestIsMetro = true;
-              break;
-            }
-            // Check known city (coords or IBGE)
-            if (getCityCoords(candidateNorm) || isRecognizedCity(candidateNorm)) {
-              if (candidateNorm.length > bestMatch.length) {
-                bestMatch = candidateNorm;
-                bestStart = i;
-                bestEnd = i + len;
-                bestIsMetro = false;
-              }
-            }
-          }
-          if (bestIsMetro) break; // Metro is highest priority
-          if (bestMatch && len < bestMatch.length) break; // Already found longest
-        }
-
-        if (bestMatch && bestStart >= 0) {
-          effectiveCity = bestMatch;
-          const coords = getCityCoords(bestMatch);
-          if (coords) { effectiveLat = coords.lat; effectiveLon = coords.lon; }
-          const cityEntry = lookupCity(bestMatch, detectedUF);
-          if (cityEntry) effectiveState = cityEntry.state;
-          else if (detectedUF) effectiveState = detectedUF.toUpperCase();
-          // Remaining tokens become the textual query
-          const remaining = [
-            ...rawTokens.slice(0, bestStart),
-            ...rawTokens.slice(bestEnd),
-          ].join(' ').trim();
-          textualQuery = remaining;
-        }
-      }
-    }
-  }
+  // Use service tokens for textual filtering
+  const textualQuery = intent.serviceTokens.join(' ').trim();
 
   // Apply textual filter only with non-geo terms
   if (textualQuery) {
@@ -652,7 +412,10 @@ export function filterAndRankProviders(
     );
   }
 
-  const ctx = buildGeoContext(effectiveCity, effectiveState, effectiveLat, effectiveLon);
+  // Build geo context from resolved intent
+  const effectiveLat = intent.coords?.lat ?? userLat;
+  const effectiveLon = intent.coords?.lon ?? userLon;
+  const ctx = GeoEngine.buildGeoContext(intent, effectiveLat, effectiveLon);
   // Override radius if explicitly provided
   if (radiusKm) (ctx as any).radius = radiusKm;
 
@@ -662,8 +425,8 @@ export function filterAndRankProviders(
       const pCityNorm = normalize(p.city);
       const pStateNorm = normalize(p.state);
       const provCoords = resolveProviderCoords(p);
-      const isLocal = matchesGeoContext(pCityNorm, pStateNorm, provCoords, ctx);
-      const gs = isLocal ? geoScore(pCityNorm, pStateNorm, provCoords, ctx) : 0;
+      const isLocal = GeoEngine.matchesGeoContext(pCityNorm, pStateNorm, provCoords, ctx);
+      const gs = isLocal ? GeoEngine.geoScore(pCityNorm, pStateNorm, provCoords, ctx, intent.confidence) : 0;
       return { p, pCityNorm, isLocal, gs };
     });
 
