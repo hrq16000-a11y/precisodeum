@@ -511,7 +511,7 @@ const SignupPage = () => {
                           onChange={(e) => {
                             setCategorySearch(e.target.value);
                             setShowCategorySuggestions(true);
-                            if (!e.target.value) setForm(prev => ({ ...prev, categoryId: '', categoryName: '' }));
+                            if (!e.target.value) setForm(prev => ({ ...prev, categoryId: '', categoryName: '', categoryCustom: '' }));
                           }}
                           onFocus={() => setShowCategorySuggestions(true)}
                           placeholder="Digite para buscar... Ex: Eletricista"
