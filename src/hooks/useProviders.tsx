@@ -215,26 +215,28 @@ export function useCategoriesWithCount() {
   });
 }
 
+const FEATURED_SCORE_THRESHOLD = 5;
+
 export function useFeaturedProviders() {
   return useQuery({
     queryKey: ['featured-providers'],
     queryFn: async () => {
+      // Fetch all approved providers — featured is now score-based
       const allProviders = await fetchProvidersLightweight(
         supabase
           .from('providers')
           .select(providerSelect)
           .eq('status', 'approved')
-          .eq('featured', true)
-          .limit(200)
+          .limit(500)
       );
 
-      // Score by content: contentScore (from fetch) + visual fallback
+      // Filter by content score threshold
       const scored = allProviders
         .map((p) => ({
           ...p,
-          _totalScore: ((p as any)._contentScore || 0) + (p.serviceImage ? 2 : 0) + (p.hasPortfolio ? 2 : 0) + (p.photo ? 1 : 0),
+          _totalScore: (p as any)._contentScore || 0,
         }))
-        .filter(p => p._totalScore > 0);
+        .filter(p => p._totalScore >= FEATURED_SCORE_THRESHOLD);
 
       if (scored.length === 0) return [];
 
