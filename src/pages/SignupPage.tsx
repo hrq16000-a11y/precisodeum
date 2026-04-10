@@ -10,6 +10,7 @@ import { logAuditAction } from '@/hooks/useAuditLog';
 import { useQuery } from '@tanstack/react-query';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { User, Briefcase, Building2, ArrowRight, ArrowLeft, CheckCircle2, Search } from 'lucide-react';
+import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 
 const ACCOUNT_TYPES = [
   {
