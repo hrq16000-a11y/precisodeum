@@ -208,7 +208,7 @@ const DashboardServicesPage = () => {
       }
     }
 
-    toast.success(editId ? 'Anúncio atualizado!' : 'Anúncio publicado!');
+    toast.success(editId ? 'Serviço atualizado!' : 'Serviço publicado!');
     resetForm();
     setShowDialog(false);
     await fetchServices();
@@ -245,16 +245,16 @@ const DashboardServicesPage = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir este anúncio? Ele será movido para a lixeira.')) return;
+    if (!window.confirm('Tem certeza que deseja excluir este serviço? Ele será movido para a lixeira.')) return;
     await supabase.from('services').update({ deleted_at: new Date().toISOString() }).eq('id', id);
-    toast.success('Anúncio movido para a lixeira');
+    toast.success('Serviço movido para a lixeira');
     fetchServices();
   };
 
   const handlePause = async (s: any) => {
     const newDate = s.deleted_at ? null : new Date().toISOString();
     await supabase.from('services').update({ deleted_at: newDate }).eq('id', s.id);
-    toast.success(newDate ? 'Anúncio pausado' : 'Anúncio reativado');
+    toast.success(newDate ? 'Serviço pausado' : 'Serviço reativado');
     fetchServices();
   };
 
@@ -272,15 +272,15 @@ const DashboardServicesPage = () => {
       {!limitsLoading && limits && limits.can_create_services && remainingServices !== null && remainingServices === 0 && (
         <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span>Limite de {limits.max_services} anúncio(s) atingido. Atualize seu plano.</span>
+          <span>Limite de {limits.max_services} serviço(s) atingido. Atualize seu plano.</span>
         </div>
       )}
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Meus Anúncios</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">{services.length} anúncio{services.length !== 1 ? 's' : ''}</p>
+          <h1 className="font-display text-2xl font-bold text-foreground">Meus Serviços</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">{services.length} serviço{services.length !== 1 ? 's' : ''}</p>
         </div>
         <Button
           variant="accent"
@@ -291,7 +291,7 @@ const DashboardServicesPage = () => {
             setShowDialog(true);
           }}
         >
-          <Plus className="mr-1 h-4 w-4" /> Novo Anúncio
+          <Plus className="mr-1 h-4 w-4" /> Novo Serviço
         </Button>
       </div>
 
@@ -301,7 +301,7 @@ const DashboardServicesPage = () => {
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Buscar anúncios..."
+          placeholder="Buscar serviços..."
           className="w-full rounded-lg border border-input bg-background pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
       </div>
@@ -311,8 +311,8 @@ const DashboardServicesPage = () => {
       <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.length === 0 && (
           <div className="col-span-full rounded-xl border border-border bg-card p-12 text-center">
-            <p className="text-foreground font-semibold">Nenhum anúncio encontrado</p>
-            <p className="mt-1 text-sm text-muted-foreground">Crie seu primeiro anúncio para começar a vender.</p>
+            <p className="text-foreground font-semibold">Nenhum serviço encontrado</p>
+            <p className="mt-1 text-sm text-muted-foreground">Crie seu primeiro serviço para começar a receber clientes.</p>
           </div>
         )}
         {filtered.map(s => {
@@ -400,7 +400,7 @@ const DashboardServicesPage = () => {
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
-              📦 {editId ? 'Editar Anúncio' : 'Novo Anúncio'}
+              📦 {editId ? 'Editar Serviço' : 'Novo Serviço'}
             </DialogTitle>
           </DialogHeader>
 
@@ -478,7 +478,7 @@ const DashboardServicesPage = () => {
 
             {/* Photo upload area */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Foto do Anúncio</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">Foto do Serviço</label>
               {editId && user ? (
                 <div className="rounded-lg border border-border p-3">
                   <ServiceImageUpload serviceId={editId} userId={user.id} />
