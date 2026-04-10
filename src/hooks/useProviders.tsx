@@ -3,9 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
 import { calculateDistanceKm, hasCoordinates } from '@/lib/geoDistance';
-import { getCityCoords } from '@/lib/cityCoords';
+import { getCityCoords, isRecognizedCity } from '@/lib/cityCoords';
 import { resolveMetroRegion, isMemberOfMetro } from '@/lib/metroRegions';
 import { normalize } from '@/lib/normalize';
+import { extractUFFromQuery, isUF, getUFCapital } from '@/lib/ufIndex';
+import { lookupCity } from '@/lib/citiesIndex';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
