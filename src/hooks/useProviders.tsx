@@ -340,16 +340,20 @@ function normalizeCityName(name: string): string {
 }
 
 /** Check if provider matches city/state context */
-function matchesGeoContext(provider: DbProvider, cityNorm: string): boolean {
-  if (!cityNorm) return true;
+function matchesGeoContext(provider: DbProvider, cityNorm: string, stateNorm?: string): boolean {
+  if (!cityNorm && !stateNorm) return true;
   const pCity = normalizeCityName(provider.city);
   const pState = normalizeCityName(provider.state);
   // Exact city match
-  if (pCity === cityNorm) return true;
+  if (cityNorm && pCity === cityNorm) return true;
   // City contains search or search contains city (e.g. "sao paulo" vs "são paulo")
-  if (pCity.includes(cityNorm) || cityNorm.includes(pCity)) return true;
-  // State match (e.g. searching "SP" or "sao-paulo" matching state)
-  if (pState === cityNorm || pState.includes(cityNorm)) return true;
+  if (cityNorm && (pCity.includes(cityNorm) || cityNorm.includes(pCity))) return true;
+  // Same state = same region (metropolitan areas, nearby cities)
+  if (stateNorm && pState === stateNorm) return true;
+  if (cityNorm) {
+    // State match (e.g. searching "SP" or "sao-paulo" matching state)
+    if (pState === cityNorm || pState.includes(cityNorm)) return true;
+  }
   return false;
 }
 
