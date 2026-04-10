@@ -74,12 +74,20 @@ interface ThemeConfig {
   input: string;
 }
 
+interface PortfolioAlbum {
+  id: string;
+  name: string;
+  description: string;
+  photos: { id: string; image_url: string; display_order: number }[];
+}
+
 interface ProviderProfileSnapshot {
   provider: any;
   services: any[];
   reviews: any[];
   portfolioImages: string[];
   portfolioRawUrls: string[];
+  portfolioAlbums: PortfolioAlbum[];
   pageSettings: PageSettings;
   relatedProviders: any[];
 }
@@ -197,6 +205,7 @@ const ProviderProfile = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
   const [portfolioRawUrls, setPortfolioRawUrls] = useState<string[]>([]);
+  const [portfolioAlbums, setPortfolioAlbums] = useState<PortfolioAlbum[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
@@ -217,6 +226,7 @@ const ProviderProfile = () => {
       setReviews(snapshot.reviews);
       setPortfolioRawUrls(snapshot.portfolioRawUrls);
       setPortfolioImages(snapshot.portfolioImages);
+      setPortfolioAlbums(snapshot.portfolioAlbums || []);
       setPageSettings(snapshot.pageSettings);
       setRelatedProviders(snapshot.relatedProviders);
       setLoading(false);
