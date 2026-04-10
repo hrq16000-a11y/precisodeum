@@ -90,30 +90,71 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
 
 const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, categories(name, slug, icon)';
 
-// Cache portfolio folder list (single storage call, reused across hooks)
-let _portfolioCachePromise: Promise<Set<string>> | null = null;
+// Cache portfolio + service counts for ranking
+let _portfolioCachePromise: Promise<Map<string, { hasPortfolio: boolean; albumCount: number; photoCount: number }>> | null = null;
 let _portfolioCacheTime = 0;
 const PORTFOLIO_CACHE_TTL = 10 * 60_000; // 10 min
 
-async function getPortfolioSet(): Promise<Set<string>> {
+async function getPortfolioMap(): Promise<Map<string, { hasPortfolio: boolean; albumCount: number; photoCount: number }>> {
   const now = Date.now();
   if (_portfolioCachePromise && now - _portfolioCacheTime < PORTFOLIO_CACHE_TTL) {
     return _portfolioCachePromise;
   }
   _portfolioCacheTime = now;
   _portfolioCachePromise = (async () => {
+    const result = new Map<string, { hasPortfolio: boolean; albumCount: number; photoCount: number }>();
     try {
+      // Query albums with photo counts via provider → user mapping
+      const { data: albums } = await supabase
+        .from('portfolio_albums')
+        .select('provider_id, id');
+      if (albums && albums.length > 0) {
+        const albumIds = albums.map(a => a.id);
+        const { data: photos } = await supabase
+          .from('portfolio_photos')
+          .select('album_id')
+          .in('album_id', albumIds);
+
+        // Group by provider
+        const provAlbums: Record<string, string[]> = {};
+        albums.forEach(a => {
+          if (!provAlbums[a.provider_id]) provAlbums[a.provider_id] = [];
+          provAlbums[a.provider_id].push(a.id);
+        });
+
+        const albumPhotoCount: Record<string, number> = {};
+        (photos || []).forEach(p => {
+          albumPhotoCount[p.album_id] = (albumPhotoCount[p.album_id] || 0) + 1;
+        });
+
+        // Now we need provider → user_id mapping
+        const providerIds = Object.keys(provAlbums);
+        const { data: providers } = await supabase
+          .from('providers')
+          .select('id, user_id')
+          .in('id', providerIds);
+
+        (providers || []).forEach(prov => {
+          const albIds = provAlbums[prov.id] || [];
+          const totalPhotos = albIds.reduce((sum, aid) => sum + (albumPhotoCount[aid] || 0), 0);
+          result.set(prov.user_id, {
+            hasPortfolio: totalPhotos > 0,
+            albumCount: albIds.length,
+            photoCount: totalPhotos,
+          });
+        });
+      }
+
+      // Fallback: also check legacy storage folders
       const { data: folders } = await supabase.storage.from('portfolio').list('', { limit: 1000 });
-      const set = new Set<string>();
       (folders || []).forEach((f: any) => {
-        if (f.name && f.name !== '.emptyFolderPlaceholder' && f.id === null) {
-          // folders have id=null in storage listing
-          set.add(f.name);
+        if (f.name && f.name !== '.emptyFolderPlaceholder' && f.id === null && !result.has(f.name)) {
+          result.set(f.name, { hasPortfolio: true, albumCount: 0, photoCount: 0 });
         }
       });
-      return set;
+      return result;
     } catch {
-      return new Set<string>();
+      return result;
     }
   })();
   return _portfolioCachePromise;
@@ -130,8 +171,8 @@ async function fetchProvidersLightweight(query: any) {
   const providerIds = (data as any[]).map((p) => p.id);
   const userIds = [...new Set((data as any[]).map((p) => p.user_id))];
 
-  // 3 parallel fetches: profiles + services + portfolio folders (single call)
-  const [profilesRes, servicesRes, portfolioSet] = await Promise.all([
+  // 3 parallel fetches: profiles + services + portfolio data
+  const [profilesRes, servicesRes, portfolioMap] = await Promise.all([
     supabase
       .from('public_profiles' as any)
       .select('id, full_name, avatar_url')
@@ -140,7 +181,7 @@ async function fetchProvidersLightweight(query: any) {
       .from('services')
       .select('id, provider_id, service_name, description, whatsapp, service_area, service_images(image_url, display_order)')
       .in('provider_id', providerIds),
-    getPortfolioSet(),
+    getPortfolioMap(),
   ]);
 
   const profileMap: Record<string, { name: string; avatar?: string }> = {};
