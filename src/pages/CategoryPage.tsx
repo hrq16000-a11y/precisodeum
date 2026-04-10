@@ -130,7 +130,7 @@ const CategoryPage = () => {
       <Header />
 
       {/* Hero section with enhanced visual */}
-      <section className="relative bg-hero py-16 overflow-hidden">
+      <section className="relative bg-hero py-16 overflow-x-clip">
         {/* Decorative elements */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-transparent" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-accent/10 rounded-full blur-3xl -translate-y-1/2" />
