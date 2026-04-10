@@ -128,6 +128,11 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                   <MapPin className="h-3 w-3" /> Outra região
                 </span>
               )}
+              {isOnline && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                  <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online
+                </span>
+              )}
             </div>
           </div>
         </div>
