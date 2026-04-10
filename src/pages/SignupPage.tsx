@@ -215,7 +215,43 @@ const SignupPage = () => {
       toast.error('A senha deve ter pelo menos 6 caracteres');
       return;
     }
+    // Phone validation: 10 or 11 digits
+    const phoneDigits = form.phone.replace(/\D/g, '');
+    if (phoneDigits.length < 10) {
+      toast.error('Telefone deve ter pelo menos 10 dígitos');
+      return;
+    }
+
+    if (showProviderFields) {
+      // Category required
+      if (!form.categoryId && !form.categoryCustom) {
+        toast.error('Selecione uma categoria ou digite "Outro"');
+        return;
+      }
+      // City must come from valid selection
+      if (!form.city || !form.state) {
+        toast.error('Selecione sua cidade na lista');
+        return;
+      }
+      // CNPJ validation if provided
+      const cnpjDigits = form.cnpj.replace(/\D/g, '');
+      if (cnpjDigits && cnpjDigits.length !== 14) {
+        toast.error('CNPJ deve ter 14 dígitos');
+        return;
+      }
+    }
+
     setLoading(true);
+
+    // Geocode fallback if lat/lon missing but city exists
+    let { latitude, longitude } = form;
+    if (showProviderFields && form.city && (latitude == null || longitude == null)) {
+      try {
+        const coords = await geocodeCity(form.city, form.state);
+        latitude = coords.latitude;
+        longitude = coords.longitude;
+      } catch { /* proceed without coords */ }
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email: form.email,
@@ -246,6 +282,7 @@ const SignupPage = () => {
 
       if (accountType === 'provider') {
         const slug = `${form.fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${form.city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+        const cnpjClean = form.cnpj ? form.cnpj.replace(/\D/g, '') : null;
         const { data: providerData } = await supabase.from('providers').insert({
           user_id: data.user.id,
           business_name: form.businessName || null,
@@ -255,12 +292,13 @@ const SignupPage = () => {
           phone: form.phone,
           whatsapp: form.phone,
           category_id: form.categoryId || null,
-          cnpj: form.cnpj ? form.cnpj.replace(/\D/g, '') : null,
-          latitude: form.latitude,
-          longitude: form.longitude,
+          category_custom: form.categoryCustom || null,
+          cnpj: cnpjClean || null,
+          latitude,
+          longitude,
           slug,
           status: 'pending',
-        }).select('id').single();
+        } as any).select('id').single();
 
         // Auto-create trial subscription (idempotent: skip if already exists)
         if (providerData?.id) {
@@ -292,7 +330,6 @@ const SignupPage = () => {
 
     setLoading(false);
     toast.success('Conta criada com sucesso! Bem-vindo!');
-    // Smart redirect based on account type
     if (accountType === 'client') {
       navigate('/');
     } else if (accountType === 'rh') {
