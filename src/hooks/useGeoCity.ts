@@ -223,13 +223,22 @@ export function useGeoCity(): GeoStore {
     safeSet(CITY_KEY, city);
     safeSet(OVERRIDE_KEY, 'true');
     if (state) safeSet(STATE_KEY, state);
+
     if (latitude !== undefined && latitude !== null) safeSet(LAT_KEY, String(latitude));
+    else {
+      try { localStorage.removeItem(LAT_KEY); sessionStorage.removeItem(LAT_KEY); } catch {}
+    }
+
     if (longitude !== undefined && longitude !== null) safeSet(LON_KEY, String(longitude));
+    else {
+      try { localStorage.removeItem(LON_KEY); sessionStorage.removeItem(LON_KEY); } catch {}
+    }
+
     setGeoState({
       city,
       state: state || geoState.state,
-      latitude: latitude ?? geoState.latitude,
-      longitude: longitude ?? geoState.longitude,
+      latitude: latitude ?? null,
+      longitude: longitude ?? null,
       manualOverride: true,
     });
   }, []);

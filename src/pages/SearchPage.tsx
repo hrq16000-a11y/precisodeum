@@ -29,7 +29,7 @@ const SearchPage = () => {
   const navigate = useNavigate();
   const query = searchParams.get('q') || '';
   const cityParam = searchParams.get('cidade') || '';
-  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, manualOverride } = useGeoCity();
+  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon } = useGeoCity();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('categoria') || '');
   const [selectedCity, setSelectedCity] = useState(cityParam);
   const [selectedNeighborhood, setSelectedNeighborhood] = useState(searchParams.get('bairro') || '');
@@ -44,8 +44,6 @@ const SearchPage = () => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
 
   const effectiveCity = selectedCity || cityParam || geoCity || '';
-  const effectiveUserLat = selectedCity && manualOverride ? null : userLat;
-  const effectiveUserLon = selectedCity && manualOverride ? null : userLon;
 
   const { data: categories = [], isError: categoriesError } = useCategories();
   const { data: suggestions } = useSearchSuggestions();
@@ -54,7 +52,7 @@ const SearchPage = () => {
     isLoading,
     isError: searchError,
     refetch,
-  } = useSearchProviders(query, effectiveCity, selectedCategory, minRating, geoState || '', effectiveUserLat, effectiveUserLon);
+  } = useSearchProviders(query, effectiveCity, selectedCategory, minRating, geoState || '', userLat, userLon);
 
   // Apply additional client-side filters
   const fullyFiltered = useMemo(() => {

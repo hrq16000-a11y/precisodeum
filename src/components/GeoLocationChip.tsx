@@ -9,8 +9,6 @@ interface GeoLocationChipProps {
 interface CityResult {
   name: string;
   state: string;
-  latitude: number | null;
-  longitude: number | null;
 }
 
 // IBGE API: all 5,570 Brazilian municipalities
@@ -30,8 +28,6 @@ function fetchAllMunicipalities(): Promise<CityResult[]> {
         .map((m) => ({
           name: (m.nome || '') as string,
           state: (m.microrregiao?.mesorregiao?.UF?.sigla || '') as string,
-          latitude: Number.isFinite(Number(m.microrregiao?.mesorregiao?.UF?.regiao?.id)) ? null : null,
-          longitude: null,
         }))
         .filter((c) => c.name && c.state)
     )
@@ -40,6 +36,30 @@ function fetchAllMunicipalities(): Promise<CityResult[]> {
       return [] as CityResult[];
     });
   return ibgeCachePromise;
+}
+
+let geocodeCache = new Map<string, { latitude: number | null; longitude: number | null }>();
+
+async function geocodeCity(name: string, state: string) {
+  const key = `${name}|${state}`;
+  if (geocodeCache.has(key)) return geocodeCache.get(key)!;
+
+  const query = encodeURIComponent(`${name}, ${state}, Brasil`);
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br&q=${query}`);
+    if (!res.ok) throw new Error('geocode failed');
+    const data = await res.json();
+    const result = {
+      latitude: data?.[0]?.lat ? Number(data[0].lat) : null,
+      longitude: data?.[0]?.lon ? Number(data[0].lon) : null,
+    };
+    geocodeCache.set(key, result);
+    return result;
+  } catch {
+    const result = { latitude: null, longitude: null };
+    geocodeCache.set(key, result);
+    return result;
+  }
 }
 
 // Normalize for accent-insensitive search
@@ -96,7 +116,8 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
       .slice(0, 12);
   }, [search, allCities])();
 
-  const handleSelect = (name: string, st: string, latitude?: number | null, longitude?: number | null) => {
+  const handleSelect = async (name: string, st: string) => {
+    const { latitude, longitude } = await geocodeCity(name, st);
     setCity(name, st, latitude, longitude);
     setOpen(false);
     setSearch('');
@@ -149,7 +170,7 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  handleSelect(c.name, c.state, c.latitude, c.longitude);
+                  void handleSelect(c.name, c.state);
                 }}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
               >
