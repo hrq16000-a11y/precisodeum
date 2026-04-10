@@ -121,6 +121,18 @@ const FloatingDots = () => {
   );
 };
 
+/** Pick N random items from an array (Fisher-Yates partial shuffle) */
+function pickRandom<T>(arr: T[], n: number): T[] {
+  const copy = [...arr];
+  const result: T[] = [];
+  for (let i = 0; i < Math.min(n, copy.length); i++) {
+    const j = i + Math.floor(Math.random() * (copy.length - i));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+    result.push(copy[i]);
+  }
+  return result;
+}
+
 const HeroBanner = () => {
   const [bgIndex, setBgIndex] = useState(0);
   const { city: geoCity } = useGeoCity();
