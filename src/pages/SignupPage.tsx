@@ -221,9 +221,11 @@ const SignupPage = () => {
           description: form.description,
           city: form.city,
           state: form.state,
-           phone: form.phone,
-           whatsapp: form.phone,
+          phone: form.phone,
+          whatsapp: form.phone,
           category_id: form.categoryId || null,
+          latitude: form.latitude,
+          longitude: form.longitude,
           slug,
           status: 'pending',
         }).select('id').single();
