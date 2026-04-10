@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check, X, Eye, Search, Download } from 'lucide-react';
+import { Check, X, Eye, Search, Download, MapPin } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -27,6 +27,7 @@ const AdminProvidersPage = () => {
   const [filter, setFilter] = useState('pending');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [backfilling, setBackfilling] = useState(false);
 
   const fetchProviders = async () => {
     let query = supabase
@@ -85,8 +86,33 @@ const AdminProvidersPage = () => {
 
   return (
     <AdminLayout>
-      <h1 className="font-display text-2xl font-bold text-foreground">Gerenciar Prestadores</h1>
-      <p className="mt-1 text-sm text-muted-foreground">{filtered.length} prestador(es)</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Gerenciar Prestadores</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{filtered.length} prestador(es)</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={backfilling}
+          onClick={async () => {
+            setBackfilling(true);
+            try {
+              const { data, error } = await supabase.functions.invoke('backfill-provider-coords');
+              if (error) throw error;
+              toast.success(`Coordenadas atualizadas: ${data?.updated || 0} de ${data?.total || 0}`);
+              if (data?.failed) toast.info(`${data.failed} não geocodificados`);
+            } catch (e: any) {
+              toast.error(e.message || 'Erro ao geocodificar');
+            } finally {
+              setBackfilling(false);
+            }
+          }}
+        >
+          <MapPin className="mr-1.5 h-4 w-4" />
+          {backfilling ? 'Geocodificando...' : 'Preencher Coordenadas'}
+        </Button>
+      </div>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="flex gap-2 flex-wrap">
