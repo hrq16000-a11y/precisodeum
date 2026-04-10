@@ -84,7 +84,7 @@ const SignupPage = () => {
   const cityDropdownRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState({
     fullName: '', email: '', phone: '', password: '',
-    businessName: '', categoryId: '', categoryName: '', city: '', state: '', description: '',
+    businessName: '', categoryId: '', categoryName: '', categoryCustom: '', city: '', state: '', description: '',
     cnpj: '',
     latitude: null as number | null, longitude: null as number | null,
   });
@@ -215,7 +215,43 @@ const SignupPage = () => {
       toast.error('A senha deve ter pelo menos 6 caracteres');
       return;
     }
+    // Phone validation: 10 or 11 digits
+    const phoneDigits = form.phone.replace(/\D/g, '');
+    if (phoneDigits.length < 10) {
+      toast.error('Telefone deve ter pelo menos 10 dígitos');
+      return;
+    }
+
+    if (showProviderFields) {
+      // Category required
+      if (!form.categoryId && !form.categoryCustom) {
+        toast.error('Selecione uma categoria ou digite "Outro"');
+        return;
+      }
+      // City must come from valid selection
+      if (!form.city || !form.state) {
+        toast.error('Selecione sua cidade na lista');
+        return;
+      }
+      // CNPJ validation if provided
+      const cnpjDigits = form.cnpj.replace(/\D/g, '');
+      if (cnpjDigits && cnpjDigits.length !== 14) {
+        toast.error('CNPJ deve ter 14 dígitos');
+        return;
+      }
+    }
+
     setLoading(true);
+
+    // Geocode fallback if lat/lon missing but city exists
+    let { latitude, longitude } = form;
+    if (showProviderFields && form.city && (latitude == null || longitude == null)) {
+      try {
+        const coords = await geocodeCity(form.city, form.state);
+        latitude = coords.latitude;
+        longitude = coords.longitude;
+      } catch { /* proceed without coords */ }
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email: form.email,
@@ -246,6 +282,7 @@ const SignupPage = () => {
 
       if (accountType === 'provider') {
         const slug = `${form.fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${form.city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+        const cnpjClean = form.cnpj ? form.cnpj.replace(/\D/g, '') : null;
         const { data: providerData } = await supabase.from('providers').insert({
           user_id: data.user.id,
           business_name: form.businessName || null,
@@ -255,12 +292,13 @@ const SignupPage = () => {
           phone: form.phone,
           whatsapp: form.phone,
           category_id: form.categoryId || null,
-          cnpj: form.cnpj ? form.cnpj.replace(/\D/g, '') : null,
-          latitude: form.latitude,
-          longitude: form.longitude,
+          category_custom: form.categoryCustom || null,
+          cnpj: cnpjClean || null,
+          latitude,
+          longitude,
           slug,
           status: 'pending',
-        }).select('id').single();
+        } as any).select('id').single();
 
         // Auto-create trial subscription (idempotent: skip if already exists)
         if (providerData?.id) {
@@ -292,7 +330,6 @@ const SignupPage = () => {
 
     setLoading(false);
     toast.success('Conta criada com sucesso! Bem-vindo!');
-    // Smart redirect based on account type
     if (accountType === 'client') {
       navigate('/');
     } else if (accountType === 'rh') {
@@ -494,11 +531,11 @@ const SignupPage = () => {
                     {/* Smart category picker with hierarchy */}
                     <div className="relative">
                       <label className="mb-1 block text-sm font-medium text-foreground">Categoria principal</label>
-                      {form.categoryName && (
+                      {(form.categoryName || form.categoryCustom) && (
                         <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
-                          {form.categoryName}
+                          {form.categoryName || form.categoryCustom}
                           <button type="button" onClick={() => {
-                            setForm(prev => ({ ...prev, categoryId: '', categoryName: '' }));
+                            setForm(prev => ({ ...prev, categoryId: '', categoryName: '', categoryCustom: '' }));
                             setCategorySearch('');
                           }} className="ml-0.5 hover:text-destructive">✕</button>
                         </div>
@@ -511,7 +548,7 @@ const SignupPage = () => {
                           onChange={(e) => {
                             setCategorySearch(e.target.value);
                             setShowCategorySuggestions(true);
-                            if (!e.target.value) setForm(prev => ({ ...prev, categoryId: '', categoryName: '' }));
+                            if (!e.target.value) setForm(prev => ({ ...prev, categoryId: '', categoryName: '', categoryCustom: '' }));
                           }}
                           onFocus={() => setShowCategorySuggestions(true)}
                           placeholder="Digite para buscar... Ex: Eletricista"
@@ -560,8 +597,9 @@ const SignupPage = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              setForm(prev => ({ ...prev, categoryId: '', categoryName: categorySearch.trim() || 'Outro' }));
-                              setCategorySearch(categorySearch.trim() || 'Outro');
+                              const customVal = categorySearch.trim() || 'Outro';
+                              setForm(prev => ({ ...prev, categoryId: '', categoryName: '', categoryCustom: customVal }));
+                              setCategorySearch(customVal);
                               setShowCategorySuggestions(false);
                             }}
                             className="w-full border-t border-border px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted transition-colors"
@@ -596,9 +634,8 @@ const SignupPage = () => {
                             setCitySearch(e.target.value);
                             setShowCitySuggestions(true);
                             loadCities();
-                            if (!e.target.value.trim()) {
-                              setForm(prev => ({ ...prev, city: '', state: '', latitude: null, longitude: null }));
-                            }
+                            // Invalidate selection when user edits after choosing
+                            setForm(prev => ({ ...prev, city: '', state: '', latitude: null, longitude: null }));
                           }}
                           onFocus={() => { setShowCitySuggestions(true); loadCities(); }}
                           placeholder="Digite sua cidade..."
@@ -670,7 +707,7 @@ const SignupPage = () => {
                 )}
 
                 <Button type="submit" variant="accent" className="w-full text-base py-3" disabled={loading}>
-                  {loading ? 'Criando conta...' : 'Criar minha conta'}
+                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando conta...</> : 'Criar minha conta'}
                 </Button>
               </form>
 
