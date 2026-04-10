@@ -37,7 +37,7 @@ const stagger = {
 
 const CategoryPage = () => {
   const { slug } = useParams();
-  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon } = useGeoCity();
+  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm } = useGeoCity();
   const { data, isLoading } = useCategoryProviders(slug || '');
   const [page, setPage] = useState(1);
 
@@ -53,7 +53,7 @@ const CategoryPage = () => {
     const stateNorm = geoState ? normalizeCityName(geoState) : undefined;
 
     const localResults = allProviders.filter((p) =>
-      matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon)
+      matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon, radiusKm)
     );
 
     if (localResults.length > 0) {
@@ -61,7 +61,7 @@ const CategoryPage = () => {
     }
 
     return { displayProviders: allProviders, isFallback: true, expansionLevel: 'all' as const };
-  }, [allProviders, geoCity, geoState, userLat, userLon]);
+  }, [allProviders, geoCity, geoState, userLat, userLon, radiusKm]);
 
   useSeoHead({
     title: category ? `${category.name} - Profissionais` : 'Categoria',

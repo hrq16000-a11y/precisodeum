@@ -365,9 +365,12 @@ function matchesGeoContext(
   cityNorm: string,
   stateNorm?: string,
   userLat?: number | null,
-  userLon?: number | null
+  userLon?: number | null,
+  radiusKm?: number
 ): boolean {
   if (!cityNorm && !stateNorm) return true;
+
+  const effectiveRadius = radiusKm || SERVICE_RADIUS_KM;
 
   // 1. Distance-based: if both user and provider have coordinates
   if (
@@ -378,7 +381,7 @@ function matchesGeoContext(
       { latitude: userLat!, longitude: userLon! },
       { latitude: provider.latitude!, longitude: provider.longitude! }
     );
-    return dist <= SERVICE_RADIUS_KM;
+    return dist <= effectiveRadius;
   }
 
   // 2. Fallback: city name matching
@@ -386,15 +389,12 @@ function matchesGeoContext(
   const pState = normalizeCityName(provider.state);
   const coreCity = extractCoreCity(cityNorm);
 
-  // Exact or partial city name match
   if (cityNorm && pCity === cityNorm) return true;
   if (cityNorm && (pCity.includes(cityNorm) || cityNorm.includes(pCity))) return true;
-  // Match against the core city extracted from "Região Metropolitana de X"
   if (coreCity !== cityNorm && coreCity) {
     if (pCity === coreCity) return true;
     if (pCity.includes(coreCity) || coreCity.includes(pCity)) return true;
   }
-  // Same state as fallback only for metropolitan-region auto-detection strings
   if (stateNorm && pState === stateNorm && cityNorm.includes('regiaometropolitana')) return true;
   return false;
 }
@@ -411,7 +411,8 @@ export function filterAndRankProviders(
   minRating: number,
   state?: string,
   userLat?: number | null,
-  userLon?: number | null
+  userLon?: number | null,
+  radiusKm?: number
 ) {
   let results = [...providers];
 
@@ -442,10 +443,9 @@ export function filterAndRankProviders(
   const cityNorm = city ? normalizeCityName(city) : '';
   const stateNorm = state ? normalizeCityName(state) : '';
 
-  // Smart geo filtering: distance-based when coordinates available
   if (cityNorm || stateNorm) {
-    const localResults = results.filter((p) => matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon));
-    const otherResults = results.filter((p) => !matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon));
+    const localResults = results.filter((p) => matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon, radiusKm));
+    const otherResults = results.filter((p) => !matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon, radiusKm));
 
     if (localResults.length >= MIN_LOCAL_RESULTS) {
       results = localResults;
@@ -455,23 +455,19 @@ export function filterAndRankProviders(
   }
 
   results.sort((a, b) => {
-    // 1. Local match first
     if (cityNorm || stateNorm) {
-      const aLocal = matchesGeoContext(a, cityNorm, stateNorm, userLat, userLon) ? 0 : 1;
-      const bLocal = matchesGeoContext(b, cityNorm, stateNorm, userLat, userLon) ? 0 : 1;
+      const aLocal = matchesGeoContext(a, cityNorm, stateNorm, userLat, userLon, radiusKm) ? 0 : 1;
+      const bLocal = matchesGeoContext(b, cityNorm, stateNorm, userLat, userLon, radiusKm) ? 0 : 1;
       if (aLocal !== bLocal) return aLocal - bLocal;
     }
-    // 2. Among locals, prefer exact city match
     if (cityNorm) {
       const aCityMatch = normalizeCityName(a.city) === cityNorm || normalizeCityName(a.city).includes(cityNorm) || cityNorm.includes(normalizeCityName(a.city));
       const bCityMatch = normalizeCityName(b.city) === cityNorm || normalizeCityName(b.city).includes(cityNorm) || cityNorm.includes(normalizeCityName(b.city));
       if (aCityMatch !== bCityMatch) return aCityMatch ? -1 : 1;
     }
-    // 3. Hybrid final score
     const aScore = (a as any)._finalScore || (a as any)._contentScore || 0;
     const bScore = (b as any)._finalScore || (b as any)._contentScore || 0;
     if (aScore !== bScore) return bScore - aScore;
-    // 4. Rating & reviews tiebreaker
     if (b.rating !== a.rating) return b.rating - a.rating;
     return b.reviewCount - a.reviewCount;
   });
@@ -479,7 +475,7 @@ export function filterAndRankProviders(
   return results;
 }
 
-export function useSearchProviders(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null) {
+export function useSearchProviders(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null, radiusKm?: number) {
   const baseQuery = useQuery({
     queryKey: ['search-providers-base'],
     queryFn: async () => {
@@ -498,8 +494,8 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
   });
 
   const filteredData = useMemo(
-    () => filterAndRankProviders(baseQuery.data || [], query, city, categorySlug, minRating, state, userLat, userLon),
-    [baseQuery.data, query, city, categorySlug, minRating, state, userLat, userLon]
+    () => filterAndRankProviders(baseQuery.data || [], query, city, categorySlug, minRating, state, userLat, userLon, radiusKm),
+    [baseQuery.data, query, city, categorySlug, minRating, state, userLat, userLon, radiusKm]
   );
 
   return {

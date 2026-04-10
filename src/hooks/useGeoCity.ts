@@ -8,10 +8,12 @@ interface GeoData {
   longitude: number | null;
   precise: boolean;
   manualOverride: boolean;
+  radiusKm: number;
 }
 
 interface GeoStore extends GeoData {
   setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null) => void;
+  setRadius: (km: number) => void;
   requestPreciseLocation: () => Promise<boolean>;
 }
 
@@ -23,6 +25,7 @@ const LON_KEY = 'geo_lon';
 const OVERRIDE_KEY = 'geo_override';
 const PRECISE_KEY = 'geo_precise';
 const GEO_ASKED_KEY = 'geo_browser_asked';
+const RADIUS_KEY = 'geo_radius';
 
 function safeGet(key: string): string | null {
   try {
@@ -49,6 +52,7 @@ let geoState: GeoData = {
   longitude: parseNumber(safeGet(LON_KEY)),
   precise: safeGet(PRECISE_KEY) === 'true',
   manualOverride: safeGet(OVERRIDE_KEY) === 'true',
+  radiusKm: parseNumber(safeGet(RADIUS_KEY)) ?? 50,
 };
 
 let listeners = new Set<() => void>();
@@ -291,5 +295,10 @@ export function useGeoCity(): GeoStore {
     });
   }, []);
 
-  return { ...data, setCity, requestPreciseLocation };
+  const setRadius = useCallback((km: number) => {
+    safeSet(RADIUS_KEY, String(km));
+    setGeoState({ radiusKm: km });
+  }, []);
+
+  return { ...data, setCity, setRadius, requestPreciseLocation };
 }
