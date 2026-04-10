@@ -61,7 +61,8 @@ const CategoryPage = () => {
       const ls = geoState.toLowerCase();
       const stateResults = allProviders.filter((p) => p.state.toLowerCase() === ls);
       if (stateResults.length > 0) {
-        return { displayProviders: stateResults, isFallback: true, expansionLevel: 'state' as const };
+        // Same state = same region (metropolitan areas), NOT fallback
+        return { displayProviders: stateResults, isFallback: false, expansionLevel: 'state' as const };
       }
     }
 
