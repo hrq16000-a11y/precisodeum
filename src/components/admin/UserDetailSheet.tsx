@@ -33,13 +33,13 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const [leads, setLeads] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [media, setMedia] = useState<any[]>([]);
-  const [portfolio, setPortfolio] = useState<{ name: string; url: string }[]>([]);
+  const [portfolio, setPortfolio] = useState<{ id: string; name: string; photos: { id: string; image_url: string; name: string }[] }[]>([]);
   const [pageSettings, setPageSettings] = useState<any>(null);
   const [provider, setProvider] = useState<any>(null);
   const [tab, setTab] = useState('profile');
   const [settingsForm, setSettingsForm] = useState<any>({});
   const [avatarUploading, setAvatarUploading] = useState(false);
-  const [portfolioUploading, setPortfolioUploading] = useState(false);
+  const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [currentAvatar, setCurrentAvatar] = useState('');
   const avatarRef = useRef<HTMLInputElement>(null);
 
@@ -160,15 +160,43 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
             });
           });
 
-        supabase.storage.from('portfolio').list(user.id, { limit: 100 }).then(({ data }) => {
-          if (data) {
-            const filtered = data.filter(f => f.name !== '.emptyFolderPlaceholder');
-            setPortfolio(filtered.map(f => ({
-              name: f.name,
-              url: supabase.storage.from('portfolio').getPublicUrl(`${user.id}/${f.name}`).data.publicUrl,
-            })));
-          }
-        });
+        // Fetch portfolio albums + photos
+        supabase.from('portfolio_albums').select('id, name')
+          .eq('provider_id', prov.id).order('display_order')
+          .then(async ({ data: albums }) => {
+            if (albums && albums.length > 0) {
+              const albumIds = albums.map(a => a.id);
+              const { data: photos } = await supabase.from('portfolio_photos')
+                .select('id, album_id, image_url, original_name')
+                .in('album_id', albumIds).order('display_order');
+              setPortfolio(albums.map(a => ({
+                id: a.id,
+                name: a.name,
+                photos: (photos || []).filter(p => p.album_id === a.id).map(p => ({
+                  id: p.id,
+                  image_url: p.image_url,
+                  name: p.original_name || '',
+                })),
+              })));
+            } else {
+              // Fallback: legacy storage
+              const { data: files } = await supabase.storage.from('portfolio').list(user.id, { limit: 100 });
+              if (files) {
+                const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
+                setPortfolio([{
+                  id: 'legacy',
+                  name: 'Portfólio',
+                  photos: filtered.map(f => ({
+                    id: f.name,
+                    image_url: supabase.storage.from('portfolio').getPublicUrl(`${user.id}/${f.name}`).data.publicUrl,
+                    name: f.name,
+                  })),
+                }]);
+              } else {
+                setPortfolio([]);
+              }
+            }
+          });
       } else {
         setServices([]);
         setLeads([]);
