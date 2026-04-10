@@ -547,6 +547,27 @@ const DashboardPage = () => {
           )}
         </AnimatePresence>
       </GlassCard>
+
+      {/* Service Wizard Modal — onboarding only */}
+      {provider && user && (
+        <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
+          <DialogContent className="max-w-lg p-0 gap-0 overflow-y-auto max-h-[90vh]">
+            <div className="p-5">
+              <ServiceWizard
+                providerId={provider.id}
+                userId={user.id}
+                provider={provider}
+                categories={categories}
+                onComplete={() => {
+                  setWizardOpen(false);
+                  setServicesCount(prev => (prev ?? 0) + 1);
+                }}
+                onCancel={() => setWizardOpen(false)}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </DashboardLayout>
   );
 };
