@@ -45,11 +45,11 @@ const AdminNotificationsPage = () => {
     mutationFn: async (n: any) => {
       const minute = n.created_at?.slice(0, 16);
       // Delete all notifications with matching title and target_group within same minute
-      const { error } = await supabase
+      const { error } = await (supabase
         .from('notifications')
         .delete()
-        .eq('title', n.title)
-        .eq('target_group' as any, n.target_group)
+        .eq('title', n.title) as any)
+        .eq('target_group', n.target_group)
         .gte('created_at', minute + ':00')
         .lte('created_at', minute + ':59.999999');
       if (error) throw error;
