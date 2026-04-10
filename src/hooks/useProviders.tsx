@@ -390,7 +390,9 @@ export function filterAndRankProviders(
   city: string,
   categorySlug: string,
   minRating: number,
-  state?: string
+  state?: string,
+  userLat?: number | null,
+  userLon?: number | null
 ) {
   let results = [...providers];
 
@@ -421,10 +423,10 @@ export function filterAndRankProviders(
   const cityNorm = city ? normalizeCityName(city) : '';
   const stateNorm = state ? normalizeCityName(state) : '';
 
-  // Smart geo filtering: same state = same region (covers metropolitan areas)
+  // Smart geo filtering: distance-based when coordinates available
   if (cityNorm || stateNorm) {
-    const localResults = results.filter((p) => matchesGeoContext(p, cityNorm, stateNorm));
-    const otherResults = results.filter((p) => !matchesGeoContext(p, cityNorm, stateNorm));
+    const localResults = results.filter((p) => matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon));
+    const otherResults = results.filter((p) => !matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon));
 
     if (localResults.length >= MIN_LOCAL_RESULTS) {
       results = localResults;
@@ -434,22 +436,23 @@ export function filterAndRankProviders(
   }
 
   results.sort((a, b) => {
-    // 1. Exact city match first, then same-state, then others
+    // 1. Local match first
+    if (cityNorm || stateNorm) {
+      const aLocal = matchesGeoContext(a, cityNorm, stateNorm, userLat, userLon) ? 0 : 1;
+      const bLocal = matchesGeoContext(b, cityNorm, stateNorm, userLat, userLon) ? 0 : 1;
+      if (aLocal !== bLocal) return aLocal - bLocal;
+    }
+    // 2. Among locals, prefer exact city match
     if (cityNorm) {
       const aCityMatch = normalizeCityName(a.city) === cityNorm || normalizeCityName(a.city).includes(cityNorm) || cityNorm.includes(normalizeCityName(a.city));
       const bCityMatch = normalizeCityName(b.city) === cityNorm || normalizeCityName(b.city).includes(cityNorm) || cityNorm.includes(normalizeCityName(b.city));
       if (aCityMatch !== bCityMatch) return aCityMatch ? -1 : 1;
     }
-    if (cityNorm || stateNorm) {
-      const aLocal = matchesGeoContext(a, cityNorm, stateNorm) ? 0 : 1;
-      const bLocal = matchesGeoContext(b, cityNorm, stateNorm) ? 0 : 1;
-      if (aLocal !== bLocal) return aLocal - bLocal;
-    }
-    // 2. Hybrid final score
+    // 3. Hybrid final score
     const aScore = (a as any)._finalScore || (a as any)._contentScore || 0;
     const bScore = (b as any)._finalScore || (b as any)._contentScore || 0;
     if (aScore !== bScore) return bScore - aScore;
-    // 3. Rating & reviews tiebreaker
+    // 4. Rating & reviews tiebreaker
     if (b.rating !== a.rating) return b.rating - a.rating;
     return b.reviewCount - a.reviewCount;
   });
