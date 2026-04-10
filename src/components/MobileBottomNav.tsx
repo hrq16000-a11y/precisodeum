@@ -214,8 +214,12 @@ const DynamicNav = ({ config, items }: { config: BottomNavConfig; items: BottomN
               (item.route_path === '/' && location.pathname === '/index') ||
               (item.route_path !== '/' && location.pathname.startsWith(item.route_path))
             );
+            // Inject notification badge for auth-required items (e.g. Perfil)
+            const dynamicBadge = item.requires_auth && unreadCount > 0
+              ? { ...item, badge: unreadCount > 9 ? '9+' : String(unreadCount) }
+              : item;
             return (
-              <DynamicNavItem key={item.id} item={item} isActive={isActive} navigate={navigate} user={user} />
+              <DynamicNavItem key={item.id} item={dynamicBadge} isActive={isActive} navigate={navigate} user={user} />
             );
           })}
         </div>
