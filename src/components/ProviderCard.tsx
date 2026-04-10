@@ -106,7 +106,12 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               </div>
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              {hasImages && (
+              {isVerified && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
+                  <BadgeCheck className="h-3 w-3" /> Verificado
+                </span>
+              )}
+              {!isVerified && hasImages && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
                   <BadgeCheck className="h-3 w-3" /> Perfil Completo
                 </span>
