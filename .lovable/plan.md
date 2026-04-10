@@ -1,81 +1,74 @@
+## Plano: Seletor Inteligente de Categorias (SmartCategoryPicker)
+
+### Problema Atual
+
+O seletor de categorias é uma lista plana de ~171 itens sem hierarquia visual. O usuário não vê a relação Macro → Subcategoria, e a busca é um simples `includes()` sem fuzzy matching.
+
+### Solução
+
+Criar `src/components/SmartCategoryPicker.tsx` — componente reutilizável com:
+
+**1. Interface visual**
+
+- Campo de input com chips das categorias selecionadas
+- Dropdown com busca integrada
+- Resultados agrupados por macro-categoria (7 grupos visuais com headers)
+- Subcategorias indentadas sob cada macro
+- Ícone + nome em cada item
+
+**2. Busca inteligente**
+
+- Normalização de acentos (`técnico` = `tecnico`)
+- Fuzzy parcial (digitar "eletric" encontra "Eletricista", "Eletricista Residencial", etc.)
+- Quando busca ativa: mostrar apenas subcategorias que matcham, com o header da macro visível
+- Resultado vazio: mensagem "Nenhuma categoria encontrada"
+
+**3. Hierarquia visual**
+
+- Headers de macro-categoria (não clicáveis como seleção, apenas agrupamento)
+- Subcategorias clicáveis com indentação
+- Checkbox visual nos itens selecionados
+- Suporte a multi-select (já existente no fluxo atual)
+
+**4. Props do componente**
+
+```typescript
+interface SmartCategoryPickerProps {
+  categories: Category[];           // lista completa (macros + subs)
+  selectedIds: string[];            // IDs selecionados
+  onToggle: (id: string) => void;   // toggle seleção
+  maxSelections?: number;           // limite opcional
+}
+```
+
+### Arquivos alterados
 
 
-## Plano: Consistencia Final — Identidade, Idempotencia e Auditoria
+| Arquivo                                      | Mudança                                                                 |
+| -------------------------------------------- | ----------------------------------------------------------------------- |
+| `src/components/SmartCategoryPicker.tsx`     | **Novo** — componente completo                                          |
+| `src/pages/DashboardServicesPage.tsx`        | Substituir bloco de categoria (linhas 442-489) pelo SmartCategoryPicker |
+| `src/components/admin/ServiceEditDialog.tsx` | Substituir Select simples (linhas 133-141) pelo SmartCategoryPicker     |
 
-### Diagnostico confirmado
 
-Apos analise dos arquivos, confirmo os 5 problemas estruturais:
+### Zero alterações no banco
 
-1. **entity_ref inconsistente**: AvatarUpload usa `userId`, PortfolioUpload usa `userId`, ServiceImageUpload usa `serviceId` — sem padrao
-2. **user_ref fallback "unlinked"** ainda usado como padrao estrutural
-3. **Uploads nao idempotentes**: `Date.now()-filename` gera duplicatas em retry
-4. **Subscription trial sem protecao** contra double-submit
-5. **Audit log incompleto**: sem eventos de media ou subscription_created
+A estrutura `categories` com `parent_id` já está correta. Nenhuma migração necessária.
 
----
+&nbsp;
 
-### Correcoes (4 blocos)
+&nbsp;
 
-#### 1. Padronizar identidade em media inserts (3 arquivos)
+Plano pode ser mantido com adaptações obrigatórias abaixo:
 
-**Regra unica**:
-- `user_ref` = SEMPRE `profiles.user_ref` (nunca fallback "unlinked" em uploads de usuario)
-- `entity_ref` = `provider_id` quando existir, senao `profile.id`
-- `entity_type` = mantido como esta (profile, portfolio, service)
+Tornar a busca obrigatoriamente fuzzy (não opcional) com fallback de similaridade, não só includes()
 
-**Arquivos**:
-- `AvatarUpload.tsx`: buscar provider_id se existir, usar como entity_ref; user_ref ja busca de profiles
-- `PortfolioUpload.tsx`: `entity_ref` = `providerId` (ja recebe como prop), remover fallback "unlinked" — se user_ref null, nao inserir media (erro silencioso)
-- `ServiceImageUpload.tsx`: ja correto (entity_ref=serviceId, user_ref de profiles) — apenas remover fallback null silencioso
+Garantir que o componente permita seleção por digitação direta + criação implícita (texto livre válido) sem dependência de “nenhuma categoria encontrada”
 
-#### 2. Idempotencia em uploads (3 arquivos)
+Remover comportamento de “resultado vazio: mensagem bloqueante” → deve ser apenas informativa, nunca impeditiva
 
-**Estrategia**: Antes de inserir na tabela `media`, verificar se `storage_path` ja existe. Se existir, fazer `update` (public_url, is_active=true) em vez de `insert`.
+Subcategoria não pode ser tratada como dependência rígida de UI (não pode travar seleção principal)
 
-**Arquivos**:
-- `AvatarUpload.tsx`: upsert por storage_path
-- `PortfolioUpload.tsx`: upsert por storage_path
-- `ServiceImageUpload.tsx`: upsert por storage_path
+Garantir que seleção de categoria não seja pré-requisito de fluxo de publicação
 
-Extrair funcao utilitaria `upsertMedia()` para evitar duplicacao de logica.
-
-#### 3. Protecao de subscription trial (1 arquivo)
-
-**Arquivo**: `SignupPage.tsx`
-- Antes do insert, verificar: `select count from subscriptions where provider_id = X and status in ('trial','active')`
-- Se existir, skip insert
-
-#### 4. Eventos de auditoria estruturais (1 arquivo)
-
-**Arquivo**: `useAuditLog.ts`
-- Adicionar tipos: `media_uploaded`, `media_deleted`, `subscription_created`
-- Os componentes de upload e signup passam a chamar `logAuditAction` para estes eventos (non-blocking, try/catch)
-
-**Integracao nos uploads** (non-blocking):
-- `AvatarUpload.tsx`: `logAuditAction({ action: 'media_uploaded', resource_type: 'avatar' })`
-- `PortfolioUpload.tsx`: `logAuditAction({ action: 'media_uploaded'/'media_deleted', resource_type: 'portfolio' })`
-- `SignupPage.tsx`: `logAuditAction({ action: 'subscription_created', resource_type: 'subscription' })`
-
----
-
-### Arquivos a criar/editar
-
-| Arquivo | Acao |
-|---|---|
-| `src/lib/mediaUtils.ts` | Criar — funcao `upsertMedia()` centralizada |
-| `src/components/AvatarUpload.tsx` | Editar — usar upsertMedia, entity_ref=provider_id, audit |
-| `src/components/PortfolioUpload.tsx` | Editar — usar upsertMedia, entity_ref=providerId, audit |
-| `src/components/ServiceImageUpload.tsx` | Editar — usar upsertMedia |
-| `src/pages/SignupPage.tsx` | Editar — guard de subscription duplicada, audit |
-| `src/hooks/useAuditLog.ts` | Editar — novos tipos de evento |
-
-### Nenhuma migracao SQL necessaria
-Todas as tabelas e colunas ja existem.
-
-### Resultado esperado
-- 100% dos media inserts usam `profiles.user_ref` (sem "unlinked" em uploads de usuario)
-- `entity_ref` padronizado: provider_id quando existir
-- Retry de upload = update, nao duplicacao
-- Subscription trial criada apenas 1x por provider
-- Auditoria cobre upload, delete de media e criacao de subscription
-
+Restante do plano está OK e pode ser mantido.
