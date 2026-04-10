@@ -707,7 +707,7 @@ const SignupPage = () => {
                 )}
 
                 <Button type="submit" variant="accent" className="w-full text-base py-3" disabled={loading}>
-                  {loading ? 'Criando conta...' : 'Criar minha conta'}
+                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando conta...</> : 'Criar minha conta'}
                 </Button>
               </form>
 
