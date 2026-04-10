@@ -85,7 +85,7 @@ const SignupPage = () => {
   const [form, setForm] = useState({
     fullName: '', email: '', phone: '', password: '',
     businessName: '', categoryId: '', categoryName: '', categoryCustom: '', city: '', state: '', description: '',
-    cnpj: '',
+    cnpj: '', ibgeCode: '',
     latitude: null as number | null, longitude: null as number | null,
   });
   const navigate = useNavigate();
@@ -167,11 +167,11 @@ const SignupPage = () => {
     setShowCategorySuggestions(false);
   };
 
-  const handleCitySelect = async (name: string, st: string) => {
-    setForm(prev => ({ ...prev, city: name, state: st }));
-    setCitySearch(`${name}, ${st}`);
+  const handleCitySelect = async (c: CityResult) => {
+    setForm(prev => ({ ...prev, city: c.name, state: c.state, ibgeCode: c.ibgeCode }));
+    setCitySearch(`${c.name}, ${c.state}`);
     setShowCitySuggestions(false);
-    const { latitude, longitude } = await geocodeCity(name, st);
+    const { latitude, longitude } = await geocodeCity(c.name, c.state);
     setForm(prev => ({ ...prev, latitude, longitude }));
   };
 
@@ -194,10 +194,10 @@ const SignupPage = () => {
               detectedState.toLowerCase().includes(c.state.toLowerCase())
             ));
             if (match) {
-              setForm(prev => ({ ...prev, city: match.name, state: match.state, latitude: lat, longitude: lon }));
+              setForm(prev => ({ ...prev, city: match.name, state: match.state, ibgeCode: match.ibgeCode, latitude: lat, longitude: lon }));
               setCitySearch(`${match.name}, ${match.state}`);
             } else {
-              setForm(prev => ({ ...prev, city: detectedCity, state: detectedState, latitude: lat, longitude: lon }));
+              setForm(prev => ({ ...prev, city: detectedCity, state: detectedState, ibgeCode: '', latitude: lat, longitude: lon }));
               setCitySearch(`${detectedCity}, ${detectedState}`);
             }
           }
@@ -294,6 +294,7 @@ const SignupPage = () => {
           category_id: form.categoryId || null,
           category_custom: form.categoryCustom || null,
           cnpj: cnpjClean || null,
+          ibge_code: form.ibgeCode || null,
           latitude,
           longitude,
           slug,
