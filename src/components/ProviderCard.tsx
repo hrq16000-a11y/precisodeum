@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, MessageCircle, Crown, BadgeCheck, Clock } from 'lucide-react';
+import { MapPin, MessageCircle, Crown, BadgeCheck, Clock, Circle } from 'lucide-react';
 import { usePrefetchProvider, usePrefetchHandlers } from '@/hooks/usePrefetch';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
@@ -11,6 +11,7 @@ import { handleImageError } from '@/lib/imageResolver';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ProviderCardProps {
   provider: DbProvider;
@@ -21,6 +22,7 @@ interface ProviderCardProps {
 
 const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', index = 0 }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const { user } = useAuth();
   const prefetch = usePrefetchProvider();
   const handlers = usePrefetchHandlers(prefetch, provider.slug);
   const displayPhoto = provider.photo || provider.serviceImage || '';
@@ -99,8 +101,13 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 </span>
               )}
               {isFallback && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                  <MapPin className="h-3 w-3" /> Atende sua região
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                  <MapPin className="h-3 w-3" /> Outra região
+                </span>
+              )}
+              {user && !isFallback && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                  <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online
                 </span>
               )}
             </div>

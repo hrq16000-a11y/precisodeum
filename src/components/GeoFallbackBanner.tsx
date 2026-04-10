@@ -24,7 +24,7 @@ const GeoFallbackBanner = ({ originalCity, expansionLevel, stateName, resultCoun
             Não encontramos resultados em {originalCity}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Exibindo <span className="font-medium text-foreground">{resultCount}</span> resultado(s) {levelText} que podem atender sua região.
+            Exibindo <span className="font-medium text-foreground">{resultCount}</span> resultado(s) {levelText}. Esses profissionais são de outras regiões e podem não atender sua localidade.
           </p>
           {onClearCity && (
             <Button
