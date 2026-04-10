@@ -152,7 +152,10 @@ export default function AdminAuditRefPage() {
     toast.success('CSV exportado');
   };
 
+  if (adminLoading) return <AdminLayout><p className="text-muted-foreground p-4">Carregando...</p></AdminLayout>;
+
   return (
+    <AdminLayout>
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
