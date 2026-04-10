@@ -498,6 +498,127 @@ export type Database = {
         }
         Relationships: []
       }
+      governance_approvals: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          id: string
+          proposed_value: Json | null
+          reason: string | null
+          requested_by: string | null
+          resolved_at: string | null
+          rule_id: string | null
+          status: string
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          proposed_value?: Json | null
+          reason?: string | null
+          requested_by?: string | null
+          resolved_at?: string | null
+          rule_id?: string | null
+          status?: string
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          proposed_value?: Json | null
+          reason?: string | null
+          requested_by?: string | null
+          resolved_at?: string | null
+          rule_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_approvals_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "governance_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_changes_log: {
+        Row: {
+          action: string
+          after_value: Json | null
+          before_value: Json | null
+          created_at: string
+          id: string
+          rule_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          id?: string
+          rule_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          id?: string
+          rule_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_changes_log_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "governance_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_rules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          key: string
+          scope: string
+          status: string
+          updated_at: string
+          value: Json
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          key: string
+          scope: string
+          status?: string
+          updated_at?: string
+          value?: Json
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          key?: string
+          scope?: string
+          status?: string
+          updated_at?: string
+          value?: Json
+          version?: number
+        }
+        Relationships: []
+      }
       hero_banners: {
         Row: {
           active: boolean
@@ -1891,6 +2012,63 @@ export type Database = {
           },
         ]
       }
+      runtime_component_health: {
+        Row: {
+          component_name: string
+          created_at: string
+          failure_count: number
+          id: string
+          last_checked_at: string | null
+          last_error: string | null
+          status: string
+        }
+        Insert: {
+          component_name: string
+          created_at?: string
+          failure_count?: number
+          id?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          status?: string
+        }
+        Update: {
+          component_name?: string
+          created_at?: string
+          failure_count?: number
+          id?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      runtime_fallback_registry: {
+        Row: {
+          component: string
+          created_at: string
+          fallback_type: string
+          id: string
+          strategy_json: Json
+          updated_at: string
+        }
+        Insert: {
+          component: string
+          created_at?: string
+          fallback_type?: string
+          id?: string
+          strategy_json?: Json
+          updated_at?: string
+        }
+        Update: {
+          component?: string
+          created_at?: string
+          fallback_type?: string
+          id?: string
+          strategy_json?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_categories: {
         Row: {
           category_id: string
@@ -2570,6 +2748,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_contract_map: {
+        Row: {
+          contract_json: Json
+          created_at: string
+          entity_name: string
+          entity_type: string
+          id: string
+          last_verified_at: string | null
+          status: string
+        }
+        Insert: {
+          contract_json?: Json
+          created_at?: string
+          entity_name: string
+          entity_type: string
+          id?: string
+          last_verified_at?: string | null
+          status?: string
+        }
+        Update: {
+          contract_json?: Json
+          created_at?: string
+          entity_name?: string
+          entity_type?: string
+          id?: string
+          last_verified_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      system_drift_reports: {
+        Row: {
+          description: string
+          detected_at: string
+          id: string
+          resolution_note: string | null
+          resolved: boolean
+          severity: string
+          type: string
+        }
+        Insert: {
+          description: string
+          detected_at?: string
+          id?: string
+          resolution_note?: string | null
+          resolved?: boolean
+          severity?: string
+          type: string
+        }
+        Update: {
+          description?: string
+          detected_at?: string
+          id?: string
+          resolution_note?: string | null
+          resolved?: boolean
+          severity?: string
+          type?: string
+        }
+        Relationships: []
       }
       tier_rules: {
         Row: {
