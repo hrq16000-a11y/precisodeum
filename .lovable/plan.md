@@ -1,23 +1,50 @@
 
 
-## Correção: Redirecionar usuário autenticado na página de cadastro
+## Correções de Validação e Robustez no Cadastro
 
-### Problema
-Quando o usuário clica "Cadastrar com Google" na página de cadastro e já tem conta, o OAuth completa com sucesso mas o usuário permanece na tela de cadastro. Isso acontece porque:
-1. A `SignupPage` não verifica se o usuário já está autenticado após o retorno do OAuth
-2. O `OAuthRedirectHandler` só redireciona se houver uma URL salva em `sessionStorage`, mas a signup page não salva nenhuma
+### Arquivo: `src/pages/SignupPage.tsx`
 
-### Solução
-Adicionar um `useEffect` na `SignupPage` que detecta quando o usuário está autenticado e redireciona automaticamente para o dashboard apropriado (baseado no `profile_type`).
+**1. "Outro" salva em campo separado**
+- Adicionar `categoryCustom` ao form state
+- Quando "Outro" for selecionado, salvar texto em `categoryCustom` (não em `categoryId`)
+- No submit, enviar `category_custom` separado no insert do provider
 
-### Arquivo editado
-**`src/pages/SignupPage.tsx`**
-- Importar `useAuth` 
-- Adicionar `useEffect` que observa `user` e `loading` do auth context
-- Quando detectar usuário autenticado, consultar `profile_type` e redirecionar:
-  - `client` → `/`
-  - `rh` → `/dashboard/vagas`
-  - Outros → `/dashboard/servicos`
+**2. Categoria obrigatória**
+- Validar no submit: `categoryId` OU `categoryCustom` deve existir
+- Toast de erro se nenhum preenchido
 
-Mesma lógica de redirecionamento já usada no `LoginPage.getRedirectForProfile()`.
+**3. Cidade validada obrigatória**
+- Bloquear submit se `form.city` ou `form.state` estiverem vazios
+- Impedir digitação livre sem seleção (limpar city/state se input mudar após seleção)
+
+**4. Fallback GPS**
+- Já existe tratamento de erro no `handleAutoLocate` — apenas garantir que o toast de erro não trava o fluxo (já OK, mas remover `return` desnecessário)
+
+**5. Garantir lat/lon no submit**
+- Se `latitude`/`longitude` forem `null` mas `city`/`state` existem → chamar `geocodeCity()` antes de inserir
+
+**6. Sanitizar CNPJ**
+- Já faz `form.cnpj.replace(/\D/g, '')` no submit — OK
+- Adicionar validação: se preenchido, deve ter exatamente 14 dígitos
+
+**7. Vínculo user_ref**
+- O trigger `copy_user_ref_from_profile` já copia `user_ref` do profile para provider via `user_id` — OK, nenhuma mudança necessária
+
+**8. Prevenir duplicidade no submit**
+- Desabilitar botão com `loading` (já faz `disabled={loading}`)
+- Adicionar `loading` state visual com spinner no botão
+
+**9. Validar telefone mínimo**
+- No submit, validar `form.phone.length >= 10` antes de prosseguir
+
+### Arquivo: Migração SQL
+- Adicionar coluna `category_custom TEXT DEFAULT NULL` na tabela `providers`
+
+### Resumo das mudanças
+| Correção | Arquivo |
+|---|---|
+| Campo `category_custom` no DB | Migração SQL |
+| Validações no submit (categoria, cidade, telefone, CNPJ, lat/lon) | `SignupPage.tsx` |
+| Separar "Outro" de `categoryId` | `SignupPage.tsx` |
+| Loading spinner no botão | `SignupPage.tsx` |
 
