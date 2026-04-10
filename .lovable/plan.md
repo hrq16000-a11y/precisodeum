@@ -1,215 +1,103 @@
-## Problema identificado
 
-A busca por **"Região Metropolitana de Curitiba"** retorna apenas **1 resultado** porque:
 
-1. O texto `q=Região Metropolitana de Curitiba` é tratado como **busca textual** — filtra providers cujo nome/descrição/cidade contém TODOS os termos ("região", "metropolitana", "de", "curitiba")
-2. A inteligência geográfica (metro region detection) só é ativada pelo parâmetro `city` (via `effectiveCity`), **não pelo** `q`
-3. O chip de geolocalização mostra "Boardman, Oregon" (IP do servidor sandbox), então a geo context não ajuda
+# GEO Intelligence v4 — Cobertura Nacional Completa
+
+## Problema atual
+O sistema reconhece apenas ~200 cidades hardcoded em `CITY_COORDS`. Qualquer busca por cidade fora dessa lista (ex: "Encanador em Chapecó" ou "Advogado Londrina PR") falha silenciosamente. A detecção de cidade no query só funciona por sufixo (right-to-left), falhando para cidades no meio da string.
 
 ## Solução
 
-Detectar termos geográficos dentro do `q` (query) e extrair automaticamente para o contexto geo, em vez de tratá-los como filtro textual.
+### 1. Criar `src/lib/citiesIndex.ts` — Base nacional IBGE (5.570 cidades)
 
-### Alterações
-
-**1.** `src/hooks/useProviders.tsx` **—** `filterAndRankProviders` (função principal)
-
-Antes de aplicar o filtro textual, detectar se o `query` contém um padrão geo reconhecível ("região metropolitana de X", "grande X", etc.):
-
-- Usar `resolveMetroRegion(normalize(query))` para verificar se o query inteiro resolve para uma metro region
-- Se sim: usar o metro region como contexto geo (ignorando o `city` parameter) e **remover os termos geo do query textual**
-- Se o query normalizado corresponde a uma cidade conhecida (via `getCityCoords`), também tratá-lo como filtro geo em vez de texto
-
-**2.** `src/pages/SearchPage.tsx` — Ajuste mínimo
-
-Passar o `query` raw para `useSearchProviders` como já faz. Nenhuma alteração necessária aqui — toda a inteligência fica no hook.
-
-### Lógica de detecção (pseudocódigo)
+Arquivo estático gerado a partir da API IBGE, contendo todas as cidades brasileiras indexadas por nome normalizado:
 
 ```text
-queryNorm = normalize(query)
-
-1. Tentar resolveMetroRegion(queryNorm) → se encontrar metro:
-   - Usar metro como geo context
-   - Usar coordenadas do polo como userCoords
-   - Limpar query textual (não filtrar por "região metropolitana de curitiba")
-
-2. Senão, tentar getCityCoords(queryNorm) → se encontrar cidade:
-   - Usar como city no geo context
-   - Manter o restante do query como texto
-
-3. Senão: comportamento atual (busca textual pura)
+type CityEntry = { name: string; state: string; lat: number; lon: number }
+type CitiesIndex = Record<string, CityEntry>  // key = normalize(name)
+type CitiesByNormState = Record<string, CityEntry[]>  // key = normalize(name+state)
 ```
 
-### Resultado esperado
+- Gerar via script que consulta IBGE API + Nominatim para coords das 200+ maiores (as demais usam coords do IBGE quando disponível)
+- Para cidades sem coords, armazenar `lat: null, lon: null` (o sistema já trata fallback)
+- Indexar por `normalize(city)` e por `normalize(city + state)` para resolver ambiguidades como "São José"
+- Exportar função `lookupCity(norm: string, stateNorm?: string): CityEntry | null`
+
+### 2. Criar `src/lib/ufIndex.ts` — Detecção de UF no query
+
+Mapa de UFs brasileiras para detecção de padrões como "Curitiba PR", "Curitiba/PR", "SP":
+
+```text
+UF_MAP: Record<string, string> = { sp: 'SP', rj: 'RJ', pr: 'PR', ... }
+```
+
+- Detectar UF como último token do query (2 letras) ou após `/` ou `-`
+- Usar para desambiguação: "São José SC" vs "São José SP"
+- Se query é apenas uma UF (ex: "SP"), tratar como estado inteiro
+
+### 3. Refatorar detecção geo em `filterAndRankProviders`
+
+Substituir a lógica atual (linhas 526-571) por sliding window bidirecional:
+
+```text
+1. Extrair UF se presente (regex: /\b([A-Z]{2})$/ ou /\/([A-Z]{2})$/)
+2. normalize(query) → tentar resolveMetroRegion() (mantém v3)
+3. Se não metro → sliding window em TODOS os tokens (não só sufixo):
+   - Para cada par (i, j), candidato = tokens[i..j].join('')
+   - Match contra: citiesIndex > CITY_COORDS > metroRegions
+   - Escolher match MAIS LONGO (mais específico)
+   - Se UF detectada, priorizar match com UF correspondente
+4. Separar termos geo dos termos de serviço
+5. Manter pipeline existente (Haversine → RM → fuzzy → estado)
+```
+
+### 4. Expandir aliases regionais em `metroRegions.ts`
+
+Adicionar ao `REGIONAL_ALIASES`:
+- `abc` → `saopaulo`
+- `grandebh` → `belohorizonte`
+- `grandevitoria` → `vitoria`
+- `baixadasantista` → `santos` (já existe, verificar)
+- `litoralpaulista` → `santos`
+- `valedo paraiba` → lookup especial (não é metro simples)
+
+Adicionar RMs faltantes: **Campinas**, **Vale do Paraíba**, **Baixada Santista**, **Manaus**, **Brasília/RIDE**.
+
+### 5. Atualizar `getCityCoords` para usar citiesIndex como fallback
+
+```text
+getCityCoords(city):
+  1. Checar CITY_COORDS (cache estático, ~200 cidades) → O(1)
+  2. Se não: checar citiesIndex → O(1)
+  3. Se não: null
+```
+
+### 6. Performance
+
+- `citiesIndex` é um `Record<string, ...>` — lookup O(1)
+- Sliding window é O(n^2) nos tokens do query, mas queries têm max ~6 tokens → negligível
+- Manter cache/memo existente em `normalize()` e `coordsCache`
+- citiesIndex carregado uma vez (import estático)
+
+## Arquivos afetados
+
+| Arquivo | Ação |
+|---|---|
+| `src/lib/citiesIndex.ts` | **CRIAR** — index nacional de cidades |
+| `src/lib/ufIndex.ts` | **CRIAR** — mapa de UFs |
+| `src/lib/cityCoords.ts` | **EDITAR** — fallback para citiesIndex |
+| `src/lib/metroRegions.ts` | **EDITAR** — adicionar RMs e aliases |
+| `src/hooks/useProviders.tsx` | **EDITAR** — sliding window + UF detection |
+
+## O que NÃO muda
+- `geoScore`, `dynamicRadius`, `matchesGeoContext` (core v3 intacto)
+- Pipeline de ranking (Haversine → RM → fuzzy → estado)
+- Nenhuma alteração no banco de dados
+
+## Resultado esperado
+- "Região Metropolitana de Curitiba" → RM Curitiba
+- "Grande BH" → Belo Horizonte
+- "Encanador Campinas SP" → Campinas
+- "Eletricista São José dos Pinhais" → match correto
+- "Advogado RJ" → Rio de Janeiro (estado)
+- Qualquer cidade brasileira → reconhecida via IBGE index
 
-- `q=Região Metropolitana de Curitiba` → ~98 providers da RM Curitiba
-- `q=Curitiba` → providers de Curitiba + RM, ordenados por Haversine
-- `q=encanador Curitiba` → encanadores na RM Curitiba
-- `q=encanador` → sem filtro geo (comportamento atual mantido)
-
-SIM.
-
-&nbsp;
-
-Plano de implementação (correto e sem quebrar GEO v3):
-
-&nbsp;
-
-1. Interceptar query no início do filterAndRankProviders
-
-&nbsp;
-
-queryNorm = normalize(query)
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-2. Detecção de Região Metropolitana
-
-&nbsp;
-
-const metro = resolveMetroRegion(queryNorm);
-
-if (metro) {
-
-  ctx.metro = metro;
-
-  ctx.cityNorm = metro.pole;
-
-  ctx.coreCity = metro.pole;
-
-  ctx.userCoords = getCityCoords(metro.pole);
-
-  query = ''; // limpa filtro textual
-
-}
-
-&nbsp;
-
-&nbsp;
-
-3. Detecção de cidade direta
-
-&nbsp;
-
-else if (getCityCoords(queryNorm)) {
-
-  ctx.cityNorm = queryNorm;
-
-  ctx.coreCity = queryNorm;
-
-  ctx.userCoords = getCityCoords(queryNorm);
-
-  query = ''; // evita filtrar texto
-
-}
-
-&nbsp;
-
-&nbsp;
-
-4. Query mista (serviço + cidade)
-
-&nbsp;
-
-Detectar cidade dentro da string:
-
-&nbsp;
-
-&nbsp;
-
-const tokens = queryNorm.split(/\s+/);
-
-const cityToken = tokens.find(t => getCityCoords(t));
-
-if (cityToken) {
-
-  ctx.cityNorm = cityToken;
-
-  ctx.coreCity = cityToken;
-
-  ctx.userCoords = getCityCoords(cityToken);
-
-  query = query.replace(new RegExp(cityToken, 'i'), '').trim();
-
-}
-
-&nbsp;
-
-&nbsp;
-
-5. Manter pipeline existente
-
-&nbsp;
-
-GEO continua:
-
-&nbsp;
-
-Haversine → RM → fuzzy → estado
-
-&nbsp;
-
-&nbsp;
-
-Text search só com termos não-geo
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-6. Regra crítica
-
-&nbsp;
-
-Geo detection SEMPRE antes do filtro textual
-
-&nbsp;
-
-Nunca misturar RM com filtro textual completo
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-7. Resultado esperado
-
-&nbsp;
-
-“Região Metropolitana de Curitiba” → RM completa
-
-&nbsp;
-
-“Curitiba” → cidade + RM
-
-&nbsp;
-
-“encanador Curitiba” → serviço + geo correto
-
-&nbsp;
-
-“encanador” → comportamento atual
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-Conclusão:
-
-✔ Corrige o problema sem tocar no core
-
-✔ Mantém determinismo
-
-✔ Eleva UX e SEO imediatamente
