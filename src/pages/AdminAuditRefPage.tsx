@@ -48,6 +48,7 @@ function getBucket(path: string) {
 }
 
 export default function AdminAuditRefPage() {
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const [tab, setTab] = useState('tabelas');
   const [loading, setLoading] = useState(false);
   const [lastRun, setLastRun] = useState<string | null>(null);
