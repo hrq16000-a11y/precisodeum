@@ -13,6 +13,7 @@ import type { GeoIntent, GeoContext } from './geoEngine';
 import { normalize } from './normalize';
 import { trackEvent } from './tracking';
 import GovernanceEngine from './governanceEngine';
+import { ControlPlane, ControlRegistry } from '@/core/governance';
 
 // ═══════════════════════════════════════════════════════════════════════
 // SECTION 1: Types
