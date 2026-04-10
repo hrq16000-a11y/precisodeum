@@ -51,13 +51,13 @@ const DashboardPage = () => {
     Promise.all([
       supabase.from('services').select('id, view_count', { count: 'exact' }).eq('provider_id', provider.id),
       supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
-      supabase.storage.from('portfolio').list(`${provider.user_id}`, { limit: 100 }),
+      supabase.from('portfolio_photos').select('id', { count: 'exact', head: true })
+        .in('album_id', (await supabase.from('portfolio_albums').select('id').eq('provider_id', provider.id)).data?.map(a => a.id) || []),
       supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
     ]).then(([sRes, lRes, pRes, rRes]) => {
       setServicesCount(sRes.count ?? 0);
       setLeadsCount(lRes.count ?? 0);
-      const files = (pRes.data || []).filter(f => f.name !== '.emptyFolderPlaceholder');
-      setPortfolioCount(files.length);
+      setPortfolioCount(pRes.count ?? 0);
       const totalViews = (sRes.data || []).reduce((acc: number, s: any) => acc + (s.view_count || 0), 0);
       setViewsTotal(totalViews);
       setReviewCount(rRes.count ?? 0);
