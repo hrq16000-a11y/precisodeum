@@ -254,6 +254,7 @@ const DashboardJobsPage = () => {
       job_type: (job as any).job_type || '', work_model: (job as any).work_model || '',
     });
     setEditingId(job.id);
+    setCitySearch(job.city ? `${job.city}${job.state ? ', ' + job.state : ''}` : '');
     setMode('structured');
     setDialogOpen(true);
   };
@@ -268,6 +269,7 @@ const DashboardJobsPage = () => {
   const openNew = () => {
     setForm({ ...emptyForm, deadline: getDefaultDeadline() });
     setEditingId(null);
+    setCitySearch('');
     setSimpleText('');
     setCsvText('');
     setDialogOpen(true);
