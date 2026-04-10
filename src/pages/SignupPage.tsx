@@ -84,7 +84,7 @@ const SignupPage = () => {
   const cityDropdownRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState({
     fullName: '', email: '', phone: '', password: '',
-    businessName: '', categoryId: '', categoryName: '', city: '', state: '', description: '',
+    businessName: '', categoryId: '', categoryName: '', categoryCustom: '', city: '', state: '', description: '',
     cnpj: '',
     latitude: null as number | null, longitude: null as number | null,
   });
