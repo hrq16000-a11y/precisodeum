@@ -121,6 +121,18 @@ const FloatingDots = () => {
   );
 };
 
+/** Pick N random items from an array (Fisher-Yates partial shuffle) */
+function pickRandom<T>(arr: T[], n: number): T[] {
+  const copy = [...arr];
+  const result: T[] = [];
+  for (let i = 0; i < Math.min(n, copy.length); i++) {
+    const j = i + Math.floor(Math.random() * (copy.length - i));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+    result.push(copy[i]);
+  }
+  return result;
+}
+
 const HeroBanner = () => {
   const [bgIndex, setBgIndex] = useState(0);
   const { city: geoCity } = useGeoCity();
@@ -135,10 +147,14 @@ const HeroBanner = () => {
   const ctaSecondaryText = useSettingValue('hero_cta_secondary_text');
   const ctaSecondaryLink = useSettingValue('hero_cta_secondary_link');
 
+  // Pick 3 random images once per mount (session) from the full list
   const bgImages = useMemo(() => {
-    if (!bgImagesRaw) return FALLBACK_BG_IMAGES;
-    const parsed = bgImagesRaw.split(',').map(s => s.trim()).filter(Boolean);
-    return parsed.length > 0 ? parsed : FALLBACK_BG_IMAGES;
+    const pool = bgImagesRaw
+      ? bgImagesRaw.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+    const source = pool.length > 0 ? pool : FALLBACK_BG_IMAGES;
+    return pickRandom(source, 3);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bgImagesRaw]);
 
   const prefixes = useMemo(() => {
