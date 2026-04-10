@@ -560,8 +560,9 @@ const SignupPage = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              setForm(prev => ({ ...prev, categoryId: '', categoryName: categorySearch.trim() || 'Outro' }));
-                              setCategorySearch(categorySearch.trim() || 'Outro');
+                              const customVal = categorySearch.trim() || 'Outro';
+                              setForm(prev => ({ ...prev, categoryId: '', categoryName: '', categoryCustom: customVal }));
+                              setCategorySearch(customVal);
                               setShowCategorySuggestions(false);
                             }}
                             className="w-full border-t border-border px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted transition-colors"
