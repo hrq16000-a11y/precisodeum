@@ -24,10 +24,12 @@ function fetchAllMunicipalities(): Promise<CityResult[]> {
       return res.json();
     })
     .then((data: any[]) =>
-      data.map((m) => ({
-        name: m.nome as string,
-        state: m.microrregiao?.mesorregiao?.UF?.sigla as string,
-      }))
+      data
+        .map((m) => ({
+          name: (m.nome || '') as string,
+          state: (m.microrregiao?.mesorregiao?.UF?.sigla || '') as string,
+        }))
+        .filter((c) => c.name && c.state)
     )
     .catch(() => {
       ibgeCachePromise = null;
@@ -37,7 +39,8 @@ function fetchAllMunicipalities(): Promise<CityResult[]> {
 }
 
 // Normalize for accent-insensitive search
-function normalize(s: string) {
+function normalize(s: string | undefined | null) {
+  if (!s) return '';
   return s
     .toLowerCase()
     .normalize('NFD')
