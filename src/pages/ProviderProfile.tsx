@@ -300,13 +300,12 @@ const ProviderProfile = () => {
 
         const providerWithProfile = { ...data, profiles: profile, levelInfo, accTypeInfo };
 
-        const [{ data: svc }, { data: rev }, { data: files }, { data: ps }] = await Promise.all([
+        const [{ data: svc }, { data: rev }, { data: ps }] = await Promise.all([
           supabase.from('services').select('*').eq('provider_id', data.id),
           supabase.from('reviews')
             .select('*, user_id')
             .eq('provider_id', data.id)
             .order('created_at', { ascending: false }),
-          supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 }),
           supabase.from('provider_page_settings').select('*').eq('provider_id', data.id).maybeSingle(),
         ]);
 
@@ -370,10 +369,39 @@ const ProviderProfile = () => {
           preparedReviews = rev.map((r: any) => ({ ...r, profiles: { full_name: profileMap[r.user_id] || 'Cliente' } }));
         }
 
-        if (files) {
-          const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
-          preparedPortfolioRawUrls = filtered.map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl);
+        // Fetch portfolio: try albums first, fallback to legacy storage
+        let preparedAlbums: PortfolioAlbum[] = [];
+        const { data: albumsData } = await supabase
+          .from('portfolio_albums')
+          .select('id, name, description')
+          .eq('provider_id', data.id)
+          .order('display_order');
+
+        if (albumsData && albumsData.length > 0) {
+          const albumIds = albumsData.map(a => a.id);
+          const { data: photosData } = await supabase
+            .from('portfolio_photos')
+            .select('id, album_id, image_url, display_order')
+            .in('album_id', albumIds)
+            .order('display_order');
+
+          preparedAlbums = albumsData.map(album => ({
+            ...album,
+            photos: (photosData || []).filter(p => p.album_id === album.id),
+          }));
+
+          // Flatten all photos for lightbox compatibility
+          const allPhotos = preparedAlbums.flatMap(a => a.photos);
+          preparedPortfolioRawUrls = allPhotos.map(p => p.image_url);
           preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
+        } else {
+          // Fallback: legacy flat storage for old profiles
+          const { data: files } = await supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 });
+          if (files) {
+            const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
+            preparedPortfolioRawUrls = filtered.map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl);
+            preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
+          }
         }
 
         // Fetch related providers — prioritize same category, then same city
@@ -415,6 +443,7 @@ const ProviderProfile = () => {
           reviews: preparedReviews,
           portfolioImages: preparedPortfolioImages,
           portfolioRawUrls: preparedPortfolioRawUrls,
+          portfolioAlbums: preparedAlbums,
           pageSettings: preparedPageSettings,
           relatedProviders: preparedRelated,
         };
