@@ -88,8 +88,28 @@ const DashboardPage = () => {
   const isProvider = profileType === 'provider';
   const isRH = profileType === 'rh';
 
+  const onboardingProgress = provider?.onboarding_progress as any || {};
   const profileDone = !!provider?.description && !!provider?.city;
   const servicesDone = servicesCount !== null && servicesCount > 0;
+  const portfolioDone = portfolioCount > 0;
+
+  // Persist onboarding progress when steps complete
+  useEffect(() => {
+    if (!provider?.id) return;
+    const current = provider?.onboarding_progress as any || {};
+    const updates: Record<string, boolean> = {};
+    if (profileDone && !current.profile) updates.profile = true;
+    if (servicesDone && !current.services) updates.services = true;
+    if (portfolioDone && !current.portfolio) updates.portfolio = true;
+    const allDone = profileDone && servicesDone && portfolioDone;
+    if (allDone && !current.completed) updates.completed = true;
+
+    if (Object.keys(updates).length > 0) {
+      supabase.from('providers').update({
+        onboarding_progress: { ...current, ...updates },
+      }).eq('id', provider.id);
+    }
+  }, [provider?.id, profileDone, servicesDone, portfolioDone]);
 
   // ---- CLIENT DASHBOARD ----
   if (isClient) {
