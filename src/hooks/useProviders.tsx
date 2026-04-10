@@ -357,6 +357,8 @@ function matchesGeoContext(provider: DbProvider, cityNorm: string, stateNorm?: s
   return false;
 }
 
+export { normalizeCityName, matchesGeoContext };
+
 const MIN_LOCAL_RESULTS = 3;
 
 export function filterAndRankProviders(
@@ -364,7 +366,8 @@ export function filterAndRankProviders(
   query: string,
   city: string,
   categorySlug: string,
-  minRating: number
+  minRating: number,
+  state?: string
 ) {
   let results = [...providers];
 
@@ -393,32 +396,33 @@ export function filterAndRankProviders(
   }
 
   const cityNorm = city ? normalizeCityName(city) : '';
+  const stateNorm = state ? normalizeCityName(state) : '';
 
-  // Smart city filtering: filter by city when context exists,
-  // but fall back to global + ranking if too few local results
-  if (cityNorm) {
-    const localResults = results.filter((p) => matchesGeoContext(p, cityNorm));
-    const otherResults = results.filter((p) => !matchesGeoContext(p, cityNorm));
+  // Smart geo filtering: same state = same region (covers metropolitan areas)
+  if (cityNorm || stateNorm) {
+    const localResults = results.filter((p) => matchesGeoContext(p, cityNorm, stateNorm));
+    const otherResults = results.filter((p) => !matchesGeoContext(p, cityNorm, stateNorm));
 
     if (localResults.length >= MIN_LOCAL_RESULTS) {
-      // Enough local results — show only local
       results = localResults;
     } else {
-      // Few local results — show local first, then others
       results = [...localResults, ...otherResults];
     }
   }
 
-  
-
   results.sort((a, b) => {
-    // 1. City match first (for fallback/expanded results)
+    // 1. Exact city match first, then same-state, then others
     if (cityNorm) {
-      const aLocal = matchesGeoContext(a, cityNorm) ? 0 : 1;
-      const bLocal = matchesGeoContext(b, cityNorm) ? 0 : 1;
+      const aCityMatch = normalizeCityName(a.city) === cityNorm || normalizeCityName(a.city).includes(cityNorm) || cityNorm.includes(normalizeCityName(a.city));
+      const bCityMatch = normalizeCityName(b.city) === cityNorm || normalizeCityName(b.city).includes(cityNorm) || cityNorm.includes(normalizeCityName(b.city));
+      if (aCityMatch !== bCityMatch) return aCityMatch ? -1 : 1;
+    }
+    if (cityNorm || stateNorm) {
+      const aLocal = matchesGeoContext(a, cityNorm, stateNorm) ? 0 : 1;
+      const bLocal = matchesGeoContext(b, cityNorm, stateNorm) ? 0 : 1;
       if (aLocal !== bLocal) return aLocal - bLocal;
     }
-    // 2. Hybrid final score (content + boost - fairness + random)
+    // 2. Hybrid final score
     const aScore = (a as any)._finalScore || (a as any)._contentScore || 0;
     const bScore = (b as any)._finalScore || (b as any)._contentScore || 0;
     if (aScore !== bScore) return bScore - aScore;
