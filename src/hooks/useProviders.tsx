@@ -384,9 +384,15 @@ function matchesGeoContext(
     return dist <= effectiveRadius;
   }
 
-  // 2. Fallback: city name matching
+  // 2. Metropolitan region: match by state (same UF = local)
+  const isMetroRegion = cityNorm.includes('regiaometropolitana');
+  if (isMetroRegion && stateNorm) {
+    const pState = normalizeCityName(provider.state);
+    return pState === stateNorm;
+  }
+
+  // 3. Fallback: city name matching
   const pCity = normalizeCityName(provider.city);
-  const pState = normalizeCityName(provider.state);
   const coreCity = extractCoreCity(cityNorm);
 
   if (cityNorm && pCity === cityNorm) return true;
@@ -395,7 +401,6 @@ function matchesGeoContext(
     if (pCity === coreCity) return true;
     if (pCity.includes(coreCity) || coreCity.includes(pCity)) return true;
   }
-  if (stateNorm && pState === stateNorm && cityNorm.includes('regiaometropolitana')) return true;
   return false;
 }
 
