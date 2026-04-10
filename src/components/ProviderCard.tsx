@@ -34,9 +34,6 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const isOnline = useIsProviderOnline(provider.userId);
   const prefetch = usePrefetchProvider();
   const handlers = usePrefetchHandlers(prefetch, provider.slug);
-  const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  const generatedAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff&size=128&bold=true`;
-  const displayPhoto = provider.photo || provider.serviceImage || generatedAvatar;
   const hasImages = !!provider.serviceImage || !!provider.hasPortfolio;
   const impressionRef = useCardImpression(provider.id, provider.slug, trackingSource);
 
@@ -45,6 +42,8 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const locationText = locationParts.join(', ');
 
   const displayName = provider.name || provider.businessName || 'Profissional';
+  const generatedAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff&size=128&bold=true`;
+  const displayPhoto = provider.photo || provider.serviceImage || generatedAvatar;
 
   // Verified badge — computed from admin-configurable rules
   const isVerified = verifiedEnabled && (
