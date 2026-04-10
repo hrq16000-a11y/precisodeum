@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard, Search as SearchIcon, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard, Search as SearchIcon, ChevronDown, Star, Rocket, Receipt, UserPlus } from 'lucide-react';
 import AdminGroupNav, { AdminGroupTabs } from '@/components/admin/AdminGroupNav';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ const menuGroups = [
     label: 'Geral',
     items: [
       { label: 'Visão Geral', icon: LayoutDashboard, path: '/admin' },
+      { label: 'Executivo', icon: BarChart3, path: '/admin/overview' },
     ],
   },
   {
@@ -27,6 +28,8 @@ const menuGroups = [
       { label: 'CRM Usuários', icon: Target, path: '/admin/crm-usuarios' },
       { label: 'Serviços', icon: Package, path: '/admin/servicos' },
       { label: 'Leads', icon: FileText, path: '/admin/leads' },
+      { label: 'Avaliações', icon: Star, path: '/admin/avaliacoes' },
+      { label: 'Assinaturas', icon: Receipt, path: '/admin/assinaturas' },
       { label: 'Planos & Regras', icon: Crown, path: '/admin/regras' },
       { label: 'Comunidade', icon: Users2, path: '/admin/comunidade' },
     ],
@@ -54,6 +57,8 @@ const menuGroups = [
     items: [
       { label: 'Patrocinadores', icon: Megaphone, path: '/admin/patrocinadores' },
       { label: 'CRM Comercial', icon: HandshakeIcon, path: '/admin/crm-patrocinadores' },
+      { label: 'Leads Sponsors', icon: UserPlus, path: '/admin/leads-patrocinadores' },
+      { label: 'Boosts', icon: Rocket, path: '/admin/boosts' },
       { label: 'Slots de Anúncios', icon: LayoutGrid, path: '/admin/slots-anuncios' },
       { label: 'Painel Sponsor', icon: Shield, path: '/sponsor-panel' },
       { label: 'Cidades', icon: MapPin, path: '/admin/cidades' },

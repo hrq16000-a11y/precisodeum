@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/AdminLayout';
+import { useAdmin } from '@/hooks/useAdmin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +62,7 @@ const POPULAR_ICONS = [
 const DEFAULT_HIDDEN = ['/admin', '/login', '/cadastro', '/reset-password', '/dashboard', '/sponsor-panel'];
 
 const AdminBottomNavPage = () => {
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const queryClient = useQueryClient();
 
   // ── Fetch config ──
@@ -211,6 +213,8 @@ const AdminBottomNavPage = () => {
     });
     setShowDialog(true);
   };
+
+  if (adminLoading) return <AdminLayout><p className="text-muted-foreground p-4">Carregando...</p></AdminLayout>;
 
   if (!config) {
     return (
