@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import AvatarUpload from '@/components/AvatarUpload';
-import PortfolioUpload from '@/components/PortfolioUpload';
+
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
