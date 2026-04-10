@@ -245,7 +245,7 @@ const DashboardPage = () => {
       number: '2',
       title: 'Cadastre seus serviços',
       description: 'Adicione os serviços que você oferece, com imagens e descrições.',
-      action: servicesDone ? () => navigate('/dashboard/servicos') : () => setWizardOpen(true),
+      action: servicesDone ? () => navigate('/dashboard/servicos') : (wizardEnabled ? () => setWizardOpen(true) : () => navigate('/dashboard/servicos')),
       actionLabel: servicesDone ? 'Meus Serviços' : 'Criar primeiro serviço',
       icon: Briefcase,
       done: servicesDone,
@@ -337,7 +337,7 @@ const DashboardPage = () => {
               <h2 className="text-base font-bold text-foreground">Crie seu primeiro serviço!</h2>
               <p className="text-sm text-muted-foreground mt-0.5">Publique seus serviços para que clientes possam encontrá-lo.</p>
             </div>
-            <Button variant="accent" size="sm" onClick={() => setWizardOpen(true)} className="shrink-0 relative">
+            <Button variant="accent" size="sm" onClick={() => wizardEnabled ? setWizardOpen(true) : navigate('/dashboard/servicos')} className="shrink-0 relative">
               <PlusCircle className="mr-1 h-4 w-4" /> Criar Serviço
             </Button>
           </motion.div>
