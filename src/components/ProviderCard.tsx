@@ -22,6 +22,13 @@ interface ProviderCardProps {
 
 const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', index = 0 }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const verifiedEnabled = useFeatureEnabled('verified_badge_enabled');
+  const minServices = Number(useSettingValue('verified_badge_min_services')) || 2;
+  const minAlbums = Number(useSettingValue('verified_badge_min_albums')) || 1;
+  const minReviews = Number(useSettingValue('verified_badge_min_reviews')) || 1;
+  const minRating = Number(useSettingValue('verified_badge_min_rating')) || 0;
+  const requirePhoto = useSettingValue('verified_badge_require_photo') !== 'false';
+
   const { user } = useAuth();
   const prefetch = usePrefetchProvider();
   const handlers = usePrefetchHandlers(prefetch, provider.slug);
@@ -34,6 +41,15 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const locationText = locationParts.join(', ');
 
   const displayName = provider.name || provider.businessName || 'Profissional';
+
+  // Verified badge — computed from admin-configurable rules
+  const isVerified = verifiedEnabled && (
+    provider.servicesCount >= minServices &&
+    provider.portfolioAlbumCount >= minAlbums &&
+    provider.reviewCount >= minReviews &&
+    (minRating <= 0 || provider.rating >= minRating) &&
+    (!requirePhoto || !!displayPhoto)
+  );
 
   return (
     <motion.div
