@@ -480,9 +480,18 @@ const SignupPage = () => {
                       />
                     </div>
 
-                    {/* Smart category search */}
+                    {/* Smart category picker with hierarchy */}
                     <div className="relative">
                       <label className="mb-1 block text-sm font-medium text-foreground">Categoria principal</label>
+                      {form.categoryName && (
+                        <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
+                          {form.categoryName}
+                          <button type="button" onClick={() => {
+                            setForm(prev => ({ ...prev, categoryId: '', categoryName: '' }));
+                            setCategorySearch('');
+                          }} className="ml-0.5 hover:text-destructive">✕</button>
+                        </div>
+                      )}
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                         <input
@@ -498,21 +507,58 @@ const SignupPage = () => {
                           className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-colors"
                         />
                       </div>
-                      {showCategorySuggestions && filteredCategories.length > 0 && (
-                        <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-48 overflow-y-auto">
-                          {filteredCategories.map((cat: any) => (
-                            <button
-                              key={cat.id}
-                              type="button"
-                              onClick={() => handleCategorySelect(cat)}
-                              className={`w-full px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${form.categoryId === cat.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}
-                            >
-                              {cat.name}
-                            </button>
-                          ))}
+                      {showCategorySuggestions && (
+                        <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-56 overflow-y-auto">
+                          {filteredCategoryTree.length > 0 ? (
+                            filteredCategoryTree.map(({ macro, subs }) => (
+                              <div key={macro.id}>
+                                {subs.length > 0 ? (
+                                  <>
+                                    <div className="sticky top-0 bg-muted/60 backdrop-blur-sm px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                                      {macro.icon} {macro.name}
+                                    </div>
+                                    {subs.map((sub: any) => (
+                                      <button
+                                        key={sub.id}
+                                        type="button"
+                                        onClick={() => handleCategorySelect(sub)}
+                                        className={`w-full pl-6 pr-3 py-2 text-left text-sm hover:bg-muted transition-colors ${form.categoryId === sub.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}
+                                      >
+                                        {sub.icon} {sub.name}
+                                      </button>
+                                    ))}
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCategorySelect(macro)}
+                                    className={`w-full px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${form.categoryId === macro.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}
+                                  >
+                                    {macro.icon} {macro.name}
+                                  </button>
+                                )}
+                              </div>
+                            ))
+                          ) : categorySearch.trim() ? (
+                            <div className="px-3 py-3 text-center text-xs text-muted-foreground">
+                              Nenhuma categoria encontrada
+                            </div>
+                          ) : null}
+
+                          {/* "Outro" option */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setForm(prev => ({ ...prev, categoryId: '', categoryName: categorySearch.trim() || 'Outro' }));
+                              setCategorySearch(categorySearch.trim() || 'Outro');
+                              setShowCategorySuggestions(false);
+                            }}
+                            className="w-full border-t border-border px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted transition-colors"
+                          >
+                            🏷️ Outro {categorySearch.trim() ? `("${categorySearch.trim()}")` : ''}
+                          </button>
                         </div>
                       )}
-                      {/* Click-away */}
                       {showCategorySuggestions && (
                         <div className="fixed inset-0 z-10" onClick={() => setShowCategorySuggestions(false)} />
                       )}
