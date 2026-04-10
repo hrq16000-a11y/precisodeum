@@ -114,6 +114,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProvider(null);
     setNeedsTypeSelection(false);
   };
+  // Track online presence for the current user
+  usePresenceTracker(user?.id);
 
   return (
     <AuthContext.Provider value={{ session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile }}>
