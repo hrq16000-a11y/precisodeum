@@ -4,6 +4,7 @@
  * All keys MUST be pre-normalized (lowercase, no accents, alpha only).
  */
 import { normalize } from './normalize';
+import { isKnownCity } from './citiesIndex';
 
 interface CityCoord {
   lat: number;
@@ -265,6 +266,14 @@ export function getCityCoords(city: string): { lat: number; lon: number } | null
   const result = entry ? { lat: entry.lat, lon: entry.lon } : null;
   coordsCache.set(key, result);
   return result;
+}
+
+/**
+ * Check if a normalized string is a recognized city (CITY_COORDS or IBGE national index).
+ * Does NOT require coordinates — just validates the city name exists.
+ */
+export function isRecognizedCity(normCity: string): boolean {
+  return normCity in CITY_COORDS || isKnownCity(normCity);
 }
 
 export { CITY_COORDS };

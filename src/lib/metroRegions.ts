@@ -195,6 +195,42 @@ const METRO_REGIONS: MetroRegion[] = [
       'novaalvoradadosul', 'ribasdoriopardo', 'jaraguari',
     ],
   },
+  {
+    pole: 'campinas',
+    state: 'SP',
+    members: [
+      'campinas', 'hortolandia', 'sumare', 'americana', 'santabarbara doeste',
+      'indaiatuba', 'paulinia', 'valinhos', 'vinhedo', 'itatiba',
+      'jaguariuna', 'pedreira', 'cosmopolis', 'artur nogueira',
+      'engenheiro coelho', 'holambra', 'santo antonio de posse',
+      'morungaba', 'monte mor', 'nova odessa',
+    ].map(s => s.replace(/\s/g, '')),
+  },
+  {
+    pole: 'manaus',
+    state: 'AM',
+    members: [
+      'manaus', 'iranduba', 'riopretodaeva', 'presidentefigueiredo',
+      'manacapuru', 'itacoatiara', 'novaairao', 'careirodavarze',
+    ],
+  },
+  {
+    pole: 'brasilia',
+    state: 'DF',
+    members: [
+      'brasilia', 'luziania', 'valparaiso degoias', 'aguaslindas degoias',
+      'novogama', 'cidadeocidental', 'planaltina', 'formosa',
+      'santoantoniododescoberto', 'alexania',
+    ].map(s => s.replace(/\s/g, '')),
+  },
+  {
+    pole: 'santos',
+    state: 'SP',
+    members: [
+      'santos', 'saovicente', 'guaruja', 'praiagrande', 'cubatao',
+      'bertioga', 'itanhaem', 'mongagua', 'peruibe',
+    ],
+  },
 ];
 
 // Build lookups
@@ -222,9 +258,11 @@ const REGIONAL_ALIASES: Record<string, string> = {
   baixadasantista: 'santos',
   regiaodoabc: 'saopaulo',
   abcpaulista: 'saopaulo',
+  abc: 'saopaulo',
   grandesaopaulo: 'saopaulo',
   granderiodejaneiro: 'riodejaneiro',
   grandebelohorizonte: 'belohorizonte',
+  grandebh: 'belohorizonte',
   grandecuritiba: 'curitiba',
   grandeportoalegre: 'portoalegre',
   granderecife: 'recife',
@@ -236,6 +274,14 @@ const REGIONAL_ALIASES: Record<string, string> = {
   grandebelem: 'belem',
   grandenatal: 'natal',
   grandesaoluis: 'saoluis',
+  grandecampinas: 'campinas',
+  grandemanaus: 'manaus',
+  litoralpaulista: 'santos',
+  litoralnortesp: 'santos',
+  ride: 'brasilia',
+  ridedistritofederal: 'brasilia',
+  entornodebrasilia: 'brasilia',
+  valedoparaiba: 'saojosedoscampos',
 };
 
 export function resolveMetroRegion(normalizedGeo: string, stateNorm?: string): MetroRegion | null {
