@@ -1387,6 +1387,13 @@ export type Database = {
             foreignKeyName: "profile_type_settings_default_level_id_fkey"
             columns: ["default_level_id"]
             isOneToOne: false
+            referencedRelation: "public_user_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_type_settings_default_level_id_fkey"
+            columns: ["default_level_id"]
+            isOneToOne: false
             referencedRelation: "user_levels"
             referencedColumns: ["id"]
           },
@@ -1453,6 +1460,13 @@ export type Database = {
             columns: ["account_type_id"]
             isOneToOne: false
             referencedRelation: "account_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "public_user_levels"
             referencedColumns: ["id"]
           },
           {
@@ -3015,6 +3029,27 @@ export type Database = {
           avatar_url?: string | null
           full_name?: string | null
           id?: string | null
+        }
+        Relationships: []
+      }
+      public_user_levels: {
+        Row: {
+          color: string | null
+          description: string | null
+          id: string | null
+          name: string | null
+        }
+        Insert: {
+          color?: string | null
+          description?: string | null
+          id?: string | null
+          name?: string | null
+        }
+        Update: {
+          color?: string | null
+          description?: string | null
+          id?: string | null
+          name?: string | null
         }
         Relationships: []
       }
