@@ -1,7 +1,16 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { avatarThumb, serviceImageThumb, originalUrl } from '@/lib/imageOptimizer';
+import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
+
+/** Track impression for fairness system — fire-and-forget */
+export function trackProviderImpressions(providerIds: string[]) {
+  if (!providerIds.length) return;
+  // Batch via RPC — one call per provider (lightweight)
+  providerIds.forEach(id => {
+    supabase.rpc('increment_provider_impression', { _provider_id: id }).then(() => {});
+  });
+}
 
 export interface DbProvider {
   id: string;
