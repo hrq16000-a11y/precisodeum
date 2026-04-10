@@ -94,12 +94,10 @@ const Footer = () => {
                 <li key={item.id || item.url}>
                   {item.open_in_new_tab || item.url?.startsWith('http') ? (
                     <a href={item.url} target="_blank" rel="noopener noreferrer" className="story-link transition-colors hover:text-primary-foreground">
-                      {item.icon && <span className="mr-1">{item.icon}</span>}
                       {item.label}
                     </a>
                   ) : (
                     <Link to={item.url} className="story-link transition-colors hover:text-primary-foreground">
-                      {item.icon && <span className="mr-1">{item.icon}</span>}
                       {item.label}
                     </Link>
                   )}
