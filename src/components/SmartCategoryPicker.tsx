@@ -15,10 +15,6 @@ interface SmartCategoryPickerProps {
   categories: Category[];
   selectedIds: string[];
   onToggle: (id: string) => void;
-  /** Free-text value typed by user (hybrid mode) */
-  freeText?: string;
-  /** Called when user types free text */
-  onFreeTextChange?: (text: string) => void;
   maxSelections?: number;
   placeholder?: string;
   className?: string;
@@ -46,10 +42,8 @@ const SmartCategoryPicker = ({
   categories,
   selectedIds,
   onToggle,
-  freeText = '',
-  onFreeTextChange,
   maxSelections,
-  placeholder = 'Buscar ou digitar categoria...',
+  placeholder = 'Buscar categoria...',
   className,
 }: SmartCategoryPickerProps) => {
   const [open, setOpen] = useState(false);
@@ -118,28 +112,15 @@ const SmartCategoryPicker = ({
 
   const handleToggle = (id: string) => {
     if (!selectedIds.includes(id) && maxSelections && selectedIds.length >= maxSelections) return;
-    // When selecting a category, clear free text
-    if (onFreeTextChange) onFreeTextChange('');
     onToggle(id);
-  };
-
-  const handleSearchChange = (value: string) => {
-    setSearch(value);
-    // Also update free text so the parent can use it
-    if (onFreeTextChange) onFreeTextChange(value);
   };
 
   const handleOpen = () => {
     setOpen(true);
-    // Restore search from freeText if any
-    if (freeText && !search) setSearch(freeText);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   const hasResults = filteredTree.length > 0;
-
-  // Display text when closed: chips for selected categories, or free text, or placeholder
-  const showFreeTextLabel = freeText && selectedCats.length === 0 && !open;
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>
@@ -148,24 +129,9 @@ const SmartCategoryPicker = ({
         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm cursor-pointer min-h-[42px] flex flex-wrap items-center gap-1"
         onClick={handleOpen}
       >
-        {selectedCats.length === 0 && !showFreeTextLabel && !open && (
+        {selectedCats.length === 0 && !open && (
           <span className="text-muted-foreground text-xs flex items-center gap-1">
             <Search className="h-3 w-3" /> {placeholder}
-          </span>
-        )}
-        {showFreeTextLabel && (
-          <span className="text-foreground text-xs flex items-center gap-1">
-            ✏️ {freeText}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onFreeTextChange) onFreeTextChange('');
-                setSearch('');
-              }}
-            >
-              <X className="h-3 w-3 text-muted-foreground" />
-            </button>
           </span>
         )}
         {selectedCats.map((cat) => (
@@ -198,12 +164,12 @@ const SmartCategoryPicker = ({
               <input
                 ref={inputRef}
                 value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder={placeholder}
                 className="w-full bg-transparent py-1.5 text-xs text-foreground outline-none placeholder:text-muted-foreground"
               />
               {search && (
-                <button type="button" onClick={() => handleSearchChange('')}>
+                <button type="button" onClick={() => setSearch('')}>
                   <X className="h-3 w-3 text-muted-foreground" />
                 </button>
               )}
@@ -266,7 +232,6 @@ const SmartCategoryPicker = ({
             ) : (
               <div className="px-3 py-4 text-center text-xs text-muted-foreground">
                 Nenhuma categoria encontrada para "<span className="font-medium">{search}</span>"
-                <p className="mt-1 text-[10px]">O texto digitado será usado como categoria livre.</p>
               </div>
             )}
           </div>
