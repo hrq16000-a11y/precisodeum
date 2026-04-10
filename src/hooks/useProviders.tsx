@@ -460,7 +460,7 @@ export function filterAndRankProviders(
   return results;
 }
 
-export function useSearchProviders(query: string, city: string, categorySlug: string, minRating: number, state?: string) {
+export function useSearchProviders(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null) {
   const baseQuery = useQuery({
     queryKey: ['search-providers-base'],
     queryFn: async () => {
@@ -479,8 +479,8 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
   });
 
   const filteredData = useMemo(
-    () => filterAndRankProviders(baseQuery.data || [], query, city, categorySlug, minRating, state),
-    [baseQuery.data, query, city, categorySlug, minRating, state]
+    () => filterAndRankProviders(baseQuery.data || [], query, city, categorySlug, minRating, state, userLat, userLon),
+    [baseQuery.data, query, city, categorySlug, minRating, state, userLat, userLon]
   );
 
   return {
