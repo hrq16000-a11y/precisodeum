@@ -295,5 +295,10 @@ export function useGeoCity(): GeoStore {
     });
   }, []);
 
-  return { ...data, setCity, requestPreciseLocation };
+  const setRadius = useCallback((km: number) => {
+    safeSet(RADIUS_KEY, String(km));
+    setGeoState({ radiusKm: km });
+  }, []);
+
+  return { ...data, setCity, setRadius, requestPreciseLocation };
 }
