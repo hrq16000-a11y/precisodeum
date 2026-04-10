@@ -84,6 +84,7 @@ const SignupPage = () => {
   const [form, setForm] = useState({
     fullName: '', email: '', phone: '', password: '',
     businessName: '', categoryId: '', categoryName: '', city: '', state: '', description: '',
+    cnpj: '',
     latitude: null as number | null, longitude: null as number | null,
   });
   const navigate = useNavigate();
@@ -224,6 +225,7 @@ const SignupPage = () => {
           phone: form.phone,
           whatsapp: form.phone,
           category_id: form.categoryId || null,
+          cnpj: form.cnpj ? form.cnpj.replace(/\D/g, '') : null,
           latitude: form.latitude,
           longitude: form.longitude,
           slug,
@@ -435,6 +437,28 @@ const SignupPage = () => {
                       <input type="text" name="businessName" value={form.businessName} onChange={handleChange}
                         placeholder="Ex: João Eletricista"
                         className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-colors" />
+                    </div>
+
+                    {/* CNPJ opcional */}
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-foreground">
+                        CNPJ <span className="text-muted-foreground font-normal">(opcional — pontua no ranking)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={form.cnpj}
+                        onChange={(e) => {
+                          let v = e.target.value.replace(/\D/g, '').slice(0, 14);
+                          // Apply mask: XX.XXX.XXX/XXXX-XX
+                          if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5');
+                          else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4');
+                          else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                          else if (v.length > 2) v = v.replace(/^(\d{2})(\d{1,3})/, '$1.$2');
+                          setForm(prev => ({ ...prev, cnpj: v }));
+                        }}
+                        placeholder="00.000.000/0000-00"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-colors"
+                      />
                     </div>
 
                     {/* Smart category search */}
