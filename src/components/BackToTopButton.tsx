@@ -19,17 +19,18 @@ const BackToTopButton = () => {
     <AnimatePresence>
       {visible && (
         <motion.button
-          initial={{ opacity: 0, scale: 0.5, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.5, y: 20 }}
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 0.6, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.5 }}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           onClick={scrollToTop}
-          className="fixed bottom-20 right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg shadow-accent/25 transition-colors hover:bg-accent/90 md:bottom-6 md:right-6 md:h-11 md:w-11"
+          className="fixed right-3 z-40 flex h-7 w-7 items-center justify-center rounded-full bg-muted/80 text-muted-foreground backdrop-blur-sm transition-opacity hover:opacity-100"
+          style={{ top: '60vh' }}
           aria-label="Voltar ao topo"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.15 }}
+          whileTap={{ scale: 0.85 }}
         >
-          <ArrowUp className="h-4 w-4 md:h-5 md:w-5" />
+          <ArrowUp className="h-3.5 w-3.5" strokeWidth={2.5} />
         </motion.button>
       )}
     </AnimatePresence>
