@@ -1,50 +1,46 @@
 
 
-## Correções de Validação e Robustez no Cadastro
+## Aplicar parametrizações do cadastro na página /dashboard/perfil
 
-### Arquivo: `src/pages/SignupPage.tsx`
+### Problema
+A página `DashboardProfilePage.tsx` usa campos de texto livre para cidade/estado e um `<select>` simples para categoria, sem as melhorias aplicadas ao cadastro: seletor inteligente de cidade (IBGE + GPS), categoria hierárquica com "Outro", CNPJ, validações robustas e lat/lon.
 
-**1. "Outro" salva em campo separado**
-- Adicionar `categoryCustom` ao form state
-- Quando "Outro" for selecionado, salvar texto em `categoryCustom` (não em `categoryId`)
-- No submit, enviar `category_custom` separado no insert do provider
+### Mudanças no arquivo `src/pages/DashboardProfilePage.tsx`
 
-**2. Categoria obrigatória**
-- Validar no submit: `categoryId` OU `categoryCustom` deve existir
-- Toast de erro se nenhum preenchido
+**1. Seletor inteligente de cidade (igual ao cadastro)**
+- Importar `fetchAllMunicipalities`, `geocodeCity`, `reverseGeocode`, `normalize` de `geoUtils`
+- Substituir inputs de cidade/estado por busca com autocomplete + botão "Usar minha localização"
+- Estado fica readonly (auto-preenchido pela seleção)
+- Adicionar `latitude`, `longitude` ao form state (pré-populados do provider existente)
 
-**3. Cidade validada obrigatória**
-- Bloquear submit se `form.city` ou `form.state` estiverem vazios
-- Impedir digitação livre sem seleção (limpar city/state se input mudar após seleção)
+**2. Categoria hierárquica com "Outro"**
+- Substituir `<select>` por busca com árvore macro/sub (mesma lógica do cadastro)
+- Adicionar `category_custom` ao form state (pré-populado do provider)
+- Chip visual para categoria selecionada com botão de remoção
 
-**4. Fallback GPS**
-- Já existe tratamento de erro no `handleAutoLocate` — apenas garantir que o toast de erro não trava o fluxo (já OK, mas remover `return` desnecessário)
+**3. Campo CNPJ opcional**
+- Adicionar `cnpj` ao form state (pré-populado do provider)
+- Input com máscara `XX.XXX.XXX/XXXX-XX`
+- Validação: se preenchido, deve ter 14 dígitos
 
-**5. Garantir lat/lon no submit**
-- Se `latitude`/`longitude` forem `null` mas `city`/`state` existem → chamar `geocodeCity()` antes de inserir
+**4. Validações robustas no handleSave**
+- Telefone: mínimo 10 dígitos
+- Categoria: `category_id` OU `category_custom` obrigatório (para providers)
+- Cidade/estado: devem vir de seleção válida (limpar se input mudar)
+- CNPJ: exatamente 14 dígitos se preenchido
+- Lat/lon: fallback `geocodeCity` se ausente mas cidade selecionada
+- Spinner + disable botão durante save
 
-**6. Sanitizar CNPJ**
-- Já faz `form.cnpj.replace(/\D/g, '')` no submit — OK
-- Adicionar validação: se preenchido, deve ter exatamente 14 dígitos
+**5. Salvar campos extras no submit**
+- Incluir `category_custom`, `cnpj` (sanitizado), `latitude`, `longitude` nos updates/inserts do provider
 
-**7. Vínculo user_ref**
-- O trigger `copy_user_ref_from_profile` já copia `user_ref` do profile para provider via `user_id` — OK, nenhuma mudança necessária
+**6. Pré-popular campos do provider existente**
+- `category_custom`, `cnpj`, `latitude`, `longitude` no useEffect que carrega dados
 
-**8. Prevenir duplicidade no submit**
-- Desabilitar botão com `loading` (já faz `disabled={loading}`)
-- Adicionar `loading` state visual com spinner no botão
-
-**9. Validar telefone mínimo**
-- No submit, validar `form.phone.length >= 10` antes de prosseguir
-
-### Arquivo: Migração SQL
-- Adicionar coluna `category_custom TEXT DEFAULT NULL` na tabela `providers`
-
-### Resumo das mudanças
-| Correção | Arquivo |
+### Arquivos afetados
+| Arquivo | Ação |
 |---|---|
-| Campo `category_custom` no DB | Migração SQL |
-| Validações no submit (categoria, cidade, telefone, CNPJ, lat/lon) | `SignupPage.tsx` |
-| Separar "Outro" de `categoryId` | `SignupPage.tsx` |
-| Loading spinner no botão | `SignupPage.tsx` |
+| `src/pages/DashboardProfilePage.tsx` | Editar (seletor cidade, categoria, CNPJ, validações) |
+
+Nenhuma migração necessária — `category_custom` e `cnpj` já existem na tabela `providers`.
 
