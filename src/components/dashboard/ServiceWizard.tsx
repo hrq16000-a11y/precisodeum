@@ -111,6 +111,15 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
       }
 
       setCreatedServiceId(data.id);
+
+      // Persist onboarding progress
+      await supabase.from('providers').update({
+        onboarding_progress: {
+          ...(provider?.onboarding_progress || {}),
+          services: true,
+        },
+      }).eq('id', providerId);
+
       toast.success('Serviço criado! Agora adicione fotos.');
       return true;
     } catch (err: any) {

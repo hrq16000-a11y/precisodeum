@@ -81,8 +81,6 @@ const DashboardPage = () => {
       .then(({ data }) => setCategories(data || []));
   }, []);
 
-  if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
-
   const profileType = profile?.profile_type || 'client';
   const isClient = profileType === 'client';
   const isProvider = profileType === 'provider';
@@ -90,6 +88,27 @@ const DashboardPage = () => {
 
   const profileDone = !!provider?.description && !!provider?.city;
   const servicesDone = servicesCount !== null && servicesCount > 0;
+  const portfolioDone = portfolioCount > 0;
+
+  // Persist onboarding progress when steps complete
+  useEffect(() => {
+    if (!provider?.id) return;
+    const current = provider?.onboarding_progress as any || {};
+    const updates: Record<string, boolean> = {};
+    if (profileDone && !current.profile) updates.profile = true;
+    if (servicesDone && !current.services) updates.services = true;
+    if (portfolioDone && !current.portfolio) updates.portfolio = true;
+    const allDone = profileDone && servicesDone && portfolioDone;
+    if (allDone && !current.completed) updates.completed = true;
+
+    if (Object.keys(updates).length > 0) {
+      supabase.from('providers').update({
+        onboarding_progress: { ...current, ...updates },
+      }).eq('id', provider.id);
+    }
+  }, [provider?.id, profileDone, servicesDone, portfolioDone]);
+
+  if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
   // ---- CLIENT DASHBOARD ----
   if (isClient) {
