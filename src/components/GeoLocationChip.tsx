@@ -24,10 +24,12 @@ function fetchAllMunicipalities(): Promise<CityResult[]> {
       return res.json();
     })
     .then((data: any[]) =>
-      data.map((m) => ({
-        name: m.nome as string,
-        state: m.microrregiao?.mesorregiao?.UF?.sigla as string,
-      }))
+      data
+        .map((m) => ({
+          name: (m.nome || '') as string,
+          state: (m.microrregiao?.mesorregiao?.UF?.sigla || '') as string,
+        }))
+        .filter((c) => c.name && c.state)
     )
     .catch(() => {
       ibgeCachePromise = null;
