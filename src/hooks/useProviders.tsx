@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
 import { calculateDistanceKm, hasCoordinates, SERVICE_RADIUS_KM } from '@/lib/geoDistance';
+import { getCityCoords } from '@/lib/cityCoords';
+import { resolveMetroRegion, isMemberOfMetro } from '@/lib/metroRegions';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
