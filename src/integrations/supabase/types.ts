@@ -1408,13 +1408,17 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           neighborhood: string
+          onboarding_progress: Json | null
           phone: string
           photo_url: string | null
           plan: string
+          portfolio_album_count: number
+          portfolio_photo_count: number
           rating_avg: number
           response_time: string | null
           review_count: number
           service_radius: string | null
+          services_count: number
           slug: string | null
           state: string
           status: string
@@ -1438,13 +1442,17 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           neighborhood?: string
+          onboarding_progress?: Json | null
           phone?: string
           photo_url?: string | null
           plan?: string
+          portfolio_album_count?: number
+          portfolio_photo_count?: number
           rating_avg?: number
           response_time?: string | null
           review_count?: number
           service_radius?: string | null
+          services_count?: number
           slug?: string | null
           state?: string
           status?: string
@@ -1468,13 +1476,17 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           neighborhood?: string
+          onboarding_progress?: Json | null
           phone?: string
           photo_url?: string | null
           plan?: string
+          portfolio_album_count?: number
+          portfolio_photo_count?: number
           rating_avg?: number
           response_time?: string | null
           review_count?: number
           service_radius?: string | null
+          services_count?: number
           slug?: string | null
           state?: string
           status?: string
