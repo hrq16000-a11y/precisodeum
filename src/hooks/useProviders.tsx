@@ -518,7 +518,7 @@ export function filterAndRankProviders(
     results = results.filter((p) => p.categorySlug === categorySlug);
   }
 
-  // --- Geo Intelligence: detect geographic intent inside query ---
+  // --- GEO Intelligence v4: detect geographic intent inside query ---
   let effectiveCity = city;
   let effectiveState = state;
   let effectiveLat = userLat;
@@ -526,48 +526,111 @@ export function filterAndRankProviders(
   let textualQuery = query;
 
   if (query) {
-    const queryNorm = normalize(query);
+    let workingQuery = query.trim();
+    let detectedUF: string | undefined;
 
-    // 1. Full query is a metro region? e.g. "Região Metropolitana de Curitiba"
-    const metroFromQuery = resolveMetroRegion(queryNorm);
-    if (metroFromQuery) {
-      const poleCoords = getCityCoords(metroFromQuery.pole);
-      effectiveCity = metroFromQuery.pole;
-      effectiveState = metroFromQuery.state;
-      if (poleCoords) {
-        effectiveLat = poleCoords.lat;
-        effectiveLon = poleCoords.lon;
-      }
-      textualQuery = ''; // pure geo query, no text filter
+    // 0. Extract UF from query end: "Curitiba PR", "São Paulo/SP"
+    const ufResult = extractUFFromQuery(workingQuery);
+    if (ufResult) {
+      detectedUF = ufResult.uf;
+      workingQuery = ufResult.queryWithoutUF;
     }
-    // 2. Full query is a known city? e.g. "Curitiba"
-    else if (getCityCoords(queryNorm)) {
-      const coords = getCityCoords(queryNorm)!;
-      effectiveCity = queryNorm;
-      effectiveLat = coords.lat;
-      effectiveLon = coords.lon;
+
+    const queryNorm = normalize(workingQuery);
+
+    // 1. Full query is a UF only? e.g. "SP", "RJ"
+    if (!queryNorm && detectedUF) {
+      // Query was just a UF like "SP"
+      const capital = getUFCapital(detectedUF);
+      if (capital) {
+        effectiveCity = capital;
+        effectiveState = detectedUF.toUpperCase();
+        const coords = getCityCoords(capital);
+        if (coords) { effectiveLat = coords.lat; effectiveLon = coords.lon; }
+      }
+      textualQuery = '';
+    } else if (isUF(queryNorm) && !detectedUF) {
+      // Bare UF in query: "sp", "rj"
+      const capital = getUFCapital(queryNorm);
+      if (capital) {
+        effectiveCity = capital;
+        effectiveState = queryNorm.toUpperCase();
+        const coords = getCityCoords(capital);
+        if (coords) { effectiveLat = coords.lat; effectiveLon = coords.lon; }
+      }
       textualQuery = '';
     }
-    // 3. Mixed query: "encanador Curitiba" — try to extract city token
+    // 2. Full query is a metro region? e.g. "Região Metropolitana de Curitiba"
     else {
-      const rawTokens = query.trim().split(/\s+/);
-      // Try progressively longer suffixes (right-to-left) for multi-word cities
-      let bestCityMatch = '';
-      let bestCityIdx = -1;
-      for (let i = rawTokens.length - 1; i >= 0; i--) {
-        const candidate = rawTokens.slice(i).join(' ');
-        const candidateNorm = normalize(candidate);
-        if (getCityCoords(candidateNorm)) {
-          bestCityMatch = candidateNorm;
-          bestCityIdx = i;
-        }
+      const metroFromQuery = resolveMetroRegion(queryNorm, detectedUF);
+      if (metroFromQuery) {
+        const poleCoords = getCityCoords(metroFromQuery.pole);
+        effectiveCity = metroFromQuery.pole;
+        effectiveState = metroFromQuery.state;
+        if (poleCoords) { effectiveLat = poleCoords.lat; effectiveLon = poleCoords.lon; }
+        textualQuery = '';
       }
-      if (bestCityMatch && bestCityIdx > 0) {
-        const coords = getCityCoords(bestCityMatch)!;
-        effectiveCity = bestCityMatch;
-        effectiveLat = coords.lat;
-        effectiveLon = coords.lon;
-        textualQuery = rawTokens.slice(0, bestCityIdx).join(' ');
+      // 3. Full query is a known city?
+      else if (getCityCoords(queryNorm) || isRecognizedCity(queryNorm)) {
+        const coords = getCityCoords(queryNorm);
+        const cityEntry = lookupCity(queryNorm, detectedUF);
+        effectiveCity = queryNorm;
+        if (cityEntry) effectiveState = cityEntry.state;
+        else if (detectedUF) effectiveState = detectedUF.toUpperCase();
+        if (coords) { effectiveLat = coords.lat; effectiveLon = coords.lon; }
+        textualQuery = '';
+      }
+      // 4. Sliding window: detect city/metro anywhere in query
+      else {
+        const rawTokens = workingQuery.trim().split(/\s+/);
+        let bestMatch = '';
+        let bestStart = -1;
+        let bestEnd = -1;
+        let bestIsMetro = false;
+
+        // Try longest candidates first (greedy)
+        for (let len = rawTokens.length; len >= 1; len--) {
+          for (let i = 0; i <= rawTokens.length - len; i++) {
+            const candidate = rawTokens.slice(i, i + len).join(' ');
+            const candidateNorm = normalize(candidate);
+
+            // Check metro region
+            const metro = resolveMetroRegion(candidateNorm, detectedUF);
+            if (metro) {
+              bestMatch = metro.pole;
+              bestStart = i;
+              bestEnd = i + len;
+              bestIsMetro = true;
+              break;
+            }
+            // Check known city (coords or IBGE)
+            if (getCityCoords(candidateNorm) || isRecognizedCity(candidateNorm)) {
+              if (candidateNorm.length > bestMatch.length) {
+                bestMatch = candidateNorm;
+                bestStart = i;
+                bestEnd = i + len;
+                bestIsMetro = false;
+              }
+            }
+          }
+          if (bestIsMetro) break; // Metro is highest priority
+          if (bestMatch && len < bestMatch.length) break; // Already found longest
+        }
+
+        if (bestMatch && bestStart >= 0) {
+          effectiveCity = bestMatch;
+          const coords = getCityCoords(bestMatch);
+          if (coords) { effectiveLat = coords.lat; effectiveLon = coords.lon; }
+          const cityEntry = lookupCity(bestMatch, detectedUF);
+          if (cityEntry) effectiveState = cityEntry.state;
+          else if (detectedUF) effectiveState = detectedUF.toUpperCase();
+          // Remaining tokens become the textual query
+          const remaining = [
+            ...rawTokens.slice(0, bestStart),
+            ...rawTokens.slice(bestEnd),
+          ].join(' ').trim();
+          textualQuery = remaining;
+        }
       }
     }
   }
