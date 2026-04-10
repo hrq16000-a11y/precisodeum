@@ -30,6 +30,8 @@ function fetchAllMunicipalities(): Promise<CityResult[]> {
         .map((m) => ({
           name: (m.nome || '') as string,
           state: (m.microrregiao?.mesorregiao?.UF?.sigla || '') as string,
+          latitude: Number.isFinite(Number(m.microrregiao?.mesorregiao?.UF?.regiao?.id)) ? null : null,
+          longitude: null,
         }))
         .filter((c) => c.name && c.state)
     )
@@ -94,8 +96,8 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
       .slice(0, 12);
   }, [search, allCities])();
 
-  const handleSelect = (name: string, st: string) => {
-    setCity(name, st);
+  const handleSelect = (name: string, st: string, latitude?: number | null, longitude?: number | null) => {
+    setCity(name, st, latitude, longitude);
     setOpen(false);
     setSearch('');
   };
@@ -147,7 +149,7 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  handleSelect(c.name, c.state);
+                  handleSelect(c.name, c.state, c.latitude, c.longitude);
                 }}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
               >

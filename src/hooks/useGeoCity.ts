@@ -219,11 +219,19 @@ function getSnapshot(): GeoData {
 export function useGeoCity(): GeoStore {
   const data = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  const setCity = useCallback((city: string, state?: string) => {
+  const setCity = useCallback((city: string, state?: string, latitude?: number | null, longitude?: number | null) => {
     safeSet(CITY_KEY, city);
     safeSet(OVERRIDE_KEY, 'true');
     if (state) safeSet(STATE_KEY, state);
-    setGeoState({ city, state: state || geoState.state, manualOverride: true });
+    if (latitude !== undefined && latitude !== null) safeSet(LAT_KEY, String(latitude));
+    if (longitude !== undefined && longitude !== null) safeSet(LON_KEY, String(longitude));
+    setGeoState({
+      city,
+      state: state || geoState.state,
+      latitude: latitude ?? geoState.latitude,
+      longitude: longitude ?? geoState.longitude,
+      manualOverride: true,
+    });
   }, []);
 
   const requestPreciseLocation = useCallback(async () => {

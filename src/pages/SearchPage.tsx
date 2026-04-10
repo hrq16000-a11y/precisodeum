@@ -44,6 +44,8 @@ const SearchPage = () => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
 
   const effectiveCity = selectedCity || cityParam || geoCity || '';
+  const effectiveUserLat = selectedCity && manualOverride ? null : userLat;
+  const effectiveUserLon = selectedCity && manualOverride ? null : userLon;
 
   const { data: categories = [], isError: categoriesError } = useCategories();
   const { data: suggestions } = useSearchSuggestions();
@@ -52,7 +54,7 @@ const SearchPage = () => {
     isLoading,
     isError: searchError,
     refetch,
-  } = useSearchProviders(query, effectiveCity, selectedCategory, minRating, geoState || '', userLat, userLon);
+  } = useSearchProviders(query, effectiveCity, selectedCategory, minRating, geoState || '', effectiveUserLat, effectiveUserLon);
 
   // Apply additional client-side filters
   const fullyFiltered = useMemo(() => {
