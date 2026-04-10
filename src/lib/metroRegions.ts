@@ -195,6 +195,42 @@ const METRO_REGIONS: MetroRegion[] = [
       'novaalvoradadosul', 'ribasdoriopardo', 'jaraguari',
     ],
   },
+  {
+    pole: 'campinas',
+    state: 'SP',
+    members: [
+      'campinas', 'hortolandia', 'sumare', 'americana', 'santabarbara doeste',
+      'indaiatuba', 'paulinia', 'valinhos', 'vinhedo', 'itatiba',
+      'jaguariuna', 'pedreira', 'cosmopolis', 'artur nogueira',
+      'engenheiro coelho', 'holambra', 'santo antonio de posse',
+      'morungaba', 'monte mor', 'nova odessa',
+    ].map(s => s.replace(/\s/g, '')),
+  },
+  {
+    pole: 'manaus',
+    state: 'AM',
+    members: [
+      'manaus', 'iranduba', 'riopretodaeva', 'presidentefigueiredo',
+      'manacapuru', 'itacoatiara', 'novaairao', 'careirodavarze',
+    ],
+  },
+  {
+    pole: 'brasilia',
+    state: 'DF',
+    members: [
+      'brasilia', 'luziania', 'valparaiso degoias', 'aguaslindas degoias',
+      'novogama', 'cidadeocidental', 'planaltina', 'formosa',
+      'santoantoniododescoberto', 'alexania',
+    ].map(s => s.replace(/\s/g, '')),
+  },
+  {
+    pole: 'santos',
+    state: 'SP',
+    members: [
+      'santos', 'saovicente', 'guaruja', 'praiagrande', 'cubatao',
+      'bertioga', 'itanhaem', 'mongagua', 'peruibe',
+    ],
+  },
 ];
 
 // Build lookups
