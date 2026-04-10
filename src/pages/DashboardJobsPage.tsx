@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, ExternalLink, Copy, CopyPlus, Upload } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Copy, CopyPlus, Upload, MapPin, LocateFixed, Loader2, CheckCircle2 } from 'lucide-react';
+import { fetchAllMunicipalities, geocodeCity, reverseGeocode, normalize, type CityResult } from '@/lib/geoUtils';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp } from '@/lib/whatsapp';
@@ -66,6 +67,75 @@ const DashboardJobsPage = () => {
   const [csvText, setCsvText] = useState('');
   const [csvImporting, setCsvImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Smart city selector state
+  const [citySearch, setCitySearch] = useState('');
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [allCities, setAllCities] = useState<CityResult[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const cityDropdownRef = useRef<HTMLDivElement>(null);
+
+  const filteredCities = useMemo(() => {
+    if (!citySearch.trim()) return allCities.slice(0, 10);
+    const q = normalize(citySearch);
+    const terms = q.split(/\s+/).filter(Boolean);
+    return allCities
+      .filter((c) => {
+        const cityNorm = normalize(c.name);
+        const stateNorm = normalize(c.state);
+        return terms.every((t) => cityNorm.includes(t) || stateNorm.includes(t));
+      })
+      .slice(0, 10);
+  }, [citySearch, allCities]);
+
+  const loadCities = useCallback(() => {
+    if (allCities.length > 0) return;
+    setCitiesLoading(true);
+    fetchAllMunicipalities().then((cities) => {
+      setAllCities(cities);
+      setCitiesLoading(false);
+    });
+  }, [allCities.length]);
+
+  const handleCitySelect = async (name: string, st: string) => {
+    setForm(prev => ({ ...prev, city: name, state: st }));
+    setCitySearch(`${name}, ${st}`);
+    setShowCitySuggestions(false);
+  };
+
+  const handleAutoLocate = async () => {
+    setLocating(true);
+    loadCities();
+    try {
+      if (!navigator?.geolocation) { setLocating(false); return; }
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const { city: detectedCity, state: detectedState } = await reverseGeocode(lat, lon);
+          if (detectedCity) {
+            const cities = await fetchAllMunicipalities();
+            const normalizedDetected = normalize(detectedCity);
+            const match = cities.find(c => normalize(c.name) === normalizedDetected && (
+              !detectedState || normalize(c.state) === normalize(detectedState) ||
+              detectedState.toLowerCase().includes(c.state.toLowerCase())
+            ));
+            if (match) {
+              setForm(prev => ({ ...prev, city: match.name, state: match.state }));
+              setCitySearch(`${match.name}, ${match.state}`);
+            } else {
+              setForm(prev => ({ ...prev, city: detectedCity, state: detectedState }));
+              setCitySearch(`${detectedCity}, ${detectedState}`);
+            }
+          }
+          setLocating(false);
+        },
+        () => { setLocating(false); toast.error('Não foi possível detectar sua localização'); },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
+      );
+    } catch { setLocating(false); }
+  };
 
   const profileType = (profile as any)?.profile_type || profile?.role || 'client';
   const canPostJobs = profileType === 'provider' || profileType === 'rh';
@@ -184,6 +254,7 @@ const DashboardJobsPage = () => {
       job_type: (job as any).job_type || '', work_model: (job as any).work_model || '',
     });
     setEditingId(job.id);
+    setCitySearch(job.city ? `${job.city}${job.state ? ', ' + job.state : ''}` : '');
     setMode('structured');
     setDialogOpen(true);
   };
@@ -198,6 +269,7 @@ const DashboardJobsPage = () => {
   const openNew = () => {
     setForm({ ...emptyForm, deadline: getDefaultDeadline() });
     setEditingId(null);
+    setCitySearch('');
     setSimpleText('');
     setCsvText('');
     setDialogOpen(true);
@@ -217,6 +289,7 @@ const DashboardJobsPage = () => {
       job_type: (job as any).job_type || '', work_model: (job as any).work_model || '',
     });
     setEditingId(null);
+    setCitySearch(job.city ? `${job.city}${job.state ? ', ' + job.state : ''}` : '');
     setMode('structured');
     setDialogOpen(true);
     toast.info('Vaga duplicada — edite e publique');
@@ -476,14 +549,76 @@ const DashboardJobsPage = () => {
                 <textarea name="benefits" value={form.benefits} onChange={handleChange} rows={2} className={inputClass}
                   placeholder="Um benefício por linha" />
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className={labelClass}>Cidade</label>
-                  <input name="city" value={form.city} onChange={handleChange} className={inputClass} />
+              {/* Smart city selector */}
+              <div>
+                <label className={labelClass}>Cidade</label>
+                <button
+                  type="button"
+                  onClick={handleAutoLocate}
+                  disabled={locating}
+                  className="mb-2 inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent/5 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+                >
+                  {locating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5" />}
+                  {locating ? 'Detectando...' : '📍 Usar minha localização'}
+                </button>
+                <div className="relative" ref={cityDropdownRef}>
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <input
+                    type="text"
+                    value={citySearch}
+                    onChange={(e) => {
+                      setCitySearch(e.target.value);
+                      setShowCitySuggestions(true);
+                      loadCities();
+                      setForm(prev => ({ ...prev, city: '', state: '' }));
+                    }}
+                    onFocus={() => { setShowCitySuggestions(true); loadCities(); }}
+                    placeholder="Digite sua cidade..."
+                    className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground"
+                  />
+                  {showCitySuggestions && (
+                    <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-48 overflow-y-auto">
+                      {citiesLoading && (
+                        <div className="flex items-center justify-center gap-2 px-3 py-3">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Carregando municípios...</span>
+                        </div>
+                      )}
+                      {!citiesLoading && filteredCities.length === 0 && citySearch.trim() && (
+                        <p className="px-3 py-2 text-xs text-muted-foreground">Nenhuma cidade encontrada</p>
+                      )}
+                      {!citiesLoading && filteredCities.map((c, i) => (
+                        <button
+                          key={`${c.name}-${c.state}-${i}`}
+                          type="button"
+                          onClick={() => handleCitySelect(c.name, c.state)}
+                          className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${
+                            form.city === c.name && form.state === c.state ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'
+                          }`}
+                        >
+                          <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <span className="flex-1 truncate">{c.name}</span>
+                          <span className="text-xs text-muted-foreground">{c.state}</span>
+                          {form.city === c.name && form.state === c.state && <CheckCircle2 className="h-3.5 w-3.5 text-accent" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {showCitySuggestions && (
+                    <div className="fixed inset-0 z-10" onClick={() => setShowCitySuggestions(false)} />
+                  )}
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelClass}>Estado</label>
-                  <input name="state" value={form.state} onChange={handleChange} maxLength={2} className={inputClass} placeholder="PR" />
+                  <input
+                    type="text"
+                    value={form.state}
+                    readOnly
+                    placeholder="Auto-preenchido"
+                    className="w-full rounded-md border border-input bg-muted/50 px-3 py-2 text-sm text-foreground uppercase cursor-not-allowed"
+                  />
                 </div>
                 <div>
                   <label className={labelClass}>Bairro</label>
