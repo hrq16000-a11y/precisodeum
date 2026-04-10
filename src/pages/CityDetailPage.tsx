@@ -14,9 +14,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { motion } from 'framer-motion';
+import { importWithRetry } from '@/lib/lazyWithRetry';
 
-const SponsorLeaderBanner = lazy(() => import('@/components/sponsors/SponsorLeaderBanner'));
-const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
+const SponsorLeaderBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorLeaderBanner')));
+const SponsorFooterCTA = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorFooterCTA')));
 
 const STATE_NAMES: Record<string, string> = {
   ac: 'Acre', al: 'Alagoas', am: 'Amazonas', ap: 'Amapá',

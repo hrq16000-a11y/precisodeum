@@ -12,10 +12,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { importWithRetry } from '@/lib/lazyWithRetry';
 
-const SponsorLeaderBanner = lazy(() => import('@/components/sponsors/SponsorLeaderBanner'));
-const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
-const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
+const SponsorLeaderBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorLeaderBanner')));
+const SponsorTopBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorTopBanner')));
+const SponsorFooterCTA = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorFooterCTA')));
 
 const ITEMS_PER_PAGE = 12;
 
