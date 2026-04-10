@@ -21,6 +21,8 @@ import DashboardTipOfDay from '@/components/dashboard/DashboardTipOfDay';
 import { usePermissions } from '@/hooks/usePermissions';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
+import ServiceWizard from '@/components/dashboard/ServiceWizard';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
@@ -34,6 +36,8 @@ const DashboardPage = () => {
   const [viewsTotal, setViewsTotal] = useState<number>(0);
   const [reviewCount, setReviewCount] = useState<number>(0);
   const [guideOpen, setGuideOpen] = useState(true);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -65,6 +69,12 @@ const DashboardPage = () => {
     supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
       .then(({ count }) => setJobsCount(count ?? 0));
   }, [user]);
+
+  // Fetch categories for ServiceWizard
+  useEffect(() => {
+    supabase.from('categories').select('id, name, slug, icon').order('name')
+      .then(({ data }) => setCategories(data || []));
+  }, []);
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
@@ -230,8 +240,8 @@ const DashboardPage = () => {
       number: '2',
       title: 'Cadastre seus serviços',
       description: 'Adicione os serviços que você oferece, com imagens e descrições.',
-      action: () => navigate('/dashboard/servicos'),
-      actionLabel: 'Meus Serviços',
+      action: servicesDone ? () => navigate('/dashboard/servicos') : () => setWizardOpen(true),
+      actionLabel: servicesDone ? 'Meus Serviços' : 'Criar primeiro serviço',
       icon: Briefcase,
       done: servicesDone,
     },
@@ -322,7 +332,7 @@ const DashboardPage = () => {
               <h2 className="text-base font-bold text-foreground">Crie seu primeiro serviço!</h2>
               <p className="text-sm text-muted-foreground mt-0.5">Publique seus serviços para que clientes possam encontrá-lo.</p>
             </div>
-            <Button variant="accent" size="sm" onClick={() => navigate('/dashboard/servicos')} className="shrink-0 relative">
+            <Button variant="accent" size="sm" onClick={() => setWizardOpen(true)} className="shrink-0 relative">
               <PlusCircle className="mr-1 h-4 w-4" /> Criar Serviço
             </Button>
           </motion.div>
@@ -537,6 +547,27 @@ const DashboardPage = () => {
           )}
         </AnimatePresence>
       </GlassCard>
+
+      {/* Service Wizard Modal — onboarding only */}
+      {provider && user && (
+        <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
+          <DialogContent className="max-w-lg p-0 gap-0 overflow-y-auto max-h-[90vh]">
+            <div className="p-5">
+              <ServiceWizard
+                providerId={provider.id}
+                userId={user.id}
+                provider={provider}
+                categories={categories}
+                onComplete={() => {
+                  setWizardOpen(false);
+                  setServicesCount(prev => (prev ?? 0) + 1);
+                }}
+                onCancel={() => setWizardOpen(false)}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </DashboardLayout>
   );
 };
