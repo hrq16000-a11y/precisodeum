@@ -90,10 +90,10 @@ const DashboardPage = () => {
   const servicesDone = servicesCount !== null && servicesCount > 0;
   const portfolioDone = portfolioCount > 0;
 
-  // Persist onboarding progress when steps complete
+  // Persist onboarding progress when steps complete (debounced, no loops)
   useEffect(() => {
     if (!provider?.id) return;
-    const current = provider?.onboarding_progress as any || {};
+    const current = (provider?.onboarding_progress as Record<string, boolean>) || {};
     const updates: Record<string, boolean> = {};
     if (profileDone && !current.profile) updates.profile = true;
     if (servicesDone && !current.services) updates.services = true;
@@ -101,11 +101,11 @@ const DashboardPage = () => {
     const allDone = profileDone && servicesDone && portfolioDone;
     if (allDone && !current.completed) updates.completed = true;
 
-    if (Object.keys(updates).length > 0) {
-      supabase.from('providers').update({
-        onboarding_progress: { ...current, ...updates },
-      }).eq('id', provider.id);
-    }
+    if (Object.keys(updates).length === 0) return;
+
+    void supabase.from('providers').update({
+      onboarding_progress: { ...current, ...updates },
+    }).eq('id', provider.id);
   }, [provider?.id, profileDone, servicesDone, portfolioDone]);
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
