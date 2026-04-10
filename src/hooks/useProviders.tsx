@@ -365,9 +365,12 @@ function matchesGeoContext(
   cityNorm: string,
   stateNorm?: string,
   userLat?: number | null,
-  userLon?: number | null
+  userLon?: number | null,
+  radiusKm?: number
 ): boolean {
   if (!cityNorm && !stateNorm) return true;
+
+  const effectiveRadius = radiusKm || SERVICE_RADIUS_KM;
 
   // 1. Distance-based: if both user and provider have coordinates
   if (
@@ -378,7 +381,7 @@ function matchesGeoContext(
       { latitude: userLat!, longitude: userLon! },
       { latitude: provider.latitude!, longitude: provider.longitude! }
     );
-    return dist <= SERVICE_RADIUS_KM;
+    return dist <= effectiveRadius;
   }
 
   // 2. Fallback: city name matching
@@ -386,15 +389,12 @@ function matchesGeoContext(
   const pState = normalizeCityName(provider.state);
   const coreCity = extractCoreCity(cityNorm);
 
-  // Exact or partial city name match
   if (cityNorm && pCity === cityNorm) return true;
   if (cityNorm && (pCity.includes(cityNorm) || cityNorm.includes(pCity))) return true;
-  // Match against the core city extracted from "Região Metropolitana de X"
   if (coreCity !== cityNorm && coreCity) {
     if (pCity === coreCity) return true;
     if (pCity.includes(coreCity) || coreCity.includes(pCity)) return true;
   }
-  // Same state as fallback only for metropolitan-region auto-detection strings
   if (stateNorm && pState === stateNorm && cityNorm.includes('regiaometropolitana')) return true;
   return false;
 }
