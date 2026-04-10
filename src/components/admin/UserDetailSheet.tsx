@@ -33,13 +33,13 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const [leads, setLeads] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [media, setMedia] = useState<any[]>([]);
-  const [portfolio, setPortfolio] = useState<{ name: string; url: string }[]>([]);
+  const [portfolio, setPortfolio] = useState<{ id: string; name: string; photos: { id: string; image_url: string; name: string }[] }[]>([]);
   const [pageSettings, setPageSettings] = useState<any>(null);
   const [provider, setProvider] = useState<any>(null);
   const [tab, setTab] = useState('profile');
   const [settingsForm, setSettingsForm] = useState<any>({});
   const [avatarUploading, setAvatarUploading] = useState(false);
-  const [portfolioUploading, setPortfolioUploading] = useState(false);
+  const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [currentAvatar, setCurrentAvatar] = useState('');
   const avatarRef = useRef<HTMLInputElement>(null);
 
@@ -160,15 +160,43 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
             });
           });
 
-        supabase.storage.from('portfolio').list(user.id, { limit: 100 }).then(({ data }) => {
-          if (data) {
-            const filtered = data.filter(f => f.name !== '.emptyFolderPlaceholder');
-            setPortfolio(filtered.map(f => ({
-              name: f.name,
-              url: supabase.storage.from('portfolio').getPublicUrl(`${user.id}/${f.name}`).data.publicUrl,
-            })));
-          }
-        });
+        // Fetch portfolio albums + photos
+        supabase.from('portfolio_albums').select('id, name')
+          .eq('provider_id', prov.id).order('display_order')
+          .then(async ({ data: albums }) => {
+            if (albums && albums.length > 0) {
+              const albumIds = albums.map(a => a.id);
+              const { data: photos } = await supabase.from('portfolio_photos')
+                .select('id, album_id, image_url, original_name')
+                .in('album_id', albumIds).order('display_order');
+              setPortfolio(albums.map(a => ({
+                id: a.id,
+                name: a.name,
+                photos: (photos || []).filter(p => p.album_id === a.id).map(p => ({
+                  id: p.id,
+                  image_url: p.image_url,
+                  name: p.original_name || '',
+                })),
+              })));
+            } else {
+              // Fallback: legacy storage
+              const { data: files } = await supabase.storage.from('portfolio').list(user.id, { limit: 100 });
+              if (files) {
+                const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
+                setPortfolio([{
+                  id: 'legacy',
+                  name: 'Portfólio',
+                  photos: filtered.map(f => ({
+                    id: f.name,
+                    image_url: supabase.storage.from('portfolio').getPublicUrl(`${user.id}/${f.name}`).data.publicUrl,
+                    name: f.name,
+                  })),
+                }]);
+              } else {
+                setPortfolio([]);
+              }
+            }
+          });
       } else {
         setServices([]);
         setLeads([]);
@@ -279,35 +307,8 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     setResettingPw(false);
   };
 
-  // === Portfolio Upload ===
-  const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files?.length || !user) return;
-    setPortfolioUploading(true);
-    for (const file of Array.from(files).slice(0, 5)) {
-      if (file.size > 5 * 1024 * 1024) { toast.error(`${file.name}: máx 5MB`); continue; }
-      const path = `${user.id}/${Date.now()}-${file.name}`;
-      await supabase.storage.from('portfolio').upload(path, file);
-    }
-    const { data } = await supabase.storage.from('portfolio').list(user.id, { limit: 100 });
-    if (data) {
-      const filtered = data.filter(f => f.name !== '.emptyFolderPlaceholder');
-      setPortfolio(filtered.map(f => ({
-        name: f.name,
-        url: supabase.storage.from('portfolio').getPublicUrl(`${user.id}/${f.name}`).data.publicUrl,
-      })));
-    }
-    setPortfolioUploading(false);
-    toast.success('Fotos enviadas!');
-    e.target.value = '';
-  };
-
-  const deletePortfolioImage = async (name: string) => {
-    if (!user) return;
-    await supabase.storage.from('portfolio').remove([`${user.id}/${name}`]);
-    setPortfolio(prev => prev.filter(p => p.name !== name));
-    toast.success('Imagem removida');
-  };
+  // Portfolio is now read-only in admin — managed via dashboard/portfolio
+  const totalPortfolioPhotos = portfolio.reduce((acc, a) => acc + a.photos.length, 0);
 
   const deleteServiceImage = async (img: any) => {
     const urlParts = img.image_url.split('/service-images/');
@@ -852,32 +853,30 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
             {/* ====== PORTFOLIO / MEDIA TAB ====== */}
             <TabsContent value="portfolio" className="space-y-4 mt-0">
               <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground text-sm">📸 Portfólio ({portfolio.length})</h3>
-                  <label className="cursor-pointer">
-                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild disabled={portfolioUploading}>
-                      <span>{portfolioUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />} Adicionar</span>
-                    </Button>
-                    <input type="file" accept="image/*" multiple className="hidden" onChange={handlePortfolioUpload} />
-                  </label>
-                </div>
+                <h3 className="font-semibold text-foreground text-sm">📸 Portfólio ({portfolio.length} {portfolio.length === 1 ? 'álbum' : 'álbuns'} • {totalPortfolioPhotos} fotos)</h3>
                 {portfolio.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-3">Nenhuma foto no portfólio</p>
+                  <p className="text-xs text-muted-foreground text-center py-3">Nenhum álbum no portfólio</p>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {portfolio.map(img => (
-                      <div key={img.name} className="relative group aspect-square rounded-lg overflow-hidden border border-border">
-                        <img src={img.url} alt="" className="h-full w-full object-cover" loading="lazy" />
-                        <button
-                          onClick={() => deletePortfolioImage(img.name)}
-                          className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
+                  <div className="space-y-4">
+                    {portfolio.map(album => (
+                      <div key={album.id}>
+                        <p className="text-xs font-medium text-foreground mb-1.5">{album.name} ({album.photos.length})</p>
+                        {album.photos.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Sem fotos</p>
+                        ) : (
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {album.photos.map(photo => (
+                              <div key={photo.id} className="relative group aspect-square rounded-lg overflow-hidden border border-border">
+                                <img src={photo.image_url} alt={photo.name} className="h-full w-full object-cover" loading="lazy" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
+                <p className="text-[10px] text-muted-foreground">Gerenciado pelo profissional em Dashboard → Portfólio</p>
               </div>
 
               <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">

@@ -90,30 +90,71 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
 
 const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, categories(name, slug, icon)';
 
-// Cache portfolio folder list (single storage call, reused across hooks)
-let _portfolioCachePromise: Promise<Set<string>> | null = null;
+// Cache portfolio + service counts for ranking
+let _portfolioCachePromise: Promise<Map<string, { hasPortfolio: boolean; albumCount: number; photoCount: number }>> | null = null;
 let _portfolioCacheTime = 0;
 const PORTFOLIO_CACHE_TTL = 10 * 60_000; // 10 min
 
-async function getPortfolioSet(): Promise<Set<string>> {
+async function getPortfolioMap(): Promise<Map<string, { hasPortfolio: boolean; albumCount: number; photoCount: number }>> {
   const now = Date.now();
   if (_portfolioCachePromise && now - _portfolioCacheTime < PORTFOLIO_CACHE_TTL) {
     return _portfolioCachePromise;
   }
   _portfolioCacheTime = now;
   _portfolioCachePromise = (async () => {
+    const result = new Map<string, { hasPortfolio: boolean; albumCount: number; photoCount: number }>();
     try {
+      // Query albums with photo counts via provider → user mapping
+      const { data: albums } = await supabase
+        .from('portfolio_albums')
+        .select('provider_id, id');
+      if (albums && albums.length > 0) {
+        const albumIds = albums.map(a => a.id);
+        const { data: photos } = await supabase
+          .from('portfolio_photos')
+          .select('album_id')
+          .in('album_id', albumIds);
+
+        // Group by provider
+        const provAlbums: Record<string, string[]> = {};
+        albums.forEach(a => {
+          if (!provAlbums[a.provider_id]) provAlbums[a.provider_id] = [];
+          provAlbums[a.provider_id].push(a.id);
+        });
+
+        const albumPhotoCount: Record<string, number> = {};
+        (photos || []).forEach(p => {
+          albumPhotoCount[p.album_id] = (albumPhotoCount[p.album_id] || 0) + 1;
+        });
+
+        // Now we need provider → user_id mapping
+        const providerIds = Object.keys(provAlbums);
+        const { data: providers } = await supabase
+          .from('providers')
+          .select('id, user_id')
+          .in('id', providerIds);
+
+        (providers || []).forEach(prov => {
+          const albIds = provAlbums[prov.id] || [];
+          const totalPhotos = albIds.reduce((sum, aid) => sum + (albumPhotoCount[aid] || 0), 0);
+          result.set(prov.user_id, {
+            hasPortfolio: totalPhotos > 0,
+            albumCount: albIds.length,
+            photoCount: totalPhotos,
+          });
+        });
+      }
+
+      // Fallback: also check legacy storage folders
       const { data: folders } = await supabase.storage.from('portfolio').list('', { limit: 1000 });
-      const set = new Set<string>();
       (folders || []).forEach((f: any) => {
-        if (f.name && f.name !== '.emptyFolderPlaceholder' && f.id === null) {
-          // folders have id=null in storage listing
-          set.add(f.name);
+        if (f.name && f.name !== '.emptyFolderPlaceholder' && f.id === null && !result.has(f.name)) {
+          result.set(f.name, { hasPortfolio: true, albumCount: 0, photoCount: 0 });
         }
       });
-      return set;
+      return result;
     } catch {
-      return new Set<string>();
+      return result;
     }
   })();
   return _portfolioCachePromise;
@@ -130,8 +171,8 @@ async function fetchProvidersLightweight(query: any) {
   const providerIds = (data as any[]).map((p) => p.id);
   const userIds = [...new Set((data as any[]).map((p) => p.user_id))];
 
-  // 3 parallel fetches: profiles + services + portfolio folders (single call)
-  const [profilesRes, servicesRes, portfolioSet] = await Promise.all([
+  // 3 parallel fetches: profiles + services + portfolio data
+  const [profilesRes, servicesRes, portfolioMap] = await Promise.all([
     supabase
       .from('public_profiles' as any)
       .select('id, full_name, avatar_url')
@@ -140,7 +181,7 @@ async function fetchProvidersLightweight(query: any) {
       .from('services')
       .select('id, provider_id, service_name, description, whatsapp, service_area, service_images(image_url, display_order)')
       .in('provider_id', providerIds),
-    getPortfolioSet(),
+    getPortfolioMap(),
   ]);
 
   const profileMap: Record<string, { name: string; avatar?: string }> = {};
@@ -171,16 +212,34 @@ async function fetchProvidersLightweight(query: any) {
     }
   });
 
+  // Count services per provider for ranking
+  const serviceCountMap: Record<string, number> = {};
+  serviceRows.forEach((s: any) => {
+    serviceCountMap[s.provider_id] = (serviceCountMap[s.provider_id] || 0) + 1;
+  });
+
   return (data as any[]).map((p) => {
     const profile = profileMap[p.user_id];
     const rawPhoto = p.photo_url || profile?.avatar || '';
-    return mapProvider(
+    const portfolioInfo = portfolioMap.get(p.user_id);
+    const mapped = mapProvider(
       { ...p, photo_url: avatarThumb(rawPhoto) },
       profile?.name,
       serviceImageThumb(serviceImageMap[p.id]),
-      portfolioSet.has(p.user_id),
+      portfolioInfo?.hasPortfolio || false,
       serviceFallbackMap[p.id]
     );
+    // Attach content score for ranking
+    const svcCount = serviceCountMap[p.id] || 0;
+    let contentScore = 0;
+    contentScore += rawPhoto ? 1 : 0;                          // +1 foto de perfil
+    contentScore += svcCount >= 1 ? 2 : 0;                     // +2 pelo menos 1 serviço
+    contentScore += svcCount >= 3 ? 3 : 0;                     // +3 se 3+ serviços
+    contentScore += portfolioInfo?.hasPortfolio ? 2 : 0;        // +2 portfólio existe
+    contentScore += (portfolioInfo?.albumCount || 0) >= 2 ? 2 : 0; // +2 se 2+ álbuns
+    contentScore += (portfolioInfo?.photoCount || 0) >= 5 ? 2 : 0; // +2 se fotos suficientes
+    (mapped as any)._contentScore = contentScore;
+    return mapped;
   });
 }
 
@@ -243,18 +302,18 @@ export function useFeaturedProviders() {
           .limit(200)
       );
 
-      // Score by visual content: serviceImage + portfolio
+      // Score by content: contentScore (from fetch) + visual fallback
       const scored = allProviders
-        .filter((p) => !!p.serviceImage || !!p.hasPortfolio)
         .map((p) => ({
           ...p,
-          _imageScore: (p.serviceImage ? 2 : 0) + (p.hasPortfolio ? 2 : 0) + (p.photo ? 1 : 0),
-        }));
+          _totalScore: ((p as any)._contentScore || 0) + (p.serviceImage ? 2 : 0) + (p.hasPortfolio ? 2 : 0) + (p.photo ? 1 : 0),
+        }))
+        .filter(p => p._totalScore > 0);
 
       if (scored.length === 0) return [];
 
-      // Sort by image score desc, then shuffle within same score for variety
-      scored.sort((a, b) => b._imageScore - a._imageScore);
+      // Sort by total score desc
+      scored.sort((a, b) => b._totalScore - a._totalScore);
 
       // Pick target count: 9 > 6 > 3
       let target = 3;
@@ -264,7 +323,7 @@ export function useFeaturedProviders() {
       // Light shuffle within top candidates to keep variety
       const candidates = scored.slice(0, Math.min(scored.length, target * 2));
       const shuffled = shuffleArray(candidates);
-      return shuffled.slice(0, target).map(({ _imageScore, ...p }) => p);
+      return shuffled.slice(0, target).map(({ _totalScore, _contentScore, ...p }: any) => p);
     },
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
@@ -359,15 +418,19 @@ export function filterAndRankProviders(
       const bLocal = matchesGeoContext(b, cityNorm) ? 0 : 1;
       if (aLocal !== bLocal) return aLocal - bLocal;
     }
-    // 2. Visual content priority
+    // 2. Content score (services + portfolio + photo)
+    const aScore = (a as any)._contentScore || 0;
+    const bScore = (b as any)._contentScore || 0;
+    if (aScore !== bScore) return bScore - aScore;
+    // 3. Visual content priority (fallback for legacy)
     const aImg = a.serviceImage || a.hasPortfolio ? 0 : 1;
     const bImg = b.serviceImage || b.hasPortfolio ? 0 : 1;
     if (aImg !== bImg) return aImg - bImg;
-    // 3. Plan priority
+    // 4. Plan priority
     const pa = planPriority[a.plan] ?? 2;
     const pb = planPriority[b.plan] ?? 2;
     if (pa !== pb) return pa - pb;
-    // 4. Rating & reviews
+    // 5. Rating & reviews
     if (b.rating !== a.rating) return b.rating - a.rating;
     return b.reviewCount - a.reviewCount;
   });

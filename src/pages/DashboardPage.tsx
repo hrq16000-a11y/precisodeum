@@ -7,7 +7,7 @@ import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useSettingValue } from '@/hooks/useSiteSettings';
+import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
 import AvatarReminder from '@/components/dashboard/AvatarReminder';
@@ -28,6 +28,7 @@ const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
   const navigate = useNavigate();
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
+  const wizardEnabled = useFeatureEnabled('enable_service_wizard_onboarding');
   const { levelName, levelColor, accountTypeName, accountTypeColor } = usePermissions();
   const [servicesCount, setServicesCount] = useState<number | null>(null);
   const [leadsCount, setLeadsCount] = useState<number>(0);
@@ -48,20 +49,24 @@ const DashboardPage = () => {
 
   useEffect(() => {
     if (!provider) return;
-    Promise.all([
-      supabase.from('services').select('id, view_count', { count: 'exact' }).eq('provider_id', provider.id),
-      supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
-      supabase.storage.from('portfolio').list(`${provider.user_id}`, { limit: 100 }),
-      supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
-    ]).then(([sRes, lRes, pRes, rRes]) => {
+    (async () => {
+      const albumsRes = await supabase.from('portfolio_albums').select('id').eq('provider_id', provider.id);
+      const albumIds = (albumsRes.data || []).map(a => a.id);
+      const [sRes, lRes, pRes, rRes] = await Promise.all([
+        supabase.from('services').select('id, view_count', { count: 'exact' }).eq('provider_id', provider.id),
+        supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
+        albumIds.length > 0
+          ? supabase.from('portfolio_photos').select('id', { count: 'exact', head: true }).in('album_id', albumIds)
+          : Promise.resolve({ count: 0 } as any),
+        supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
+      ]);
       setServicesCount(sRes.count ?? 0);
       setLeadsCount(lRes.count ?? 0);
-      const files = (pRes.data || []).filter(f => f.name !== '.emptyFolderPlaceholder');
-      setPortfolioCount(files.length);
+      setPortfolioCount(pRes.count ?? 0);
       const totalViews = (sRes.data || []).reduce((acc: number, s: any) => acc + (s.view_count || 0), 0);
       setViewsTotal(totalViews);
       setReviewCount(rRes.count ?? 0);
-    });
+    })();
   }, [provider]);
 
   useEffect(() => {
@@ -240,7 +245,7 @@ const DashboardPage = () => {
       number: '2',
       title: 'Cadastre seus serviços',
       description: 'Adicione os serviços que você oferece, com imagens e descrições.',
-      action: servicesDone ? () => navigate('/dashboard/servicos') : () => setWizardOpen(true),
+      action: servicesDone ? () => navigate('/dashboard/servicos') : (wizardEnabled ? () => setWizardOpen(true) : () => navigate('/dashboard/servicos')),
       actionLabel: servicesDone ? 'Meus Serviços' : 'Criar primeiro serviço',
       icon: Briefcase,
       done: servicesDone,
@@ -332,7 +337,7 @@ const DashboardPage = () => {
               <h2 className="text-base font-bold text-foreground">Crie seu primeiro serviço!</h2>
               <p className="text-sm text-muted-foreground mt-0.5">Publique seus serviços para que clientes possam encontrá-lo.</p>
             </div>
-            <Button variant="accent" size="sm" onClick={() => setWizardOpen(true)} className="shrink-0 relative">
+            <Button variant="accent" size="sm" onClick={() => wizardEnabled ? setWizardOpen(true) : navigate('/dashboard/servicos')} className="shrink-0 relative">
               <PlusCircle className="mr-1 h-4 w-4" /> Criar Serviço
             </Button>
           </motion.div>

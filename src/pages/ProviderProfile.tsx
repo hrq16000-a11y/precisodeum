@@ -74,12 +74,20 @@ interface ThemeConfig {
   input: string;
 }
 
+interface PortfolioAlbum {
+  id: string;
+  name: string;
+  description: string;
+  photos: { id: string; image_url: string; display_order: number }[];
+}
+
 interface ProviderProfileSnapshot {
   provider: any;
   services: any[];
   reviews: any[];
   portfolioImages: string[];
   portfolioRawUrls: string[];
+  portfolioAlbums: PortfolioAlbum[];
   pageSettings: PageSettings;
   relatedProviders: any[];
 }
@@ -197,6 +205,7 @@ const ProviderProfile = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
   const [portfolioRawUrls, setPortfolioRawUrls] = useState<string[]>([]);
+  const [portfolioAlbums, setPortfolioAlbums] = useState<PortfolioAlbum[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
@@ -217,6 +226,7 @@ const ProviderProfile = () => {
       setReviews(snapshot.reviews);
       setPortfolioRawUrls(snapshot.portfolioRawUrls);
       setPortfolioImages(snapshot.portfolioImages);
+      setPortfolioAlbums(snapshot.portfolioAlbums || []);
       setPageSettings(snapshot.pageSettings);
       setRelatedProviders(snapshot.relatedProviders);
       setLoading(false);
@@ -290,13 +300,12 @@ const ProviderProfile = () => {
 
         const providerWithProfile = { ...data, profiles: profile, levelInfo, accTypeInfo };
 
-        const [{ data: svc }, { data: rev }, { data: files }, { data: ps }] = await Promise.all([
+        const [{ data: svc }, { data: rev }, { data: ps }] = await Promise.all([
           supabase.from('services').select('*').eq('provider_id', data.id),
           supabase.from('reviews')
             .select('*, user_id')
             .eq('provider_id', data.id)
             .order('created_at', { ascending: false }),
-          supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 }),
           supabase.from('provider_page_settings').select('*').eq('provider_id', data.id).maybeSingle(),
         ]);
 
@@ -360,10 +369,39 @@ const ProviderProfile = () => {
           preparedReviews = rev.map((r: any) => ({ ...r, profiles: { full_name: profileMap[r.user_id] || 'Cliente' } }));
         }
 
-        if (files) {
-          const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
-          preparedPortfolioRawUrls = filtered.map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl);
+        // Fetch portfolio: try albums first, fallback to legacy storage
+        let preparedAlbums: PortfolioAlbum[] = [];
+        const { data: albumsData } = await supabase
+          .from('portfolio_albums')
+          .select('id, name, description')
+          .eq('provider_id', data.id)
+          .order('display_order');
+
+        if (albumsData && albumsData.length > 0) {
+          const albumIds = albumsData.map(a => a.id);
+          const { data: photosData } = await supabase
+            .from('portfolio_photos')
+            .select('id, album_id, image_url, display_order')
+            .in('album_id', albumIds)
+            .order('display_order');
+
+          preparedAlbums = albumsData.map(album => ({
+            ...album,
+            photos: (photosData || []).filter(p => p.album_id === album.id),
+          }));
+
+          // Flatten all photos for lightbox compatibility
+          const allPhotos = preparedAlbums.flatMap(a => a.photos);
+          preparedPortfolioRawUrls = allPhotos.map(p => p.image_url);
           preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
+        } else {
+          // Fallback: legacy flat storage for old profiles
+          const { data: files } = await supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 });
+          if (files) {
+            const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
+            preparedPortfolioRawUrls = filtered.map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl);
+            preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
+          }
         }
 
         // Fetch related providers — prioritize same category, then same city
@@ -405,6 +443,7 @@ const ProviderProfile = () => {
           reviews: preparedReviews,
           portfolioImages: preparedPortfolioImages,
           portfolioRawUrls: preparedPortfolioRawUrls,
+          portfolioAlbums: preparedAlbums,
           pageSettings: preparedPageSettings,
           relatedProviders: preparedRelated,
         };
@@ -627,6 +666,70 @@ const ProviderProfile = () => {
 
   const renderPortfolio = () => {
     if (portfolioImages.length === 0) return null;
+
+    // If we have albums, render organized by album
+    if (portfolioAlbums.length > 0) {
+      let globalIndex = 0;
+      return (
+        <motion.div key="portfolio" className={`mt-6 ${tc.section} overflow-hidden`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+              <ImageIcon className="h-4 w-4 text-accent" />
+            </div>
+            <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Portfólio</h2>
+            <motion.span
+              className="ml-auto inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent"
+              initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}
+            >
+              <ImageIcon className="h-3 w-3" />
+              {portfolioAlbums.length} {portfolioAlbums.length === 1 ? 'álbum' : 'álbuns'} • {portfolioImages.length} fotos
+            </motion.span>
+          </div>
+          <div className="space-y-5">
+            {portfolioAlbums.filter(a => a.photos.length > 0).map(album => {
+              const albumPhotos = album.photos.map(p => portfolioThumb(p.image_url));
+              const showCount = isMobile ? 3 : 4;
+              const visible = albumPhotos.slice(0, showCount);
+              const remaining = albumPhotos.length - showCount;
+              const startIdx = globalIndex;
+              globalIndex += album.photos.length;
+
+              return (
+                <div key={album.id}>
+                  <h3 className="text-sm font-semibold text-foreground mb-2">{album.name}</h3>
+                  {album.description && <p className="text-xs text-muted-foreground mb-2">{album.description}</p>}
+                  <motion.div className="grid grid-cols-2 gap-2 sm:grid-cols-4" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                    {visible.map((url, i) => (
+                      <motion.div
+                        key={i}
+                        variants={scaleIn}
+                        className="relative cursor-pointer overflow-hidden rounded-xl border border-border group aspect-square"
+                        onClick={() => openPortfolioLightbox(startIdx + i)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <img src={url} alt={`${album.name} ${i + 1}`} className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" onError={handleImageError} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <motion.div className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-foreground opacity-0 group-hover:opacity-100 transition-opacity shadow-lg" whileHover={{ scale: 1.1 }}>
+                          <Eye className="h-3.5 w-3.5" />
+                        </motion.div>
+                        {i === showCount - 1 && remaining > 0 && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
+                            <span className="text-white text-lg font-bold">+{remaining}</span>
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      );
+    }
+
+    // Fallback: flat grid (legacy storage)
     const showCount = isMobile ? 4 : 6;
     const visiblePhotos = portfolioImages.slice(0, showCount);
     const remaining = portfolioImages.length - showCount;
@@ -640,9 +743,7 @@ const ProviderProfile = () => {
           <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Portfólio</h2>
           <motion.span
             className="ml-auto inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3, type: 'spring' }}
+            initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}
           >
             <ImageIcon className="h-3 w-3" />
             {portfolioImages.length} fotos
@@ -666,7 +767,6 @@ const ProviderProfile = () => {
               >
                 <Eye className="h-3.5 w-3.5" />
               </motion.div>
-              {/* Show remaining count on last visible item */}
               {i === showCount - 1 && remaining > 0 && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
                   <span className="text-white text-lg font-bold">+{remaining}</span>
