@@ -24,6 +24,7 @@ const DashboardServicesPage = () => {
   const [editId, setEditId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [freeTextCategory, setFreeTextCategory] = useState('');
   const [categorySearch, setCategorySearch] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({});

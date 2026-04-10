@@ -15,6 +15,10 @@ interface SmartCategoryPickerProps {
   categories: Category[];
   selectedIds: string[];
   onToggle: (id: string) => void;
+  /** Free-text value typed by user (hybrid mode) */
+  freeText?: string;
+  /** Called when user types free text */
+  onFreeTextChange?: (text: string) => void;
   maxSelections?: number;
   placeholder?: string;
   className?: string;
@@ -29,7 +33,6 @@ const fuzzyMatch = (query: string, target: string): boolean => {
   const q = normalize(query);
   const t = normalize(target);
   if (t.includes(q)) return true;
-  // char-by-char subsequence
   let qi = 0;
   for (let ti = 0; ti < t.length && qi < q.length; ti++) {
     if (t[ti] === q[qi]) qi++;
@@ -43,6 +46,8 @@ const SmartCategoryPicker = ({
   categories,
   selectedIds,
   onToggle,
+  freeText = '',
+  onFreeTextChange,
   maxSelections,
   placeholder = 'Buscar ou digitar categoria...',
   className,
@@ -113,15 +118,28 @@ const SmartCategoryPicker = ({
 
   const handleToggle = (id: string) => {
     if (!selectedIds.includes(id) && maxSelections && selectedIds.length >= maxSelections) return;
+    // When selecting a category, clear free text
+    if (onFreeTextChange) onFreeTextChange('');
     onToggle(id);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    // Also update free text so the parent can use it
+    if (onFreeTextChange) onFreeTextChange(value);
   };
 
   const handleOpen = () => {
     setOpen(true);
+    // Restore search from freeText if any
+    if (freeText && !search) setSearch(freeText);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   const hasResults = filteredTree.length > 0;
+
+  // Display text when closed: chips for selected categories, or free text, or placeholder
+  const showFreeTextLabel = freeText && selectedCats.length === 0 && !open;
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>
@@ -130,9 +148,24 @@ const SmartCategoryPicker = ({
         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm cursor-pointer min-h-[42px] flex flex-wrap items-center gap-1"
         onClick={handleOpen}
       >
-        {selectedCats.length === 0 && !open && (
+        {selectedCats.length === 0 && !showFreeTextLabel && !open && (
           <span className="text-muted-foreground text-xs flex items-center gap-1">
             <Search className="h-3 w-3" /> {placeholder}
+          </span>
+        )}
+        {showFreeTextLabel && (
+          <span className="text-foreground text-xs flex items-center gap-1">
+            ✏️ {freeText}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onFreeTextChange) onFreeTextChange('');
+                setSearch('');
+              }}
+            >
+              <X className="h-3 w-3 text-muted-foreground" />
+            </button>
           </span>
         )}
         {selectedCats.map((cat) => (
@@ -165,12 +198,12 @@ const SmartCategoryPicker = ({
               <input
                 ref={inputRef}
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder={placeholder}
                 className="w-full bg-transparent py-1.5 text-xs text-foreground outline-none placeholder:text-muted-foreground"
               />
               {search && (
-                <button type="button" onClick={() => setSearch('')}>
+                <button type="button" onClick={() => handleSearchChange('')}>
                   <X className="h-3 w-3 text-muted-foreground" />
                 </button>
               )}
@@ -182,7 +215,6 @@ const SmartCategoryPicker = ({
             {hasResults ? (
               filteredTree.map(({ macro, subs }) => (
                 <div key={macro.id}>
-                  {/* macro header — clickable only if it's a standalone (no subs) */}
                   {subs.length > 0 ? (
                     <div className="sticky top-0 bg-muted/60 backdrop-blur-sm px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                       <span>{macro.icon}</span> {macro.name}
@@ -208,7 +240,6 @@ const SmartCategoryPicker = ({
                     </button>
                   )}
 
-                  {/* subcategories */}
                   {subs.map((sub) => (
                     <button
                       key={sub.id}
@@ -235,7 +266,7 @@ const SmartCategoryPicker = ({
             ) : (
               <div className="px-3 py-4 text-center text-xs text-muted-foreground">
                 Nenhuma categoria encontrada para "<span className="font-medium">{search}</span>"
-                <p className="mt-1 text-[10px]">Você pode prosseguir sem selecionar uma categoria.</p>
+                <p className="mt-1 text-[10px]">O texto digitado será usado como categoria livre.</p>
               </div>
             )}
           </div>
