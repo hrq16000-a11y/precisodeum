@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react';
-import { normalizeCityName, matchesGeoContext } from '@/hooks/useProviders';
 import { motion } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -15,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useSearchProviders, useCategories, useSearchSuggestions } from '@/hooks/useProviders';
+import { useSearchProviders, useCategories, useSearchSuggestions, normalizeCityName, matchesGeoContext } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
