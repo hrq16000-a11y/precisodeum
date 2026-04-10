@@ -39,7 +39,8 @@ function fetchAllMunicipalities(): Promise<CityResult[]> {
 }
 
 // Normalize for accent-insensitive search
-function normalize(s: string) {
+function normalize(s: string | undefined | null) {
+  if (!s) return '';
   return s
     .toLowerCase()
     .normalize('NFD')
