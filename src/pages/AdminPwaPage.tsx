@@ -16,6 +16,7 @@ import { Smartphone, Download, Eye, MousePointerClick, XCircle, CheckCircle2, Ba
 import type { PwaSettings } from '@/hooks/usePwaInstall';
 
 const AdminPwaPage = () => {
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<PwaSettings | null>(null);
 
