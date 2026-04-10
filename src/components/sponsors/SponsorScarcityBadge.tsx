@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { AlertTriangle, Flame } from 'lucide-react';
+import { Flame, TrendingUp } from 'lucide-react';
 import { useRemainingSlots } from '@/hooks/useSponsors';
 
 interface Props {
@@ -9,18 +9,21 @@ interface Props {
 }
 
 const SponsorScarcityBadge = ({ type, contextValue, className = '' }: Props) => {
-  const { remaining, isFull, maxSlots } = useRemainingSlots(type, contextValue);
-
-  if (maxSlots === 0) return null;
+  const { remaining, maxSlots } = useRemainingSlots(type, contextValue);
 
   const label = type === 'global' ? 'premium global' : type === 'city' ? 'nesta cidade' : 'nesta categoria';
 
-  if (isFull) {
+  // High demand / all taken — show opportunity, not "sold out"
+  if (maxSlots === 0 || remaining === 0) {
     return (
-      <div className={`flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive ${className}`}>
-        <AlertTriangle className="h-3.5 w-3.5" />
-        Sem vagas disponíveis {label}
-      </div>
+      <motion.div
+        animate={{ scale: [1, 1.02, 1] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" as const }}
+        className={`flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary ${className}`}
+      >
+        <TrendingUp className="h-3.5 w-3.5" />
+        Alta demanda {label} — garanta seu espaço!
+      </motion.div>
     );
   }
 
