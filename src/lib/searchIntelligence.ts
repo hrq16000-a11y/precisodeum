@@ -227,7 +227,7 @@ function matchesGeo(provider: ProviderGeoData, ctx: GeoContext): boolean {
   const pCityNorm = normalize(provider.city);
   const pStateNorm = normalize(provider.state);
   const provCoords = (provider.latitude != null && provider.longitude != null)
-    ? { latitude: provider.latitude, longitude: provider.longitude }
+    ? { lat: provider.latitude, lon: provider.longitude }
     : null;
   return GeoEngine.matchesGeoContext(pCityNorm, pStateNorm, provCoords, ctx);
 }
@@ -243,7 +243,7 @@ function providerGeoScore(
   const pCityNorm = normalize(provider.city);
   const pStateNorm = normalize(provider.state);
   const provCoords = (provider.latitude != null && provider.longitude != null)
-    ? { latitude: provider.latitude, longitude: provider.longitude }
+    ? { lat: provider.latitude, lon: provider.longitude }
     : null;
   return GeoEngine.geoScore(pCityNorm, pStateNorm, provCoords, ctx, confidence);
 }
