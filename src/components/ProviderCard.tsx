@@ -22,6 +22,7 @@ interface ProviderCardProps {
 
 const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', index = 0 }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const { user } = useAuth();
   const prefetch = usePrefetchProvider();
   const handlers = usePrefetchHandlers(prefetch, provider.slug);
   const displayPhoto = provider.photo || provider.serviceImage || '';
