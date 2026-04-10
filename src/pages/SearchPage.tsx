@@ -159,7 +159,7 @@ const SearchPage = () => {
       <Header />
       
       {/* Search header with gradient background */}
-      <section className="relative bg-gradient-to-b from-muted/80 to-background pb-2 pt-6 overflow-hidden">
+      <section className="relative bg-gradient-to-b from-muted/80 to-background pb-2 pt-6 overflow-x-clip">
         <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
         <div className="container relative">
           <motion.div
