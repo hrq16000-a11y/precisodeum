@@ -394,7 +394,7 @@ function matchesGeoContext(
     if (pCity === coreCity) return true;
     if (pCity.includes(coreCity) || coreCity.includes(pCity)) return true;
   }
-  // Same state as fallback when geo returned a metropolitan region name
+  // Same state as fallback only for metropolitan-region auto-detection strings
   if (stateNorm && pState === stateNorm && cityNorm.includes('regiaometropolitana')) return true;
   return false;
 }

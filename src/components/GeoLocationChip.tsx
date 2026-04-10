@@ -9,6 +9,8 @@ interface GeoLocationChipProps {
 interface CityResult {
   name: string;
   state: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 // IBGE API: all 5,570 Brazilian municipalities

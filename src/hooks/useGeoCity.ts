@@ -11,7 +11,7 @@ interface GeoData {
 }
 
 interface GeoStore extends GeoData {
-  setCity: (city: string, state?: string) => void;
+  setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null) => void;
   requestPreciseLocation: () => Promise<boolean>;
 }
 
