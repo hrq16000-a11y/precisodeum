@@ -111,6 +111,9 @@ const CityDetailPage = () => {
         plan: p.plan,
         slug: p.slug || p.id,
         featured: p.featured,
+        servicesCount: p.services_count || 0,
+        portfolioAlbumCount: p.portfolio_album_count || 0,
+        portfolioPhotoCount: p.portfolio_photo_count || 0,
       }));
 
       // Unique categories from providers
