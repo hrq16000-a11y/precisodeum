@@ -49,7 +49,7 @@ const DynamicPageBlocks = React.forwardRef<HTMLDivElement, DynamicPageBlocksProp
       ))}
     </div>
   );
-};
+});
 
 const DynamicBlock = ({ block }: { block: any }) => {
   const content = block.content || {};
