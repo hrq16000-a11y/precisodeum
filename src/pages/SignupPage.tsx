@@ -415,12 +415,6 @@ const SignupPage = () => {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
-                      <input type="tel" name="whatsapp" value={form.whatsapp} onChange={handleChange}
-                        placeholder="11999999999"
-                        className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-colors" />
-                    </div>
 
                     <div>
                       <label className="mb-1 block text-sm font-medium text-foreground">Descrição profissional</label>
