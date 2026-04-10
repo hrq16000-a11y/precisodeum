@@ -101,6 +101,7 @@ const SeoPage = lazy(() => import("./pages/SeoPage"));
 const CityPage = lazy(() => import("./pages/CityPage"));
 const CitiesListPage = lazy(() => import("./pages/CitiesListPage"));
 const StateProviderPage = lazy(() => import("./pages/StateProviderPage"));
+const CityDetailPage = lazy(() => import("./pages/CityDetailPage"));
 const CategoriesListPage = lazy(() => import("./pages/CategoriesListPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
@@ -276,6 +277,7 @@ const App = () => {
                 <Route path="/cidade/:slug" element={<CityPage />} />
                 <Route path="/cidades" element={<CitiesListPage />} />
                 <Route path="/cidades/:estado" element={<StateProviderPage />} />
+                <Route path="/cidades/:estado/:cidade" element={<CityDetailPage />} />
                 <Route path="/categorias" element={<CategoriesListPage />} />
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/privacidade" element={<PrivacyPage />} />
