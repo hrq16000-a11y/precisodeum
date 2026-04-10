@@ -180,6 +180,7 @@ const DynamicNav = ({ config, items }: { config: BottomNavConfig; items: BottomN
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
 
   const hiddenPaths = config.hidden_paths || [];
   const shouldHide = hiddenPaths.some((p: string) => location.pathname.startsWith(p));
@@ -210,10 +211,15 @@ const DynamicNav = ({ config, items }: { config: BottomNavConfig; items: BottomN
           {items.map((item) => {
             const isActive = item.action_type === 'route' && (
               location.pathname === item.route_path ||
+              (item.route_path === '/' && location.pathname === '/index') ||
               (item.route_path !== '/' && location.pathname.startsWith(item.route_path))
             );
+            // Inject notification badge for auth-required items (e.g. Perfil)
+            const dynamicBadge = item.requires_auth && unreadCount > 0
+              ? { ...item, badge: unreadCount > 9 ? '9+' : String(unreadCount) }
+              : item;
             return (
-              <DynamicNavItem key={item.id} item={item} isActive={isActive} navigate={navigate} user={user} />
+              <DynamicNavItem key={item.id} item={dynamicBadge} isActive={isActive} navigate={navigate} user={user} />
             );
           })}
         </div>
