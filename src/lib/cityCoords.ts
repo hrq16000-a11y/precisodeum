@@ -87,7 +87,7 @@ const CITY_COORDS: Record<string, CityCoord> = {
   contagem: { lat: -19.9320, lon: -44.0539, state: 'MG' },
   juizdefora: { lat: -21.7642, lon: -43.3503, state: 'MG' },
   betim: { lat: -19.9678, lon: -44.1983, state: 'MG' },
-  montes claros: { lat: -16.7350, lon: -43.8616, state: 'MG' },
+  montesclaros2: { lat: -16.7350, lon: -43.8616, state: 'MG' },
   montesclaros: { lat: -16.7350, lon: -43.8616, state: 'MG' },
   ribeiraodasneves: { lat: -19.7669, lon: -44.0867, state: 'MG' },
   uberaba: { lat: -19.7472, lon: -47.9319, state: 'MG' },
