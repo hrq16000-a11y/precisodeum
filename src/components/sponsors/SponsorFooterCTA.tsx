@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 import SponsorScarcityBadge from './SponsorScarcityBadge';
 
 interface Props {
@@ -11,8 +13,23 @@ interface Props {
 
 /** Bottom CTA block encouraging businesses to become sponsors */
 const SponsorFooterCTA = ({ city, category, className = '' }: Props) => {
+  const navigate = useNavigate();
   const type = city ? 'city' : category ? 'category' : 'global';
   const contextValue = city || category;
+
+  // Admin-managed values with sensible defaults
+  const ctaTitle = useSettingValue('sponsor_cta_title') || 'Destaque sua empresa aqui';
+  const ctaSubtitle = useSettingValue('sponsor_cta_subtitle') || 'Seja encontrado por milhares de clientes. Patrocinadores recebem leads diretos e posicionamento premium na plataforma.';
+  const ctaButtonText = useSettingValue('sponsor_cta_button_text') || 'Quero ser patrocinador';
+  const ctaLink = useSettingValue('sponsor_cta_link') || '/quero-ser-patrocinador';
+
+  const handleClick = () => {
+    if (ctaLink.startsWith('http')) {
+      window.open(ctaLink, '_blank');
+    } else {
+      navigate(ctaLink);
+    }
+  };
 
   return (
     <motion.section
@@ -28,10 +45,10 @@ const SponsorFooterCTA = ({ city, category, className = '' }: Props) => {
             <Sparkles className="h-6 w-6 text-primary" />
           </div>
           <h3 className="text-xl md:text-2xl font-bold text-foreground">
-            Destaque sua empresa aqui
+            {ctaTitle}
           </h3>
           <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-            Seja encontrado por milhares de clientes. Patrocinadores recebem leads diretos e posicionamento premium na plataforma.
+            {ctaSubtitle}
           </p>
           
           <SponsorScarcityBadge type={type} contextValue={contextValue} className="justify-center mt-4" />
@@ -39,9 +56,9 @@ const SponsorFooterCTA = ({ city, category, className = '' }: Props) => {
           <Button
             size="lg"
             className="mt-6 gap-2 bg-primary hover:bg-primary/90"
-            onClick={() => window.open('https://wa.me/5500000000000?text=Quero%20ser%20patrocinador', '_blank')}
+            onClick={handleClick}
           >
-            Quero ser patrocinador
+            {ctaButtonText}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
