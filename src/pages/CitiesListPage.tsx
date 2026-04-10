@@ -22,6 +22,10 @@ const STATE_NAMES: Record<string, string> = {
   SE: 'Sergipe', SP: 'São Paulo', TO: 'Tocantins',
 };
 
+/** Normalize city name for dedup: title-case, trim */
+const normalizeCity = (name: string) =>
+  name.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+
 const CitiesListPage = () => {
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
@@ -33,7 +37,6 @@ const CitiesListPage = () => {
     canonical: `${SITE_BASE_URL}/cidades`,
   });
 
-  // Provider count per state
   const { data: stateStats = [] } = useQuery({
     queryKey: ['state-provider-stats'],
     queryFn: async () => {
@@ -53,7 +56,6 @@ const CitiesListPage = () => {
     staleTime: 1000 * 60 * 10,
   });
 
-  // Top 10 cities by providers
   const { data: topCities = [] } = useQuery({
     queryKey: ['top-cities-providers'],
     queryFn: async () => {
@@ -65,18 +67,18 @@ const CitiesListPage = () => {
       if (!data) return [];
       const map = new Map<string, { name: string; state: string; count: number }>();
       data.forEach(p => {
-        const key = `${p.city?.trim()}|${p.state?.trim()}`;
-        if (p.city) {
-          const existing = map.get(key);
-          map.set(key, { name: p.city.trim(), state: p.state?.trim() || '', count: (existing?.count || 0) + 1 });
-        }
+        if (!p.city) return;
+        const normalized = normalizeCity(p.city);
+        const stateUf = p.state?.toUpperCase().trim() || '';
+        const key = `${normalized}|${stateUf}`;
+        const existing = map.get(key);
+        map.set(key, { name: normalized, state: stateUf, count: (existing?.count || 0) + 1 });
       });
       return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 10);
     },
     staleTime: 1000 * 60 * 10,
   });
 
-  // Geo-detected city match
   const { data: geoCity } = useQuery({
     queryKey: ['geo-city-match', geo.city],
     queryFn: async () => {
@@ -93,7 +95,6 @@ const CitiesListPage = () => {
     staleTime: 1000 * 60 * 30,
   });
 
-  // Search autocomplete cities (only when typing)
   const { data: searchResults = [] } = useQuery({
     queryKey: ['city-search', search],
     queryFn: async () => {
@@ -123,9 +124,13 @@ const CitiesListPage = () => {
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-[var(--hero-gradient)] py-16 md:py-24">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(25_95%_53%_/_0.08),transparent_70%)]" />
+      {/* Hero — high contrast solid bg */}
+      <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+        {/* Decorative circles */}
+        <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-white/5" />
+        <div className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-white/5" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-white/[0.03]" />
+
         <div className="container relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -133,7 +138,7 @@ const CitiesListPage = () => {
             transition={{ duration: 0.6 }}
             className="mx-auto max-w-2xl text-center"
           >
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold text-white/90">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold text-white backdrop-blur-sm">
               <MapPin className="h-3.5 w-3.5" />
               Cobertura em {activeStates} estados • {totalProviders}+ profissionais
             </div>
@@ -142,9 +147,9 @@ const CitiesListPage = () => {
               <>
                 <h1 className="font-display text-3xl font-bold text-white md:text-5xl leading-tight">
                   Profissionais em{' '}
-                  <span className="text-accent">{geo.city}</span>
+                  <span className="text-accent drop-shadow-sm">{geo.city}</span>
                 </h1>
-                <p className="mt-3 text-base text-white/70 md:text-lg">
+                <p className="mt-4 text-base text-white/80 md:text-lg max-w-lg mx-auto">
                   Detectamos sua localização. Encontre os melhores profissionais da sua região.
                 </p>
               </>
@@ -152,9 +157,9 @@ const CitiesListPage = () => {
               <>
                 <h1 className="font-display text-3xl font-bold text-white md:text-5xl leading-tight">
                   Encontre profissionais em{' '}
-                  <span className="text-accent">todo o Brasil</span>
+                  <span className="text-accent drop-shadow-sm">todo o Brasil</span>
                 </h1>
-                <p className="mt-3 text-base text-white/70 md:text-lg">
+                <p className="mt-4 text-base text-white/80 md:text-lg max-w-lg mx-auto">
                   Conecte-se com profissionais qualificados na sua cidade.
                 </p>
               </>
@@ -162,19 +167,19 @@ const CitiesListPage = () => {
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               {geoCity ? (
-                <Button size="lg" className="rounded-full gap-2 bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg" asChild>
+                <Button size="lg" className="rounded-full gap-2 bg-accent hover:bg-accent/90 text-accent-foreground shadow-xl text-base px-8 h-12" asChild>
                   <Link to={`/cidade/${geoCity.slug}`}>
                     <Search className="h-4 w-4" /> Buscar em {geoCity.name}
                   </Link>
                 </Button>
               ) : (
-                <Button size="lg" className="rounded-full gap-2 bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg" asChild>
+                <Button size="lg" className="rounded-full gap-2 bg-accent hover:bg-accent/90 text-accent-foreground shadow-xl text-base px-8 h-12" asChild>
                   <Link to="/buscar">
                     <Search className="h-4 w-4" /> Buscar profissionais
                   </Link>
                 </Button>
               )}
-              <Button size="lg" variant="outline" className="rounded-full gap-2 border-white/20 text-white hover:bg-white/10" asChild>
+              <Button size="lg" className="rounded-full gap-2 bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 backdrop-blur-sm text-base px-8 h-12" asChild>
                 <Link to="/cadastro">
                   <Sparkles className="h-4 w-4" /> Cadastrar meu serviço
                 </Link>
@@ -247,15 +252,14 @@ const CitiesListPage = () => {
                 highlightState={geoStateUf && geoStateUf.length === 2 ? geoStateUf : null}
               />
               <div className="mt-4 flex items-center gap-4 justify-center text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm" style={{ background: 'hsl(210 20% 90%)' }} /> Sem cobertura</span>
-                <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm" style={{ background: 'hsl(215 65% 55%)' }} /> Ativa</span>
-                <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm" style={{ background: 'hsl(215 80% 25%)' }} /> Alta densidade</span>
+                <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-muted-foreground/20" /> Sem cobertura</span>
+                <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-primary/60" /> Ativa</span>
+                <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-primary" /> Alta densidade</span>
               </div>
             </motion.div>
 
             {/* Top cities + state grid */}
             <div className="space-y-8">
-              {/* Top cities */}
               {topCities.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
