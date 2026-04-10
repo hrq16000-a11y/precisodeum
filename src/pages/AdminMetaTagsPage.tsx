@@ -1,18 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Globe, Save, Plus, Trash2, Pencil, X, Search } from 'lucide-react';
+import { Globe, Save, Search, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-
-const defaultPages = [
-  { page_path: '/', page_label: 'Homepage' },
-  { page_path: '/buscar', page_label: 'Buscar' },
-  { page_path: '/sobre', page_label: 'Sobre' },
-];
 
 const AdminMetaTagsPage = () => {
   const { isAdmin, loading } = useAdmin();
@@ -26,11 +20,11 @@ const AdminMetaTagsPage = () => {
   useEffect(() => { if (isAdmin) fetchSettings(); }, [isAdmin]);
 
   const metaSettings = [
-    { key: 'meta_title_home', label: 'Título da Homepage', description: 'Tag <title> da página inicial' },
-    { key: 'meta_description_home', label: 'Descrição da Homepage', description: 'Meta description da página inicial' },
-    { key: 'meta_og_image', label: 'Imagem OG padrão', description: 'URL da imagem para compartilhamento em redes sociais' },
-    { key: 'google_search_console_id', label: 'Google Search Console', description: 'ID de verificação do Google Search Console (content da meta tag)' },
-    { key: 'google_analytics_id', label: 'Google Analytics ID', description: 'ID do Google Analytics (ex: G-XXXXXXX)' },
+    { key: 'meta_title_home', label: 'Título da Homepage', description: 'Tag <title> da página inicial', type: 'text' },
+    { key: 'meta_description_home', label: 'Descrição da Homepage', description: 'Meta description da página inicial', type: 'textarea' },
+    { key: 'meta_og_image', label: 'Imagem OG padrão', description: 'Imagem para compartilhamento em redes sociais (1200×630px recomendado)', type: 'image' },
+    { key: 'google_search_console_id', label: 'Google Search Console', description: 'ID de verificação do Google Search Console (content da meta tag)', type: 'text' },
+    { key: 'google_analytics_id', label: 'Google Analytics ID', description: 'ID do Google Analytics (ex: G-XXXXXXX)', type: 'text' },
   ];
 
   const getValue = (key: string) => {
@@ -67,11 +61,12 @@ const AdminMetaTagsPage = () => {
         {metaSettings.map(ms => (
           <MetaSettingRow
             key={ms.key}
+            settingKey={ms.key}
             label={ms.label}
             description={ms.description}
             value={getValue(ms.key)}
             onSave={(val) => saveSetting(ms.key, val, ms.label, ms.description)}
-            multiline={ms.key === 'meta_description_home'}
+            type={ms.type as 'text' | 'textarea' | 'image'}
           />
         ))}
       </div>
@@ -82,18 +77,24 @@ const AdminMetaTagsPage = () => {
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Para verificar o site no Google Search Console, adicione o ID de verificação acima. A meta tag será injetada automaticamente em todas as páginas.
-          A integração com a API de indexação será habilitada futuramente.
         </p>
       </div>
     </AdminLayout>
   );
 };
 
-const MetaSettingRow = ({ label, description, value: initialValue, onSave, multiline }: {
-  label: string; description: string; value: string; onSave: (val: string) => Promise<void>; multiline?: boolean;
+const MetaSettingRow = ({ settingKey, label, description, value: initialValue, onSave, type = 'text' }: {
+  settingKey: string;
+  label: string;
+  description: string;
+  value: string;
+  onSave: (val: string) => Promise<void>;
+  type?: 'text' | 'textarea' | 'image';
 }) => {
   const [value, setValue] = useState(initialValue);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { setValue(initialValue); }, [initialValue]);
 
@@ -105,6 +106,133 @@ const MetaSettingRow = ({ label, description, value: initialValue, onSave, multi
     setSaving(false);
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecione um arquivo de imagem');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `settings/og-image-${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('service-images')
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('service-images')
+        .getPublicUrl(path);
+
+      setValue(publicUrl);
+      // Auto-save after upload
+      setSaving(true);
+      await onSave(publicUrl);
+      setSaving(false);
+      toast.success('Imagem OG atualizada!');
+    } catch (err: any) {
+      toast.error('Erro no upload: ' + err.message);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const handleClearImage = async () => {
+    setValue('');
+    setSaving(true);
+    await onSave('');
+    setSaving(false);
+  };
+
+  if (type === 'image') {
+    return (
+      <div className="rounded-xl border border-border bg-card p-5 shadow-card space-y-3">
+        <div>
+          <h3 className="text-sm font-bold text-foreground">{label}</h3>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+
+        {value ? (
+          <div className="space-y-2">
+            <div className="relative rounded-lg overflow-hidden border border-border bg-muted/30">
+              <img
+                src={value}
+                alt="OG Image Preview"
+                className="w-full max-h-48 object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground break-all font-mono">{value}</p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+              >
+                <Upload className="h-3 w-3 mr-1" />
+                {uploading ? 'Enviando...' : 'Substituir'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearImage}
+                className="text-destructive hover:text-destructive"
+              >
+                <X className="h-3 w-3 mr-1" /> Remover
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div
+            className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 p-8 cursor-pointer hover:bg-muted/40 transition-colors"
+            onClick={() => fileRef.current?.click()}
+          >
+            <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground">
+              {uploading ? 'Enviando...' : 'Clique para enviar imagem OG'}
+            </p>
+            <p className="text-xs text-muted-foreground/60">Recomendado: 1200×630px, PNG ou JPG</p>
+          </div>
+        )}
+
+        {/* URL manual */}
+        <div className="flex gap-2">
+          <Input
+            value={value}
+            onChange={e => setValue(e.target.value)}
+            placeholder="Ou cole uma URL diretamente..."
+            className="flex-1 text-xs"
+          />
+          {changed && (
+            <Button variant="accent" size="sm" onClick={handleSave} disabled={saving}>
+              <Save className="mr-1 h-3 w-3" /> Salvar
+            </Button>
+          )}
+        </div>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleImageUpload}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card space-y-2">
       <div>
@@ -112,7 +240,7 @@ const MetaSettingRow = ({ label, description, value: initialValue, onSave, multi
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
       <div className="flex gap-2">
-        {multiline ? (
+        {type === 'textarea' ? (
           <Textarea value={value} onChange={e => setValue(e.target.value)} className="flex-1" rows={2} />
         ) : (
           <Input value={value} onChange={e => setValue(e.target.value)} className="flex-1" />
