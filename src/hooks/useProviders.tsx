@@ -5,6 +5,7 @@ import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
 import { normalize } from '@/lib/normalize';
 import GeoEngine from '@/lib/geoEngine';
 import type { GeoIntent } from '@/lib/geoEngine';
+import SearchIntelligence from '@/lib/searchIntelligence';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
