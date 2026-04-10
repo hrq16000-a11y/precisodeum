@@ -15,6 +15,7 @@ export function trackProviderImpressions(providerIds: string[]) {
 
 export interface DbProvider {
   id: string;
+  userId: string;
   name: string;
   businessName?: string;
   category: string;
