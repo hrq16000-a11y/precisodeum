@@ -70,6 +70,12 @@ const DashboardPage = () => {
       .then(({ count }) => setJobsCount(count ?? 0));
   }, [user]);
 
+  // Fetch categories for ServiceWizard
+  useEffect(() => {
+    supabase.from('categories').select('id, name, slug, icon').order('name')
+      .then(({ data }) => setCategories(data || []));
+  }, []);
+
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
   const profileType = profile?.profile_type || 'client';
