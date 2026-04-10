@@ -345,6 +345,15 @@ function normalizeCityName(name: string): string {
 }
 
 /**
+ * Extract the core city name from geo-detected strings like
+ * "Região Metropolitana de Curitiba" → "curitiba"
+ */
+function extractCoreCity(cityNorm: string): string {
+  // Remove "regiaometropolitanade" prefix (already normalized, no accents/spaces)
+  return cityNorm.replace(/^regiaometropolitanade/, '');
+}
+
+/**
  * Check if provider is within the user's region.
  * Uses 45km distance when both sides have coordinates,
  * otherwise falls back to city name matching.
@@ -373,10 +382,18 @@ function matchesGeoContext(
   // 2. Fallback: city name matching
   const pCity = normalizeCityName(provider.city);
   const pState = normalizeCityName(provider.state);
+  const coreCity = extractCoreCity(cityNorm);
+
+  // Exact or partial city name match
   if (cityNorm && pCity === cityNorm) return true;
   if (cityNorm && (pCity.includes(cityNorm) || cityNorm.includes(pCity))) return true;
-  // Same state as fallback only when no coordinates available
-  if (stateNorm && pState === stateNorm) return true;
+  // Match against the core city extracted from "Região Metropolitana de X"
+  if (coreCity !== cityNorm && coreCity) {
+    if (pCity === coreCity) return true;
+    if (pCity.includes(coreCity) || coreCity.includes(pCity)) return true;
+  }
+  // Same state as fallback when geo returned a metropolitan region name
+  if (stateNorm && pState === stateNorm && cityNorm.includes('regiaometropolitana')) return true;
   return false;
 }
 
