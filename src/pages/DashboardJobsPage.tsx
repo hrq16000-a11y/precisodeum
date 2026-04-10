@@ -549,14 +549,76 @@ const DashboardJobsPage = () => {
                 <textarea name="benefits" value={form.benefits} onChange={handleChange} rows={2} className={inputClass}
                   placeholder="Um benefício por linha" />
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className={labelClass}>Cidade</label>
-                  <input name="city" value={form.city} onChange={handleChange} className={inputClass} />
+              {/* Smart city selector */}
+              <div>
+                <label className={labelClass}>Cidade</label>
+                <button
+                  type="button"
+                  onClick={handleAutoLocate}
+                  disabled={locating}
+                  className="mb-2 inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent/5 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+                >
+                  {locating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5" />}
+                  {locating ? 'Detectando...' : '📍 Usar minha localização'}
+                </button>
+                <div className="relative" ref={cityDropdownRef}>
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <input
+                    type="text"
+                    value={citySearch}
+                    onChange={(e) => {
+                      setCitySearch(e.target.value);
+                      setShowCitySuggestions(true);
+                      loadCities();
+                      setForm(prev => ({ ...prev, city: '', state: '' }));
+                    }}
+                    onFocus={() => { setShowCitySuggestions(true); loadCities(); }}
+                    placeholder="Digite sua cidade..."
+                    className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground"
+                  />
+                  {showCitySuggestions && (
+                    <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-48 overflow-y-auto">
+                      {citiesLoading && (
+                        <div className="flex items-center justify-center gap-2 px-3 py-3">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Carregando municípios...</span>
+                        </div>
+                      )}
+                      {!citiesLoading && filteredCities.length === 0 && citySearch.trim() && (
+                        <p className="px-3 py-2 text-xs text-muted-foreground">Nenhuma cidade encontrada</p>
+                      )}
+                      {!citiesLoading && filteredCities.map((c, i) => (
+                        <button
+                          key={`${c.name}-${c.state}-${i}`}
+                          type="button"
+                          onClick={() => handleCitySelect(c.name, c.state)}
+                          className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${
+                            form.city === c.name && form.state === c.state ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'
+                          }`}
+                        >
+                          <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <span className="flex-1 truncate">{c.name}</span>
+                          <span className="text-xs text-muted-foreground">{c.state}</span>
+                          {form.city === c.name && form.state === c.state && <CheckCircle2 className="h-3.5 w-3.5 text-accent" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {showCitySuggestions && (
+                    <div className="fixed inset-0 z-10" onClick={() => setShowCitySuggestions(false)} />
+                  )}
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelClass}>Estado</label>
-                  <input name="state" value={form.state} onChange={handleChange} maxLength={2} className={inputClass} placeholder="PR" />
+                  <input
+                    type="text"
+                    value={form.state}
+                    readOnly
+                    placeholder="Auto-preenchido"
+                    className="w-full rounded-md border border-input bg-muted/50 px-3 py-2 text-sm text-foreground uppercase cursor-not-allowed"
+                  />
                 </div>
                 <div>
                   <label className={labelClass}>Bairro</label>
