@@ -214,6 +214,8 @@ const AdminBottomNavPage = () => {
     setShowDialog(true);
   };
 
+  if (adminLoading) return <AdminLayout><p className="text-muted-foreground p-4">Carregando...</p></AdminLayout>;
+
   if (!config) {
     return (
       <AdminLayout>
