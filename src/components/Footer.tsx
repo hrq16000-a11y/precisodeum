@@ -3,19 +3,33 @@ import { MessageCircle, Users } from 'lucide-react';
 import { useMemo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-import { useMenuItems } from '@/hooks/useMenuItems';
+import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
 import SponsorAd from '@/components/SponsorAd';
 import PwaFooterInstall from '@/components/PwaFooterInstall';
 
-const ecosystemLinks = [
-  { name: 'Mestre dos Serviços', url: 'https://mestredosservicos.com.br' },
-  { name: 'Encontre um Técnico', url: 'https://www.encontreumtecnico.com' },
-  { name: 'Preciso de um Técnico', url: 'https://www.precisodeumtecnico.com' },
-  { name: 'Encontre um Profissional', url: 'https://www.encontreumprofissional.com.br' },
-  { name: 'Preciso de um Profissional', url: 'https://www.precisodeumprofissional.com.br' },
-  { name: 'TamoNaWeb', url: 'https://www.TamoNaWeb.com.br', isNew: true },
+const fallbackProfissionais = [
+  { label: 'Cadastro', url: '/cadastro' },
+  { label: 'Login', url: '/login' },
+  { label: 'Dashboard', url: '/dashboard' },
+  { label: 'Buscar Profissionais', url: '/buscar' },
+  { label: 'Vagas', url: '/vagas' },
+  { label: 'Notícias', url: '/blog' },
+  { label: 'Sobre', url: '/sobre' },
+];
+
+const fallbackEco = [
+  { label: 'Mestre dos Serviços', url: 'https://mestredosservicos.com.br', open_in_new_tab: true },
+  { label: 'Encontre um Técnico', url: 'https://www.encontreumtecnico.com', open_in_new_tab: true },
+  { label: 'Preciso de um Técnico', url: 'https://www.precisodeumtecnico.com', open_in_new_tab: true },
+  { label: 'Encontre um Profissional', url: 'https://www.encontreumprofissional.com.br', open_in_new_tab: true },
+  { label: 'Preciso de um Profissional', url: 'https://www.precisodeumprofissional.com.br', open_in_new_tab: true },
+  { label: 'TamoNaWeb', url: 'https://www.TamoNaWeb.com.br', open_in_new_tab: true, icon: '🆕' },
+];
+
+const fallbackSuporte = [
+  { label: '(41) 99745-2053', url: 'https://wa.me/5541997452053', open_in_new_tab: true, icon: '💬' },
 ];
 
 const footerTaglines = [
@@ -45,25 +59,39 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
+const FooterLinkItem = ({ item }: { item: any }) => {
+  const isExternal = item.open_in_new_tab || item.url?.startsWith('http');
+  const isNewItem = item.icon === '🆕';
+
+  if (isExternal) {
+    return (
+      <a href={item.url} target="_blank" rel="noopener noreferrer" className="story-link inline-flex items-center gap-1.5 transition-colors hover:text-primary-foreground">
+        {item.label}
+        {isNewItem && (
+          <span className="rounded-full bg-accent/20 px-1.5 py-0.5 text-[8px] font-bold uppercase text-accent">Novo</span>
+        )}
+      </a>
+    );
+  }
+
+  return (
+    <Link to={item.url} className="story-link transition-colors hover:text-primary-foreground">
+      {item.label}
+    </Link>
+  );
+};
+
 const Footer = () => {
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoFooterUrl = useSettingValue('logo_footer_url');
   const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : DEFAULT_LOGO_URL;
   const tagline = useMemo(() => footerTaglines[Math.floor(Math.random() * footerTaglines.length)], []);
 
-  const { data: footerItems = [] } = useMenuItems('footer');
+  const { data: menuGroups } = useMenuItemsByLocations(['footer', 'footer_eco', 'footer_suporte']);
 
-  const fallbackFooterLinks = [
-    { label: 'Cadastro', url: '/cadastro' },
-    { label: 'Login', url: '/login' },
-    { label: 'Dashboard', url: '/dashboard' },
-    { label: 'Buscar Profissionais', url: '/buscar' },
-    { label: 'Vagas', url: '/vagas' },
-    { label: 'Notícias', url: '/blog' },
-    { label: 'Sobre', url: '/sobre' },
-  ];
-
-  const footerNavLinks = footerItems.length > 0 ? footerItems : fallbackFooterLinks;
+  const profLinks = menuGroups?.footer?.length ? menuGroups.footer : fallbackProfissionais;
+  const ecoLinks = menuGroups?.footer_eco?.length ? menuGroups.footer_eco : fallbackEco;
+  const suporteLinks = menuGroups?.footer_suporte?.length ? menuGroups.footer_suporte : fallbackSuporte;
 
   return (
     <footer className="border-t border-border bg-primary text-primary-foreground">
@@ -86,21 +114,13 @@ const Footer = () => {
             </p>
           </motion.div>
 
-          {/* Dynamic Footer Nav */}
+          {/* Profissionais */}
           <motion.div variants={itemVariants}>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Profissionais</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
-              {footerNavLinks.map((item: any) => (
+              {profLinks.map((item: any) => (
                 <li key={item.id || item.url}>
-                  {item.open_in_new_tab || item.url?.startsWith('http') ? (
-                    <a href={item.url} target="_blank" rel="noopener noreferrer" className="story-link transition-colors hover:text-primary-foreground">
-                      {item.label}
-                    </a>
-                  ) : (
-                    <Link to={item.url} className="story-link transition-colors hover:text-primary-foreground">
-                      {item.label}
-                    </Link>
-                  )}
+                  <FooterLinkItem item={item} />
                 </li>
               ))}
             </ul>
@@ -110,14 +130,9 @@ const Footer = () => {
           <motion.div variants={itemVariants}>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Ecossistema</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
-              {ecosystemLinks.map((link) => (
-                <li key={link.url}>
-                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="story-link inline-flex items-center gap-1.5 transition-colors hover:text-primary-foreground">
-                    {link.name}
-                    {(link as any).isNew && (
-                      <span className="rounded-full bg-accent/20 px-1.5 py-0.5 text-[8px] font-bold uppercase text-accent">Novo</span>
-                    )}
-                  </a>
+              {ecoLinks.map((item: any) => (
+                <li key={item.id || item.url}>
+                  <FooterLinkItem item={item} />
                 </li>
               ))}
             </ul>
@@ -127,17 +142,19 @@ const Footer = () => {
           <motion.div variants={itemVariants}>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Suporte</h4>
             <ul className="space-y-3 text-sm text-primary-foreground/70">
-              <li>
-                <a
-                  href="https://wa.me/5541997452053"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary-foreground/10 px-3 py-2 transition-colors hover:bg-primary-foreground/20"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  (41) 99745-2053
-                </a>
-              </li>
+              {suporteLinks.map((item: any) => (
+                <li key={item.id || item.url}>
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary-foreground/10 px-3 py-2 transition-colors hover:bg-primary-foreground/20"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {item.label}
+                  </a>
+                </li>
+              ))}
               {whatsappGroupUrl && (
                 <li>
                   <a
