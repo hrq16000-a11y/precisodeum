@@ -81,14 +81,11 @@ const DashboardPage = () => {
       .then(({ data }) => setCategories(data || []));
   }, []);
 
-  if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
-
   const profileType = profile?.profile_type || 'client';
   const isClient = profileType === 'client';
   const isProvider = profileType === 'provider';
   const isRH = profileType === 'rh';
 
-  const onboardingProgress = provider?.onboarding_progress as any || {};
   const profileDone = !!provider?.description && !!provider?.city;
   const servicesDone = servicesCount !== null && servicesCount > 0;
   const portfolioDone = portfolioCount > 0;
@@ -110,6 +107,8 @@ const DashboardPage = () => {
       }).eq('id', provider.id);
     }
   }, [provider?.id, profileDone, servicesDone, portfolioDone]);
+
+  if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
   // ---- CLIENT DASHBOARD ----
   if (isClient) {
