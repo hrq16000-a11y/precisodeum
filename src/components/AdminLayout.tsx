@@ -17,6 +17,7 @@ const menuGroups = [
       { label: 'Visão Geral', icon: LayoutDashboard, path: '/admin' },
       { label: 'Executivo', icon: BarChart3, path: '/admin/overview' },
       { label: 'Notificações', icon: Bell, path: '/admin/notificacoes' },
+      { label: 'Chat', icon: MessageSquare, path: '/admin/chat' },
     ],
   },
   {
