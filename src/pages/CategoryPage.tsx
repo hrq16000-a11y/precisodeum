@@ -1,4 +1,5 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
+import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, Users, MapPin } from 'lucide-react';
@@ -17,7 +18,7 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
-const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
 const SponsorLeaderBanner = lazy(() => import('@/components/sponsors/SponsorLeaderBanner'));
 const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
 const SponsorMidContent = lazy(() => import('@/components/sponsors/SponsorMidContent'));

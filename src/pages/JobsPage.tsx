@@ -14,10 +14,11 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import AdNativeCard from '@/components/ads/AdNativeCard';
 import { lazy, Suspense } from 'react';
+import { importWithRetry } from '@/lib/lazyWithRetry';
 import { motion, AnimatePresence } from 'framer-motion';
 import FadeInSection from '@/components/FadeInSection';
 
-const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
 
 const JOB_TYPES = [
   { value: '', label: 'Todos os tipos' },
