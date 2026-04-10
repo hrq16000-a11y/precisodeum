@@ -8,10 +8,12 @@ interface GeoData {
   longitude: number | null;
   precise: boolean;
   manualOverride: boolean;
+  radiusKm: number;
 }
 
 interface GeoStore extends GeoData {
   setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null) => void;
+  setRadius: (km: number) => void;
   requestPreciseLocation: () => Promise<boolean>;
 }
 
