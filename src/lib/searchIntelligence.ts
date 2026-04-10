@@ -141,6 +141,14 @@ function analyze(
   userLat?: number | null,
   userLon?: number | null,
 ): SILResult {
+  // 0. Read governed config from Control Plane registry (sync, already enforced)
+  const cpConfidence = ControlRegistry.getValue<number>('sil', 'confidenceThreshold');
+  if (cpConfidence !== undefined) _config.confidenceThreshold = cpConfidence;
+  const cpGeoWeight = ControlRegistry.getValue<number>('sil', 'geoWeight');
+  if (cpGeoWeight !== undefined) _config.geoWeight = cpGeoWeight;
+  const cpServiceWeight = ControlRegistry.getValue<number>('sil', 'serviceWeight');
+  if (cpServiceWeight !== undefined) _config.serviceWeight = cpServiceWeight;
+
   // 1. Delegate geo resolution entirely to GeoEngine
   const geoIntent = GeoEngine.resolve(query, city, state);
 
@@ -167,7 +175,21 @@ function analyze(
   // 5. Extract service query from service tokens
   const serviceQuery = geoIntent.serviceTokens.join(' ').trim();
 
-  // 6. Telemetry
+  // 6. Fire-and-forget Control Plane evaluation (non-blocking governance audit)
+  ControlPlane.evaluate({
+    source: 'sil',
+    action: 'analyze',
+    inputs: {
+      query,
+      intent,
+      geoConfidence: geoIntent.confidence,
+      fallbackTriggered,
+      geoWeight: _config.geoWeight,
+      serviceWeight: _config.serviceWeight,
+    },
+  }).catch(() => { /* governance unavailable — non-blocking */ });
+
+  // 7. Telemetry
   silTrack('sil_intent_detected', { intent, query });
   silTrack('sil_route_selected', {
     intent,
