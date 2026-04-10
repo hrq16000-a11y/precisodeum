@@ -25,6 +25,7 @@ const LON_KEY = 'geo_lon';
 const OVERRIDE_KEY = 'geo_override';
 const PRECISE_KEY = 'geo_precise';
 const GEO_ASKED_KEY = 'geo_browser_asked';
+const RADIUS_KEY = 'geo_radius';
 
 function safeGet(key: string): string | null {
   try {
@@ -51,6 +52,7 @@ let geoState: GeoData = {
   longitude: parseNumber(safeGet(LON_KEY)),
   precise: safeGet(PRECISE_KEY) === 'true',
   manualOverride: safeGet(OVERRIDE_KEY) === 'true',
+  radiusKm: parseNumber(safeGet(RADIUS_KEY)) ?? 50,
 };
 
 let listeners = new Set<() => void>();
