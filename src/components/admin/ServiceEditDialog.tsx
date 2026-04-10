@@ -137,7 +137,7 @@ const ServiceEditDialog = ({ service, onClose, onSaved }: ServiceEditDialogProps
                 selectedIds={form.category_id ? [form.category_id] : []}
                 onToggle={(id) => setForm(f => ({ ...f, category_id: f.category_id === id ? '' : id }))}
                 maxSelections={1}
-                freeText=""
+                
               />
             </div>
             <div>
