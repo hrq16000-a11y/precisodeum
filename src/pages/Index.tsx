@@ -8,18 +8,12 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
+// Critical path — eagerly loaded
 import Header from '@/components/Header';
-import PageTransition from '@/components/PageTransition';
-import ParallaxSection from '@/components/ParallaxSection';
 import HeroBanner from '@/components/home/HeroBanner';
-import CategoriesGrid from '@/components/home/CategoriesGrid';
-import HighlightsCarousel from '@/components/home/HighlightsCarousel';
-import FeaturedProviders from '@/components/home/FeaturedProviders';
-import RecentServices from '@/components/home/RecentServices';
-import PwaInstallSection from '@/components/home/PwaInstallSection';
-import DynamicPageBlocks from '@/components/DynamicPageBlocks';
-import StatsCounter from '@/components/home/StatsCounter';
-import UrgencyBanner from '@/components/home/UrgencyBanner';
+
+// Near-fold — lazy but high priority
+import PageTransition from '@/components/PageTransition';
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
