@@ -1,50 +1,54 @@
 
 
-## Correção: Geolocalização de Busca Funcionando Sem Margem de Erro
+## Inteligência Geográfica Universal para Todo o Brasil
 
 ### Problema Raiz
-1. **100% dos providers existentes têm `latitude`/`longitude` NULL** — a busca por distância (Haversine) nunca é usada
-2. Sem coordenadas, o fallback por nome falha porque "Região Metropolitana de Curitiba" ≠ "São José dos Pinhais"
-3. O `extractCoreCity` extrai "curitiba" mas não faz match com "saojosedospinhais"
+A lógica atual de `matchesGeoContext` tem 3 falhas críticas:
 
-### Solução (3 frentes)
+1. **Sem coordenadas nos providers** — o cálculo Haversine nunca é usado, então o fallback por texto é o único caminho
+2. **Fallback "região metropolitana → estado" é grosseiro** — "Região Metropolitana de Curitiba" retorna providers de Londrina (400km), fazendo o sistema parecer quebrado
+3. **Apenas "Região Metropolitana de X" é tratada** — padrões como "Grande São Paulo", "Baixada Fluminense", "Região do ABC" não são reconhecidos
 
-**1. Backfill de coordenadas dos providers existentes (edge function)**
-- Criar uma edge function `backfill-provider-coords` que:
-  - Busca todos os providers com `latitude IS NULL`
-  - Para cada um, usa a API Nominatim (gratuita) para geocodificar `city + state + Brasil`
-  - Atualiza `latitude`, `longitude` e `ibge_code` no banco
-  - Processa em lotes com delay (1 req/s para respeitar rate limit do Nominatim)
-- Botão no admin para disparar o backfill
+### Solução em 3 camadas
 
-**2. Garantir coordenadas no cadastro (já implementado, mas validar)**
-- Já salva lat/lon no signup e perfil — apenas garantir que o campo é obrigatório antes do submit (bloqueando cadastro sem cidade selecionada do IBGE)
+**Camada 1 — Geocodificação sob demanda dos providers (sem coordenadas)**
+Quando o user TEM coordenadas mas o provider NÃO tem, geocodificar o provider em tempo real usando a cidade/estado dele contra um mapa de coordenadas de municípios (cache estático). Isso permite que o Haversine funcione imediatamente sem depender do backfill.
 
-**3. Melhorar fallback de nome para casos sem coordenadas**
-- Enquanto o backfill não rodar, melhorar `matchesGeoContext`:
-  - Quando o user city contém "região metropolitana", fazer match por **estado** (mesmo UF = local)
-  - Isso garante que "Região Metropolitana de Curitiba" + PR encontra providers de "São José dos Pinhais, PR"
+- Criar um cache local de coordenadas dos ~200 maiores municípios brasileiros em `src/lib/cityCoords.ts`
+- No `matchesGeoContext`, quando o provider não tem lat/lon, buscar no cache pela cidade normalizada
+- Se encontrar, usar Haversine normalmente
+
+**Camada 2 — Extração inteligente de padrões regionais**
+Expandir `extractCoreCity` para reconhecer todos os padrões comuns de geo-detecção:
+
+```text
+Padrões reconhecidos:
+- "Região Metropolitana de X" → cidade X
+- "Grande X" → cidade X  
+- "Baixada X" → busca por estado
+- "Região do ABC" → São Paulo/SP
+- "Litoral X" → busca por estado
+- Qualquer variação com prefixo regional → extrai cidade-polo
+```
+
+**Camada 3 — Fallback por proximidade estimada (não por estado inteiro)**
+Quando não há coordenadas de nenhum lado e a busca é por região metropolitana:
+
+- Em vez de aceitar TODO o estado, usar uma lista fixa das ~15 maiores regiões metropolitanas do Brasil com seus municípios membros
+- Se a cidade do provider está na lista de municípios da RM detectada → match
+- Se não está na lista → não match (evita Londrina quando buscando RM Curitiba)
 
 ### Arquivos afetados
 
 | Arquivo | Ação |
 |---|---|
-| `supabase/functions/backfill-provider-coords/index.ts` | Criar (edge function de geocodificação em lote) |
-| `src/hooks/useProviders.tsx` | Editar (melhorar fallback região metropolitana → match por estado) |
-| `src/pages/AdminProvidersPage.tsx` | Editar (botão para disparar backfill) |
-
-### Detalhe técnico do fallback melhorado
-
-```text
-matchesGeoContext():
-  Se userCity contém "regiaometropolitana":
-    → extrair estado do user (ex: PR)
-    → Se provider.state === userState → match = true
-    
-  Isso cobre 100% dos casos de região metropolitana
-  até que as coordenadas existam para usar Haversine
-```
+| `src/lib/cityCoords.ts` | **Criar** — cache de coordenadas dos ~200 maiores municípios |
+| `src/lib/metroRegions.ts` | **Criar** — mapa das regiões metropolitanas com municípios membros |
+| `src/hooks/useProviders.tsx` | **Editar** — `matchesGeoContext` e `extractCoreCity` com lógica de 3 camadas |
 
 ### Resultado esperado
-- Imediatamente: providers de PR aparecem ao buscar "Região Metropolitana de Curitiba"
-- Após backfill: busca por distância real (100km) funciona para todos
+- "Região Metropolitana de Curitiba" → mostra São José dos Pinhais, Colombo, Araucária, mas NÃO Londrina
+- "Grande São Paulo" → mostra Guarulhos, Osasco, Santo André, mas NÃO Campinas
+- Qualquer cidade com coordenadas do user → Haversine funciona mesmo sem backfill
+- Zero dependência de APIs externas em tempo de busca — tudo local/estático
+
