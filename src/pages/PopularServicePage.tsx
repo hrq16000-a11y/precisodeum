@@ -88,7 +88,10 @@ const PopularServicePage = () => {
           photo: p.photo_url || profile?.avatar_url || '',
           description: p.description, phone: p.phone, whatsapp: p.whatsapp,
           yearsExperience: p.years_experience, plan: p.plan,
-          services: [], reviews: [], slug: p.slug || p.id, featured: p.featured,
+          slug: p.slug || p.id, featured: p.featured,
+          servicesCount: p.services_count || 0,
+          portfolioAlbumCount: p.portfolio_album_count || 0,
+          portfolioPhotoCount: p.portfolio_photo_count || 0,
         };
       });
     },

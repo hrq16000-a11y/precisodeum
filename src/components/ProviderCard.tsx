@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { DbProvider } from '@/hooks/useProviders';
-import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { whatsappLink } from '@/lib/whatsapp';
 import { handleImageError } from '@/lib/imageResolver';
 import { useCardImpression } from '@/hooks/useCardImpression';
@@ -22,6 +22,13 @@ interface ProviderCardProps {
 
 const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', index = 0 }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const verifiedEnabled = useFeatureEnabled('verified_badge_enabled');
+  const minServices = Number(useSettingValue('verified_badge_min_services')) || 2;
+  const minAlbums = Number(useSettingValue('verified_badge_min_albums')) || 1;
+  const minReviews = Number(useSettingValue('verified_badge_min_reviews')) || 1;
+  const minRating = Number(useSettingValue('verified_badge_min_rating')) || 0;
+  const requirePhoto = useSettingValue('verified_badge_require_photo') !== 'false';
+
   const { user } = useAuth();
   const prefetch = usePrefetchProvider();
   const handlers = usePrefetchHandlers(prefetch, provider.slug);
@@ -34,6 +41,15 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const locationText = locationParts.join(', ');
 
   const displayName = provider.name || provider.businessName || 'Profissional';
+
+  // Verified badge — computed from admin-configurable rules
+  const isVerified = verifiedEnabled && (
+    provider.servicesCount >= minServices &&
+    provider.portfolioAlbumCount >= minAlbums &&
+    provider.reviewCount >= minReviews &&
+    (minRating <= 0 || provider.rating >= minRating) &&
+    (!requirePhoto || !!displayPhoto)
+  );
 
   return (
     <motion.div
@@ -90,7 +106,12 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               </div>
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              {hasImages && (
+              {isVerified && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
+                  <BadgeCheck className="h-3 w-3" /> Verificado
+                </span>
+              )}
+              {!isVerified && hasImages && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
                   <BadgeCheck className="h-3 w-3" /> Perfil Completo
                 </span>

@@ -34,6 +34,9 @@ export interface DbProvider {
   plan: string;
   slug: string;
   featured: boolean;
+  servicesCount: number;
+  portfolioAlbumCount: number;
+  portfolioPhotoCount: number;
 }
 
 interface ServiceFallback {
@@ -68,7 +71,6 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
   const provWhatsapp = p.whatsapp?.trim() || '';
   const provPhone = p.phone?.trim() || '';
 
-  // Fallback: whatsapp ↔ phone
   const effectiveWhatsapp = provWhatsapp || provPhone || serviceFallback?.serviceWhatsapp || '';
   const effectivePhone = provPhone || provWhatsapp || serviceFallback?.serviceWhatsapp || '';
 
@@ -94,6 +96,9 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
     plan: p.plan,
     slug: p.slug || p.id,
     featured: p.featured,
+    servicesCount: p.services_count || 0,
+    portfolioAlbumCount: p.portfolio_album_count || 0,
+    portfolioPhotoCount: p.portfolio_photo_count || 0,
   };
 }
 
