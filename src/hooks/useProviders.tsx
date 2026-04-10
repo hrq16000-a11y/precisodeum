@@ -15,6 +15,7 @@ export function trackProviderImpressions(providerIds: string[]) {
 
 export interface DbProvider {
   id: string;
+  userId: string;
   name: string;
   businessName?: string;
   category: string;
@@ -78,6 +79,7 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
   const effectivePhone = provPhone || provWhatsapp || serviceFallback?.serviceWhatsapp || '';
 
   return {
+    userId: p.user_id,
     id: p.id,
     name: profileName || p.business_name || serviceFallback?.serviceName || 'Profissional',
     businessName: p.business_name || undefined,

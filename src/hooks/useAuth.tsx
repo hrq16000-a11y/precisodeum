@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { usePresenceTracker } from '@/hooks/useOnlinePresence';
 
 interface AuthContextType {
   session: Session | null;
@@ -113,6 +114,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProvider(null);
     setNeedsTypeSelection(false);
   };
+  // Track online presence for the current user
+  usePresenceTracker(user?.id);
 
   return (
     <AuthContext.Provider value={{ session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile }}>

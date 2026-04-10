@@ -85,6 +85,7 @@ const SeoPage = () => {
 
       const providers = (provs || []).map((p) => ({
         id: p.id,
+        userId: p.user_id,
         name: profileMap[p.user_id] || p.business_name || 'Profissional',
         businessName: p.business_name || undefined,
         category: (p.categories as any)?.name || parsed.categoryName,

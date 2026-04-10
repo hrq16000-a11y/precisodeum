@@ -12,6 +12,7 @@ import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
 
 interface ProviderCardProps {
   provider: DbProvider;
@@ -30,6 +31,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const requirePhoto = useSettingValue('verified_badge_require_photo') !== 'false';
 
   const { user } = useAuth();
+  const isOnline = useIsProviderOnline(provider.userId);
   const prefetch = usePrefetchProvider();
   const handlers = usePrefetchHandlers(prefetch, provider.slug);
   const displayPhoto = provider.photo || provider.serviceImage || '';
@@ -124,6 +126,11 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               {isFallback && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                   <MapPin className="h-3 w-3" /> Outra região
+                </span>
+              )}
+              {isOnline && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                  <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online
                 </span>
               )}
             </div>
