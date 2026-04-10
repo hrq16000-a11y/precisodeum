@@ -344,21 +344,39 @@ function normalizeCityName(name: string): string {
     .trim();
 }
 
-/** Check if provider matches city/state context */
-function matchesGeoContext(provider: DbProvider, cityNorm: string, stateNorm?: string): boolean {
+/**
+ * Check if provider is within the user's region.
+ * Uses 45km distance when both sides have coordinates,
+ * otherwise falls back to city name matching.
+ */
+function matchesGeoContext(
+  provider: DbProvider,
+  cityNorm: string,
+  stateNorm?: string,
+  userLat?: number | null,
+  userLon?: number | null
+): boolean {
   if (!cityNorm && !stateNorm) return true;
+
+  // 1. Distance-based: if both user and provider have coordinates
+  if (
+    hasCoordinates(userLat, userLon) &&
+    hasCoordinates(provider.latitude, provider.longitude)
+  ) {
+    const dist = calculateDistanceKm(
+      { latitude: userLat!, longitude: userLon! },
+      { latitude: provider.latitude!, longitude: provider.longitude! }
+    );
+    return dist <= SERVICE_RADIUS_KM;
+  }
+
+  // 2. Fallback: city name matching
   const pCity = normalizeCityName(provider.city);
   const pState = normalizeCityName(provider.state);
-  // Exact city match
   if (cityNorm && pCity === cityNorm) return true;
-  // City contains search or search contains city (e.g. "sao paulo" vs "são paulo")
   if (cityNorm && (pCity.includes(cityNorm) || cityNorm.includes(pCity))) return true;
-  // Same state = same region (metropolitan areas, nearby cities)
+  // Same state as fallback only when no coordinates available
   if (stateNorm && pState === stateNorm) return true;
-  if (cityNorm) {
-    // State match (e.g. searching "SP" or "sao-paulo" matching state)
-    if (pState === cityNorm || pState.includes(cityNorm)) return true;
-  }
   return false;
 }
 
@@ -372,7 +390,9 @@ export function filterAndRankProviders(
   city: string,
   categorySlug: string,
   minRating: number,
-  state?: string
+  state?: string,
+  userLat?: number | null,
+  userLon?: number | null
 ) {
   let results = [...providers];
 
@@ -403,10 +423,10 @@ export function filterAndRankProviders(
   const cityNorm = city ? normalizeCityName(city) : '';
   const stateNorm = state ? normalizeCityName(state) : '';
 
-  // Smart geo filtering: same state = same region (covers metropolitan areas)
+  // Smart geo filtering: distance-based when coordinates available
   if (cityNorm || stateNorm) {
-    const localResults = results.filter((p) => matchesGeoContext(p, cityNorm, stateNorm));
-    const otherResults = results.filter((p) => !matchesGeoContext(p, cityNorm, stateNorm));
+    const localResults = results.filter((p) => matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon));
+    const otherResults = results.filter((p) => !matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon));
 
     if (localResults.length >= MIN_LOCAL_RESULTS) {
       results = localResults;
@@ -416,22 +436,23 @@ export function filterAndRankProviders(
   }
 
   results.sort((a, b) => {
-    // 1. Exact city match first, then same-state, then others
+    // 1. Local match first
+    if (cityNorm || stateNorm) {
+      const aLocal = matchesGeoContext(a, cityNorm, stateNorm, userLat, userLon) ? 0 : 1;
+      const bLocal = matchesGeoContext(b, cityNorm, stateNorm, userLat, userLon) ? 0 : 1;
+      if (aLocal !== bLocal) return aLocal - bLocal;
+    }
+    // 2. Among locals, prefer exact city match
     if (cityNorm) {
       const aCityMatch = normalizeCityName(a.city) === cityNorm || normalizeCityName(a.city).includes(cityNorm) || cityNorm.includes(normalizeCityName(a.city));
       const bCityMatch = normalizeCityName(b.city) === cityNorm || normalizeCityName(b.city).includes(cityNorm) || cityNorm.includes(normalizeCityName(b.city));
       if (aCityMatch !== bCityMatch) return aCityMatch ? -1 : 1;
     }
-    if (cityNorm || stateNorm) {
-      const aLocal = matchesGeoContext(a, cityNorm, stateNorm) ? 0 : 1;
-      const bLocal = matchesGeoContext(b, cityNorm, stateNorm) ? 0 : 1;
-      if (aLocal !== bLocal) return aLocal - bLocal;
-    }
-    // 2. Hybrid final score
+    // 3. Hybrid final score
     const aScore = (a as any)._finalScore || (a as any)._contentScore || 0;
     const bScore = (b as any)._finalScore || (b as any)._contentScore || 0;
     if (aScore !== bScore) return bScore - aScore;
-    // 3. Rating & reviews tiebreaker
+    // 4. Rating & reviews tiebreaker
     if (b.rating !== a.rating) return b.rating - a.rating;
     return b.reviewCount - a.reviewCount;
   });
@@ -439,7 +460,7 @@ export function filterAndRankProviders(
   return results;
 }
 
-export function useSearchProviders(query: string, city: string, categorySlug: string, minRating: number, state?: string) {
+export function useSearchProviders(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null) {
   const baseQuery = useQuery({
     queryKey: ['search-providers-base'],
     queryFn: async () => {
@@ -458,8 +479,8 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
   });
 
   const filteredData = useMemo(
-    () => filterAndRankProviders(baseQuery.data || [], query, city, categorySlug, minRating, state),
-    [baseQuery.data, query, city, categorySlug, minRating, state]
+    () => filterAndRankProviders(baseQuery.data || [], query, city, categorySlug, minRating, state, userLat, userLon),
+    [baseQuery.data, query, city, categorySlug, minRating, state, userLat, userLon]
   );
 
   return {
