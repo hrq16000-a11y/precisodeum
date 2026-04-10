@@ -31,6 +31,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const requirePhoto = useSettingValue('verified_badge_require_photo') !== 'false';
 
   const { user } = useAuth();
+  const isOnline = useIsProviderOnline(provider.userId);
   const prefetch = usePrefetchProvider();
   const handlers = usePrefetchHandlers(prefetch, provider.slug);
   const displayPhoto = provider.photo || provider.serviceImage || '';
