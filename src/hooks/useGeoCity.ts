@@ -11,7 +11,7 @@ interface GeoData {
 }
 
 interface GeoStore extends GeoData {
-  setCity: (city: string, state?: string) => void;
+  setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null) => void;
   requestPreciseLocation: () => Promise<boolean>;
 }
 
@@ -219,11 +219,28 @@ function getSnapshot(): GeoData {
 export function useGeoCity(): GeoStore {
   const data = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  const setCity = useCallback((city: string, state?: string) => {
+  const setCity = useCallback((city: string, state?: string, latitude?: number | null, longitude?: number | null) => {
     safeSet(CITY_KEY, city);
     safeSet(OVERRIDE_KEY, 'true');
     if (state) safeSet(STATE_KEY, state);
-    setGeoState({ city, state: state || geoState.state, manualOverride: true });
+
+    if (latitude !== undefined && latitude !== null) safeSet(LAT_KEY, String(latitude));
+    else {
+      try { localStorage.removeItem(LAT_KEY); sessionStorage.removeItem(LAT_KEY); } catch {}
+    }
+
+    if (longitude !== undefined && longitude !== null) safeSet(LON_KEY, String(longitude));
+    else {
+      try { localStorage.removeItem(LON_KEY); sessionStorage.removeItem(LON_KEY); } catch {}
+    }
+
+    setGeoState({
+      city,
+      state: state || geoState.state,
+      latitude: latitude ?? null,
+      longitude: longitude ?? null,
+      manualOverride: true,
+    });
   }, []);
 
   const requestPreciseLocation = useCallback(async () => {
