@@ -344,21 +344,39 @@ function normalizeCityName(name: string): string {
     .trim();
 }
 
-/** Check if provider matches city/state context */
-function matchesGeoContext(provider: DbProvider, cityNorm: string, stateNorm?: string): boolean {
+/**
+ * Check if provider is within the user's region.
+ * Uses 45km distance when both sides have coordinates,
+ * otherwise falls back to city name matching.
+ */
+function matchesGeoContext(
+  provider: DbProvider,
+  cityNorm: string,
+  stateNorm?: string,
+  userLat?: number | null,
+  userLon?: number | null
+): boolean {
   if (!cityNorm && !stateNorm) return true;
+
+  // 1. Distance-based: if both user and provider have coordinates
+  if (
+    hasCoordinates(userLat, userLon) &&
+    hasCoordinates(provider.latitude, provider.longitude)
+  ) {
+    const dist = calculateDistanceKm(
+      { latitude: userLat!, longitude: userLon! },
+      { latitude: provider.latitude!, longitude: provider.longitude! }
+    );
+    return dist <= SERVICE_RADIUS_KM;
+  }
+
+  // 2. Fallback: city name matching
   const pCity = normalizeCityName(provider.city);
   const pState = normalizeCityName(provider.state);
-  // Exact city match
   if (cityNorm && pCity === cityNorm) return true;
-  // City contains search or search contains city (e.g. "sao paulo" vs "são paulo")
   if (cityNorm && (pCity.includes(cityNorm) || cityNorm.includes(pCity))) return true;
-  // Same state = same region (metropolitan areas, nearby cities)
+  // Same state as fallback only when no coordinates available
   if (stateNorm && pState === stateNorm) return true;
-  if (cityNorm) {
-    // State match (e.g. searching "SP" or "sao-paulo" matching state)
-    if (pState === cityNorm || pState.includes(cityNorm)) return true;
-  }
   return false;
 }
 
