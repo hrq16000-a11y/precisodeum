@@ -44,6 +44,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Leads', icon: 'FileText', path: '/admin/leads' },
       { label: 'Planos & Regras', icon: 'Crown', path: '/admin/regras' },
       { label: 'Assinaturas', icon: 'CreditCard', path: '/admin/assinaturas' },
+      { label: 'Boosts & Ranking', icon: 'Sparkles', path: '/admin/boosts' },
       { label: 'Comunidade', icon: 'Users2', path: '/admin/comunidade' },
       { label: 'Cidades', icon: 'MapPin', path: '/admin/cidades' },
     ],

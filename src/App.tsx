@@ -88,6 +88,7 @@ const AdminTestimonialsPage = lazy(() => import("./pages/AdminTestimonialsPage")
 const AdminCtaBlocksPage = lazy(() => import("./pages/AdminCtaBlocksPage"));
 const AdminHomeSectionsPage = lazy(() => import("./pages/AdminHomeSectionsPage"));
 const AdminUsersCrmPage = lazy(() => import("./pages/AdminUsersCrmPage"));
+const AdminBoostsPage = lazy(() => import("./pages/AdminBoostsPage"));
 const AdminLevelsPage = lazy(() => import("./pages/AdminLevelsPage"));
 const AdminAccountTypesPage = lazy(() => import("./pages/AdminAccountTypesPage"));
 const AdminSponsorLeadsPage = lazy(() => import("./pages/AdminSponsorLeadsPage"));
@@ -257,6 +258,7 @@ const App = () => {
                 <Route path="/admin/leads-patrocinadores" element={<AdminSponsorLeadsPage />} />
                 <Route path="/admin/assinaturas" element={<AdminSubscriptionsPage />} />
                 <Route path="/admin/overview" element={<AdminOverviewPage />} />
+                <Route path="/admin/boosts" element={<AdminBoostsPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
