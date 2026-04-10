@@ -1567,6 +1567,7 @@ export type Database = {
       providers: {
         Row: {
           business_name: string | null
+          category_custom: string | null
           category_id: string | null
           city: string
           cnpj: string | null
@@ -1602,6 +1603,7 @@ export type Database = {
         }
         Insert: {
           business_name?: string | null
+          category_custom?: string | null
           category_id?: string | null
           city?: string
           cnpj?: string | null
@@ -1637,6 +1639,7 @@ export type Database = {
         }
         Update: {
           business_name?: string | null
+          category_custom?: string | null
           category_id?: string | null
           city?: string
           cnpj?: string | null
