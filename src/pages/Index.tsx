@@ -55,7 +55,22 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
     this.state = { hasError: false };
   }
   static getDerivedStateFromError() { return { hasError: true }; }
-  render() { return this.state.hasError ? null : this.props.children; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 gap-3">
+          <p className="text-sm text-muted-foreground">Algo deu errado ao carregar esta seção.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 // Minimal height placeholder to prevent CLS from lazy sections
