@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useSearchProviders, useCategories, useSearchSuggestions } from '@/hooks/useProviders';
+import { useSearchProviders, useCategories, useSearchSuggestions, normalizeCityName, matchesGeoContext } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
@@ -52,7 +52,7 @@ const SearchPage = () => {
     isLoading,
     isError: searchError,
     refetch,
-  } = useSearchProviders(query, effectiveCity, selectedCategory, minRating);
+  } = useSearchProviders(query, effectiveCity, selectedCategory, minRating, geoState || '');
 
   // Apply additional client-side filters
   const fullyFiltered = useMemo(() => {
@@ -441,7 +441,7 @@ const SearchPage = () => {
                       transition={{ duration: 0.35 }}
                       layout
                     >
-                      <ProviderCard provider={p} isFallback={false} />
+                      <ProviderCard provider={p} isFallback={!!effectiveCity && !matchesGeoContext(p, normalizeCityName(effectiveCity), geoState ? normalizeCityName(geoState) : undefined)} />
                     </motion.div>
                   ))}
                 </motion.div>
