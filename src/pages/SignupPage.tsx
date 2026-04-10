@@ -12,6 +12,7 @@ import { useSeoHead } from '@/hooks/useSeoHead';
 import { User, Briefcase, Building2, ArrowRight, ArrowLeft, CheckCircle2, Search, LocateFixed, Loader2, MapPin } from 'lucide-react';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import { fetchAllMunicipalities, geocodeCity, reverseGeocode, normalize, type CityResult } from '@/lib/geoUtils';
+import { useAuth } from '@/hooks/useAuth';
 
 const ACCOUNT_TYPES = [
   {
@@ -88,6 +89,16 @@ const SignupPage = () => {
     latitude: null as number | null, longitude: null as number | null,
   });
   const navigate = useNavigate();
+  const { user: authUser, loading: authLoading, profile: authProfile } = useAuth();
+
+  // Redirect already-authenticated users (e.g. after Google OAuth)
+  useEffect(() => {
+    if (authLoading || !authUser) return;
+    const type = authProfile?.profile_type || 'client';
+    if (type === 'client') navigate('/', { replace: true });
+    else if (type === 'rh') navigate('/dashboard/vagas', { replace: true });
+    else navigate('/dashboard/servicos', { replace: true });
+  }, [authUser, authLoading, authProfile, navigate]);
 
   useSeoHead({ title: 'Criar Conta', description: 'Cadastre-se na plataforma Preciso de um.', noindex: true });
 
