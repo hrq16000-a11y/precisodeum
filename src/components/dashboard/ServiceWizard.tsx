@@ -12,7 +12,11 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-/* ───── Types ───── */
+/**
+ * ServiceWizard — ONBOARDING ONLY
+ * Used exclusively for initial professional setup (first-time provider registration).
+ * DO NOT use for day-to-day service creation/editing — use DashboardServicesPage Dialog instead.
+ */
 interface ServiceWizardProps {
   providerId: string;
   userId: string;
