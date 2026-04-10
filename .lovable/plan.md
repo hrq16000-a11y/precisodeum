@@ -1,103 +1,114 @@
 
 
-# GEO Intelligence v4 — Cobertura Nacional Completa
+# Auditoria Profunda — Plataforma Preciso de Um
 
-## Problema atual
-O sistema reconhece apenas ~200 cidades hardcoded em `CITY_COORDS`. Qualquer busca por cidade fora dessa lista (ex: "Encanador em Chapecó" ou "Advogado Londrina PR") falha silenciosamente. A detecção de cidade no query só funciona por sufixo (right-to-left), falhando para cidades no meio da string.
+## Resumo Executivo
 
-## Solução
+A plataforma foi auditada em 5 dimensões: **Segurança**, **Estabilidade Runtime**, **Banco de Dados**, **Código** e **Governança**. Foram encontrados **14 problemas** sendo **5 críticos**, **6 médios** e **3 baixos**.
 
-### 1. Criar `src/lib/citiesIndex.ts` — Base nacional IBGE (5.570 cidades)
+---
 
-Arquivo estático gerado a partir da API IBGE, contendo todas as cidades brasileiras indexadas por nome normalizado:
+## 1. SEGURANÇA — Problemas Críticos
 
-```text
-type CityEntry = { name: string; state: string; lat: number; lon: number }
-type CitiesIndex = Record<string, CityEntry>  // key = normalize(name)
-type CitiesByNormState = Record<string, CityEntry[]>  // key = normalize(name+state)
-```
+### 1.1 CRÍTICO — Storage "sponsors" sem verificação de role admin
+As políticas `Admin insert sponsors`, `Admin update sponsors` e `Admin delete sponsors` verificam apenas `bucket_id = 'sponsors'` — qualquer usuário autenticado pode sobrescrever ou excluir imagens de patrocinadores.
 
-- Gerar via script que consulta IBGE API + Nominatim para coords das 200+ maiores (as demais usam coords do IBGE quando disponível)
-- Para cidades sem coords, armazenar `lat: null, lon: null` (o sistema já trata fallback)
-- Indexar por `normalize(city)` e por `normalize(city + state)` para resolver ambiguidades como "São José"
-- Exportar função `lookupCity(norm: string, stateNorm?: string): CityEntry | null`
+**Correção:** Adicionar `has_role(auth.uid(), 'admin'::app_role)` nas condições USING/WITH CHECK dessas 3 políticas.
 
-### 2. Criar `src/lib/ufIndex.ts` — Detecção de UF no query
+### 1.2 CRÍTICO — 7 Views SECURITY DEFINER no schema public
+As views `public_profiles`, `account_model_view`, `account_limits_view`, `user_master_view`, `export_users`, `city_provider_stats` e `public_jobs` estão com `security_invoker=false` (padrão SECURITY DEFINER), bypassando RLS das tabelas subjacentes.
 
-Mapa de UFs brasileiras para detecção de padrões como "Curitiba PR", "Curitiba/PR", "SP":
+**Correção:** Migração SQL para definir `ALTER VIEW ... SET (security_invoker = true)` em todas as 7 views.
 
-```text
-UF_MAP: Record<string, string> = { sp: 'SP', rj: 'RJ', pr: 'PR', ... }
-```
+### 1.3 MÉDIO — audit_log INSERT restrito a admins
+A política `Admins can insert audit log` exige `has_role(auth.uid(), 'admin')`, mas o código (`useAuditLog.ts`) tenta inserir para qualquer usuário autenticado. Ações de usuários normais (leads, uploads) falham silenciosamente.
 
-- Detectar UF como último token do query (2 letras) ou após `/` ou `-`
-- Usar para desambiguação: "São José SC" vs "São José SP"
-- Se query é apenas uma UF (ex: "SP"), tratar como estado inteiro
+**Correção:** Alterar a política INSERT para `auth.uid() = user_id` (permitir qualquer autenticado inserir seu próprio log) ou criar uma função SECURITY DEFINER para inserções.
 
-### 3. Refatorar detecção geo em `filterAndRankProviders`
+### 1.4 MÉDIO — user_levels expõe permissions JSONB publicamente
+A policy `User levels viewable by everyone` com `USING (true)` expõe toda a estrutura de permissões internas incluindo `create_users`, `delete_users`, `manage_billing`.
 
-Substituir a lógica atual (linhas 526-571) por sliding window bidirecional:
+**Correção:** Criar uma view pública limitada (nome, cor, descrição) e restringir o SELECT da tabela a autenticados.
 
-```text
-1. Extrair UF se presente (regex: /\b([A-Z]{2})$/ ou /\/([A-Z]{2})$/)
-2. normalize(query) → tentar resolveMetroRegion() (mantém v3)
-3. Se não metro → sliding window em TODOS os tokens (não só sufixo):
-   - Para cada par (i, j), candidato = tokens[i..j].join('')
-   - Match contra: citiesIndex > CITY_COORDS > metroRegions
-   - Escolher match MAIS LONGO (mais específico)
-   - Se UF detectada, priorizar match com UF correspondente
-4. Separar termos geo dos termos de serviço
-5. Manter pipeline existente (Haversine → RM → fuzzy → estado)
-```
+### 1.5 BAIXO — Leaked Password Protection desativado
+Proteção contra senhas vazadas está desabilitada.
 
-### 4. Expandir aliases regionais em `metroRegions.ts`
+**Correção:** Ativar via configuração de autenticação.
 
-Adicionar ao `REGIONAL_ALIASES`:
-- `abc` → `saopaulo`
-- `grandebh` → `belohorizonte`
-- `grandevitoria` → `vitoria`
-- `baixadasantista` → `santos` (já existe, verificar)
-- `litoralpaulista` → `santos`
-- `valedo paraiba` → lookup especial (não é metro simples)
+---
 
-Adicionar RMs faltantes: **Campinas**, **Vale do Paraíba**, **Baixada Santista**, **Manaus**, **Brasília/RIDE**.
+## 2. ESTABILIDADE RUNTIME — Problemas Ativos
 
-### 5. Atualizar `getCityCoords` para usar citiesIndex como fallback
+### 2.1 CRÍTICO — Dynamic imports falhando (tela branca)
+Três componentes com falha de importação dinâmica causando **blank screen**:
+- `AdSlot` em `Index.tsx` (linha 43) — usa `lazy(() => import(...))` SEM `importWithRetry`
+- `Footer` em `Index.tsx` (linha 48) — SEM `importWithRetry`  
+- `FeaturedProviders` em `Index.tsx` (linha 26) — SEM `importWithRetry`
+- `SponsorFooterCTA` em `Index.tsx` (linha 45) — SEM `importWithRetry`
+- Outros em `Index02.tsx`, `CityDetailPage.tsx`, `CityPage.tsx`, `CategoryPage.tsx` (SponsorFooterCTA)
 
-```text
-getCityCoords(city):
-  1. Checar CITY_COORDS (cache estático, ~200 cidades) → O(1)
-  2. Se não: checar citiesIndex → O(1)
-  3. Se não: null
-```
+Esses componentes já foram corrigidos em `Header.tsx`, `Footer.tsx`, `JobsPage.tsx`, `ProviderProfile.tsx` mas **Index.tsx permanece vulnerável**.
 
-### 6. Performance
+**Correção:** Substituir TODOS os `lazy(() => import(...))` por `lazy(() => importWithRetry(() => import(...)))` em `Index.tsx`, `Index02.tsx`, `CityDetailPage.tsx`, `CityPage.tsx`, `CategoryPage.tsx`.
 
-- `citiesIndex` é um `Record<string, ...>` — lookup O(1)
-- Sliding window é O(n^2) nos tokens do query, mas queries têm max ~6 tokens → negligível
-- Manter cache/memo existente em `normalize()` e `coordsCache`
-- citiesIndex carregado uma vez (import estático)
+### 2.2 MÉDIO — LazyErrorBoundary silenciosa
+O `LazyErrorBoundary` em Index.tsx renderiza `null` quando falha — o usuário vê seções desaparecendo sem feedback.
 
-## Arquivos afetados
+**Correção:** Adicionar feedback visual mínimo (skeleton ou mensagem de retry).
 
-| Arquivo | Ação |
-|---|---|
-| `src/lib/citiesIndex.ts` | **CRIAR** — index nacional de cidades |
-| `src/lib/ufIndex.ts` | **CRIAR** — mapa de UFs |
-| `src/lib/cityCoords.ts` | **EDITAR** — fallback para citiesIndex |
-| `src/lib/metroRegions.ts` | **EDITAR** — adicionar RMs e aliases |
-| `src/hooks/useProviders.tsx` | **EDITAR** — sliding window + UF detection |
+---
 
-## O que NÃO muda
-- `geoScore`, `dynamicRadius`, `matchesGeoContext` (core v3 intacto)
-- Pipeline de ranking (Haversine → RM → fuzzy → estado)
-- Nenhuma alteração no banco de dados
+## 3. BANCO DE DADOS
 
-## Resultado esperado
-- "Região Metropolitana de Curitiba" → RM Curitiba
-- "Grande BH" → Belo Horizonte
-- "Encanador Campinas SP" → Campinas
-- "Eletricista São José dos Pinhais" → match correto
-- "Advogado RJ" → Rio de Janeiro (estado)
-- Qualquer cidade brasileira → reconhecida via IBGE index
+### 3.1 MÉDIO — Duplicação de políticas de storage
+Existem políticas duplicadas para avatars (`Authenticated users can upload avatars` E `Authenticated users can upload own avatars`) e portfolio (`Authenticated users can upload portfolio` E `Authenticated users can upload own portfolio`). Não causam bug mas poluem a governança.
+
+**Correção:** Remover as políticas duplicadas.
+
+### 3.2 MÉDIO — RLS "always true" em INSERT/UPDATE
+2 políticas detectadas com `WITH CHECK (true)` ou `USING (true)` para operações de escrita. Não foi possível identificar as tabelas exatas pelo scan, mas são potencialmente perigosas.
+
+**Correção:** Investigar e restringir a `auth.uid()` scoped.
+
+---
+
+## 4. CÓDIGO
+
+### 4.1 BAIXO — Uso de `as any` em queries Supabase
+`useAuditLog.ts` e `LeadEditDialog.tsx` usam `as any` para contornar tipagem — indica tabelas ou colunas não refletidas no types.ts gerado.
+
+### 4.2 BAIXO — Index.tsx com 300+ linhas
+O componente principal da home tem complexidade alta. Idealmente deveria delegar para um componente orquestrador de seções.
+
+---
+
+## 5. PLANO DE EXECUÇÃO
+
+### Fase 1 — Correções Críticas (imediato)
+1. **Fix dynamic imports** — Aplicar `importWithRetry` em TODOS os lazy imports de `Index.tsx`, `Index02.tsx`, `CityDetailPage.tsx`, `CityPage.tsx`, `CategoryPage.tsx`
+2. **Fix storage sponsors policies** — Migração SQL adicionando `has_role(auth.uid(), 'admin')` 
+3. **Fix views SECURITY DEFINER** — Migração SQL com `ALTER VIEW ... SET (security_invoker = true)` nas 7 views
+
+### Fase 2 — Segurança média
+4. **Fix audit_log INSERT policy** — Permitir qualquer autenticado inserir seu próprio log
+5. **Fix user_levels exposure** — Criar view pública limitada
+6. **Remover storage policies duplicadas**
+
+### Fase 3 — Qualidade
+7. **Melhorar LazyErrorBoundary** com feedback visual
+8. **Ativar leaked password protection**
+
+### Arquivos modificados
+- `src/pages/Index.tsx` — importWithRetry em todos lazy imports
+- `src/pages/Index02.tsx` — importWithRetry
+- `src/pages/CityDetailPage.tsx` — importWithRetry
+- `src/pages/CityPage.tsx` — importWithRetry  
+- `src/pages/CategoryPage.tsx` — importWithRetry (SponsorFooterCTA)
+- 1 migração SQL para storage policies + views + audit_log + user_levels
+
+### O que NÃO será alterado
+- GeoEngine, SIL, searchIntelligence (imutáveis)
+- Tabelas blindadas (conforme manifesto)
+- Funções DB blindadas
+- `client.ts`, `types.ts`, `.env`
 
