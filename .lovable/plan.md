@@ -1,74 +1,48 @@
-## Plano: Seletor Inteligente de Categorias (SmartCategoryPicker)
 
-### Problema Atual
 
-O seletor de categorias é uma lista plana de ~171 itens sem hierarquia visual. O usuário não vê a relação Macro → Subcategoria, e a busca é um simples `includes()` sem fuzzy matching.
+## Auditoria: Onboarding vs Serviços
 
-### Solução
+### Diagnóstico
 
-Criar `src/components/SmartCategoryPicker.tsx` — componente reutilizável com:
+| Item | Status |
+|---|---|
+| `ServiceWizard.tsx` existe | Sim, mas **nunca importado** — código morto |
+| Fluxo de criação de serviço | Único: Dialog em `DashboardServicesPage` |
+| Onboarding no Dashboard | Checklist manual (4 passos) que redireciona para páginas existentes |
+| Wizard integrado ao onboarding | **Não** — o passo 2 do onboarding manda para `/dashboard/servicos` (Dialog) |
 
-**1. Interface visual**
+### Problemas identificados
 
-- Campo de input com chips das categorias selecionadas
-- Dropdown com busca integrada
-- Resultados agrupados por macro-categoria (7 grupos visuais com headers)
-- Subcategorias indentadas sob cada macro
-- Ícone + nome em cada item
+1. **ServiceWizard é código morto** — documentado como "onboarding only" mas sem nenhum `import` em todo o projeto
+2. **Onboarding não usa wizard** — o checklist do Dashboard redireciona diretamente para as páginas normais, sem fluxo guiado
+3. **Passo 2 do onboarding ("Cadastre seus serviços")** manda para o mesmo Dialog de operação diária — não há diferenciação de experiência
 
-**2. Busca inteligente**
+### Plano
 
-- Normalização de acentos (`técnico` = `tecnico`)
-- Fuzzy parcial (digitar "eletric" encontra "Eletricista", "Eletricista Residencial", etc.)
-- Quando busca ativa: mostrar apenas subcategorias que matcham, com o header da macro visível
-- Resultado vazio: mensagem "Nenhuma categoria encontrada"
+**Arquivo: `src/pages/DashboardPage.tsx`**
+- Integrar `ServiceWizard` como modal no passo 2 do onboarding (quando `servicesCount === 0`)
+- O CTA "Crie seu primeiro serviço!" abre o Wizard em vez de navegar para `/dashboard/servicos`
+- Após conclusão do Wizard, marca `servicesDone = true` e fecha o modal
+- Para profissionais com serviços existentes, o link do checklist continua apontando para `/dashboard/servicos`
 
-**3. Hierarquia visual**
+**Arquivo: `src/components/dashboard/ServiceWizard.tsx`**
+- Nenhuma alteração estrutural — já está pronto para uso
+- Validar que `onComplete` e `onCancel` estão compatíveis com o uso como modal
 
-- Headers de macro-categoria (não clicáveis como seleção, apenas agrupamento)
-- Subcategorias clicáveis com indentação
-- Checkbox visual nos itens selecionados
-- Suporte a multi-select (já existente no fluxo atual)
+**Separação clara:**
 
-**4. Props do componente**
-
-```typescript
-interface SmartCategoryPickerProps {
-  categories: Category[];           // lista completa (macros + subs)
-  selectedIds: string[];            // IDs selecionados
-  onToggle: (id: string) => void;   // toggle seleção
-  maxSelections?: number;           // limite opcional
-}
+```text
+┌─────────────────────────┐     ┌──────────────────────────┐
+│   ONBOARDING (1ª vez)   │     │   OPERAÇÃO (dia a dia)   │
+│                         │     │                          │
+│  DashboardPage          │     │  DashboardServicesPage   │
+│  └─ ServiceWizard       │     │  └─ Dialog inline        │
+│     (modal guiado)      │     │     (criação rápida)     │
+│                         │     │                          │
+│  Quando: servicesCount=0│     │  Quando: sempre          │
+│  Contexto: setup inicial│     │  Contexto: gestão        │
+└─────────────────────────┘     └──────────────────────────┘
 ```
 
-### Arquivos alterados
+**Escopo total: 2 arquivos editados, 0 migrações SQL**
 
-
-| Arquivo                                      | Mudança                                                                 |
-| -------------------------------------------- | ----------------------------------------------------------------------- |
-| `src/components/SmartCategoryPicker.tsx`     | **Novo** — componente completo                                          |
-| `src/pages/DashboardServicesPage.tsx`        | Substituir bloco de categoria (linhas 442-489) pelo SmartCategoryPicker |
-| `src/components/admin/ServiceEditDialog.tsx` | Substituir Select simples (linhas 133-141) pelo SmartCategoryPicker     |
-
-
-### Zero alterações no banco
-
-A estrutura `categories` com `parent_id` já está correta. Nenhuma migração necessária.
-
-&nbsp;
-
-&nbsp;
-
-Plano pode ser mantido com adaptações obrigatórias abaixo:
-
-Tornar a busca obrigatoriamente fuzzy (não opcional) com fallback de similaridade, não só includes()
-
-Garantir que o componente permita seleção por digitação direta + criação implícita (texto livre válido) sem dependência de “nenhuma categoria encontrada”
-
-Remover comportamento de “resultado vazio: mensagem bloqueante” → deve ser apenas informativa, nunca impeditiva
-
-Subcategoria não pode ser tratada como dependência rígida de UI (não pode travar seleção principal)
-
-Garantir que seleção de categoria não seja pré-requisito de fluxo de publicação
-
-Restante do plano está OK e pode ser mantido.
