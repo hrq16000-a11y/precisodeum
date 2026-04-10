@@ -16,7 +16,9 @@ import { logAuditAction } from '@/hooks/useAuditLog';
 
 const MENU_LOCATIONS = [
   { value: 'header', label: 'Header' },
-  { value: 'footer', label: 'Footer' },
+  { value: 'footer', label: 'Rodapé — Profissionais' },
+  { value: 'footer_eco', label: 'Rodapé — Ecossistema' },
+  { value: 'footer_suporte', label: 'Rodapé — Suporte' },
   { value: 'sidebar', label: 'Sidebar' },
   { value: 'mobile', label: 'Mobile' },
 ];
