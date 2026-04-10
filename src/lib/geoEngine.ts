@@ -1064,5 +1064,4 @@ export const GeoEngine = {
 
 export default GeoEngine;
 
-// Re-export adapter types for external implementors
-export type { GeoCacheAdapter, GeoTelemetryAdapter };
+// Adapter types already exported at declaration site
