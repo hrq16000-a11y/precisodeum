@@ -1,33 +1,23 @@
 
 
-## Parte 2: Cidade Inteligente no Cadastro
+## Correção: Redirecionar usuário autenticado na página de cadastro
 
-### O que muda
-Substituir os campos de texto livre "Cidade" e "Estado" por um seletor inteligente com:
+### Problema
+Quando o usuário clica "Cadastrar com Google" na página de cadastro e já tem conta, o OAuth completa com sucesso mas o usuário permanece na tela de cadastro. Isso acontece porque:
+1. A `SignupPage` não verifica se o usuário já está autenticado após o retorno do OAuth
+2. O `OAuthRedirectHandler` só redireciona se houver uma URL salva em `sessionStorage`, mas a signup page não salva nenhuma
 
-1. **Botão "Usar minha localização"** — GPS do navegador + reverse geocode para auto-preencher cidade/estado
-2. **Busca em tempo real** — Input com autocomplete consultando os 5.570 municípios brasileiros (API IBGE, com cache)
-3. **Estado auto-preenchido** — Ao selecionar uma cidade, o estado é preenchido automaticamente (readonly)
-4. **Coordenadas salvas** — Geocodifica via Nominatim para salvar lat/lon no provider
+### Solução
+Adicionar um `useEffect` na `SignupPage` que detecta quando o usuário está autenticado e redireciona automaticamente para o dashboard apropriado (baseado no `profile_type`).
 
-### Implementação
+### Arquivo editado
+**`src/pages/SignupPage.tsx`**
+- Importar `useAuth` 
+- Adicionar `useEffect` que observa `user` e `loading` do auth context
+- Quando detectar usuário autenticado, consultar `profile_type` e redirecionar:
+  - `client` → `/`
+  - `rh` → `/dashboard/vagas`
+  - Outros → `/dashboard/servicos`
 
-**Arquivo: `src/pages/SignupPage.tsx`**
-
-- Importar e reutilizar `fetchAllMunicipalities()` e `geocodeCity()` do `GeoLocationChip.tsx` (extrair para módulo compartilhado `src/lib/geoUtils.ts`)
-- Criar novo módulo `src/lib/geoUtils.ts` com as funções `fetchAllMunicipalities`, `geocodeCity` e `normalize` extraídas do GeoLocationChip
-- Substituir os 2 inputs (cidade + estado) por:
-  - Botão "📍 Usar minha localização" (chama `navigator.geolocation` + reverse geocode)
-  - Input com busca fuzzy nos municípios + dropdown de sugestões
-  - Campo Estado readonly (auto-preenchido)
-- Adicionar `latitude` e `longitude` ao form state
-- No `handleSubmit`, salvar lat/lon no insert do provider
-
-**Arquivo: `src/components/GeoLocationChip.tsx`**
-- Importar funções de `src/lib/geoUtils.ts` em vez de defini-las localmente
-
-### Arquivos afetados
-1. **Criar** `src/lib/geoUtils.ts` — funções compartilhadas
-2. **Editar** `src/pages/SignupPage.tsx` — novo seletor de cidade
-3. **Editar** `src/components/GeoLocationChip.tsx` — importar de geoUtils
+Mesma lógica de redirecionamento já usada no `LoginPage.getRedirectForProfile()`.
 
