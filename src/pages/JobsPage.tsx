@@ -17,7 +17,7 @@ import { lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FadeInSection from '@/components/FadeInSection';
 
-const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
 
 const JOB_TYPES = [
   { value: '', label: 'Todos os tipos' },

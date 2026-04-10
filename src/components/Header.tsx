@@ -358,6 +358,6 @@ const Header = () => {
   );
 };
 
-const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
 
 export default Header;
