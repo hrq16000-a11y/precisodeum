@@ -494,11 +494,11 @@ const SignupPage = () => {
                     {/* Smart category picker with hierarchy */}
                     <div className="relative">
                       <label className="mb-1 block text-sm font-medium text-foreground">Categoria principal</label>
-                      {form.categoryName && (
+                      {(form.categoryName || form.categoryCustom) && (
                         <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
-                          {form.categoryName}
+                          {form.categoryName || form.categoryCustom}
                           <button type="button" onClick={() => {
-                            setForm(prev => ({ ...prev, categoryId: '', categoryName: '' }));
+                            setForm(prev => ({ ...prev, categoryId: '', categoryName: '', categoryCustom: '' }));
                             setCategorySearch('');
                           }} className="ml-0.5 hover:text-destructive">✕</button>
                         </div>
