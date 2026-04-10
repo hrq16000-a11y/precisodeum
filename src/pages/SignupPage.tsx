@@ -94,16 +94,35 @@ const SignupPage = () => {
   const { data: categories = [] } = useQuery({
     queryKey: ['signup-categories'],
     queryFn: async () => {
-      const { data } = await supabase.from('categories').select('id, name').order('name');
+      const { data } = await supabase.from('categories').select('id, name, icon, parent_id').is('deleted_at', null).order('name');
       return data || [];
     },
   });
 
-  const filteredCategories = useMemo(() => {
-    if (!categorySearch.trim()) return categories.slice(0, 10);
-    const q = categorySearch.toLowerCase();
-    return categories.filter((c: any) => c.name.toLowerCase().includes(q)).slice(0, 10);
-  }, [categories, categorySearch]);
+  const macroCategories = useMemo(() => categories.filter((c: any) => !c.parent_id), [categories]);
+  const subsByParent = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    categories.forEach((c: any) => { if (c.parent_id) (map[c.parent_id] ??= []).push(c); });
+    return map;
+  }, [categories]);
+
+  const filteredCategoryTree = useMemo(() => {
+    if (!categorySearch.trim()) {
+      return macroCategories.map((m: any) => ({ macro: m, subs: subsByParent[m.id] || [] }));
+    }
+    const q = categorySearch.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const results: { macro: any; subs: any[] }[] = [];
+    for (const macro of macroCategories) {
+      const macroName = (macro.name as string).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const subs = (subsByParent[macro.id] || []).filter((s: any) =>
+        (s.name as string).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q)
+      );
+      if (macroName.includes(q) || subs.length > 0) {
+        results.push({ macro, subs: macroName.includes(q) ? subsByParent[macro.id] || [] : subs });
+      }
+    }
+    return results;
+  }, [categorySearch, macroCategories, subsByParent]);
 
   const filteredCities = useMemo(() => {
     if (!citySearch.trim()) return allCities.slice(0, 10);
