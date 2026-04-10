@@ -1,5 +1,5 @@
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
 import { getPositionConfig } from '@/config/sponsorPositions';
 
@@ -100,6 +100,8 @@ const AdBanner = React.forwardRef<HTMLDivElement, AdBannerProps>(({ position, cl
       </div>
     </div>
   );
-};
+});
+
+AdBanner.displayName = 'AdBanner';
 
 export default AdBanner;

@@ -1,6 +1,6 @@
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect, useRef, useMemo, useState } from 'react';
 import SponsorImage from '@/components/SponsorImage';
 
 interface SlotSponsor {
@@ -245,7 +245,9 @@ const AdSlot = React.forwardRef<HTMLElement, AdSlotProps>(({ slotSlug, className
       </div>
     </section>
   );
-};
+});
+
+AdSlot.displayName = 'AdSlot';
 
 export { useSlotSponsors, trackMetric };
 export default AdSlot;
