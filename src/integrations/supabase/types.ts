@@ -1569,6 +1569,7 @@ export type Database = {
           business_name: string | null
           category_id: string | null
           city: string
+          cnpj: string | null
           created_at: string
           deleted_at: string | null
           description: string
@@ -1603,6 +1604,7 @@ export type Database = {
           business_name?: string | null
           category_id?: string | null
           city?: string
+          cnpj?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string
@@ -1637,6 +1639,7 @@ export type Database = {
           business_name?: string | null
           category_id?: string | null
           city?: string
+          cnpj?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string
