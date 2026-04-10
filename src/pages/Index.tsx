@@ -58,7 +58,19 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
   render() { return this.state.hasError ? null : this.props.children; }
 }
 
-const SectionFallback = () => null;
+// Minimal height placeholder to prevent CLS from lazy sections
+const SECTION_MIN_HEIGHTS: Record<string, string> = {
+  categories: 'min-h-[280px]',
+  stats: 'min-h-[120px]',
+  highlights: 'min-h-[200px]',
+  featured: 'min-h-[340px]',
+  popular: 'min-h-[280px]',
+};
+
+const SectionFallback = ({ slug }: { slug?: string }) => {
+  const h = slug ? SECTION_MIN_HEIGHTS[slug] : undefined;
+  return h ? <div className={h} /> : null;
+};
 
 // Default section order
 const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
