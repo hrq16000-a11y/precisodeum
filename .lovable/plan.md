@@ -1,416 +1,197 @@
-## Inteligência Geográfica v3 — Normalização, Score, Raio Dinâmico e Correções
+## Limpeza de Dados Sujos no Banco — Providers
 
-### Resumo
+### Problema
 
-Refatoração completa do sistema de busca geográfica para eliminar bugs silenciosos de normalização, adicionar ranking por relevância geográfica (score), raio dinâmico por tipo de localidade e memoização para performance.
+Encontrei **17 registros sujos** no campo `city` dos providers, além de 14 registros completamente vazios. Isso causa exclusão silenciosa do algoritmo de busca geográfica.
 
-### O que muda para o usuário
+### Dados sujos encontrados
 
-- Resultados mais precisos e ordenados por proximidade real
-- Cidades pequenas mostram raio menor (menos "poluição"), capitais mostram raio maior
-- Performance melhor em listas grandes
+```text
+REGISTRO SUJO                           → CORREÇÃO
+─────────────────────────────────────────────────────
+"Curi"                        (1x)      → "Curitiba"
+"curitiba"                    (1x)      → "Curitiba"
+"CURITIBA"                    (2x)      → "Curitiba"
+"Curitiba e região"           (1x)      → "Curitiba"
+"Curitiba PR"                 (1x)      → "Curitiba"
+"curitiba/ sao jose dos pinhais" (1x)   → "Curitiba"
+"Região Metropolitana de Curitiba" (1x) → "Curitiba" + state "PR"
+"CAMPO LARGO"                 (1x)      → "Campo Largo"
+"Fazenda Rio grande"          (1x)      → "Fazenda Rio Grande"
+"São José Dos Pinhais"        (2x)      → "São José dos Pinhais"
+"São josé dos pinhais"        (1x)      → "São José dos Pinhais"
+"Rio de janeiro"              (1x)      → "Rio de Janeiro"
+"RIO DE JANEIRO"              (1x)      → "Rio de Janeiro"
+"Ribeirão preto"              (1x)      → "Ribeirão Preto"
+"Sao Bernardo do campo"       (1x)      → "São Bernardo do Campo"
+"Maringá e regiao"            (1x)      → "Maringá"
+"Curitiba" com state "PA"     (1x)      → state "PR" (erro óbvio)
+14 registros vazios (city='')            → manter (cadastros incompletos)
+```
 
----
+### Execução
 
-### Mudanças por arquivo
+**1. UPDATE via insert tool** (dados, não schema):
 
-**1.** `src/lib/normalize.ts` **(NOVO)**  
-Função única de normalização global com `replace(/[^a-z]/g, '')` — usado por todos os módulos geo.
+```sql
+-- Curitiba variants
+UPDATE providers SET city = 'Curitiba' WHERE city IN ('Curi','curitiba','CURITIBA','Curitiba e região','Curitiba PR');
+UPDATE providers SET city = 'Curitiba' WHERE city = 'curitiba/ sao jose dos pinhais';
+UPDATE providers SET city = 'Curitiba', state = 'PR' WHERE city = 'Região Metropolitana de Curitiba';
 
-**2.** `src/lib/cityCoords.ts` **(CORRIGIR)**
+-- Casing fixes
+UPDATE providers SET city = 'Campo Largo' WHERE city = 'CAMPO LARGO';
+UPDATE providers SET city = 'Fazenda Rio Grande' WHERE city = 'Fazenda Rio grande';
+UPDATE providers SET city = 'São José dos Pinhais' WHERE city IN ('São José Dos Pinhais','São josé dos pinhais');
+UPDATE providers SET city = 'Rio de Janeiro' WHERE city IN ('Rio de janeiro','RIO DE JANEIRO');
+UPDATE providers SET city = 'Ribeirão Preto' WHERE city = 'Ribeirão preto';
+UPDATE providers SET city = 'São Bernardo do Campo' WHERE city = 'Sao Bernardo do campo';
+UPDATE providers SET city = 'Maringá' WHERE city = 'Maringá e regiao';
 
-- Corrigir chaves inválidas: `americanA` → `americana`, `petr0polis` → `petropolis`, `nilop0lis` → `nilopolis`, `pontaGrossa` → `pontagrossa`, `campoLargo` → `campolargo`, `sabinoB` → remover (duplicata de `sabara`), `novohamburgO` → `novohamburgo`, `santaLuzia` → `santaluzia`, `montesclaros2` → remover (duplicata)
-- Importar e usar `normalize()` do módulo compartilhado na função `normalizeForLookup`
-- Adicionar memoização no `getCityCoords` com Map cache
+-- State fix
+UPDATE providers SET state = 'PR' WHERE city = 'Curitiba' AND state = 'PA';
+```
 
-**3.** `src/lib/metroRegions.ts` **(CORRIGIR)**
+**2. Validação** — query de verificação pós-update
 
-- Substituir a função local `n()` por import do `normalize()` compartilhado
-- Corrigir chaves com caracteres inválidos nos members (ex: `contendA`, `rioGrandedaserrA`, `novaLima`, `rioAcima`, `saojosedemipibU`, `condE`, `rioLargo`, `barradeSantoantonio`)
+**3. Resultado**: 100% dos providers com nomes de cidade padronizados e compatíveis com o algoritmo de RM/Haversine
 
-**4.** `src/hooks/useProviders.tsx` **(REFATORAR)**
+### Arquivos alterados
 
-Substituir `normalizeCityName` pelo `normalize` compartilhado.
-
-Adicionar funções:
-
-- `resolveProviderCoords(provider)` — coords reais → cache → null
-- `dynamicRadius(cityNorm)` — RM: 100km, capital: 120km, padrão: 60km
-- `geoScore(provider, userCity, userState, userCoords)` — score numérico:
-  - +100 mesma cidade
-  - +70 mesma RM
-  - +50 distância ≤ 30km
-  - +30 distância ≤ 80km
-  - +10 mesmo estado
-- `isCapital(cityNorm)` — lista das 27 capitais
-
-Refatorar `matchesGeoContext`:
-
-1. Haversine (coords reais ou cache) com raio dinâmico → prioridade máxima
-2. RM membership → bloqueia se detectou RM e não é membro
-3. Fuzzy por nome → fallback final
-
-Refatorar `filterAndRankProviders`:
-
-- Calcular `matchesGeoContext` UMA vez por provider (não 3x como hoje)
-- Ordenar por `geoScore` DESC integrado ao score existente (`_finalScore`)
-- Memoizar normalizações dentro do loop
-
----
-
-### Arquivos afetados
-
-
-| Arquivo                      | Ação                                                              |
-| ---------------------------- | ----------------------------------------------------------------- |
-| `src/lib/normalize.ts`       | **Criar**                                                         |
-| `src/lib/cityCoords.ts`      | **Corrigir** chaves + usar normalize compartilhado                |
-| `src/lib/metroRegions.ts`    | **Corrigir** members + usar normalize compartilhado               |
-| `src/hooks/useProviders.tsx` | **Refatorar** — score, raio dinâmico, memoização, normalize único |
-
-
-### Resultado esperado
-
-- Zero chaves inválidas que quebram lookup silenciosamente
-- Normalização 100% consistente entre módulos
-- Ranking real por proximidade (não só filtro binário)
-- Raio inteligente por contexto
-- Performance: normalize chamado 1x por provider (não 3-5x)
+Nenhum arquivo de código será alterado. Apenas dados no banco.
 
 &nbsp;
 
-...............
+....
+
+&nbsp;
+
+SIM.
+
+&nbsp;
+
+Plano final validado:
+
+&nbsp;
+
+1. Executar exatamente como proposto (correção direta no banco)
 
 &nbsp;
 
 &nbsp;
 
-PROMPT ÚNICO (EXECUÇÃO COMPLETA — LOVABLE)
-
-Implemente a Geographic Intelligence v3 FINAL com foco em consistência, performance e ranking real. NÃO alterar comportamento funcional existente, apenas melhorar precisão, ordenação e eficiência.
-
-1. CRIAR src/lib/normalize.ts (FONTE ÚNICA)
-
-TypeScript
-
-const normalizeCache = new Map<string, string>();
+2. Adicionar reforço mínimo (obrigatório):
 
 &nbsp;
 
-export function normalize(value: string | null | undefined): string {
-
-  if (!value) return '';
+&nbsp;
 
 &nbsp;
 
-  if (normalizeCache.has(value)) {
+-- Normalização futura (proteção)
 
-    return normalizeCache.get(value)!;
+CREATE OR REPLACE FUNCTION clean_city_input(txt text)
 
-  }
+RETURNS text AS $$
 
-&nbsp;
+BEGIN
 
-  const normalized = value
+  RETURN INITCAP(TRIM(txt));
 
-    .toLowerCase()
+END;
 
-    .normalize('NFD')
-
-    .replace(/[\u0300-\u036f]/g, '')
-
-    .replace(/[^a-z]/g, '');
+$$ LANGUAGE plpgsql;
 
 &nbsp;
 
-  normalizeCache.set(value, normalized);
-
-  return normalized;
-
-}
-
-2. CORRIGIR cityCoords.ts
-
-Remover TODAS chaves inválidas
-
-Padronizar 100% via normalize
-
-Adicionar cache interno
-
-TypeScript
-
-import { normalize } from './normalize';
+-- Trigger opcional (recomendado)
 
 &nbsp;
 
-const coordsCache = new Map<string, { lat: number; lon: number } | null>();
+3. Validação crítica pós-execução:
 
 &nbsp;
 
-export function getCityCoords(city: string) {
-
-  const key = normalize(city);
+&nbsp;
 
 &nbsp;
 
-  if (coordsCache.has(key)) {
+SELECT COUNT(*) 
 
-    return coordsCache.get(key);
+FROM providers 
 
-  }
-
-&nbsp;
-
-  const entry = CITY_COORDS[key] || null;
+WHERE city ~ '[^A-Za-zÀ-ÿ ]';
 
 &nbsp;
 
-  const result = entry ? { lat: entry.lat, lon: entry.lon } : null;
+→ esperado: 0
 
 &nbsp;
 
-  coordsCache.set(key, result);
+SELECT city, COUNT(*) 
 
-  return result;
+FROM providers 
 
-}
+GROUP BY city 
 
-3. CORRIGIR metroRegions.ts
-
-Remover qualquer normalização local
-
-Usar apenas normalize
-
-Garantir que TODOS members estejam normalizados previamente
-
-4. REFATORAR useProviders.tsx (CORE DO SISTEMA)
-
-4.1 Resolver coordenadas do provider (com fallback inteligente)
-
-TypeScript
-
-function resolveProviderCoords(provider) {
-
-  if (provider.latitude && provider.longitude) {
-
-    return { lat: provider.latitude, lon: provider.longitude };
-
-  }
+ORDER BY COUNT(*) DESC;
 
 &nbsp;
 
-  return getCityCoords(provider.city);
-
-}
-
-4.2 Detectar capital
-
-TypeScript
-
-const CAPITALS = new Set([
-
-  'saopaulo','riodejaneiro','brasilia','salvador','fortaleza','belo horizonte',
-
-  'manaus','curitiba','recife','portoalegre','belem','goiania','guarulhos',
-
-  'campinas','saoluis','maceio','natal','teresina','campo grande','joaopessoa',
-
-  'aracaju','cuiaba','florianopolis','palmas','macapa','boavista','riobranco'
-
-]);
+4. Teste funcional (obrigatório):
 
 &nbsp;
 
-function isCapital(cityNorm) {
-
-  return CAPITALS.has(cityNorm);
-
-}
-
-4.3 Raio dinâmico
-
-TypeScript
-
-function dynamicRadius(cityNorm, metroDetected) {
-
-  if (metroDetected) return 100;
-
-  if (isCapital(cityNorm)) return 120;
-
-  return 60;
-
-}
-
-4.4 GEO SCORE (CORE DO DIFERENCIAL)
-
-TypeScript
-
-function geoScore(provider, userCityNorm, userStateNorm, userCoords, metro) {
-
-  const providerCityNorm = normalize(provider.city);
-
-  const providerStateNorm = normalize(provider.state);
+&nbsp;
 
 &nbsp;
 
-  let score = 0;
+Curitiba → 100% dos locais aparecem
 
 &nbsp;
 
-  if (providerCityNorm === userCityNorm) score += 100;
+Nenhum falso negativo
 
 &nbsp;
 
-  if (metro && isMemberOfMetro(providerCityNorm, metro)) score += 70;
+Ranking consistente
 
 &nbsp;
 
-  const coords = resolveProviderCoords(provider);
+&nbsp;
+
+5. Regra permanente:
 
 &nbsp;
 
-  if (coords && userCoords) {
-
-    const d = haversine(userCoords, coords);
+&nbsp;
 
 &nbsp;
 
-    if (d <= 30) score += 50;
-
-    else if (d <= 80) score += 30;
-
-  }
+Input de cidade NUNCA livre
 
 &nbsp;
 
-  if (providerStateNorm === userStateNorm) score += 10;
+Sempre:
 
 &nbsp;
 
-  return score;
-
-}
-
-4.5 MATCH GEO (COM BLOQUEIO INTELIGENTE)
-
-TypeScript
-
-function matchesGeoContext(provider, context) {
-
-  const { userCityNorm, userStateNorm, userCoords, metro } = context;
+autocomplete
 
 &nbsp;
 
-  const providerCityNorm = normalize(provider.city);
-
-  const providerStateNorm = normalize(provider.state);
+ou select controlado
 
 &nbsp;
 
-  const coords = resolveProviderCoords(provider);
+&nbsp;
 
 &nbsp;
 
-  if (coords && userCoords) {
+Conclusão:
 
-    const radius = dynamicRadius(userCityNorm, !!metro);
+✔ abordagem correta
 
-    const d = haversine(userCoords, coords);
+✔ impacto imediato
 
-&nbsp;
-
-    if (d <= radius) return true;
-
-  }
-
-&nbsp;
-
-  if (metro) {
-
-    return isMemberOfMetro(providerCityNorm, metro);
-
-  }
-
-&nbsp;
-
-  if (providerCityNorm.includes(userCityNorm)) return true;
-
-&nbsp;
-
-  if (providerStateNorm === userStateNorm) return true;
-
-&nbsp;
-
-  return false;
-
-}
-
-5. FILTER + RANK (CRÍTICO)
-
-NÃO recalcular normalize múltiplas vezes
-
-NÃO rodar match 3x
-
-TypeScript
-
-const results = providers
-
-  .map((p) => {
-
-    const match = matchesGeoContext(p, context);
-
-    if (!match) return null;
-
-&nbsp;
-
-    const gScore = geoScore(p, context.userCityNorm, context.userStateNorm, context.userCoords, context.metro);
-
-&nbsp;
-
-    return {
-
-      ...p,
-
-      _geoScore: gScore,
-
-      _finalScore: (p._score || 0) + gScore
-
-    };
-
-  })
-
-  .filter(Boolean)
-
-  .sort((a, b) => b._finalScore - a._finalScore);
-
-6. OTIMIZAÇÃO FINAL (OBRIGATÓRIO)
-
-Memoizar context com useMemo
-
-Memoizar normalize do user
-
-NÃO recalcular dentro de loops
-
-7. RESULTADO ESPERADO
-
-Zero falhas silenciosas de normalização
-
-Haversine funcionando mesmo sem backfill
-
-RM 100% correta (sem “Londrina em Curitiba”)
-
-Ranking por proximidade real (diferencial competitivo)
-
-Performance estável mesmo com escala
-
-8. NÃO FAZER
-
-NÃO usar API externa
-
-NÃO alterar schema do banco
-
-NÃO alterar UI
-
-NÃO adicionar logs visíveis ao usuário
-
-Executar exatamente como descrito.
+✔ sem risco no algoritmo
