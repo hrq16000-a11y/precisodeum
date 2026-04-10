@@ -91,7 +91,7 @@ function trackMetric(sponsorId: string, slotSlug: string, eventType: 'impression
   } as any).then(() => {});
 }
 
-const AdSlot = ({ slotSlug, className = '', layout = 'banner', category, city, state, maxAds }: AdSlotProps) => {
+const AdSlot = React.forwardRef<HTMLElement, AdSlotProps>(({ slotSlug, className = '', layout = 'banner', category, city, state, maxAds }, ref) => {
   const { data: sponsors = [] } = useSlotSponsors(slotSlug, category, city, state);
   const tracked = useRef(new Set<string>());
   const [currentIndex, setCurrentIndex] = useState(0);

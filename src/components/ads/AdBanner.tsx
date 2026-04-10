@@ -10,7 +10,7 @@ interface AdBannerProps {
   sticky?: boolean;
 }
 
-const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBannerProps) => {
+const AdBanner = React.forwardRef<HTMLDivElement, AdBannerProps>(({ position, className = '', maxWidth, sticky = false }, ref) => {
   const { data: rawSponsors = [], trackImpression, trackClick } = useSponsorsBySlot(position);
   const config = getPositionConfig(position);
   const sponsors = useMemo(

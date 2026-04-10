@@ -282,7 +282,6 @@ const Header = () => {
                         onClick={() => setMobileOpen(false)}
                       >
                         <span className="flex items-center gap-2">
-                          {item.icon && <span>{item.icon}</span>}
                           {item.label}
                         </span>
                         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
@@ -294,7 +293,6 @@ const Header = () => {
                         onClick={() => setMobileOpen(false)}
                       >
                         <span className="flex items-center gap-2">
-                          {item.icon && <span>{item.icon}</span>}
                           {item.label}
                         </span>
                         {active ? (
