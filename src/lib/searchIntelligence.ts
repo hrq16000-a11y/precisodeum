@@ -65,19 +65,37 @@ let _config: SILConfig = { ...DEFAULT_CONFIG };
 let _governanceLoaded = false;
 
 /**
- * Load SIL config overrides from Governance Engine (non-blocking).
+ * Load SIL config overrides from Governance Engine AND Control Plane registry.
+ * Control Plane values (post-enforcement) take priority.
  * Falls back to DEFAULT_CONFIG if governance is unavailable.
  */
 async function loadGovernanceConfig(): Promise<void> {
   if (_governanceLoaded) return;
   try {
+    // 1. Load raw governance overrides
     const overrides = await GovernanceEngine.getRuleValue<Partial<SILConfig>>(
       'sil', 'config_overrides', {}
     );
     if (overrides && typeof overrides === 'object') {
       _config = { ...DEFAULT_CONFIG, ...overrides };
-      _governanceLoaded = true;
     }
+
+    // 2. Apply Control Plane registry values (post-enforcement, highest priority)
+    const cpGeoWeight = ControlRegistry.getValue<number>('sil', 'geoWeight');
+    const cpServiceWeight = ControlRegistry.getValue<number>('sil', 'serviceWeight');
+    const cpConfidence = ControlRegistry.getValue<number>('sil', 'confidenceThreshold');
+    const cpGeoFilter = ControlRegistry.getValue<boolean>('sil', 'enableGeoFiltering');
+    const cpHybridBoost = ControlRegistry.getValue<boolean>('sil', 'enableHybridBoost');
+    const cpFallback = ControlRegistry.getValue<FallbackMode>('sil', 'fallbackMode');
+
+    if (cpGeoWeight !== undefined) _config.geoWeight = cpGeoWeight;
+    if (cpServiceWeight !== undefined) _config.serviceWeight = cpServiceWeight;
+    if (cpConfidence !== undefined) _config.confidenceThreshold = cpConfidence;
+    if (cpGeoFilter !== undefined) _config.enableGeoFiltering = cpGeoFilter;
+    if (cpHybridBoost !== undefined) _config.enableHybridBoost = cpHybridBoost;
+    if (cpFallback !== undefined) _config.fallbackMode = cpFallback;
+
+    _governanceLoaded = true;
   } catch {
     // Governance unavailable — continue with defaults
   }
