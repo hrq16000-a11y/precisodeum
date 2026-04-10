@@ -336,17 +336,31 @@ export function useFeaturedProviders() {
   });
 }
 
-/**
- * Normalize a city/state string for fuzzy comparison.
- * Removes accents, lowercases, strips hyphens/spaces.
- */
-function normalizeCityName(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[-_\s]+/g, '')
-    .trim();
+// --- Geo Intelligence v3 ---
+
+const CAPITALS = new Set([
+  'saopaulo','riodejaneiro','brasilia','salvador','fortaleza','belohorizonte',
+  'manaus','curitiba','recife','portoalegre','belem','goiania',
+  'saoluis','maceio','natal','teresina','campogrande','joaopessoa',
+  'aracaju','cuiaba','florianopolis','palmas','macapa','boavista','riobranco',
+  'vitoria','portovelho',
+]);
+
+function isCapital(cityNorm: string): boolean {
+  return CAPITALS.has(cityNorm);
+}
+
+function resolveProviderCoords(provider: DbProvider): { lat: number; lon: number } | null {
+  if (hasCoordinates(provider.latitude, provider.longitude)) {
+    return { lat: provider.latitude!, lon: provider.longitude! };
+  }
+  return getCityCoords(provider.city);
+}
+
+function dynamicRadius(cityNorm: string, metroDetected: boolean): number {
+  if (metroDetected) return 100;
+  if (isCapital(cityNorm)) return 120;
+  return 60;
 }
 
 /**
@@ -355,91 +369,112 @@ function normalizeCityName(name: string): string {
  * "Grande São Paulo" → "saopaulo"
  */
 function extractCoreCity(cityNorm: string): string {
-  // "regiaometropolitanade..." → pole city
   if (cityNorm.startsWith('regiaometropolitanade')) {
     return cityNorm.slice('regiaometropolitanade'.length);
   }
   if (cityNorm.startsWith('regiaometropolitana')) {
     return cityNorm.slice('regiaometropolitana'.length);
   }
-  // "grande..." → pole city
   if (cityNorm.startsWith('grande')) {
     return cityNorm.slice(6);
   }
   return cityNorm;
 }
 
-/**
- * Check if provider is within the user's region using 3-layer intelligence:
- * 1. Haversine distance (with static coord fallback for providers)
- * 2. Metro region membership matching
- * 3. City name fuzzy matching
- */
-function matchesGeoContext(
-  provider: DbProvider,
-  cityNorm: string,
-  stateNorm?: string,
-  userLat?: number | null,
-  userLon?: number | null,
-  radiusKm?: number
-): boolean {
-  if (!cityNorm && !stateNorm) return true;
+interface GeoContext {
+  cityNorm: string;
+  stateNorm: string;
+  coreCity: string;
+  userCoords: { latitude: number; longitude: number } | null;
+  metro: ReturnType<typeof resolveMetroRegion>;
+  radius: number;
+}
 
-  const effectiveRadius = radiusKm || SERVICE_RADIUS_KM;
-  const pCityNorm = normalizeCityName(provider.city);
-  const pStateNorm = normalizeCityName(provider.state);
-
-  // --- Layer 1: Distance-based (Haversine) ---
-  if (hasCoordinates(userLat, userLon)) {
-    let provLat = provider.latitude;
-    let provLon = provider.longitude;
-
-    // If provider has no coords, try static cache
-    if (!hasCoordinates(provLat, provLon)) {
-      const cached = getCityCoords(provider.city);
-      if (cached) {
-        provLat = cached.lat;
-        provLon = cached.lon;
-      }
-    }
-
-    if (hasCoordinates(provLat, provLon)) {
-      const dist = calculateDistanceKm(
-        { latitude: userLat!, longitude: userLon! },
-        { latitude: provLat!, longitude: provLon! }
-      );
-      return dist <= effectiveRadius;
-    }
-  }
-
-  // --- Layer 2: Metro region membership ---
-  const metro = resolveMetroRegion(cityNorm, stateNorm);
-  if (metro) {
-    // Check if provider's city is a member of this metro region
-    if (isMemberOfMetro(pCityNorm, metro)) return true;
-
-    // Also check if provider is the pole city itself
-    const coreCity = extractCoreCity(cityNorm);
-    if (pCityNorm === coreCity) return true;
-
-    // If we found a metro region, only match members — don't fall through
-    // to fuzzy matching (which would be too broad)
-    return false;
-  }
-
-  // --- Layer 3: City name fuzzy matching ---
+function buildGeoContext(
+  city: string, state?: string,
+  userLat?: number | null, userLon?: number | null,
+): GeoContext {
+  const cityNorm = normalize(city);
+  const stateNorm = normalize(state);
   const coreCity = extractCoreCity(cityNorm);
+  const metro = cityNorm ? resolveMetroRegion(cityNorm, stateNorm || undefined) : null;
+  const userCoords = hasCoordinates(userLat, userLon)
+    ? { latitude: userLat!, longitude: userLon! }
+    : null;
+  const radius = dynamicRadius(coreCity || cityNorm, !!metro);
+  return { cityNorm, stateNorm, coreCity, userCoords, metro, radius };
+}
 
-  if (cityNorm && pCityNorm === cityNorm) return true;
-  if (cityNorm && (pCityNorm.includes(cityNorm) || cityNorm.includes(pCityNorm))) return true;
-  if (coreCity !== cityNorm && coreCity) {
-    if (pCityNorm === coreCity) return true;
-    if (pCityNorm.includes(coreCity) || coreCity.includes(pCityNorm)) return true;
+function matchesGeoContext(
+  pCityNorm: string,
+  pStateNorm: string,
+  provCoords: { lat: number; lon: number } | null,
+  ctx: GeoContext,
+): boolean {
+  if (!ctx.cityNorm && !ctx.stateNorm) return true;
+
+  // Layer 1: Haversine with dynamic radius
+  if (ctx.userCoords && provCoords) {
+    const dist = calculateDistanceKm(
+      ctx.userCoords,
+      { latitude: provCoords.lat, longitude: provCoords.lon },
+    );
+    if (dist <= ctx.radius) return true;
   }
+
+  // Layer 2: Metro region membership (blocks non-members)
+  if (ctx.metro) {
+    return isMemberOfMetro(pCityNorm, ctx.metro) || pCityNorm === ctx.coreCity;
+  }
+
+  // Layer 3: Fuzzy city name match
+  if (ctx.cityNorm) {
+    if (pCityNorm === ctx.cityNorm) return true;
+    if (pCityNorm.includes(ctx.cityNorm) || ctx.cityNorm.includes(pCityNorm)) return true;
+    if (ctx.coreCity !== ctx.cityNorm) {
+      if (pCityNorm === ctx.coreCity) return true;
+      if (pCityNorm.includes(ctx.coreCity) || ctx.coreCity.includes(pCityNorm)) return true;
+    }
+  }
+
+  // Layer 4: Same state fallback (only if no metro detected)
+  if (ctx.stateNorm && pStateNorm === ctx.stateNorm) return true;
+
   return false;
 }
 
-export { normalizeCityName, matchesGeoContext };
+function geoScore(
+  pCityNorm: string,
+  pStateNorm: string,
+  provCoords: { lat: number; lon: number } | null,
+  ctx: GeoContext,
+): number {
+  let score = 0;
+
+  if (pCityNorm === (ctx.coreCity || ctx.cityNorm)) score += 100;
+
+  if (ctx.metro && isMemberOfMetro(pCityNorm, ctx.metro)) score += 70;
+
+  if (ctx.userCoords && provCoords) {
+    const d = calculateDistanceKm(
+      ctx.userCoords,
+      { latitude: provCoords.lat, longitude: provCoords.lon },
+    );
+    if (d <= 30) score += 50;
+    else if (d <= 80) score += 30;
+  }
+
+  if (pStateNorm === ctx.stateNorm) score += 10;
+
+  return score;
+}
+
+// Keep backward compat export
+function normalizeCityName(name: string): string {
+  return normalize(name);
+}
+
+export { normalizeCityName, matchesGeoContext as matchesGeoContextFn };
 
 const MIN_LOCAL_RESULTS = 3;
 
@@ -480,31 +515,47 @@ export function filterAndRankProviders(
     );
   }
 
-  const cityNorm = city ? normalizeCityName(city) : '';
-  const stateNorm = state ? normalizeCityName(state) : '';
+  const ctx = buildGeoContext(city, state, userLat, userLon);
+  // Override radius if explicitly provided
+  if (radiusKm) (ctx as any).radius = radiusKm;
 
-  if (cityNorm || stateNorm) {
-    const localResults = results.filter((p) => matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon, radiusKm));
-    const otherResults = results.filter((p) => !matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon, radiusKm));
+  if (ctx.cityNorm || ctx.stateNorm) {
+    // Pre-compute normalized values + coords once per provider
+    const enriched = results.map((p) => {
+      const pCityNorm = normalize(p.city);
+      const pStateNorm = normalize(p.state);
+      const provCoords = resolveProviderCoords(p);
+      const isLocal = matchesGeoContext(pCityNorm, pStateNorm, provCoords, ctx);
+      const gs = isLocal ? geoScore(pCityNorm, pStateNorm, provCoords, ctx) : 0;
+      return { p, pCityNorm, isLocal, gs };
+    });
 
+    const localResults = enriched.filter((e) => e.isLocal);
+    const otherResults = enriched.filter((e) => !e.isLocal);
+
+    let final: typeof enriched;
     if (localResults.length >= MIN_LOCAL_RESULTS) {
-      results = localResults;
+      final = localResults;
     } else {
-      results = [...localResults, ...otherResults];
+      final = [...localResults, ...otherResults];
     }
+
+    // Sort by: local first, then geoScore, then existing _finalScore
+    final.sort((a, b) => {
+      if (a.isLocal !== b.isLocal) return a.isLocal ? -1 : 1;
+      if (a.gs !== b.gs) return b.gs - a.gs;
+      const aScore = (a.p as any)._finalScore || (a.p as any)._contentScore || 0;
+      const bScore = (b.p as any)._finalScore || (b.p as any)._contentScore || 0;
+      if (aScore !== bScore) return bScore - aScore;
+      if (b.p.rating !== a.p.rating) return b.p.rating - a.p.rating;
+      return b.p.reviewCount - a.p.reviewCount;
+    });
+
+    return final.map((e) => e.p);
   }
 
+  // No geo filter — sort by existing score
   results.sort((a, b) => {
-    if (cityNorm || stateNorm) {
-      const aLocal = matchesGeoContext(a, cityNorm, stateNorm, userLat, userLon, radiusKm) ? 0 : 1;
-      const bLocal = matchesGeoContext(b, cityNorm, stateNorm, userLat, userLon, radiusKm) ? 0 : 1;
-      if (aLocal !== bLocal) return aLocal - bLocal;
-    }
-    if (cityNorm) {
-      const aCityMatch = normalizeCityName(a.city) === cityNorm || normalizeCityName(a.city).includes(cityNorm) || cityNorm.includes(normalizeCityName(a.city));
-      const bCityMatch = normalizeCityName(b.city) === cityNorm || normalizeCityName(b.city).includes(cityNorm) || cityNorm.includes(normalizeCityName(b.city));
-      if (aCityMatch !== bCityMatch) return aCityMatch ? -1 : 1;
-    }
     const aScore = (a as any)._finalScore || (a as any)._contentScore || 0;
     const bScore = (b as any)._finalScore || (b as any)._contentScore || 0;
     if (aScore !== bScore) return bScore - aScore;
