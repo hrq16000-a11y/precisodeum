@@ -302,18 +302,18 @@ export function useFeaturedProviders() {
           .limit(200)
       );
 
-      // Score by visual content: serviceImage + portfolio
+      // Score by content: contentScore (from fetch) + visual fallback
       const scored = allProviders
-        .filter((p) => !!p.serviceImage || !!p.hasPortfolio)
         .map((p) => ({
           ...p,
-          _imageScore: (p.serviceImage ? 2 : 0) + (p.hasPortfolio ? 2 : 0) + (p.photo ? 1 : 0),
-        }));
+          _totalScore: ((p as any)._contentScore || 0) + (p.serviceImage ? 2 : 0) + (p.hasPortfolio ? 2 : 0) + (p.photo ? 1 : 0),
+        }))
+        .filter(p => p._totalScore > 0);
 
       if (scored.length === 0) return [];
 
-      // Sort by image score desc, then shuffle within same score for variety
-      scored.sort((a, b) => b._imageScore - a._imageScore);
+      // Sort by total score desc
+      scored.sort((a, b) => b._totalScore - a._totalScore);
 
       // Pick target count: 9 > 6 > 3
       let target = 3;
@@ -323,7 +323,7 @@ export function useFeaturedProviders() {
       // Light shuffle within top candidates to keep variety
       const candidates = scored.slice(0, Math.min(scored.length, target * 2));
       const shuffled = shuffleArray(candidates);
-      return shuffled.slice(0, target).map(({ _imageScore, ...p }) => p);
+      return shuffled.slice(0, target).map(({ _totalScore, _contentScore, ...p }: any) => p);
     },
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
@@ -418,15 +418,19 @@ export function filterAndRankProviders(
       const bLocal = matchesGeoContext(b, cityNorm) ? 0 : 1;
       if (aLocal !== bLocal) return aLocal - bLocal;
     }
-    // 2. Visual content priority
+    // 2. Content score (services + portfolio + photo)
+    const aScore = (a as any)._contentScore || 0;
+    const bScore = (b as any)._contentScore || 0;
+    if (aScore !== bScore) return bScore - aScore;
+    // 3. Visual content priority (fallback for legacy)
     const aImg = a.serviceImage || a.hasPortfolio ? 0 : 1;
     const bImg = b.serviceImage || b.hasPortfolio ? 0 : 1;
     if (aImg !== bImg) return aImg - bImg;
-    // 3. Plan priority
+    // 4. Plan priority
     const pa = planPriority[a.plan] ?? 2;
     const pb = planPriority[b.plan] ?? 2;
     if (pa !== pb) return pa - pb;
-    // 4. Rating & reviews
+    // 5. Rating & reviews
     if (b.rating !== a.rating) return b.rating - a.rating;
     return b.reviewCount - a.reviewCount;
   });
