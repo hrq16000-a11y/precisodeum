@@ -441,7 +441,7 @@ const SearchPage = () => {
                       transition={{ duration: 0.35 }}
                       layout
                     >
-                      <ProviderCard provider={p} isFallback={!!effectiveCity && !matchesGeoContext(p, normalizeCityName(effectiveCity), geoState ? normalizeCityName(geoState) : undefined, userLat, userLon)} />
+                      <ProviderCard provider={p} isFallback={!!effectiveCity && !matchesGeoContext(p, normalizeCityName(effectiveCity), geoState ? normalizeCityName(geoState) : undefined, userLat, userLon, radiusKm)} />
                     </motion.div>
                   ))}
                 </motion.div>
