@@ -34,6 +34,9 @@ export interface DbProvider {
   plan: string;
   slug: string;
   featured: boolean;
+  servicesCount: number;
+  portfolioAlbumCount: number;
+  portfolioPhotoCount: number;
 }
 
 interface ServiceFallback {
