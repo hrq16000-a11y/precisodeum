@@ -402,19 +402,11 @@ export function filterAndRankProviders(
       const bLocal = matchesGeoContext(b, cityNorm) ? 0 : 1;
       if (aLocal !== bLocal) return aLocal - bLocal;
     }
-    // 2. Content score (services + portfolio + photo)
-    const aScore = (a as any)._contentScore || 0;
-    const bScore = (b as any)._contentScore || 0;
+    // 2. Hybrid final score (content + boost - fairness + random)
+    const aScore = (a as any)._finalScore || (a as any)._contentScore || 0;
+    const bScore = (b as any)._finalScore || (b as any)._contentScore || 0;
     if (aScore !== bScore) return bScore - aScore;
-    // 3. Visual content priority (fallback for legacy)
-    const aImg = a.serviceImage || a.hasPortfolio ? 0 : 1;
-    const bImg = b.serviceImage || b.hasPortfolio ? 0 : 1;
-    if (aImg !== bImg) return aImg - bImg;
-    // 4. Plan priority
-    const pa = planPriority[a.plan] ?? 2;
-    const pb = planPriority[b.plan] ?? 2;
-    if (pa !== pb) return pa - pb;
-    // 5. Rating & reviews
+    // 3. Rating & reviews tiebreaker
     if (b.rating !== a.rating) return b.rating - a.rating;
     return b.reviewCount - a.reviewCount;
   });
