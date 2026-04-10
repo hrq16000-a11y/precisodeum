@@ -82,48 +82,44 @@ function useCountUp(target: number, duration = 1500) {
   return count;
 }
 
-/* Floating decorative dots */
-const FloatingDots = () => (
-  <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-    {[...Array(8)].map((_, i) => (
-      <motion.div
-        key={i}
-        className="absolute rounded-full"
-        style={{
-          width: 4 + i * 3,
-          height: 4 + i * 3,
-          left: `${10 + i * 12}%`,
-          top: `${15 + (i % 4) * 20}%`,
-          background: i % 2 === 0
-            ? 'hsl(var(--secondary) / 0.25)'
-            : 'hsl(var(--primary-foreground) / 0.15)',
-        }}
-        animate={{
-          y: [0, -24 - i * 4, 0],
-          x: [0, (i % 2 === 0 ? 8 : -8), 0],
-          opacity: [0.2, 0.6, 0.2],
-          scale: [1, 1.2, 1],
-        }}
-        transition={{
-          duration: 5 + i * 0.8,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: i * 0.5,
-        }}
-      />
-    ))}
-    <motion.div
-      className="absolute right-[10%] top-[25%] h-16 w-16 rounded-lg border border-primary-foreground/10 rotate-45"
-      animate={{ rotate: [45, 90, 45], scale: [1, 1.1, 1] }}
-      transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-    />
-    <motion.div
-      className="absolute left-[8%] bottom-[20%] h-10 w-10 rounded-full border border-secondary/20"
-      animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.5, 0.2] }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-    />
-  </div>
-);
+/* Floating decorative dots — deferred to avoid blocking FCP */
+const FloatingDots = () => {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShow(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  if (!show) return null;
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      {[...Array(6)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            width: 4 + i * 3,
+            height: 4 + i * 3,
+            left: `${10 + i * 15}%`,
+            top: `${15 + (i % 3) * 25}%`,
+            background: i % 2 === 0
+              ? 'hsl(var(--secondary) / 0.25)'
+              : 'hsl(var(--primary-foreground) / 0.15)',
+          }}
+          animate={{
+            y: [0, -24 - i * 4, 0],
+            opacity: [0.2, 0.6, 0.2],
+          }}
+          transition={{
+            duration: 5 + i * 0.8,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: i * 0.5,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
 
 const HeroBanner = () => {
   const [bgIndex, setBgIndex] = useState(0);
@@ -161,19 +157,25 @@ const HeroBanner = () => {
     return () => clearInterval(interval);
   }, [bgImages.length, bgInterval]);
 
+  // Only render current + next image to avoid loading all 20
+  const visibleIndices = useMemo(() => {
+    const next = (bgIndex + 1) % bgImages.length;
+    return [bgIndex, next];
+  }, [bgIndex, bgImages.length]);
+
   return (
     <section className="relative min-h-[320px] overflow-visible py-8 md:min-h-[480px] md:overflow-hidden md:py-20">
-      {/* Background images with crossfade */}
-      {bgImages.map((src, i) => (
+      {/* Background images — only current + next preloaded */}
+      {visibleIndices.map((i) => (
         <img
-          key={src}
-          src={src}
+          key={bgImages[i]}
+          src={bgImages[i]}
           alt="Profissionais de serviços"
           width={1920}
           height={768}
-          fetchPriority={i === 0 ? 'high' : 'low'}
-          loading={i === 0 ? 'eager' : 'lazy'}
-          decoding={i === 0 ? 'sync' : 'async'}
+          fetchPriority={i === bgIndex ? 'high' : 'low'}
+          loading={i === bgIndex ? 'eager' : 'lazy'}
+          decoding={i === bgIndex ? 'sync' : 'async'}
           className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[1500ms] ease-in-out ${i === bgIndex ? 'opacity-100 hero-img-cinematic' : 'opacity-0'}`}
         />
       ))}

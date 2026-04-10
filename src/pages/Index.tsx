@@ -8,24 +8,25 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
+// Critical path — eagerly loaded
 import Header from '@/components/Header';
-import PageTransition from '@/components/PageTransition';
-import ParallaxSection from '@/components/ParallaxSection';
 import HeroBanner from '@/components/home/HeroBanner';
-import CategoriesGrid from '@/components/home/CategoriesGrid';
-import HighlightsCarousel from '@/components/home/HighlightsCarousel';
-import FeaturedProviders from '@/components/home/FeaturedProviders';
-import RecentServices from '@/components/home/RecentServices';
-import PwaInstallSection from '@/components/home/PwaInstallSection';
-import DynamicPageBlocks from '@/components/DynamicPageBlocks';
-import StatsCounter from '@/components/home/StatsCounter';
-import UrgencyBanner from '@/components/home/UrgencyBanner';
+
+// Near-fold — lazy but high priority
+import PageTransition from '@/components/PageTransition';
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
   reactLazy(() => importWithRetry(importer));
 
-// Lazy load below-the-fold sections
+// Lazy load all non-critical sections
+const UrgencyBanner = lazy(() => import('@/components/home/UrgencyBanner'));
+const CategoriesGrid = lazy(() => import('@/components/home/CategoriesGrid'));
+const HighlightsCarousel = lazy(() => import('@/components/home/HighlightsCarousel'));
+const FeaturedProviders = lazy(() => import('@/components/home/FeaturedProviders'));
+const StatsCounter = lazy(() => import('@/components/home/StatsCounter'));
+const PwaInstallSection = lazy(() => import('@/components/home/PwaInstallSection'));
+const DynamicPageBlocks = lazy(() => import('@/components/DynamicPageBlocks'));
 const PopularServices = lazy(() => import('@/components/home/PopularServices'));
 const FeaturedJobs = lazy(() => import('@/components/home/FeaturedJobs'));
 const BlogHighlight = lazy(() => import('@/components/home/BlogHighlight'));
@@ -57,7 +58,19 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
   render() { return this.state.hasError ? null : this.props.children; }
 }
 
-const SectionFallback = () => null;
+// Minimal height placeholder to prevent CLS from lazy sections
+const SECTION_MIN_HEIGHTS: Record<string, string> = {
+  categories: 'min-h-[280px]',
+  stats: 'min-h-[120px]',
+  highlights: 'min-h-[200px]',
+  featured: 'min-h-[340px]',
+  popular: 'min-h-[280px]',
+};
+
+const SectionFallback = ({ slug }: { slug?: string }) => {
+  const h = slug ? SECTION_MIN_HEIGHTS[slug] : undefined;
+  return h ? <div className={h} /> : null;
+};
 
 // Default section order
 const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
@@ -269,7 +282,7 @@ const Index = () => {
           if (!section) return null;
           return (
             <LazyErrorBoundary key={slug}>
-              <Suspense fallback={<SectionFallback />}>
+              <Suspense fallback={<SectionFallback slug={slug} />}>
                 {section}
               </Suspense>
             </LazyErrorBoundary>
