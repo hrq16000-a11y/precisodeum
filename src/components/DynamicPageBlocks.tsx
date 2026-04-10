@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DynamicPageBlocksProps {
@@ -8,7 +8,7 @@ interface DynamicPageBlocksProps {
   campaign?: string;
 }
 
-const DynamicPageBlocks = ({ pageSlug, city, category, campaign }: DynamicPageBlocksProps) => {
+const DynamicPageBlocks = React.forwardRef<HTMLDivElement, DynamicPageBlocksProps>(({ pageSlug, city, category, campaign }, ref) => {
   const [blocks, setBlocks] = useState<any[]>([]);
 
   useEffect(() => {
@@ -138,5 +138,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
       );
   }
 };
+
+DynamicPageBlocks.displayName = 'DynamicPageBlocks';
 
 export default DynamicPageBlocks;
