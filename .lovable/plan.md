@@ -1,44 +1,33 @@
 
 
-# Plano: Limpeza Diária Automática de Cache (Web + PWA)
+## Parte 2: Cidade Inteligente no Cadastro
 
-## Problema Atual
-O sistema só limpa cache quando detecta um novo deploy (`__BUILD_TIMESTAMP__`). Se não houver deploy por dias, dados obsoletos podem ficar no cache do browser e do Service Worker.
+### O que muda
+Substituir os campos de texto livre "Cidade" e "Estado" por um seletor inteligente com:
 
-## Solução
+1. **Botão "Usar minha localização"** — GPS do navegador + reverse geocode para auto-preencher cidade/estado
+2. **Busca em tempo real** — Input com autocomplete consultando os 5.570 municípios brasileiros (API IBGE, com cache)
+3. **Estado auto-preenchido** — Ao selecionar uma cidade, o estado é preenchido automaticamente (readonly)
+4. **Coordenadas salvas** — Geocodifica via Nominatim para salvar lat/lon no provider
 
-### 1. Limpeza diária no frontend (`src/main.tsx`)
-Adicionar verificação baseada em data. Ao carregar a app, compara a data atual com a última limpeza salva em `localStorage`. Se passou 24h ou mais, purga todos os caches (Cache API + react-query).
+### Implementação
 
-```text
-Fluxo:
-  App inicia
-  → Verifica localStorage('cache-last-purge')
-  → Se > 24h atrás (ou inexistente):
-      → caches.keys() → delete all
-      → localStorage.clear() de dados temporários
-      → Salva nova timestamp
-  → Continua normalmente
-```
+**Arquivo: `src/pages/SignupPage.tsx`**
 
-### 2. Limpeza diária no Service Worker (`src/sw.ts`)
-Adicionar listener de `message` para receber comando `PURGE_CACHES` do frontend. Também implementar auto-purge periódica: a cada fetch, verifica se já passou 24h desde a última limpeza interna do SW.
+- Importar e reutilizar `fetchAllMunicipalities()` e `geocodeCity()` do `GeoLocationChip.tsx` (extrair para módulo compartilhado `src/lib/geoUtils.ts`)
+- Criar novo módulo `src/lib/geoUtils.ts` com as funções `fetchAllMunicipalities`, `geocodeCity` e `normalize` extraídas do GeoLocationChip
+- Substituir os 2 inputs (cidade + estado) por:
+  - Botão "📍 Usar minha localização" (chama `navigator.geolocation` + reverse geocode)
+  - Input com busca fuzzy nos municípios + dropdown de sugestões
+  - Campo Estado readonly (auto-preenchido)
+- Adicionar `latitude` e `longitude` ao form state
+- No `handleSubmit`, salvar lat/lon no insert do provider
 
-### 3. Limpeza do React Query stale data
-No `App.tsx`, adicionar rotina que invalida todas as queries do `QueryClient` quando a limpeza diária é acionada, garantindo dados frescos do banco.
+**Arquivo: `src/components/GeoLocationChip.tsx`**
+- Importar funções de `src/lib/geoUtils.ts` em vez de defini-las localmente
 
-## Arquivos a Editar
-
-| Arquivo | Mudança |
-|---|---|
-| `src/main.tsx` | Adicionar lógica de purge diário (24h) + enviar mensagem ao SW |
-| `src/sw.ts` | Adicionar listener `PURGE_CACHES` + auto-purge periódica no SW |
-
-## Detalhes Técnicos
-
-- **Chave localStorage**: `cache-last-purge` (timestamp em ms)
-- **Intervalo**: 24 horas (86400000 ms)
-- **O que é limpo**: Cache API (api-cache, fonts-cache, images-cache), dados stale do localStorage
-- **Não limpa**: credenciais de auth, preferências do usuário, build version key
-- **SW**: responde a mensagem `{type: 'PURGE_CACHES'}` e também verifica internamente via IndexedDB/cache timestamp
+### Arquivos afetados
+1. **Criar** `src/lib/geoUtils.ts` — funções compartilhadas
+2. **Editar** `src/pages/SignupPage.tsx` — novo seletor de cidade
+3. **Editar** `src/components/GeoLocationChip.tsx` — importar de geoUtils
 
