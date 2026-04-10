@@ -52,7 +52,7 @@ const SearchPage = () => {
     isLoading,
     isError: searchError,
     refetch,
-  } = useSearchProviders(query, effectiveCity, selectedCategory, minRating, geoState || '');
+  } = useSearchProviders(query, effectiveCity, selectedCategory, minRating, geoState || '', userLat, userLon);
 
   // Apply additional client-side filters
   const fullyFiltered = useMemo(() => {
