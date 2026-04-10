@@ -1,7 +1,16 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { avatarThumb, serviceImageThumb, originalUrl } from '@/lib/imageOptimizer';
+import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
+
+/** Track impression for fairness system — fire-and-forget */
+export function trackProviderImpressions(providerIds: string[]) {
+  if (!providerIds.length) return;
+  // Batch via RPC — one call per provider (lightweight)
+  providerIds.forEach(id => {
+    supabase.rpc('increment_provider_impression', { _provider_id: id }).then(() => {});
+  });
+}
 
 export interface DbProvider {
   id: string;
@@ -90,8 +99,30 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
 
 const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, categories(name, slug, icon)';
 
+// --- Ranking config cache ---
+let _rankingConfig: { boostMul: number; fairnessPen: number; randomMax: number } | null = null;
+let _rankingConfigTime = 0;
+
+async function getRankingConfig() {
+  const now = Date.now();
+  if (_rankingConfig && now - _rankingConfigTime < 5 * 60_000) return _rankingConfig;
+  const { data } = await supabase
+    .from('site_settings')
+    .select('key, value')
+    .in('key', ['ranking_boost_multiplier', 'ranking_fairness_penalty', 'ranking_random_factor']);
+  const map: Record<string, string> = {};
+  (data || []).forEach((s: any) => { map[s.key] = s.value; });
+  _rankingConfig = {
+    boostMul: Number(map['ranking_boost_multiplier']) || 20,
+    fairnessPen: Number(map['ranking_fairness_penalty']) || 5,
+    randomMax: Number(map['ranking_random_factor']) || 5,
+  };
+  _rankingConfigTime = now;
+  return _rankingConfig;
+}
+
 /**
- * Lightweight fetch — uses counter columns instead of heavy portfolio queries.
+ * Lightweight fetch — uses counter columns + boost/impressions for hybrid ranking.
  */
 async function fetchProvidersLightweight(query: any) {
   const { data, error } = await query;
@@ -101,8 +132,8 @@ async function fetchProvidersLightweight(query: any) {
   const providerIds = (data as any[]).map((p) => p.id);
   const userIds = [...new Set((data as any[]).map((p) => p.user_id))];
 
-  // 2 parallel fetches: profiles + services (for images/fallback only)
-  const [profilesRes, servicesRes] = await Promise.all([
+  // 4 parallel fetches
+  const [profilesRes, servicesRes, boostsRes, impressionsRes, rankConfig] = await Promise.all([
     supabase
       .from('public_profiles' as any)
       .select('id, full_name, avatar_url')
@@ -111,11 +142,36 @@ async function fetchProvidersLightweight(query: any) {
       .from('services')
       .select('id, provider_id, service_name, description, whatsapp, service_area, service_images(image_url, display_order)')
       .in('provider_id', providerIds),
+    supabase
+      .from('provider_boosts' as any)
+      .select('provider_id, boost_weight')
+      .in('provider_id', providerIds)
+      .eq('is_active', true)
+      .lte('start_at', new Date().toISOString())
+      .gte('end_at', new Date().toISOString()) as any,
+    supabase
+      .from('provider_impressions' as any)
+      .select('provider_id, impressions')
+      .in('provider_id', providerIds)
+      .gte('date', new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)) as any,
+    getRankingConfig(),
   ]);
 
   const profileMap: Record<string, { name: string; avatar?: string }> = {};
   (profilesRes.data || []).forEach((p: any) => {
     profileMap[p.id] = { name: p.full_name, avatar: p.avatar_url || undefined };
+  });
+
+  // Boost aggregation
+  const boostMap: Record<string, number> = {};
+  (boostsRes.data || []).forEach((b: any) => {
+    boostMap[b.provider_id] = (boostMap[b.provider_id] || 0) + (b.boost_weight || 0);
+  });
+
+  // Impressions aggregation (last 7 days)
+  const impressionMap: Record<string, number> = {};
+  (impressionsRes.data || []).forEach((i: any) => {
+    impressionMap[i.provider_id] = (impressionMap[i.provider_id] || 0) + (i.impressions || 0);
   });
 
   const serviceRows = servicesRes.data || [];
@@ -157,14 +213,23 @@ async function fetchProvidersLightweight(query: any) {
       serviceFallbackMap[p.id]
     );
 
-    // Content score from counter columns — O(1)
+    // Hybrid score
     const contentScore =
       (rawPhoto ? 10 : 0) +
       (svcCount >= 1 ? 2 : 0) +
       (svcCount >= 3 ? 3 : 0) +
       (photoCount * 2) +
       (albumCount * 5);
+    const boostScore = boostMap[p.id] || 0;
+    const impressions7d = impressionMap[p.id] || 0;
+    const fairnessPenalty = Math.log(1 + impressions7d) * rankConfig.fairnessPen;
+    const randomFactor = Math.random() * rankConfig.randomMax;
+
+    const finalScore = contentScore + (boostScore * rankConfig.boostMul) - fairnessPenalty + randomFactor;
+
     (mapped as any)._contentScore = contentScore;
+    (mapped as any)._finalScore = finalScore;
+    (mapped as any)._boostScore = boostScore;
     return mapped;
   });
 }
@@ -230,17 +295,17 @@ export function useFeaturedProviders() {
           .limit(500)
       );
 
-      // Filter by content score threshold
+      // Filter by finalScore threshold (hybrid: content + boost - fairness)
       const scored = allProviders
         .map((p) => ({
           ...p,
-          _totalScore: (p as any)._contentScore || 0,
+          _totalScore: (p as any)._finalScore || (p as any)._contentScore || 0,
         }))
         .filter(p => p._totalScore >= FEATURED_SCORE_THRESHOLD);
 
       if (scored.length === 0) return [];
 
-      // Sort by total score desc
+      // Sort by hybrid score desc
       scored.sort((a, b) => b._totalScore - a._totalScore);
 
       // Pick target count: 9 > 6 > 3
@@ -251,7 +316,7 @@ export function useFeaturedProviders() {
       // Light shuffle within top candidates to keep variety
       const candidates = scored.slice(0, Math.min(scored.length, target * 2));
       const shuffled = shuffleArray(candidates);
-      return shuffled.slice(0, target).map(({ _totalScore, _contentScore, ...p }: any) => p);
+      return shuffled.slice(0, target).map(({ _totalScore, _contentScore, _finalScore, _boostScore, ...p }: any) => p);
     },
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
@@ -337,7 +402,7 @@ export function filterAndRankProviders(
     }
   }
 
-  const planPriority: Record<string, number> = { premium: 0, pro: 1, free: 2 };
+  
 
   results.sort((a, b) => {
     // 1. City match first (for fallback/expanded results)
@@ -346,19 +411,11 @@ export function filterAndRankProviders(
       const bLocal = matchesGeoContext(b, cityNorm) ? 0 : 1;
       if (aLocal !== bLocal) return aLocal - bLocal;
     }
-    // 2. Content score (services + portfolio + photo)
-    const aScore = (a as any)._contentScore || 0;
-    const bScore = (b as any)._contentScore || 0;
+    // 2. Hybrid final score (content + boost - fairness + random)
+    const aScore = (a as any)._finalScore || (a as any)._contentScore || 0;
+    const bScore = (b as any)._finalScore || (b as any)._contentScore || 0;
     if (aScore !== bScore) return bScore - aScore;
-    // 3. Visual content priority (fallback for legacy)
-    const aImg = a.serviceImage || a.hasPortfolio ? 0 : 1;
-    const bImg = b.serviceImage || b.hasPortfolio ? 0 : 1;
-    if (aImg !== bImg) return aImg - bImg;
-    // 4. Plan priority
-    const pa = planPriority[a.plan] ?? 2;
-    const pb = planPriority[b.plan] ?? 2;
-    if (pa !== pb) return pa - pb;
-    // 5. Rating & reviews
+    // 3. Rating & reviews tiebreaker
     if (b.rating !== a.rating) return b.rating - a.rating;
     return b.reviewCount - a.reviewCount;
   });
