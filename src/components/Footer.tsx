@@ -4,6 +4,7 @@ import { useMemo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
+import { importWithRetry } from '@/lib/lazyWithRetry';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
 import SponsorAd from '@/components/SponsorAd';
@@ -198,6 +199,6 @@ const Footer = () => {
   );
 };
 
-const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
 
 export default Footer;
