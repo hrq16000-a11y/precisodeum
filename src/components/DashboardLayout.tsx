@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell } from 'lucide-react';
+import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -73,6 +73,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: hasProfilePermission('dashboard'), badge: 0 },
     { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil', show: hasProfilePermission('profile'), badge: 0 },
     { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos', show: !isClient && !isRH && hasProfilePermission('services'), badge: 0 },
+    { label: 'Portfólio', icon: Camera, path: '/dashboard/portfolio', show: !isClient && !isRH && hasProfilePermission('services'), badge: 0 },
     { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina', show: !isClient && !isRH && hasProfilePermission('my_page'), badge: 0 },
     { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas', show: !isClient && hasProfilePermission('jobs'), badge: 0 },
     { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade', show: hasProfilePermission('community'), badge: 0 },

@@ -50,6 +50,7 @@ const DashboardMyPagePage = lazy(() => import("./pages/DashboardMyPagePage"));
 const DashboardJobsPage = lazy(() => import("./pages/DashboardJobsPage"));
 const DashboardCommunityPage = lazy(() => import("./pages/DashboardCommunityPage"));
 const DashboardNotificationsPage = lazy(() => import("./pages/DashboardNotificationsPage"));
+const DashboardPortfolioPage = lazy(() => import("./pages/DashboardPortfolioPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const AdminProvidersPage = lazy(() => import("./pages/AdminProvidersPage"));
 const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage"));
@@ -206,6 +207,7 @@ const App = () => {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/perfil" element={<DashboardProfilePage />} />
                 <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><DashboardServicesPage /></ProtectedRoute>} />
+                <Route path="/dashboard/portfolio" element={<ProtectedRoute allowedTypes={['provider']}><DashboardPortfolioPage /></ProtectedRoute>} />
                 <Route path="/dashboard/avaliacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReviewsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/leads" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLeadsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/plano" element={<ProtectedRoute allowedTypes={['provider']}><DashboardPlanPage /></ProtectedRoute>} />
