@@ -18,10 +18,10 @@ const AdminNotificationsPage = () => {
     queryKey: ['admin-sent-notifications'],
     enabled: isAdmin,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('notifications')
-        .select('*')
-        .not('target_group' as any, 'is', null)
+        .select('*') as any)
+        .not('target_group', 'is', null)
         .order('created_at', { ascending: false })
         .limit(200);
       if (error) throw error;
