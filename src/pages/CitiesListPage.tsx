@@ -22,9 +22,12 @@ const STATE_NAMES: Record<string, string> = {
   SE: 'Sergipe', SP: 'São Paulo', TO: 'Tocantins',
 };
 
-/** Normalize city name for dedup: title-case, trim */
-const normalizeCity = (name: string) =>
-  name.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+/** Normalize city name for dedup: title-case first letter of each space-separated word */
+const normalizeCity = (name: string) => {
+  const lower = name.trim().toLowerCase();
+  // Only capitalize after spaces (not after accented chars)
+  return lower.replace(/(^|\s)\S/g, c => c.toUpperCase());
+};
 
 const CitiesListPage = () => {
   const [search, setSearch] = useState('');
