@@ -104,6 +104,28 @@ const SignupPage = () => {
     return categories.filter((c: any) => c.name.toLowerCase().includes(q)).slice(0, 10);
   }, [categories, categorySearch]);
 
+  const filteredCities = useMemo(() => {
+    if (!citySearch.trim()) return allCities.slice(0, 10);
+    const q = normalize(citySearch);
+    const terms = q.split(/\s+/).filter(Boolean);
+    return allCities
+      .filter((c) => {
+        const cityNorm = normalize(c.name);
+        const stateNorm = normalize(c.state);
+        return terms.every((t) => cityNorm.includes(t) || stateNorm.includes(t));
+      })
+      .slice(0, 10);
+  }, [citySearch, allCities]);
+
+  const loadCities = useCallback(() => {
+    if (allCities.length > 0) return;
+    setCitiesLoading(true);
+    fetchAllMunicipalities().then((cities) => {
+      setAllCities(cities);
+      setCitiesLoading(false);
+    });
+  }, [allCities.length]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -112,6 +134,48 @@ const SignupPage = () => {
     setForm(prev => ({ ...prev, categoryId: cat.id, categoryName: cat.name }));
     setCategorySearch(cat.name);
     setShowCategorySuggestions(false);
+  };
+
+  const handleCitySelect = async (name: string, st: string) => {
+    setForm(prev => ({ ...prev, city: name, state: st }));
+    setCitySearch(`${name}, ${st}`);
+    setShowCitySuggestions(false);
+    const { latitude, longitude } = await geocodeCity(name, st);
+    setForm(prev => ({ ...prev, latitude, longitude }));
+  };
+
+  const handleAutoLocate = async () => {
+    setLocating(true);
+    loadCities();
+    try {
+      if (!navigator?.geolocation) { setLocating(false); return; }
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const { city: detectedCity, state: detectedState } = await reverseGeocode(lat, lon);
+          if (detectedCity) {
+            // Try to match with IBGE city list
+            const cities = await fetchAllMunicipalities();
+            const normalizedDetected = normalize(detectedCity);
+            const match = cities.find(c => normalize(c.name) === normalizedDetected && (
+              !detectedState || normalize(c.state) === normalize(detectedState) ||
+              detectedState.toLowerCase().includes(c.state.toLowerCase())
+            ));
+            if (match) {
+              setForm(prev => ({ ...prev, city: match.name, state: match.state, latitude: lat, longitude: lon }));
+              setCitySearch(`${match.name}, ${match.state}`);
+            } else {
+              setForm(prev => ({ ...prev, city: detectedCity, state: detectedState, latitude: lat, longitude: lon }));
+              setCitySearch(`${detectedCity}, ${detectedState}`);
+            }
+          }
+          setLocating(false);
+        },
+        () => { setLocating(false); toast.error('Não foi possível detectar sua localização'); },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
+      );
+    } catch { setLocating(false); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
