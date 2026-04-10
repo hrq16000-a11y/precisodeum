@@ -1,48 +1,44 @@
 
 
-## Auditoria: Onboarding vs Serviços
+# Plano: Limpeza Diária Automática de Cache (Web + PWA)
 
-### Diagnóstico
+## Problema Atual
+O sistema só limpa cache quando detecta um novo deploy (`__BUILD_TIMESTAMP__`). Se não houver deploy por dias, dados obsoletos podem ficar no cache do browser e do Service Worker.
 
-| Item | Status |
-|---|---|
-| `ServiceWizard.tsx` existe | Sim, mas **nunca importado** — código morto |
-| Fluxo de criação de serviço | Único: Dialog em `DashboardServicesPage` |
-| Onboarding no Dashboard | Checklist manual (4 passos) que redireciona para páginas existentes |
-| Wizard integrado ao onboarding | **Não** — o passo 2 do onboarding manda para `/dashboard/servicos` (Dialog) |
+## Solução
 
-### Problemas identificados
-
-1. **ServiceWizard é código morto** — documentado como "onboarding only" mas sem nenhum `import` em todo o projeto
-2. **Onboarding não usa wizard** — o checklist do Dashboard redireciona diretamente para as páginas normais, sem fluxo guiado
-3. **Passo 2 do onboarding ("Cadastre seus serviços")** manda para o mesmo Dialog de operação diária — não há diferenciação de experiência
-
-### Plano
-
-**Arquivo: `src/pages/DashboardPage.tsx`**
-- Integrar `ServiceWizard` como modal no passo 2 do onboarding (quando `servicesCount === 0`)
-- O CTA "Crie seu primeiro serviço!" abre o Wizard em vez de navegar para `/dashboard/servicos`
-- Após conclusão do Wizard, marca `servicesDone = true` e fecha o modal
-- Para profissionais com serviços existentes, o link do checklist continua apontando para `/dashboard/servicos`
-
-**Arquivo: `src/components/dashboard/ServiceWizard.tsx`**
-- Nenhuma alteração estrutural — já está pronto para uso
-- Validar que `onComplete` e `onCancel` estão compatíveis com o uso como modal
-
-**Separação clara:**
+### 1. Limpeza diária no frontend (`src/main.tsx`)
+Adicionar verificação baseada em data. Ao carregar a app, compara a data atual com a última limpeza salva em `localStorage`. Se passou 24h ou mais, purga todos os caches (Cache API + react-query).
 
 ```text
-┌─────────────────────────┐     ┌──────────────────────────┐
-│   ONBOARDING (1ª vez)   │     │   OPERAÇÃO (dia a dia)   │
-│                         │     │                          │
-│  DashboardPage          │     │  DashboardServicesPage   │
-│  └─ ServiceWizard       │     │  └─ Dialog inline        │
-│     (modal guiado)      │     │     (criação rápida)     │
-│                         │     │                          │
-│  Quando: servicesCount=0│     │  Quando: sempre          │
-│  Contexto: setup inicial│     │  Contexto: gestão        │
-└─────────────────────────┘     └──────────────────────────┘
+Fluxo:
+  App inicia
+  → Verifica localStorage('cache-last-purge')
+  → Se > 24h atrás (ou inexistente):
+      → caches.keys() → delete all
+      → localStorage.clear() de dados temporários
+      → Salva nova timestamp
+  → Continua normalmente
 ```
 
-**Escopo total: 2 arquivos editados, 0 migrações SQL**
+### 2. Limpeza diária no Service Worker (`src/sw.ts`)
+Adicionar listener de `message` para receber comando `PURGE_CACHES` do frontend. Também implementar auto-purge periódica: a cada fetch, verifica se já passou 24h desde a última limpeza interna do SW.
+
+### 3. Limpeza do React Query stale data
+No `App.tsx`, adicionar rotina que invalida todas as queries do `QueryClient` quando a limpeza diária é acionada, garantindo dados frescos do banco.
+
+## Arquivos a Editar
+
+| Arquivo | Mudança |
+|---|---|
+| `src/main.tsx` | Adicionar lógica de purge diário (24h) + enviar mensagem ao SW |
+| `src/sw.ts` | Adicionar listener `PURGE_CACHES` + auto-purge periódica no SW |
+
+## Detalhes Técnicos
+
+- **Chave localStorage**: `cache-last-purge` (timestamp em ms)
+- **Intervalo**: 24 horas (86400000 ms)
+- **O que é limpo**: Cache API (api-cache, fonts-cache, images-cache), dados stale do localStorage
+- **Não limpa**: credenciais de auth, preferências do usuário, build version key
+- **SW**: responde a mensagem `{type: 'PURGE_CACHES'}` e também verifica internamente via IndexedDB/cache timestamp
 
