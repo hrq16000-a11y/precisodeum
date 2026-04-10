@@ -1324,6 +1324,35 @@ export type Database = {
           },
         ]
       }
+      provider_impressions: {
+        Row: {
+          date: string
+          id: string
+          impressions: number
+          provider_id: string
+        }
+        Insert: {
+          date?: string
+          id?: string
+          impressions?: number
+          provider_id: string
+        }
+        Update: {
+          date?: string
+          id?: string
+          impressions?: number
+          provider_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_impressions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_page_settings: {
         Row: {
           accent_color: string | null
@@ -2721,6 +2750,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_provider_impression: {
+        Args: { _provider_id: string }
+        Returns: undefined
       }
       increment_service_view: {
         Args: { service_id: string }
