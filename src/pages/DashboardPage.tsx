@@ -36,6 +36,8 @@ const DashboardPage = () => {
   const [viewsTotal, setViewsTotal] = useState<number>(0);
   const [reviewCount, setReviewCount] = useState<number>(0);
   const [guideOpen, setGuideOpen] = useState(true);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
