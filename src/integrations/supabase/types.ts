@@ -277,27 +277,33 @@ export type Database = {
       cities: {
         Row: {
           created_at: string
+          has_providers: boolean
           ibge_code: string | null
           id: string
           name: string
+          provider_count: number
           slug: string
           state: string
           state_uf: string | null
         }
         Insert: {
           created_at?: string
+          has_providers?: boolean
           ibge_code?: string | null
           id?: string
           name: string
+          provider_count?: number
           slug: string
           state?: string
           state_uf?: string | null
         }
         Update: {
           created_at?: string
+          has_providers?: boolean
           ibge_code?: string | null
           id?: string
           name?: string
+          provider_count?: number
           slug?: string
           state?: string
           state_uf?: string | null
@@ -2719,6 +2725,22 @@ export type Database = {
           has_active_providers: boolean | null
           providers_count: number | null
           state_uf: string | null
+        }
+        Insert: {
+          city_id?: string | null
+          city_name?: string | null
+          city_slug?: string | null
+          has_active_providers?: boolean | null
+          providers_count?: number | null
+          state_uf?: string | null
+        }
+        Update: {
+          city_id?: string | null
+          city_name?: string | null
+          city_slug?: string | null
+          has_active_providers?: boolean | null
+          providers_count?: number | null
+          state_uf?: string | null
         }
         Relationships: []
       }
