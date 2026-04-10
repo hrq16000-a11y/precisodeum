@@ -13,7 +13,6 @@ const STORED_VERSION_KEY = 'app-build-version';
 
 const storedVersion = localStorage.getItem(STORED_VERSION_KEY);
 if (storedVersion !== String(BUILD_VERSION)) {
-  // New version detected — purge everything
   if ('caches' in window) {
     caches.keys().then(names => names.forEach(n => caches.delete(n)));
   }
@@ -24,6 +23,51 @@ if (storedVersion !== String(BUILD_VERSION)) {
   }
   localStorage.setItem(STORED_VERSION_KEY, String(BUILD_VERSION));
   console.log('[Cache] New build detected, caches cleared.');
+}
+
+// ── Daily cache purge (24 h) ──
+const PURGE_KEY = 'cache-last-purge';
+const PURGE_INTERVAL = 86_400_000; // 24 h in ms
+const PRESERVE_KEYS = new Set([
+  STORED_VERSION_KEY,
+  PURGE_KEY,
+  'app-build-version',
+  'sb-qaftogrqeyymewoofexc-auth-token',  // keep auth
+  'cookie-consent',
+  'pwa-dismiss-ts',
+  'pwa-visit-count',
+  'theme',
+]);
+
+const lastPurge = Number(localStorage.getItem(PURGE_KEY) || '0');
+const now = Date.now();
+
+if (now - lastPurge > PURGE_INTERVAL) {
+  // 1. Purge Cache API
+  if ('caches' in window) {
+    caches.keys().then(names => names.forEach(n => caches.delete(n)));
+  }
+
+  // 2. Clear localStorage except preserved keys
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && !PRESERVE_KEYS.has(k) && !k.startsWith('sb-')) {
+      keysToRemove.push(k);
+    }
+  }
+  keysToRemove.forEach(k => localStorage.removeItem(k));
+
+  // 3. Signal Service Worker
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'PURGE_CACHES' });
+  }
+
+  // 4. Flag for React Query invalidation (picked up by App.tsx)
+  (window as any).__DAILY_PURGE_TRIGGERED__ = true;
+
+  localStorage.setItem(PURGE_KEY, String(now));
+  console.log('[Cache] Daily purge executed.');
 }
 
 // ── Lazy image reveal via IntersectionObserver ──

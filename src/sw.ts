@@ -28,7 +28,26 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(purgeAllCaches());
 });
 
-// No need to purge on every fetch anymore
+// ── Listen for PURGE_CACHES from main thread ──
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'PURGE_CACHES') {
+    event.waitUntil(purgeAllCaches());
+  }
+});
+
+// ── Periodic self-purge every 24 h (checked on fetch) ──
+const PURGE_INTERVAL_MS = 86_400_000;
+let lastSwPurge = 0;
+
+const maybeSelfPurge = () => {
+  const now = Date.now();
+  if (now - lastSwPurge > PURGE_INTERVAL_MS) {
+    lastSwPurge = now;
+    purgeAllCaches().catch(() => {});
+  }
+};
+
+self.addEventListener('fetch', () => { maybeSelfPurge(); });
 
 // ── API: always network-first, short cache (5 min) ──
 registerRoute(
