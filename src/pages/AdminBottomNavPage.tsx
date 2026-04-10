@@ -214,7 +214,7 @@ const AdminBottomNavPage = () => {
 
   if (!config) {
     return (
-      <AdminLayout title="Barra Inferior" subtitle="Gerencie a navegação móvel">
+      <AdminLayout>
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <Smartphone className="h-16 w-16 text-muted-foreground/30" />
           <p className="text-muted-foreground">Nenhuma configuração encontrada</p>
@@ -233,7 +233,7 @@ const AdminBottomNavPage = () => {
   };
 
   return (
-    <AdminLayout title="Barra Inferior" subtitle="Gerencie a navegação móvel">
+    <AdminLayout>
       <div className="space-y-6">
         {/* ── Global Config ── */}
         <Card>
