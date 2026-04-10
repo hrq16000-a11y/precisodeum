@@ -333,10 +333,13 @@ const SignupPage = () => {
                     className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-colors" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">Telefone *</label>
-                  <input type="tel" name="phone" required value={form.phone} onChange={handleChange}
-                    placeholder="(11) 99999-9999"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-colors" />
+                  <label className="mb-1 block text-sm font-medium text-foreground">Telefone / WhatsApp *</label>
+                  <PhoneMaskedInput
+                    name="phone"
+                    value={form.phone}
+                    onChange={(name, raw) => setForm(prev => ({ ...prev, [name]: raw }))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-colors"
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Senha * <span className="text-muted-foreground font-normal">(mínimo 6 caracteres)</span></label>
