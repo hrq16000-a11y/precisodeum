@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import FadeInSection from '@/components/FadeInSection';
 
+// Fallback problem descriptions - used only when description field is empty
 const problemMap: Record<string, string> = {
   'eletricista': 'Tomada sem funcionar? Curto-circuito?',
   'encanador': 'Vazamento ou cano estourado?',
@@ -25,7 +26,10 @@ const problemMap: Record<string, string> = {
   'chuveiro': 'Chuveiro queimou ou sem pressão?',
 };
 
-function getServiceProblem(name: string, slug: string): string {
+function getServiceProblem(name: string, slug: string, description?: string): string {
+  // Use DB description first (admin-managed)
+  if (description && description.trim()) return description;
+  // Fallback to hardcoded map
   const lower = slug.toLowerCase();
   for (const [key, problem] of Object.entries(problemMap)) {
     if (lower.includes(key)) return problem;
@@ -116,7 +120,7 @@ const PopularServices = () => {
           viewport={{ once: true, margin: '-40px' }}
         >
           {displayed.map((s: any, i: number) => {
-            const problem = getServiceProblem(s.name, s.slug);
+            const problem = getServiceProblem(s.name, s.slug, s.description);
             const basePrice = Number(s.min_price) || 0;
             const maxPrice = Math.round(basePrice * 1.8);
             const isFirst = i === 0;
