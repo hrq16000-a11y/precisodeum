@@ -12,6 +12,7 @@ import GeoEngine from './geoEngine';
 import type { GeoIntent, GeoContext } from './geoEngine';
 import { normalize } from './normalize';
 import { trackEvent } from './tracking';
+import GovernanceEngine from './governanceEngine';
 
 // ═══════════════════════════════════════════════════════════════════════
 // SECTION 1: Types
@@ -60,6 +61,29 @@ const DEFAULT_CONFIG: SILConfig = {
 };
 
 let _config: SILConfig = { ...DEFAULT_CONFIG };
+let _governanceLoaded = false;
+
+/**
+ * Load SIL config overrides from Governance Engine (non-blocking).
+ * Falls back to DEFAULT_CONFIG if governance is unavailable.
+ */
+async function loadGovernanceConfig(): Promise<void> {
+  if (_governanceLoaded) return;
+  try {
+    const overrides = await GovernanceEngine.getRuleValue<Partial<SILConfig>>(
+      'sil', 'config_overrides', {}
+    );
+    if (overrides && typeof overrides === 'object') {
+      _config = { ...DEFAULT_CONFIG, ...overrides };
+      _governanceLoaded = true;
+    }
+  } catch {
+    // Governance unavailable — continue with defaults
+  }
+}
+
+// Fire-and-forget governance load on module init
+loadGovernanceConfig();
 
 // ═══════════════════════════════════════════════════════════════════════
 // SECTION 3: Telemetry (delegates to tracking.ts)
