@@ -1,6 +1,7 @@
 export interface CityResult {
   name: string;
   state: string;
+  ibgeCode: string;
 }
 
 // IBGE API: all 5,570 Brazilian municipalities (cached)
