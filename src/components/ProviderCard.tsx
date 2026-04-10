@@ -12,6 +12,7 @@ import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
 
 interface ProviderCardProps {
   provider: DbProvider;
