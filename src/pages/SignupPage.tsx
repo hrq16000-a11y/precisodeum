@@ -597,9 +597,8 @@ const SignupPage = () => {
                             setCitySearch(e.target.value);
                             setShowCitySuggestions(true);
                             loadCities();
-                            if (!e.target.value.trim()) {
-                              setForm(prev => ({ ...prev, city: '', state: '', latitude: null, longitude: null }));
-                            }
+                            // Invalidate selection when user edits after choosing
+                            setForm(prev => ({ ...prev, city: '', state: '', latitude: null, longitude: null }));
                           }}
                           onFocus={() => { setShowCitySuggestions(true); loadCities(); }}
                           placeholder="Digite sua cidade..."
