@@ -22,11 +22,12 @@ const STATE_NAMES: Record<string, string> = {
   SE: 'Sergipe', SP: 'São Paulo', TO: 'Tocantins',
 };
 
-/** Normalize city name for dedup: title-case first letter of each space-separated word */
+/** Normalize city name: title-case respecting Portuguese prepositions */
+const PREPOSITIONS = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'no', 'na', 'nos', 'nas']);
 const normalizeCity = (name: string) => {
-  const lower = name.trim().toLowerCase();
-  // Only capitalize after spaces (not after accented chars)
-  return lower.replace(/(^|\s)\S/g, c => c.toUpperCase());
+  return name.trim().toLowerCase().split(/\s+/).map((w, i) =>
+    i > 0 && PREPOSITIONS.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)
+  ).join(' ');
 };
 
 const CitiesListPage = () => {
