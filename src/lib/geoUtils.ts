@@ -1,6 +1,7 @@
 export interface CityResult {
   name: string;
   state: string;
+  ibgeCode: string;
 }
 
 // IBGE API: all 5,570 Brazilian municipalities (cached)
@@ -20,6 +21,7 @@ export function fetchAllMunicipalities(): Promise<CityResult[]> {
         .map((m) => ({
           name: (m.nome || '') as string,
           state: (m.microrregiao?.mesorregiao?.UF?.sigla || '') as string,
+          ibgeCode: String(m.id || ''),
         }))
         .filter((c) => c.name && c.state)
     )

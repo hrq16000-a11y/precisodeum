@@ -35,7 +35,7 @@ const DashboardProfilePage = () => {
     full_name: '', phone: '', business_name: '', description: '',
     city: '', state: '', neighborhood: '', whatsapp: '', website: '',
     years_experience: 0, category_id: '', category_name: '', category_custom: '',
-    cnpj: '',
+    cnpj: '', ibge_code: '',
     latitude: null as number | null, longitude: null as number | null,
   });
 
@@ -119,6 +119,7 @@ const DashboardProfilePage = () => {
         category_name: catName,
         category_custom: (provider as any).category_custom || '',
         cnpj: (provider as any).cnpj || '',
+        ibge_code: (provider as any).ibge_code || '',
         latitude: provider.latitude ?? null,
         longitude: provider.longitude ?? null,
       }));
@@ -147,11 +148,11 @@ const DashboardProfilePage = () => {
     setShowCategorySuggestions(false);
   };
 
-  const handleCitySelect = async (name: string, st: string) => {
-    setForm(prev => ({ ...prev, city: name, state: st }));
-    setCitySearch(`${name}, ${st}`);
+  const handleCitySelect = async (c: CityResult) => {
+    setForm(prev => ({ ...prev, city: c.name, state: c.state, ibge_code: c.ibgeCode }));
+    setCitySearch(`${c.name}, ${c.state}`);
     setShowCitySuggestions(false);
-    const { latitude, longitude } = await geocodeCity(name, st);
+    const { latitude, longitude } = await geocodeCity(c.name, c.state);
     setForm(prev => ({ ...prev, latitude, longitude }));
   };
 
@@ -173,10 +174,10 @@ const DashboardProfilePage = () => {
               detectedState.toLowerCase().includes(c.state.toLowerCase())
             ));
             if (match) {
-              setForm(prev => ({ ...prev, city: match.name, state: match.state, latitude: lat, longitude: lon }));
+              setForm(prev => ({ ...prev, city: match.name, state: match.state, ibge_code: match.ibgeCode, latitude: lat, longitude: lon }));
               setCitySearch(`${match.name}, ${match.state}`);
             } else {
-              setForm(prev => ({ ...prev, city: detectedCity, state: detectedState, latitude: lat, longitude: lon }));
+              setForm(prev => ({ ...prev, city: detectedCity, state: detectedState, ibge_code: '', latitude: lat, longitude: lon }));
               setCitySearch(`${detectedCity}, ${detectedState}`);
             }
           }
@@ -272,6 +273,7 @@ const DashboardProfilePage = () => {
         category_id: form.category_id || null,
         category_custom: form.category_custom || null,
         cnpj: cnpjDigits || null,
+        ibge_code: form.ibge_code || null,
         latitude,
         longitude,
       };
@@ -513,7 +515,7 @@ const DashboardProfilePage = () => {
                       <button
                         key={`${c.name}-${c.state}-${i}`}
                         type="button"
-                        onClick={() => handleCitySelect(c.name, c.state)}
+                        onClick={() => handleCitySelect(c)}
                         className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${
                           form.city === c.name && form.state === c.state ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'
                         }`}
