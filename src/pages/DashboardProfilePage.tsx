@@ -290,10 +290,6 @@ const DashboardProfilePage = () => {
           </div>
         </div>
 
-        {/* Portfolio */}
-        {provider && user && (
-          <PortfolioUpload userId={user.id} providerId={provider.id} />
-        )}
 
         {/* Account type switcher */}
         <ProfileTypeSwitcher />
