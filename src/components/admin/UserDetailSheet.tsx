@@ -307,35 +307,8 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     setResettingPw(false);
   };
 
-  // === Portfolio Upload ===
-  const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files?.length || !user) return;
-    setPortfolioUploading(true);
-    for (const file of Array.from(files).slice(0, 5)) {
-      if (file.size > 5 * 1024 * 1024) { toast.error(`${file.name}: máx 5MB`); continue; }
-      const path = `${user.id}/${Date.now()}-${file.name}`;
-      await supabase.storage.from('portfolio').upload(path, file);
-    }
-    const { data } = await supabase.storage.from('portfolio').list(user.id, { limit: 100 });
-    if (data) {
-      const filtered = data.filter(f => f.name !== '.emptyFolderPlaceholder');
-      setPortfolio(filtered.map(f => ({
-        name: f.name,
-        url: supabase.storage.from('portfolio').getPublicUrl(`${user.id}/${f.name}`).data.publicUrl,
-      })));
-    }
-    setPortfolioUploading(false);
-    toast.success('Fotos enviadas!');
-    e.target.value = '';
-  };
-
-  const deletePortfolioImage = async (name: string) => {
-    if (!user) return;
-    await supabase.storage.from('portfolio').remove([`${user.id}/${name}`]);
-    setPortfolio(prev => prev.filter(p => p.name !== name));
-    toast.success('Imagem removida');
-  };
+  // Portfolio is now read-only in admin — managed via dashboard/portfolio
+  const totalPortfolioPhotos = portfolio.reduce((acc, a) => acc + a.photos.length, 0);
 
   const deleteServiceImage = async (img: any) => {
     const urlParts = img.image_url.split('/service-images/');
