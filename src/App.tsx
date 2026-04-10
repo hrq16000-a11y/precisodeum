@@ -96,6 +96,8 @@ const AdminSponsorLeadsPage = lazy(() => import("./pages/AdminSponsorLeadsPage")
 const AdminSubscriptionsPage = lazy(() => import("./pages/AdminSubscriptionsPage"));
 const AdminOverviewPage = lazy(() => import("./pages/AdminOverviewPage"));
 const AdminNotificationsPage = lazy(() => import("./pages/AdminNotificationsPage"));
+const AdminChatPage = lazy(() => import("./pages/AdminChatPage"));
+const DashboardChatPage = lazy(() => import("./pages/DashboardChatPage"));
 const InstitutionalPage = lazy(() => import("./pages/InstitutionalPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
