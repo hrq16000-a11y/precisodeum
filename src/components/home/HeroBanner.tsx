@@ -161,19 +161,25 @@ const HeroBanner = () => {
     return () => clearInterval(interval);
   }, [bgImages.length, bgInterval]);
 
+  // Only render current + next image to avoid loading all 20
+  const visibleIndices = useMemo(() => {
+    const next = (bgIndex + 1) % bgImages.length;
+    return [bgIndex, next];
+  }, [bgIndex, bgImages.length]);
+
   return (
     <section className="relative min-h-[320px] overflow-visible py-8 md:min-h-[480px] md:overflow-hidden md:py-20">
-      {/* Background images with crossfade */}
-      {bgImages.map((src, i) => (
+      {/* Background images — only current + next preloaded */}
+      {visibleIndices.map((i) => (
         <img
-          key={src}
-          src={src}
+          key={bgImages[i]}
+          src={bgImages[i]}
           alt="Profissionais de serviços"
           width={1920}
           height={768}
-          fetchPriority={i === 0 ? 'high' : 'low'}
-          loading={i === 0 ? 'eager' : 'lazy'}
-          decoding={i === 0 ? 'sync' : 'async'}
+          fetchPriority={i === bgIndex ? 'high' : 'low'}
+          loading={i === bgIndex ? 'eager' : 'lazy'}
+          decoding={i === bgIndex ? 'sync' : 'async'}
           className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[1500ms] ease-in-out ${i === bgIndex ? 'opacity-100 hero-img-cinematic' : 'opacity-0'}`}
         />
       ))}
