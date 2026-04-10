@@ -1,19 +1,28 @@
-import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 interface GeoData {
   city: string | null;
   state: string | null;
   temp: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  precise: boolean;
+  manualOverride: boolean;
 }
 
 interface GeoStore extends GeoData {
   setCity: (city: string, state?: string) => void;
+  requestPreciseLocation: () => Promise<boolean>;
 }
 
 const CITY_KEY = 'geo_city';
 const STATE_KEY = 'geo_state';
 const TEMP_KEY = 'geo_temp';
+const LAT_KEY = 'geo_lat';
+const LON_KEY = 'geo_lon';
 const OVERRIDE_KEY = 'geo_override';
+const PRECISE_KEY = 'geo_precise';
+const GEO_ASKED_KEY = 'geo_browser_asked';
 
 function safeGet(key: string): string | null {
   try {
@@ -28,25 +37,49 @@ function safeSet(key: string, value: string) {
   try { sessionStorage.setItem(key, value); } catch {}
 }
 
-// ── Module-level singleton store ──
-// Ensures only ONE fetch happens regardless of how many components call useGeoCity
+function parseNumber(value: string | null) {
+  return value !== null && Number.isFinite(Number(value)) ? Number(value) : null;
+}
 
 let geoState: GeoData = {
   city: safeGet(CITY_KEY),
   state: safeGet(STATE_KEY),
-  temp: (() => { const v = safeGet(TEMP_KEY); return v !== null && Number.isFinite(Number(v)) ? Number(v) : null; })(),
+  temp: parseNumber(safeGet(TEMP_KEY)),
+  latitude: parseNumber(safeGet(LAT_KEY)),
+  longitude: parseNumber(safeGet(LON_KEY)),
+  precise: safeGet(PRECISE_KEY) === 'true',
+  manualOverride: safeGet(OVERRIDE_KEY) === 'true',
 };
 
 let listeners = new Set<() => void>();
 let fetchStarted = false;
 
 function notify() {
-  listeners.forEach(fn => fn());
+  listeners.forEach((fn) => fn());
 }
 
 function setGeoState(patch: Partial<GeoData>) {
   geoState = { ...geoState, ...patch };
   notify();
+}
+
+async function reverseGeocode(latitude: number, longitude: number) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=pt`,
+      { signal: controller.signal }
+    );
+    if (!response.ok) throw new Error(`reverse-geocode ${response.status}`);
+    const data = await response.json();
+    return {
+      city: data?.city || data?.locality || null,
+      state: data?.principalSubdivision || null,
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function fetchGeoFromEdge(): Promise<{ city: string | null; state: string | null; temp: number | null }> {
@@ -105,12 +138,12 @@ async function fetchGeoFromIpWho(): Promise<{ city: string | null; state: string
   }
 }
 
-async function fetchTemp(lat: number, lon: number): Promise<number | null> {
+async function fetchTemp(latitude: number, longitude: number): Promise<number | null> {
   try {
-    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-    if (!r.ok) return null;
-    const d = await r.json();
-    return d?.current_weather?.temperature ?? null;
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data?.current_weather?.temperature ?? null;
   } catch {
     return null;
   }
@@ -118,54 +151,65 @@ async function fetchTemp(lat: number, lon: number): Promise<number | null> {
 
 function startFetchIfNeeded() {
   if (fetchStarted) return;
-  const isOverride = safeGet(OVERRIDE_KEY) === 'true';
-  if (isOverride && geoState.city) return;
-  if (geoState.city && geoState.temp !== null) return;
+  if (geoState.manualOverride && geoState.city) return;
+  if (geoState.city && geoState.temp !== null && geoState.latitude !== null && geoState.longitude !== null) return;
 
   fetchStarted = true;
 
   (async () => {
-    // 1) Edge function
     try {
       const edgeGeo = await fetchGeoFromEdge();
-      if (edgeGeo?.city) {
-        safeSet(CITY_KEY, edgeGeo.city);
+      if (edgeGeo.city || edgeGeo.state || edgeGeo.temp !== null) {
+        if (edgeGeo.city) safeSet(CITY_KEY, edgeGeo.city);
         if (edgeGeo.state) safeSet(STATE_KEY, edgeGeo.state);
         if (edgeGeo.temp !== null) safeSet(TEMP_KEY, String(edgeGeo.temp));
         setGeoState(edgeGeo);
-        return;
       }
-    } catch (e) {
-      console.debug('[GeoCity] edge function failed:', e);
+    } catch (error) {
+      console.debug('[GeoCity] edge function failed:', error);
     }
 
-    // 2) Client-side fallback APIs
+    if (geoState.latitude !== null && geoState.longitude !== null) return;
+
     const apis = [fetchGeoFromIpApi, fetchGeoFromIpWho];
     for (const apiFn of apis) {
       try {
         const result = await apiFn();
-        if (result.city) {
-          let temp: number | null = geoState.temp;
-          if (result.lat && result.lon) {
-            temp = await fetchTemp(result.lat, result.lon);
-          }
-          safeSet(CITY_KEY, result.city);
-          if (result.state) safeSet(STATE_KEY, result.state);
-          if (temp !== null) safeSet(TEMP_KEY, String(temp));
-          setGeoState({ city: result.city, state: result.state, temp });
-          return;
-        }
-      } catch (e) {
-        console.debug('[GeoCity] API fallback:', e);
+        if (!result.city && (result.lat === null || result.lon === null)) continue;
+
+        const temp = result.lat !== null && result.lon !== null
+          ? await fetchTemp(result.lat, result.lon)
+          : geoState.temp;
+
+        if (result.city) safeSet(CITY_KEY, result.city);
+        if (result.state) safeSet(STATE_KEY, result.state);
+        if (result.lat !== null) safeSet(LAT_KEY, String(result.lat));
+        if (result.lon !== null) safeSet(LON_KEY, String(result.lon));
+        if (temp !== null) safeSet(TEMP_KEY, String(temp));
+        safeSet(PRECISE_KEY, 'false');
+
+        setGeoState({
+          city: result.city || geoState.city,
+          state: result.state || geoState.state,
+          temp,
+          latitude: result.lat,
+          longitude: result.lon,
+          precise: false,
+        });
+        return;
+      } catch (error) {
+        console.debug('[GeoCity] API fallback:', error);
       }
     }
   })();
 }
 
-function subscribe(cb: () => void) {
-  listeners.add(cb);
+function subscribe(callback: () => void) {
+  listeners.add(callback);
   startFetchIfNeeded();
-  return () => { listeners.delete(cb); };
+  return () => {
+    listeners.delete(callback);
+  };
 }
 
 function getSnapshot(): GeoData {
@@ -179,8 +223,56 @@ export function useGeoCity(): GeoStore {
     safeSet(CITY_KEY, city);
     safeSet(OVERRIDE_KEY, 'true');
     if (state) safeSet(STATE_KEY, state);
-    setGeoState({ city, state: state || geoState.state });
+    setGeoState({ city, state: state || geoState.state, manualOverride: true });
   }, []);
 
-  return { ...data, setCity };
+  const requestPreciseLocation = useCallback(async () => {
+    if (geoState.manualOverride || typeof window === 'undefined' || !navigator.geolocation) return false;
+    if (geoState.precise && geoState.latitude !== null && geoState.longitude !== null) return true;
+
+    try {
+      if (sessionStorage.getItem(GEO_ASKED_KEY)) return false;
+      sessionStorage.setItem(GEO_ASKED_KEY, '1');
+    } catch {
+      return false;
+    }
+
+    return await new Promise<boolean>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+          let city = geoState.city;
+          let state = geoState.state;
+          let temp = geoState.temp;
+
+          try {
+            const location = await reverseGeocode(latitude, longitude);
+            city = location.city || city;
+            state = location.state || state;
+          } catch {
+            // keep existing city/state when reverse geocoding fails
+          }
+
+          if (temp === null) {
+            temp = await fetchTemp(latitude, longitude);
+          }
+
+          if (city) safeSet(CITY_KEY, city);
+          if (state) safeSet(STATE_KEY, state);
+          if (temp !== null) safeSet(TEMP_KEY, String(temp));
+          safeSet(LAT_KEY, String(latitude));
+          safeSet(LON_KEY, String(longitude));
+          safeSet(PRECISE_KEY, 'true');
+
+          setGeoState({ city, state, temp, latitude, longitude, precise: true });
+          resolve(true);
+        },
+        () => resolve(false),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
+      );
+    });
+  }, []);
+
+  return { ...data, setCity, requestPreciseLocation };
 }

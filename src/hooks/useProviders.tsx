@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
+import { calculateDistanceKm, hasCoordinates, SERVICE_RADIUS_KM } from '@/lib/geoDistance';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
@@ -22,6 +23,8 @@ export interface DbProvider {
   city: string;
   state: string;
   neighborhood: string;
+  latitude: number | null;
+  longitude: number | null;
   rating: number;
   reviewCount: number;
   photo: string;
@@ -84,6 +87,8 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
     city: provCity,
     state: provState,
     neighborhood: provNeighborhood,
+    latitude: p.latitude ?? null,
+    longitude: p.longitude ?? null,
     rating: Number(p.rating_avg) || 0,
     reviewCount: p.review_count || 0,
     photo: p.photo_url || '',
@@ -102,7 +107,7 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
   };
 }
 
-const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, categories(name, slug, icon)';
+const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, categories(name, slug, icon)';
 
 // --- Ranking config cache ---
 let _rankingConfig: { boostMul: number; fairnessPen: number; randomMax: number } | null = null;
