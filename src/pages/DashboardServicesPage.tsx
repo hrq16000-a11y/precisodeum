@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Trash2, Edit2, X, Search, AlertTriangle, ImagePlus, MapPin, Eye, Pause, Play } from 'lucide-react';
+import SmartCategoryPicker from '@/components/SmartCategoryPicker';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccountLimits } from '@/hooks/useAccountLimits';
 import { supabase } from '@/integrations/supabase/client';
@@ -439,53 +440,13 @@ const DashboardServicesPage = () => {
                   className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
                 />
               </div>
-              <div ref={categoryContainerRef} className="relative">
+              <div>
                 <label className="mb-1 block text-sm font-medium text-foreground">Categoria</label>
-                <div
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground cursor-pointer min-h-[42px] flex flex-wrap items-center gap-1"
-                  onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                >
-                  {selectedCategoryIds.length === 0 && (
-                    <span className="text-muted-foreground">Selecione...</span>
-                  )}
-                  {selectedCategoryIds.map(catId => {
-                    const cat = categories.find((c: any) => c.id === catId);
-                    if (!cat) return null;
-                    return (
-                      <span key={catId} className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent">
-                        {cat.icon} {cat.name}
-                        <button type="button" onClick={(e) => { e.stopPropagation(); toggleCategory(catId); }}>
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    );
-                  })}
-                </div>
-                {showCategoryDropdown && (
-                  <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-border bg-card shadow-lg">
-                    <div className="p-2">
-                      <input
-                        value={categorySearch}
-                        onChange={(e) => setCategorySearch(e.target.value)}
-                        placeholder="Buscar..."
-                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground outline-none"
-                      />
-                    </div>
-                    {categories
-                      .filter((c: any) => !categorySearch || c.name.toLowerCase().includes(categorySearch.toLowerCase()))
-                      .slice(0, 15)
-                      .map((c: any) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => { toggleCategory(c.id); setCategorySearch(''); }}
-                          className={`flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent/10 ${selectedCategoryIds.includes(c.id) ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}
-                        >
-                          <span>{c.icon}</span> {c.name}
-                        </button>
-                      ))}
-                  </div>
-                )}
+                <SmartCategoryPicker
+                  categories={categories}
+                  selectedIds={selectedCategoryIds}
+                  onToggle={toggleCategory}
+                />
               </div>
             </div>
 
