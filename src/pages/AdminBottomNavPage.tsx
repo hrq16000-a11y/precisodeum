@@ -62,6 +62,7 @@ const POPULAR_ICONS = [
 const DEFAULT_HIDDEN = ['/admin', '/login', '/cadastro', '/reset-password', '/dashboard', '/sponsor-panel'];
 
 const AdminBottomNavPage = () => {
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const queryClient = useQueryClient();
 
   // ── Fetch config ──
