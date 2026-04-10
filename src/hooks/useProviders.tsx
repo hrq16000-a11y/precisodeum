@@ -402,7 +402,7 @@ export function filterAndRankProviders(
     }
   }
 
-  const planPriority: Record<string, number> = { premium: 0, pro: 1, free: 2 };
+  
 
   results.sort((a, b) => {
     // 1. City match first (for fallback/expanded results)
