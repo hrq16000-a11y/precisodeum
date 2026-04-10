@@ -90,7 +90,7 @@ const AdminPwaPage = () => {
     setForm(prev => prev ? { ...prev, [key]: value } : null);
   };
 
-  if (isLoading || !form) {
+  if (adminLoading || isLoading || !form) {
     return (
       <AdminLayout>
         <div className="space-y-3 max-w-md mx-auto py-12">
