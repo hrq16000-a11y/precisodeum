@@ -147,10 +147,14 @@ const HeroBanner = () => {
   const ctaSecondaryText = useSettingValue('hero_cta_secondary_text');
   const ctaSecondaryLink = useSettingValue('hero_cta_secondary_link');
 
+  // Pick 3 random images once per mount (session) from the full list
   const bgImages = useMemo(() => {
-    if (!bgImagesRaw) return FALLBACK_BG_IMAGES;
-    const parsed = bgImagesRaw.split(',').map(s => s.trim()).filter(Boolean);
-    return parsed.length > 0 ? parsed : FALLBACK_BG_IMAGES;
+    const pool = bgImagesRaw
+      ? bgImagesRaw.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+    const source = pool.length > 0 ? pool : FALLBACK_BG_IMAGES;
+    return pickRandom(source, 3);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bgImagesRaw]);
 
   const prefixes = useMemo(() => {
