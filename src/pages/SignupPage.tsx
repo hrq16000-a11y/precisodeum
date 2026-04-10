@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
@@ -9,8 +9,9 @@ import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { useQuery } from '@tanstack/react-query';
 import { useSeoHead } from '@/hooks/useSeoHead';
-import { User, Briefcase, Building2, ArrowRight, ArrowLeft, CheckCircle2, Search } from 'lucide-react';
+import { User, Briefcase, Building2, ArrowRight, ArrowLeft, CheckCircle2, Search, LocateFixed, Loader2, MapPin } from 'lucide-react';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
+import { fetchAllMunicipalities, geocodeCity, reverseGeocode, normalize, type CityResult } from '@/lib/geoUtils';
 
 const ACCOUNT_TYPES = [
   {
@@ -74,9 +75,16 @@ const SignupPage = () => {
   const [loading, setLoading] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [allCities, setAllCities] = useState<CityResult[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const cityDropdownRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState({
     fullName: '', email: '', phone: '', password: '',
     businessName: '', categoryId: '', categoryName: '', city: '', state: '', description: '',
+    latitude: null as number | null, longitude: null as number | null,
   });
   const navigate = useNavigate();
 
