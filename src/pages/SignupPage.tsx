@@ -657,7 +657,7 @@ const SignupPage = () => {
                               <button
                                 key={`${c.name}-${c.state}-${i}`}
                                 type="button"
-                                onClick={() => handleCitySelect(c.name, c.state)}
+                                onClick={() => handleCitySelect(c)}
                                 className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${
                                   form.city === c.name && form.state === c.state ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'
                                 }`}
