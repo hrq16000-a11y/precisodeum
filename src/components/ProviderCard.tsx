@@ -101,8 +101,13 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 </span>
               )}
               {isFallback && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                  <MapPin className="h-3 w-3" /> Atende sua região
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                  <MapPin className="h-3 w-3" /> Outra região
+                </span>
+              )}
+              {user && !isFallback && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                  <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online
                 </span>
               )}
             </div>
