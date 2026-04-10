@@ -1575,6 +1575,7 @@ export type Database = {
           deleted_at: string | null
           description: string
           featured: boolean
+          ibge_code: string | null
           id: string
           latitude: number | null
           longitude: number | null
@@ -1611,6 +1612,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string
           featured?: boolean
+          ibge_code?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
@@ -1647,6 +1649,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string
           featured?: boolean
+          ibge_code?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
