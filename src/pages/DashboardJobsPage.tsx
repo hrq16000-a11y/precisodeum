@@ -289,6 +289,7 @@ const DashboardJobsPage = () => {
       job_type: (job as any).job_type || '', work_model: (job as any).work_model || '',
     });
     setEditingId(null);
+    setCitySearch(job.city ? `${job.city}${job.state ? ', ' + job.state : ''}` : '');
     setMode('structured');
     setDialogOpen(true);
     toast.info('Vaga duplicada — edite e publique');
