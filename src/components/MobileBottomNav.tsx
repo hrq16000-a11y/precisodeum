@@ -3,6 +3,7 @@ import { Home, Search, LayoutGrid, User, MessageCircle } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBottomNav, type BottomNavItem, type BottomNavConfig } from '@/hooks/useBottomNav';
 
@@ -18,13 +19,14 @@ const FallbackNav = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
+  const supportPhone = useSettingValue('whatsapp_support_phone') || '5541997452053';
 
   const hiddenPaths = ['/admin', '/login', '/cadastro', '/reset-password', '/dashboard', '/sponsor-panel'];
   const shouldHide = hiddenPaths.some(p => location.pathname.startsWith(p));
   if (shouldHide) return null;
 
   const handleWhatsApp = () => {
-    window.open('https://wa.me/5511999999999?text=Olá! Preciso de ajuda.', '_blank');
+    window.open(`https://wa.me/${supportPhone}?text=Olá! Preciso de ajuda.`, '_blank');
   };
 
   const items = [
