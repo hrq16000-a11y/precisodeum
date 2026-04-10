@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
 import { calculateDistanceKm, hasCoordinates, SERVICE_RADIUS_KM } from '@/lib/geoDistance';
+import { getCityCoords } from '@/lib/cityCoords';
+import { resolveMetroRegion, isMemberOfMetro } from '@/lib/metroRegions';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
@@ -349,16 +351,28 @@ function normalizeCityName(name: string): string {
 /**
  * Extract the core city name from geo-detected strings like
  * "Região Metropolitana de Curitiba" → "curitiba"
+ * "Grande São Paulo" → "saopaulo"
  */
 function extractCoreCity(cityNorm: string): string {
-  // Remove "regiaometropolitanade" prefix (already normalized, no accents/spaces)
-  return cityNorm.replace(/^regiaometropolitanade/, '');
+  // "regiaometropolitanade..." → pole city
+  if (cityNorm.startsWith('regiaometropolitanade')) {
+    return cityNorm.slice('regiaometropolitanade'.length);
+  }
+  if (cityNorm.startsWith('regiaometropolitana')) {
+    return cityNorm.slice('regiaometropolitana'.length);
+  }
+  // "grande..." → pole city
+  if (cityNorm.startsWith('grande')) {
+    return cityNorm.slice(6);
+  }
+  return cityNorm;
 }
 
 /**
- * Check if provider is within the user's region.
- * Uses 45km distance when both sides have coordinates,
- * otherwise falls back to city name matching.
+ * Check if provider is within the user's region using 3-layer intelligence:
+ * 1. Haversine distance (with static coord fallback for providers)
+ * 2. Metro region membership matching
+ * 3. City name fuzzy matching
  */
 function matchesGeoContext(
   provider: DbProvider,
@@ -371,35 +385,55 @@ function matchesGeoContext(
   if (!cityNorm && !stateNorm) return true;
 
   const effectiveRadius = radiusKm || SERVICE_RADIUS_KM;
+  const pCityNorm = normalizeCityName(provider.city);
+  const pStateNorm = normalizeCityName(provider.state);
 
-  // 1. Distance-based: if both user and provider have coordinates
-  if (
-    hasCoordinates(userLat, userLon) &&
-    hasCoordinates(provider.latitude, provider.longitude)
-  ) {
-    const dist = calculateDistanceKm(
-      { latitude: userLat!, longitude: userLon! },
-      { latitude: provider.latitude!, longitude: provider.longitude! }
-    );
-    return dist <= effectiveRadius;
+  // --- Layer 1: Distance-based (Haversine) ---
+  if (hasCoordinates(userLat, userLon)) {
+    let provLat = provider.latitude;
+    let provLon = provider.longitude;
+
+    // If provider has no coords, try static cache
+    if (!hasCoordinates(provLat, provLon)) {
+      const cached = getCityCoords(provider.city);
+      if (cached) {
+        provLat = cached.lat;
+        provLon = cached.lon;
+      }
+    }
+
+    if (hasCoordinates(provLat, provLon)) {
+      const dist = calculateDistanceKm(
+        { latitude: userLat!, longitude: userLon! },
+        { latitude: provLat!, longitude: provLon! }
+      );
+      return dist <= effectiveRadius;
+    }
   }
 
-  // 2. Metropolitan region: match by state (same UF = local)
-  const isMetroRegion = cityNorm.includes('regiaometropolitana');
-  if (isMetroRegion && stateNorm) {
-    const pState = normalizeCityName(provider.state);
-    return pState === stateNorm;
+  // --- Layer 2: Metro region membership ---
+  const metro = resolveMetroRegion(cityNorm, stateNorm);
+  if (metro) {
+    // Check if provider's city is a member of this metro region
+    if (isMemberOfMetro(pCityNorm, metro)) return true;
+
+    // Also check if provider is the pole city itself
+    const coreCity = extractCoreCity(cityNorm);
+    if (pCityNorm === coreCity) return true;
+
+    // If we found a metro region, only match members — don't fall through
+    // to fuzzy matching (which would be too broad)
+    return false;
   }
 
-  // 3. Fallback: city name matching
-  const pCity = normalizeCityName(provider.city);
+  // --- Layer 3: City name fuzzy matching ---
   const coreCity = extractCoreCity(cityNorm);
 
-  if (cityNorm && pCity === cityNorm) return true;
-  if (cityNorm && (pCity.includes(cityNorm) || cityNorm.includes(pCity))) return true;
+  if (cityNorm && pCityNorm === cityNorm) return true;
+  if (cityNorm && (pCityNorm.includes(cityNorm) || cityNorm.includes(pCityNorm))) return true;
   if (coreCity !== cityNorm && coreCity) {
-    if (pCity === coreCity) return true;
-    if (pCity.includes(coreCity) || coreCity.includes(pCity)) return true;
+    if (pCityNorm === coreCity) return true;
+    if (pCityNorm.includes(coreCity) || coreCity.includes(pCityNorm)) return true;
   }
   return false;
 }
