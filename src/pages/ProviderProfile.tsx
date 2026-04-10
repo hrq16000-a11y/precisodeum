@@ -10,6 +10,7 @@ import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';
 import SponsorAd from '@/components/SponsorAd';
 import { lazy, Suspense } from 'react';
+import { importWithRetry } from '@/lib/lazyWithRetry';
 const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';

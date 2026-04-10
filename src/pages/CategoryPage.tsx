@@ -1,4 +1,5 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
+import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, Users, MapPin } from 'lucide-react';

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
+import { importWithRetry } from '@/lib/lazyWithRetry';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
