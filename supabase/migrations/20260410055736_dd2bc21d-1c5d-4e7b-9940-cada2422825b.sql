@@ -1,0 +1,2 @@
+UPDATE public.menu_items SET url = '/buscar' WHERE id = '3dc711d9-7de4-42d7-af02-5824c692658c' AND url = '/busca';
+UPDATE public.menu_items SET url = '/sobre' WHERE id = 'b98cde78-a16b-4f28-822b-755ea38dc6f0' AND url = '/p/sobre';
