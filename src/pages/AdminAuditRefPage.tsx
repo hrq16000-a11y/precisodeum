@@ -385,5 +385,6 @@ export default function AdminAuditRefPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </AdminLayout>
   );
 }
