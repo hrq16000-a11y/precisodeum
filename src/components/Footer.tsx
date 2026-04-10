@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { MessageCircle, Users } from 'lucide-react';
-import { useMemo, Suspense } from 'react';
+import { useMemo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
-import { lazyWithRetry } from '@/lib/lazyWithRetry';
+import { importWithRetry } from '@/lib/lazyWithRetry';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
 import SponsorAd from '@/components/SponsorAd';
