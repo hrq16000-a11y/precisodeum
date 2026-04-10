@@ -212,16 +212,34 @@ async function fetchProvidersLightweight(query: any) {
     }
   });
 
+  // Count services per provider for ranking
+  const serviceCountMap: Record<string, number> = {};
+  serviceRows.forEach((s: any) => {
+    serviceCountMap[s.provider_id] = (serviceCountMap[s.provider_id] || 0) + 1;
+  });
+
   return (data as any[]).map((p) => {
     const profile = profileMap[p.user_id];
     const rawPhoto = p.photo_url || profile?.avatar || '';
-    return mapProvider(
+    const portfolioInfo = portfolioMap.get(p.user_id);
+    const mapped = mapProvider(
       { ...p, photo_url: avatarThumb(rawPhoto) },
       profile?.name,
       serviceImageThumb(serviceImageMap[p.id]),
-      portfolioSet.has(p.user_id),
+      portfolioInfo?.hasPortfolio || false,
       serviceFallbackMap[p.id]
     );
+    // Attach content score for ranking
+    const svcCount = serviceCountMap[p.id] || 0;
+    let contentScore = 0;
+    contentScore += rawPhoto ? 1 : 0;                          // +1 foto de perfil
+    contentScore += svcCount >= 1 ? 2 : 0;                     // +2 pelo menos 1 serviço
+    contentScore += svcCount >= 3 ? 3 : 0;                     // +3 se 3+ serviços
+    contentScore += portfolioInfo?.hasPortfolio ? 2 : 0;        // +2 portfólio existe
+    contentScore += (portfolioInfo?.albumCount || 0) >= 2 ? 2 : 0; // +2 se 2+ álbuns
+    contentScore += (portfolioInfo?.photoCount || 0) >= 5 ? 2 : 0; // +2 se fotos suficientes
+    (mapped as any)._contentScore = contentScore;
+    return mapped;
   });
 }
 
