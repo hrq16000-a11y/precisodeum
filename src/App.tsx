@@ -272,6 +272,7 @@ const App = () => {
                 <Route path="/admin/assinaturas" element={<AdminSubscriptionsPage />} />
                 <Route path="/admin/overview" element={<AdminOverviewPage />} />
                 <Route path="/admin/notificacoes" element={<AdminNotificationsPage />} />
+                <Route path="/admin/chat" element={<AdminChatPage />} />
                 <Route path="/admin/boosts" element={<AdminBoostsPage />} />
                 <Route path="/admin/barra-inferior" element={<AdminBottomNavPage />} />
                 <Route path="/blog" element={<BlogPage />} />
