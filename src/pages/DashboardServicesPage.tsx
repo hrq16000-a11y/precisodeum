@@ -218,6 +218,7 @@ const DashboardServicesPage = () => {
   const resetForm = () => {
     setForm({ service_name: '', description: '', price: '', whatsapp: '', service_area: '', address: '', working_hours: '', website: '' });
     setSelectedCategoryIds([]);
+    setFreeTextCategory('');
     setEditId(null);
     setNewServicePhoto(null);
     setNewServicePhotoPreview(null);
@@ -447,6 +448,8 @@ const DashboardServicesPage = () => {
                   categories={categories}
                   selectedIds={selectedCategoryIds}
                   onToggle={toggleCategory}
+                  freeText={freeTextCategory}
+                  onFreeTextChange={setFreeTextCategory}
                 />
               </div>
             </div>
