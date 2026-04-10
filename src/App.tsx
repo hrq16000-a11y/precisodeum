@@ -164,6 +164,13 @@ const TypeSelectionGate = () => {
 
 const App = () => {
   useEffect(() => {
+    // Invalidate all queries if daily purge just ran
+    if ((window as any).__DAILY_PURGE_TRIGGERED__) {
+      delete (window as any).__DAILY_PURGE_TRIGGERED__;
+      queryClient.invalidateQueries();
+      console.log('[Cache] React Query invalidated (daily purge).');
+    }
+
     const timeoutId = window.setTimeout(() => {
       void Promise.allSettled([
         prefetchImportWithRetry("route-search-page", () => import("./pages/SearchPage")),
