@@ -286,17 +286,17 @@ export function useFeaturedProviders() {
           .limit(500)
       );
 
-      // Filter by content score threshold
+      // Filter by finalScore threshold (hybrid: content + boost - fairness)
       const scored = allProviders
         .map((p) => ({
           ...p,
-          _totalScore: (p as any)._contentScore || 0,
+          _totalScore: (p as any)._finalScore || (p as any)._contentScore || 0,
         }))
         .filter(p => p._totalScore >= FEATURED_SCORE_THRESHOLD);
 
       if (scored.length === 0) return [];
 
-      // Sort by total score desc
+      // Sort by hybrid score desc
       scored.sort((a, b) => b._totalScore - a._totalScore);
 
       // Pick target count: 9 > 6 > 3
@@ -307,7 +307,7 @@ export function useFeaturedProviders() {
       // Light shuffle within top candidates to keep variety
       const candidates = scored.slice(0, Math.min(scored.length, target * 2));
       const shuffled = shuffleArray(candidates);
-      return shuffled.slice(0, target).map(({ _totalScore, _contentScore, ...p }: any) => p);
+      return shuffled.slice(0, target).map(({ _totalScore, _contentScore, _finalScore, _boostScore, ...p }: any) => p);
     },
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
