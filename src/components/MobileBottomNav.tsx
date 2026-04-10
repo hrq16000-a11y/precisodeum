@@ -210,6 +210,7 @@ const DynamicNav = ({ config, items }: { config: BottomNavConfig; items: BottomN
           {items.map((item) => {
             const isActive = item.action_type === 'route' && (
               location.pathname === item.route_path ||
+              (item.route_path === '/' && location.pathname === '/index') ||
               (item.route_path !== '/' && location.pathname.startsWith(item.route_path))
             );
             return (
