@@ -4,6 +4,7 @@
  * All keys MUST be pre-normalized (lowercase, no accents, alpha only).
  */
 import { normalize } from './normalize';
+import { isKnownCity } from './citiesIndex';
 
 interface CityCoord {
   lat: number;

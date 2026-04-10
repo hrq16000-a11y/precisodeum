@@ -258,9 +258,11 @@ const REGIONAL_ALIASES: Record<string, string> = {
   baixadasantista: 'santos',
   regiaodoabc: 'saopaulo',
   abcpaulista: 'saopaulo',
+  abc: 'saopaulo',
   grandesaopaulo: 'saopaulo',
   granderiodejaneiro: 'riodejaneiro',
   grandebelohorizonte: 'belohorizonte',
+  grandebh: 'belohorizonte',
   grandecuritiba: 'curitiba',
   grandeportoalegre: 'portoalegre',
   granderecife: 'recife',
@@ -272,6 +274,14 @@ const REGIONAL_ALIASES: Record<string, string> = {
   grandebelem: 'belem',
   grandenatal: 'natal',
   grandesaoluis: 'saoluis',
+  grandecampinas: 'campinas',
+  grandemanaus: 'manaus',
+  litoralpaulista: 'santos',
+  litoralnortesp: 'santos',
+  ride: 'brasilia',
+  ridedistritofederal: 'brasilia',
+  entornodebrasilia: 'brasilia',
+  valedoparaiba: 'saojosedoscampos',
 };
 
 export function resolveMetroRegion(normalizedGeo: string, stateNorm?: string): MetroRegion | null {
