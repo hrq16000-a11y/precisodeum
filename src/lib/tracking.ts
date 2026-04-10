@@ -3,7 +3,9 @@
  * Logs impressions, clicks (WhatsApp, profile, banner) for analytics & monetization.
  */
 
-type TrackEvent = 'card_view' | 'click_whatsapp' | 'click_profile' | 'click_banner';
+type TrackEvent = 'card_view' | 'click_whatsapp' | 'click_profile' | 'click_banner'
+  | 'geo_resolved_city' | 'geo_resolved_metro' | 'geo_resolved_uf'
+  | 'geo_fallback_text_only' | 'geo_failed_resolution';
 
 interface TrackPayload {
   event: TrackEvent;
@@ -63,6 +65,11 @@ export function trackProfileClick(providerId: string, slug: string, source = 'ho
 
 export function trackBannerClick(sponsorId: string, source = 'home') {
   trackEvent({ event: 'click_banner', sponsor_id: sponsorId, source });
+}
+
+/** Track geo resolution events (GEO v5 telemetry) */
+export function trackGeoEvent(event: TrackEvent, extra: Record<string, string>) {
+  trackEvent({ event, extra });
 }
 
 // Flush on page unload
