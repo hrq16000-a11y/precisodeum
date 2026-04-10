@@ -315,6 +315,12 @@ const SearchIntelligence = {
       resultCount: String(resultCount),
     });
   },
+
+  /** Reload config from Governance Engine */
+  async reloadFromGovernance() {
+    _governanceLoaded = false;
+    await loadGovernanceConfig();
+  },
 };
 
 export default SearchIntelligence;
