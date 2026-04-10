@@ -120,7 +120,7 @@ const PopularServices = () => {
           viewport={{ once: true, margin: '-40px' }}
         >
           {displayed.map((s: any, i: number) => {
-            const problem = getServiceProblem(s.name, s.slug);
+            const problem = getServiceProblem(s.name, s.slug, s.description);
             const basePrice = Number(s.min_price) || 0;
             const maxPrice = Math.round(basePrice * 1.8);
             const isFirst = i === 0;
