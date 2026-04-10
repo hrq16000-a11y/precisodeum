@@ -13,6 +13,7 @@ import type { GeoIntent, GeoContext } from './geoEngine';
 import { normalize } from './normalize';
 import { trackEvent } from './tracking';
 import GovernanceEngine from './governanceEngine';
+import { ControlPlane, ControlRegistry } from '@/core/governance';
 
 // ═══════════════════════════════════════════════════════════════════════
 // SECTION 1: Types
@@ -64,19 +65,37 @@ let _config: SILConfig = { ...DEFAULT_CONFIG };
 let _governanceLoaded = false;
 
 /**
- * Load SIL config overrides from Governance Engine (non-blocking).
+ * Load SIL config overrides from Governance Engine AND Control Plane registry.
+ * Control Plane values (post-enforcement) take priority.
  * Falls back to DEFAULT_CONFIG if governance is unavailable.
  */
 async function loadGovernanceConfig(): Promise<void> {
   if (_governanceLoaded) return;
   try {
+    // 1. Load raw governance overrides
     const overrides = await GovernanceEngine.getRuleValue<Partial<SILConfig>>(
       'sil', 'config_overrides', {}
     );
     if (overrides && typeof overrides === 'object') {
       _config = { ...DEFAULT_CONFIG, ...overrides };
-      _governanceLoaded = true;
     }
+
+    // 2. Apply Control Plane registry values (post-enforcement, highest priority)
+    const cpGeoWeight = ControlRegistry.getValue<number>('sil', 'geoWeight');
+    const cpServiceWeight = ControlRegistry.getValue<number>('sil', 'serviceWeight');
+    const cpConfidence = ControlRegistry.getValue<number>('sil', 'confidenceThreshold');
+    const cpGeoFilter = ControlRegistry.getValue<boolean>('sil', 'enableGeoFiltering');
+    const cpHybridBoost = ControlRegistry.getValue<boolean>('sil', 'enableHybridBoost');
+    const cpFallback = ControlRegistry.getValue<FallbackMode>('sil', 'fallbackMode');
+
+    if (cpGeoWeight !== undefined) _config.geoWeight = cpGeoWeight;
+    if (cpServiceWeight !== undefined) _config.serviceWeight = cpServiceWeight;
+    if (cpConfidence !== undefined) _config.confidenceThreshold = cpConfidence;
+    if (cpGeoFilter !== undefined) _config.enableGeoFiltering = cpGeoFilter;
+    if (cpHybridBoost !== undefined) _config.enableHybridBoost = cpHybridBoost;
+    if (cpFallback !== undefined) _config.fallbackMode = cpFallback;
+
+    _governanceLoaded = true;
   } catch {
     // Governance unavailable — continue with defaults
   }
@@ -122,6 +141,14 @@ function analyze(
   userLat?: number | null,
   userLon?: number | null,
 ): SILResult {
+  // 0. Read governed config from Control Plane registry (sync, already enforced)
+  const cpConfidence = ControlRegistry.getValue<number>('sil', 'confidenceThreshold');
+  if (cpConfidence !== undefined) _config.confidenceThreshold = cpConfidence;
+  const cpGeoWeight = ControlRegistry.getValue<number>('sil', 'geoWeight');
+  if (cpGeoWeight !== undefined) _config.geoWeight = cpGeoWeight;
+  const cpServiceWeight = ControlRegistry.getValue<number>('sil', 'serviceWeight');
+  if (cpServiceWeight !== undefined) _config.serviceWeight = cpServiceWeight;
+
   // 1. Delegate geo resolution entirely to GeoEngine
   const geoIntent = GeoEngine.resolve(query, city, state);
 
@@ -148,7 +175,21 @@ function analyze(
   // 5. Extract service query from service tokens
   const serviceQuery = geoIntent.serviceTokens.join(' ').trim();
 
-  // 6. Telemetry
+  // 6. Fire-and-forget Control Plane evaluation (non-blocking governance audit)
+  ControlPlane.evaluate({
+    source: 'sil',
+    action: 'analyze',
+    inputs: {
+      query,
+      intent,
+      geoConfidence: geoIntent.confidence,
+      fallbackTriggered,
+      geoWeight: _config.geoWeight,
+      serviceWeight: _config.serviceWeight,
+    },
+  }).catch(() => { /* governance unavailable — non-blocking */ });
+
+  // 7. Telemetry
   silTrack('sil_intent_detected', { intent, query });
   silTrack('sil_route_selected', {
     intent,
