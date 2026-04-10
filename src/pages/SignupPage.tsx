@@ -10,6 +10,7 @@ import { logAuditAction } from '@/hooks/useAuditLog';
 import { useQuery } from '@tanstack/react-query';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { User, Briefcase, Building2, ArrowRight, ArrowLeft, CheckCircle2, Search } from 'lucide-react';
+import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 
 const ACCOUNT_TYPES = [
   {
@@ -75,7 +76,7 @@ const SignupPage = () => {
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
   const [form, setForm] = useState({
     fullName: '', email: '', phone: '', password: '',
-    businessName: '', categoryId: '', categoryName: '', city: '', state: '', whatsapp: '', description: '',
+    businessName: '', categoryId: '', categoryName: '', city: '', state: '', description: '',
   });
   const navigate = useNavigate();
 
@@ -148,8 +149,8 @@ const SignupPage = () => {
           description: form.description,
           city: form.city,
           state: form.state,
-          phone: form.phone,
-          whatsapp: form.whatsapp || form.phone,
+           phone: form.phone,
+           whatsapp: form.phone,
           category_id: form.categoryId || null,
           slug,
           status: 'pending',
@@ -332,10 +333,13 @@ const SignupPage = () => {
                     className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-colors" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">Telefone *</label>
-                  <input type="tel" name="phone" required value={form.phone} onChange={handleChange}
-                    placeholder="(11) 99999-9999"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-colors" />
+                  <label className="mb-1 block text-sm font-medium text-foreground">Telefone / WhatsApp *</label>
+                  <PhoneMaskedInput
+                    name="phone"
+                    value={form.phone}
+                    onChange={(name, raw) => setForm(prev => ({ ...prev, [name]: raw }))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-colors"
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Senha * <span className="text-muted-foreground font-normal">(mínimo 6 caracteres)</span></label>
@@ -411,12 +415,6 @@ const SignupPage = () => {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
-                      <input type="tel" name="whatsapp" value={form.whatsapp} onChange={handleChange}
-                        placeholder="11999999999"
-                        className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-colors" />
-                    </div>
 
                     <div>
                       <label className="mb-1 block text-sm font-medium text-foreground">Descrição profissional</label>
