@@ -12,7 +12,7 @@ import GeoLocationChip from '@/components/GeoLocationChip';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { useCategoryProviders } from '@/hooks/useProviders';
+import { useCategoryProviders, matchesGeoContext, normalizeCityName } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useGeoCity } from '@/hooks/useGeoCity';
@@ -37,7 +37,7 @@ const stagger = {
 
 const CategoryPage = () => {
   const { slug } = useParams();
-  const { city: geoCity, state: geoState } = useGeoCity();
+  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon } = useGeoCity();
   const { data, isLoading } = useCategoryProviders(slug || '');
   const [page, setPage] = useState(1);
 
@@ -49,25 +49,19 @@ const CategoryPage = () => {
       return { displayProviders: allProviders, isFallback: false, expansionLevel: null };
     }
 
-    const lc = geoCity.toLowerCase();
-    const cityResults = allProviders.filter(
-      (p) => p.city.toLowerCase().includes(lc) || p.neighborhood.toLowerCase().includes(lc)
-    );
-    if (cityResults.length > 0) {
-      return { displayProviders: cityResults, isFallback: false, expansionLevel: null };
-    }
+    const cityNorm = normalizeCityName(geoCity);
+    const stateNorm = geoState ? normalizeCityName(geoState) : undefined;
 
-    if (geoState) {
-      const ls = geoState.toLowerCase();
-      const stateResults = allProviders.filter((p) => p.state.toLowerCase() === ls);
-      if (stateResults.length > 0) {
-        // Same state = same region (metropolitan areas), NOT fallback
-        return { displayProviders: stateResults, isFallback: false, expansionLevel: 'state' as const };
-      }
+    const localResults = allProviders.filter((p) =>
+      matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon)
+    );
+
+    if (localResults.length > 0) {
+      return { displayProviders: localResults, isFallback: false, expansionLevel: null };
     }
 
     return { displayProviders: allProviders, isFallback: true, expansionLevel: 'all' as const };
-  }, [allProviders, geoCity, geoState]);
+  }, [allProviders, geoCity, geoState, userLat, userLon]);
 
   useSeoHead({
     title: category ? `${category.name} - Profissionais` : 'Categoria',
