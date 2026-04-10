@@ -228,6 +228,7 @@ const App = () => {
                 <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/comunidade" element={<DashboardCommunityPage />} />
                 <Route path="/dashboard/notificacoes" element={<DashboardNotificationsPage />} />
+                <Route path="/dashboard/chat" element={<DashboardChatPage />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
                 <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
