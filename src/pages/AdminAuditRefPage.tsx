@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react';
+import AdminLayout from '@/components/AdminLayout';
+import { useAdmin } from '@/hooks/useAdmin';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,6 +48,7 @@ function getBucket(path: string) {
 }
 
 export default function AdminAuditRefPage() {
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const [tab, setTab] = useState('tabelas');
   const [loading, setLoading] = useState(false);
   const [lastRun, setLastRun] = useState<string | null>(null);
@@ -149,7 +152,10 @@ export default function AdminAuditRefPage() {
     toast.success('CSV exportado');
   };
 
+  if (adminLoading) return <AdminLayout><p className="text-muted-foreground p-4">Carregando...</p></AdminLayout>;
+
   return (
+    <AdminLayout>
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
@@ -379,5 +385,6 @@ export default function AdminAuditRefPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </AdminLayout>
   );
 }
