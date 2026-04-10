@@ -180,6 +180,7 @@ const DynamicNav = ({ config, items }: { config: BottomNavConfig; items: BottomN
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
 
   const hiddenPaths = config.hidden_paths || [];
   const shouldHide = hiddenPaths.some((p: string) => location.pathname.startsWith(p));
