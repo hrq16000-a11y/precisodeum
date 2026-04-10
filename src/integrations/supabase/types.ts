@@ -932,32 +932,44 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          image_url: string | null
           link: string | null
           message: string
           read: boolean
+          sent_by: string | null
+          target_group: string | null
           title: string
           type: string
           user_id: string
+          video_url: string | null
         }
         Insert: {
           created_at?: string
           id?: string
+          image_url?: string | null
           link?: string | null
           message?: string
           read?: boolean
+          sent_by?: string | null
+          target_group?: string | null
           title?: string
           type?: string
           user_id: string
+          video_url?: string | null
         }
         Update: {
           created_at?: string
           id?: string
+          image_url?: string | null
           link?: string | null
           message?: string
           read?: boolean
+          sent_by?: string | null
+          target_group?: string | null
           title?: string
           type?: string
           user_id?: string
+          video_url?: string | null
         }
         Relationships: []
       }
