@@ -134,17 +134,17 @@ async function fetchProvidersLightweight(query: any) {
       .select('id, provider_id, service_name, description, whatsapp, service_area, service_images(image_url, display_order)')
       .in('provider_id', providerIds),
     supabase
-      .from('provider_boosts')
+      .from('provider_boosts' as any)
       .select('provider_id, boost_weight')
       .in('provider_id', providerIds)
       .eq('is_active', true)
       .lte('start_at', new Date().toISOString())
-      .gte('end_at', new Date().toISOString()),
+      .gte('end_at', new Date().toISOString()) as any,
     supabase
-      .from('provider_impressions')
+      .from('provider_impressions' as any)
       .select('provider_id, impressions')
       .in('provider_id', providerIds)
-      .gte('date', new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)),
+      .gte('date', new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)) as any,
     getRankingConfig(),
   ]);
 
