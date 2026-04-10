@@ -5,6 +5,7 @@ import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
 import { normalize } from '@/lib/normalize';
 import GeoEngine from '@/lib/geoEngine';
 import type { GeoIntent } from '@/lib/geoEngine';
+import SearchIntelligence from '@/lib/searchIntelligence';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
@@ -389,16 +390,16 @@ export function filterAndRankProviders(
     results = results.filter((p) => p.categorySlug === categorySlug);
   }
 
-  // --- GEO v5: resolve intent via GeoEngine ---
-  const intent: GeoIntent = GeoEngine.resolve(query, city, state);
+  // --- SIL v1: Analyze query via Search Intelligence Layer ---
+  const sil = SearchIntelligence.analyze(query, city, state, userLat, userLon);
+  const { intent, geoIntent, geoContext, serviceQuery } = sil;
 
-  // Use service tokens for textual filtering
-  const textualQuery = intent.serviceTokens.join(' ').trim();
+  // Override radius if explicitly provided
+  if (radiusKm) (geoContext as any).radius = radiusKm;
 
-  // Apply textual filter only with non-geo terms
-  if (textualQuery) {
-    const lq = textualQuery.toLowerCase();
-    const terms = lq.split(/\s+/).filter(Boolean);
+  // Apply textual filter using service tokens (cleaned by SIL)
+  if (serviceQuery) {
+    const terms = serviceQuery.toLowerCase().split(/\s+/).filter(Boolean);
     results = results.filter((p) =>
       terms.every((term) =>
         p.name.toLowerCase().includes(term) ||
@@ -412,22 +413,14 @@ export function filterAndRankProviders(
     );
   }
 
-  // Build geo context from resolved intent
-  const effectiveLat = intent.coords?.lat ?? userLat;
-  const effectiveLon = intent.coords?.lon ?? userLon;
-  const ctx = GeoEngine.buildGeoContext(intent, effectiveLat, effectiveLon);
-  // Override radius if explicitly provided
-  if (radiusKm) (ctx as any).radius = radiusKm;
-
-  if (ctx.cityNorm || ctx.stateNorm) {
-    // Pre-compute normalized values + coords once per provider
+  // Route based on SIL intent
+  if (intent !== 'SERVICE_ONLY' && (geoContext.cityNorm || geoContext.stateNorm)) {
     const enriched = results.map((p) => {
-      const pCityNorm = normalize(p.city);
-      const pStateNorm = normalize(p.state);
-      const provCoords = resolveProviderCoords(p);
-      const isLocal = GeoEngine.matchesGeoContext(pCityNorm, pStateNorm, provCoords, ctx);
-      const gs = isLocal ? GeoEngine.geoScore(pCityNorm, pStateNorm, provCoords, ctx, intent.confidence) : 0;
-      return { p, pCityNorm, isLocal, gs };
+      const isLocal = SearchIntelligence.matchesGeo(p, geoContext);
+      const gs = isLocal ? SearchIntelligence.providerGeoScore(p, geoContext, geoIntent.confidence) : 0;
+      const relevance = SearchIntelligence.computeRelevanceScore(p, serviceQuery);
+      const scored = SearchIntelligence.computeFinalScore(gs, relevance, intent);
+      return { p, isLocal, gs, scored };
     });
 
     const localResults = enriched.filter((e) => e.isLocal);
@@ -440,10 +433,10 @@ export function filterAndRankProviders(
       final = [...localResults, ...otherResults];
     }
 
-    // Sort by: local first, then geoScore, then existing _finalScore
+    // Sort by: local first, then SIL final score, then existing content score
     final.sort((a, b) => {
       if (a.isLocal !== b.isLocal) return a.isLocal ? -1 : 1;
-      if (a.gs !== b.gs) return b.gs - a.gs;
+      if (a.scored.finalScore !== b.scored.finalScore) return b.scored.finalScore - a.scored.finalScore;
       const aScore = (a.p as any)._finalScore || (a.p as any)._contentScore || 0;
       const bScore = (b.p as any)._finalScore || (b.p as any)._contentScore || 0;
       if (aScore !== bScore) return bScore - aScore;
@@ -451,10 +444,11 @@ export function filterAndRankProviders(
       return b.p.reviewCount - a.p.reviewCount;
     });
 
+    SearchIntelligence.trackFinalScore(query, intent, final.length);
     return final.map((e) => e.p);
   }
 
-  // No geo filter — sort by existing score
+  // SERVICE_ONLY — sort by existing content score
   results.sort((a, b) => {
     const aScore = (a as any)._finalScore || (a as any)._contentScore || 0;
     const bScore = (b as any)._finalScore || (b as any)._contentScore || 0;
@@ -463,6 +457,7 @@ export function filterAndRankProviders(
     return b.reviewCount - a.reviewCount;
   });
 
+  SearchIntelligence.trackFinalScore(query, intent, results.length);
   return results;
 }
 
