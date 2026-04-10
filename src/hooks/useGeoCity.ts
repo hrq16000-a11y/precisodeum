@@ -144,7 +144,21 @@ export function useGeoCity(): GeoData {
     let cancelled = false;
 
     (async () => {
-      // 1) Try client-side APIs first (correct user IP)
+      // 1) Try edge function first (most reliable, no CORS issues)
+      try {
+        const edgeGeo = await fetchGeoFromEdge();
+        if (!cancelled && edgeGeo?.city) {
+          safeSet(CITY_KEY, edgeGeo.city);
+          if (edgeGeo.state) safeSet(STATE_KEY, edgeGeo.state);
+          if (edgeGeo.temp !== null) safeSet(TEMP_KEY, String(edgeGeo.temp));
+          setData({ city: edgeGeo.city, state: edgeGeo.state, temp: edgeGeo.temp });
+          return;
+        }
+      } catch (e) {
+        console.debug('[GeoCity] edge function failed:', e);
+      }
+
+      // 2) Fallback to client-side APIs
       try {
         const geo = await fetchGeoWithFallback();
         if (!cancelled && geo.city) {
@@ -157,24 +171,10 @@ export function useGeoCity(): GeoData {
             if (geo.state) safeSet(STATE_KEY, geo.state);
             if (temp !== null) safeSet(TEMP_KEY, String(temp));
             setData({ city: geo.city, state: geo.state, temp });
-            return;
           }
         }
       } catch (e) {
         console.debug('[GeoCity] client APIs failed:', e);
-      }
-
-      // 2) Fallback to edge function (uses server IP - less accurate)
-      try {
-        const edgeGeo = await fetchGeoFromEdge();
-        if (!cancelled && edgeGeo?.city) {
-          safeSet(CITY_KEY, edgeGeo.city);
-          if (edgeGeo.state) safeSet(STATE_KEY, edgeGeo.state);
-          if (edgeGeo.temp !== null) safeSet(TEMP_KEY, String(edgeGeo.temp));
-          setData({ city: edgeGeo.city, state: edgeGeo.state, temp: edgeGeo.temp });
-        }
-      } catch (e) {
-        console.debug('[GeoCity] edge fallback failed:', e);
       }
     })();
 

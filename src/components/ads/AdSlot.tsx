@@ -1,6 +1,6 @@
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect, useRef, useMemo, useState } from 'react';
 import SponsorImage from '@/components/SponsorImage';
 
 interface SlotSponsor {
@@ -91,7 +91,7 @@ function trackMetric(sponsorId: string, slotSlug: string, eventType: 'impression
   } as any).then(() => {});
 }
 
-const AdSlot = ({ slotSlug, className = '', layout = 'banner', category, city, state, maxAds }: AdSlotProps) => {
+const AdSlot = React.forwardRef<HTMLElement, AdSlotProps>(({ slotSlug, className = '', layout = 'banner', category, city, state, maxAds }, ref) => {
   const { data: sponsors = [] } = useSlotSponsors(slotSlug, category, city, state);
   const tracked = useRef(new Set<string>());
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -245,7 +245,9 @@ const AdSlot = ({ slotSlug, className = '', layout = 'banner', category, city, s
       </div>
     </section>
   );
-};
+});
+
+AdSlot.displayName = 'AdSlot';
 
 export { useSlotSponsors, trackMetric };
 export default AdSlot;

@@ -130,14 +130,12 @@ const Header = () => {
     if (item.open_in_new_tab || item.url?.startsWith('http')) {
       return (
         <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer" className={`${className} ${activeClass}`} onClick={onClick}>
-          {item.icon && <span className="mr-1">{item.icon}</span>}
           {item.label}
         </a>
       );
     }
     return (
       <Link key={item.id} to={item.url} className={`relative ${className} ${activeClass}`} onClick={onClick}>
-        {item.icon && <span className="mr-1">{item.icon}</span>}
         {item.label}
         {active && (
           <motion.div
@@ -284,7 +282,6 @@ const Header = () => {
                         onClick={() => setMobileOpen(false)}
                       >
                         <span className="flex items-center gap-2">
-                          {item.icon && <span>{item.icon}</span>}
                           {item.label}
                         </span>
                         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
@@ -296,7 +293,6 @@ const Header = () => {
                         onClick={() => setMobileOpen(false)}
                       >
                         <span className="flex items-center gap-2">
-                          {item.icon && <span>{item.icon}</span>}
                           {item.label}
                         </span>
                         {active ? (

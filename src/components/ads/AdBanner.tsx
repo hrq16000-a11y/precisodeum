@@ -1,5 +1,5 @@
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
 import { getPositionConfig } from '@/config/sponsorPositions';
 
@@ -10,7 +10,7 @@ interface AdBannerProps {
   sticky?: boolean;
 }
 
-const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBannerProps) => {
+const AdBanner = React.forwardRef<HTMLDivElement, AdBannerProps>(({ position, className = '', maxWidth, sticky = false }, ref) => {
   const { data: rawSponsors = [], trackImpression, trackClick } = useSponsorsBySlot(position);
   const config = getPositionConfig(position);
   const sponsors = useMemo(
@@ -100,6 +100,8 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
       </div>
     </div>
   );
-};
+});
+
+AdBanner.displayName = 'AdBanner';
 
 export default AdBanner;
