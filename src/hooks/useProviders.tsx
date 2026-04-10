@@ -90,8 +90,30 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
 
 const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, categories(name, slug, icon)';
 
+// --- Ranking config cache ---
+let _rankingConfig: { boostMul: number; fairnessPen: number; randomMax: number } | null = null;
+let _rankingConfigTime = 0;
+
+async function getRankingConfig() {
+  const now = Date.now();
+  if (_rankingConfig && now - _rankingConfigTime < 5 * 60_000) return _rankingConfig;
+  const { data } = await supabase
+    .from('site_settings')
+    .select('key, value')
+    .in('key', ['ranking_boost_multiplier', 'ranking_fairness_penalty', 'ranking_random_factor']);
+  const map: Record<string, string> = {};
+  (data || []).forEach((s: any) => { map[s.key] = s.value; });
+  _rankingConfig = {
+    boostMul: Number(map['ranking_boost_multiplier']) || 20,
+    fairnessPen: Number(map['ranking_fairness_penalty']) || 5,
+    randomMax: Number(map['ranking_random_factor']) || 5,
+  };
+  _rankingConfigTime = now;
+  return _rankingConfig;
+}
+
 /**
- * Lightweight fetch — uses counter columns instead of heavy portfolio queries.
+ * Lightweight fetch — uses counter columns + boost/impressions for hybrid ranking.
  */
 async function fetchProvidersLightweight(query: any) {
   const { data, error } = await query;
@@ -101,8 +123,8 @@ async function fetchProvidersLightweight(query: any) {
   const providerIds = (data as any[]).map((p) => p.id);
   const userIds = [...new Set((data as any[]).map((p) => p.user_id))];
 
-  // 2 parallel fetches: profiles + services (for images/fallback only)
-  const [profilesRes, servicesRes] = await Promise.all([
+  // 4 parallel fetches
+  const [profilesRes, servicesRes, boostsRes, impressionsRes, rankConfig] = await Promise.all([
     supabase
       .from('public_profiles' as any)
       .select('id, full_name, avatar_url')
@@ -111,11 +133,36 @@ async function fetchProvidersLightweight(query: any) {
       .from('services')
       .select('id, provider_id, service_name, description, whatsapp, service_area, service_images(image_url, display_order)')
       .in('provider_id', providerIds),
+    supabase
+      .from('provider_boosts')
+      .select('provider_id, boost_weight')
+      .in('provider_id', providerIds)
+      .eq('is_active', true)
+      .lte('start_at', new Date().toISOString())
+      .gte('end_at', new Date().toISOString()),
+    supabase
+      .from('provider_impressions')
+      .select('provider_id, impressions')
+      .in('provider_id', providerIds)
+      .gte('date', new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)),
+    getRankingConfig(),
   ]);
 
   const profileMap: Record<string, { name: string; avatar?: string }> = {};
   (profilesRes.data || []).forEach((p: any) => {
     profileMap[p.id] = { name: p.full_name, avatar: p.avatar_url || undefined };
+  });
+
+  // Boost aggregation
+  const boostMap: Record<string, number> = {};
+  (boostsRes.data || []).forEach((b: any) => {
+    boostMap[b.provider_id] = (boostMap[b.provider_id] || 0) + (b.boost_weight || 0);
+  });
+
+  // Impressions aggregation (last 7 days)
+  const impressionMap: Record<string, number> = {};
+  (impressionsRes.data || []).forEach((i: any) => {
+    impressionMap[i.provider_id] = (impressionMap[i.provider_id] || 0) + (i.impressions || 0);
   });
 
   const serviceRows = servicesRes.data || [];
@@ -157,14 +204,23 @@ async function fetchProvidersLightweight(query: any) {
       serviceFallbackMap[p.id]
     );
 
-    // Content score from counter columns — O(1)
+    // Hybrid score
     const contentScore =
       (rawPhoto ? 10 : 0) +
       (svcCount >= 1 ? 2 : 0) +
       (svcCount >= 3 ? 3 : 0) +
       (photoCount * 2) +
       (albumCount * 5);
+    const boostScore = boostMap[p.id] || 0;
+    const impressions7d = impressionMap[p.id] || 0;
+    const fairnessPenalty = Math.log(1 + impressions7d) * rankConfig.fairnessPen;
+    const randomFactor = Math.random() * rankConfig.randomMax;
+
+    const finalScore = contentScore + (boostScore * rankConfig.boostMul) - fairnessPenalty + randomFactor;
+
     (mapped as any)._contentScore = contentScore;
+    (mapped as any)._finalScore = finalScore;
+    (mapped as any)._boostScore = boostScore;
     return mapped;
   });
 }
