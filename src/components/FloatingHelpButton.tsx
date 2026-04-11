@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LifeBuoy, HelpCircle, MessageCircle, BookOpen, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,7 +7,7 @@ import { whatsappLink } from '@/lib/whatsapp';
 
 const FALLBACK_PHONE = '5541997452053';
 
-const FloatingHelpButton = () => {
+const FloatingHelpButton = forwardRef<HTMLDivElement>((_, ref) => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -117,8 +117,9 @@ const FloatingHelpButton = () => {
           )}
         </AnimatePresence>
       </motion.button>
-    </>
+    </div>
   );
-};
+});
 
+FloatingHelpButton.displayName = 'FloatingHelpButton';
 export default FloatingHelpButton;

@@ -1,4 +1,4 @@
-import { useEffect, useState, memo, useCallback, useRef } from 'react';
+import { useEffect, useState, memo, useCallback, useRef, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink } from 'lucide-react';
 import { handleImageError } from '@/lib/imageResolver';
@@ -25,7 +25,7 @@ interface Props {
 
 const ROTATION_MS = 5000;
 
-const LeaderSponsor = memo(({ sponsors, onClickTrack, onImpressionTrack }: Props) => {
+const LeaderSponsor = memo(forwardRef<HTMLElement, Props>(({ sponsors, onClickTrack, onImpressionTrack }, ref) => {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [dismissed, setDismissed] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -143,7 +143,7 @@ const LeaderSponsor = memo(({ sponsors, onClickTrack, onImpressionTrack }: Props
       )}
     </motion.section>
   );
-});
+}));
 
 LeaderSponsor.displayName = 'LeaderSponsor';
 export default LeaderSponsor;

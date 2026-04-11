@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, forwardRef } from 'react';
 import { Camera, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -12,7 +12,7 @@ interface AvatarUploadProps {
   onUploaded: (url: string) => void;
 }
 
-const AvatarUpload = ({ userId, currentUrl, initials, onUploaded }: AvatarUploadProps) => {
+const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(({ userId, currentUrl, initials, onUploaded }, ref) => {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -101,6 +101,7 @@ const AvatarUpload = ({ userId, currentUrl, initials, onUploaded }: AvatarUpload
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
     </div>
   );
-};
+});
 
+AvatarUpload.displayName = 'AvatarUpload';
 export default AvatarUpload;
