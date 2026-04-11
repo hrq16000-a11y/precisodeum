@@ -54,10 +54,9 @@ const TermsPage = () => {
               <p className="mt-2">A plataforma é fornecida "como está". Não garantimos disponibilidade ininterrupta e não nos responsabilizamos por danos diretos ou indiretos decorrentes do uso.</p>
             </section>
           </div>
-        </div>
+        </FadeInSection>
       </main>
       <Footer />
-        </FadeInSection>
   );
 };
 

@@ -48,10 +48,9 @@ const CookiesPage = () => {
               <p className="mt-2">Utilizamos serviços de terceiros que podem definir seus próprios cookies, como ferramentas de analytics e provedores de autenticação.</p>
             </section>
           </div>
-        </div>
+        </FadeInSection>
       </main>
       <Footer />
-        </FadeInSection>
   );
 };
 
