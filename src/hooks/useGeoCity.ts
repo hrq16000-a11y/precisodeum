@@ -1,5 +1,30 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
+/** Normalize state to 2-letter UF code */
+const STATE_NAME_TO_UF: Record<string, string> = {
+  'acre': 'AC', 'alagoas': 'AL', 'amapa': 'AP', 'amapá': 'AP', 'amazonas': 'AM',
+  'bahia': 'BA', 'ceara': 'CE', 'ceará': 'CE', 'distrito federal': 'DF',
+  'espirito santo': 'ES', 'espírito santo': 'ES', 'goias': 'GO', 'goiás': 'GO',
+  'maranhao': 'MA', 'maranhão': 'MA', 'mato grosso': 'MT', 'mato grosso do sul': 'MS',
+  'minas gerais': 'MG', 'para': 'PA', 'pará': 'PA', 'paraiba': 'PB', 'paraíba': 'PB',
+  'parana': 'PR', 'paraná': 'PR', 'pernambuco': 'PE', 'piaui': 'PI', 'piauí': 'PI',
+  'rio de janeiro': 'RJ', 'rio grande do norte': 'RN', 'rio grande do sul': 'RS',
+  'rondonia': 'RO', 'rondônia': 'RO', 'roraima': 'RR', 'santa catarina': 'SC',
+  'sao paulo': 'SP', 'são paulo': 'SP', 'sergipe': 'SE', 'tocantins': 'TO',
+};
+
+function normalizeUF(state: string | null | undefined): string | null {
+  if (!state) return null;
+  const trimmed = state.trim();
+  if (!trimmed) return null;
+  // Already a 2-letter UF
+  if (/^[A-Z]{2}$/.test(trimmed)) return trimmed;
+  if (/^[a-z]{2}$/.test(trimmed)) return trimmed.toUpperCase();
+  // Try to resolve full name
+  const lower = trimmed.toLowerCase();
+  return STATE_NAME_TO_UF[lower] || trimmed.toUpperCase().slice(0, 2);
+}
+
 interface GeoData {
   city: string | null;
   state: string | null;
@@ -46,7 +71,7 @@ function parseNumber(value: string | null) {
 
 let geoState: GeoData = {
   city: safeGet(CITY_KEY),
-  state: safeGet(STATE_KEY),
+  state: normalizeUF(safeGet(STATE_KEY)),
   temp: parseNumber(safeGet(TEMP_KEY)),
   latitude: parseNumber(safeGet(LAT_KEY)),
   longitude: parseNumber(safeGet(LON_KEY)),
@@ -164,10 +189,11 @@ function startFetchIfNeeded() {
     try {
       const edgeGeo = await fetchGeoFromEdge();
       if (edgeGeo.city || edgeGeo.state || edgeGeo.temp !== null) {
+        const uf = normalizeUF(edgeGeo.state);
         if (edgeGeo.city) safeSet(CITY_KEY, edgeGeo.city);
-        if (edgeGeo.state) safeSet(STATE_KEY, edgeGeo.state);
+        if (uf) safeSet(STATE_KEY, uf);
         if (edgeGeo.temp !== null) safeSet(TEMP_KEY, String(edgeGeo.temp));
-        setGeoState(edgeGeo);
+        setGeoState({ ...edgeGeo, state: uf });
       }
     } catch (error) {
       console.debug('[GeoCity] edge function failed:', error);
@@ -185,8 +211,9 @@ function startFetchIfNeeded() {
           ? await fetchTemp(result.lat, result.lon)
           : geoState.temp;
 
+        const uf = normalizeUF(result.state);
         if (result.city) safeSet(CITY_KEY, result.city);
-        if (result.state) safeSet(STATE_KEY, result.state);
+        if (uf) safeSet(STATE_KEY, uf);
         if (result.lat !== null) safeSet(LAT_KEY, String(result.lat));
         if (result.lon !== null) safeSet(LON_KEY, String(result.lon));
         if (temp !== null) safeSet(TEMP_KEY, String(temp));
@@ -194,7 +221,7 @@ function startFetchIfNeeded() {
 
         setGeoState({
           city: result.city || geoState.city,
-          state: result.state || geoState.state,
+          state: uf || geoState.state,
           temp,
           latitude: result.lat,
           longitude: result.lon,
@@ -224,9 +251,10 @@ export function useGeoCity(): GeoStore {
   const data = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   const setCity = useCallback((city: string, state?: string, latitude?: number | null, longitude?: number | null) => {
+    const uf = normalizeUF(state) || undefined;
     safeSet(CITY_KEY, city);
     safeSet(OVERRIDE_KEY, 'true');
-    if (state) safeSet(STATE_KEY, state);
+    if (uf) safeSet(STATE_KEY, uf);
 
     if (latitude !== undefined && latitude !== null) safeSet(LAT_KEY, String(latitude));
     else {
@@ -240,7 +268,7 @@ export function useGeoCity(): GeoStore {
 
     setGeoState({
       city,
-      state: state || geoState.state,
+      state: uf || geoState.state,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
       manualOverride: true,
@@ -270,7 +298,7 @@ export function useGeoCity(): GeoStore {
           try {
             const location = await reverseGeocode(latitude, longitude);
             city = location.city || city;
-            state = location.state || state;
+            state = normalizeUF(location.state) || state;
           } catch {
             // keep existing city/state when reverse geocoding fails
           }
