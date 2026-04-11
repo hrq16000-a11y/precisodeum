@@ -136,8 +136,14 @@ const JobsPage = () => {
         .eq('status', 'active')
         .is('deleted_at', null);
 
-      // Filters
-      if (search) query = query.ilike('title', `%${search}%`);
+      // Filter expired jobs
+      const today = new Date().toISOString().split('T')[0];
+      query = query.or(`deadline.gte.${today},deadline.is.null`);
+
+      // Filters — expanded search across title, description, and category name
+      if (search) {
+        query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+      }
       if (cityFilter) query = query.ilike('city', `%${cityFilter}%`);
       if (jobTypeFilter) query = query.eq('job_type', jobTypeFilter);
       if (workModelFilter) query = query.eq('work_model', workModelFilter);

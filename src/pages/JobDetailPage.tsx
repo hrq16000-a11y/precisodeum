@@ -8,9 +8,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { whatsappLink } from '@/lib/whatsapp';
+import { Eye, Share2, Facebook, Linkedin } from 'lucide-react';
 
 const renderList = (text: string) => {
   if (!text) return null;
@@ -66,10 +67,23 @@ const JobDetailPage = () => {
   }) : null, [job]);
   useJsonLd(jobLd);
 
+  // Track view count (once per page load)
+  const viewTracked = useRef(false);
+  useEffect(() => {
+    if (job?.id && !viewTracked.current) {
+      viewTracked.current = true;
+      supabase.rpc('increment_job_view', { job_id: job.id }).then(() => {});
+    }
+  }, [job?.id]);
+
   const copyUrl = () => {
     navigator.clipboard.writeText(pageUrl);
     toast.success('Link copiado!');
   };
+
+  const shareWhatsApp = () => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`${job?.title} - ${pageUrl}`)}`, '_blank');
+  const shareFacebook = () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`, '_blank');
+  const shareLinkedIn = () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(pageUrl)}`, '_blank');
 
   if (isLoading) {
     return (
@@ -217,6 +231,29 @@ const JobDetailPage = () => {
               <Button variant="outline" className="w-full" size="sm" onClick={copyUrl}>
                 <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar link da vaga
               </Button>
+
+              {/* View count */}
+              {job.view_count != null && (
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground pt-2">
+                  <Eye className="h-3.5 w-3.5" /> {job.view_count} visualização(ões)
+                </p>
+              )}
+
+              {/* Social sharing */}
+              <div className="pt-2 border-t border-border">
+                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1"><Share2 className="h-3.5 w-3.5" /> Compartilhar</p>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={shareWhatsApp}>
+                    <MessageCircle className="mr-1 h-3.5 w-3.5" /> WhatsApp
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={shareFacebook}>
+                    <Facebook className="mr-1 h-3.5 w-3.5" /> Facebook
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={shareLinkedIn}>
+                    <Linkedin className="mr-1 h-3.5 w-3.5" /> LinkedIn
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
