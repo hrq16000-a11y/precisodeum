@@ -298,7 +298,7 @@ export function useGeoCity(): GeoStore {
           try {
             const location = await reverseGeocode(latitude, longitude);
             city = location.city || city;
-            state = location.state || state;
+            state = normalizeUF(location.state) || state;
           } catch {
             // keep existing city/state when reverse geocoding fails
           }
