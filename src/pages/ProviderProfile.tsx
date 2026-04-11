@@ -558,6 +558,18 @@ const ProviderProfile = () => {
   const scaleIn = { hidden: { opacity: 0, scale: 0.92 }, visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
   const slideInLeft = { hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
 
+  // Verified badge logic — same rules as ProviderCard, admin-configurable
+  const hasProfileImages = !!(provider?.photo_url || portfolioImages.length > 0);
+  const isProfileVerified = verifiedEnabled && !!provider && (
+    (provider.services_count || 0) >= vMinServices &&
+    (provider.portfolio_album_count || 0) >= vMinAlbums &&
+    (provider.review_count || 0) >= vMinReviews &&
+    (vMinRating <= 0 || (provider.rating_avg || 0) >= vMinRating) &&
+    (!vRequirePhoto || !!provider.photo_url) &&
+    (!vRequireCnpj || !!provider.cnpj) &&
+    (!vRequireCity || !!provider.city)
+  );
+
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col">
