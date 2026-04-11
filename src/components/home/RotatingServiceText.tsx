@@ -86,7 +86,7 @@ const RotatingServiceText = () => {
 
   return (
     <>
-      <span className="relative inline-block min-w-[180px] sm:min-w-[260px] text-left align-bottom">
+      <span className="relative inline-block min-w-[180px] sm:min-w-[260px] text-left align-bottom" style={{ height: '1.2em' }}>
         <AnimatePresence mode="wait">
           <motion.span
             key={`${index}-${animType}`}
