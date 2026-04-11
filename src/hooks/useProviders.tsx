@@ -509,6 +509,78 @@ export function useSearchSuggestions() {
   });
 }
 
+/**
+ * Returns only categories that have approved providers, sorted by GPS proximity.
+ */
+export function useGeoCategories(userLat?: number | null, userLon?: number | null) {
+  return useQuery({
+    queryKey: ['geo-categories', userLat ?? 'none', userLon ?? 'none'],
+    queryFn: async () => {
+      // Fetch categories + providers with coords in parallel
+      const [catsRes, provsRes] = await Promise.all([
+        supabase.from('categories').select('id, name, slug, icon'),
+        supabase.from('providers').select('category_id, latitude, longitude').eq('status', 'approved'),
+      ]);
+      if (catsRes.error) throw catsRes.error;
+
+      const cats = catsRes.data || [];
+      const provs = provsRes.data || [];
+
+      // Build map: category_id -> { count, coords[] }
+      const catMap: Record<string, { count: number; coords: { latitude: number; longitude: number }[] }> = {};
+      provs.forEach((p: any) => {
+        if (!p.category_id) return;
+        if (!catMap[p.category_id]) catMap[p.category_id] = { count: 0, coords: [] };
+        catMap[p.category_id].count++;
+        if (Number.isFinite(p.latitude) && Number.isFinite(p.longitude)) {
+          catMap[p.category_id].coords.push({ latitude: p.latitude, longitude: p.longitude });
+        }
+      });
+
+      // Only categories with providers
+      let result = cats
+        .filter((c) => catMap[c.id]?.count > 0)
+        .map((c) => {
+          const info = catMap[c.id];
+          let minDistance = Infinity;
+
+          if (userLat != null && userLon != null && Number.isFinite(userLat) && Number.isFinite(userLon)) {
+            info.coords.forEach((coord) => {
+              const dist = calculateDistanceKmSimple(userLat, userLon, coord.latitude, coord.longitude);
+              if (dist < minDistance) minDistance = dist;
+            });
+          }
+
+          return { ...c, providerCount: info.count, minDistance };
+        });
+
+      // Sort: by proximity if GPS available, otherwise by provider count
+      if (userLat != null && userLon != null && Number.isFinite(userLat) && Number.isFinite(userLon)) {
+        result.sort((a, b) => a.minDistance - b.minDistance);
+      } else {
+        // Shuffle for variety when no GPS
+        for (let i = result.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [result[i], result[j]] = [result[j], result[i]];
+        }
+      }
+
+      return result;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+/** Lightweight Haversine for sorting only */
+function calculateDistanceKmSimple(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = (v: number) => (v * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export function useCategoryProviders(categorySlug: string) {
   return useQuery({
     queryKey: ['category-providers', categorySlug],
