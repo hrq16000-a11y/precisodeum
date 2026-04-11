@@ -144,16 +144,23 @@ const DashboardServicesPage = () => {
 
   const uploadPhoto = async (serviceId: string): Promise<void> => {
     if (!newServicePhoto || !user) return;
-    const ext = newServicePhoto.name.split('.').pop();
-    const path = `${user.id}/${serviceId}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('service-images').upload(path, newServicePhoto);
-    if (error) return;
-    const { data: urlData } = supabase.storage.from('service-images').getPublicUrl(path);
-    await supabase.from('service_images').insert({
-      service_id: serviceId,
-      image_url: urlData.publicUrl,
-      display_order: 0,
-    });
+    setUploadingPhoto(true);
+    try {
+      const ext = newServicePhoto.name.split('.').pop();
+      const path = `${user.id}/${serviceId}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('service-images').upload(path, newServicePhoto);
+      if (error) { toast.error('Erro ao enviar foto: ' + error.message); return; }
+      const { data: urlData } = supabase.storage.from('service-images').getPublicUrl(path);
+      const { error: dbErr } = await supabase.from('service_images').insert({
+        service_id: serviceId,
+        image_url: urlData.publicUrl,
+        display_order: 0,
+      });
+      if (dbErr) { toast.error('Erro ao salvar foto: ' + dbErr.message); return; }
+      toast.success('Foto enviada com sucesso!');
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const handleSave = async () => {
@@ -216,9 +223,17 @@ const DashboardServicesPage = () => {
   };
 
   const resetForm = () => {
-    setForm({ service_name: '', description: '', price: '', whatsapp: '', service_area: '', address: '', working_hours: '', website: '' });
+    setForm({
+      service_name: '',
+      description: '',
+      price: '',
+      whatsapp: provider?.whatsapp ? provider.whatsapp.replace(/^55/, '') : '',
+      service_area: provider?.city || '',
+      address: provider ? [provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') : '',
+      working_hours: provider?.working_hours || '',
+      website: provider?.website || '',
+    });
     setSelectedCategoryIds([]);
-    
     setEditId(null);
     setNewServicePhoto(null);
     setNewServicePhotoPreview(null);
@@ -458,7 +473,7 @@ const DashboardServicesPage = () => {
                 <label className="mb-1 block text-sm font-medium text-foreground">Cidade *</label>
                 <input
                   name="service_area"
-                  value={form.service_area || (provider ? provider.city : '')}
+                  value={form.service_area}
                   onChange={handleChange}
                   placeholder="Selecione"
                   className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
@@ -468,7 +483,7 @@ const DashboardServicesPage = () => {
                 <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
                 <input
                   name="whatsapp"
-                  value={form.whatsapp || (provider?.whatsapp ? provider.whatsapp.replace(/^55/, '') : '')}
+                  value={form.whatsapp}
                   onChange={handleChange}
                   placeholder="(61) 99999-9999"
                   className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
