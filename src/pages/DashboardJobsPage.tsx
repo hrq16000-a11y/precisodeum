@@ -291,6 +291,7 @@ const DashboardJobsPage = () => {
     setCitySearch('');
     setSimpleText('');
     setCsvText('');
+    setExtractionSummary([]);
     setDialogOpen(true);
   };
 
@@ -655,7 +656,7 @@ Horário: Segunda a sexta, 08h às 17h`}
                     </div>
                   )}
                   {showCitySuggestions && (
-                    <div className="fixed inset-0 z-10" onClick={() => setShowCitySuggestions(false)} />
+                    <div className="fixed inset-0 z-[5]" onClick={() => setShowCitySuggestions(false)} />
                   )}
                 </div>
               </div>
