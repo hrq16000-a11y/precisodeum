@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { X, ChevronDown, Search } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import CategoryIcon from '@/components/CategoryIcon';
 import { cn } from '@/lib/utils';
 
 interface Category {
@@ -139,7 +140,7 @@ const SmartCategoryPicker = ({
             key={cat.id}
             className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent"
           >
-            {cat.icon} {cat.name}
+            <CategoryIcon icon={cat.icon || ''} size={12} className="text-accent" /> {cat.name}
             <button
               type="button"
               onClick={(e) => {

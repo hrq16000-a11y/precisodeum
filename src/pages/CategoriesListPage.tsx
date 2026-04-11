@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
@@ -82,8 +83,8 @@ const CategoriesListPage = () => {
                     className="group relative flex items-center gap-2.5 rounded-xl border border-border bg-card p-3 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30 overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/[0.03] to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
-                    <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xl text-primary transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                      {cat.icon}
+                    <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                      <CategoryIcon icon={cat.icon} size={22} className="text-primary" />
                     </span>
                     <div className="relative min-w-0 flex-1">
                       <span className="text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2">

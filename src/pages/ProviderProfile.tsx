@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2 } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import { formatLocationString, capitalizeName } from '@/lib/normalize';
@@ -1472,8 +1473,8 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
       {service.serviceCategories?.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {service.serviceCategories.map((cat: any, i: number) => (
-            <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">
-              {cat.icon} {cat.name}
+            <span key={i} className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">
+              <CategoryIcon icon={cat.icon} size={12} className="text-accent" /> {cat.name}
             </span>
           ))}
         </div>
@@ -1543,8 +1544,8 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
                   {s.serviceCategories?.length > 0 && (
                     <div className="mt-1 flex flex-wrap gap-1">
                       {s.serviceCategories.map((cat: any, i: number) => (
-                        <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
-                          {cat.icon} {cat.name}
+                        <span key={i} className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                          <CategoryIcon icon={cat.icon} size={10} className="text-accent" /> {cat.name}
                         </span>
                       ))}
                     </div>
