@@ -38,8 +38,7 @@ const HowItWorksSection = () => {
               <motion.div
                 className="h-full bg-gradient-to-r from-primary/20 via-accent/40 to-primary/20 rounded-full origin-left"
                 initial={{ scaleX: 0 }}
-                whileInView={{ scaleX: 1 }}
-                viewport={{ once: true }}
+                animate={{ scaleX: 1 }}
                 transition={{ duration: 1.2, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
               />
               <motion.div
@@ -73,8 +72,7 @@ const HowItWorksSection = () => {
                     className="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent/80 text-xs font-bold text-accent-foreground shadow-md ring-2 ring-background"
                     whileHover={{ scale: 1.2 }}
                     initial={{ scale: 0 }}
-                    whileInView={{ scale: 1 }}
-                    viewport={{ once: true }}
+                    animate={{ scale: 1 }}
                     transition={{ type: 'spring', delay: 0.3 + i * 0.15 }}
                   >
                     {item.step}
