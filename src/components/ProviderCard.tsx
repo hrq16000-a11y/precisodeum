@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Crown, BadgeCheck, Clock, Circle } from 'lucide-react';
+import { MapPin, Crown, BadgeCheck, Clock, Circle, ArrowRight } from 'lucide-react';
 import { usePrefetchProvider, usePrefetchHandlers } from '@/hooks/usePrefetch';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';

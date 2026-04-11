@@ -875,7 +875,14 @@ export function matchesGeoContext(
       ctx.userCoords,
       { latitude: provCoords.lat, longitude: provCoords.lon },
     );
-    return dist <= ctx.radius;
+    if (dist <= ctx.radius) return true;
+
+    // FALLBACK: same city or metro region — never flag as "outra região"
+    if (ctx.coreCity && pCityNorm === ctx.coreCity) return true;
+    if (ctx.cityNorm && pCityNorm === ctx.cityNorm) return true;
+    if (ctx.metro && isMemberOfMetro(pCityNorm, ctx.metro)) return true;
+
+    return false;
   }
 
   // SECONDARY: When user has coords but provider doesn't — provider can't be confirmed local
