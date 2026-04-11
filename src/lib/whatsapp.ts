@@ -12,7 +12,11 @@
  * - Links always use wa.me/{canonical}
  */
 
-const DEFAULT_MESSAGE = 'Olá, vim pelo site Preciso de Um.';
+const DEFAULT_MESSAGE = 'Olá, vi o seu perfil no Preciso de um e gostaria de um orçamento.';
+
+/** Detect mobile device via user agent */
+const isMobileDevice = (): boolean =>
+  typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 /** Remove all non-digit characters and leading zeros */
 export const sanitizePhone = (raw: string): string =>
@@ -25,15 +29,12 @@ export const sanitizePhone = (raw: string): string =>
 export const toCanonical = (input: string): string => {
   const digits = sanitizePhone(input);
   if (!digits) return '';
-  // Already canonical: starts with 55 and 12-13 digits total
   if (digits.startsWith('55') && (digits.length === 12 || digits.length === 13)) {
     return digits;
   }
-  // Raw DDD + number: 10-11 digits
   if (digits.length === 10 || digits.length === 11) {
     return '55' + digits;
   }
-  // Invalid length — return empty
   return '';
 };
 
@@ -49,12 +50,28 @@ export const formatToWhatsApp = (phone: string): string => {
   return toCanonical(phone);
 };
 
-/** Generate wa.me link with optional message (message is ALWAYS preserved) */
-export const whatsappLink = (number: string, message?: string): string => {
+/** Deep link nativo whatsapp://send (mobile) */
+export const whatsappDeepLink = (number: string, message?: string): string => {
+  const formatted = formatToWhatsApp(number);
+  if (!formatted) return '#';
+  const text = message || DEFAULT_MESSAGE;
+  return `whatsapp://send?phone=${formatted}&text=${encodeURIComponent(text)}`;
+};
+
+/** Link web wa.me (desktop fallback) */
+export const whatsappWebLink = (number: string, message?: string): string => {
   const formatted = formatToWhatsApp(number);
   if (!formatted) return '#';
   const text = message || DEFAULT_MESSAGE;
   return `https://wa.me/${formatted}?text=${encodeURIComponent(text)}`;
+};
+
+/** Generate WhatsApp link — deep link on mobile, wa.me on desktop */
+export const whatsappLink = (number: string, message?: string): string => {
+  if (isMobileDevice()) {
+    return whatsappDeepLink(number, message);
+  }
+  return whatsappWebLink(number, message);
 };
 
 /**
