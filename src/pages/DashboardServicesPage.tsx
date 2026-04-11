@@ -28,6 +28,7 @@ const DashboardServicesPage = () => {
   const [categorySearch, setCategorySearch] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [newServicePhoto, setNewServicePhoto] = useState<File | null>(null);
   const [newServicePhotoPreview, setNewServicePhotoPreview] = useState<string | null>(null);
@@ -109,6 +110,7 @@ const DashboardServicesPage = () => {
     } else {
       setForm(prev => ({ ...prev, [name]: value }));
     }
+    if (formErrors[name]) setFormErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const toggleCategory = (catId: string) => {
@@ -171,7 +173,10 @@ const DashboardServicesPage = () => {
         : `Limite de serviços atingido (${limits?.max_services}).`);
       return;
     }
-    if (!form.service_name.trim()) { toast.error('Título é obrigatório'); return; }
+    const errors: Record<string, string> = {};
+    if (!form.service_name.trim()) errors.service_name = 'Título é obrigatório';
+    if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+    setFormErrors({});
 
     const providerId = await ensureProvider();
     if (!providerId) return;
@@ -237,6 +242,7 @@ const DashboardServicesPage = () => {
     setEditId(null);
     setNewServicePhoto(null);
     setNewServicePhotoPreview(null);
+    setFormErrors({});
   };
 
   const handleEdit = async (s: any) => {
@@ -428,8 +434,9 @@ const DashboardServicesPage = () => {
                 value={form.service_name}
                 onChange={handleChange}
                 placeholder="Ex: iPhone 15 Pro Max 256GB"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none ${formErrors.service_name ? 'border-destructive' : 'border-input'}`}
               />
+              {formErrors.service_name && <p className="text-xs text-destructive mt-1">{formErrors.service_name}</p>}
             </div>
 
             {/* Description */}
