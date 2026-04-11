@@ -112,6 +112,7 @@ const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const SitemapRedirect = lazy(() => import("./pages/SitemapRedirect"));
 const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
+const HelpCenterPage = lazy(() => import("./pages/HelpCenterPage"));
 const ServicesPage = lazy(() => import("./pages/ServicesPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
@@ -128,6 +129,7 @@ const SponsorContractPage = lazy(() => import("./pages/SponsorContractPage"));
 import CookieConsent from "./components/CookieConsent";
 import PwaInstallBanner from "./components/PwaInstallBanner";
 import OAuthRedirectHandler from "./components/OAuthRedirectHandler";
+import FloatingHelpButton from "./components/FloatingHelpButton";
 
 // Sponsor Panel (CRM) — isolated module
 const SponsorDashboardPage = lazy(() => import("./pages/sponsor/SponsorDashboardPage"));
@@ -288,6 +290,7 @@ const App = () => {
                 <Route path="/cidades/:estado/:cidade" element={<CityDetailPage />} />
                 <Route path="/categorias" element={<CategoriesListPage />} />
                 <Route path="/faq" element={<FaqPage />} />
+                <Route path="/ajuda" element={<HelpCenterPage />} />
                 <Route path="/privacidade" element={<PrivacyPage />} />
                 <Route path="/termos" element={<TermsPage />} />
                 <Route path="/cookies" element={<CookiesPage />} />
@@ -310,6 +313,7 @@ const App = () => {
             </Suspense>
             <ScrollProgressBar />
             <MobileBottomNav />
+            <FloatingHelpButton />
             <BackToTopButton />
             <CookieConsent />
             <PwaInstallBanner />
