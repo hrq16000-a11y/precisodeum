@@ -1,41 +1,80 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, LayoutGrid, User, MessageCircle } from 'lucide-react';
+import { Home, Search, LayoutGrid, User, Plus } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useSettingValue } from '@/hooks/useSiteSettings';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBottomNav, type BottomNavItem, type BottomNavConfig } from '@/hooks/useBottomNav';
 
-// ── Icon resolver ──
 const getIcon = (name: string): React.ElementType => {
   const icons = LucideIcons as Record<string, any>;
   return icons[name] || Home;
 };
 
-// ── Fallback (hardcoded original) ──
+// ── FAB button (central "Criar") ──
+const FabButton = ({ onClick, icon: Icon, label }: { onClick: () => void; icon: React.ElementType; label: string }) => (
+  <motion.button
+    onClick={onClick}
+    className="relative flex flex-col items-center justify-center w-14 py-1"
+    whileTap={{ scale: 0.85 }}
+  >
+    <motion.div
+      className="relative -mt-5 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent/80 shadow-lg shadow-accent/30"
+      whileHover={{ scale: 1.1 }}
+      animate={{ boxShadow: ['0 4px 14px 0 hsl(var(--accent)/0.3)', '0 4px 20px 0 hsl(var(--accent)/0.5)', '0 4px 14px 0 hsl(var(--accent)/0.3)'] }}
+      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+    >
+      <Icon className="h-5 w-5 text-accent-foreground" />
+    </motion.div>
+    <span className="mt-0.5 text-[9px] font-semibold text-accent">{label}</span>
+  </motion.button>
+);
+
+// ── Regular nav item ──
+const NavItem = ({ icon: Icon, label, isActive, onClick, badge }: { icon: React.ElementType; label: string; isActive: boolean; onClick: () => void; badge?: number }) => (
+  <motion.button
+    onClick={onClick}
+    className="relative flex flex-col items-center justify-center w-14 py-1 transition-colors text-muted-foreground"
+    whileTap={{ scale: 0.85 }}
+  >
+    <AnimatePresence>
+      {isActive && (
+        <motion.div layoutId="mobile-nav-bg" className="absolute top-0.5 h-8 w-8 rounded-xl bg-accent/10" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 25 }} />
+      )}
+    </AnimatePresence>
+    {isActive && (
+      <motion.div layoutId="mobile-nav-indicator" className="absolute -top-1.5 h-0.5 w-8 rounded-full bg-accent" transition={{ type: 'spring', stiffness: 400, damping: 30 }} />
+    )}
+    <motion.div className="relative z-10 flex h-8 w-8 items-center justify-center" animate={isActive ? { scale: 1.1 } : { scale: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+      <Icon className={`h-[18px] w-[18px] transition-colors duration-200 ${isActive ? 'text-accent' : ''}`} />
+      {badge && badge > 0 && (
+        <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-0.5 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-destructive px-0.5 text-[8px] font-bold text-destructive-foreground">
+          {badge > 9 ? '9+' : badge}
+        </motion.span>
+      )}
+    </motion.div>
+    <AnimatePresence>
+      {isActive ? (
+        <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} className="mt-0 text-[9px] font-bold text-accent">{label}</motion.span>
+      ) : (
+        <span className="mt-0 text-[9px] font-medium">{label}</span>
+      )}
+    </AnimatePresence>
+  </motion.button>
+);
+
+// ── Fallback (hardcoded) ──
 const FallbackNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
-  const supportPhone = useSettingValue('whatsapp_support_phone') || '5541997452053';
 
-  const hiddenPaths = ['/admin', '/login', '/cadastro', '/reset-password', '/dashboard', '/sponsor-panel'];
+  const hiddenPaths = ['/admin', '/login', '/cadastro', '/reset-password', '/sponsor-panel'];
   const shouldHide = hiddenPaths.some(p => location.pathname.startsWith(p));
   if (shouldHide) return null;
 
-  const handleWhatsApp = () => {
-    window.open(`https://wa.me/${supportPhone}?text=Olá! Preciso de ajuda.`, '_blank');
-  };
-
-  const items = [
-    { icon: Home, label: 'Home', path: '/', active: location.pathname === '/' || location.pathname === '/index' },
-    { icon: Search, label: 'Buscar', path: '/buscar', active: location.pathname === '/buscar' },
-    { icon: LayoutGrid, label: 'Categorias', path: '/categorias', active: location.pathname === '/categorias' },
-    { icon: User, label: 'Perfil', path: user ? '/dashboard' : '/login', active: location.pathname.startsWith('/dashboard') },
-    { icon: MessageCircle, label: 'WhatsApp', action: handleWhatsApp, isWhatsApp: true },
-  ];
+  const handleCriar = () => navigate(user ? '/dashboard/servicos' : '/login');
 
   return (
     <>
@@ -45,54 +84,11 @@ const FallbackNav = () => {
         style={{ zIndex: 1000, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="flex items-center justify-around px-2 py-1.5">
-          {items.map((item, i) => {
-            const Icon = item.icon;
-            const isActive = item.active;
-
-            if (item.isWhatsApp) {
-              return (
-                <motion.button key={i} onClick={item.action} className="relative flex flex-col items-center justify-center w-14 py-1" style={{ color: '#25D366' }} whileTap={{ scale: 0.85 }}>
-                  <motion.div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#25D366]/10" whileHover={{ scale: 1.1 }}>
-                    <Icon className="h-[18px] w-[18px]" />
-                  </motion.div>
-                  <span className="mt-0.5 text-[9px] font-semibold">WhatsApp</span>
-                </motion.button>
-              );
-            }
-
-            return (
-              <motion.button
-                key={i}
-                onClick={() => { if (item.action) item.action(); else if (item.path) navigate(item.path); }}
-                className="relative flex flex-col items-center justify-center w-14 py-1 transition-colors text-muted-foreground"
-                whileTap={{ scale: 0.85 }}
-              >
-                <AnimatePresence>
-                  {isActive && (
-                    <motion.div layoutId="mobile-nav-bg" className="absolute top-0.5 h-8 w-8 rounded-xl bg-accent/10" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 25 }} />
-                  )}
-                </AnimatePresence>
-                {isActive && (
-                  <motion.div layoutId="mobile-nav-indicator" className="absolute -top-1.5 h-0.5 w-8 rounded-full bg-accent" transition={{ type: 'spring', stiffness: 400, damping: 30 }} />
-                )}
-                <motion.div className="relative z-10 flex h-8 w-8 items-center justify-center" animate={isActive ? { scale: 1.1 } : { scale: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
-                  <Icon className={`h-[18px] w-[18px] transition-colors duration-200 ${isActive ? 'text-accent' : ''}`} />
-                  {item.label === 'Perfil' && unreadCount > 0 && (
-                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-0.5 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-destructive px-0.5 text-[8px] font-bold text-destructive-foreground">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </motion.span>
-                  )}
-                </motion.div>
-                <AnimatePresence>
-                  {isActive ? (
-                    <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} className="mt-0 text-[9px] font-bold text-accent">{item.label}</motion.span>
-                  ) : (
-                    <span className="mt-0 text-[9px] font-medium">{item.label}</span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
-            );
-          })}
+          <NavItem icon={Home} label="Início" isActive={location.pathname === '/' || location.pathname === '/index'} onClick={() => navigate('/')} />
+          <NavItem icon={Search} label="Buscar" isActive={location.pathname === '/buscar'} onClick={() => navigate('/buscar')} />
+          <FabButton icon={Plus} label="Criar" onClick={handleCriar} />
+          <NavItem icon={LayoutGrid} label="Categorias" isActive={location.pathname === '/categorias'} onClick={() => navigate('/categorias')} />
+          <NavItem icon={User} label="Perfil" isActive={location.pathname.startsWith('/dashboard')} onClick={() => navigate(user ? '/dashboard' : '/login')} badge={unreadCount} />
         </div>
       </nav>
     </>
@@ -102,78 +98,26 @@ const FallbackNav = () => {
 // ── Dynamic nav item ──
 const DynamicNavItem = ({ item, isActive, navigate, user }: { item: BottomNavItem; isActive: boolean; navigate: (path: string) => void; user: any }) => {
   const Icon = getIcon(item.icon);
-  const activeColor = item.active_color || undefined;
 
   const handleClick = () => {
-    if (item.requires_auth && !user) {
-      navigate('/login');
-      return;
-    }
-
-    switch (item.action_type) {
-      case 'external':
-        window.open(item.external_url || item.route_path, '_blank');
-        break;
-      case 'route':
-      default:
-        navigate(item.route_path);
-        break;
-    }
+    if (item.requires_auth && !user) { navigate('/login'); return; }
+    if (item.action_type === 'external') { window.open(item.external_url || item.route_path, '_blank'); return; }
+    navigate(item.route_path);
   };
 
-  const isExternal = item.action_type === 'external';
+  // FAB style for "large" items
+  if (item.size === 'large') {
+    return <FabButton icon={Icon} label={item.label} onClick={handleClick} />;
+  }
 
   return (
-    <motion.button
+    <NavItem
+      icon={Icon}
+      label={item.label}
+      isActive={isActive}
       onClick={handleClick}
-      className="relative flex flex-col items-center justify-center w-14 py-1 transition-colors text-muted-foreground"
-      whileTap={{ scale: 0.85 }}
-      style={isExternal ? { color: item.text_color || '#25D366' } : undefined}
-    >
-      {!isExternal && (
-        <AnimatePresence>
-          {isActive && (
-            <motion.div layoutId="mobile-nav-bg-dyn" className="absolute top-0.5 h-8 w-8 rounded-xl bg-accent/10" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 25 }} />
-          )}
-        </AnimatePresence>
-      )}
-
-      {!isExternal && isActive && (
-        <motion.div layoutId="mobile-nav-indicator-dyn" className="absolute -top-1.5 h-0.5 w-8 rounded-full bg-accent" transition={{ type: 'spring', stiffness: 400, damping: 30 }} />
-      )}
-
-      <motion.div
-        className="relative z-10 flex h-8 w-8 items-center justify-center"
-        animate={isActive ? { scale: 1.1 } : { scale: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        style={isExternal && item.background_color ? { backgroundColor: item.background_color, borderRadius: '0.75rem' } : undefined}
-      >
-        <Icon className={`h-[18px] w-[18px] transition-colors duration-200 ${isActive ? 'text-accent' : ''}`} style={activeColor && isActive ? { color: activeColor } : undefined} />
-
-        {item.badge && (
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -top-0.5 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-destructive px-0.5 text-[8px] font-bold text-destructive-foreground"
-            style={item.badge_color ? { backgroundColor: item.badge_color } : undefined}
-          >
-            {item.badge}
-          </motion.span>
-        )}
-      </motion.div>
-
-      <AnimatePresence>
-        {isActive ? (
-          <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} className="mt-0 text-[9px] font-bold text-accent" style={activeColor ? { color: activeColor } : undefined}>
-            {item.label}
-          </motion.span>
-        ) : (
-          <span className="mt-0 text-[9px] font-medium" style={item.text_color ? { color: item.text_color } : undefined}>
-            {item.label}
-          </span>
-        )}
-      </AnimatePresence>
-    </motion.button>
+      badge={item.badge ? parseInt(item.badge) || 0 : 0}
+    />
   );
 };
 
@@ -193,7 +137,6 @@ const DynamicNav = ({ config, items }: { config: BottomNavConfig; items: BottomN
     paddingBottom: 'env(safe-area-inset-bottom, 0px)',
     ...(config.background_color ? { backgroundColor: config.background_color } : {}),
     ...(config.border_color ? { borderColor: config.border_color } : {}),
-    ...(config.height ? { height: `${config.height}px` } : {}),
   };
 
   const navClasses = [
@@ -211,18 +154,15 @@ const DynamicNav = ({ config, items }: { config: BottomNavConfig; items: BottomN
       <nav className={navClasses} style={navStyle}>
         <div className="flex items-center justify-around px-2 py-1.5 h-full">
           {items.map((item) => {
-            const isActive = item.action_type === 'route' && (
+            const isActive = item.action_type === 'route' && item.size !== 'large' && (
               location.pathname === item.route_path ||
               (item.route_path === '/' && location.pathname === '/index') ||
               (item.route_path !== '/' && location.pathname.startsWith(item.route_path))
             );
-            // Inject notification badge for auth-required items (e.g. Perfil)
-            const dynamicBadge = item.requires_auth && unreadCount > 0
+            const dynamicBadge = item.requires_auth && unreadCount > 0 && item.size !== 'large'
               ? { ...item, badge: unreadCount > 9 ? '9+' : String(unreadCount) }
               : item;
-            return (
-              <DynamicNavItem key={item.id} item={dynamicBadge} isActive={isActive} navigate={navigate} user={user} />
-            );
+            return <DynamicNavItem key={item.id} item={dynamicBadge} isActive={isActive} navigate={navigate} user={user} />;
           })}
         </div>
       </nav>
@@ -230,14 +170,9 @@ const DynamicNav = ({ config, items }: { config: BottomNavConfig; items: BottomN
   );
 };
 
-// ── Main exported component ──
 const MobileBottomNav = () => {
   const { config, items, useFallback } = useBottomNav();
-
-  if (useFallback) {
-    return <FallbackNav />;
-  }
-
+  if (useFallback) return <FallbackNav />;
   return <DynamicNav config={config!} items={items} />;
 };
 
