@@ -3,8 +3,12 @@ import App from "./App.tsx";
 import "./index.css";
 import { cleanupFrequencyData } from "@/lib/sponsorRanking";
 
-// Clean stale frequency-cap data from previous sessions
-cleanupFrequencyData();
+// Defer non-critical cleanup to idle time
+if ('requestIdleCallback' in window) {
+  (window as any).requestIdleCallback(() => cleanupFrequencyData());
+} else {
+  setTimeout(cleanupFrequencyData, 300);
+}
 
 // ── Auto-clear caches after every new deploy ──
 // @ts-ignore — injected by Vite define config at build time
@@ -101,7 +105,16 @@ const observeLazyImages = () => {
 
 // Defer MutationObserver to avoid blocking main thread during boot
 const startObserver = () => {
-  const bodyObs = new MutationObserver(() => observeLazyImages());
+  let rafPending = false;
+  const bodyObs = new MutationObserver(() => {
+    if (!rafPending) {
+      rafPending = true;
+      requestAnimationFrame(() => {
+        observeLazyImages();
+        rafPending = false;
+      });
+    }
+  });
   bodyObs.observe(document.documentElement, { childList: true, subtree: true });
   observeLazyImages();
 };
