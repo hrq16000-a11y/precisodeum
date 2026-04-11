@@ -1,37 +1,61 @@
-# Adicionar "Vagas" ao Menu Mobile
 
-## Situação Atual
 
-- **Header desktop**: ✅ Já tem "Vagas" no `menu_items` (posição 4, ativo)
-- **Menu mobile**: ❌ Falta o link "Vagas" — tem apenas Início, Buscar, Categorias, Perfil
+# Reformular Barra Inferior Mobile
 
-## Ação
+## Situação Atual (banco de dados)
 
-Inserir um registro na tabela `menu_items` para a localização `mobile` com o link de Vagas:
+- **Itens atuais**: Home(0), Buscar(1), Categorias(2), Perfil(3), WhatsApp(4)
+- **hidden_paths**: `/admin`, `/login`, `/cadastro`, `/reset-password`, **`/dashboard`**, `/sponsor-panel`
+- A barra **desaparece** quando o usuário está logado (dashboard está na lista de hidden_paths)
 
-```sql
-INSERT INTO menu_items (label, url, icon, menu_location, display_order, active, open_in_new_tab)
-VALUES ('Vagas', '/vagas', 'Megaphone', 'mobile', 3, true, false);
-```
+## Mudanças
 
-Isso reordena os itens mobile: Início (0) → Buscar (1) → Categorias (2) → **Vagas (3)** → Perfil (4).
-
-Também atualizar o `display_order` do item "Perfil" de 3 para 4:
+### 1. Banco de dados (migration)
 
 ```sql
-UPDATE menu_items SET display_order = 4 WHERE id = 'ba1f4f00-5227-489e-8e1f-e1354c0c56eb';
+-- Remover /dashboard dos hidden_paths para a barra aparecer em toda navegação
+UPDATE ui_bottom_nav_config 
+SET hidden_paths = '["/admin", "/login", "/cadastro", "/reset-password", "/sponsor-panel"]'::jsonb
+WHERE id = 'a0000000-0000-0000-0000-000000000001';
+
+-- Desativar WhatsApp
+UPDATE ui_bottom_nav_items SET is_active = false 
+WHERE id = 'be2f0238-1205-4cd5-bc16-43e867655282';
+
+-- Reordenar: Buscar fica 1, Criar entra como 2, Categorias vai pra 3, Perfil vai pra 4
+UPDATE ui_bottom_nav_items SET order_index = 3 WHERE id = '5e4ab0cd-aa50-4ab4-8494-21b713a205a2'; -- Categorias
+UPDATE ui_bottom_nav_items SET order_index = 4 WHERE id = '2ddd95af-51ae-464f-8eab-ac32bb172339'; -- Perfil
+
+-- Inserir botão "Criar" na posição central (2)
+INSERT INTO ui_bottom_nav_items (config_id, label, icon, route_path, action_type, order_index, is_active, requires_auth, size, animation, active_color, background_color, border_radius)
+VALUES ('a0000000-0000-0000-0000-000000000001', 'Criar', 'Plus', '/dashboard/servicos', 'route', 2, true, true, 'large', 'scale', '#ffffff', '', '9999');
 ```
 
-## Resultado
+### 2. Componente MobileBottomNav.tsx
 
-O link "Vagas" aparecerá tanto no menu desktop quanto no mobile, 100% gerenciável pelo admin em `/admin/menus`. O admin pode reordenar, desativar ou remover a qualquer momento.
+- **Fallback atualizado**: Ordem Início → Buscar → Criar → Categorias → Perfil (sem WhatsApp)
+- **Remover `/dashboard` do hiddenPaths** do fallback
+- **Botão "Criar" com destaque visual**: Ícone `Plus` dentro de um círculo com gradiente accent, elevado acima da barra (estilo FAB central), com animação de pulso sutil
+- **Tratamento especial**: Itens com `size: 'large'` ou posição central recebem o estilo FAB automaticamente (funciona tanto no fallback quanto no dinâmico)
 
-## Arquivos Modificados
+### 3. Resultado visual
 
-Nenhum arquivo de código — apenas inserts/updates na tabela `menu_items` via migration.
+```text
+┌─────────────────────────────────────┐
+│  Home   Buscar  [+]  Categ.  Perfil │
+│   🏠      🔍    ⊕     ⊞      👤    │
+└─────────────────────────────────────┘
+                  ↑
+          Botão elevado com
+          gradiente accent
+```
 
-&nbsp;
+O botão "Criar" redireciona para `/dashboard/servicos` (requer login). Se o usuário não estiver logado, redireciona para `/login`.
 
-Tudo deve ser e estar sincronizado e gerenciável pelo painel administrarivo correspondente. 
+### Arquivos Modificados
 
-&nbsp;
+| Arquivo | Alteração |
+|---|---|
+| Migration SQL | Reordenar itens, desativar WhatsApp, inserir "Criar", remover `/dashboard` dos hidden_paths |
+| `src/components/MobileBottomNav.tsx` | Fallback atualizado + estilo FAB para botão central "Criar" |
+
