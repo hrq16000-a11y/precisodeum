@@ -24,6 +24,14 @@ interface GroupItem {
   path: string;
 }
 
+const groupColors: Record<string, { active: string; bg: string; dot: string }> = {
+  'Geral': { active: 'bg-slate-600 text-white', bg: 'hover:bg-slate-100 dark:hover:bg-slate-800', dot: 'bg-slate-500' },
+  'Gestão': { active: 'bg-blue-600 text-white', bg: 'hover:bg-blue-50 dark:hover:bg-blue-950', dot: 'bg-blue-500' },
+  'Conteúdo': { active: 'bg-emerald-600 text-white', bg: 'hover:bg-emerald-50 dark:hover:bg-emerald-950', dot: 'bg-emerald-500' },
+  'Comercial': { active: 'bg-purple-600 text-white', bg: 'hover:bg-purple-50 dark:hover:bg-purple-950', dot: 'bg-purple-500' },
+  'Sistema': { active: 'bg-gray-600 text-white', bg: 'hover:bg-gray-50 dark:hover:bg-gray-800', dot: 'bg-gray-500' },
+};
+
 const menuGroups: { label: string; items: GroupItem[] }[] = [
   {
     label: 'Geral',
