@@ -2,7 +2,7 @@ import { useState, useMemo, lazy, Suspense } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, Users, MapPin } from 'lucide-react';
+import { ChevronRight, Users, MapPin, Globe, Sparkles } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -134,10 +134,10 @@ const CategoryPage = () => {
       <Header />
 
       {/* Hero section with enhanced visual */}
-      <section className="relative bg-hero py-16 overflow-x-clip">
-        {/* Decorative elements */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-transparent" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-accent/10 rounded-full blur-3xl -translate-y-1/2" />
+      <section className="relative bg-hero py-12 md:py-20 overflow-x-clip">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/10" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-accent/8 rounded-full blur-[120px] -translate-y-1/2" />
+        <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-primary/5 rounded-full blur-[80px] translate-y-1/2" />
         
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -145,46 +145,54 @@ const CategoryPage = () => {
           transition={{ duration: 0.6 }}
           className="container relative text-center"
         >
-          {/* Breadcrumb */}
           <Breadcrumbs
             items={[
               { label: 'Categorias', url: '/categorias' },
               { label: category.name },
             ]}
-            className="justify-center text-primary-foreground/60 mb-4"
+            className="justify-center text-primary-foreground/50 mb-6 text-xs"
           />
           
-          <motion.span
+          <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm text-4xl shadow-lg"
+            className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-md text-5xl shadow-xl ring-1 ring-white/10"
           >
             {category.icon}
-          </motion.span>
+          </motion.div>
           
           <motion.h1
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="mt-4 font-display text-3xl font-bold text-primary-foreground md:text-4xl"
+            className="mt-5 font-display text-3xl font-bold text-primary-foreground md:text-5xl tracking-tight"
           >
             {category.name}
           </motion.h1>
           
-          <motion.div
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="mt-3 flex flex-wrap items-center justify-center gap-3"
+            transition={{ delay: 0.35 }}
+            className="mt-2 text-primary-foreground/60 text-sm md:text-base max-w-md mx-auto"
           >
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1.5 text-sm font-medium text-primary-foreground">
-              <Users className="h-3.5 w-3.5" />
-              {allProviders.length} profissional(is)
+            Encontre os melhores profissionais para o seu projeto
+          </motion.p>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-5 flex flex-wrap items-center justify-center gap-2"
+          >
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-4 py-2 text-sm font-medium text-primary-foreground ring-1 ring-white/10">
+              <Users className="h-3.5 w-3.5 text-accent" />
+              {allProviders.length} profissional{allProviders.length !== 1 ? 'is' : ''}
             </span>
             {geoCity && !isFallback && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1.5 text-sm font-medium text-primary-foreground">
-                <MapPin className="h-3.5 w-3.5" />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-4 py-2 text-sm font-medium text-primary-foreground ring-1 ring-white/10">
+                <MapPin className="h-3.5 w-3.5 text-accent" />
                 {geoCity}
               </span>
             )}
@@ -235,24 +243,37 @@ const CategoryPage = () => {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-8 flex justify-center"
+            className="mt-10 flex justify-center"
           >
-            <Button
-              variant="outline"
-              size="lg"
+            <button
               onClick={() => { setShowAllLocations(true); setPage(1); }}
-              className="gap-2"
+              className="group relative inline-flex items-center gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-4 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:scale-[1.02] active:scale-[0.98]"
             >
-              <MapPin className="h-4 w-4" />
-              Ver profissionais de outras localidades ({otherProviders.length})
-            </Button>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                <Globe className="h-5 w-5" />
+              </span>
+              <span className="text-left">
+                <span className="block text-sm font-semibold">Ver outras localidades</span>
+                <span className="block text-xs text-muted-foreground">+{otherProviders.length} profissional{otherProviders.length !== 1 ? 'is' : ''} em todo o Brasil</span>
+              </span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+            </button>
           </motion.div>
         )}
 
         {showAllLocations && otherProviders.length > 0 && (
-          <p className="mt-6 text-sm text-muted-foreground text-center">
-            Exibindo também profissionais de outras regiões
-          </p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-8 mb-2 flex items-center gap-3"
+          >
+            <div className="h-px flex-1 bg-border" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
+              <Globe className="h-3 w-3" />
+              Outras regiões
+            </span>
+            <div className="h-px flex-1 bg-border" />
+          </motion.div>
         )}
 
         {displayProviders.length === 0 && (
