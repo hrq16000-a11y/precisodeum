@@ -39,14 +39,13 @@ const FadeInSection = forwardRef<HTMLDivElement, FadeInSectionProps>(({
         ...(scale ? { scale: 0.95 } : {}),
         ...(blur ? { filter: 'blur(8px)' } : {}),
       }}
-      whileInView={{
+      animate={{
         opacity: 1,
         x: 0,
         y: 0,
         ...(scale ? { scale: 1 } : {}),
         ...(blur ? { filter: 'blur(0px)' } : {}),
       }}
-      viewport={{ once: true, margin: '-60px' }}
       transition={{ duration, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
       className={className}
     >

@@ -48,8 +48,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
       <div className="container relative">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          animate={{ opacity: 1, y: 0 }}
           className="mb-8 flex flex-col items-center text-center md:flex-row md:items-end md:justify-between md:text-left"
         >
           <div>
@@ -78,8 +77,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
           <motion.div
             variants={container}
             initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
+            animate="visible"
             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
             {items.map((item, idx) => {
@@ -101,8 +99,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
 
         <motion.div
           initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
           className="mt-8 text-center md:hidden"
         >
