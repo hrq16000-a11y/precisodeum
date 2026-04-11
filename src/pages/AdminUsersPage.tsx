@@ -473,7 +473,6 @@ const AdminUsersPage = () => {
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
         />
-        />
       </div>
 
       {totalPages > 1 && (
