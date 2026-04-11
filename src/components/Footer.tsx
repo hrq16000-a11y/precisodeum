@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import { useMemo, lazy, Suspense } from 'react';
-import { motion } from 'framer-motion';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 import { importWithRetry } from '@/lib/lazyWithRetry';
@@ -50,16 +49,6 @@ const footerTaglines = [
   { headline: 'Os melhores profissionais estão aqui.', sub: 'Simples, rápido e direto ao profissional.' },
 ];
 
-const containerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.06 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-};
-
 const FooterLinkItem = ({ item }: { item: any }) => {
   const isExternal = item.open_in_new_tab || item.url?.startsWith('http');
 
@@ -91,16 +80,10 @@ const Footer = () => {
 
   return (
     <footer className="border-t border-border bg-primary text-primary-foreground">
-      <motion.div
-        className="container py-12"
-        variants={containerVariants}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: '-60px' }}
-      >
+      <div className="container py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
-          <motion.div variants={itemVariants} className="sm:col-span-2 lg:col-span-1">
+          <div className="sm:col-span-2 lg:col-span-1">
             <Link to="/">
               <img src={logoVertical} alt="Preciso de um" className="mb-4 h-12 w-auto max-w-[220px] object-contain" width="133" height="48" loading="lazy" />
             </Link>
@@ -108,10 +91,10 @@ const Footer = () => {
             <p className="text-sm leading-relaxed text-primary-foreground/70">
               {tagline.sub}
             </p>
-          </motion.div>
+          </div>
 
           {/* Profissionais */}
-          <motion.div variants={itemVariants}>
+          <div>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Profissionais</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
               {profLinks.map((item: any) => (
@@ -120,10 +103,10 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </div>
 
           {/* Ecossistema */}
-          <motion.div variants={itemVariants}>
+          <div>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Ecossistema</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
               {ecoLinks.map((item: any) => (
@@ -132,10 +115,10 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </div>
 
           {/* Suporte */}
-          <motion.div variants={itemVariants}>
+          <div>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/50">Suporte</h4>
             <ul className="space-y-3 text-sm text-primary-foreground/70">
               {suporteLinks.map((item: any) => (
@@ -150,7 +133,7 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </div>
         </div>
 
         <PwaFooterInstall />
@@ -174,7 +157,7 @@ const Footer = () => {
         <Suspense fallback={null}>
           <AdSlot slotSlug="global-footer" layout="inline" className="mt-6 border-t border-primary-foreground/10 pt-6" />
         </Suspense>
-      </motion.div>
+      </div>
     </footer>
   );
 };

@@ -1,34 +1,15 @@
-import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
-
-const pageVariants = {
-  initial: { opacity: 0 },
-  enter: { opacity: 1 },
-  exit: { opacity: 0 },
-};
-
-const pageTransition = {
-  type: 'tween' as const,
-  ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
-  duration: 0.4,
-};
 
 interface PageTransitionProps {
   children: ReactNode;
   className?: string;
 }
 
+/** Lightweight page transition using CSS only — avoids framer-motion reflow */
 const PageTransition = ({ children, className = '' }: PageTransitionProps) => (
-  <motion.div
-    variants={pageVariants}
-    initial="initial"
-    animate="enter"
-    exit="exit"
-    transition={pageTransition}
-    className={className}
-  >
+  <div className={`animate-fade-in ${className}`}>
     {children}
-  </motion.div>
+  </div>
 );
 
 export default PageTransition;
