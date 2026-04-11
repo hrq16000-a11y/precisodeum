@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MessageCircle, Users } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { useMemo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useSettingValue } from '@/hooks/useSiteSettings';
@@ -30,7 +30,7 @@ const fallbackEco = [
 ];
 
 const fallbackSuporte = [
-  { label: '(41) 99745-2053', url: 'https://wa.me/5541997452053', open_in_new_tab: true, icon: '💬' },
+  { label: 'Central de Ajuda', url: '/ajuda', open_in_new_tab: false, icon: '❓' },
 ];
 
 const footerTaglines = [
@@ -83,7 +83,6 @@ const FooterLinkItem = ({ item }: { item: any }) => {
 };
 
 const Footer = () => {
-  const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoFooterUrl = useSettingValue('logo_footer_url');
   const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : DEFAULT_LOGO_URL;
   const tagline = useMemo(() => footerTaglines[Math.floor(Math.random() * footerTaglines.length)], []);
@@ -156,19 +155,6 @@ const Footer = () => {
                   </a>
                 </li>
               ))}
-              {whatsappGroupUrl && (
-                <li>
-                  <a
-                    href={whatsappGroupUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#25D366]/20 px-3 py-2 text-[#25D366] transition-colors hover:bg-[#25D366]/30"
-                  >
-                    <Users className="h-4 w-4" />
-                    Grupo WhatsApp
-                  </a>
-                </li>
-              )}
             </ul>
           </motion.div>
         </div>
