@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 interface CategoryItem {
   id: string;
@@ -91,14 +91,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
               ))}
             </div>
 
-            <div className="mt-6 text-center animate-fade-in" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
-              <Button variant="outline" size="sm" className="gap-1.5 rounded-full hover:bg-accent hover:text-accent-foreground transition-colors" asChild>
-                <Link to="/categorias">
-                  Ver Todas as Categorias
-                  <ChevronRight className="h-3 w-3" />
-                </Link>
-              </Button>
-            </div>
+            <CategoriesViewAllButton />
           </>
         )}
       </div>
