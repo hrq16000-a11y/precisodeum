@@ -245,16 +245,26 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
             </div>
 
             {/* Quick Actions Footer */}
-            <div className="border-t border-border px-4 py-2 flex items-center gap-1">
+            <div className="border-t border-border px-3 py-2 flex items-center gap-1 flex-wrap">
               <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => onEdit(p)}>
                 <Edit2 className="h-3 w-3" /> Editar
               </Button>
               <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => onBlock(p)}>
-                <Ban className={`h-3 w-3 ${isInactive ? 'text-green-600' : 'text-destructive'}`} />
+                <Ban className={`h-3 w-3 ${isInactive ? 'text-emerald-600' : 'text-destructive'}`} />
                 {isInactive ? 'Ativar' : 'Bloquear'}
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1 text-destructive" onClick={() => onDelete(p)}>
-                <Trash2 className="h-3 w-3" /> Excluir
+              {provider && provider.status !== 'approved' && onApproveProvider && (
+                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-emerald-600" onClick={() => onApproveProvider(provider.id)}>
+                  <Check className="h-3 w-3" /> Aprovar
+                </Button>
+              )}
+              {provider && provider.status !== 'rejected' && onRejectProvider && (
+                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" onClick={() => onRejectProvider(provider.id)}>
+                  <X className="h-3 w-3" /> Rejeitar
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" onClick={() => onDelete(p)}>
+                <Trash2 className="h-3 w-3" />
               </Button>
             </div>
           </div>
