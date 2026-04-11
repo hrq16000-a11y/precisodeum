@@ -93,7 +93,7 @@ const StatsCounter = () => {
   const values = data || { providers: 0, services: 0, cities: 0 };
 
   return (
-    <section className="relative overflow-hidden py-6">
+    <section className="relative overflow-hidden py-2">
       <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-background to-muted/30" />
 
       <div className="container relative">
