@@ -4,6 +4,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, GripVertical, Save, X } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -102,7 +103,7 @@ const AdminPopularServicesPage = () => {
         {services.map(s => (
           <div key={s.id} className="rounded-xl border border-border bg-card p-3 shadow-card">
             <div className="flex items-start gap-3">
-              <span className="text-2xl shrink-0">{s.icon}</span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10"><CategoryIcon icon={s.icon} size={20} className="text-accent" /></span>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-bold text-foreground truncate">{s.name}</h3>
                 <p className="text-xs text-muted-foreground">{s.category_name} · R$ {s.min_price.toFixed(2).replace('.', ',')}</p>
