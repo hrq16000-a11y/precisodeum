@@ -1,80 +1,54 @@
 
 
-# Sistema de Suporte/Ajuda + WhatsApp no Card + Reformulação do Perfil
+# Chips de Categorias Inteligentes na Busca (GPS + Proximidade)
 
-## 1. Desativar WhatsApp flutuante na Home
+## Problema
 
-**Arquivo:** `src/pages/Index.tsx`, `Index02.tsx`, `Index03.tsx`
-- Remover `<FloatingWhatsApp />` das 3 páginas Index (o componente continua existindo mas não aparece mais na home)
+- Os chips de sugestão na SearchPage mostram as primeiras 6 categorias **sem verificar se têm prestadores cadastrados**
+- Não há ordenação por proximidade GPS
+- O GPS não é solicitado proativamente ao abrir a página de busca
 
-## 2. Botão WhatsApp no Card do Prestador
+## Solução
 
-**Arquivo:** `src/components/ProviderCard.tsx`
-- O card **já tem** o botão WhatsApp integrado (linhas 160-170) com ícone `MessageCircle` e link correto
-- Ajustar a cor do ícone WhatsApp para o verde oficial `#25D366` (mesmo verde do logo) conforme feedback do usuário
-- Adicionar ícone SVG do WhatsApp real ao invés do `MessageCircle` genérico
+### 1. Novo hook `useGeoCategories` (src/hooks/useProviders.tsx)
 
-## 3. WhatsApp flutuante na página do Prestador
+Query que retorna apenas categorias com prestadores aprovados, incluindo coordenadas dos prestadores para cálculo de proximidade:
 
-**Arquivo:** `src/pages/ProviderProfile.tsx`
-- Adicionar `<FloatingWhatsApp />` (ou botão direto) usando o WhatsApp **do prestador** (não o de suporte)
-- Cor do botão: `#25D366` (verde oficial do WhatsApp, igual ao logo)
-- Posição alinhada com a barra inferior mobile
+```sql
+SELECT c.name, c.slug, c.icon,
+  COUNT(p.id) as provider_count,
+  json_agg(json_build_object('lat', p.latitude, 'lon', p.longitude))
+    FILTER (WHERE p.latitude IS NOT NULL) as coords
+FROM categories c
+JOIN providers p ON p.category_id = c.id
+  AND p.status = 'approved' AND p.deleted_at IS NULL
+GROUP BY c.id
+ORDER BY COUNT(p.id) DESC
+```
 
-## 4. Criar página de Central de Ajuda (`/ajuda`)
+No client-side, com coordenadas GPS do usuário:
+- Calcular distância mínima (Haversine) do prestador mais próximo de cada categoria
+- Ordenar por menor distância primeiro
+- Embaralhar parcialmente para variedade visual
+- Sem GPS disponível: fallback para `provider_count` DESC + shuffle
 
-**Novo arquivo:** `src/pages/HelpCenterPage.tsx`
-- Página pública com busca + FAQs organizados por categoria
-- Seções: "Para Clientes", "Para Profissionais", "Planos e Pagamentos", "Conta e Segurança"
-- Puxa dados da tabela `faqs` existente (já tem dados e admin em `/admin/faq`)
-- Link de contato via WhatsApp de suporte (do `site_settings`)
-- SEO configurado
+### 2. Solicitar GPS ao montar SearchPage (src/pages/SearchPage.tsx)
 
-**Rota:** Adicionar em `App.tsx` → `/ajuda`
+- Chamar `requestPreciseLocation()` do `useGeoCity` via `useEffect` ao montar a página
+- Já existe a função no hook, só não é chamada na SearchPage
 
-## 5. Botão flutuante de Suporte/Ajuda
+### 3. Atualizar chips na SearchPage (src/pages/SearchPage.tsx)
 
-**Novo arquivo:** `src/components/FloatingHelpButton.tsx`
-- Ícone: `HelpCircle` ou `LifeBuoy` do Lucide
-- Aparece em: `/login`, `/cadastro`, `/reset-password`, `/dashboard/*`
-- NÃO aparece em: `/admin`, `/sponsor-panel`, home pública
-- Ao clicar: abre mini-painel com 3 opções:
-  - "Central de Ajuda" → navega para `/ajuda`
-  - "Perguntas Frequentes" → navega para `/faq`
-  - "Falar com Suporte" → WhatsApp de suporte (do `site_settings`)
-- Animação sutil com framer-motion
-- Posição: canto inferior direito, acima da barra mobile
-
-## 6. Dashboard: link de Suporte no menu
-
-**Arquivo:** `src/components/DashboardLayout.tsx`
-- Adicionar item "Ajuda & Suporte" no menu lateral/grupo do dashboard
-- Link para `/ajuda`
-
-## 7. Reformulação do "Meu Perfil" (`DashboardProfilePage.tsx`)
-
-**Arquivo:** `src/pages/DashboardProfilePage.tsx`
-- **Barra de completude** no topo: progresso visual (0-100%) mostrando campos preenchidos
-- **Organização em abas** (ou acordeão expansível): "Dados Pessoais" | "Dados Profissionais" | "Localização" | "Redes Sociais"
-- **Dica contextual**: link "Precisa de ajuda?" no topo → `/ajuda`
-- **Preview do perfil público**: mini-card mostrando como o perfil aparece para visitantes
-- **Animações framer-motion**: fade-in nos blocos, transição entre abas
-- Manter toda a lógica de salvamento existente
+- Substituir `suggestionChips` (linhas 149-155) para usar `useGeoCategories` em vez de `suggestions?.categories`
+- Mostrar apenas categorias com `provider_count > 0`
+- Ordenar por proximidade GPS quando coordenadas disponíveis
 
 ## Arquivos Modificados
 
-| Arquivo | Ação |
+| Arquivo | Alteração |
 |---|---|
-| `src/pages/Index.tsx` | Remover FloatingWhatsApp |
-| `src/pages/Index02.tsx` | Remover FloatingWhatsApp |
-| `src/pages/Index03.tsx` | Remover FloatingWhatsApp |
-| `src/components/ProviderCard.tsx` | Ícone WhatsApp real + cor #25D366 |
-| `src/pages/ProviderProfile.tsx` | Adicionar WhatsApp flutuante do prestador |
-| `src/components/FloatingHelpButton.tsx` | **Novo** — botão flutuante de suporte |
-| `src/pages/HelpCenterPage.tsx` | **Novo** — Central de Ajuda |
-| `src/App.tsx` | Rota `/ajuda` |
-| `src/components/DashboardLayout.tsx` | Link "Ajuda" no menu |
-| `src/pages/DashboardProfilePage.tsx` | Reformulação com abas, barra de completude, preview |
+| `src/hooks/useProviders.tsx` | Novo hook `useGeoCategories` com query filtrada e lógica de proximidade |
+| `src/pages/SearchPage.tsx` | `useEffect` para GPS + chips dinâmicos via `useGeoCategories` |
 
-Nenhuma migration necessária — usa tabela `faqs` e `site_settings` existentes.
+A SearchBar **não será alterada** conforme solicitado.
 
