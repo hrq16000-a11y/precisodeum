@@ -51,7 +51,76 @@ const Header = () => {
   const { data: headerItems = [] } = useMenuItems('header');
   const { data: mobileItems = [] } = useMenuItems('mobile');
 
+  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileOpen) setMobileOpen(false);
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setMobileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [mobileOpen]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const handleSearchSubmit = useCallback((e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/buscar?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchOpen(false);
+      setSearchQuery('');
+    }
+  }, [searchQuery, navigate]);
+
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchOpen]);
+
+  const fallbackHeaderLinks = [
+    { label: 'Buscar', url: '/buscar' },
+    { label: 'Vagas', url: '/vagas' },
+    { label: 'Notícias', url: '/blog' },
+    { label: 'Como Funciona', url: '/sobre' },
+    { label: 'Seja Profissional', url: '/cadastro' },
+  ];
+
+  const fallbackMobileLinks = [
+    { label: 'Buscar Profissionais', url: '/buscar' },
+    { label: 'Vagas', url: '/vagas' },
+    { label: 'Notícias', url: '/blog' },
+    { label: 'Como Funciona', url: '/sobre' },
+    { label: 'Categorias', url: '/categorias' },
+    { label: 'Cidades', url: '/cidades' },
+    { label: 'Seja Profissional', url: '/cadastro' },
+  ];
+
+  const navLinks = headerItems.length > 0 ? headerItems : fallbackHeaderLinks.map((l, i) => ({ ...l, id: `fb-${i}`, icon: '', open_in_new_tab: false, parent_id: null, display_order: i, active: true, menu_location: 'header' }));
+  const mobileNavLinks = mobileItems.length > 0 ? mobileItems : (headerItems.length > 0 ? headerItems : fallbackMobileLinks.map((l, i) => ({ ...l, id: `fbm-${i}`, icon: '', open_in_new_tab: false, parent_id: null, display_order: i, active: true, menu_location: 'mobile' })));
+
   const isActiveLink = (url: string) => location.pathname === url;
+
 
   const renderLink = (item: any, className: string, onClick?: () => void) => {
     const active = isActiveLink(item.url);
