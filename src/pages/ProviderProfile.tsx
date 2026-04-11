@@ -1173,6 +1173,11 @@ const ProviderProfile = () => {
             );
           })}
 
+          {/* ── Testimonials (always rendered if reviews exist) ── */}
+          {!visibleSections.includes('testimonials') && reviews.length > 0 && (
+            <TestimonialsCarousel reviews={reviews} />
+          )}
+
           {/* ── Related Providers ── */}
           {relatedProviders.length > 0 && (
             <motion.div className="mt-8" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
