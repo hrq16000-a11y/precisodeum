@@ -1152,6 +1152,9 @@ const ProviderProfile = () => {
                 </Button>
               </div>
             </motion.div>
+            <p className="mt-2 text-center sm:text-left text-[11px] text-muted-foreground">
+              Orçamento sem compromisso. Fale direto com o profissional.
+            </p>
           </motion.div>
 
           {/* ── Dynamic sections ── */}
