@@ -71,7 +71,7 @@ function parseNumber(value: string | null) {
 
 let geoState: GeoData = {
   city: safeGet(CITY_KEY),
-  state: safeGet(STATE_KEY),
+  state: normalizeUF(safeGet(STATE_KEY)),
   temp: parseNumber(safeGet(TEMP_KEY)),
   latitude: parseNumber(safeGet(LAT_KEY)),
   longitude: parseNumber(safeGet(LON_KEY)),
