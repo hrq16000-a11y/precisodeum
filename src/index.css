@@ -595,3 +595,13 @@ img[loading="lazy"].img-revealed:not([data-no-reveal]) {
 .animate-scale-in {
   animation: animate-scale-in 0.2s ease-out;
 }
+
+/* Floating dot animation (replaces framer-motion to avoid forced reflow) */
+@keyframes floating-dot {
+  0%, 100% { transform: translateY(0); opacity: 0.2; }
+  50% { transform: translateY(var(--dot-distance, -24px)); opacity: 0.6; }
+}
+
+.animate-floating-dot {
+  animation: floating-dot 5s ease-in-out infinite;
+}
