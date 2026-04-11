@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -12,12 +14,20 @@ import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@
 import { generateProviderSlug } from '@/lib/slugify';
 import { fetchAllMunicipalities, geocodeCity, reverseGeocode, normalize, type CityResult } from '@/lib/geoUtils';
 import { useQuery } from '@tanstack/react-query';
-import { Search, LocateFixed, Loader2, MapPin, CheckCircle2 } from 'lucide-react';
+import { Search, LocateFixed, Loader2, MapPin, CheckCircle2, User, Briefcase, Globe, HelpCircle, Eye } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+
+const fadeIn = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+};
 
 const DashboardProfilePage = () => {
   const { user, profile, provider, loading, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('pessoal');
 
   // City selector state
   const [citySearch, setCitySearch] = useState('');
@@ -123,11 +133,9 @@ const DashboardProfilePage = () => {
         latitude: provider.latitude ?? null,
         longitude: provider.longitude ?? null,
       }));
-      // Set city search display
       if (provider.city) {
         setCitySearch(provider.state ? `${provider.city}, ${provider.state}` : provider.city);
       }
-      // Set category search display
       if (catName) setCategorySearch(catName);
       else if ((provider as any).category_custom) setCategorySearch((provider as any).category_custom);
     }
@@ -191,405 +199,371 @@ const DashboardProfilePage = () => {
 
   const handleSave = async () => {
     if (!user) return;
-
-    // Validate required fields
-    if (!form.full_name.trim()) {
-      toast.error('Nome completo é obrigatório');
-      return;
-    }
-
-    // Phone validation: min 10 digits
+    if (!form.full_name.trim()) { toast.error('Nome completo é obrigatório'); return; }
     const phoneDigits = form.phone.replace(/\D/g, '');
-    if (phoneDigits.length < 10) {
-      toast.error('Telefone deve ter pelo menos 10 dígitos');
-      return;
-    }
-
-    // City/state must be selected
-    if (!form.city.trim() || !form.state.trim()) {
-      toast.error('Selecione sua cidade na lista');
-      return;
-    }
-
-    // Category required: category_id OR category_custom
-    if (!form.category_id && !form.category_custom) {
-      toast.error('Selecione uma categoria ou digite "Outro"');
-      return;
-    }
-
-    // WhatsApp validation
+    if (phoneDigits.length < 10) { toast.error('Telefone deve ter pelo menos 10 dígitos'); return; }
+    if (!form.city.trim() || !form.state.trim()) { toast.error('Selecione sua cidade na lista'); return; }
+    if (!form.category_id && !form.category_custom) { toast.error('Selecione uma categoria ou digite "Outro"'); return; }
     const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.phone);
-    if (finalWhatsapp && !isValidWhatsApp(finalWhatsapp)) {
-      toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)');
-      return;
-    }
+    if (finalWhatsapp && !isValidWhatsApp(finalWhatsapp)) { toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)'); return; }
     const finalPhone = toCanonical(form.phone);
-    if (form.phone.trim() && !finalPhone) {
-      toast.error('Número de telefone inválido (deve ter 10 ou 11 dígitos)');
-      return;
-    }
-
-    // CNPJ validation
+    if (form.phone.trim() && !finalPhone) { toast.error('Número de telefone inválido (deve ter 10 ou 11 dígitos)'); return; }
     const cnpjDigits = form.cnpj.replace(/\D/g, '');
-    if (cnpjDigits && cnpjDigits.length !== 14) {
-      toast.error('CNPJ deve ter 14 dígitos');
-      return;
-    }
+    if (cnpjDigits && cnpjDigits.length !== 14) { toast.error('CNPJ deve ter 14 dígitos'); return; }
 
     setSaving(true);
-
-    // Geocode fallback
     let { latitude, longitude } = form;
     if (form.city && (latitude == null || longitude == null)) {
-      try {
-        const coords = await geocodeCity(form.city, form.state);
-        latitude = coords.latitude;
-        longitude = coords.longitude;
-      } catch { /* proceed without coords */ }
+      try { const coords = await geocodeCity(form.city, form.state); latitude = coords.latitude; longitude = coords.longitude; } catch {}
     }
 
     try {
       const { error: profileError } = await supabase.from('profiles').update({
-        full_name: form.full_name,
-        phone: form.phone,
-        email: user.email || '',
+        full_name: form.full_name, phone: form.phone, email: user.email || '',
       }).eq('id', user.id);
-
-      if (profileError) {
-        toast.error('Erro ao salvar perfil: ' + profileError.message);
-        setSaving(false);
-        return;
-      }
+      if (profileError) { toast.error('Erro ao salvar perfil: ' + profileError.message); setSaving(false); return; }
 
       const providerPayload = {
-        business_name: form.business_name || null,
-        description: form.description,
-        city: form.city,
-        state: form.state,
-        neighborhood: form.neighborhood,
-        whatsapp: finalWhatsapp,
-        website: form.website || null,
-        years_experience: form.years_experience,
-        category_id: form.category_id || null,
-        category_custom: form.category_custom || null,
-        cnpj: cnpjDigits || null,
-        ibge_code: form.ibge_code || null,
-        latitude,
-        longitude,
+        business_name: form.business_name || null, description: form.description,
+        city: form.city, state: form.state, neighborhood: form.neighborhood,
+        whatsapp: finalWhatsapp, website: form.website || null, years_experience: form.years_experience,
+        category_id: form.category_id || null, category_custom: form.category_custom || null,
+        cnpj: cnpjDigits || null, ibge_code: form.ibge_code || null, latitude, longitude,
       };
 
       if (provider) {
-        const { error: providerError } = await supabase.from('providers').update(providerPayload as any).eq('id', provider.id);
-        if (providerError) {
-          toast.error('Erro ao salvar dados profissionais: ' + providerError.message);
-          setSaving(false);
-          return;
-        }
+        const { error } = await supabase.from('providers').update(providerPayload as any).eq('id', provider.id);
+        if (error) { toast.error('Erro ao salvar dados profissionais: ' + error.message); setSaving(false); return; }
       } else {
-        const { data: existingProviders } = await supabase
-          .from('providers').select('id').eq('user_id', user.id).limit(1);
-
-        if (existingProviders && existingProviders.length > 0) {
-          const { error: updateError } = await supabase.from('providers').update({
-            ...providerPayload, phone: finalPhone,
-          } as any).eq('id', existingProviders[0].id);
-          if (updateError) {
-            toast.error('Erro ao atualizar perfil profissional: ' + updateError.message);
-            setSaving(false);
-            return;
-          }
+        const { data: existing } = await supabase.from('providers').select('id').eq('user_id', user.id).limit(1);
+        if (existing && existing.length > 0) {
+          const { error } = await supabase.from('providers').update({ ...providerPayload, phone: finalPhone } as any).eq('id', existing[0].id);
+          if (error) { toast.error('Erro ao atualizar: ' + error.message); setSaving(false); return; }
         } else {
           const slug = generateProviderSlug(form.full_name, form.city);
-          const { error: insertError } = await supabase.from('providers').insert({
-            ...providerPayload, user_id: user.id, phone: finalPhone, slug, status: 'pending',
-          } as any);
-          if (insertError) {
-            toast.error('Erro ao criar perfil profissional: ' + insertError.message);
-            setSaving(false);
-            return;
-          }
+          const { error } = await supabase.from('providers').insert({ ...providerPayload, user_id: user.id, phone: finalPhone, slug, status: 'pending' } as any);
+          if (error) { toast.error('Erro ao criar perfil: ' + error.message); setSaving(false); return; }
         }
       }
-
       await refetchProfile();
       toast.success('Perfil salvo com sucesso!');
     } catch (err: any) {
       toast.error('Erro inesperado: ' + (err.message || 'Tente novamente.'));
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
   const initials = form.full_name.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
+  useEffect(() => { if (profile?.avatar_url) setAvatarUrl(profile.avatar_url); }, [profile]);
 
-  useEffect(() => {
-    if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
-  }, [profile]);
+  // Profile completeness
+  const completeness = useMemo(() => {
+    const fields = [
+      !!form.full_name.trim(),
+      !!form.phone.trim(),
+      !!avatarUrl,
+      !!form.city.trim(),
+      !!(form.category_id || form.category_custom),
+      !!form.description.trim(),
+      !!form.whatsapp.trim(),
+      !!form.business_name?.trim(),
+    ];
+    return Math.round((fields.filter(Boolean).length / fields.length) * 100);
+  }, [form, avatarUrl]);
+
+  const displayName = form.full_name || 'Usuário';
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
+  const inputCls = 'w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all';
+  const labelCls = 'mb-1.5 block text-sm font-medium text-foreground';
+
   return (
     <DashboardLayout>
-      <h1 className="font-display text-2xl font-bold text-foreground">Meu Perfil</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Edite suas informações profissionais</p>
-
-      <div className="mt-6 max-w-2xl space-y-6">
-        {/* Avatar upload */}
-        <div className="rounded-xl border border-border bg-card p-6 shadow-card flex items-center gap-6">
-          <AvatarUpload userId={user!.id} currentUrl={avatarUrl} initials={initials} onUploaded={setAvatarUrl} />
+      <motion.div initial="hidden" animate="visible" variants={fadeIn} className="max-w-3xl">
+        {/* Header with help link */}
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-display text-lg font-bold text-foreground">Foto de Perfil</h2>
-            <p className="text-sm text-muted-foreground">Clique no ícone da câmera para alterar (max 2MB)</p>
+            <h1 className="font-display text-2xl font-bold text-foreground">Meu Perfil</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Edite suas informações profissionais</p>
           </div>
+          <Link to="/ajuda" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-accent hover:border-accent/30 transition-colors">
+            <HelpCircle className="h-3.5 w-3.5" /> Precisa de ajuda?
+          </Link>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
-          <h2 className="font-display text-lg font-bold text-foreground">Dados Pessoais</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Nome completo *</label>
-              <input name="full_name" value={form.full_name} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Telefone *</label>
-              <PhoneMaskedInput name="phone" value={form.phone} onChange={handlePhoneChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
+        {/* Progress bar */}
+        <motion.div
+          className="mt-5 rounded-xl border border-border bg-card p-4 shadow-sm"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-foreground">Completude do perfil</span>
+            <span className={`text-xs font-bold ${completeness === 100 ? 'text-emerald-500' : 'text-accent'}`}>{completeness}%</span>
           </div>
-        </div>
+          <Progress value={completeness} className="h-2" />
+          {completeness < 100 && (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Complete seu perfil para ter mais visibilidade e atrair mais clientes.
+            </p>
+          )}
+        </motion.div>
 
-        <div className="rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
-          <h2 className="font-display text-lg font-bold text-foreground">Dados Profissionais</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Nome do negócio</label>
-              <input name="business_name" value={form.business_name} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-
-            {/* Hierarchical category picker */}
-            <div className="relative">
-              <label className="mb-1 block text-sm font-medium text-foreground">Categoria principal *</label>
-              {(form.category_name || form.category_custom) && (
-                <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
-                  {form.category_name || form.category_custom}
-                  <button type="button" onClick={() => {
-                    setForm(prev => ({ ...prev, category_id: '', category_name: '', category_custom: '' }));
-                    setCategorySearch('');
-                  }} className="ml-0.5 hover:text-destructive">✕</button>
-                </div>
-              )}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                <input
-                  type="text"
-                  value={categorySearch}
-                  onChange={(e) => {
-                    setCategorySearch(e.target.value);
-                    setShowCategorySuggestions(true);
-                    if (!e.target.value) setForm(prev => ({ ...prev, category_id: '', category_name: '', category_custom: '' }));
-                  }}
-                  onFocus={() => setShowCategorySuggestions(true)}
-                  placeholder="Digite para buscar..."
-                  className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground"
-                />
-              </div>
-              {showCategorySuggestions && (
-                <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-56 overflow-y-auto">
-                  {filteredCategoryTree.length > 0 ? (
-                    filteredCategoryTree.map(({ macro, subs }) => (
-                      <div key={macro.id}>
-                        {subs.length > 0 ? (
-                          <>
-                            <div className="sticky top-0 bg-muted/60 backdrop-blur-sm px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                              {macro.icon} {macro.name}
-                            </div>
-                            {subs.map((sub: any) => (
-                              <button
-                                key={sub.id}
-                                type="button"
-                                onClick={() => handleCategorySelect(sub)}
-                                className={`w-full pl-6 pr-3 py-2 text-left text-sm hover:bg-muted transition-colors ${form.category_id === sub.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}
-                              >
-                                {sub.icon} {sub.name}
-                              </button>
-                            ))}
-                          </>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleCategorySelect(macro)}
-                            className={`w-full px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${form.category_id === macro.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}
-                          >
-                            {macro.icon} {macro.name}
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  ) : categorySearch.trim() ? (
-                    <div className="px-3 py-3 text-center text-xs text-muted-foreground">
-                      Nenhuma categoria encontrada
-                    </div>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const customVal = categorySearch.trim() || 'Outro';
-                      setForm(prev => ({ ...prev, category_id: '', category_name: '', category_custom: customVal }));
-                      setCategorySearch(customVal);
-                      setShowCategorySuggestions(false);
-                    }}
-                    className="w-full border-t border-border px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted transition-colors"
-                  >
-                    🏷️ Outro {categorySearch.trim() ? `("${categorySearch.trim()}")` : ''}
-                  </button>
-                </div>
-              )}
-              {showCategorySuggestions && (
-                <div className="fixed inset-0 z-10" onClick={() => setShowCategorySuggestions(false)} />
-              )}
-            </div>
-
-            {/* CNPJ */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
-                CNPJ <span className="text-muted-foreground font-normal">(opcional)</span>
-              </label>
-              <input
-                type="text"
-                value={form.cnpj}
-                onChange={(e) => {
-                  let v = e.target.value.replace(/\D/g, '').slice(0, 14);
-                  if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5');
-                  else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4');
-                  else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3');
-                  else if (v.length > 2) v = v.replace(/^(\d{2})(\d{1,3})/, '$1.$2');
-                  setForm(prev => ({ ...prev, cnpj: v }));
-                }}
-                placeholder="00.000.000/0000-00"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-              />
-            </div>
-
-            {/* Smart city selector */}
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-foreground">Cidade *</label>
-              <button
-                type="button"
-                onClick={handleAutoLocate}
-                disabled={locating}
-                className="mb-2 inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent/5 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
-              >
-                {locating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5" />}
-                {locating ? 'Detectando...' : '📍 Usar minha localização'}
-              </button>
-              <div className="relative" ref={cityDropdownRef}>
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                <input
-                  type="text"
-                  value={citySearch}
-                  onChange={(e) => {
-                    setCitySearch(e.target.value);
-                    setShowCitySuggestions(true);
-                    loadCities();
-                    setForm(prev => ({ ...prev, city: '', state: '', latitude: null, longitude: null }));
-                  }}
-                  onFocus={() => { setShowCitySuggestions(true); loadCities(); }}
-                  placeholder="Digite sua cidade..."
-                  className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground"
-                />
-                {showCitySuggestions && (
-                  <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-48 overflow-y-auto">
-                    {citiesLoading && (
-                      <div className="flex items-center justify-center gap-2 px-3 py-3">
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">Carregando municípios...</span>
-                      </div>
-                    )}
-                    {!citiesLoading && filteredCities.length === 0 && citySearch.trim() && (
-                      <p className="px-3 py-2 text-xs text-muted-foreground">Nenhuma cidade encontrada</p>
-                    )}
-                    {!citiesLoading && filteredCities.map((c, i) => (
-                      <button
-                        key={`${c.name}-${c.state}-${i}`}
-                        type="button"
-                        onClick={() => handleCitySelect(c)}
-                        className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${
-                          form.city === c.name && form.state === c.state ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'
-                        }`}
-                      >
-                        <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                        <span className="flex-1 truncate">{c.name}</span>
-                        <span className="text-xs text-muted-foreground">{c.state}</span>
-                        {form.city === c.name && form.state === c.state && <CheckCircle2 className="h-3.5 w-3.5 text-accent" />}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {showCitySuggestions && (
-                  <div className="fixed inset-0 z-10" onClick={() => setShowCitySuggestions(false)} />
-                )}
-              </div>
-            </div>
-
-            {/* State readonly */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Estado</label>
-              <input
-                type="text"
-                value={form.state}
-                readOnly
-                placeholder="Auto-preenchido"
-                className="w-full rounded-md border border-input bg-muted/50 px-3 py-2 text-sm text-foreground uppercase cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Bairro</label>
-              <input name="neighborhood" value={form.neighborhood} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
-              <PhoneMaskedInput name="whatsapp" value={form.whatsapp} onChange={handlePhoneChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-              {!form.whatsapp && form.phone && (
-                <button
-                  type="button"
-                  onClick={() => setForm(prev => ({ ...prev, whatsapp: prev.phone }))}
-                  className="mt-1 text-xs text-accent hover:underline"
+        {/* Avatar + Preview */}
+        <motion.div
+          className="mt-5 rounded-xl border border-border bg-card p-5 shadow-sm"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <div className="flex items-center gap-5">
+            <AvatarUpload userId={user!.id} currentUrl={avatarUrl} initials={initials} onUploaded={setAvatarUrl} />
+            <div className="flex-1 min-w-0">
+              <h2 className="font-display text-lg font-bold text-foreground truncate">{displayName}</h2>
+              <p className="text-xs text-muted-foreground">
+                {form.category_name || form.category_custom || 'Profissional'} {form.city && `• ${form.city}`}
+              </p>
+              {provider?.slug && (
+                <Link
+                  to={`/profissional/${provider.slug}`}
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
                 >
-                  Copiar do telefone
-                </button>
+                  <Eye className="h-3 w-3" /> Ver perfil público
+                </Link>
               )}
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Website</label>
-              <input name="website" value={form.website} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Anos de experiência</label>
-              <input name="years_experience" type="number" value={form.years_experience} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">Descrição profissional</label>
-            <textarea name="description" rows={4} value={form.description} onChange={handleChange}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-          </div>
-        </div>
+        </motion.div>
+
+        {/* Tabs */}
+        <motion.div
+          className="mt-5"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full grid grid-cols-3 h-11">
+              <TabsTrigger value="pessoal" className="gap-1.5 text-xs sm:text-sm">
+                <User className="h-3.5 w-3.5" /> Pessoal
+              </TabsTrigger>
+              <TabsTrigger value="profissional" className="gap-1.5 text-xs sm:text-sm">
+                <Briefcase className="h-3.5 w-3.5" /> Profissional
+              </TabsTrigger>
+              <TabsTrigger value="localizacao" className="gap-1.5 text-xs sm:text-sm">
+                <MapPin className="h-3.5 w-3.5" /> Localização
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Tab: Pessoal */}
+            <TabsContent value="pessoal">
+              <motion.div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4" variants={fadeIn} initial="hidden" animate="visible">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelCls}>Nome completo *</label>
+                    <input name="full_name" value={form.full_name} onChange={handleChange} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Telefone *</label>
+                    <PhoneMaskedInput name="phone" value={form.phone} onChange={handlePhoneChange} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>WhatsApp</label>
+                    <PhoneMaskedInput name="whatsapp" value={form.whatsapp} onChange={handlePhoneChange} className={inputCls} />
+                    {!form.whatsapp && form.phone && (
+                      <button type="button" onClick={() => setForm(prev => ({ ...prev, whatsapp: prev.phone }))} className="mt-1 text-xs text-accent hover:underline">
+                        Copiar do telefone
+                      </button>
+                    )}
+                  </div>
+                  <div>
+                    <label className={labelCls}>Website</label>
+                    <input name="website" value={form.website} onChange={handleChange} placeholder="https://" className={inputCls} />
+                  </div>
+                </div>
+              </motion.div>
+            </TabsContent>
+
+            {/* Tab: Profissional */}
+            <TabsContent value="profissional">
+              <motion.div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4" variants={fadeIn} initial="hidden" animate="visible">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelCls}>Nome do negócio</label>
+                    <input name="business_name" value={form.business_name} onChange={handleChange} className={inputCls} />
+                  </div>
+
+                  {/* Hierarchical category picker */}
+                  <div className="relative">
+                    <label className={labelCls}>Categoria principal *</label>
+                    {(form.category_name || form.category_custom) && (
+                      <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
+                        {form.category_name || form.category_custom}
+                        <button type="button" onClick={() => {
+                          setForm(prev => ({ ...prev, category_id: '', category_name: '', category_custom: '' }));
+                          setCategorySearch('');
+                        }} className="ml-0.5 hover:text-destructive">✕</button>
+                      </div>
+                    )}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      <input
+                        type="text" value={categorySearch}
+                        onChange={(e) => { setCategorySearch(e.target.value); setShowCategorySuggestions(true); if (!e.target.value) setForm(prev => ({ ...prev, category_id: '', category_name: '', category_custom: '' })); }}
+                        onFocus={() => setShowCategorySuggestions(true)}
+                        placeholder="Digite para buscar..."
+                        className={`${inputCls} pl-9`}
+                      />
+                    </div>
+                    {showCategorySuggestions && (
+                      <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-56 overflow-y-auto">
+                        {filteredCategoryTree.length > 0 ? (
+                          filteredCategoryTree.map(({ macro, subs }) => (
+                            <div key={macro.id}>
+                              {subs.length > 0 ? (
+                                <>
+                                  <div className="sticky top-0 bg-muted/60 backdrop-blur-sm px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                                    {macro.icon} {macro.name}
+                                  </div>
+                                  {subs.map((sub: any) => (
+                                    <button key={sub.id} type="button" onClick={() => handleCategorySelect(sub)}
+                                      className={`w-full pl-6 pr-3 py-2 text-left text-sm hover:bg-muted transition-colors ${form.category_id === sub.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}>
+                                      {sub.icon} {sub.name}
+                                    </button>
+                                  ))}
+                                </>
+                              ) : (
+                                <button type="button" onClick={() => handleCategorySelect(macro)}
+                                  className={`w-full px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${form.category_id === macro.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}>
+                                  {macro.icon} {macro.name}
+                                </button>
+                              )}
+                            </div>
+                          ))
+                        ) : categorySearch.trim() ? (
+                          <div className="px-3 py-3 text-center text-xs text-muted-foreground">Nenhuma categoria encontrada</div>
+                        ) : null}
+                        <button type="button" onClick={() => {
+                          const customVal = categorySearch.trim() || 'Outro';
+                          setForm(prev => ({ ...prev, category_id: '', category_name: '', category_custom: customVal }));
+                          setCategorySearch(customVal);
+                          setShowCategorySuggestions(false);
+                        }} className="w-full border-t border-border px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted transition-colors">
+                          🏷️ Outro {categorySearch.trim() ? `("${categorySearch.trim()}")` : ''}
+                        </button>
+                      </div>
+                    )}
+                    {showCategorySuggestions && (
+                      <div className="fixed inset-0 z-10" onClick={() => setShowCategorySuggestions(false)} />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>CNPJ <span className="text-muted-foreground font-normal">(opcional)</span></label>
+                    <input type="text" value={form.cnpj} onChange={(e) => {
+                      let v = e.target.value.replace(/\D/g, '').slice(0, 14);
+                      if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5');
+                      else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4');
+                      else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                      else if (v.length > 2) v = v.replace(/^(\d{2})(\d{1,3})/, '$1.$2');
+                      setForm(prev => ({ ...prev, cnpj: v }));
+                    }} placeholder="00.000.000/0000-00" className={inputCls} />
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>Anos de experiência</label>
+                    <input name="years_experience" type="number" value={form.years_experience} onChange={handleChange} className={inputCls} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelCls}>Descrição profissional</label>
+                  <textarea name="description" rows={4} value={form.description} onChange={handleChange} className={`${inputCls} resize-none`} />
+                </div>
+              </motion.div>
+            </TabsContent>
+
+            {/* Tab: Localização */}
+            <TabsContent value="localizacao">
+              <motion.div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4" variants={fadeIn} initial="hidden" animate="visible">
+                <div>
+                  <label className={labelCls}>Cidade *</label>
+                  <button type="button" onClick={handleAutoLocate} disabled={locating}
+                    className="mb-2 inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/5 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/10 disabled:opacity-50">
+                    {locating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5" />}
+                    {locating ? 'Detectando...' : '📍 Usar minha localização'}
+                  </button>
+                  <div className="relative" ref={cityDropdownRef}>
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <input type="text" value={citySearch}
+                      onChange={(e) => { setCitySearch(e.target.value); setShowCitySuggestions(true); loadCities(); setForm(prev => ({ ...prev, city: '', state: '', latitude: null, longitude: null })); }}
+                      onFocus={() => { setShowCitySuggestions(true); loadCities(); }}
+                      placeholder="Digite sua cidade..."
+                      className={`${inputCls} pl-9`}
+                    />
+                    {showCitySuggestions && (
+                      <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-48 overflow-y-auto">
+                        {citiesLoading && (
+                          <div className="flex items-center justify-center gap-2 px-3 py-3">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">Carregando municípios...</span>
+                          </div>
+                        )}
+                        {!citiesLoading && filteredCities.length === 0 && citySearch.trim() && (
+                          <p className="px-3 py-2 text-xs text-muted-foreground">Nenhuma cidade encontrada</p>
+                        )}
+                        {!citiesLoading && filteredCities.map((c, i) => (
+                          <button key={`${c.name}-${c.state}-${i}`} type="button" onClick={() => handleCitySelect(c)}
+                            className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${form.city === c.name && form.state === c.state ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}>
+                            <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                            <span className="flex-1 truncate">{c.name}</span>
+                            <span className="text-xs text-muted-foreground">{c.state}</span>
+                            {form.city === c.name && form.state === c.state && <CheckCircle2 className="h-3.5 w-3.5 text-accent" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {showCitySuggestions && (
+                      <div className="fixed inset-0 z-10" onClick={() => setShowCitySuggestions(false)} />
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelCls}>Estado</label>
+                    <input type="text" value={form.state} readOnly placeholder="Auto-preenchido"
+                      className={`${inputCls} bg-muted/50 cursor-not-allowed uppercase`} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Bairro</label>
+                    <input name="neighborhood" value={form.neighborhood} onChange={handleChange} className={inputCls} />
+                  </div>
+                </div>
+              </motion.div>
+            </TabsContent>
+          </Tabs>
+        </motion.div>
 
         {/* Account type switcher */}
-        <ProfileTypeSwitcher />
+        <div className="mt-5">
+          <ProfileTypeSwitcher />
+        </div>
 
-        <Button variant="accent" onClick={handleSave} disabled={saving}>
-          {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : 'Salvar Perfil'}
-        </Button>
-      </div>
+        {/* Save button */}
+        <motion.div
+          className="mt-5 flex gap-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Button variant="accent" onClick={handleSave} disabled={saving} className="flex-1 sm:flex-none sm:min-w-[180px]">
+            {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : 'Salvar Perfil'}
+          </Button>
+        </motion.div>
+      </motion.div>
     </DashboardLayout>
   );
 };
