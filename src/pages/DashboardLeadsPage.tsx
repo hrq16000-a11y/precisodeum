@@ -101,9 +101,12 @@ const DashboardLeadsPage = () => {
         initial="hidden"
         animate="show"
       >
+        <AnimatePresence mode="popLayout">
         {leads.length === 0 && (
           <motion.div
+            key="empty"
             variants={itemVariants}
+            exit={{ opacity: 0, scale: 0.95 }}
             className="rounded-xl border border-border bg-card p-12 text-center shadow-card"
           >
             <motion.div
@@ -116,10 +119,12 @@ const DashboardLeadsPage = () => {
             <p className="mt-1 text-sm text-muted-foreground">Quando clientes solicitarem orçamento, os leads aparecerão aqui.</p>
           </motion.div>
         )}
-        {leads.map((lead, i) => (
+        {leads.map((lead) => (
           <motion.div
             key={lead.id}
+            layout
             variants={itemVariants}
+            exit={{ opacity: 0, x: -80, transition: { duration: 0.3 } }}
             whileHover={{ y: -2, scale: 1.005 }}
             className="rounded-xl border border-border bg-card p-4 shadow-card transition-shadow hover:shadow-card-hover"
           >
@@ -146,6 +151,15 @@ const DashboardLeadsPage = () => {
                   >
                     <MessageCircle className="h-4 w-4" />
                   </motion.a>
+                  <motion.button
+                    onClick={() => handleDelete(lead.id)}
+                    className="inline-flex items-center justify-center rounded-full bg-destructive/10 p-1.5 text-destructive hover:bg-destructive/20 transition-colors"
+                    title="Excluir lead"
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </motion.button>
                 </div>
               </div>
             </div>
@@ -154,6 +168,7 @@ const DashboardLeadsPage = () => {
             </span>
           </motion.div>
         ))}
+        </AnimatePresence>
       </motion.div>
     </DashboardLayout>
   );
