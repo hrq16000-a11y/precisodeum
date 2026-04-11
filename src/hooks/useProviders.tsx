@@ -249,7 +249,7 @@ async function fetchProvidersLightweight(query: any) {
     // business_name or slug filled in.
     const displayName = (profile?.name?.trim()) || (p.business_name?.trim()) || (p.slug?.trim()) || '';
     const provCity = p.city?.trim() || '';
-    const isIncomplete = !displayName;
+    const isIncomplete = !displayName || (requireCityForVisibility && !provCity);
     (mapped as any)._isIncomplete = isIncomplete;
 
     // Hybrid score
