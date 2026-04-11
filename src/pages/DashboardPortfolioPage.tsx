@@ -179,26 +179,50 @@ const DashboardPortfolioPage = () => {
     setUploading(true);
     const { userRef } = await resolveIdentity(user.id);
 
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const { data: { session } } = await supabase.auth.getSession();
+
     for (const file of filesToUpload) {
       if (file.size > 5 * 1024 * 1024) {
         toast.error(`${file.name}: máximo 5MB`);
         continue;
       }
-      const fileName = `${Date.now()}-${file.name}`;
-      const storagePath = `${user.id}/${selectedAlbum.id}/${fileName}`;
-      const { error } = await supabase.storage.from('portfolio').upload(storagePath, file);
 
-      if (error) {
-        toast.error(`Erro: ${file.name}`);
-      } else {
-        const publicUrl = supabase.storage.from('portfolio').getPublicUrl(storagePath).data.publicUrl;
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('bucket', 'portfolio');
+        formData.append('folder', `${user.id}/${selectedAlbum.id}`);
+
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/optimize-image`,
+          {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'apikey': anonKey,
+              'Authorization': `Bearer ${session?.access_token}`,
+            },
+          }
+        );
+
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        const publicUrl = data.url;
+        const storagePath = data.path;
+
+        if (data.deduplicated) {
+          toast.info(`${file.name}: imagem reutilizada (duplicada)`);
+        }
 
         await supabase.from('portfolio_photos').insert({
           album_id: selectedAlbum.id,
           user_id: user.id,
           image_url: publicUrl,
           storage_path: storagePath,
-          original_name: fileName,
+          original_name: file.name,
           display_order: photos.length,
         });
 
@@ -206,7 +230,7 @@ const DashboardPortfolioPage = () => {
           await upsertMedia({
             storagePath: `portfolio/${storagePath}`,
             publicUrl,
-            originalName: fileName,
+            originalName: file.name,
             mimeType: file.type || 'image/jpeg',
             entityType: 'portfolio',
             entityRef: selectedAlbum.id,
@@ -219,6 +243,8 @@ const DashboardPortfolioPage = () => {
         if (!selectedAlbum.cover_image_url && photos.length === 0) {
           await supabase.from('portfolio_albums').update({ cover_image_url: publicUrl }).eq('id', selectedAlbum.id);
         }
+      } catch (err) {
+        toast.error(`Erro ao enviar: ${file.name}`);
       }
     }
 
