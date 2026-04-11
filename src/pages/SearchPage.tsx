@@ -347,6 +347,7 @@ const SearchPage = () => {
 
           {/* Results */}
           <div className="flex-1">
+            <GeoPromptBanner />
             {(categoriesError || searchError) && (
               <div className="mb-4 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
                 Falha temporária ao carregar dados.{' '}
