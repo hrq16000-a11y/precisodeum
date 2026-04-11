@@ -1,51 +1,25 @@
 
 
-## Plan: Deep Link WhatsApp (`whatsapp://send`) com fallback
+## Plano: Adicionar animação sutil à logo do cabeçalho
 
 ### Problema
-Atualmente, `whatsappLink()` em `src/lib/whatsapp.ts` gera URLs `https://wa.me/...` que abrem o navegador primeiro, causando fricção em dispositivos mobile. O ideal e usar o deep link `whatsapp://send?phone=...` que abre a app diretamente.
+A logo do rodapé aparece com um efeito de fade-in ao entrar na viewport (comportamento natural do scroll), enquanto a logo do cabeçalho aparece sem nenhuma animação.
 
-### Estrategia: Deep link com fallback inteligente
+### Solução
+Adicionar uma animação sutil de entrada na logo do cabeçalho usando framer-motion, consistente com o design system do projeto.
 
-Usar `whatsapp://send?phone=NUMERO&text=MENSAGEM` como esquema primario. Porem, em desktop, esse esquema pode falhar silenciosamente. A solucao e usar uma abordagem hibrida:
+### Alteração
 
-- **Mobile** (detectado via `navigator.userAgent` ou viewport): usar `whatsapp://send?phone=...`
-- **Desktop**: manter `https://wa.me/...` como fallback seguro
+**Arquivo: `src/components/Header.tsx`**
 
-### Alteracoes
+1. Importar `motion` de `framer-motion`
+2. Substituir a tag `<img>` da logo (linha 152-158) por `<motion.img>` com animação de fade-in + leve scale:
+   - `initial={{ opacity: 0, scale: 0.95 }}`
+   - `animate={{ opacity: 1, scale: 1 }}`
+   - `transition={{ duration: 0.4, ease: "easeOut" }}`
 
-**Arquivo: `src/lib/whatsapp.ts`**
+Isso dá à logo do header o mesmo tipo de efeito suave que o resto da interface, sem afetar performance (animação ocorre apenas uma vez no mount).
 
-1. Atualizar `whatsappLink()` para gerar `whatsapp://send?phone={canonical}&text={message}` por padrao
-2. Adicionar funcao `whatsappDeepLink()` que retorna o deep link nativo
-3. Adicionar funcao `whatsappWebLink()` que retorna o link wa.me (fallback)
-4. Adicionar helper `isMobileDevice()` para detectar mobile
-5. A funcao principal `whatsappLink()` passa a retornar automaticamente o deep link em mobile e o web link em desktop
-6. A mensagem padrao continua: `"Olá, vi o seu perfil no Preciso de um e gostaria de um orçamento."`
-7. O numero ja e sanitizado por `toCanonical()` (apenas digitos com codigo 55) -- nenhuma mudanca necessaria
-
-**Nenhuma alteracao nos consumidores** (`ProviderProfile.tsx`, `ServiceDetailPage.tsx`, `FloatingWhatsApp.tsx`, etc.) -- todos ja chamam `whatsappLink()` que passara a retornar o deep link correto automaticamente.
-
-### Detalhes tecnicos
-
-```typescript
-// Nova logica em whatsapp.ts
-const isMobile = (): boolean =>
-  typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-export const whatsappLink = (number: string, message?: string): string => {
-  const formatted = formatToWhatsApp(number);
-  if (!formatted) return '#';
-  const text = message || DEFAULT_MESSAGE;
-  const encoded = encodeURIComponent(text);
-  
-  if (isMobile()) {
-    return `whatsapp://send?phone=${formatted}&text=${encoded}`;
-  }
-  return `https://wa.me/${formatted}?text=${encoded}`;
-};
-```
-
-### Arquivos modificados
-- `src/lib/whatsapp.ts` -- unica alteracao necessaria (funcao centralizada)
+### Arquivo modificado
+- `src/components/Header.tsx`
 
