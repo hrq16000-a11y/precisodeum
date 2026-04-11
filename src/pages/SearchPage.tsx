@@ -7,6 +7,7 @@ import SearchBar from '@/components/SearchBar';
 import ProviderCard from '@/components/ProviderCard';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';
+import GeoPromptBanner from '@/components/GeoPromptBanner';
 import PaginationControls from '@/components/PaginationControls';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -347,6 +348,7 @@ const SearchPage = () => {
 
           {/* Results */}
           <div className="flex-1">
+            <GeoPromptBanner />
             {(categoriesError || searchError) && (
               <div className="mb-4 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
                 Falha temporária ao carregar dados.{' '}

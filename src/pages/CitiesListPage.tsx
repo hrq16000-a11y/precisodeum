@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Search, ArrowRight, Users, Building2, Sparkles, TrendingUp } from 'lucide-react';
+import { MapPin, Search, ArrowRight, Users, Building2, Sparkles, TrendingUp, Navigation } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { calculateDistanceKm } from '@/lib/geoDistance';
 import { motion } from 'framer-motion';
 import BrazilMapSVG from '@/components/home/BrazilMapSVG';
 
@@ -22,12 +23,24 @@ const STATE_NAMES: Record<string, string> = {
   SE: 'Sergipe', SP: 'São Paulo', TO: 'Tocantins',
 };
 
-/** Normalize city name: title-case respecting Portuguese prepositions */
 const PREPOSITIONS = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'no', 'na', 'nos', 'nas']);
 const normalizeCity = (name: string) => {
   return name.trim().toLowerCase().split(/\s+/).map((w, i) =>
     i > 0 && PREPOSITIONS.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)
   ).join(' ');
+};
+
+// Known approximate coordinates for Brazilian state capitals
+const STATE_COORDS: Record<string, { lat: number; lon: number }> = {
+  AC: { lat: -9.97, lon: -67.81 }, AL: { lat: -9.67, lon: -35.74 }, AM: { lat: -3.12, lon: -60.02 },
+  AP: { lat: 0.03, lon: -51.05 }, BA: { lat: -12.97, lon: -38.51 }, CE: { lat: -3.72, lon: -38.53 },
+  DF: { lat: -15.79, lon: -47.88 }, ES: { lat: -20.32, lon: -40.34 }, GO: { lat: -16.68, lon: -49.25 },
+  MA: { lat: -2.53, lon: -44.28 }, MG: { lat: -19.92, lon: -43.94 }, MS: { lat: -20.44, lon: -54.65 },
+  MT: { lat: -15.60, lon: -56.10 }, PA: { lat: -1.46, lon: -48.50 }, PB: { lat: -7.12, lon: -34.86 },
+  PE: { lat: -8.05, lon: -34.87 }, PI: { lat: -5.09, lon: -42.81 }, PR: { lat: -25.43, lon: -49.27 },
+  RJ: { lat: -22.91, lon: -43.17 }, RN: { lat: -5.79, lon: -35.21 }, RO: { lat: -8.76, lon: -63.90 },
+  RR: { lat: 2.82, lon: -60.67 }, RS: { lat: -30.03, lon: -51.23 }, SC: { lat: -27.59, lon: -48.55 },
+  SE: { lat: -10.91, lon: -37.07 }, SP: { lat: -23.55, lon: -46.63 }, TO: { lat: -10.18, lon: -48.33 },
 };
 
 const CitiesListPage = () => {
@@ -60,28 +73,71 @@ const CitiesListPage = () => {
     staleTime: 1000 * 60 * 10,
   });
 
-  const { data: topCities = [] } = useQuery({
+  const { data: topCitiesRaw = [] } = useQuery({
     queryKey: ['top-cities-providers'],
     queryFn: async () => {
       const { data } = await supabase
         .from('providers')
-        .select('city, state')
+        .select('city, state, latitude, longitude')
         .eq('status', 'approved')
         .is('deleted_at', null);
       if (!data) return [];
-      const map = new Map<string, { name: string; state: string; count: number }>();
+      const map = new Map<string, { name: string; state: string; count: number; lat: number | null; lon: number | null }>();
       data.forEach(p => {
         if (!p.city) return;
         const normalized = normalizeCity(p.city);
         const stateUf = p.state?.toUpperCase().trim() || '';
         const key = `${normalized}|${stateUf}`;
         const existing = map.get(key);
-        map.set(key, { name: normalized, state: stateUf, count: (existing?.count || 0) + 1 });
+        if (!existing) {
+          map.set(key, { name: normalized, state: stateUf, count: 1, lat: p.latitude, lon: p.longitude });
+        } else {
+          existing.count++;
+          if (!existing.lat && p.latitude) { existing.lat = p.latitude; existing.lon = p.longitude; }
+        }
       });
-      return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 10);
+      return Array.from(map.values());
     },
     staleTime: 1000 * 60 * 10,
   });
+
+  // Sort top cities by GPS proximity when available
+  const topCities = useMemo(() => {
+    const hasGps = geo.latitude != null && geo.longitude != null;
+    if (!hasGps) {
+      return [...topCitiesRaw].sort((a, b) => b.count - a.count).slice(0, 10);
+    }
+    return [...topCitiesRaw]
+      .map(c => {
+        let dist = Infinity;
+        if (c.lat != null && c.lon != null) {
+          dist = calculateDistanceKm(
+            { latitude: geo.latitude!, longitude: geo.longitude! },
+            { latitude: c.lat, longitude: c.lon }
+          );
+        }
+        return { ...c, distanceKm: Math.round(dist * 10) / 10 };
+      })
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .slice(0, 10);
+  }, [topCitiesRaw, geo.latitude, geo.longitude]);
+
+  // Sort states by proximity when GPS available
+  const sortedStates = useMemo(() => {
+    const hasGps = geo.latitude != null && geo.longitude != null;
+    const entries = Object.entries(STATE_NAMES);
+    if (!hasGps) return entries.sort(([, a], [, b]) => a.localeCompare(b));
+    return entries
+      .map(([uf, name]) => {
+        const coords = STATE_COORDS[uf];
+        const dist = coords
+          ? calculateDistanceKm({ latitude: geo.latitude!, longitude: geo.longitude! }, { latitude: coords.lat, longitude: coords.lon })
+          : Infinity;
+        return { uf, name, dist };
+      })
+      .sort((a, b) => a.dist - b.dist)
+      .map(({ uf, name }) => [uf, name] as [string, string]);
+  }, [geo.latitude, geo.longitude]);
 
   const { data: geoCity } = useQuery({
     queryKey: ['geo-city-match', geo.city],
@@ -123,14 +179,14 @@ const CitiesListPage = () => {
   }, [navigate]);
 
   const geoStateUf = geo.state?.toUpperCase().trim();
+  const hasGps = geo.latitude != null && geo.longitude != null;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
 
-      {/* Hero — high contrast solid bg */}
+      {/* Hero */}
       <section className="relative overflow-hidden bg-primary py-16 md:py-24">
-        {/* Decorative circles */}
         <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-white/5" />
         <div className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-white/5" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-white/[0.03]" />
@@ -169,7 +225,21 @@ const CitiesListPage = () => {
               </>
             )}
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            {!hasGps && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-4">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 rounded-full border-white/30 text-white hover:bg-white/20"
+                  onClick={() => geo.requestPreciseLocation()}
+                >
+                  <Navigation className="h-3.5 w-3.5" />
+                  Ativar GPS para ordenar por proximidade
+                </Button>
+              </motion.div>
+            )}
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
               {geoCity ? (
                 <Button size="lg" className="rounded-full gap-2 bg-accent hover:bg-accent/90 text-accent-foreground shadow-xl text-base px-8 h-12" asChild>
                   <Link to={`/cidade/${geoCity.slug}`}>
@@ -273,7 +343,7 @@ const CitiesListPage = () => {
                   <div className="flex items-center gap-2 mb-4">
                     <TrendingUp className="h-5 w-5 text-accent" />
                     <h2 className="font-display text-lg font-bold text-foreground">
-                      Cidades com mais profissionais
+                      {hasGps ? 'Cidades mais próximas' : 'Cidades com mais profissionais'}
                     </h2>
                   </div>
                   <div className="space-y-2">
@@ -290,9 +360,16 @@ const CitiesListPage = () => {
                           <span className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors">{city.name}</span>
                           <span className="text-xs text-muted-foreground ml-2">{city.state}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Users className="h-3.5 w-3.5" />
-                          {city.count}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {hasGps && (city as any).distanceKm != null && (city as any).distanceKm !== Infinity && (
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                              📍 {(city as any).distanceKm < 1 ? '< 1' : (city as any).distanceKm} km
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3.5 w-3.5" />
+                            {city.count}
+                          </span>
                         </div>
                       </Link>
                     ))}
@@ -309,11 +386,11 @@ const CitiesListPage = () => {
                 <div className="flex items-center gap-2 mb-4">
                   <Building2 className="h-5 w-5 text-primary" />
                   <h2 className="font-display text-lg font-bold text-foreground">
-                    Explorar por Estado
+                    Explorar por Estado {hasGps && <span className="text-xs font-normal text-muted-foreground">(por proximidade)</span>}
                   </h2>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {Object.entries(STATE_NAMES).sort(([,a],[,b]) => a.localeCompare(b)).map(([uf, name]) => {
+                  {sortedStates.map(([uf, name]) => {
                     const count = stateStats.find(s => s.uf === uf)?.providers || 0;
                     return (
                       <Link

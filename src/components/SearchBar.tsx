@@ -47,7 +47,8 @@ const badgeColors: Record<string, string> = {
 };
 
 const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
-  const { city: geoCity, setCity } = useGeoCity();
+  const { city: geoCity, setCity, latitude, longitude, radiusKm } = useGeoCity();
+  const hasGps = latitude != null && longitude != null;
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(-1);
@@ -301,6 +302,12 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
           <Button type="submit" variant="accent" size="sm">Buscar</Button>
         </form>
         {searchError && <p className="mt-1 text-xs text-destructive">{searchError}</p>}
+        {hasGps && geoCity && (
+          <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <MapPin className="h-3 w-3 text-primary" />
+            <span>📍 {geoCity} · {radiusKm}km</span>
+          </div>
+        )}
         {suggestionsDropdown}
       </div>
     );

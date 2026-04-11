@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -10,6 +10,7 @@ import ProviderCard from '@/components/ProviderCard';
 import PaginationControls from '@/components/PaginationControls';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import GeoLocationChip from '@/components/GeoLocationChip';
+import GeoPromptBanner from '@/components/GeoPromptBanner';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -42,10 +43,15 @@ const stagger = {
 
 const CategoryPage = () => {
   const { slug } = useParams();
-  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm } = useGeoCity();
+  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, requestPreciseLocation } = useGeoCity();
   const { data, isLoading } = useCategoryProviders(slug || '');
   const [page, setPage] = useState(1);
   const [showAllLocations, setShowAllLocations] = useState(false);
+
+  // Request GPS proactively on mount
+  useEffect(() => {
+    requestPreciseLocation();
+  }, [requestPreciseLocation]);
 
   const category = data?.category;
   const allProviders = data?.providers || [];
@@ -58,11 +64,15 @@ const CategoryPage = () => {
     const cityNorm = normalizeCityName(geoCity);
     const stateNorm = geoState ? normalizeCityName(geoState) : undefined;
 
-    const local: DbProvider[] = [];
+    const local: (DbProvider & { _dist?: number })[] = [];
     const other: DbProvider[] = [];
     allProviders.forEach((p) => {
       if (matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon, radiusKm)) {
-        local.push(p);
+        let dist: number | undefined;
+        if (userLat != null && userLon != null && p.latitude != null && p.longitude != null) {
+          dist = Math.round(haversine(userLat, userLon, p.latitude, p.longitude) * 10) / 10;
+        }
+        local.push({ ...p, distanceKm: dist, _dist: dist });
       } else {
         other.push(p);
       }
@@ -71,16 +81,14 @@ const CategoryPage = () => {
     // Sort local by real distance when possible
     if (userLat != null && userLon != null) {
       local.sort((a, b) => {
-        const distA = (a.latitude != null && a.longitude != null)
-          ? haversine(userLat, userLon, a.latitude, a.longitude) : Infinity;
-        const distB = (b.latitude != null && b.longitude != null)
-          ? haversine(userLat, userLon, b.latitude, b.longitude) : Infinity;
+        const distA = a._dist ?? Infinity;
+        const distB = b._dist ?? Infinity;
         return distA - distB;
       });
     }
 
     if (local.length > 0) {
-      return { localProviders: local, otherProviders: other, isFallback: false, expansionLevel: null };
+      return { localProviders: local as DbProvider[], otherProviders: other, isFallback: false, expansionLevel: null };
     }
 
     return { localProviders: allProviders, otherProviders: [] as DbProvider[], isFallback: true, expansionLevel: 'all' as const };
@@ -231,6 +239,8 @@ const CategoryPage = () => {
       <Suspense fallback={null}><AdSlot slotSlug="category-top" category={slug} /></Suspense>
 
       <div className="container py-8">
+        <GeoPromptBanner />
+
         {isFallback && expansionLevel && (
           <GeoFallbackBanner
             originalCity={geoCity || ''}
