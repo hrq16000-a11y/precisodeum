@@ -480,12 +480,28 @@ const ProviderProfile = () => {
     return () => { active = false; };
   }, [slug, navigate]);
 
+  // DESTAQUE criteria
+  const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
+  const destaqueRequirePortfolio = useSettingValue('destaque_require_portfolio') !== 'false';
+  const destaqueRequireServices = useSettingValue('destaque_require_services') !== 'false';
+  const destaqueMinServices = Number(useSettingValue('destaque_min_services')) || 1;
+  const destaqueMinPortfolio = Number(useSettingValue('destaque_min_portfolio')) || 1;
+  const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
+
   const name = provider ? ((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : '';
-  const avatarUrl = provider ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : '';
+  const hasOwnAvatar = !!(provider && ((provider.profiles as any)?.avatar_url || provider.photo_url));
+  const diceBearAvatar = provider ? `https://api.dicebear.com/9.x/${avatarFallbackStyle}/svg?seed=${encodeURIComponent(provider.user_id || provider.id)}` : '';
+  const avatarUrl = provider ? (hasOwnAvatar ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : diceBearAvatar) : '';
   const category = provider ? ((provider.categories as any)?.name || '') : '';
   const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
   const categoryIcon = provider ? ((provider.categories as any)?.icon || '🔧') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
+
+  // DESTAQUE: replaces simple plan === 'premium' check
+  const isDestaque = !!provider && provider.plan === 'premium' && hasOwnAvatar &&
+    (!destaqueRequireServices || (provider.services_count || 0) >= destaqueMinServices) &&
+    (!destaqueRequirePortfolio || (provider.portfolio_album_count || 0) >= destaqueMinPortfolio) &&
+    (!destaqueRequireAvatar || hasOwnAvatar);
   const effectiveWhatsApp = provider ? toCanonical(provider.whatsapp || provider.phone || '') : '';
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
@@ -975,7 +991,7 @@ const ProviderProfile = () => {
               >
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
-                  {provider.plan === 'premium' && (
+                  {isDestaque && (
                     <motion.span
                       className={`inline-flex items-center gap-1 ${tc.badge} bg-gradient-to-r from-accent to-accent/80 px-2.5 py-0.5 text-xs font-semibold text-accent-foreground shadow-md`}
                       style={accentBg ? { background: `linear-gradient(135deg, ${accentBg}, ${accentBg}cc)` } : undefined}

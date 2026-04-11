@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera, LifeBuoy } from 'lucide-react';
+import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera, LifeBuoy, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,8 +30,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingLeads, setPendingLeads] = useState(0);
+  const [incompleteAlert, setIncompleteAlert] = useState<{ daysLeft: number } | null>(null);
   const logoUrl = useSettingValue('logo_url');
   const logo = logoUrl || DEFAULT_LOGO_URL;
+  const daysLimit = Number(useSettingValue('incomplete_profile_days_limit')) || 60;
 
   useEffect(() => {
     if (!user) return;
@@ -59,6 +61,23 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           .then(({ count }) => setPendingLeads(count ?? 0));
       });
   }, [user, profile]);
+
+  // Check if profile is incomplete and show countdown alert
+  useEffect(() => {
+    if (!user || !profile) return;
+    if (profile.profile_type === 'client') return;
+    const isIncomplete = !profile.full_name?.trim() || profile.full_name?.trim() === '';
+    if (!isIncomplete) { setIncompleteAlert(null); return; }
+    // Check provider creation date
+    supabase.from('providers').select('created_at').eq('user_id', user.id).limit(1)
+      .then(({ data: providers }) => {
+        if (!providers?.[0]) return;
+        const createdAt = new Date(providers[0].created_at);
+        const daysSince = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+        const daysLeft = Math.max(0, daysLimit - daysSince);
+        setIncompleteAlert({ daysLeft });
+      });
+  }, [user, profile, daysLimit]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -258,6 +277,26 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             key={location.pathname}
           >
             <DashboardGroupNav />
+            {incompleteAlert && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4"
+              >
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-destructive">Complete seu cadastro!</p>
+                  <p className="text-xs text-muted-foreground">
+                    {incompleteAlert.daysLeft > 0
+                      ? `Você tem ${incompleteAlert.daysLeft} dias para preencher seus dados básicos (nome, cidade) antes que seu perfil seja removido.`
+                      : 'Seu prazo expirou. Complete seus dados imediatamente para evitar a remoção do perfil.'}
+                  </p>
+                </div>
+                <Button variant="accent" size="sm" asChild>
+                  <Link to="/dashboard/perfil">Completar</Link>
+                </Button>
+              </motion.div>
+            )}
             {children}
           </motion.div>
         </AnimatePresence>

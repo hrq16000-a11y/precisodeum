@@ -32,6 +32,14 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const requireCnpj = useSettingValue('verified_badge_require_cnpj') !== 'false';
   const requireCity = useSettingValue('verified_badge_require_city') !== 'false';
 
+  // DESTAQUE criteria (admin-configurable, replaces plan === 'premium')
+  const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
+  const destaqueRequirePortfolio = useSettingValue('destaque_require_portfolio') !== 'false';
+  const destaqueRequireServices = useSettingValue('destaque_require_services') !== 'false';
+  const destaqueMinServices = Number(useSettingValue('destaque_min_services')) || 1;
+  const destaqueMinPortfolio = Number(useSettingValue('destaque_min_portfolio')) || 1;
+  const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
+
   const { user } = useAuth();
   const isOnline = useIsProviderOnline(provider.userId);
   const prefetch = usePrefetchProvider();
@@ -44,7 +52,9 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const locationText = locationParts.join(', ');
 
   const displayName = provider.name || provider.businessName || 'Profissional';
-  const generatedAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff&size=128&bold=true`;
+  // DiceBear avatar instead of initials
+  const generatedAvatar = `https://api.dicebear.com/9.x/${avatarFallbackStyle}/svg?seed=${encodeURIComponent(provider.userId || provider.id)}`;
+  const hasOwnPhoto = !!(provider.photo || provider.serviceImage);
   const displayPhoto = provider.photo || provider.serviceImage || generatedAvatar;
 
   // Verified badge — computed from admin-configurable rules
@@ -93,7 +103,10 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
                   {displayName}
                 </h3>
-                {provider.plan === 'premium' && (
+                {provider.plan === 'premium' && hasOwnPhoto &&
+                  (!destaqueRequireServices || provider.servicesCount >= destaqueMinServices) &&
+                  (!destaqueRequirePortfolio || provider.portfolioAlbumCount >= destaqueMinPortfolio) &&
+                  (!destaqueRequireAvatar || hasOwnPhoto) && (
                   <motion.div animate={{ rotate: [0, 12, -12, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}>
                     <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />
                   </motion.div>
