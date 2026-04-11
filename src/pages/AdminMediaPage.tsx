@@ -49,6 +49,8 @@ const AdminMediaPage = () => {
   const [syncHistory, setSyncHistory] = useState<any[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [portfolioOptimizing, setPortfolioOptimizing] = useState(false);
+  const [allBucketsOptimizing, setAllBucketsOptimizing] = useState(false);
+  const [optimizeResult, setOptimizeResult] = useState<any>(null);
 
   const fetchMedia = useCallback(async () => {
     setLoading(true);
@@ -501,6 +503,34 @@ const AdminMediaPage = () => {
           <Button variant="default" size="sm" onClick={optimizePortfolio} disabled={portfolioOptimizing}>
             {portfolioOptimizing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Zap className="mr-1 h-4 w-4" />}
             {portfolioOptimizing ? 'Otimizando...' : 'Otimizar Portfólio'}
+          </Button>
+          <Button variant="default" size="sm" onClick={async () => {
+            setAllBucketsOptimizing(true);
+            setOptimizeResult(null);
+            try {
+              const { data, error } = await supabase.functions.invoke('batch-optimize-all');
+              if (error) throw error;
+              setOptimizeResult(data);
+              toast.success(data?.message || 'Otimização concluída');
+              await logAuditAction({
+                action: 'batch_optimize_all',
+                resource_type: 'media',
+                details: {
+                  grand_total_optimized: data?.grand_total_optimized,
+                  grand_total_savings_kb: data?.grand_total_savings_kb,
+                  buckets: data?.buckets,
+                },
+              });
+              fetchMedia();
+              fetchStats();
+            } catch (err: any) {
+              toast.error('Erro: ' + (err.message || ''));
+            } finally {
+              setAllBucketsOptimizing(false);
+            }
+          }} disabled={allBucketsOptimizing}>
+            {allBucketsOptimizing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Zap className="mr-1 h-4 w-4" />}
+            {allBucketsOptimizing ? 'Otimizando Tudo...' : 'Otimizar Todos Buckets'}
           </Button>
         </div>
 
