@@ -1,71 +1,63 @@
 
 
-## Plano: Otimizacoes de Performance — Fase 2
+## Plano: Otimizacoes de Performance — Fase 3
 
-### Analise
+### Problemas identificados
 
-A fase anterior resolveu os maiores gargalos (wildcard lucide, lazy load de componentes, framer-motion no Header). Agora restam otimizacoes de medio impacto que, somadas, reduzem mais ~100-150ms do tempo de carregamento.
+1. **NotificationCenter no critical path via Header** — O Header importa `NotificationBell` de `NotificationCenter.tsx`, que por sua vez puxa `framer-motion`, `date-fns/formatDistanceToNow`, `date-fns/locale/ptBR` e `useNotifications` (com query ao Supabase). Tudo isso entra no bundle principal porque o Header e eager.
+
+2. **Index.tsx eagerly loaded** — A pagina Index e importada de forma sincrona no App.tsx (linha 33). Ela traz consigo o Header, HeroBanner, SearchBar, GeoLocationChip, RotatingServiceText e todos os hooks associados. Embora seja a rota principal, a conversao para lazy com `prefetch` imediato manteria o mesmo UX mas permitiria code-splitting.
+
+3. **MutationObserver no main.tsx observa TODA mutacao do DOM** — O `bodyObs.observe(document.documentElement, { childList: true, subtree: true })` dispara `observeLazyImages()` em cada mutacao DOM (centenas por segundo durante hydration). Deveria ser throttled.
+
+4. **`cleanupFrequencyData()` sincrono no boot** — Executa logica de localStorage sincronamente antes do `createRoot`. Deveria ser deferido.
+
+5. **Toaster + Sonner eagerly loaded** — Ambos sao importados de forma sincrona no App.tsx mas so sao necessarios quando um toast e disparado.
 
 ---
 
 ### Alteracoes
 
-**1. `src/hooks/useSiteSettings.ts`** — staleTime 60s para 5min
+**1. `src/components/Header.tsx`** — Lazy load do NotificationCenter
 
-O `site_settings` e consultado em cada pagina (via feature flags) com staleTime de apenas 60s, gerando refetches desnecessarios. Todas as outras queries usam 5min.
+- Substituir `import { NotificationBell } from '@/components/NotificationCenter'` por um lazy import com Suspense
+- Isso remove `framer-motion`, `date-fns` e `useNotifications` do bundle critico
+- **Impacto: ~80-120KB fora do critical path**
 
-- Alterar `staleTime: 60000` para `staleTime: 1000 * 60 * 5`
+**2. `src/main.tsx`** — Throttle do MutationObserver + defer cleanup
 
-**2. `src/App.tsx`** — Lazy load do OAuthRedirectHandler
+- Envolver `observeLazyImages()` num `requestAnimationFrame` debounce para que nao execute centenas de vezes durante hydration
+- Mover `cleanupFrequencyData()` para dentro de `requestIdleCallback`
 
-O `OAuthRedirectHandler` e importado eagerly (linha 132) mas so e necessario na rota `/~oauth`. Converte-lo para lazy reduz o bundle inicial.
+**3. `src/App.tsx`** — Lazy load Index com prefetch imediato
 
-- Trocar `import OAuthRedirectHandler` por `const OAuthRedirectHandler = reactLazy(...)`
+- Converter `import Index from "./pages/Index"` para lazy
+- Adicionar prefetch imediato (delay 0) para que o chunk comece a carregar instantaneamente
+- O `PageFallback` (CinematicLoader) ja existe e cobre o intervalo
+- **Impacto: permite que o shell (React, Router, QueryClient) renderize antes da pagina completa**
 
-**3. `src/App.tsx`** — Lazy load do CurtainReveal
+**4. `src/App.tsx`** — Lazy load Toaster e Sonner
 
-O `CurtainReveal` e importado eagerly (linha 146) mas so executa em modo PWA standalone. Converte-lo para lazy evita carregar codigo inutil em 95%+ dos acessos.
-
-- Trocar `import CurtainReveal` por `const CurtainReveal = reactLazy(...)`
-
-**4. `vite.config.ts`** — Chunk separado para lucide-react
-
-Mesmo com o fix do wildcard no MobileBottomNav, `lucide-react` ainda e importado em dezenas de componentes e acaba no bundle principal. Isolar num chunk separado permite caching independente.
-
-- Adicionar `'vendor-icons': ['lucide-react']` ao `manualChunks`
-
-**5. `src/components/home/HeroBanner.tsx`** — fetchpriority="high" na imagem ativa
-
-A imagem do hero e o maior LCP candidate. Adicionar `fetchPriority="high"` garante que o browser priorize o download dela sobre outros recursos.
-
-- Na tag `<img>` da imagem ativa do carrossel, adicionar `fetchPriority="high"`
-
-**6. `src/hooks/useGeoCity.ts`** — Cache de 30 min para evitar refetches em navegacao
-
-Atualmente, `startFetchIfNeeded()` roda toda vez que o hook monta (toda navegacao). Adicionar um TTL de 30 min no localStorage para evitar chamadas repetidas a edge function e IP APIs durante a mesma sessao.
-
-- Adicionar `GEO_FETCH_TS` key e verificar se o ultimo fetch foi ha menos de 30 min antes de refazer
+- Converter ambos para lazy imports com `Suspense fallback={null}`
+- Sao componentes de notificacao que so precisam estar montados quando um toast dispara (React Query ja faz buffering)
 
 ---
 
 ### Resumo de impacto
 
 ```text
-Mudanca                              Economia estimada
-─────────────────────────────────────────────────────
-staleTime site_settings 60s → 5min   -4 queries/5min
-Lazy OAuthRedirectHandler            -5KB bundle inicial
-Lazy CurtainReveal                   -2KB bundle inicial
-Chunk separado lucide-react          cache independente
-fetchPriority="high" no hero         -100ms LCP
-Cache 30min no geoCity               -2 network requests
-─────────────────────────────────────────────────────
+Mudanca                                    Economia estimada
+────────────────────────────────────────────────────────────
+NotificationCenter lazy no Header          ~80-120KB critical JS
+Index lazy + prefetch imediato             code-split principal (~150KB)
+Throttle MutationObserver                  -50+ callbacks/hydration
+Defer cleanupFrequencyData                 -2ms boot bloqueio
+Lazy Toaster + Sonner                      ~15KB critical JS
+────────────────────────────────────────────────────────────
 ```
 
 ### Arquivos modificados
-- `src/hooks/useSiteSettings.ts`
+- `src/components/Header.tsx`
+- `src/main.tsx`
 - `src/App.tsx`
-- `vite.config.ts`
-- `src/components/home/HeroBanner.tsx`
-- `src/hooks/useGeoCity.ts`
 
