@@ -415,20 +415,25 @@ export function filterAndRankProviders(
   // Override radius if explicitly provided
   if (radiusKm) (geoContext as any).radius = radiusKm;
 
-  // Apply textual filter using service tokens (cleaned by SIL)
+  // Apply textual filter using sanitized service tokens (stop words removed)
   if (serviceQuery) {
-    const terms = serviceQuery.toLowerCase().split(/\s+/).filter(Boolean);
-    results = results.filter((p) =>
-      terms.every((term) =>
-        p.name.toLowerCase().includes(term) ||
-        p.category.toLowerCase().includes(term) ||
-        p.description.toLowerCase().includes(term) ||
-        (p.businessName?.toLowerCase().includes(term) ?? false) ||
-        p.city.toLowerCase().includes(term) ||
-        p.neighborhood.toLowerCase().includes(term) ||
-        p.state.toLowerCase().includes(term)
-      )
-    );
+    const terms = sanitizeSearchTokens(serviceQuery);
+    if (terms.length > 0) {
+      results = results.filter((p) => {
+        const searchable = [
+          p.name, p.category, p.description,
+          p.businessName || '', p.city, p.neighborhood, p.state,
+        ].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/-/g, ' ');
+
+        let matched = 0;
+        for (const term of terms) {
+          if (searchable.includes(term)) matched++;
+        }
+        // 1 term: must match; 2+ terms: at least 50% must match
+        const threshold = terms.length === 1 ? 1 : Math.ceil(terms.length * 0.5);
+        return matched >= threshold;
+      });
+    }
   }
 
   // Route based on SIL intent
