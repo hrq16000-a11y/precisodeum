@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { DollarSign, ArrowRight, Sparkles, TrendingUp } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -147,8 +148,8 @@ const PopularServices = () => {
                     </motion.span>
                   )}
 
-                  <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent/10 to-accent/20 text-xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                    {s.icon || '🔧'}
+                  <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent/10 to-accent/20 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                    <CategoryIcon icon={s.icon || 'Wrench'} size={24} className="text-accent" />
                   </span>
                   <div className="relative min-w-0 flex-1">
                     <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
