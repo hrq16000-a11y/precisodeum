@@ -2,6 +2,7 @@ import { useState, useMemo, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapPin, Search, ArrowLeft, Users, Sparkles, Star, ArrowRight, Building2, Phone } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProviderCard from '@/components/ProviderCard';
@@ -348,7 +349,7 @@ const CityDetailPage = () => {
                   to={`/categoria/${cat.slug}`}
                   className="rounded-full border border-border bg-card px-4 py-2 text-sm transition-colors hover:bg-primary hover:text-primary-foreground"
                 >
-                  {cat.icon} {cat.name}
+                  <CategoryIcon icon={cat.icon} size={14} className="text-current" /> {cat.name}
                 </Link>
               ))}
             </div>

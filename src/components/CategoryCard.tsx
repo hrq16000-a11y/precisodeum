@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { usePrefetchCategory, usePrefetchHandlers } from '@/hooks/usePrefetch';
 import { motion } from 'framer-motion';
+import CategoryIcon from '@/components/CategoryIcon';
 
 interface CategoryCardProps {
   category: {
@@ -32,11 +33,11 @@ const CategoryCard = ({ category, index = 0 }: CategoryCardProps) => {
         {...handlers}
       >
         <motion.span
-          className="text-3xl"
+          className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50"
           whileHover={{ scale: 1.2, rotate: [0, -10, 10, 0] }}
           transition={{ duration: 0.4 }}
         >
-          {category.icon}
+          <CategoryIcon icon={category.icon} size={28} />
         </motion.span>
         <span className="text-center text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
           {category.name}

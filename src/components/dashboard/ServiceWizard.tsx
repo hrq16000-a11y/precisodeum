@@ -10,6 +10,7 @@ import {
   ArrowRight, ArrowLeft, Store, Phone, ImagePlus,
   CheckCircle2, Copy, ExternalLink, Share2, Sparkles, X,
 } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
@@ -250,7 +251,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                       if (!cat) return null;
                       return (
                         <span key={catId} className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-medium text-accent">
-                          {cat.icon} {cat.name}
+                          <CategoryIcon icon={cat.icon} size={12} className="text-accent" /> {cat.name}
                           <button onClick={() => setSelectedCategoryIds(prev => prev.filter(id => id !== catId))} className="hover:text-destructive">
                             <X className="h-3 w-3" />
                           </button>

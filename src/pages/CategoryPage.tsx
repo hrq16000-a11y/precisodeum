@@ -3,6 +3,7 @@ import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, Users, MapPin, Globe, Sparkles } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -182,9 +183,9 @@ const CategoryPage = () => {
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-md text-5xl shadow-xl ring-1 ring-white/10"
+            className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-md shadow-xl ring-1 ring-white/10"
           >
-            {category.icon}
+            <CategoryIcon icon={category.icon} size={40} className="text-white" />
           </motion.div>
           
           <motion.h1

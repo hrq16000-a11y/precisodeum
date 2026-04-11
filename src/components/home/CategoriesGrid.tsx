@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, icons } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -19,15 +20,6 @@ interface Props {
 
 const HOME_COUNT_DESKTOP = 8;
 
-/** Render a Lucide icon by name, falling back to emoji if not found */
-const CategoryIcon = ({ icon }: { icon: string }) => {
-  const LucideIcon = (icons as Record<string, any>)[icon];
-  if (LucideIcon) {
-    return <LucideIcon size={28} strokeWidth={1.75} className="text-slate-600" />;
-  }
-  // Fallback: render as emoji/text
-  return <span className="text-2xl">{icon}</span>;
-};
 
 const CategoriesGrid = ({ categories, isLoading }: Props) => {
   const visible = useMemo(() => {
@@ -87,7 +79,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                     <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-accent/0 to-transparent group-hover:via-accent transition-all duration-500" />
 
                     <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 group-hover:bg-sky-100 transition-all duration-300">
-                      <CategoryIcon icon={cat.icon} />
+                      <CategoryIcon icon={cat.icon} size={28} />
                     </span>
                     <div className="relative">
                       <span className="block text-sm font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2">

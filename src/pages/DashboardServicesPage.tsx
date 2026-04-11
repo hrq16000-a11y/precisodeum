@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Trash2, Edit2, X, Search, AlertTriangle, ImagePlus, MapPin, Eye, Pause, Play } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import SmartCategoryPicker from '@/components/SmartCategoryPicker';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccountLimits } from '@/hooks/useAccountLimits';
@@ -358,8 +359,8 @@ const DashboardServicesPage = () => {
                 {s.serviceCategories?.length > 0 && (
                   <div className="absolute top-2 left-2 flex flex-wrap gap-1">
                     {s.serviceCategories.slice(0, 2).map((cat: any, i: number) => (
-                      <span key={i} className="rounded-full bg-card/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm">
-                        {cat.icon} {cat.name}
+                      <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-card/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm">
+                        <CategoryIcon icon={cat.icon} size={12} className="text-current" /> {cat.name}
                       </span>
                     ))}
                   </div>
