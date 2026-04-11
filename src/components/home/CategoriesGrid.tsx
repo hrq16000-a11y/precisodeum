@@ -30,10 +30,10 @@ const CategoriesViewAllButton = () => {
     <div className="mt-6 animate-fade-in" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
       <Link
         to="/categorias"
-        className="group flex w-full items-center justify-between rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-        style={{ backgroundColor: bg || undefined }}
+        className={`group flex w-full items-center justify-between rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${!bg ? 'bg-accent/5 border border-accent/10' : ''}`}
+        style={bg ? { backgroundColor: bg } : undefined}
       >
-        <span className={`text-sm font-bold ${bg ? 'text-foreground' : 'text-foreground'}`}>{text}</span>
+        <span className="text-sm font-bold text-foreground">{text}</span>
         <ChevronRight className="h-4 w-4 text-accent transition-transform group-hover:translate-x-1" />
       </Link>
     </div>
