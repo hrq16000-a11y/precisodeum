@@ -1,4 +1,5 @@
-import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, Check, X } from 'lucide-react';
+import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -45,11 +46,9 @@ interface UserTableProps {
   onViewDetails: (u: any) => void;
   selectedIds?: Set<string>;
   onToggleSelection?: (id: string) => void;
-  onApproveProvider?: (providerId: string) => void;
-  onRejectProvider?: (providerId: string) => void;
 }
 
-const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection, onApproveProvider, onRejectProvider }: UserTableProps) => {
+const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
   if (users.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card p-12 text-center">
@@ -253,14 +252,11 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                 <Ban className={`h-3 w-3 ${isInactive ? 'text-emerald-600' : 'text-destructive'}`} />
                 {isInactive ? 'Ativar' : 'Bloquear'}
               </Button>
-              {provider && provider.status !== 'approved' && onApproveProvider && (
-                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-emerald-600" onClick={() => onApproveProvider(provider.id)}>
-                  <Check className="h-3 w-3" /> Aprovar
-                </Button>
-              )}
-              {provider && provider.status !== 'rejected' && onRejectProvider && (
-                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" onClick={() => onRejectProvider(provider.id)}>
-                  <X className="h-3 w-3" /> Rejeitar
+              {provider && (
+                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-accent" asChild>
+                  <Link to="/admin/prestadores">
+                    <ExternalLink className="h-3 w-3" /> Gerenciar
+                  </Link>
                 </Button>
               )}
               <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" onClick={() => onDelete(p)}>
