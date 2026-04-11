@@ -1,82 +1,34 @@
 
-Objetivo: restaurar a aparição dos profissionais sem mexer na regra correta de ocultar apenas os cadastros realmente incompletos.
 
-1. Diagnóstico confirmado
-- Hoje existem 164 profissionais aprovados/ativos no banco.
-- A regra `incomplete_profile_hide_public=true` não explica “sumiu tudo”: ela esconderia só 14 perfis sem cidade/nome e deixaria 150 visíveis.
-- O indício mais forte está na busca em linguagem natural. No replay, a consulta foi algo como:
-  `Preciso de um instalador de ar-condicionado em São José dos Pinhais`
-- Em `src/hooks/useProviders.tsx`, o filtro textual atual usa `terms.every(...)`.
-- Em `src/lib/geoEngine.ts`, após extrair a cidade, os termos restantes ainda podem incluir palavras vazias como `preciso`, `um`, `de`, `em`.
-- Resultado: a busca passa a exigir que o profissional contenha todos esses termos irrelevantes, o que derruba os resultados para zero.
+# Correção Pendente: Sincronizar `portfolio_album_count` via Migration SQL Direta
 
-2. Correção principal da busca
-- Centralizar uma sanitização real da consulta antes do filtro textual:
-  - remover palavras vazias e frases naturais (`preciso`, `quero`, `um`, `uma`, `de`, `do`, `da`, `em`, etc.)
-  - normalizar hífen/acento (`ar-condicionado` = `ar condicionado`)
-  - manter só tokens úteis de serviço
-- Trocar a lógica rígida de `every` por relevância mínima:
-  - 1 termo útil: exigir match desse termo
-  - 2+ termos úteis: aceitar match parcial forte, não 100% obrigatório
-- Incluir mais fontes de texto no match:
-  - nome do serviço
-  - descrição do serviço
-  - categoria
-  - nome do profissional/empresa
-  - descrição do provider
+## Situação
 
-3. Preservar a regra de visibilidade já existente
-- Manter a regra pública atual:
-  - ocultar apenas perfis realmente incompletos
-  - não criar nenhum novo filtro de ocultação
-- Garantir que home, listagens e busca usem o mesmo conjunto-base de profissionais públicos válidos.
+A lógica dos cards e do DESTAQUE está correta (OR). Os profissionais aparecem na home e nas categorias (150 dos 164). O problema restante é que `portfolio_album_count = 0` para todos — a edge function de migração de álbuns ainda não foi executada.
 
-4. Endurecer o carregamento da home
-- Ajustar `useFeaturedProviders()` para não depender de tabela opcional inexistente.
-- Hoje há chamada para `provider_boosts` retornando 404 no snapshot de rede; isso deve virar fallback silencioso, sem afetar a listagem de profissionais.
+Em vez de depender do botão admin (que exige deploy da edge function), a correção mais confiável é uma **migration SQL direta** que:
 
-5. Verificação após a correção
-- Testar exatamente a consulta do replay:
-  `Preciso de um instalador de ar-condicionado em São José dos Pinhais`
-- Confirmar:
-  - profissionais voltam a aparecer na busca
-  - home continua exibindo profissionais
-  - os 14 incompletos continuam ocultos
-  - os demais continuam visíveis como antes
-  - selo DESTAQUE não interfere na visibilidade
+1. Cria um álbum "Meus Trabalhos" para cada provider que tem fotos na `media` (entity_type=portfolio) mas 0 álbuns
+2. Insere registros em `portfolio_photos` vinculando as fotos existentes
+3. Atualiza `portfolio_album_count` nos providers
 
-Arquivos a ajustar
-- `src/hooks/useProviders.tsx`
-- `src/lib/searchIntelligence.ts`
-- `src/lib/geoEngine.ts`
-- possivelmente um helper novo para sanitização de termos de busca
-- opcionalmente `src/components/SearchBar.tsx` apenas se eu decidir limpar a consulta já na entrada, mas a correção principal deve ficar no motor de busca
+## Etapa Única: Migration SQL
 
-Detalhe técnico
 ```text
-Consulta digitada
-  ↓
-GeoEngine extrai cidade
-  ↓
-Hoje sobra: "preciso um instalador de ar-condicionado em"
-  ↓
-useProviders exige match de TODOS os termos
-  ↓
-0 resultados
-
-Após correção
-  ↓
-sobra algo como: "instalador ar condicionado"
-  ↓
-match por relevância + termos úteis
-  ↓
-profissionais reaparecem
+Para cada user_ref com fotos na media (entity_type=portfolio):
+  → Localizar provider via profiles.id = providers.user_id
+  → INSERT INTO portfolio_albums (provider_id, user_id, name)
+  → INSERT INTO portfolio_photos (album_id, image_url, storage_path) FROM media
+  → UPDATE providers SET portfolio_album_count = count de álbuns
 ```
 
-Implementação proposta
-1. Auditar e ajustar a extração dos `serviceTokens`
-2. Criar sanitização de tokens úteis
-3. Trocar `every(...)` por score de relevância
-4. Agregar melhor texto de serviços no provider mapeado
-5. Blindar fallback da query de `provider_boosts`
-6. Validar home + busca + regra dos incompletos
+Isso ativa imediatamente o critério `portfolioAlbumCount > 0` no DESTAQUE para os 58 profissionais com portfólio.
+
+## Arquivo
+
+| Arquivo | Alteração |
+|---|---|
+| Migration SQL | Criar álbuns + vincular fotos + atualizar contadores |
+
+Nenhuma mudança de código — apenas dados. A lógica nos cards já está pronta para consumir esses valores.
+
