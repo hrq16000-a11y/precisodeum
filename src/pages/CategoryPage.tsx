@@ -1,6 +1,7 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useParams, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ChevronRight, Users, MapPin, Globe, Sparkles } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
