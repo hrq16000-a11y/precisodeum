@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Trash2, Pencil, ExternalLink, CheckCircle, XCircle, Search } from 'lucide-react';
+import { Trash2, Pencil, ExternalLink, CheckCircle, XCircle, Search, Plus, Eye } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
@@ -16,13 +16,49 @@ import PaginationControls from '@/components/PaginationControls';
 
 const PAGE_SIZE = 20;
 
+const OPPORTUNITY_TYPES = [
+  { value: 'servico', label: 'Serviço' },
+  { value: 'freelance', label: 'Freelance' },
+  { value: 'emprego', label: 'Emprego' },
+];
+
+const JOB_TYPES = [
+  { value: '', label: 'Não especificado' },
+  { value: 'clt', label: 'CLT' },
+  { value: 'pj', label: 'PJ / Autônomo' },
+  { value: 'estagio', label: 'Estágio' },
+  { value: 'temporario', label: 'Temporário' },
+  { value: 'aprendiz', label: 'Aprendiz' },
+  { value: 'freelance', label: 'Freelance' },
+  { value: 'meio-periodo', label: 'Meio período' },
+];
+
+const WORK_MODELS = [
+  { value: '', label: 'Não especificado' },
+  { value: 'presencial', label: 'Presencial' },
+  { value: 'remoto', label: 'Remoto' },
+  { value: 'hibrido', label: 'Híbrido' },
+];
+
+const emptyForm = {
+  title: '', subtitle: '', description: '', category_id: '', opportunity_type: 'servico',
+  job_type: '', work_model: '', city: '', state: '', neighborhood: '',
+  contact_name: '', contact_phone: '', whatsapp: '', salary: '',
+  benefits: '', activities: '', requirements: '', schedule: '',
+  deadline: '', status: 'active', approval_status: 'approved',
+  cover_image_url: '',
+};
+
 const AdminJobsPage = () => {
   const { isAdmin, loading: adminLoading } = useAdmin();
   const queryClient = useQueryClient();
   const [editJob, setEditJob] = useState<any>(null);
-  const [editForm, setEditForm] = useState({ status: 'active', title: '', description: '', approval_status: 'approved' });
+  const [editForm, setEditForm] = useState(emptyForm);
+  const [isCreating, setIsCreating] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [search, setSearch] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [page, setPage] = useState(1);
 
   const { data: jobs = [], isLoading } = useQuery({
@@ -39,11 +75,26 @@ const AdminJobsPage = () => {
     enabled: isAdmin,
   });
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ['admin-jobs-categories'],
+    queryFn: async () => {
+      const { data } = await supabase.from('categories').select('id, name').is('deleted_at', null).order('name');
+      return data || [];
+    },
+    enabled: isAdmin,
+  });
+
   const bulk = useAdminBulkActions({
     table: 'jobs',
     resourceType: 'job',
     onComplete: () => queryClient.invalidateQueries({ queryKey: ['admin-jobs'] }),
   });
+
+  // Derive unique cities from jobs data
+  const uniqueCities = useMemo(() => {
+    const cities = new Set(jobs.map((j: any) => j.city).filter(Boolean));
+    return Array.from(cities).sort() as string[];
+  }, [jobs]);
 
   const filteredJobs = useMemo(() => {
     let list = filter === 'all' ? jobs : jobs.filter((j: any) => j.approval_status === filter);
@@ -55,8 +106,10 @@ const AdminJobsPage = () => {
         (j.contact_name || '').toLowerCase().includes(q)
       );
     }
+    if (cityFilter) list = list.filter((j: any) => j.city === cityFilter);
+    if (categoryFilter) list = list.filter((j: any) => j.category_id === categoryFilter);
     return list;
-  }, [jobs, filter, search]);
+  }, [jobs, filter, search, cityFilter, categoryFilter]);
 
   const pendingCount = jobs.filter((j: any) => j.approval_status === 'pending').length;
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE));
@@ -70,42 +123,116 @@ const AdminJobsPage = () => {
     queryClient.invalidateQueries({ queryKey: ['admin-jobs'] });
   };
 
+  const notifyUser = async (job: any, action: 'approved' | 'rejected') => {
+    if (!job?.user_id) return;
+    const msg = action === 'approved'
+      ? `✅ Sua vaga "${job.title}" foi aprovada e já está visível no portal!`
+      : `❌ Sua vaga "${job.title}" foi rejeitada. Entre em contato para mais informações.`;
+    await supabase.from('notifications').insert({
+      user_id: job.user_id,
+      title: action === 'approved' ? 'Vaga aprovada' : 'Vaga rejeitada',
+      message: msg,
+      type: 'system',
+    });
+  };
+
   const handleApprove = async (id: string) => {
+    const job = jobs.find((j: any) => j.id === id);
     await supabase.from('jobs').update({ approval_status: 'approved' } as any).eq('id', id);
     toast.success('Vaga aprovada!');
+    await notifyUser(job, 'approved');
     await logAuditAction({ action: 'approve', resource_type: 'job', resource_id: id });
     queryClient.invalidateQueries({ queryKey: ['admin-jobs'] });
   };
 
   const handleReject = async (id: string) => {
+    const job = jobs.find((j: any) => j.id === id);
     await supabase.from('jobs').update({ approval_status: 'rejected', status: 'inactive' } as any).eq('id', id);
     toast.success('Vaga rejeitada');
+    await notifyUser(job, 'rejected');
     await logAuditAction({ action: 'reject', resource_type: 'job', resource_id: id });
     queryClient.invalidateQueries({ queryKey: ['admin-jobs'] });
   };
 
   const handleEdit = (job: any) => {
     setEditJob(job);
-    setEditForm({ status: job.status, title: job.title, description: job.description, approval_status: (job as any).approval_status || 'approved' });
+    setIsCreating(false);
+    setEditForm({
+      title: job.title || '', subtitle: job.subtitle || '',
+      description: job.description || '', category_id: job.category_id || '',
+      opportunity_type: job.opportunity_type || 'servico',
+      job_type: job.job_type || '', work_model: job.work_model || '',
+      city: job.city || '', state: job.state || '', neighborhood: job.neighborhood || '',
+      contact_name: job.contact_name || '', contact_phone: job.contact_phone || '',
+      whatsapp: job.whatsapp || '', salary: job.salary || '',
+      benefits: job.benefits || '', activities: job.activities || '',
+      requirements: job.requirements || '', schedule: job.schedule || '',
+      deadline: job.deadline || '', status: job.status || 'active',
+      approval_status: job.approval_status || 'approved',
+      cover_image_url: job.cover_image_url || '',
+    });
+  };
+
+  const handleCreate = () => {
+    setEditJob({ _new: true });
+    setIsCreating(true);
+    setEditForm({ ...emptyForm });
+  };
+
+  const generateSlug = (title: string, city: string) => {
+    const base = `${title}-${city}`.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return `${base}-${Date.now().toString(36)}`;
   };
 
   const handleSave = async () => {
-    if (!editJob) return;
-    await supabase.from('jobs').update(editForm as any).eq('id', editJob.id);
-    toast.success('Vaga atualizada');
-    await logAuditAction({ action: 'update', resource_type: 'job', resource_id: editJob.id });
+    if (!editForm.title.trim()) { toast.error('Título é obrigatório'); return; }
+
+    if (isCreating) {
+      // Admin creates with auto-approved status
+      const { data: adminUser } = await supabase.auth.getUser();
+      if (!adminUser?.user) { toast.error('Não autenticado'); return; }
+      const slug = generateSlug(editForm.title, editForm.city);
+      const payload: any = {
+        ...editForm,
+        user_id: adminUser.user.id,
+        slug,
+        category_id: editForm.category_id || null,
+        deadline: editForm.deadline || null,
+      };
+      const { error } = await supabase.from('jobs').insert(payload);
+      if (error) { toast.error('Erro ao criar: ' + error.message); return; }
+      toast.success('Vaga criada com sucesso!');
+      await logAuditAction({ action: 'create', resource_type: 'job' });
+    } else {
+      const payload: any = { ...editForm, category_id: editForm.category_id || null, deadline: editForm.deadline || null };
+      const { error } = await supabase.from('jobs').update(payload).eq('id', editJob.id);
+      if (error) { toast.error('Erro ao salvar: ' + error.message); return; }
+      toast.success('Vaga atualizada');
+      await logAuditAction({ action: 'update', resource_type: 'job', resource_id: editJob.id });
+    }
+
     setEditJob(null);
     queryClient.invalidateQueries({ queryKey: ['admin-jobs'] });
   };
+
+  const inputClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground";
+  const labelClass = "mb-1 block text-sm font-medium text-foreground";
 
   if (adminLoading) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
 
   return (
     <AdminLayout>
-      <h1 className="font-display text-2xl font-bold text-foreground">Gestão de Vagas</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Modere e gerencie vagas publicadas na plataforma</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Gestão de Vagas</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Crie, edite, modere e gerencie vagas da plataforma</p>
+        </div>
+        <Button variant="accent" onClick={handleCreate}><Plus className="mr-1 h-4 w-4" /> Nova Vaga</Button>
+      </div>
 
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
         <div className="flex gap-2 flex-wrap">
           {[
             { value: 'all', label: `Todas (${jobs.length})` },
@@ -126,6 +253,14 @@ const AdminJobsPage = () => {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar vagas..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
         </div>
+        <select value={cityFilter} onChange={e => { setCityFilter(e.target.value); setPage(1); }} className="rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground">
+          <option value="">Todas as cidades</option>
+          {uniqueCities.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select value={categoryFilter} onChange={e => { setCategoryFilter(e.target.value); setPage(1); }} className="rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground">
+          <option value="">Todas as categorias</option>
+          {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
       </div>
 
       {bulk.hasSelection && (
@@ -171,9 +306,13 @@ const AdminJobsPage = () => {
                     }`}>
                       {job.approval_status === 'pending' ? '⏳ Pendente' : job.approval_status === 'rejected' ? '❌ Rejeitada' : '✅ Aprovada'}
                     </span>
+                    {job.deadline && new Date(job.deadline) < new Date() && (
+                      <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700">Expirada</span>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {(job.categories as any)?.name || 'Sem categoria'} · {job.city || '?'} · {new Date(job.created_at).toLocaleDateString('pt-BR')}
+                    {job.view_count > 0 && <> · <Eye className="inline h-3 w-3" /> {job.view_count}</>}
                   </p>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0 flex-wrap justify-end">
@@ -204,40 +343,137 @@ const AdminJobsPage = () => {
         </div>
       )}
 
+      {/* Full Edit / Create Dialog */}
       <Dialog open={!!editJob} onOpenChange={() => setEditJob(null)}>
-        <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Editar Vaga</DialogTitle></DialogHeader>
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{isCreating ? 'Nova Vaga' : 'Editar Vaga'}</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Título</label>
-              <input value={editForm.title} onChange={(e) => setEditForm(p => ({ ...p, title: e.target.value }))}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+              <label className={labelClass}>Título *</label>
+              <input value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} className={inputClass} />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
-              <textarea value={editForm.description} onChange={(e) => setEditForm(p => ({ ...p, description: e.target.value }))} rows={4}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+              <label className={labelClass}>Subtítulo</label>
+              <input value={editForm.subtitle} onChange={e => setEditForm(p => ({ ...p, subtitle: e.target.value }))} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Descrição</label>
+              <textarea value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} rows={4} className={inputClass} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Categoria</label>
+                <select value={editForm.category_id} onChange={e => setEditForm(p => ({ ...p, category_id: e.target.value }))} className={inputClass}>
+                  <option value="">Sem categoria</option>
+                  {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Tipo de oportunidade</label>
+                <select value={editForm.opportunity_type} onChange={e => setEditForm(p => ({ ...p, opportunity_type: e.target.value }))} className={inputClass}>
+                  {OPPORTUNITY_TYPES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Tipo de contrato</label>
+                <select value={editForm.job_type} onChange={e => setEditForm(p => ({ ...p, job_type: e.target.value }))} className={inputClass}>
+                  {JOB_TYPES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Modelo de trabalho</label>
+                <select value={editForm.work_model} onChange={e => setEditForm(p => ({ ...p, work_model: e.target.value }))} className={inputClass}>
+                  {WORK_MODELS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className={labelClass}>Cidade</label>
+                <input value={editForm.city} onChange={e => setEditForm(p => ({ ...p, city: e.target.value }))} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Estado (UF)</label>
+                <input value={editForm.state} onChange={e => setEditForm(p => ({ ...p, state: e.target.value }))} className={inputClass} maxLength={2} />
+              </div>
+              <div>
+                <label className={labelClass}>Bairro</label>
+                <input value={editForm.neighborhood} onChange={e => setEditForm(p => ({ ...p, neighborhood: e.target.value }))} className={inputClass} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Nome do contato</label>
+                <input value={editForm.contact_name} onChange={e => setEditForm(p => ({ ...p, contact_name: e.target.value }))} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Telefone</label>
+                <input value={editForm.contact_phone} onChange={e => setEditForm(p => ({ ...p, contact_phone: e.target.value }))} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>WhatsApp</label>
+                <input value={editForm.whatsapp} onChange={e => setEditForm(p => ({ ...p, whatsapp: e.target.value }))} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Salário</label>
+                <input value={editForm.salary} onChange={e => setEditForm(p => ({ ...p, salary: e.target.value }))} className={inputClass} />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Atividades</label>
+              <textarea value={editForm.activities} onChange={e => setEditForm(p => ({ ...p, activities: e.target.value }))} rows={3} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Requisitos</label>
+              <textarea value={editForm.requirements} onChange={e => setEditForm(p => ({ ...p, requirements: e.target.value }))} rows={3} className={inputClass} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Status</label>
-                <select value={editForm.status} onChange={(e) => setEditForm(p => ({ ...p, status: e.target.value }))}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
+                <label className={labelClass}>Benefícios</label>
+                <textarea value={editForm.benefits} onChange={e => setEditForm(p => ({ ...p, benefits: e.target.value }))} rows={2} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Horário</label>
+                <input value={editForm.schedule} onChange={e => setEditForm(p => ({ ...p, schedule: e.target.value }))} className={inputClass} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Prazo (deadline)</label>
+                <input type="date" value={editForm.deadline} onChange={e => setEditForm(p => ({ ...p, deadline: e.target.value }))} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Imagem de capa (URL)</label>
+                <input value={editForm.cover_image_url} onChange={e => setEditForm(p => ({ ...p, cover_image_url: e.target.value }))} className={inputClass} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Status</label>
+                <select value={editForm.status} onChange={e => setEditForm(p => ({ ...p, status: e.target.value }))} className={inputClass}>
                   <option value="active">Ativa</option>
                   <option value="inactive">Inativa</option>
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Aprovação</label>
-                <select value={editForm.approval_status} onChange={(e) => setEditForm(p => ({ ...p, approval_status: e.target.value }))}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
+                <label className={labelClass}>Aprovação</label>
+                <select value={editForm.approval_status} onChange={e => setEditForm(p => ({ ...p, approval_status: e.target.value }))} className={inputClass}>
                   <option value="approved">Aprovada</option>
                   <option value="pending">Pendente</option>
                   <option value="rejected">Rejeitada</option>
                 </select>
               </div>
             </div>
-            <Button variant="accent" className="w-full" onClick={handleSave}>Salvar</Button>
+
+            <Button variant="accent" className="w-full" onClick={handleSave}>
+              {isCreating ? 'Criar Vaga' : 'Salvar Alterações'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
