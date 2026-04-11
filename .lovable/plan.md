@@ -1,61 +1,80 @@
 
 
-# Reformular Barra Inferior Mobile
+# Sistema de Suporte/Ajuda + WhatsApp no Card + Reformulação do Perfil
 
-## Situação Atual (banco de dados)
+## 1. Desativar WhatsApp flutuante na Home
 
-- **Itens atuais**: Home(0), Buscar(1), Categorias(2), Perfil(3), WhatsApp(4)
-- **hidden_paths**: `/admin`, `/login`, `/cadastro`, `/reset-password`, **`/dashboard`**, `/sponsor-panel`
-- A barra **desaparece** quando o usuário está logado (dashboard está na lista de hidden_paths)
+**Arquivo:** `src/pages/Index.tsx`, `Index02.tsx`, `Index03.tsx`
+- Remover `<FloatingWhatsApp />` das 3 páginas Index (o componente continua existindo mas não aparece mais na home)
 
-## Mudanças
+## 2. Botão WhatsApp no Card do Prestador
 
-### 1. Banco de dados (migration)
+**Arquivo:** `src/components/ProviderCard.tsx`
+- O card **já tem** o botão WhatsApp integrado (linhas 160-170) com ícone `MessageCircle` e link correto
+- Ajustar a cor do ícone WhatsApp para o verde oficial `#25D366` (mesmo verde do logo) conforme feedback do usuário
+- Adicionar ícone SVG do WhatsApp real ao invés do `MessageCircle` genérico
 
-```sql
--- Remover /dashboard dos hidden_paths para a barra aparecer em toda navegação
-UPDATE ui_bottom_nav_config 
-SET hidden_paths = '["/admin", "/login", "/cadastro", "/reset-password", "/sponsor-panel"]'::jsonb
-WHERE id = 'a0000000-0000-0000-0000-000000000001';
+## 3. WhatsApp flutuante na página do Prestador
 
--- Desativar WhatsApp
-UPDATE ui_bottom_nav_items SET is_active = false 
-WHERE id = 'be2f0238-1205-4cd5-bc16-43e867655282';
+**Arquivo:** `src/pages/ProviderProfile.tsx`
+- Adicionar `<FloatingWhatsApp />` (ou botão direto) usando o WhatsApp **do prestador** (não o de suporte)
+- Cor do botão: `#25D366` (verde oficial do WhatsApp, igual ao logo)
+- Posição alinhada com a barra inferior mobile
 
--- Reordenar: Buscar fica 1, Criar entra como 2, Categorias vai pra 3, Perfil vai pra 4
-UPDATE ui_bottom_nav_items SET order_index = 3 WHERE id = '5e4ab0cd-aa50-4ab4-8494-21b713a205a2'; -- Categorias
-UPDATE ui_bottom_nav_items SET order_index = 4 WHERE id = '2ddd95af-51ae-464f-8eab-ac32bb172339'; -- Perfil
+## 4. Criar página de Central de Ajuda (`/ajuda`)
 
--- Inserir botão "Criar" na posição central (2)
-INSERT INTO ui_bottom_nav_items (config_id, label, icon, route_path, action_type, order_index, is_active, requires_auth, size, animation, active_color, background_color, border_radius)
-VALUES ('a0000000-0000-0000-0000-000000000001', 'Criar', 'Plus', '/dashboard/servicos', 'route', 2, true, true, 'large', 'scale', '#ffffff', '', '9999');
-```
+**Novo arquivo:** `src/pages/HelpCenterPage.tsx`
+- Página pública com busca + FAQs organizados por categoria
+- Seções: "Para Clientes", "Para Profissionais", "Planos e Pagamentos", "Conta e Segurança"
+- Puxa dados da tabela `faqs` existente (já tem dados e admin em `/admin/faq`)
+- Link de contato via WhatsApp de suporte (do `site_settings`)
+- SEO configurado
 
-### 2. Componente MobileBottomNav.tsx
+**Rota:** Adicionar em `App.tsx` → `/ajuda`
 
-- **Fallback atualizado**: Ordem Início → Buscar → Criar → Categorias → Perfil (sem WhatsApp)
-- **Remover `/dashboard` do hiddenPaths** do fallback
-- **Botão "Criar" com destaque visual**: Ícone `Plus` dentro de um círculo com gradiente accent, elevado acima da barra (estilo FAB central), com animação de pulso sutil
-- **Tratamento especial**: Itens com `size: 'large'` ou posição central recebem o estilo FAB automaticamente (funciona tanto no fallback quanto no dinâmico)
+## 5. Botão flutuante de Suporte/Ajuda
 
-### 3. Resultado visual
+**Novo arquivo:** `src/components/FloatingHelpButton.tsx`
+- Ícone: `HelpCircle` ou `LifeBuoy` do Lucide
+- Aparece em: `/login`, `/cadastro`, `/reset-password`, `/dashboard/*`
+- NÃO aparece em: `/admin`, `/sponsor-panel`, home pública
+- Ao clicar: abre mini-painel com 3 opções:
+  - "Central de Ajuda" → navega para `/ajuda`
+  - "Perguntas Frequentes" → navega para `/faq`
+  - "Falar com Suporte" → WhatsApp de suporte (do `site_settings`)
+- Animação sutil com framer-motion
+- Posição: canto inferior direito, acima da barra mobile
 
-```text
-┌─────────────────────────────────────┐
-│  Home   Buscar  [+]  Categ.  Perfil │
-│   🏠      🔍    ⊕     ⊞      👤    │
-└─────────────────────────────────────┘
-                  ↑
-          Botão elevado com
-          gradiente accent
-```
+## 6. Dashboard: link de Suporte no menu
 
-O botão "Criar" redireciona para `/dashboard/servicos` (requer login). Se o usuário não estiver logado, redireciona para `/login`.
+**Arquivo:** `src/components/DashboardLayout.tsx`
+- Adicionar item "Ajuda & Suporte" no menu lateral/grupo do dashboard
+- Link para `/ajuda`
 
-### Arquivos Modificados
+## 7. Reformulação do "Meu Perfil" (`DashboardProfilePage.tsx`)
 
-| Arquivo | Alteração |
+**Arquivo:** `src/pages/DashboardProfilePage.tsx`
+- **Barra de completude** no topo: progresso visual (0-100%) mostrando campos preenchidos
+- **Organização em abas** (ou acordeão expansível): "Dados Pessoais" | "Dados Profissionais" | "Localização" | "Redes Sociais"
+- **Dica contextual**: link "Precisa de ajuda?" no topo → `/ajuda`
+- **Preview do perfil público**: mini-card mostrando como o perfil aparece para visitantes
+- **Animações framer-motion**: fade-in nos blocos, transição entre abas
+- Manter toda a lógica de salvamento existente
+
+## Arquivos Modificados
+
+| Arquivo | Ação |
 |---|---|
-| Migration SQL | Reordenar itens, desativar WhatsApp, inserir "Criar", remover `/dashboard` dos hidden_paths |
-| `src/components/MobileBottomNav.tsx` | Fallback atualizado + estilo FAB para botão central "Criar" |
+| `src/pages/Index.tsx` | Remover FloatingWhatsApp |
+| `src/pages/Index02.tsx` | Remover FloatingWhatsApp |
+| `src/pages/Index03.tsx` | Remover FloatingWhatsApp |
+| `src/components/ProviderCard.tsx` | Ícone WhatsApp real + cor #25D366 |
+| `src/pages/ProviderProfile.tsx` | Adicionar WhatsApp flutuante do prestador |
+| `src/components/FloatingHelpButton.tsx` | **Novo** — botão flutuante de suporte |
+| `src/pages/HelpCenterPage.tsx` | **Novo** — Central de Ajuda |
+| `src/App.tsx` | Rota `/ajuda` |
+| `src/components/DashboardLayout.tsx` | Link "Ajuda" no menu |
+| `src/pages/DashboardProfilePage.tsx` | Reformulação com abas, barra de completude, preview |
+
+Nenhuma migration necessária — usa tabela `faqs` e `site_settings` existentes.
 
