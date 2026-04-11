@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Trash2, Pencil, ExternalLink, CheckCircle, XCircle, Search, Plus, Eye } from 'lucide-react';
+import { Trash2, Pencil, ExternalLink, CheckCircle, XCircle, Search, Plus, Eye, ToggleLeft, ToggleRight, Archive, Briefcase, Clock, AlertTriangle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
@@ -74,6 +75,22 @@ const AdminJobsPage = () => {
     },
     enabled: isAdmin,
   });
+
+  // Fetch profiles for creator names
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['admin-jobs-profiles'],
+    queryFn: async () => {
+      const { data } = await supabase.from('profiles').select('id, full_name, email');
+      return data || [];
+    },
+    enabled: isAdmin,
+  });
+
+  const profileMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    profiles.forEach((p: any) => { m[p.id] = p.full_name || p.email || p.id; });
+    return m;
+  }, [profiles]);
 
   const { data: categories = [] } = useQuery({
     queryKey: ['admin-jobs-categories'],
