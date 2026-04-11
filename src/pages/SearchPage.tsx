@@ -245,7 +245,7 @@ const SearchPage = () => {
                     <SelectTrigger className="mt-1"><SelectValue placeholder="Todas" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas as cidades</SelectItem>
-                      {availableCities.map(c => (
+                      {availableCities.map((c: string) => (
                         <SelectItem key={c} value={c}>{c}</SelectItem>
                       ))}
                     </SelectContent>
@@ -260,7 +260,7 @@ const SearchPage = () => {
                       <SelectTrigger className="mt-1"><SelectValue placeholder="Todos" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todos os bairros</SelectItem>
-                        {availableNeighborhoods.map(n => (
+                        {availableNeighborhoods.map((n: string) => (
                           <SelectItem key={n} value={n}>{n}</SelectItem>
                         ))}
                       </SelectContent>
