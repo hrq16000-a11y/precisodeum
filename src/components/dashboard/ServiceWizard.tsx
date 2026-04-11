@@ -278,7 +278,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                             onClick={() => { setSelectedCategoryIds(prev => [...prev, c.id]); setCategorySearch(''); }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent/10"
                           >
-                            <span>{c.icon}</span> {c.name}
+                            <CategoryIcon icon={c.icon} size={14} className="text-current" /> {c.name}
                           </button>
                         ))}
                       </div>

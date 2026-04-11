@@ -9,6 +9,7 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MessageCircle, MapPin, ChevronRight, Clock, Globe } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useMemo, useEffect, useRef } from 'react';
@@ -119,8 +120,8 @@ const ServiceDetailPage = () => {
               {svc.serviceCategories?.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {svc.serviceCategories.map((sc: any, i: number) => (
-                    <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">
-                      {(sc.categories as any)?.icon} {(sc.categories as any)?.name}
+                    <span key={i} className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">
+                      <CategoryIcon icon={(sc.categories as any)?.icon} size={12} className="text-accent" /> {(sc.categories as any)?.name}
                     </span>
                   ))}
                 </div>

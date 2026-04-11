@@ -10,6 +10,7 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRight, DollarSign, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import CategoryIcon from '@/components/CategoryIcon';
 
 const PopularServicePage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -144,7 +145,7 @@ const PopularServicePage = () => {
               <span className="text-foreground">{service.name}</span>
             </nav>
             <div className="flex items-center gap-4">
-              <span className="text-5xl">{service.icon}</span>
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10"><CategoryIcon icon={service.icon} size={32} className="text-accent" /></span>
               <div>
                 <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">{aiContent?.title || service.name}</h1>
                 <p className="mt-2 text-muted-foreground max-w-xl">{aiContent?.description || service.description}</p>
