@@ -1,4 +1,4 @@
-import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star } from 'lucide-react';
+import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,6 +24,12 @@ const profileTypeIcon = (t: string) => {
   return '👤';
 };
 
+const providerStatusBadge: Record<string, { label: string; cls: string }> = {
+  pending: { label: '⏳ Pendente', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
+  approved: { label: '✅ Aprovado', cls: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
+  rejected: { label: '❌ Rejeitado', cls: 'bg-destructive/10 text-destructive' },
+};
+
 interface UserTableProps {
   users: any[];
   adminIds: Set<string>;
@@ -39,6 +45,8 @@ interface UserTableProps {
   onViewDetails: (u: any) => void;
   selectedIds?: Set<string>;
   onToggleSelection?: (id: string) => void;
+  onApproveProvider?: (providerId: string) => void;
+  onRejectProvider?: (providerId: string) => void;
 }
 
 const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
