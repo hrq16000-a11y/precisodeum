@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -10,6 +10,7 @@ import ProviderCard from '@/components/ProviderCard';
 import PaginationControls from '@/components/PaginationControls';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import GeoLocationChip from '@/components/GeoLocationChip';
+import GeoPromptBanner from '@/components/GeoPromptBanner';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
