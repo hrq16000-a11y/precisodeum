@@ -91,7 +91,7 @@ const CategoryPage = () => {
   useSeoHead({
     title: category ? `${category.name} - Profissionais` : 'Categoria',
     description: category
-      ? `Encontre os melhores profissionais de ${category.name}. ${displayProviders.length} cadastrados com avaliações verificadas.`
+      ? `Encontre os melhores profissionais de ${category.name}. ${allProviders.length} cadastrados com avaliações verificadas.`
       : 'Encontre profissionais por categoria.',
     canonical: slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined,
   });
@@ -107,7 +107,8 @@ const CategoryPage = () => {
 
   useJsonLd(breadcrumbLd);
 
-  const paginatedProviders = displayProviders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedLocal = localProviders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedOther = showAllLocations ? otherProviders : [];
 
   if (isLoading) {
     return (
@@ -234,8 +235,19 @@ const CategoryPage = () => {
             originalCity={geoCity || ''}
             expansionLevel={expansionLevel}
             stateName={geoState || undefined}
-            resultCount={displayProviders.length}
+            resultCount={allProviders.length}
           />
+        )}
+
+        {/* Local results grid */}
+        {geoCity && !isFallback && localProviders.length > 0 && (
+          <div className="mb-3 flex items-center gap-2">
+            <MapPin className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-semibold text-primary">
+              Na sua região (até {radiusKm}km)
+            </span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
         )}
 
         <motion.div
@@ -244,7 +256,7 @@ const CategoryPage = () => {
           animate="visible"
           className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
         >
-          {paginatedProviders.map((p, i) => (
+          {paginatedLocal.map((p, i) => (
             <motion.div key={p.id} variants={fadeUp}>
               {i === 6 && <Suspense fallback={null}><AdSlot slotSlug="category-between" layout="native" category={slug} /></Suspense>}
               {i === 4 && <Suspense fallback={null}><SponsorMidContent /></Suspense>}
@@ -276,29 +288,43 @@ const CategoryPage = () => {
           </motion.div>
         )}
 
-        {showAllLocations && otherProviders.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-8 mb-2 flex items-center gap-3"
-          >
-            <div className="h-px flex-1 bg-border" />
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
-              <Globe className="h-3 w-3" />
-              Outras regiões
-            </span>
-            <div className="h-px flex-1 bg-border" />
-          </motion.div>
+        {showAllLocations && paginatedOther.length > 0 && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-8 mb-3 flex items-center gap-3"
+            >
+              <div className="h-px flex-1 bg-border" />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                <Globe className="h-3 w-3" />
+                Outras regiões ({otherProviders.length})
+              </span>
+              <div className="h-px flex-1 bg-border" />
+            </motion.div>
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              animate="visible"
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              {paginatedOther.map((p, i) => (
+                <motion.div key={p.id} variants={fadeUp}>
+                  <ProviderCard provider={p} isFallback={true} index={i} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </>
         )}
 
-        {displayProviders.length === 0 && (
+        {totalDisplay === 0 && (
           <EmptyStateFallback
             title={`Nenhum profissional de ${category.name} encontrado`}
             message="Seja o primeiro a se cadastrar nesta categoria!"
           />
         )}
 
-        <PaginationControls currentPage={page} totalItems={displayProviders.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
+        <PaginationControls currentPage={page} totalItems={totalDisplay} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
       </div>
       
       <Suspense fallback={null}><SponsorFooterCTA category={slug} /></Suspense>
