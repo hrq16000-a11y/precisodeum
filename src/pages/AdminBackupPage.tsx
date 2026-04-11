@@ -53,6 +53,31 @@ const MODULE_GROUPS = [
     ],
   },
   {
+    label: 'Portfólio & Mídia',
+    modules: [
+      { table: 'portfolio_albums', label: 'Álbuns de Portfólio', icon: '📸' },
+      { table: 'portfolio_photos', label: 'Fotos de Portfólio', icon: '🖼️' },
+      { table: 'media', label: 'Biblioteca de Mídia', icon: '📁' },
+      { table: 'provider_impressions', label: 'Impressões Prestadores', icon: '👁️' },
+    ],
+  },
+  {
+    label: 'Chat',
+    modules: [
+      { table: 'chat_conversations', label: 'Conversas', icon: '💬' },
+      { table: 'chat_messages', label: 'Mensagens', icon: '✉️' },
+      { table: 'chat_settings', label: 'Config. Chat', icon: '⚙️' },
+    ],
+  },
+  {
+    label: 'Governança',
+    modules: [
+      { table: 'governance_rules', label: 'Regras de Governança', icon: '📏' },
+      { table: 'governance_changes_log', label: 'Log de Alterações', icon: '📋' },
+      { table: 'governance_approvals', label: 'Aprovações', icon: '✅' },
+    ],
+  },
+  {
     label: 'Logs & Auditoria',
     modules: [
       { table: 'audit_log', label: 'Trilha de Auditoria', icon: '📜' },
