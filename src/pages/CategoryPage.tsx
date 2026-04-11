@@ -64,6 +64,17 @@ const CategoryPage = () => {
       }
     });
 
+    // Sort local by real distance when possible
+    if (userLat != null && userLon != null) {
+      local.sort((a, b) => {
+        const distA = (a.latitude != null && a.longitude != null)
+          ? haversine(userLat, userLon, a.latitude, a.longitude) : Infinity;
+        const distB = (b.latitude != null && b.longitude != null)
+          ? haversine(userLat, userLon, b.latitude, b.longitude) : Infinity;
+        return distA - distB;
+      });
+    }
+
     if (local.length > 0) {
       return { localProviders: local, otherProviders: other, isFallback: false, expansionLevel: null };
     }
