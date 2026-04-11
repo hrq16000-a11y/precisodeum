@@ -29,24 +29,10 @@ export function normalize(value: string | null | undefined): string {
 export function formatLocationString(text: string | null | undefined): string {
   if (!text) return '';
   return text
-    .replace(/\s+,/g, ',')        // remove spaces before commas
-    .replace(/,\s*/g, ', ')       // normalize space after commas
-    .replace(/,{2,}/g, ',')      // remove duplicate commas
-    .replace(/\s+/g, ' ')        // collapse multiple spaces
-    .replace(/, E /gi, ' e ')    // ", E " → " e "
+    .replace(/\s+,/g, ',')
+    .replace(/,\s*/g, ', ')
+    .replace(/,{2,}/g, ',')
+    .replace(/\s+/g, ' ')
+    .replace(/, E /gi, ' e ')
     .trim();
-}
-  if (!value) return '';
-
-  const cached = normalizeCache.get(value);
-  if (cached !== undefined) return cached;
-
-  const normalized = value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z]/g, '');
-
-  normalizeCache.set(value, normalized);
-  return normalized;
 }
