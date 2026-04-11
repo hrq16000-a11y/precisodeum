@@ -432,6 +432,35 @@ const AdminMediaPage = () => {
             </CollapsibleContent>
           </Card>
         </Collapsible>
+        {/* Optimize All Result */}
+        {optimizeResult && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  Resultado da Otimização — {optimizeResult.grand_total_optimized} arquivo(s), {optimizeResult.grand_total_savings_kb}KB economizados
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setOptimizeResult(null)}>Fechar</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {Object.entries(optimizeResult.buckets || {}).map(([bucket, info]: [string, any]) => (
+                  <div key={bucket} className="flex items-center justify-between rounded-lg border border-border p-2 text-sm">
+                    <div>
+                      <p className="font-medium text-foreground">{bucket}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {info.scanned} escaneados · {info.eligible} elegíveis · {info.optimized} otimizados · {info.skipped} ignorados
+                      </p>
+                    </div>
+                    <Badge variant={info.optimized > 0 ? 'default' : 'secondary'}>{info.savings_kb}KB salvos</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {showOversized && (
           <Card>
             <CardHeader className="pb-3">
