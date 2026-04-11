@@ -55,6 +55,7 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
         const file = await compressImage(raw);
 
         const formData = new FormData();
+        formData.append('file', file);
         formData.append('bucket', 'service-images');
         formData.append('folder', `${userId}/${serviceId}`);
 
