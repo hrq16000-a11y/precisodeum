@@ -5,6 +5,7 @@ import { ImagePlus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleImageError } from '@/lib/imageResolver';
 import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils';
+import { compressImage } from '@/lib/compressImage';
 
 interface ServiceImage {
   id: string;
@@ -45,11 +46,13 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const { data: { session } } = await supabase.auth.getSession();
 
-      for (const file of Array.from(files)) {
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error(`${file.name} excede 5MB`);
+      for (const raw of Array.from(files)) {
+        if (raw.size > 5 * 1024 * 1024) {
+          toast.error(`${raw.name} excede 5MB`);
           continue;
         }
+
+        const file = await compressImage(raw);
 
         const formData = new FormData();
         formData.append('file', file);

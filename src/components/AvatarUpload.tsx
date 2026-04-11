@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
+import { compressImage } from '@/lib/compressImage';
 
 interface AvatarUploadProps {
   userId: string;
@@ -17,16 +18,18 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(({ userId, cu
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const raw = e.target.files?.[0];
+    if (!raw) return;
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (raw.size > 5 * 1024 * 1024) {
       toast.error('Imagem deve ter no máximo 5MB');
       return;
     }
 
     setUploading(true);
     try {
+      const file = await compressImage(raw, { maxDimension: 512, targetKB: 200 });
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         toast.error('Você precisa estar logado');
