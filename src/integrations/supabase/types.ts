@@ -908,6 +908,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          view_count: number
           whatsapp: string
           work_model: string
         }
@@ -938,6 +939,7 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          view_count?: number
           whatsapp?: string
           work_model?: string
         }
@@ -968,6 +970,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          view_count?: number
           whatsapp?: string
           work_model?: string
         }
@@ -3323,6 +3326,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_job_view: { Args: { job_id: string }; Returns: undefined }
       increment_provider_impression: {
         Args: { _provider_id: string }
         Returns: undefined
