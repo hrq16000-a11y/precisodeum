@@ -129,8 +129,17 @@ const AdminJobsPage = () => {
   }, [jobs, filter, search, cityFilter, categoryFilter]);
 
   const pendingCount = jobs.filter((j: any) => j.approval_status === 'pending').length;
+  const activeCount = jobs.filter((j: any) => j.status === 'active' && j.approval_status === 'approved').length;
+  const expiredCount = jobs.filter((j: any) => j.deadline && new Date(j.deadline) < new Date()).length;
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE));
   const paginated = filteredJobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleToggleStatus = async (job: any) => {
+    const newStatus = job.status === 'active' ? 'inactive' : 'active';
+    await supabase.from('jobs').update({ status: newStatus } as any).eq('id', job.id);
+    toast.success(newStatus === 'active' ? 'Vaga ativada' : 'Vaga desativada');
+    queryClient.invalidateQueries({ queryKey: ['admin-jobs'] });
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir esta vaga?')) return;
@@ -241,12 +250,41 @@ const AdminJobsPage = () => {
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Gestão de Vagas</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Crie, edite, modere e gerencie vagas da plataforma</p>
+          <p className="mt-1 text-sm text-muted-foreground">Controle absoluto sobre vagas da plataforma</p>
         </div>
-        <Button variant="accent" onClick={handleCreate}><Plus className="mr-1 h-4 w-4" /> Nova Vaga</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => window.location.href = '/admin/lixeira?type=job'}>
+            <Archive className="h-4 w-4 mr-1" /> Lixeira
+          </Button>
+          <Button variant="accent" size="sm" onClick={handleCreate}><Plus className="mr-1 h-4 w-4" /> Nova Vaga</Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="rounded-lg border border-border bg-card p-3 text-center">
+          <Briefcase className="mx-auto h-5 w-5 text-muted-foreground" />
+          <p className="mt-1 text-lg font-bold text-foreground">{jobs.length}</p>
+          <p className="text-xs text-muted-foreground">Total</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3 text-center">
+          <CheckCircle className="mx-auto h-5 w-5 text-green-600" />
+          <p className="mt-1 text-lg font-bold text-foreground">{activeCount}</p>
+          <p className="text-xs text-muted-foreground">Ativas</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3 text-center">
+          <Clock className="mx-auto h-5 w-5 text-amber-600" />
+          <p className="mt-1 text-lg font-bold text-foreground">{pendingCount}</p>
+          <p className="text-xs text-muted-foreground">Pendentes</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3 text-center">
+          <AlertTriangle className="mx-auto h-5 w-5 text-red-600" />
+          <p className="mt-1 text-lg font-bold text-foreground">{expiredCount}</p>
+          <p className="text-xs text-muted-foreground">Expiradas</p>
+        </div>
       </div>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
@@ -331,8 +369,16 @@ const AdminJobsPage = () => {
                     {(job.categories as any)?.name || 'Sem categoria'} · {job.city || '?'} · {new Date(job.created_at).toLocaleDateString('pt-BR')}
                     {job.view_count > 0 && <> · <Eye className="inline h-3 w-3" /> {job.view_count}</>}
                   </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Criado por: {profileMap[job.user_id] || job.user_id?.slice(0, 8)}
+                  </p>
                 </div>
-                <div className="flex items-center gap-0.5 shrink-0 flex-wrap justify-end">
+                <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+                  <Switch
+                    checked={job.status === 'active'}
+                    onCheckedChange={() => handleToggleStatus(job)}
+                    title={job.status === 'active' ? 'Desativar' : 'Ativar'}
+                  />
                   {job.approval_status === 'pending' && (
                     <>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleApprove(job.id)} title="Aprovar">
