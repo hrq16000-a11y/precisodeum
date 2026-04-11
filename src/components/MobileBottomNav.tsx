@@ -1,15 +1,15 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, LayoutGrid, User, Plus } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
+import { Home, Search, LayoutGrid, User, Plus, Bell, Heart, Star, Settings, MessageCircle, Briefcase, MapPin, Grid, Menu, Bookmark, ShoppingBag, Zap, type LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBottomNav, type BottomNavItem, type BottomNavConfig } from '@/hooks/useBottomNav';
 
-const getIcon = (name: string): React.ElementType => {
-  const icons = LucideIcons as Record<string, any>;
-  return icons[name] || Home;
+const ICON_MAP: Record<string, LucideIcon> = {
+  Home, Search, LayoutGrid, User, Plus, Bell, Heart, Star, Settings,
+  MessageCircle, Briefcase, MapPin, Grid, Menu, Bookmark, ShoppingBag, Zap,
 };
+const getIcon = (name: string): React.ElementType => ICON_MAP[name] || Home;
 
 // ── FAB button (central "Criar") ──
 const FabButton = ({ onClick, icon: Icon, label }: { onClick: () => void; icon: React.ElementType; label: string }) => (

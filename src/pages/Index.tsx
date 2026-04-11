@@ -174,46 +174,25 @@ const Index = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Consolidated secondary data
+  // Consolidated secondary data — deferred until primary content renders
+  const primaryReady = categories.length > 0 || !catsLoading;
   const { data: secondaryData } = useQuery({
     queryKey: ['home-secondary-data'],
     queryFn: async () => {
-      const [citiesRes, allCatsRes, recentRes, sponsorsRes] = await Promise.all([
-        (async () => {
-          const { data: services } = await supabase.from('services').select('provider_id');
-          if (!services || services.length === 0) return [];
-          const providerIds = [...new Set(services.map((s: any) => s.provider_id))];
-          const { data: providers } = await supabase.from('providers').select('city').in('id', providerIds);
-          if (!providers) return [];
-          const cityNames = [...new Set(providers.map((p: any) => p.city).filter(Boolean))];
-          const { data: cities } = await supabase.from('cities').select('name, slug, state').in('name', cityNames);
-          const shuffled = [...(cities || [])].sort(() => Math.random() - 0.5);
-          return shuffled.slice(0, 6);
-        })(),
+      const [citiesRes, allCatsRes, sponsorsRes] = await Promise.all([
+        supabase.from('cities').select('name, slug, state').eq('has_providers', true).order('provider_count', { ascending: false }).limit(6).then(r => r.data || []),
         supabase.from('categories').select('name, slug').order('name').then(r => r.data || []),
-        (async () => {
-          const { data } = await supabase
-            .from('services')
-            .select('id, service_name, service_area, created_at, provider_id, category_id, categories(name, slug, icon)')
-            .order('created_at', { ascending: false })
-            .limit(6);
-          if (!data || data.length === 0) return [];
-          const providerIds = [...new Set(data.map((s: any) => s.provider_id))];
-          const { data: providers } = await supabase.from('providers').select('id, city, state').in('id', providerIds);
-          const providerMap: Record<string, any> = {};
-          (providers || []).forEach((p: any) => { providerMap[p.id] = p; });
-          return data.map((s: any) => ({ ...s, provider: providerMap[s.provider_id] || null }));
-        })(),
         supabase.from('sponsors').select('id, title, company_name, image_url, logo_url, link_url, tier, position, active, display_order, short_description, max_width, max_height').eq('active', true).order('display_order').then(r => r.data || []),
       ]);
       return {
         topCities: citiesRes,
         allCategories: allCatsRes,
-        recentServices: recentRes,
+        recentServices: [] as any[],
         sponsors: sponsorsRes,
       };
     },
     staleTime: 1000 * 60 * 5,
+    enabled: primaryReady,
   });
 
   const topCities = secondaryData?.topCities || [];
