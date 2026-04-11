@@ -189,6 +189,7 @@ const Index = () => {
   const allCategories = secondaryData?.allCategories || [];
   const recentServices = secondaryData?.recentServices || [];
   const sponsors = secondaryData?.sponsors || [];
+  const counts = secondaryData?.counts;
 
   // Section renderer — maps slug to component
   const renderSection = (slug: string) => {
@@ -264,13 +265,15 @@ const Index = () => {
         <Header />
         <HeroBanner />
 
-        {sectionOrder.map(slug => {
+        {sectionOrder.map((slug, i) => {
           const section = renderSection(slug);
           if (!section) return null;
+          // Apply content-visibility to sections below the fold (index >= 3)
+          const cvStyle = i >= 3 ? { contentVisibility: 'auto' as const, containIntrinsicSize: '0 400px' } : undefined;
           return (
             <LazyErrorBoundary key={slug}>
               <Suspense fallback={<SectionFallback slug={slug} />}>
-                {section}
+                <div style={cvStyle}>{section}</div>
               </Suspense>
             </LazyErrorBoundary>
           );
