@@ -150,9 +150,9 @@ const DynamicNav = ({ config, items }: { config: BottomNavConfig; items: BottomN
 
   return (
     <>
-      <div className={`h-16 ${config.mobile_only ? 'md:hidden' : ''}`} />
+      <div className={`h-12 ${config.mobile_only ? 'md:hidden' : ''}`} />
       <nav className={navClasses} style={navStyle}>
-        <div className="flex items-center justify-around px-2 py-1.5 h-full">
+        <div className="flex items-center justify-around px-1 py-1 h-full">
           {items.map((item) => {
             const isActive = item.action_type === 'route' && item.size !== 'large' && (
               location.pathname === item.route_path ||
