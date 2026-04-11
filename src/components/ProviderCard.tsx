@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Crown, BadgeCheck, Clock, Circle, ArrowRight } from 'lucide-react';
+import { MapPin, Crown, Clock, Circle, ArrowRight, Trophy } from 'lucide-react';
 import { usePrefetchProvider, usePrefetchHandlers } from '@/hooks/usePrefetch';
 import { Button } from '@/components/ui/button';
+import ProfileBadge from '@/components/ProfileBadge';
+import { getRankTier } from '@/components/ReviewSummary';
 import StarRating from '@/components/StarRating';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { DbProvider } from '@/hooks/useProviders';
@@ -133,16 +135,15 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               </div>
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              {isVerified && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-bold text-accent border border-accent/20">
-                  <BadgeCheck className="h-3 w-3" /> Verificado
-                </span>
-              )}
-              {!isVerified && hasImages && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
-                  <BadgeCheck className="h-3 w-3" /> Perfil Completo
-                </span>
-              )}
+              <ProfileBadge hasPhoto={hasOwnPhoto} hasServices={(provider.servicesCount || 0) >= 1} size="sm" />
+              {(() => {
+                const tier = getRankTier(provider.rating, provider.reviewCount);
+                return tier ? (
+                  <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${tier.bg} ${tier.color} border ${tier.border}`}>
+                    <Trophy className="h-2.5 w-2.5" /> {tier.label}
+                  </span>
+                ) : null;
+              })()}
               {(provider as any).response_time && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
                   <Clock className="h-3 w-3" /> {(provider as any).response_time}
@@ -202,6 +203,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
             </Link>
           </Button>
         </div>
+        <p className="mt-1.5 text-center text-[10px] text-muted-foreground">Orçamento sem compromisso</p>
       </div>
     </motion.div>
   );

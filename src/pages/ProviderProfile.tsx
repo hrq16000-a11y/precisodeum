@@ -9,6 +9,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';
+import ReviewSummary from '@/components/ReviewSummary';
+import ProfileBadge from '@/components/ProfileBadge';
+import ConversionTags from '@/components/ConversionTags';
+import TrustGuarantee from '@/components/TrustGuarantee';
+import TestimonialsCarousel from '@/components/TestimonialsCarousel';
 import SponsorAd from '@/components/SponsorAd';
 import { lazy, Suspense } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
@@ -718,7 +723,7 @@ const ProviderProfile = () => {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
               <ImageIcon className="h-4 w-4 text-accent" />
             </div>
-            <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Portfólio</h2>
+            <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Trabalhos Realizados</h2>
             <motion.span
               className="ml-auto inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent"
               initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}
@@ -782,7 +787,7 @@ const ProviderProfile = () => {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
             <ImageIcon className="h-4 w-4 text-accent" />
           </div>
-          <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Portfólio</h2>
+          <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Trabalhos Realizados</h2>
           <motion.span
             className="ml-auto inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent"
             initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}
@@ -889,11 +894,23 @@ const ProviderProfile = () => {
     );
   };
 
+  const renderTestimonials = () => (
+    <TestimonialsCarousel reviews={reviews} />
+  );
+
+  const renderAboutWithGuarantee = () => (
+    <>
+      {renderAbout()}
+      <TrustGuarantee />
+    </>
+  );
+
   const sectionMap: Record<string, () => React.ReactNode> = {
-    about: renderAbout,
+    about: renderAboutWithGuarantee,
     portfolio: renderPortfolio,
     services: renderServices,
     reviews: renderReviews,
+    testimonials: renderTestimonials,
   };
 
   return (
@@ -1026,16 +1043,14 @@ const ProviderProfile = () => {
                 </div>
                 {reviewsEnabled && (
                   <div className="mt-3 flex justify-center sm:justify-start">
-                    <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
+                    <ReviewSummary rating={Number(provider.rating_avg)} reviewCount={provider.review_count} />
                   </div>
                 )}
 
                 {/* Trust Badges */}
                 <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-1.5">
-                  {isProfileVerified && <TrustBadge icon={Shield} text="Perfil verificado" delay={0.5} />}
-                  {!isProfileVerified && hasProfileImages && <TrustBadge icon={CheckCircle2} text="Perfil Completo" delay={0.5} />}
+                  <ProfileBadge hasPhoto={hasOwnAvatar} hasServices={services.length > 0} />
                   {provider.years_experience >= 3 && <TrustBadge icon={Award} text="Experiente" delay={0.6} />}
-                  {provider.review_count >= 3 && <TrustBadge icon={ThumbsUp} text="Recomendado" delay={0.7} />}
                   {provider.response_time && (
                     <motion.span
                       className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-1 text-[11px] font-medium text-blue-600"
@@ -1092,6 +1107,9 @@ const ProviderProfile = () => {
               )}
             </div>
 
+            {/* ── Conversion Tags ── */}
+            <ConversionTags reviewCount={provider.review_count} responseTime={provider.response_time} />
+
             {/* ── CTA Buttons ── */}
             <motion.div
               className="mt-6 flex flex-col sm:flex-row flex-wrap justify-center sm:justify-start gap-2"
@@ -1134,6 +1152,9 @@ const ProviderProfile = () => {
                 </Button>
               </div>
             </motion.div>
+            <p className="mt-2 text-center sm:text-left text-[11px] text-muted-foreground">
+              Orçamento sem compromisso. Fale direto com o profissional.
+            </p>
           </motion.div>
 
           {/* ── Dynamic sections ── */}
@@ -1151,6 +1172,11 @@ const ProviderProfile = () => {
               </div>
             );
           })}
+
+          {/* ── Testimonials (always rendered if reviews exist) ── */}
+          {!visibleSections.includes('testimonials') && reviews.length > 0 && (
+            <TestimonialsCarousel reviews={reviews} />
+          )}
 
           {/* ── Related Providers ── */}
           {relatedProviders.length > 0 && (
