@@ -185,7 +185,12 @@ function startFetchIfNeeded() {
 
   fetchStarted = true;
 
-  (async () => {
+  // Defer geo fetch to avoid extending the critical request chain
+  const deferStart = typeof requestIdleCallback === 'function'
+    ? requestIdleCallback
+    : (cb: () => void) => setTimeout(cb, 50);
+
+  deferStart(() => { (async () => {
     try {
       const edgeGeo = await fetchGeoFromEdge();
       if (edgeGeo.city || edgeGeo.state || edgeGeo.temp !== null) {
@@ -232,7 +237,7 @@ function startFetchIfNeeded() {
         console.debug('[GeoCity] API fallback:', error);
       }
     }
-  })();
+  })(); });
 }
 
 function subscribe(callback: () => void) {
