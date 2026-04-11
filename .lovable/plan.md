@@ -1,45 +1,63 @@
 
 
-## Plano: Integrar componentes premium no ProviderProfile, ProviderCard e FeaturedProviders
+## Plano: Compartilhamento, Solicitação de Avaliação e SEO Dinâmico
 
-### Estado atual
-Os 5 componentes ja foram criados na iteracao anterior (ProfileBadge, ReviewSummary, TestimonialsCarousel, ConversionTags, TrustGuarantee). Falta integrá-los nos 3 arquivos principais. Os componentes ja respeitam as regras de negocio (sem "Identidade Verificada", sem escudo verde, usando Handshake e "Negociacao Direta").
+### Estado Atual
+- **SEO já implementado** (linha 516-522): `useSeoHead` já gera título dinâmico `[Nome] - [Categoria] em [Cidade] | Preciso de um` e meta description com avaliações. ✅
+- **Botão "Copiar Link"** já existe (linha 1148-1152), mas sem Web Share API. Precisa upgrade.
+- **Não existe** lógica de `isOwner` nem botão "Pedir Avaliação".
 
-### Alteracoes
+---
 
-**1. `src/pages/ProviderProfile.tsx`** — Integrar todos os componentes
+### 1. Botão "Compartilhar Perfil" — Upgrade do "Copiar Link" existente
 
-- Adicionar imports: `ReviewSummary`, `ProfileBadge`, `ConversionTags`, `TrustGuarantee`, `TestimonialsCarousel`, `getRankTier` (de ReviewSummary)
-- **Linha ~1027-1031**: Substituir `StarRating` no header por `ReviewSummary` (versao full com ranking badge)
-- **Linha ~1033-1050**: Substituir o bloco `TrustBadge` por `ProfileBadge` (usa `hasOwnAvatar` e `services.length > 0`), mantendo badges de "Experiente" e "Responde em X"
-- **Linha ~1093-1094**: Apos Stats Mini Cards, adicionar `ConversionTags` com `reviewCount` e `responseTime`
-- **Linha ~1136**: Apos CTA buttons, adicionar microcopy: "Orcamento sem compromisso. Fale direto com o profissional."
-- **Linha ~892-897**: No `sectionMap`, adicionar `testimonials: renderTestimonials` que renderiza `TestimonialsCarousel` com `reviews`
-- Apos `renderAbout`, inserir `TrustGuarantee`
-- Renomear "Portfolio" para "Trabalhos Realizados" (linhas ~721 e ~785)
-- Confirmar que WhatsApp com deep link (`whatsappLink`) ja esta integrado nos CTAs (ja esta — linhas 1116, 1344)
+**Arquivo: `src/pages/ProviderProfile.tsx`**
 
-**2. `src/components/ProviderCard.tsx`** — Badges e microcopy
+Substituir o botão "Copiar Link" (linha 1148-1152) por um botão "Compartilhar" que:
+- Usa `navigator.share()` se disponível (mobile), com título e texto do profissional
+- Fallback: `navigator.clipboard.writeText()` + toast "Link do perfil copiado!"
+- Ícone: `Share2` (Lucide) em vez de `Copy`
+- Mover para posição mais proeminente — ao lado dos botões CTA principais (não escondido num flex secundário)
 
-- Adicionar imports: `ProfileBadge`, `ReviewSummary` (compact), `getRankTier`
-- Substituir badge "Verificado" (linha ~131) por `ProfileBadge size="sm"`
-- Adicionar ranking badge (Ouro/Prata/Bronze) via `getRankTier` ao lado do nome
-- Adicionar microcopy "Orcamento sem compromisso" em `text-[10px]` abaixo dos botoes CTA
+### 2. Botão "Pedir Avaliação" — Exclusivo para o dono do perfil
 
-**3. `src/components/home/FeaturedProviders.tsx`** — Mesmo tratamento
+**Arquivo: `src/pages/ProviderProfile.tsx`**
 
-- Adicionar imports: `ProfileBadge`, `getRankTier`
-- Na funcao `ProviderCardFeatured`, adicionar ranking badge e `ProfileBadge` compacto
-- Adicionar microcopy abaixo dos botoes
+- Importar `useAuth` e obter `user`
+- Calcular `isOwner = user?.id === provider?.user_id`
+- Se `isOwner`, renderizar um botão destacado "⭐ Pedir Avaliação" logo após os CTAs
+- Ao clicar, gera link WhatsApp com mensagem pré-pronta:
+  `"Olá! Agradeço por escolher meus serviços. Poderia me avaliar rapidinho na plataforma? Isso fortalece meu trabalho! {profileUrl}"`
+- Usa `whatsappLink('', mensagem)` — abre WhatsApp sem número pré-definido (o profissional escolhe o contato)
+- Fallback: se WhatsApp indisponível, copia a mensagem para clipboard
 
-### Confirmacoes
-- WhatsApp com deep link `whatsapp://send?phone=...` ja esta implementado via `whatsappLink()` em `src/lib/whatsapp.ts` — mantido em toda a hierarquia
-- Nenhum termo de "Identidade Verificada" ou "Contratacao Segura" sera usado
-- ProfileBadge usa cores accent (laranja da marca), nao verde-escudo
-- TrustGuarantee usa icone Handshake com texto "Negociacao Direta"
+### 3. SEO Dinâmico — Já implementado ✅
 
-### Arquivos modificados
-- `src/pages/ProviderProfile.tsx`
-- `src/components/ProviderCard.tsx`
-- `src/components/home/FeaturedProviders.tsx`
+O `useSeoHead` na linha 516-522 já gera:
+- `<title>`: "Henrique da Cruz - Manutenção em São José dos Pinhais | Preciso de um"
+- `<meta description>`: com nome, categoria, cidade, avaliações e nota
+- `og:title`, `og:description`, `og:url`, canonical — todos dinâmicos
+- JSON-LD LocalBusiness com aggregateRating (linhas 534-549)
+
+Apenas ajustar: passar `ogImage` com o avatar do profissional para que o compartilhamento social mostre a foto dele.
+
+---
+
+### Detalhes técnicos
+
+```text
+Hierarquia dos CTAs (atualizada):
+┌────────────────────────────────────────┐
+│  [Solicitar Orçamento] [WhatsApp]      │
+│  [Compartilhar] [Ligar]                │
+│  "Orçamento sem compromisso..."        │
+├────────────────────────────────────────┤
+│  (se isOwner):                         │
+│  [⭐ Pedir Avaliação via WhatsApp]     │
+│  "Envie para clientes recentes"        │
+└────────────────────────────────────────┘
+```
+
+### Arquivo modificado
+- `src/pages/ProviderProfile.tsx` — único arquivo alterado
 
