@@ -1,44 +1,47 @@
 
 
-# Página "Como Funciona" — Guia Completo da Plataforma
+# Consolidação e Melhorias da Gestão Admin
 
-## Contexto
+## Status Atual
 
-Já existem 3 páginas relacionadas:
-- `/ajuda` — Central de Ajuda (FAQ com busca)
-- `/faq` — Perguntas Frequentes (accordion)
-- `/sobre` — Sobre prestação de serviço (conceito genérico)
+As 3 funcionalidades listadas **já estão implementadas**:
+- `/admin/usuarios` tem filtro por status de aprovação + ações de aprovar/rejeitar prestadores
+- `/admin/prestadores` tem stats cards, edição completa e checklist de verificação
 
-Nenhuma delas explica **a plataforma em si**: como funciona, que é gratuita, o passo a passo para clientes e profissionais, com ilustrações visuais.
+**Problema**: As duas páginas têm funcionalidades sobrepostas de moderação, mas `/admin/prestadores` oferece recursos especializados que `/admin/usuarios` não tem (cards visuais, checklist de verificação, edição profunda, geocodificação).
 
-## Solução
+## Proposta: Consolidar sem perder recursos
 
-Criar uma nova página `/como-funciona` rica e ilustrada, com seções visuais:
+Em vez de remover `/admin/prestadores`, a proposta é **diferenciar claramente o papel de cada página**:
 
-### Seções da Página
+### 1. Limpar moderação duplicada de `/admin/usuarios`
 
-1. **Hero** — "Como funciona o Preciso de um?" com subtítulo e ilustração (ícones animados)
-2. **Para Clientes** — 3 passos ilustrados (Buscar → Comparar → Contratar) com ícones grandes e animação sequencial
-3. **Para Profissionais** — 3 passos (Cadastrar → Receber Leads → Crescer) mesmo padrão visual
-4. **É Gratuito!** — Seção destacada explicando que não há custos para clientes, e que profissionais têm plano gratuito
-5. **Diferenciais** — Grid com cards: Verificação, Avaliações, Geolocalização, Sem Intermediários, Chat Direto, Suporte
-6. **FAQ Rápido** — 4-5 perguntas inline mais comuns (hardcoded ou puxando do banco)
-7. **CTA Final** — Botões "Buscar Profissional" e "Cadastrar como Profissional"
+Na tabela de usuários, **remover os botões individuais de aprovar/rejeitar prestador** e substituir por um **link direto** para `/admin/prestadores` quando o usuário é do tipo `provider`. Isso evita confusão sobre onde moderar.
 
-### Recursos Visuais
+Manter apenas:
+- Filtro por status de aprovação (para visibilidade)
+- Badge de status do prestador na tabela
+- Link "Gerenciar" que leva ao `/admin/prestadores` filtrado
 
-- Ícones Lucide como ilustrações principais em containers coloridos (gradient)
-- Animações framer-motion: fade-in escalonado, parallax sutil, counters
-- Linha conectora animada entre os passos (padrão já usado no HowItWorksSection)
-- Cards com glassmorphism leve e hover scale
-- Badges coloridos por seção (azul = clientes, amarelo = profissionais, verde = gratuito)
+### 2. Melhorias em `/admin/prestadores`
 
-### Arquivos
+- **Aba de detalhes expandível**: Ao clicar no card, expandir mostrando o checklist de verificação completo (não compact) + dados do prestador
+- **Filtro por categoria**: Adicionar dropdown de categoria ao lado dos filtros existentes
+- **Filtro por cidade/estado**: Permitir filtrar prestadores por localização
+- **Indicador de "último acesso"**: Mostrar quando o prestador acessou a plataforma pela última vez
 
-| Arquivo | Ação |
+### 3. Melhorias gerais de UX
+
+- **Contadores no menu lateral**: Mostrar badge com contagem de pendentes no link do menu para `/admin/prestadores`
+- **Exportação CSV**: Adicionar botão de exportar na página de prestadores (já existe na de usuários)
+
+## Arquivos Modificados
+
+| Arquivo | Alteração |
 |---|---|
-| `src/pages/ComoFuncionaPage.tsx` | Novo — página completa |
-| `src/App.tsx` | Adicionar rota `/como-funciona` |
+| `src/pages/AdminUsersPage.tsx` | Remover botões aprovar/rejeitar, adicionar link para /admin/prestadores |
+| `src/components/admin/UserTable.tsx` | Substituir ações de moderação por link "Gerenciar prestador" |
+| `src/pages/AdminProvidersPage.tsx` | Adicionar filtros de categoria e cidade, card expandível, exportação CSV |
 
-Sem mudanças de banco de dados. Conteúdo hardcoded (pode ser migrado para CMS depois).
+Sem mudanças de banco de dados.
 
