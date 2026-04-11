@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { Shield, Users, Zap, Briefcase, MapPin } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
+import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import SearchBar from '@/components/SearchBar';
-import GeoLocationChip from '@/components/GeoLocationChip';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useSettingValue } from '@/hooks/useSiteSettings';
+import { importWithRetry } from '@/lib/lazyWithRetry';
+
+const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBar')));
+const GeoLocationChip = lazy(() => importWithRetry(() => import('@/components/GeoLocationChip')));
 
 const FALLBACK_BG_IMAGES = [
   '/hero-bg-1.jpg', '/hero-bg-2.jpg', '/hero-bg-3.jpg', '/hero-bg-4.jpg',
@@ -211,9 +213,11 @@ const HeroBanner = () => {
         </div>
 
         <div className="relative z-30 mt-4 w-full max-w-2xl md:mt-6">
-          <div className="animate-glow-ring rounded-full">
-            <SearchBar />
-          </div>
+          <Suspense fallback={<div className="h-12 rounded-full bg-primary-foreground/10 animate-pulse" />}>
+            <div className="animate-glow-ring rounded-full">
+              <SearchBar />
+            </div>
+          </Suspense>
           <div className="mt-3 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">
             <MapPin className="h-3.5 w-3.5 text-secondary" />
             <span>{geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
