@@ -67,39 +67,28 @@ const SearchPage = () => {
   const otherProviders = grouped?.other || [];
   const isFallback = grouped?.isFallback || false;
 
+  // Combine for client-side filters
+  const allProviders = useMemo(() => [...localProviders, ...otherProviders], [localProviders, otherProviders]);
+
   // Apply additional client-side filters
-  const fullyFiltered = useMemo(() => {
-    let results = [...filtered];
+  const applyClientFilters = useCallback((list: DbProvider[]) => {
+    let results = [...list];
 
     if (selectedNeighborhood) {
       const nb = selectedNeighborhood.toLowerCase();
       results = results.filter(p => p.neighborhood.toLowerCase().includes(nb));
     }
-
     if (businessNameFilter) {
       const bn = businessNameFilter.toLowerCase();
-      results = results.filter(p =>
-        (p.businessName?.toLowerCase().includes(bn)) ||
-        p.name.toLowerCase().includes(bn)
-      );
+      results = results.filter(p => (p.businessName?.toLowerCase().includes(bn)) || p.name.toLowerCase().includes(bn));
     }
-
     if (phoneFilter) {
       const ph = phoneFilter.replace(/\D/g, '');
-      if (ph) {
-        results = results.filter(p =>
-          p.phone.includes(ph) || p.whatsapp.includes(ph)
-        );
-      }
+      if (ph) results = results.filter(p => p.phone.includes(ph) || p.whatsapp.includes(ph));
     }
+    if (featuredFilter === 'featured') results = results.filter(p => p.featured);
+    else if (featuredFilter === 'normal') results = results.filter(p => !p.featured);
 
-    if (featuredFilter === 'featured') {
-      results = results.filter(p => p.featured);
-    } else if (featuredFilter === 'normal') {
-      results = results.filter(p => !p.featured);
-    }
-
-    // Sort
     if (sortBy !== 'relevance') {
       results.sort((a, b) => {
         switch (sortBy) {
@@ -112,9 +101,14 @@ const SearchPage = () => {
         }
       });
     }
-
     return results;
-  }, [filtered, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy]);
+  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy]);
+
+  const filteredLocal = useMemo(() => applyClientFilters(localProviders), [applyClientFilters, localProviders]);
+  const filteredOther = useMemo(() => applyClientFilters(otherProviders), [applyClientFilters, otherProviders]);
+
+  const displayProviders = showAllLocations ? [...filteredLocal, ...filteredOther] : filteredLocal;
+  const fullyFiltered = [...filteredLocal, ...filteredOther];
 
   const activeFilterCount = [selectedCategory, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter !== 'all' ? 'x' : '', minRating > 0 ? 'x' : ''].filter(Boolean).length;
 
