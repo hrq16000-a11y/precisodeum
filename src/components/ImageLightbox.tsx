@@ -110,7 +110,10 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
     if (!touchStart.current || scale > 1) return;
     const dxAbs = Math.abs(e.touches[0].clientX - touchStart.current.x);
     const dyAbs = Math.abs(e.touches[0].clientY - touchStart.current.y);
-    if (dxAbs > dyAbs && dxAbs > 10) swiping.current = true;
+    if (dxAbs > dyAbs && dxAbs > 10) {
+      swiping.current = true;
+      e.preventDefault();
+    }
   }, [scale]);
 
   const onTouchEnd = useCallback((e: React.TouchEvent) => {
@@ -130,6 +133,7 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
   // Double-tap to toggle zoom
   const lastTap = useRef(0);
   const handleTap = useCallback(() => {
+    if (swiping.current) { swiping.current = false; return; }
     const now = Date.now();
     if (now - lastTap.current < 300) {
       if (scale > 1) resetZoom(); else { setScale(2.5); }
