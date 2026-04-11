@@ -268,12 +268,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Main content */}
       <main className="flex-1 pt-14 lg:ml-60 lg:pt-0">
         {/* Profile status strip for providers with incomplete profiles */}
-        {!isClient && !isRH && profile && provider && (() => {
+        {!isClient && !isRH && profile && (() => {
           const items = [
-            !!provider?.description?.trim(),
-            !!provider?.city?.trim(),
+            !!profile?.full_name?.trim(),
+            !!profile?.phone?.trim(),
             !!profile?.avatar_url,
-            (provider?.services_count ?? 0) > 0,
           ];
           const pct = Math.round((items.filter(Boolean).length / items.length) * 100);
           if (pct >= 100) return null;
