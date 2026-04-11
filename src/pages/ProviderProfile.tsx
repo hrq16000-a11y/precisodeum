@@ -247,9 +247,11 @@ const ProviderProfile = () => {
 
       if (active) setLoading(true);
 
+      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, phone, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, whatsapp, working_hours, years_experience, ibge_code, latitude, longitude, created_at, updated_at, deleted_at, onboarding_progress, website, user_ref';
+
       let { data } = await supabase
         .from('providers')
-        .select('*, categories(name, slug, icon)')
+        .select(`${PROVIDER_PUBLIC_COLS}, categories(name, slug, icon)`)
         .eq('slug', slug)
         .maybeSingle();
 
@@ -258,7 +260,7 @@ const ProviderProfile = () => {
         if (sanitized !== slug) {
           const { data: fallback } = await supabase
             .from('providers')
-            .select('*, categories(name, slug, icon)')
+            .select(`${PROVIDER_PUBLIC_COLS}, categories(name, slug, icon)`)
             .eq('slug', sanitized)
             .maybeSingle();
           if (fallback) {
