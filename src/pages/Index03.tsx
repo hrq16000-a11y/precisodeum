@@ -129,8 +129,7 @@ const Index03 = () => {
           {/* Sponsor Top Banner */}
           <SponsorTopBanner />
 
-          {/* Stats */}
-          <StatsCounter />
+          {/* Stats removed */}
 
           {/* Highlights */}
           <HighlightsCarousel />
