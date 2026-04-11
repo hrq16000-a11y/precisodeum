@@ -1,49 +1,76 @@
-# Auditoria Completa — Melhorias Pendentes
+# Melhorias no Módulo de Vagas
 
-## Achados do Scan
+Após auditoria completa dos 4 arquivos do módulo (Dashboard, Listagem pública, Detalhe, Admin), identifiquei **7 melhorias** concretas.
 
-O sistema está em bom estado. Os findings restantes são:
+---
 
-- **2x RLS "always true" em INSERT** — `pwa_install_events` e `sponsor_leads` (ambas intencionais: tracking público e formulário de lead aberto)
-- **CNPJ exposto via API** — `ProviderProfile.tsx` faz `select('*')` nos providers, enviando CNPJ ao frontend mesmo sem exibir
-- **Leaked password protection** — HIBP check desabilitado (configuração manual no painel Cloud)
+## 1. Vagas Expiradas — Auto-desativação
 
-## Plano de Execução (3 itens)
+**Problema:** Vagas com `deadline` vencido continuam aparecendo como "Ativa" na listagem pública. Não há filtro por prazo.
 
-### 1. Ocultar CNPJ de queries públicas
+**Ação:** Adicionar filtro `deadline >= today OR deadline IS NULL` na query pública do `JobsPage.tsx`. Na listagem do dashboard, exibir badge "Expirada" em vermelho para vagas com prazo vencido.
 
-O `ProviderProfile.tsx` e `useProviders.tsx` usam `select('*')` ou select amplo. O CNPJ viaja ao frontend desnecessariamente.
+## 2. Busca por Descrição e Categoria (Listagem Pública)
 
-**Ação:** Substituir `select('*')` por select explícito (sem `cnpj`) nas queries públicas:
+**Problema:** A busca pública (`JobsPage`) filtra apenas por `title` (`ilike`). Se o usuário buscar "eletricista" e o título for "Técnico Residencial", não encontra.
 
-- `src/pages/ProviderProfile.tsx` — 3 queries que buscam providers
-- `src/hooks/useProviders.tsx` — já usa select explícito sem cnpj (OK)
+**Ação:** Expandir a busca para incluir `description` e o nome da categoria usando `or()` do Supabase. Isso melhora drasticamente a relevância dos resultados.
 
-Para que RH possa ver o CNPJ, manter o select completo apenas quando o viewer é RH ou admin (verificar `profile_type` no contexto auth).
+## 3. Contador de Visualizações por Vaga
 
-### 2. Restringir CNPJ via RLS (camada extra)
+**Problema:** Não há métricas de visualização. O anunciante não sabe se sua vaga está sendo vista.
 
-Criar uma **view** `public_providers_safe` que exclui `cnpj`, ou — mais simples — apenas ajustar as queries frontend (item 1). Como o CNPJ só é perigoso se chegar ao browser e as policies SELECT já restringem a `approved + !deleted`, a mitigação frontend é suficiente.
+**Ação:**
 
-**Decisão:** Apenas ajustar queries frontend (sem nova view, sem alterar schema blindado).
+- Adicionar coluna `view_count integer default 0` na tabela `jobs`
+- Incrementar via RPC (`increment_job_view`) chamado no `JobDetailPage`
+- Exibir o contador no card do dashboard e na página de detalhe
 
-### 3. UX — DashboardJobsPage refinamentos menores
+## 4. Compartilhamento Social (JobDetailPage)
 
-- O backdrop do dropdown de cidades (`z-[5]`) agora fica **abaixo** do dropdown (`z-20`) — mas o backdrop `fixed inset-0` ainda intercepta cliques fora. Melhorar para usar `onBlur` no input + `mousedown` no dropdown, eliminando o backdrop completamente.
+**Problema:** A página de detalhe tem apenas "Copiar link". Faltam botões de compartilhar no WhatsApp, Facebook, LinkedIn.
+
+**Ação:** Adicionar botões de compartilhamento social na sidebar do `JobDetailPage` com links nativos (WhatsApp API, Facebook sharer, LinkedIn share).
+
+## 5. Notificação ao Anunciante (Aprovação/Rejeição)
+
+**Problema:** Quando o admin aprova ou rejeita uma vaga, o anunciante não é notificado. Só descobre ao acessar o dashboard.
+
+**Ação:** No `AdminJobsPage`, ao aprovar/rejeitar, inserir um registro na tabela `notifications` para o `user_id` da vaga, com mensagem contextual.
+
+## 6. Filtros no Admin — Cidade e Categoria
+
+**Problema:** O painel admin filtra apenas por `approval_status` e texto livre. Não há filtro por cidade ou categoria.
+
+**Ação:** Adicionar selects de filtro por cidade e categoria no `AdminJobsPage`, usando os dados já disponíveis na query.
+
+## 7. Edição Completa no Admin
+
+**Problema:** O dialog de edição no admin só permite alterar título, descrição, status e aprovação. Campos como cidade, salário, WhatsApp, categoria não são editáveis.
+
+**Ação:** Expandir o formulário de edição do admin para incluir todos os campos relevantes (cidade, estado, categoria, salário, WhatsApp, tipo de contrato, modelo de trabalho).
 
 ---
 
 ## Arquivos Modificados
 
-- `src/pages/ProviderProfile.tsx` — substituir `select('*')` por select explícito sem `cnpj`; manter CNPJ visível apenas para RH/admin
-- `src/pages/DashboardJobsPage.tsx` — eliminar backdrop e usar onBlur para fechar dropdown de cidades
+
+| Arquivo                           | Alterações                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------ |
+| `src/pages/JobsPage.tsx`          | Busca expandida (descrição + categoria); filtro de deadline                                |
+| `src/pages/JobDetailPage.tsx`     | Botões de compartilhamento social; chamada de view_count                                   |
+| `src/pages/DashboardJobsPage.tsx` | Badge "Expirada"; exibir view_count no card                                                |
+| `src/pages/AdminJobsPage.tsx`     | Filtros cidade/categoria; formulário de edição completo; notificação na aprovação/rejeição |
+| **Migration SQL**                 | Coluna `view_count`; função RPC `increment_job_view`                                       |
+
 
 ## O que NÃO será alterado
 
-- Schema de tabelas (blindado)
-- `client.ts`, `types.ts`, `.env`
+- Schema blindado (`client.ts`, `types.ts`, `.env`)
+- Parser de texto (`jobTextParser.ts`) — já funciona bem
 - GeoEngine, SIL, Governance Engine
-- `useProviders.tsx` (já não expõe cnpj)
-- Policies RLS existentes
+- RLS policies existentes
 
-Desejavel recursos ser Administravel e gerenciável pelo painel administrativo 
+Permitir que o administrativo tenha gestão de criar Editar e excluir vagas.
+
+&nbsp;
