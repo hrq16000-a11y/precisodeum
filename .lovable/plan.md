@@ -1,47 +1,23 @@
-# Melhoria das Miniaturas de Imagens nos Serviços Oferecidos
 
-## Problema
 
-Na seção "Serviços oferecidos" do perfil do profissional, as miniaturas das imagens estão usando `object-contain` com fundo `bg-muted/20`, o que faz as imagens parecerem "espremidas" e com espaço vazio ao redor. Isso acontece em três pontos:
+# Correção do ImageLightbox: Overlay Completo + Pinch-to-Zoom + Touch Aprimorado
 
-1. **Imagem principal do serviço** (80×80px) — linha 1479: `object-contain bg-muted/20`
-2. **Miniaturas secundárias** (48×48px) — linha 1508: `object-contain bg-muted/20`
+## Problemas na Screenshot
 
-## Solução
+1. **Overlay incompleto**: `bg-black/90` deixa UI de fundo visível (nav bar, chat bar). Precisa ser `bg-black` opaco
+2. **Sem pinch-to-zoom**: Não há suporte a gesto de pinça
+3. **Setas invisíveis no mobile**: Classe `hidden sm:flex` esconde setas no mobile
+4. **Touch funcional mas sem feedback visual**: Sem indicador de transição entre imagens
 
-**Arquivo:** `src/pages/ProviderProfile.tsx`
+## Alterações
 
-- Trocar `object-contain bg-muted/20` por `object-cover` em todas as miniaturas da seção de serviços
-- Aumentar levemente as miniaturas secundárias de `h-12 w-12` (48px) para `h-14 w-14` (56px) para melhor visualização
-- Adicionar `rounded-lg` nas miniaturas secundárias para consistência visual com a imagem principal
-- Aplicar `formatLocationString` no texto de `service_area` (linha 1499) que ainda mostra espaços antes das vírgulas na screenshot
+**Arquivo:** `src/components/ImageLightbox.tsx`
 
-Alteração simples em um único arquivo, sem dependências.
+1. **Overlay total**: Trocar `bg-black/90 backdrop-blur-sm` por `bg-black` + `z-[9999]` para cobrir tudo incluindo bottom nav
+2. **Pinch-to-zoom**: Adicionar estado de scale/translate com dois dedos (touch events para pinch), transformando a imagem via CSS `transform: scale() translate()`
+3. **Setas mobile**: Remover `hidden sm:flex`, mostrar setas semitransparentes que aparecem ao tocar e somem após 2s com `setTimeout`
+4. **Transição suave**: Adicionar `transition-opacity` na troca de imagem para feedback visual
+5. **Body scroll lock**: Adicionar `useEffect` que seta `document.body.style.overflow = 'hidden'` quando aberto
 
-&nbsp;
+Sem dependências externas — tudo com touch events nativos do React.
 
-&nbsp;
-
-&nbsp;
-
-Você é um Engenheiro de Software Sênior trabalhando no aplicativo "Preciso de um". O usuário enviou capturas de tela (como image_1.png e image_2.png) mostrando uma distorção grave nas imagens da galeria de anúncios dos profissionais. As miniaturas das fotos no modal de detalhes do serviço estão espremidas e esticadas para caber em contêineres quadrados, o que prejudica a apresentação profissional dos serviços.
-
-Entregáveis e Regras de Negócio (Estrito):
-
-Correção de Renderização da Galeria: Refatore o componente que exibe as quatro miniaturas de fotos na galeria (visível em image_1.png e image_2.png). Implemente uma lógica de visualização que mantenha a proporção original da imagem original enviada.
-
-Solução: Utilize object-fit: cover (ou o equivalente nativo mobile, como centerCrop / scaleAspectFill). As imagens devem preencher o quadrado inteiro do contêiner sem distorcer, cortando as bordas se necessário (o sistema deve "dar zoom" na imagem para preencher o quadrado mantendo a proporção).
-
-Melhoria do Modal de Detalhes (Bônus): Aproveite para refinar o layout do modal de detalhes (conforme as sugestões anteriores de UI/UX):
-
-Melhore ligeiramente o contraste do texto de descrição do serviço para garantir acessibilidade.
-
-Aplique uma sombra (box-shadow) mais suave e difusa ao modal para dar mais profundidade sobre o fundo escuro.
-
-Crie uma função de tratamento de dados de texto para limpar a localização (Pinsais , Piraquara ...), removendo espaços antes das vírgulas e padronizando as letras maiúsculas/minúsculas.
-
-Melhoria da Visualização de Zoom (Opcional): Certifique-se de que, ao clicar em uma miniatura, a imagem aberta no modal de zoom (como em image_2.png) carregue com a melhor qualidade possível e permita gestos de pinça para zoom, mantendo a proporção original.
-
-Código:
-
-Gere o código React/nativo atualizado para o componente da galeria de imagens e os estilos associados, bem como a função de tratamento de texto. Certifique-se de que o código seja limpo e modular.
