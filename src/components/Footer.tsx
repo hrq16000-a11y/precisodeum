@@ -26,7 +26,7 @@ const fallbackEco = [
   { label: 'Preciso de um Técnico', url: 'https://www.precisodeumtecnico.com', open_in_new_tab: true },
   { label: 'Encontre um Profissional', url: 'https://www.encontreumprofissional.com.br', open_in_new_tab: true },
   { label: 'Preciso de um Profissional', url: 'https://www.precisodeumprofissional.com.br', open_in_new_tab: true },
-  { label: 'TamoNaWeb', url: 'https://www.TamoNaWeb.com.br', open_in_new_tab: true, icon: '🆕' },
+  { label: 'TamoNaWeb', url: 'https://www.TamoNaWeb.com.br', open_in_new_tab: true },
 ];
 
 const fallbackSuporte = [
