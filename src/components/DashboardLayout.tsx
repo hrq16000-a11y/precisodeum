@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera, LifeBuoy, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera, LifeBuoy, AlertTriangle, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -267,6 +267,41 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main content */}
       <main className="flex-1 pt-14 lg:ml-60 lg:pt-0">
+        {/* Profile status strip for providers with incomplete profiles */}
+        {!isClient && !isRH && profile && provider && (() => {
+          const items = [
+            !!provider?.description?.trim(),
+            !!provider?.city?.trim(),
+            !!profile?.avatar_url,
+            (provider?.services_count ?? 0) > 0,
+          ];
+          const pct = Math.round((items.filter(Boolean).length / items.length) * 100);
+          if (pct >= 100) return null;
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3 px-4 py-2 border-b border-accent/20 bg-accent/5"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-semibold text-accent">{pct}% completo</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-border/50 overflow-hidden max-w-[120px]">
+                    <motion.div
+                      className="h-full rounded-full bg-accent"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ delay: 0.3, duration: 0.6 }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <Link to="/dashboard/perfil" className="text-[10px] font-medium text-accent flex items-center gap-0.5 hover:underline shrink-0">
+                Completar <ChevronRight className="h-3 w-3" />
+              </Link>
+            </motion.div>
+          );
+        })()}
         <AnimatePresence mode="wait">
           <motion.div
             className="p-4 pb-20 sm:p-6 sm:pb-6"
