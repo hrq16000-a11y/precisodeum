@@ -197,10 +197,10 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <CurtainReveal />
+          <Suspense fallback={null}><CurtainReveal /></Suspense>
           <ScrollToTop />
           <AuthProvider>
-            <OAuthRedirectHandler />
+            <Suspense fallback={null}><OAuthRedirectHandler /></Suspense>
             <Suspense fallback={<PageFallback />}>
               <Routes>
                 <Route path="/" element={<Index />} />
