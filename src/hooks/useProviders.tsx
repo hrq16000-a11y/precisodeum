@@ -159,12 +159,13 @@ async function fetchProvidersLightweight(query: any) {
       .select('id, provider_id, service_name, description, whatsapp, service_area, service_images(image_url, display_order)')
       .in('provider_id', providerIds),
     supabase
-      .from('provider_boosts' as any)
-      .select('provider_id, boost_weight')
-      .in('provider_id', providerIds)
-      .eq('is_active', true)
-      .lte('start_at', new Date().toISOString())
-      .gte('end_at', new Date().toISOString()) as any,
+157:       .from('provider_boosts' as any)
+158:       .select('provider_id, boost_weight')
+159:       .in('provider_id', providerIds)
+160:       .eq('is_active', true)
+161:       .lte('start_at', new Date().toISOString())
+162:       .gte('end_at', new Date().toISOString())
+163:       .then((res: any) => ({ data: res.error ? [] : (res.data || []) })),
     supabase
       .from('provider_impressions' as any)
       .select('provider_id, impressions')
