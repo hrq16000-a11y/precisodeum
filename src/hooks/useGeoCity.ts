@@ -237,7 +237,7 @@ function startFetchIfNeeded() {
         console.debug('[GeoCity] API fallback:', error);
       }
     }
-  })();
+  })(); });
 }
 
 function subscribe(callback: () => void) {
