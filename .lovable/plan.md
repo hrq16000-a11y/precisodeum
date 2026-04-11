@@ -1,45 +1,53 @@
 
 
-## Plano: Otimizacoes de Performance — Fase 3
+## Plano: Otimizacoes de Performance — Fase 4
 
-### Problemas identificados
+### Oportunidades restantes
 
-1. **NotificationCenter no critical path via Header** — O Header importa `NotificationBell` de `NotificationCenter.tsx`, que por sua vez puxa `framer-motion`, `date-fns/formatDistanceToNow`, `date-fns/locale/ptBR` e `useNotifications` (com query ao Supabase). Tudo isso entra no bundle principal porque o Header e eager.
-
-2. **Index.tsx eagerly loaded** — A pagina Index e importada de forma sincrona no App.tsx (linha 33). Ela traz consigo o Header, HeroBanner, SearchBar, GeoLocationChip, RotatingServiceText e todos os hooks associados. Embora seja a rota principal, a conversao para lazy com `prefetch` imediato manteria o mesmo UX mas permitiria code-splitting.
-
-3. **MutationObserver no main.tsx observa TODA mutacao do DOM** — O `bodyObs.observe(document.documentElement, { childList: true, subtree: true })` dispara `observeLazyImages()` em cada mutacao DOM (centenas por segundo durante hydration). Deveria ser throttled.
-
-4. **`cleanupFrequencyData()` sincrono no boot** — Executa logica de localStorage sincronamente antes do `createRoot`. Deveria ser deferido.
-
-5. **Toaster + Sonner eagerly loaded** — Ambos sao importados de forma sincrona no App.tsx mas so sao necessarios quando um toast e disparado.
+Apos 3 fases de otimizacao, os maiores gargalos ja foram resolvidos. As melhorias restantes sao incrementais mas ainda significativas, especialmente no contexto PWA/mobile.
 
 ---
 
 ### Alteracoes
 
-**1. `src/components/Header.tsx`** — Lazy load do NotificationCenter
+**1. `src/pages/Index.tsx`** — Lazy load SearchBar e GeoLocationChip do HeroBanner
 
-- Substituir `import { NotificationBell } from '@/components/NotificationCenter'` por um lazy import com Suspense
-- Isso remove `framer-motion`, `date-fns` e `useNotifications` do bundle critico
-- **Impacto: ~80-120KB fora do critical path**
+O `HeroBanner` importa eagerly `SearchBar` (355 linhas, com useQuery + supabase) e `GeoLocationChip` (268 linhas, com supabase + geoDistance). Ambos estao no critical path mas nao sao necessarios para o LCP (a imagem hero e o titulo sao o LCP). Converter para lazy dentro do HeroBanner permitiria que a imagem hero renderize antes.
 
-**2. `src/main.tsx`** — Throttle do MutationObserver + defer cleanup
+- No `HeroBanner.tsx`: lazy load `SearchBar` e `GeoLocationChip` com Suspense skeleton
+- Manter `RotatingServiceText` eager (e leve e parte do titulo)
 
-- Envolver `observeLazyImages()` num `requestAnimationFrame` debounce para que nao execute centenas de vezes durante hydration
-- Mover `cleanupFrequencyData()` para dentro de `requestIdleCallback`
+**2. `src/components/Footer.tsx`** — Lazy load SponsorAd e PwaFooterInstall
 
-**3. `src/App.tsx`** — Lazy load Index com prefetch imediato
+O Footer importa eagerly `SponsorAd` e `PwaFooterInstall`. Como o Footer e lazy no Index, isso e menos critico, mas esses imports puxam hooks adicionais (useSponsors, usePwaInstall) que geram queries desnecessarias se o usuario nem scrollar ate o fim.
 
-- Converter `import Index from "./pages/Index"` para lazy
-- Adicionar prefetch imediato (delay 0) para que o chunk comece a carregar instantaneamente
-- O `PageFallback` (CinematicLoader) ja existe e cobre o intervalo
-- **Impacto: permite que o shell (React, Router, QueryClient) renderize antes da pagina completa**
+- Converter `SponsorAd` e `PwaFooterInstall` para lazy no Footer
 
-**4. `src/App.tsx`** — Lazy load Toaster e Sonner
+**3. `src/hooks/useGeoCity.ts`** — Evitar re-render cascading
 
-- Converter ambos para lazy imports com `Suspense fallback={null}`
-- Sao componentes de notificacao que so precisam estar montados quando um toast dispara (React Query ja faz buffering)
+O hook `useGeoCity` e chamado 3 vezes no critical path: Header, HeroBanner, e SearchBar. Cada instancia roda a mesma logica. Mover para um React Context no App.tsx evitaria chamadas duplicadas e re-renders em cascata.
+
+- Criar `GeoProvider` simples no App.tsx que chama `useGeoCity()` uma vez
+- Header, HeroBanner, SearchBar consomem via `useContext` em vez de chamar o hook diretamente
+
+**4. `src/pages/Index.tsx`** — Consolidar queries `home-counts` com `home-secondary-data`
+
+Atualmente ha 2 queries separadas (`home-counts` e `home-secondary-data`) que poderiam ser uma so, reduzindo 2 round-trips ao Supabase para 1.
+
+- Mover os counts (services, jobs) para dentro da query `home-secondary-data`
+- Remover query `home-counts` separada
+
+**5. `index.html`** — Adicionar `modulepreload` para o entry point
+
+O browser precisa descobrir o grafo de modulos sequencialmente. Adicionar `<link rel="modulepreload">` para o entry chunk principal permite que o browser comece a baixar os modulos criticos em paralelo com o HTML parsing.
+
+- Nao faremos manualmente (Vite ja gera isso no build). Em vez disso, verificar se o Vite esta gerando corretamente e, se nao, adicionar o plugin `vite-plugin-preload`.
+
+**6. `src/components/home/HeroBanner.tsx`** — Usar CSS `content-visibility: auto` nas secoes abaixo do hero
+
+Adicionar `content-visibility: auto` e `contain-intrinsic-size` nos wrappers de secao lazy do Index.tsx para que o browser pule o rendering de secoes fora da viewport.
+
+- No `Index.tsx`, adicionar `style={{ contentVisibility: 'auto', containIntrinsicSize: '0 400px' }}` nos wrappers de secao abaixo do fold
 
 ---
 
@@ -48,16 +56,17 @@
 ```text
 Mudanca                                    Economia estimada
 ────────────────────────────────────────────────────────────
-NotificationCenter lazy no Header          ~80-120KB critical JS
-Index lazy + prefetch imediato             code-split principal (~150KB)
-Throttle MutationObserver                  -50+ callbacks/hydration
-Defer cleanupFrequencyData                 -2ms boot bloqueio
-Lazy Toaster + Sonner                      ~15KB critical JS
+Lazy SearchBar + GeoLocationChip           ~40KB fora do LCP
+Lazy SponsorAd + PwaFooterInstall          ~15KB (Footer)
+GeoProvider context (eliminar duplicatas)  -2 re-renders cascata
+Consolidar home-counts + secondary-data    -1 round-trip Supabase
+content-visibility: auto nas secoes        -rendering offscreen
 ────────────────────────────────────────────────────────────
 ```
 
 ### Arquivos modificados
-- `src/components/Header.tsx`
-- `src/main.tsx`
-- `src/App.tsx`
+- `src/components/home/HeroBanner.tsx`
+- `src/components/Footer.tsx`
+- `src/App.tsx` (GeoProvider)
+- `src/pages/Index.tsx`
 
