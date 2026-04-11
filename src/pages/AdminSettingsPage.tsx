@@ -238,4 +238,81 @@ const TextSettingRow = ({ setting, onSave, onDelete }: { setting: any; onSave: (
   );
 };
 
+/* ====== Badge Verificado — Painel Agrupado ====== */
+const BADGE_KEYS = [
+  { key: 'verified_badge_enabled', label: 'Badge habilitado', type: 'boolean' },
+  { key: 'verified_badge_require_cnpj', label: 'Exigir CNPJ', type: 'boolean' },
+  { key: 'verified_badge_require_city', label: 'Exigir Cidade', type: 'boolean' },
+  { key: 'verified_badge_require_photo', label: 'Exigir Foto', type: 'boolean' },
+  { key: 'verified_badge_min_services', label: 'Mínimo de serviços', type: 'number' },
+  { key: 'verified_badge_min_albums', label: 'Mínimo de álbuns', type: 'number' },
+  { key: 'verified_badge_min_reviews', label: 'Mínimo de avaliações', type: 'number' },
+  { key: 'verified_badge_min_rating', label: 'Nota mínima', type: 'number' },
+];
+
+const VerifiedBadgeSection = ({ settings, onToggle, onSaveText, onRefresh }: {
+  settings: any[];
+  onToggle: (key: string, currentValue: string) => Promise<void>;
+  onSaveText: (key: string, value: string) => Promise<void>;
+  onRefresh: () => void;
+}) => {
+  const map = useMemo(() => {
+    const m: Record<string, string> = {};
+    settings.forEach((s: any) => { m[s.key] = s.value; });
+    return m;
+  }, [settings]);
+
+  const [localValues, setLocalValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const init: Record<string, string> = {};
+    BADGE_KEYS.forEach(b => { if (b.type === 'number') init[b.key] = map[b.key] || '0'; });
+    setLocalValues(init);
+  }, [map]);
+
+  return (
+    <div className="mt-6 rounded-xl border-2 border-accent/30 bg-accent/5 p-5">
+      <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-4">
+        <ShieldCheck className="h-5 w-5 text-accent" /> Selo Verificado — Regras
+      </h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        Configure os critérios para um profissional receber o badge "Verificado". Todas as condições ativas devem ser atendidas simultaneamente.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {BADGE_KEYS.map(({ key, label, type }) => {
+          const val = map[key];
+          if (type === 'boolean') {
+            return (
+              <div key={key} className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                <span className="text-sm font-medium text-foreground">{label}</span>
+                <Switch
+                  checked={val === 'true'}
+                  onCheckedChange={() => onToggle(key, val || 'false')}
+                />
+              </div>
+            );
+          }
+          return (
+            <div key={key} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+              <span className="text-sm font-medium text-foreground flex-1">{label}</span>
+              <Input
+                type="number"
+                min={0}
+                className="w-20 text-center"
+                value={localValues[key] ?? val ?? '0'}
+                onChange={(e) => setLocalValues(p => ({ ...p, [key]: e.target.value }))}
+              />
+              {(localValues[key] ?? '') !== (val ?? '') && (
+                <Button variant="accent" size="sm" onClick={() => onSaveText(key, localValues[key])}>
+                  <Save className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export default AdminSettingsPage;
