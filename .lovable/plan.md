@@ -1,60 +1,27 @@
 
 
-# Auditoria Completa da Plataforma — Resultados e Correções
+# Histórico de Sincronizações na Página de Mídia
 
-## Resultados da Varredura
+## Abordagem
 
-### Compilação TypeScript: LIMPO
-Zero erros de compilação.
+Usar a tabela `audit_log` existente para registrar cada sincronização (já temos `logAuditAction`), e adicionar uma seção colapsável na página de mídia mostrando o histórico.
 
-### Erros de Runtime/Console: LIMPO
-Nenhum erro detectado no navegador.
+## Implementação
 
-### Segurança (RLS/Banco): LIMPO
-Todos os findings de segurança já estão tratados ou ignorados com justificativa documentada. Linter retorna apenas warnings previamente aceitos.
+### 1. Registrar sincronizações no audit_log
+Alterar `syncStorage()` em `AdminMediaPage.tsx` para chamar `logAuditAction` após cada sincronização bem-sucedida, com action `media_uploaded`, resource_type `storage_sync`, e details contendo `{ inserted, scanned_buckets, existing_tracked, new_files_found }`.
 
-### Referências de código quebradas: LIMPO
-- `displayProviders`, `paginatedResults` — totalmente removidos, sem referências órfãs.
-- `handleImageError` — usado corretamente em 14 componentes com fallback gracioso.
-- Imagens do storage — zero registros com URLs vazios na tabela `media` ou `service_images`.
+### 2. Adicionar seção de histórico na UI
+Após os stats cards, adicionar um card colapsável "Histórico de Sincronizações" que:
+- Busca os últimos 20 registros de `audit_log` onde `resource_type = 'storage_sync'`
+- Mostra data/hora formatada, quantidade de arquivos sincronizados, e buckets escaneados
+- Inclui botão para expandir/recolher
 
-### Integridade de dados (user_ref): LIMPO
-- Zero perfis sem `user_ref`
-- Zero providers sem `user_ref`
-- Zero mídia órfã (`unlinked` ativa)
-- Zero `user_ref` duplicados
-
----
-
-## Problemas Encontrados (3)
-
-### 1. 14 "prestadores fantasma" aprovados sem dados
-Prestadores reais que se cadastraram mas nunca preencheram o perfil (sem nome, cidade, estado, coordenadas). Estão aprovados via `auto_approve` e poluem os resultados de busca.
-
-**Correção**: Migração SQL para mover esses 14 prestadores para status `pending` — forçando-os a completar o cadastro antes de aparecerem na busca. Também adicionar check no trigger `auto_approve_provider` para não aprovar providers sem cidade.
-
-### 2. Tabelas faltando no backup admin
-O módulo de backup (`AdminBackupPage`) cobre 30+ tabelas, mas faltam:
-- `portfolio_albums` e `portfolio_photos`
-- `media` (a biblioteca de mídia principal)
-- `provider_impressions`
-- `governance_rules` e `governance_changes_log`
-- `chat_conversations` e `chat_messages`
-
-**Correção**: Adicionar esses módulos ao array `MODULE_GROUPS`.
-
-### 3. Otimização de imagens: botão de compressão em lote
-O `AdminMediaPage` já tem scan de oversized e compressão individual. Verificar que o fluxo de compressão em lote (`batchCompressing`) está funcional e acessível.
-
----
-
-## Arquivos a Modificar
+## Arquivo modificado
 
 | Arquivo | Alteração |
 |---|---|
-| Migração SQL | Mover 14 providers fantasma para `pending`, adicionar check no `auto_approve_provider` |
-| `src/pages/AdminBackupPage.tsx` | Adicionar tabelas faltantes ao MODULE_GROUPS |
-| `src/pages/AdminMediaPage.tsx` | Verificar e garantir botão de compressão em lote funcional |
+| `src/pages/AdminMediaPage.tsx` | Adicionar log de auditoria no sync + seção de histórico com fetch do audit_log |
 
-Nenhuma mudança de frontend visual, routing ou segurança necessária.
+Sem mudanças de banco de dados — reutiliza a tabela `audit_log` existente.
 
