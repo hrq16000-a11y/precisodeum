@@ -81,22 +81,29 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Auth check — require admin
+    // Auth: accept CRON_SECRET header or admin JWT
+    const cronSecret = Deno.env.get("CRON_SECRET");
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return jsonResponse({ error: "Unauthorized" }, 401);
-
-    const callerClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: authError } = await callerClient.auth.getUser();
-    if (authError || !user) return jsonResponse({ error: "Unauthenticated" }, 401);
+    const cronHeader = req.headers.get("x-cron-secret");
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
-    const { data: roleCheck } = await supabase.rpc("has_role", {
-      _user_id: user.id,
-      _role: "admin",
-    });
-    if (!roleCheck) return jsonResponse({ error: "Admin access required" }, 403);
+
+    if (cronHeader && cronSecret && cronHeader === cronSecret) {
+      // Authorized via cron secret
+    } else if (authHeader) {
+      const callerClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user }, error: authError } = await callerClient.auth.getUser();
+      if (authError || !user) return jsonResponse({ error: "Unauthenticated" }, 401);
+      const { data: roleCheck } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+      if (!roleCheck) return jsonResponse({ error: "Admin access required" }, 403);
+    } else {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
 
     // Optional bucket filter
     let filterBucket: string | null = null;
