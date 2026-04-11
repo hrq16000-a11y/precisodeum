@@ -51,6 +51,7 @@ const CookiesPage = () => {
         </FadeInSection>
       </main>
       <Footer />
+    </div>
   );
 };
 
