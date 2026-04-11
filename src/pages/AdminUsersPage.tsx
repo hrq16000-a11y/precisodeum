@@ -375,6 +375,8 @@ const AdminUsersPage = () => {
           onFilterTypeChange={v => { setFilterType(v); setPage(1); }}
           filterStatus={filterStatus}
           onFilterStatusChange={v => { setFilterStatus(v); setPage(1); }}
+          filterProviderStatus={filterProviderStatus}
+          onFilterProviderStatusChange={v => { setFilterProviderStatus(v); setPage(1); }}
           totalResults={filtered.length}
           onExport={handleExport}
         />
