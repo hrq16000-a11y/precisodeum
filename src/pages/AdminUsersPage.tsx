@@ -487,6 +487,8 @@ const AdminUsersPage = () => {
           onViewDetails={setDetailUser}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
+          onApproveProvider={handleApproveProvider}
+          onRejectProvider={handleRejectProvider}
         />
       </div>
 
