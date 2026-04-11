@@ -43,7 +43,7 @@ const stagger = {
 
 const CategoryPage = () => {
   const { slug } = useParams();
-  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, requestPreciseLocation } = useGeoCity();
+  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, setRadius, requestPreciseLocation } = useGeoCity();
   const { data, isLoading } = useCategoryProviders(slug || '');
   const [page, setPage] = useState(1);
   const [showAllLocations, setShowAllLocations] = useState(false);
@@ -328,7 +328,37 @@ const CategoryPage = () => {
           </>
         )}
 
-        {totalDisplay === 0 && (
+        {/* Auto-expand suggestion when 0 local results but others exist */}
+        {!isFallback && localProviders.length === 0 && otherProviders.length > 0 && userLat != null && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="my-8 flex flex-col items-center gap-4 rounded-2xl border border-accent/20 bg-accent/5 p-6 text-center"
+          >
+            <Sparkles className="h-8 w-8 text-accent" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                Nenhum profissional de {category.name} a até {radiusKm}km
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Encontramos {otherProviders.length} profissional{otherProviders.length !== 1 ? 'is' : ''} em outras regiões
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {radiusKm < 50 && (
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setRadius(50)}>
+                  Expandir para 50km
+                </Button>
+              )}
+              <Button size="sm" className="gap-1.5" onClick={() => { setShowAllLocations(true); setPage(1); }}>
+                <Globe className="h-3.5 w-3.5" />
+                Ver todas as regiões
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {totalDisplay === 0 && otherProviders.length === 0 && (
           <EmptyStateFallback
             title={`Nenhum profissional de ${category.name} encontrado`}
             message="Seja o primeiro a se cadastrar nesta categoria!"

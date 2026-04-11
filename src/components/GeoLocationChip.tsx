@@ -1,19 +1,31 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { MapPin, ChevronDown, Check, Loader2, LocateFixed, SlidersHorizontal } from 'lucide-react';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { fetchAllMunicipalities, geocodeCity, normalize, type CityResult } from '@/lib/geoUtils';
+import { supabase } from '@/integrations/supabase/client';
+import { calculateDistanceKm } from '@/lib/geoDistance';
+import { normalize } from '@/lib/geoUtils';
 
 interface GeoLocationChipProps {
   variant?: 'default' | 'hero';
 }
 
+interface CityRow {
+  name: string;
+  state_uf: string | null;
+  state: string;
+  latitude: number | null;
+  longitude: number | null;
+  has_providers: boolean;
+  provider_count: number;
+}
+
 const RADIUS_OPTIONS = [5, 10, 30, 50, 100];
 
 const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
-  const { city, state, latitude, longitude, radiusKm, setCity, setRadius, requestPreciseLocation } = useGeoCity();
+  const { city, state, latitude, longitude, radiusKm, setCity, setRadius } = useGeoCity();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [allCities, setAllCities] = useState<CityResult[]>([]);
+  const [allCities, setAllCities] = useState<CityRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -32,28 +44,63 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
       setTimeout(() => inputRef.current?.focus(), 50);
       if (allCities.length === 0) {
         setLoading(true);
-        fetchAllMunicipalities().then((cities) => {
-          setAllCities(cities);
-          setLoading(false);
-        });
+        supabase
+          .from('cities')
+          .select('name, state_uf, state, latitude, longitude, has_providers, provider_count')
+          .order('provider_count', { ascending: false })
+          .limit(500)
+          .then(({ data }) => {
+            setAllCities((data as CityRow[]) || []);
+            setLoading(false);
+          });
       }
     }
   }, [open]);
 
   const displayText = city ? `${city}${state ? `, ${state}` : ''}` : 'Definir localização';
 
-  const filteredCities = useCallback(() => {
-    if (!search.trim()) return allCities.slice(0, 10);
-    const q = normalize(search);
-    const terms = q.split(/\s+/).filter(Boolean);
-    return allCities
-      .filter((c) => {
+  const filteredCities = useMemo(() => {
+    const hasGps = latitude != null && longitude != null;
+
+    let list = allCities;
+
+    // When searching, filter by text
+    if (search.trim()) {
+      const q = normalize(search);
+      const terms = q.split(/\s+/).filter(Boolean);
+      list = allCities.filter((c) => {
         const cityNorm = normalize(c.name);
-        const stateNorm = normalize(c.state);
+        const stateNorm = normalize(c.state_uf || c.state);
         return terms.every((t) => cityNorm.includes(t) || stateNorm.includes(t));
-      })
-      .slice(0, 10);
-  }, [search, allCities])();
+      });
+    }
+
+    // Calculate distances and sort by proximity when GPS available
+    if (hasGps) {
+      const withDist = list.map((c) => {
+        const dist = c.latitude != null && c.longitude != null
+          ? calculateDistanceKm(
+              { latitude: latitude!, longitude: longitude! },
+              { latitude: c.latitude, longitude: c.longitude }
+            )
+          : null;
+        return { ...c, _dist: dist };
+      });
+
+      // Sort: cities with coords by distance, then cities without coords
+      withDist.sort((a, b) => {
+        if (a._dist != null && b._dist != null) return a._dist - b._dist;
+        if (a._dist != null) return -1;
+        if (b._dist != null) return 1;
+        return 0;
+      });
+
+      return withDist.slice(0, 15);
+    }
+
+    // No GPS — show by provider count (already sorted), limit
+    return list.slice(0, 15).map((c) => ({ ...c, _dist: null as number | null }));
+  }, [search, allCities, latitude, longitude]);
 
   const handleAutoLocate = async () => {
     setLocating(true);
@@ -79,9 +126,7 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
             setLocating(false);
             setOpen(false);
           },
-          () => {
-            setLocating(false);
-          },
+          () => setLocating(false),
           { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
         );
       } else {
@@ -92,9 +137,8 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
     }
   };
 
-  const handleSelectCity = async (name: string, st: string) => {
-    const { latitude: lat, longitude: lon } = await geocodeCity(name, st);
-    setCity(name, st, lat, lon);
+  const handleSelectCity = (c: CityRow & { _dist: number | null }) => {
+    setCity(c.name, c.state_uf || c.state, c.latitude, c.longitude);
     setOpen(false);
     setSearch('');
   };
@@ -134,11 +178,7 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
             disabled={locating}
             className="flex w-full items-center gap-2.5 border-b border-border px-3 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-accent/5 disabled:opacity-50"
           >
-            {locating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <LocateFixed className="h-4 w-4" />
-            )}
+            {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
             {locating ? 'Detectando localização...' : 'Usar minha localização'}
           </button>
 
@@ -184,31 +224,40 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
             {loading && (
               <div className="flex items-center justify-center gap-2 px-3 py-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Carregando municípios...</span>
+                <span className="text-xs text-muted-foreground">Carregando cidades...</span>
               </div>
             )}
             {!loading && filteredCities.length === 0 && search.trim() && (
               <p className="px-3 py-2 text-xs text-muted-foreground">Nenhuma cidade encontrada</p>
             )}
-            {!loading && filteredCities.length === 0 && !search.trim() && allCities.length === 0 && (
-              <p className="px-3 py-2 text-xs text-muted-foreground">Erro ao carregar cidades.</p>
-            )}
-            {filteredCities.map((c, i) => (
-              <button
-                key={`${c.name}-${c.state}-${i}`}
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  void handleSelectCity(c.name, c.state);
-                }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
-              >
-                <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <span className="flex-1 truncate font-medium text-foreground">{c.name}</span>
-                <span className="text-xs text-muted-foreground">{c.state}</span>
-                {city === c.name && state === c.state && <Check className="h-3.5 w-3.5 text-accent" />}
-              </button>
-            ))}
+            {filteredCities.map((c, i) => {
+              const uf = c.state_uf || c.state;
+              const isSelected = city === c.name && state === uf;
+              const distLabel = c._dist != null
+                ? c._dist < 1 ? '< 1 km' : `${Math.round(c._dist)} km`
+                : null;
+              return (
+                <button
+                  key={`${c.name}-${uf}-${i}`}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelectCity(c);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+                >
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 truncate font-medium text-foreground">{c.name}</span>
+                  <span className="text-xs text-muted-foreground">{uf}</span>
+                  {distLabel && (
+                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                      {distLabel}
+                    </span>
+                  )}
+                  {isSelected && <Check className="h-3.5 w-3.5 text-accent" />}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

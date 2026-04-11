@@ -402,6 +402,8 @@ export type Database = {
           has_providers: boolean
           ibge_code: string | null
           id: string
+          latitude: number | null
+          longitude: number | null
           name: string
           provider_count: number
           slug: string
@@ -413,6 +415,8 @@ export type Database = {
           has_providers?: boolean
           ibge_code?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           name: string
           provider_count?: number
           slug: string
@@ -424,6 +428,8 @@ export type Database = {
           has_providers?: boolean
           ibge_code?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           provider_count?: number
           slug?: string
