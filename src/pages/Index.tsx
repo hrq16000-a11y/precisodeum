@@ -1,7 +1,7 @@
 import { lazy as reactLazy, Suspense, memo, Component, ReactNode, type ComponentType, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
+import { useHomeFeatureFlags } from '@/hooks/useHomeFeatureFlags';
 import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
@@ -11,9 +11,6 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 // Critical path — eagerly loaded
 import Header from '@/components/Header';
 import HeroBanner from '@/components/home/HeroBanner';
-
-// Near-fold — lazy but high priority
-import PageTransition from '@/components/PageTransition';
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
@@ -132,22 +129,13 @@ const Index = () => {
     },
   });
 
-  // Feature flags
-  const reviewsEnabled = useFeatureEnabled('reviews_enabled');
-  const featuredEnabled = useFeatureEnabled('featured_providers_enabled');
-  const popularSearchesEnabled = useFeatureEnabled('popular_searches_enabled');
-  const faqEnabled = useFeatureEnabled('faq_enabled');
-  const blogEnabled = useFeatureEnabled('module_blog');
-  const jobsEnabled = useFeatureEnabled('module_jobs');
-  const howItWorksEnabled = useFeatureEnabled('module_howitworks');
-  const ctaEnabled = useFeatureEnabled('module_cta');
-  const citiesEnabled = useFeatureEnabled('module_cities');
-  const sponsorsEnabled = useFeatureEnabled('module_sponsors');
-  const heroBannersEnabled = useFeatureEnabled('module_hero_banners');
-
-  // Section order from admin
-  const sectionsOrderRaw = useSettingValue('homepage_sections_order');
-  const hiddenSectionsRaw = useSettingValue('homepage_hidden_sections');
+  // Single unified hook for all feature flags (avoids 10+ re-render subscriptions)
+  const {
+    reviewsEnabled, featuredEnabled, popularSearchesEnabled, faqEnabled,
+    blogEnabled, jobsEnabled, howItWorksEnabled, ctaEnabled,
+    citiesEnabled, sponsorsEnabled, heroBannersEnabled,
+    sectionsOrderRaw, hiddenSectionsRaw,
+  } = useHomeFeatureFlags();
 
   const sectionOrder = useMemo(() => {
     const order = (sectionsOrderRaw || DEFAULT_ORDER).split(',').map(s => s.trim()).filter(Boolean);
@@ -158,8 +146,7 @@ const Index = () => {
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
 
-  // Consolidated secondary data — deferred until primary content renders
-  const primaryReady = categories.length > 0 || !catsLoading;
+  // Consolidated secondary data — fires in parallel (no waterfall)
   const { data: secondaryData } = useQuery({
     queryKey: ['home-secondary-data'],
     queryFn: async () => {
@@ -181,8 +168,7 @@ const Index = () => {
         },
       };
     },
-    staleTime: 1000 * 60 * 5,
-    enabled: primaryReady,
+    staleTime: 1000 * 60 * 10,
   });
 
   const topCities = secondaryData?.topCities || [];
@@ -191,8 +177,8 @@ const Index = () => {
   const sponsors = secondaryData?.sponsors || [];
   const counts = secondaryData?.counts;
 
-  // Section renderer — maps slug to component
-  const renderSection = (slug: string) => {
+  // Section renderer — memoized to avoid re-creation each render
+  const renderSection = useCallback((slug: string) => {
     switch (slug) {
       case 'cms_banners':
         return heroBannersEnabled ? <CmsBannersCarousel key={slug} /> : null;
@@ -224,7 +210,7 @@ const Index = () => {
       case 'popular':
         return <PopularServices key={slug} />;
       case 'recent':
-        return null; // Moved to /servicos page
+        return null;
       case 'ad2':
         return (
           <div key={slug}>
@@ -257,34 +243,37 @@ const Index = () => {
       default:
         return null;
     }
-  };
+  }, [
+    heroBannersEnabled, sponsorsEnabled, featuredEnabled, jobsEnabled,
+    blogEnabled, ctaEnabled, howItWorksEnabled, popularSearchesEnabled,
+    reviewsEnabled, faqEnabled, categories, catsLoading,
+    featuredProviders, provsLoading, geoCity,
+  ]);
 
   return (
-    <PageTransition>
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <HeroBanner />
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <HeroBanner />
 
-        {sectionOrder.map((slug, i) => {
-          const section = renderSection(slug);
-          if (!section) return null;
-          // Apply content-visibility to sections below the fold (index >= 3)
-          const cvStyle = i >= 3 ? { contentVisibility: 'auto' as const, containIntrinsicSize: '0 400px' } : undefined;
-          return (
-            <LazyErrorBoundary key={slug}>
-              <Suspense fallback={<SectionFallback slug={slug} />}>
-                <div style={cvStyle}>{section}</div>
-              </Suspense>
-            </LazyErrorBoundary>
-          );
-        })}
-        <LazyErrorBoundary>
-          <Suspense fallback={<SectionFallback />}>
-            <Footer />
-          </Suspense>
-        </LazyErrorBoundary>
-      </div>
-    </PageTransition>
+      {sectionOrder.map((slug, i) => {
+        const section = renderSection(slug);
+        if (!section) return null;
+        // Apply content-visibility to sections below the fold (index >= 3)
+        const cvStyle = i >= 3 ? { contentVisibility: 'auto' as const, containIntrinsicSize: '0 400px' } : undefined;
+        return (
+          <LazyErrorBoundary key={slug}>
+            <Suspense fallback={<SectionFallback slug={slug} />}>
+              <div style={cvStyle}>{section}</div>
+            </Suspense>
+          </LazyErrorBoundary>
+        );
+      })}
+      <LazyErrorBoundary>
+        <Suspense fallback={<SectionFallback />}>
+          <Footer />
+        </Suspense>
+      </LazyErrorBoundary>
+    </div>
   );
 };
 
