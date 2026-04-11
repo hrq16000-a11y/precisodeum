@@ -1005,7 +1005,8 @@ const ProviderProfile = () => {
 
                 {/* Trust Badges */}
                 <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-1.5">
-                  <TrustBadge icon={Shield} text="Perfil verificado" delay={0.5} />
+                  {isProfileVerified && <TrustBadge icon={Shield} text="Perfil verificado" delay={0.5} />}
+                  {!isProfileVerified && hasProfileImages && <TrustBadge icon={CheckCircle2} text="Perfil Completo" delay={0.5} />}
                   {provider.years_experience >= 3 && <TrustBadge icon={Award} text="Experiente" delay={0.6} />}
                   {provider.review_count >= 3 && <TrustBadge icon={ThumbsUp} text="Recomendado" delay={0.7} />}
                   {provider.response_time && (
