@@ -138,6 +138,10 @@ const AdminMediaPage = () => {
   }, [isAdmin]);
 
   useEffect(() => {
+    if (isAdmin) fetchSyncHistory();
+  }, [isAdmin]);
+
+  useEffect(() => {
     if (isAdmin && syncDone) {
       fetchMedia();
       fetchStats();
