@@ -7,7 +7,12 @@ import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer, C
 import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { NotificationBell } from '@/components/NotificationCenter';
+const LazyNotificationBell = lazy(() => importWithRetry(() => import('@/components/NotificationCenter').then(m => ({ default: m.NotificationBell }))));
+const NotificationBell = (props: any) => (
+  <Suspense fallback={<span className="h-5 w-5" />}>
+    <LazyNotificationBell {...props} />
+  </Suspense>
+);
 import { useMenuItems } from '@/hooks/useMenuItems';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';

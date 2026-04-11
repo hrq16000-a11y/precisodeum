@@ -1,8 +1,8 @@
 import { lazy as reactLazy, Suspense, useEffect, type ComponentType } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
+const Sonner = reactLazy(() => importWithRetry(() => import("@/components/ui/sonner").then(m => ({ default: m.Toaster }))));
+const Toaster = reactLazy(() => importWithRetry(() => import("@/components/ui/toaster").then(m => ({ default: m.Toaster }))));
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { importWithRetry, prefetchImportWithRetry } from "@/lib/lazyWithRetry";
@@ -29,8 +29,9 @@ const isTransientNetworkError = (error: unknown) => {
   );
 };
 
-// Eagerly loaded (critical path)
-import Index from "./pages/Index";
+// Index — lazy with immediate prefetch for instant feel
+const Index = reactLazy(() => importWithRetry(() => import("./pages/Index")));
+import("./pages/Index"); // start fetching right away
 
 // Lazy loaded pages
 const SearchPage = lazy(() => import("./pages/SearchPage"));
@@ -194,8 +195,8 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
+        <Suspense fallback={null}><Toaster /></Suspense>
+        <Suspense fallback={null}><Sonner /></Suspense>
         <BrowserRouter>
           <Suspense fallback={null}><CurtainReveal /></Suspense>
           <ScrollToTop />
