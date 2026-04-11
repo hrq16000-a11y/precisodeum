@@ -134,12 +134,12 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               {isVerified && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-bold text-accent border border-accent/20">
                   <BadgeCheck className="h-3 w-3" /> Verificado
                 </span>
               )}
               {!isVerified && hasImages && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
                   <BadgeCheck className="h-3 w-3" /> Perfil Completo
                 </span>
               )}
@@ -149,7 +149,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 </span>
               )}
               {isFallback && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200">
                   <MapPin className="h-3 w-3" /> Outra região
                 </span>
               )}
@@ -198,7 +198,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource)}
               {...handlers}
             >
-              Ver Perfil
+              Ver Perfil <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </Link>
           </Button>
         </div>
