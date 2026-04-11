@@ -13,6 +13,7 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useMemo, useEffect, useRef } from 'react';
 import { whatsappLink } from '@/lib/whatsapp';
+import { formatLocationString } from '@/lib/normalize';
 
 const ServiceDetailPage = () => {
   const { id } = useParams<{ id: string }>();
