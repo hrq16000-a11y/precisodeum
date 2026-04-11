@@ -1,60 +1,157 @@
+## Plano: Refatoracao Premium — Prova Social, Confianca e Conversao
 
+### Visao Geral
 
-## Plano: Corrigir flickering do GeoBadge e manter temperatura sincronizada
+Transformar a pagina de perfil e o card de listagem em "paginas de venda" do profissional, com prova social forte, selos de confianca e gatilhos de urgencia que guiam o olhar do usuario ate o botao de WhatsApp.
 
-### Problema
-1. **Flickering**: O `GeoBadge` é definido como função interna do `Header`, recriando-se a cada render. Quando o geo hook atualiza (cache → edge → IP API), o badge pisca várias vezes. Além disso, o console mostra um warning de "Function components cannot be given refs" por causa disso.
-2. **Temperatura desatualizada**: A temperatura é cacheada no `localStorage` e só é atualizada na primeira visita ou quando não existe. Não há mecanismo de refresh periódico.
+---
 
-### Solução
+### 1. Componente TrustShield — Selo de Verificacao Verde (Novo)
 
-**Arquivo: `src/components/Header.tsx`**
+**Arquivo:** `src/components/TrustShield.tsx`
 
-1. **Extrair `GeoBadge` para fora do componente `Header`** — evita recriação a cada render e elimina o warning de refs.
-2. **Adicionar animação suave de entrada** com CSS `transition` (opacity + transform) em vez de `animate-fade-in` que pisca a cada remontagem. Usar um wrapper com `transition-opacity duration-500` que faz fade-in apenas uma vez quando `geoCity` aparece.
-3. **Passar `geoCity` e `geoTemp` como props** para o componente extraído.
+Criar componente reutilizavel com icone `ShieldCheck` verde e texto "Identidade Verificada" ou "Documentacao Verificada". Aparece no perfil (header card) e no ProviderCard. Substitui o badge atual de "Verificado" por algo mais visualmente impactante — fundo verde claro, borda verde, icone solido.
 
-**Arquivo: `src/hooks/useGeoCity.ts`**
+### 2. Componente ReviewSummary — Resumo de Avaliacoes (Novo)
 
-4. **Adicionar refresh periódico da temperatura** — a cada 15 minutos, se já existem coordenadas, refazer `fetchTemp()` e atualizar o estado. Isso garante sincronização com a temperatura real sem sobrecarregar APIs.
-5. **Evitar múltiplos setGeoState quando os dados não mudam** — comparar antes de chamar `setGeoState` para reduzir re-renders desnecessários.
+**Arquivo:** `src/components/ReviewSummary.tsx`
 
-**Arquivo: `supabase/functions/geo-city-weather/index.ts`**
+Bloco compacto com: nota grande (ex: 4.9), estrelas preenchidas, total de avaliacoes, e badge de ranking (Top Rated Ouro/Prata/Bronze baseado na nota). Usado no topo do perfil logo apos o nome, e como versao compacta no ProviderCard.
 
-6. **Retornar `state` (UF) na resposta** — o edge function já recebe a info do IP API mas não retorna `state`. Adicionar para evitar chamadas duplicadas ao fallback.
+Ranking:
 
-### Detalhes técnicos
+- Ouro: rating >= 4.8 e reviewCount >= 10
+- Prata: rating >= 4.5 e reviewCount >= 5
+- Bronze: rating >= 4.0 e reviewCount >= 3
 
-```typescript
-// GeoBadge extraído (Header.tsx)
-const GeoBadge = ({ city, temp, className = '' }: { city: string | null; temp: number | null; className?: string }) => {
-  if (!city) return null;
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all duration-500 ease-out ${className}`}>
-      <MapPin className="h-3 w-3 text-accent" />
-      {city}
-      {temp !== null && (
-        <>
-          <span className="mx-0.5 text-border">·</span>
-          <Thermometer className="h-3 w-3 text-accent" />
-          {Math.round(temp)}°C
-        </>
-      )}
-    </span>
-  );
-};
+### 3. Componente TestimonialsCarousel — "Resultados Reais" (Novo)
+
+**Arquivo:** `src/components/TestimonialsCarousel.tsx`
+
+Secao no perfil que mostra os ultimos 3 reviews em cards com aspas, nome do cliente e estrelas. Titulo: "O que dizem nossos clientes". Usa dados reais de `reviews[]`. Se nao houver reviews, nao renderiza.
+
+### 4. Tags de Urgencia e Microcopy de Conversao (Novo)
+
+**Arquivo:** `src/components/ConversionTags.tsx`
+
+Tags dinamicas renderizadas proximo ao CTA:
+
+- "🔥 Muito requisitado na sua regiao" — se `review_count >= 5`
+- "⚡ Responde rapido" — se `response_time` existe
+- "✅ Orcamento sem compromisso" — sempre visivel
+
+Microcopy abaixo dos botoes CTA: "Orcamento sem compromisso. Fale direto com o profissional."
+
+### 5. Banner de Garantia (Novo)
+
+**Arquivo:** `src/components/TrustGuarantee.tsx`
+
+Pequeno banner discreto no perfil: icone de escudo + "Contratacao Segura — O combinado nao sai caro." Aparece entre as secoes, usando fundo `accent/5`.
+
+### 6. Refatorar ProviderProfile.tsx
+
+**Arquivo:** `src/pages/ProviderProfile.tsx`
+
+Integrar todos os novos componentes no header card e nas secoes:
+
+- **ReviewSummary** logo apos o nome/categoria (substitui o StarRating atual no header)
+- **TrustShield** no bloco de badges (substitui o badge simples "Perfil verificado")
+- **ConversionTags** entre os stats mini cards e os botoes CTA
+- **Microcopy** abaixo dos botoes CTA: texto pequeno em `muted-foreground`
+- **TrustGuarantee** banner apos a secao "Sobre"
+- **TestimonialsCarousel** como nova secao no `sectionMap` (apos reviews ou apos about)
+- Renomear titulo do Portfolio de "Portfolio" para "Trabalhos Realizados"
+
+### 7. Refatorar ProviderCard.tsx (Card de Listagem)
+
+**Arquivo:** `src/components/ProviderCard.tsx`
+
+- Substituir badge "Verificado" pelo **TrustShield** compacto (versao `size="sm"`)
+- Adicionar badge de ranking (Ouro/Prata/Bronze) ao lado do nome quando aplicavel
+- Adicionar tag "⚡ Responde rapido" se `response_time` existe
+- Adicionar microcopy "Orcamento sem compromisso" em texto pequeno abaixo dos botoes
+
+### 8. Refatorar FeaturedProviders.tsx (Card da Home)
+
+**Arquivo:** `src/components/home/FeaturedProviders.tsx`
+
+- Mesmo tratamento do ProviderCard: badge de ranking, TrustShield compacto, microcopy
+
+### 9. Remover filtro "Menor Preco" e garantir ordenacao correta
+
+**Arquivo:** `src/pages/SearchPage.tsx`
+
+O sort atual ja nao tem "menor preco" (confirmado). Manter apenas: Relevancia, Melhor Avaliacao, Mais Avaliacoes, Mais Experiencia, Nome A-Z/Z-A. Nenhuma alteracao necessaria — ja esta correto.
+
+---
+
+### Arquivos criados:
+
+- `src/components/TrustShield.tsx`
+- `src/components/ReviewSummary.tsx`
+- `src/components/TestimonialsCarousel.tsx`
+- `src/components/ConversionTags.tsx`
+- `src/components/TrustGuarantee.tsx`
+
+### Arquivos modificados:
+
+- `src/pages/ProviderProfile.tsx`
+- `src/components/ProviderCard.tsx`
+- `src/components/home/FeaturedProviders.tsx`
+
+### Detalhes tecnicos
+
+```text
+Hierarquia visual do perfil (de cima para baixo):
+┌─────────────────────────────────────┐
+│  Avatar + Nome + Badges (Destaque,  │
+│  TrustShield, Ranking Ouro/Prata)   │
+│  Categoria + Localizacao            │
+│  ReviewSummary (4.9 ★★★★★ 23 av.)  │
+├─────────────────────────────────────┤
+│  Stats Mini Cards                   │
+├─────────────────────────────────────┤
+│  ConversionTags (🔥⚡✅)            │
+├─────────────────────────────────────┤
+│  [Solicitar Orcamento] [WhatsApp]   │
+│  "Orcamento sem compromisso..."     │
+├─────────────────────────────────────┤
+│  Sobre o profissional               │
+│  TrustGuarantee banner              │
+├─────────────────────────────────────┤
+│  Trabalhos Realizados (Portfolio)    │
+│  Servicos                           │
+│  Resultados Reais (Testimonials)    │
+│  Avaliacoes                         │
+└─────────────────────────────────────┘
 ```
 
-```typescript
-// Refresh periódico de temperatura (useGeoCity.ts)
-const TEMP_REFRESH_MS = 15 * 60 * 1000; // 15 min
-let tempInterval: ReturnType<typeof setInterval> | null = null;
+Todos os componentes usam `framer-motion` para animacoes de entrada, cores do tema (`accent`, `muted-foreground`, `emerald` para trust), e sao responsivos mobile-first.
 
-// Iniciado quando coordenadas existem, atualiza temp silenciosamente
-```
+&nbsp;
 
-### Arquivos modificados
-- `src/components/Header.tsx` — extrair GeoBadge, animação suave
-- `src/hooks/useGeoCity.ts` — refresh de temperatura a cada 15 min, dedup de updates
-- `supabase/functions/geo-city-weather/index.ts` — retornar `state` na resposta
+.....
 
+&nbsp;
+
+&nbsp;
+
+Correção 
+
+&nbsp;
+
+&nbsp;
+
+Ajuste Crítico de Regra de Negócio:
+
+O plano geral está aprovado em termos de hierarquia e conversão, mas precisamos fazer um Ajuste Crítico de Escopo referente à responsabilidade da plataforma. Nossa plataforma é um guia comercial público. Nós NÃO fazemos validação de documentos (identidade, antecedentes) e NÃO intermediamos o serviço. Portanto, não podemos usar termos que impliquem responsabilidade jurídica da plataforma.
+
+Execute o plano com as seguintes modificações:
+
+Cancele o "TrustShield" de Identidade: Em vez de "Identidade Verificada", transforme o TrustShield no componente ProfileBadge. Ele deve exibir selos de engajamento na plataforma, como: "Perfil Completo" (se ele tem foto e serviços cadastrados) ou "Membro Ativo". A cor pode ser um azul de destaque ou laranja da marca, evitando o verde-escudo que remete à verificação governamental/bancária.
+
+Refatore o "TrustGuarantee" (Banner de Garantia): Como não garantimos o serviço, altere a cópia (texto) deste banner para focar na transparência da plataforma. O novo texto deve ser: "Negociação Direta: Sem taxas ocultas. Combine os detalhes do serviço diretamente com o profissional." Use um ícone de "Aperto de mãos" (Handshake) em vez de um Escudo.
+
+Confirmação do WhatsApp: Confirme se o Passo 7 (incluir o botão do WhatsApp lado a lado com o deep link whatsapp://send?phone=...) está mantido na nova hierarquia visual.
+
+Pode prosseguir com a implementação do plano atualizado.
