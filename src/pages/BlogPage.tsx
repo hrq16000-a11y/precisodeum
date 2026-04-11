@@ -2,8 +2,10 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import FadeInSection from '@/components/FadeInSection';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, ArrowRight, Sparkles, Newspaper, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -96,17 +98,26 @@ const BlogPage = () => {
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
 
-      {/* Hero header */}
-      <div className="bg-hero py-8 sm:py-12">
+      <FadeInSection className="bg-hero py-8 sm:py-12" blur={false}>
         <div className="container px-4 text-center">
-          <h1 className="font-display text-2xl font-bold text-primary-foreground sm:text-3xl lg:text-4xl">
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="font-display text-2xl font-bold text-primary-foreground sm:text-3xl lg:text-4xl"
+          >
             📰 Notícias
-          </h1>
-          <p className="mx-auto mt-2 max-w-lg text-sm text-primary-foreground/80 sm:text-base">
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="mx-auto mt-2 max-w-lg text-sm text-primary-foreground/80 sm:text-base"
+          >
             Dicas, novidades e conteúdos sobre serviços profissionais
-          </p>
+          </motion.p>
         </div>
-      </div>
+      </FadeInSection>
 
       <main className="container flex-1 px-4 py-6 sm:py-8">
         {isLoading ? (
@@ -130,31 +141,51 @@ const BlogPage = () => {
           </div>
         ) : (
           <>
-            {highlights.length > 0 && (
-              <section>
+             {highlights.length > 0 && (
+              <FadeInSection viewportTrigger direction="up" delay={0.1}>
                 <div className="mb-4 flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-accent" />
                   <h2 className="font-display text-lg font-bold text-foreground">Destaques</h2>
                 </div>
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <motion.div
+                  className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                  initial="hidden"
+                  animate="show"
+                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}
+                >
                   {highlights.map((p) => (
-                    <PostCard key={p.id} post={p} highlight />
+                    <motion.div
+                      key={p.id}
+                      variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+                    >
+                      <PostCard post={p} highlight />
+                    </motion.div>
                   ))}
-                </div>
-              </section>
+                </motion.div>
+              </FadeInSection>
             )}
 
             {rest.length > 0 && (
-              <section className="mt-8 sm:mt-10">
+              <FadeInSection viewportTrigger direction="up" delay={0.2} className="mt-8 sm:mt-10">
                 <h2 className="mb-4 font-display text-lg font-bold text-foreground">
                   Todas as Publicações
                 </h2>
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <motion.div
+                  className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                  initial="hidden"
+                  animate="show"
+                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
+                >
                   {rest.map((p) => (
-                    <PostCard key={p.id} post={p} />
+                    <motion.div
+                      key={p.id}
+                      variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }}
+                    >
+                      <PostCard post={p} />
+                    </motion.div>
                   ))}
-                </div>
-              </section>
+                </motion.div>
+              </FadeInSection>
             )}
           </>
         )}

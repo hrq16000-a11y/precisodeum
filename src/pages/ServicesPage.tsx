@@ -227,7 +227,7 @@ const ServicesPage = () => {
       </section>
 
       {/* CTA */}
-      <section className="border-t border-border bg-muted/30 py-10">
+      <FadeInSection viewportTrigger direction="up" className="border-t border-border bg-muted/30 py-10">
         <div className="container text-center">
           <h2 className="font-display text-xl font-bold text-foreground">
             Não encontrou o que procura?
@@ -241,7 +241,7 @@ const ServicesPage = () => {
             </Link>
           </Button>
         </div>
-      </section>
+      </FadeInSection>
     </div>
   );
 };

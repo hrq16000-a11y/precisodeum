@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import FadeInSection from '@/components/FadeInSection';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import {
   Accordion,
@@ -34,17 +36,33 @@ const FaqPage = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">
-        <section className="bg-gradient-to-br from-primary/10 to-accent/10 py-12">
+        <FadeInSection className="bg-gradient-to-br from-primary/10 to-accent/10 py-12">
           <div className="container text-center">
-            <HelpCircle className="mx-auto h-12 w-12 text-primary" />
-            <h1 className="mt-4 font-display text-3xl font-bold text-foreground md:text-4xl">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, type: 'spring' }}
+            >
+              <HelpCircle className="mx-auto h-12 w-12 text-primary" />
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="mt-4 font-display text-3xl font-bold text-foreground md:text-4xl"
+            >
               Perguntas Frequentes
-            </h1>
-            <p className="mt-2 text-muted-foreground">
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="mt-2 text-muted-foreground"
+            >
               Encontre respostas para as dúvidas mais comuns sobre a plataforma
-            </p>
+            </motion.p>
           </div>
-        </section>
+        </FadeInSection>
 
         <section className="py-10">
           <div className="container max-w-3xl">
@@ -56,19 +74,25 @@ const FaqPage = () => {
               </div>
             ) : (
               <Accordion type="single" collapsible className="space-y-3">
-                {faqs.map((faq: any) => (
-                  <AccordionItem
+                {faqs.map((faq: any, index: number) => (
+                  <motion.div
                     key={faq.id}
-                    value={faq.id}
-                    className="rounded-xl border border-border bg-card px-5 shadow-card"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: index * 0.05 }}
                   >
-                    <AccordionTrigger className="text-left text-sm font-semibold text-foreground hover:no-underline sm:text-base">
-                      {faq.question}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-                      {faq.answer}
-                    </AccordionContent>
-                  </AccordionItem>
+                    <AccordionItem
+                      value={faq.id}
+                      className="rounded-xl border border-border bg-card px-5 shadow-card"
+                    >
+                      <AccordionTrigger className="text-left text-sm font-semibold text-foreground hover:no-underline sm:text-base">
+                        {faq.question}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                        {faq.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </motion.div>
                 ))}
               </Accordion>
             )}

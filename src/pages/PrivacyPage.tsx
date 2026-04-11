@@ -1,5 +1,7 @@
+import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import FadeInSection from '@/components/FadeInSection';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 const PrivacyPage = () => {
@@ -9,9 +11,22 @@ const PrivacyPage = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1 py-10">
-        <div className="container max-w-3xl">
-          <h1 className="font-display text-3xl font-bold text-foreground">Política de Privacidade</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Última atualização: Março de 2026</p>
+        <FadeInSection className="container max-w-3xl" blur={false}>
+          <motion.h1
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="font-display text-3xl font-bold text-foreground"
+          >
+            Política de Privacidade
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            className="mt-2 text-sm text-muted-foreground"
+          >
+            Última atualização: Março de 2026
+          </motion.p>
 
           <div className="mt-8 space-y-6 text-sm leading-relaxed text-muted-foreground">
             <section>
@@ -39,7 +54,7 @@ const PrivacyPage = () => {
               <p className="mt-2">Para questões relacionadas à privacidade, entre em contato pelo WhatsApp (41) 99745-2053 ou envie uma mensagem pela plataforma.</p>
             </section>
           </div>
-        </div>
+        </FadeInSection>
       </main>
       <Footer />
     </div>
