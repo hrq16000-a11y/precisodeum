@@ -180,7 +180,7 @@ const CategoryPage = () => {
           >
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1.5 text-sm font-medium text-primary-foreground">
               <Users className="h-3.5 w-3.5" />
-              {displayProviders.length} profissional(is)
+              {allProviders.length} profissional(is)
             </span>
             {geoCity && !isFallback && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1.5 text-sm font-medium text-primary-foreground">
