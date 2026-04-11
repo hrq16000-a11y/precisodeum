@@ -17,7 +17,7 @@ export function useSiteSettings() {
       });
       return { flags: map, values: raw };
     },
-    staleTime: 60000,
+    staleTime: 1000 * 60 * 5,
   });
 }
 

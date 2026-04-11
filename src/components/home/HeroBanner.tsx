@@ -181,7 +181,7 @@ const HeroBanner = () => {
           alt="Profissionais de serviços"
           width={1920}
           height={768}
-          fetchPriority={i === bgIndex ? 'high' : 'low'}
+          fetchpriority={i === bgIndex ? 'high' : 'low'}
           loading={i === bgIndex ? 'eager' : 'lazy'}
           decoding={i === bgIndex ? 'sync' : 'async'}
           className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[1500ms] ease-in-out ${i === bgIndex ? 'opacity-100 hero-img-cinematic' : 'opacity-0'}`}
