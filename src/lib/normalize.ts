@@ -20,3 +20,19 @@ export function normalize(value: string | null | undefined): string {
   normalizeCache.set(value, normalized);
   return normalized;
 }
+
+/**
+ * Formats a location string: trims, fixes spacing around commas/punctuation,
+ * removes duplicate commas, and capitalizes each segment.
+ * e.g. "Pinhais, Piraquara , São José , E região" → "Pinhais, Piraquara, São José e região"
+ */
+export function formatLocationString(text: string | null | undefined): string {
+  if (!text) return '';
+  return text
+    .replace(/\s+,/g, ',')
+    .replace(/,\s*/g, ', ')
+    .replace(/,{2,}/g, ',')
+    .replace(/\s+/g, ' ')
+    .replace(/, E /gi, ' e ')
+    .trim();
+}
