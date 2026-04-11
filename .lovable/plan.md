@@ -1,40 +1,53 @@
 
 
-# Otimização em Lote das Imagens de Portfólio Existentes
+# Compressão WebP Real no Upload + Indicador de Economia + Serviços
 
-## Situação atual
-- **419 imagens** acima de 200KB no bucket `portfolio`
-- **~870MB** de espaço desperdiçado (imagens de 200KB a 4.8MB)
-- A Edge Function `optimize-image` já suporta otimizar arquivos existentes (MODE 1: JSON com bucket + path)
+## Problema
+O MODE 2 da Edge Function `optimize-image` (upload de arquivo novo) apenas faz upload do arquivo original com deduplicação SHA-256, mas **não comprime**. A compressão real (MODE 1) só acontece para arquivos já existentes. Isso significa que fotos de portfólio e serviço são armazenadas no tamanho original.
 
-## Solução
-Criar uma nova Edge Function `batch-optimize-portfolio` que:
-1. Lista todos os arquivos do bucket `portfolio` recursivamente
-2. Para cada imagem acima de 200KB, chama internamente a mesma lógica de otimização da `optimize-image` (Supabase Image Transforms)
-3. Processa em lotes de 10 para não sobrecarregar
-4. Retorna relatório com total processado, economia total, e erros
+## Solução em 3 partes
 
-## Implementação
+### 1. Edge Function: adicionar compressão real no MODE 2
 
-### Nova Edge Function: `supabase/functions/batch-optimize-portfolio/index.ts`
-- Autenticação: requer admin (verifica `has_role`)
-- Escaneia recursivamente o bucket `portfolio`
-- Filtra apenas arquivos > 200KB e com extensão jpg/jpeg/png/webp (ignora GIF e MP4)
-- Para cada arquivo, usa `optimizeViaTransform()` (mesma lógica da `optimize-image`) para obter versão otimizada
-- Re-upload com `supabase.storage.update()` substituindo o original
-- Atualiza `size_optimized` na tabela `media` quando aplicável
-- Retorna JSON com: `total_scanned`, `total_optimized`, `total_skipped`, `savings_kb`, `errors[]`
+**Arquivo:** `supabase/functions/optimize-image/index.ts`
 
-### Adicionar botão na página Admin Mídia
-- Em `AdminMediaPage.tsx`, adicionar botão "Otimizar Portfólio" que chama a nova Edge Function
-- Mostra progresso e resultado final com toast
+Após o upload no MODE 2 (linhas 284-301), adicionar o mesmo fluxo de otimização do MODE 1:
+- Upload do arquivo original (já existente)
+- Chamar `optimizeViaTransform()` para obter versão comprimida
+- Re-upload com `storage.update()` substituindo o original
+- Retornar `original_size`, `optimized_size`, `savings_percent` na resposta JSON
+
+Isso garante que **todo novo upload** já é armazenado comprimido.
+
+### 2. Indicador visual de economia no portfólio
+
+**Arquivo:** `src/pages/DashboardPortfolioPage.tsx`
+
+Após receber a resposta da edge function com `savings_percent`, exibir um toast detalhado:
+```
+toast.success(`Imagem otimizada: 2.1MB → 180KB (-91%)`)
+```
+Usar os campos `original_size`, `optimized_size` e `savings_percent` retornados pela edge function.
+
+### 3. Compressão automática no upload de imagens de serviço
+
+**Arquivo:** `src/components/ServiceImageUpload.tsx`
+
+Substituir o upload direto (`supabase.storage.from('service-images').upload(...)`) pela mesma chamada `fetch` à edge function `optimize-image`, idêntica ao padrão já usado no portfólio:
+- `FormData` com `file`, `bucket: 'service-images'`, `folder: '{userId}/{serviceId}'`
+- Usar `data.url` e `data.path` retornados
+- Exibir toast com economia de tamanho
 
 ## Detalhes técnicos
 
 | Arquivo | Alteração |
 |---|---|
-| `supabase/functions/batch-optimize-portfolio/index.ts` | Nova Edge Function para otimização em lote |
-| `src/pages/AdminMediaPage.tsx` | Botão para disparar a otimização em lote |
+| `supabase/functions/optimize-image/index.ts` | Adicionar otimização pós-upload no MODE 2 (linhas 284-301) |
+| `src/pages/DashboardPortfolioPage.tsx` | Toast com indicador de economia usando campos da resposta |
+| `src/components/ServiceImageUpload.tsx` | Substituir upload direto por chamada à edge function |
 
 Sem migração de banco necessária.
+
+### Teste
+Após implementação, testar upload de foto no portfólio via preview para confirmar compressão e indicador visual.
 
