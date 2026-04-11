@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Trash2, Eye, EyeOff, Search, Image as ImageIcon, RefreshCw, Download, AlertTriangle, Loader2, CloudUpload } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Trash2, Eye, EyeOff, Search, Image as ImageIcon, RefreshCw, Download, AlertTriangle, Loader2, CloudUpload, History, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
