@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Upload, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleImageError } from '@/lib/imageResolver';
+import { compressImage } from '@/lib/compressImage';
 
 interface ImageUploadFieldProps {
   value: string;
@@ -27,10 +28,17 @@ const ImageUploadField = ({
   const [mode, setMode] = useState<'url' | 'upload'>('url');
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const raw = e.target.files?.[0];
+    if (!raw) return;
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (raw.size > 5 * 1024 * 1024) {
+      toast.error('Imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const file = await compressImage(raw);
       toast.error('Imagem deve ter no máximo 5MB');
       return;
     }
