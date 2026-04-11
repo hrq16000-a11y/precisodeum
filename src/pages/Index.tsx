@@ -203,7 +203,7 @@ const Index = () => {
       case 'sponsor_top':
         return sponsorsEnabled ? <SponsorTopBanner key={slug} /> : null;
       case 'stats':
-        return <StatsCounter key={slug} />;
+        return null;
       case 'highlights':
         return <HighlightsCarousel key={slug} />;
       case 'categories':
