@@ -163,7 +163,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
           </div>
         )}
 
-        {provider.description && (
+        {provider.description && !/cadastrado na plataforma|entre em contato para mais informa/i.test(provider.description) && (
           <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
             {provider.description}
           </p>
