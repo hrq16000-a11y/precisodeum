@@ -319,3 +319,103 @@ const VerifiedBadgeSection = ({ settings, onToggle, onSaveText, onRefresh }: {
 };
 
 export default AdminSettingsPage;
+
+/* ====== Regras de Perfil / DESTAQUE — Painel Agrupado ====== */
+const PROFILE_RULE_KEYS = [
+  { key: 'destaque_require_avatar', label: 'DESTAQUE: Exigir avatar', type: 'boolean' },
+  { key: 'destaque_require_portfolio', label: 'DESTAQUE: Exigir portfólio', type: 'boolean' },
+  { key: 'destaque_require_services', label: 'DESTAQUE: Exigir serviços', type: 'boolean' },
+  { key: 'destaque_min_services', label: 'DESTAQUE: Mín. serviços', type: 'number' },
+  { key: 'destaque_min_portfolio', label: 'DESTAQUE: Mín. álbuns', type: 'number' },
+  { key: 'incomplete_profile_hide_public', label: 'Ocultar perfis incompletos', type: 'boolean' },
+  { key: 'incomplete_profile_auto_delete', label: 'Exclusão automática', type: 'boolean' },
+  { key: 'incomplete_profile_days_limit', label: 'Prazo (dias)', type: 'number' },
+  { key: 'avatar_fallback_style', label: 'Estilo avatar gerado', type: 'select', options: ['adventurer', 'bottts', 'fun-emoji', 'thumbs', 'lorelei', 'avataaars', 'big-ears'] },
+];
+
+const ProfileRulesSection = ({ settings, onToggle, onSaveText }: {
+  settings: any[];
+  onToggle: (key: string, currentValue: string) => Promise<void>;
+  onSaveText: (key: string, value: string) => Promise<void>;
+}) => {
+  const map = useMemo(() => {
+    const m: Record<string, string> = {};
+    settings.forEach((s: any) => { m[s.key] = s.value; });
+    return m;
+  }, [settings]);
+
+  const [localValues, setLocalValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const init: Record<string, string> = {};
+    PROFILE_RULE_KEYS.forEach(b => {
+      if (b.type === 'number' || b.type === 'select') init[b.key] = map[b.key] || '';
+    });
+    setLocalValues(init);
+  }, [map]);
+
+  const avatarStyle = localValues['avatar_fallback_style'] || map['avatar_fallback_style'] || 'adventurer';
+  const previewUrl = `https://api.dicebear.com/9.x/${avatarStyle}/svg?seed=preview123`;
+
+  return (
+    <div className="mt-6 rounded-xl border-2 border-primary/30 bg-primary/5 p-5">
+      <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+        <Crown className="h-5 w-5 text-accent" /> Regras de Perfil e Selo DESTAQUE
+      </h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        Configure os critérios para o selo DESTAQUE, política de perfis incompletos e estilo de avatar automático.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {PROFILE_RULE_KEYS.map(({ key, label, type, options }) => {
+          const val = map[key];
+          if (type === 'boolean') {
+            return (
+              <div key={key} className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                <span className="text-sm font-medium text-foreground">{label}</span>
+                <Switch checked={val === 'true'} onCheckedChange={() => onToggle(key, val || 'false')} />
+              </div>
+            );
+          }
+          if (type === 'select' && options) {
+            return (
+              <div key={key} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+                <span className="text-sm font-medium text-foreground flex-1">{label}</span>
+                <Select value={localValues[key] || val || ''} onValueChange={(v) => { setLocalValues(p => ({ ...p, [key]: v })); onSaveText(key, v); }}>
+                  <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          }
+          return (
+            <div key={key} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+              <span className="text-sm font-medium text-foreground flex-1">{label}</span>
+              <Input
+                type="number"
+                min={0}
+                className="w-20 text-center"
+                value={localValues[key] ?? val ?? '0'}
+                onChange={(e) => setLocalValues(p => ({ ...p, [key]: e.target.value }))}
+              />
+              {(localValues[key] ?? '') !== (val ?? '') && (
+                <Button variant="accent" size="sm" onClick={() => onSaveText(key, localValues[key])}>
+                  <Save className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {/* Avatar preview */}
+      <div className="mt-4 flex items-center gap-4 rounded-lg border border-border bg-card p-3">
+        <img src={previewUrl} alt="Preview avatar" className="h-14 w-14 rounded-xl" />
+        <div>
+          <p className="text-sm font-medium text-foreground">Preview do avatar gerado</p>
+          <p className="text-xs text-muted-foreground">Estilo: <strong>{avatarStyle}</strong> — Usado quando o profissional não tem foto própria</p>
+        </div>
+      </div>
+    </div>
+  );
+};
