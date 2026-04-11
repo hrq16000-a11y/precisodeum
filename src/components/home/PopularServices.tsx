@@ -116,8 +116,7 @@ const PopularServices = () => {
           className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
           variants={containerVariants}
           initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-40px' }}
+          animate="show"
         >
           {displayed.map((s: any, i: number) => {
             const problem = getServiceProblem(s.name, s.slug, s.description);

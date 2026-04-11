@@ -57,8 +57,7 @@ const CtaSection = () => {
                   <motion.div
                     key={block.id}
                     initial={{ opacity: 0, y: 30, scale: 0.97 }}
-                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                    viewport={{ once: true, margin: '-40px' }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.5, delay: i * 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
                   >
                     <div className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br from-${colorBase}/5 to-${colorBase}/10 border border-${colorBase}/20 p-8 text-center transition-all duration-500 hover:border-${colorBase}/40 hover:shadow-lg`}>
@@ -120,8 +119,7 @@ const CtaSection = () => {
           <div className="container text-center relative">
             <motion.div
               initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
               <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
@@ -132,8 +130,7 @@ const CtaSection = () => {
               </p>
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
                 className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
               >

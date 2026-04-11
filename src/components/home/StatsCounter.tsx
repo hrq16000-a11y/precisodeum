@@ -50,8 +50,7 @@ const StatItem = memo(({ stat, value, index }: { stat: typeof stats[number]; val
     <motion.div
       ref={ref}
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, margin: '-40px' }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.4, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="group relative flex flex-col items-center gap-2 py-4 px-3 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50 shadow-sm"
     >

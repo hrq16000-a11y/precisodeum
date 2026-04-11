@@ -55,8 +55,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          animate={{ opacity: 1, y: 0 }}
           className="mb-8 text-center"
         >
           <span className="inline-block rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent mb-2">
@@ -81,8 +80,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
             <motion.div
               variants={container}
               initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-60px' }}
+              animate="visible"
               className="grid grid-cols-2 gap-3 md:grid-cols-4"
             >
               {visible.map((cat) => (
@@ -125,8 +123,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
 
             <motion.div
               initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
               className="mt-6 text-center"
             >
