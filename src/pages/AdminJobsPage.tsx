@@ -47,7 +47,7 @@ const emptyForm = {
   contact_name: '', contact_phone: '', whatsapp: '', salary: '',
   benefits: '', activities: '', requirements: '', schedule: '',
   deadline: '', status: 'active', approval_status: 'approved',
-  cover_image_url: '',
+  cover_image_url: '', user_id: '',
 };
 
 const AdminJobsPage = () => {
@@ -196,6 +196,7 @@ const AdminJobsPage = () => {
       deadline: job.deadline || '', status: job.status || 'active',
       approval_status: job.approval_status || 'approved',
       cover_image_url: job.cover_image_url || '',
+      user_id: job.user_id || '',
     });
   };
 
