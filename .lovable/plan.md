@@ -1,34 +1,32 @@
 
 
-# Fix: Touch Navigation nas Imagens do ImageLightbox
+## Plan: Refinar Perfil do Profissional — Hierarquia, Dados e Consistência Visual
 
-## Problema
+### 1. Criar função `capitalizeName` em `src/lib/normalize.ts`
+Função que capitaliza nomes próprios respeitando preposições portuguesas (de, dos, da, e, etc.).
+- `"luiz marcelo de sousa"` → `"Luiz Marcelo de Sousa"`
+- Aplicar no display do nome em `ProviderProfile.tsx` (linha 492), `FeaturedProviders.tsx`, e breadcrumbs.
 
-O código do `ImageLightbox.tsx` já tem os touch handlers implementados corretamente no wrapper div (linhas 178-183), mas há um conflito: o `onClick={handleTap}` no mesmo div dispara após o `onTouchEnd`, interferindo com o swipe. Além disso, o `handleTap` não verifica `swiping.current`, então após um swipe o click event ainda é processado.
+### 2. Refatorar o Header do Perfil (`ProviderProfile.tsx`)
+**H1 limitado a 2 linhas** (linhas 929-933 e 996):
+- O `pageSettings.headline` (que recebe texto gigante de descrição) deve ser limitado com `line-clamp-2` no H1.
+- Se não houver headline customizado, usar `"{Nome} — {Categoria}"` como H1.
+- Mover o texto longo da descrição/headline para a seção "Sobre o Profissional" (`renderAbout`), que já existe.
 
-## Solução
+### 3. Aplicar `formatLocationString` na localização do perfil
+Na linha 1029, a string de localização (`neighborhood, city - state`) não passa pela função de limpeza. Aplicar `formatLocationString` para corrigir espaços antes de vírgulas.
 
-**Arquivo:** `src/components/ImageLightbox.tsx`
+### 4. Remover tag "Usuário" (levelInfo)
+Linhas 1008-1013: A tag `provider.levelInfo.name` (ex: "Usuário") é redundante em perfil profissional. Remover essa exibição, mantendo apenas `accTypeInfo` (Premium) e `DESTAQUE`.
 
-1. **Prevenir conflito click/touch**: No `handleTap`, verificar `swiping.current` — se `true`, ignorar o tap e resetar a flag
-2. **Resetar swiping no touchEnd**: Garantir que `swiping.current` seja resetado corretamente após processar o swipe (atualmente é resetado no touchStart, mas pode ficar `true` quando o click dispara)
-3. **Prevenir default no touchMove** para swipes horizontais (não apenas pinch), evitando que o browser trate o gesto como scroll/navigation
+### 5. Remover texto de experiência ao lado da localização
+Linhas 1032-1037: Remover o bloco `{provider.years_experience} anos exp.` que aparece junto da localização, já que essa info está no StatMiniCard.
 
-Mudanças no `handleTap`:
-```tsx
-const handleTap = useCallback(() => {
-  if (swiping.current) { swiping.current = false; return; }
-  // ... double-tap logic
-}, [scale, resetZoom, flashControls]);
-```
+### 6. Padronizar cor do botão "Solicitar Orçamento" para `variant="accent"`
+O botão já usa `variant="accent"` (linha 1117), que é o laranja da marca. O screenshot mostra azul provavelmente por `accentBg` override ou `pageSettings.accent_color`. Garantir que quando `accent_color` estiver vazio, o botão use a cor accent padrão (laranja) e não caia em fallback azul. Verificar se `variant="accent"` está corretamente definido no design system.
 
-Mudança no `onTouchMove` — adicionar `e.preventDefault()` quando detectar swipe horizontal:
-```tsx
-if (dxAbs > dyAbs && dxAbs > 10) {
-  swiping.current = true;
-  e.preventDefault(); // prevent browser back/forward gesture
-}
-```
-
-Alteração confinada a um único arquivo, sem dependências.
+### Arquivos modificados:
+- `src/lib/normalize.ts` — adicionar `capitalizeName()`
+- `src/pages/ProviderProfile.tsx` — todas as 5 alterações acima
+- `src/components/home/FeaturedProviders.tsx` — aplicar `capitalizeName` no `displayName`
 
