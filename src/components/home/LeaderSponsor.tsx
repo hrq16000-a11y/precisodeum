@@ -60,6 +60,7 @@ const LeaderSponsor = memo(forwardRef<HTMLElement, Props>(({ sponsors, onClickTr
 
   return (
     <motion.section
+      ref={ref}
       aria-label="Patrocinador"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
