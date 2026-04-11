@@ -3,7 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Settings, Save, Plus, Trash2, X, ShieldCheck, Crown } from 'lucide-react';
+import { Settings, Save, Plus, Trash2, X, ShieldCheck, Crown, FolderSync, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import ImageUploadField from '@/components/ImageUploadField';
@@ -325,6 +325,7 @@ const PROFILE_RULE_KEYS = [
   { key: 'destaque_require_avatar', label: 'DESTAQUE: Exigir avatar', type: 'boolean' },
   { key: 'destaque_require_portfolio', label: 'DESTAQUE: Exigir portfólio', type: 'boolean' },
   { key: 'destaque_require_services', label: 'DESTAQUE: Exigir serviços', type: 'boolean' },
+  { key: 'destaque_require_description', label: 'DESTAQUE: Exigir descrição', type: 'boolean' },
   { key: 'destaque_min_services', label: 'DESTAQUE: Mín. serviços', type: 'number' },
   { key: 'destaque_min_portfolio', label: 'DESTAQUE: Mín. álbuns', type: 'number' },
   { key: 'incomplete_profile_hide_public', label: 'Ocultar perfis incompletos', type: 'boolean' },
@@ -338,6 +339,8 @@ const ProfileRulesSection = ({ settings, onToggle, onSaveText }: {
   onToggle: (key: string, currentValue: string) => Promise<void>;
   onSaveText: (key: string, value: string) => Promise<void>;
 }) => {
+  const [migrating, setMigrating] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<any>(null);
   const map = useMemo(() => {
     const m: Record<string, string> = {};
     settings.forEach((s: any) => { m[s.key] = s.value; });
@@ -415,6 +418,51 @@ const ProfileRulesSection = ({ settings, onToggle, onSaveText }: {
           <p className="text-sm font-medium text-foreground">Preview do avatar gerado</p>
           <p className="text-xs text-muted-foreground">Estilo: <strong>{avatarStyle}</strong> — Usado quando o profissional não tem foto própria</p>
         </div>
+      </div>
+      {/* Migration button */}
+      <div className="mt-4 rounded-lg border border-border bg-card p-4">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
+          <FolderSync className="h-4 w-4 text-accent" /> Migração de Portfólio Legado
+        </h3>
+        <p className="text-xs text-muted-foreground mb-3">
+          Cria álbuns "Meus Trabalhos" para profissionais que têm fotos no storage mas nenhum álbum criado. Vincula fotos existentes ao sistema de álbuns.
+        </p>
+        {migrationResult && (
+          <div className="mb-3 rounded-md border border-accent/30 bg-accent/5 p-3 text-xs">
+            <p className="font-medium text-foreground">Resultado da migração:</p>
+            <ul className="mt-1 space-y-0.5 text-muted-foreground">
+              <li>Profissionais com fotos: <strong>{migrationResult.totalUsersWithMedia}</strong></li>
+              <li>Álbuns criados: <strong>{migrationResult.albumsCreated}</strong></li>
+              <li>Fotos vinculadas: <strong>{migrationResult.photosLinked}</strong></li>
+              <li>Providers atualizados: <strong>{migrationResult.providersUpdated}</strong></li>
+            </ul>
+            {migrationResult.errors?.length > 0 && (
+              <p className="mt-1 text-destructive">{migrationResult.errors.length} erros</p>
+            )}
+          </div>
+        )}
+        <Button
+          variant="accent"
+          size="sm"
+          disabled={migrating}
+          onClick={async () => {
+            setMigrating(true);
+            setMigrationResult(null);
+            try {
+              const { data, error } = await supabase.functions.invoke('migrate-portfolio-albums', { method: 'POST' });
+              if (error) throw error;
+              setMigrationResult(data);
+              toast.success(`Migração concluída: ${data.albumsCreated} álbuns, ${data.photosLinked} fotos`);
+            } catch (e: any) {
+              toast.error('Erro na migração: ' + e.message);
+            } finally {
+              setMigrating(false);
+            }
+          }}
+        >
+          {migrating ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FolderSync className="mr-1 h-4 w-4" />}
+          {migrating ? 'Migrando...' : 'Migrar Fotos Legadas'}
+        </Button>
       </div>
     </div>
   );
