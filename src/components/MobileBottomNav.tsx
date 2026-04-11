@@ -15,18 +15,18 @@ const getIcon = (name: string): React.ElementType => ICON_MAP[name] || Home;
 const FabButton = ({ onClick, icon: Icon, label }: { onClick: () => void; icon: React.ElementType; label: string }) => (
   <motion.button
     onClick={onClick}
-    className="relative flex flex-col items-center justify-center w-14 py-1"
+    className="relative flex flex-col items-center justify-center w-12 py-0.5"
     whileTap={{ scale: 0.85 }}
   >
     <motion.div
-      className="relative -mt-5 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent/80 shadow-lg shadow-accent/30"
+      className="relative -mt-4 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent/80 shadow-md shadow-accent/25"
       whileHover={{ scale: 1.1 }}
-      animate={{ boxShadow: ['0 4px 14px 0 hsl(var(--accent)/0.3)', '0 4px 20px 0 hsl(var(--accent)/0.5)', '0 4px 14px 0 hsl(var(--accent)/0.3)'] }}
+      animate={{ boxShadow: ['0 3px 10px 0 hsl(var(--accent)/0.25)', '0 3px 16px 0 hsl(var(--accent)/0.4)', '0 3px 10px 0 hsl(var(--accent)/0.25)'] }}
       transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
     >
-      <Icon className="h-5 w-5 text-accent-foreground" />
+      <Icon className="h-4 w-4 text-accent-foreground" />
     </motion.div>
-    <span className="mt-0.5 text-[9px] font-semibold text-accent">{label}</span>
+    <span className="mt-0 text-[8px] font-semibold text-accent leading-tight">{label}</span>
   </motion.button>
 );
 
