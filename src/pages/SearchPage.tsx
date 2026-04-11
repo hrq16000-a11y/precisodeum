@@ -107,7 +107,7 @@ const SearchPage = () => {
   const filteredLocal = useMemo(() => applyClientFilters(localProviders), [applyClientFilters, localProviders]);
   const filteredOther = useMemo(() => applyClientFilters(otherProviders), [applyClientFilters, otherProviders]);
 
-  const displayProviders = showAllLocations ? [...filteredLocal, ...filteredOther] : filteredLocal;
+  // Local and other are always separate — never concatenated into a single grid
   const fullyFiltered = [...filteredLocal, ...filteredOther];
 
   const activeFilterCount = [selectedCategory, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter !== 'all' ? 'x' : '', minRating > 0 ? 'x' : ''].filter(Boolean).length;

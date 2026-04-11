@@ -869,14 +869,24 @@ export function matchesGeoContext(
 ): boolean {
   if (!ctx.cityNorm && !ctx.stateNorm) return true;
 
+  // PRIMARY: When user has coords, use strict radius-based matching
   if (ctx.userCoords && provCoords) {
     const dist = calculateDistanceKm(
       ctx.userCoords,
       { latitude: provCoords.lat, longitude: provCoords.lon },
     );
-    if (dist <= ctx.radius) return true;
+    return dist <= ctx.radius;
   }
 
+  // SECONDARY: When user has coords but provider doesn't — provider can't be confirmed local
+  if (ctx.userCoords && !provCoords) {
+    // Fallback: only match exact city name
+    if (ctx.cityNorm && pCityNorm === ctx.cityNorm) return true;
+    if (ctx.coreCity && ctx.coreCity !== ctx.cityNorm && pCityNorm === ctx.coreCity) return true;
+    return false;
+  }
+
+  // TERTIARY: No user coords — use city/metro name matching (no state-only)
   if (ctx.metro) {
     return isMemberOfMetro(pCityNorm, ctx.metro) || pCityNorm === ctx.coreCity;
   }
@@ -889,13 +899,11 @@ export function matchesGeoContext(
       if (pCityNorm.includes(ctx.coreCity) || ctx.coreCity.includes(pCityNorm)) return true;
     }
   } else if (ctx.cityNorm) {
-    // Strict match only
     if (pCityNorm === ctx.cityNorm) return true;
     if (ctx.coreCity !== ctx.cityNorm && pCityNorm === ctx.coreCity) return true;
   }
 
-  if (ctx.stateNorm && pStateNorm === ctx.stateNorm) return true;
-
+  // NOTE: Removed state-only matching — same state does NOT mean "local"
   return false;
 }
 
