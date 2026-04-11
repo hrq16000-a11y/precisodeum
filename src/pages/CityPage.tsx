@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -8,10 +8,13 @@ import ProviderCard from '@/components/ProviderCard';
 import PaginationControls from '@/components/PaginationControls';
 import SearchBar from '@/components/SearchBar';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import GeoLocationChip from '@/components/GeoLocationChip';
+import GeoPromptBanner from '@/components/GeoPromptBanner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { ChevronRight } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useGeoCity } from '@/hooks/useGeoCity';
+import { calculateDistanceKm } from '@/lib/geoDistance';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 
 const SponsorLeaderBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorLeaderBanner')));
@@ -20,9 +23,13 @@ const SponsorFooterCTA = lazy(() => importWithRetry(() => import('@/components/s
 
 const ITEMS_PER_PAGE = 12;
 
+const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) =>
+  calculateDistanceKm({ latitude: lat1, longitude: lon1 }, { latitude: lat2, longitude: lon2 });
+
 const CityPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const [page, setPage] = useState(1);
+  const { latitude: userLat, longitude: userLon } = useGeoCity();
 
   const { data, isLoading } = useQuery({
     queryKey: ['city-page', slug],
@@ -94,7 +101,26 @@ const CityPage = () => {
   });
 
   const city = data?.city;
-  const providers = data?.providers || [];
+  const rawProviders = data?.providers || [];
+
+  // Sort by GPS distance when available, attach distanceKm
+  const providers = useMemo(() => {
+    if (userLat == null || userLon == null) return rawProviders;
+    return rawProviders
+      .map((p) => {
+        let dist: number | undefined;
+        if (p.latitude != null && p.longitude != null) {
+          dist = Math.round(haversine(userLat, userLon, p.latitude, p.longitude) * 10) / 10;
+        }
+        return { ...p, distanceKm: dist };
+      })
+      .sort((a, b) => {
+        const dA = a.distanceKm ?? Infinity;
+        const dB = b.distanceKm ?? Infinity;
+        if (dA !== dB) return dA - dB;
+        return b.rating - a.rating;
+      });
+  }, [rawProviders, userLat, userLon]);
 
   useSeoHead({
     title: city ? `Profissionais em ${city.name} - ${city.state}` : 'Cidade',
@@ -154,7 +180,10 @@ const CityPage = () => {
         <div className="container text-center">
           <h1 className="font-display text-3xl font-bold text-primary-foreground md:text-4xl">{title}</h1>
           <p className="mx-auto mt-3 max-w-lg text-primary-foreground/70">{description}</p>
-          <div className="mx-auto mt-6 max-w-2xl">
+          <div className="mx-auto mt-4">
+            <GeoLocationChip />
+          </div>
+          <div className="mx-auto mt-4 max-w-2xl">
             <SearchBar variant="compact" />
           </div>
         </div>
@@ -164,11 +193,13 @@ const CityPage = () => {
       <Suspense fallback={null}><SponsorTopBanner /></Suspense>
 
       <div className="container py-8">
+        <GeoPromptBanner />
+
         <p className="mb-6 text-sm text-muted-foreground">
           {providers.length} profissional(is) encontrado(s) em {city!.name}
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {paginatedProviders.map((p) => <ProviderCard key={p.id} provider={p} />)}
+          {paginatedProviders.map((p) => <ProviderCard key={p.id} provider={p as any} />)}
         </div>
         {providers.length === 0 && (
           <EmptyStateFallback
