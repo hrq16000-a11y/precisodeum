@@ -1,33 +1,40 @@
 
 
-# Compressão Automática WebP no Upload de Portfólio
+# Otimização em Lote das Imagens de Portfólio Existentes
 
-## Problema
-O upload de portfólio envia o arquivo original direto ao storage sem otimização, resultando em imagens pesadas (JPEG/PNG de 2-5MB) que prejudicam o carregamento.
+## Situação atual
+- **419 imagens** acima de 200KB no bucket `portfolio`
+- **~870MB** de espaço desperdiçado (imagens de 200KB a 4.8MB)
+- A Edge Function `optimize-image` já suporta otimizar arquivos existentes (MODE 1: JSON com bucket + path)
 
 ## Solução
-Redirecionar o upload de portfólio pela Edge Function `optimize-image` já existente, que faz deduplicação SHA-256 e upload otimizado — e depois aplicar a transformação via `/render/image/` para servir WebP comprimido.
+Criar uma nova Edge Function `batch-optimize-portfolio` que:
+1. Lista todos os arquivos do bucket `portfolio` recursivamente
+2. Para cada imagem acima de 200KB, chama internamente a mesma lógica de otimização da `optimize-image` (Supabase Image Transforms)
+3. Processa em lotes de 10 para não sobrecarregar
+4. Retorna relatório com total processado, economia total, e erros
 
 ## Implementação
 
-### 1. Alterar `DashboardPortfolioPage.tsx`
-No loop de upload de fotos (linhas ~182-222), substituir o upload direto (`supabase.storage.from('portfolio').upload(...)`) por uma chamada à Edge Function `optimize-image` via `fetch`, passando `bucket: 'portfolio'` e `folder: '{userId}/{albumId}'`. A edge function já faz:
-- Validação de tipo/tamanho
-- Hash SHA-256 para deduplicação
-- Upload ao storage
+### Nova Edge Function: `supabase/functions/batch-optimize-portfolio/index.ts`
+- Autenticação: requer admin (verifica `has_role`)
+- Escaneia recursivamente o bucket `portfolio`
+- Filtra apenas arquivos > 200KB e com extensão jpg/jpeg/png/webp (ignora GIF e MP4)
+- Para cada arquivo, usa `optimizeViaTransform()` (mesma lógica da `optimize-image`) para obter versão otimizada
+- Re-upload com `supabase.storage.update()` substituindo o original
+- Atualiza `size_optimized` na tabela `media` quando aplicável
+- Retorna JSON com: `total_scanned`, `total_optimized`, `total_skipped`, `savings_kb`, `errors[]`
 
-### 2. Alterar `DashboardMyPagePage.tsx`
-Aplicar a mesma mudança no upload de capa do portfólio (linha ~190).
-
-### 3. Sem mudanças na Edge Function
-A `optimize-image` já suporta o bucket `portfolio` na lista `ALLOWED_BUCKETS` e o modo multipart/form-data com folder customizado.
+### Adicionar botão na página Admin Mídia
+- Em `AdminMediaPage.tsx`, adicionar botão "Otimizar Portfólio" que chama a nova Edge Function
+- Mostra progresso e resultado final com toast
 
 ## Detalhes técnicos
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/DashboardPortfolioPage.tsx` | Substituir `supabase.storage.upload` por chamada à edge function `optimize-image` |
-| `src/pages/DashboardMyPagePage.tsx` | Mesma substituição para upload de capa |
+| `supabase/functions/batch-optimize-portfolio/index.ts` | Nova Edge Function para otimização em lote |
+| `src/pages/AdminMediaPage.tsx` | Botão para disparar a otimização em lote |
 
-Nenhuma migração de banco necessária. Nenhuma nova edge function.
+Sem migração de banco necessária.
 
