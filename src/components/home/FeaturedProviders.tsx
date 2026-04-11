@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Crown, Star, MapPin, MessageCircle, Sparkles } from 'lucide-react';
+import { ArrowRight, Crown, Star, MapPin, MessageCircle, Sparkles, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import ProfileBadge from '@/components/ProfileBadge';
+import { getRankTier } from '@/components/ReviewSummary';
 import type { DbProvider } from '@/hooks/useProviders';
 import { whatsappLink } from '@/lib/whatsapp';
 import { capitalizeName } from '@/lib/normalize';
@@ -171,6 +173,17 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
                 {displayName}
               </h3>
             </Link>
+            <div className="mt-1 flex flex-wrap items-center gap-1">
+              <ProfileBadge hasPhoto={hasOwnPhoto} hasServices={(p.servicesCount || 0) >= 1} size="sm" />
+              {(() => {
+                const tier = getRankTier(rating, reviewCount);
+                return tier ? (
+                  <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${tier.bg} ${tier.color} border ${tier.border}`}>
+                    <Trophy className="h-2.5 w-2.5" /> {tier.label}
+                  </span>
+                ) : null;
+              })()}
+            </div>
             {p.category && (
               <p className="mt-0.5 text-sm font-medium text-accent">{p.category}</p>
             )}
