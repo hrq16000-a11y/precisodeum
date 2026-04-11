@@ -697,34 +697,43 @@ export type Database = {
       highlights: {
         Row: {
           active: boolean
+          button_text: string | null
           created_at: string
           description: string
           display_order: number
+          icon: string | null
           id: string
           image_url: string | null
           link_url: string | null
+          theme_color: string | null
           title: string
           updated_at: string
         }
         Insert: {
           active?: boolean
+          button_text?: string | null
           created_at?: string
           description?: string
           display_order?: number
+          icon?: string | null
           id?: string
           image_url?: string | null
           link_url?: string | null
+          theme_color?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           active?: boolean
+          button_text?: string | null
           created_at?: string
           description?: string
           display_order?: number
+          icon?: string | null
           id?: string
           image_url?: string | null
           link_url?: string | null
+          theme_color?: string | null
           title?: string
           updated_at?: string
         }
