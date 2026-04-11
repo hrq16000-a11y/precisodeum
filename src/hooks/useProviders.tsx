@@ -268,6 +268,7 @@ async function fetchProvidersLightweight(query: any) {
     (mapped as any)._boostScore = boostScore;
     return mapped;
   }).filter(p => !hideIncomplete || !(p as any)._isIncomplete);
+}
 
 // fetchProvidersWithProfiles now uses the same fast path
 const fetchProvidersWithProfiles = fetchProvidersLightweight;
