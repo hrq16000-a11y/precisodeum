@@ -225,6 +225,7 @@ function startFetchIfNeeded() {
         if (edgeGeo.city) safeSet(CITY_KEY, edgeGeo.city);
         if (uf) safeSet(STATE_KEY, uf);
         if (edgeGeo.temp !== null) safeSet(TEMP_KEY, String(edgeGeo.temp));
+        safeSet(FETCH_TS_KEY, String(Date.now()));
         setGeoState({ ...edgeGeo, state: uf });
       }
     } catch (error) {
@@ -249,6 +250,7 @@ function startFetchIfNeeded() {
         if (result.lat !== null) safeSet(LAT_KEY, String(result.lat));
         if (result.lon !== null) safeSet(LON_KEY, String(result.lon));
         if (temp !== null) safeSet(TEMP_KEY, String(temp));
+        safeSet(FETCH_TS_KEY, String(Date.now()));
         safeSet(PRECISE_KEY, 'false');
 
         setGeoState({
