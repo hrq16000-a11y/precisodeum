@@ -81,14 +81,17 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Auth: accept CRON_SECRET header or admin JWT
+    // Auth: accept service role key in Authorization, CRON_SECRET header, or admin JWT
     const cronSecret = Deno.env.get("CRON_SECRET");
     const authHeader = req.headers.get("Authorization");
     const cronHeader = req.headers.get("x-cron-secret");
+    const bearerToken = authHeader?.replace("Bearer ", "");
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    if (cronHeader && cronSecret && cronHeader === cronSecret) {
+    if (bearerToken === serviceRoleKey) {
+      // Authorized via service role key
+    } else if (cronHeader && cronSecret && cronHeader === cronSecret) {
       // Authorized via cron secret
     } else if (authHeader) {
       const callerClient = createClient(supabaseUrl, anonKey, {
