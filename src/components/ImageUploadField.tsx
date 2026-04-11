@@ -39,12 +39,6 @@ const ImageUploadField = ({
     setUploading(true);
     try {
       const file = await compressImage(raw);
-      toast.error('Imagem deve ter no máximo 5MB');
-      return;
-    }
-
-    setUploading(true);
-    try {
       // Get current session for auth
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
