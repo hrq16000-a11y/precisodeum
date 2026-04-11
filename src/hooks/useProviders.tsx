@@ -214,15 +214,18 @@ async function fetchProvidersLightweight(query: any) {
     }
   });
 
-  // Check if incomplete profiles should be hidden
+  // Check admin settings for visibility rules
   let hideIncomplete = false;
+  let requireCityForVisibility = false;
   try {
-    const { data: hideSetting } = await supabase
+    const { data: settingsData } = await supabase
       .from('site_settings')
-      .select('value')
-      .eq('key', 'incomplete_profile_hide_public')
-      .maybeSingle();
-    hideIncomplete = (hideSetting as any)?.value === 'true';
+      .select('key, value')
+      .in('key', ['incomplete_profile_hide_public', 'require_city_for_visibility']);
+    (settingsData || []).forEach((s: any) => {
+      if (s.key === 'incomplete_profile_hide_public') hideIncomplete = s.value === 'true';
+      if (s.key === 'require_city_for_visibility') requireCityForVisibility = s.value === 'true';
+    });
   } catch { /* ignore */ }
 
   return (data as any[]).map((p) => {
