@@ -45,6 +45,7 @@ export interface DbProvider {
   servicesCount: number;
   portfolioAlbumCount: number;
   portfolioPhotoCount: number;
+  distanceKm?: number;
 }
 
 interface ServiceFallback {
@@ -587,8 +588,14 @@ export function filterAndRankProvidersGrouped(
   SearchIntelligence.trackFinalScore(query, intent, localArr.length + otherArr.length);
 
   return {
-    local: (isFallback ? [...localArr, ...otherArr] : localArr).map(e => e.p),
-    other: isFallback ? [] : otherArr.map(e => e.p),
+    local: (isFallback ? [...localArr, ...otherArr] : localArr).map(e => ({
+      ...e.p,
+      distanceKm: e.distanceKm !== Infinity ? Math.round(e.distanceKm * 10) / 10 : undefined,
+    })),
+    other: isFallback ? [] : otherArr.map(e => ({
+      ...e.p,
+      distanceKm: e.distanceKm !== Infinity ? Math.round(e.distanceKm * 10) / 10 : undefined,
+    })),
     isFallback,
   };
 }
