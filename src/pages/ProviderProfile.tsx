@@ -520,6 +520,7 @@ const ProviderProfile = () => {
       ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliações, nota ${Number(provider.rating_avg).toFixed(1)}.`
       : 'Encontre profissionais na plataforma.',
     canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
+    ogImage: provider && hasOwnAvatar ? ((provider.profiles as any)?.avatar_url || provider.photo_url || undefined) : undefined,
   });
 
   const breadcrumbLd = useMemo(() => provider ? ({
@@ -1146,13 +1147,53 @@ const ProviderProfile = () => {
                     </a>
                   </Button>
                 )}
-                <Button variant="ghost" size="lg" onClick={() => {
-                  navigator.clipboard.writeText(window.location.href).then(() => toast.success('Link copiado!')).catch(() => window.prompt('Copie o link:', window.location.href));
+                <Button variant="ghost" size="lg" onClick={async () => {
+                  const profileUrl = window.location.href;
+                  const shareTitle = `${name} - ${category} em ${provider.city}`;
+                  const shareText = `Veja o perfil de ${name}, ${category} no Preciso de um!`;
+                  if (navigator.share) {
+                    try {
+                      await navigator.share({ title: shareTitle, text: shareText, url: profileUrl });
+                    } catch (e) {
+                      if ((e as any)?.name !== 'AbortError') {
+                        navigator.clipboard.writeText(profileUrl).then(() => toast.success('Link do perfil copiado!'));
+                      }
+                    }
+                  } else {
+                    navigator.clipboard.writeText(profileUrl).then(() => toast.success('Link do perfil copiado!')).catch(() => window.prompt('Copie o link:', profileUrl));
+                  }
                 }}>
-                  <Copy className="h-4 w-4" /> Copiar Link
+                  <Share2 className="h-4 w-4" /> Compartilhar
                 </Button>
               </div>
             </motion.div>
+
+            {/* ── Owner: Pedir Avaliação ── */}
+            {user?.id === provider.user_id && (
+              <motion.div
+                className="mt-3 flex flex-col items-center sm:items-start gap-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="gap-2 border-accent/30 hover:bg-accent/5 w-full sm:w-auto"
+                  asChild
+                >
+                  <a
+                    href={whatsappLink('', `Olá! Agradeço por escolher meus serviços. Poderia me avaliar rapidinho na plataforma? Isso fortalece meu trabalho! ${window.location.href}`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Star className="h-4 w-4 text-accent" /> Pedir Avaliação
+                  </a>
+                </Button>
+                <p className="text-[10px] text-muted-foreground">Envie para clientes recentes via WhatsApp</p>
+              </motion.div>
+            )}
+
             <p className="mt-2 text-center sm:text-left text-[11px] text-muted-foreground">
               Orçamento sem compromisso. Fale direto com o profissional.
             </p>
