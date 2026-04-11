@@ -1,329 +1,69 @@
-# Auditoria — Itens Pendentes
 
-## Status Atual
 
-- ✅ Dynamic imports com `importWithRetry` — **Concluído** (Index.tsx, Index02.tsx, CityPage, CityDetailPage, CategoryPage, Header, Footer, JobsPage, ProviderProfile)
-- ✅ Views `security_invoker = true` — **Concluído** (migração aplicada)
-- ✅ View `public_user_levels` — **Concluído**
+# Extração Inteligente de Texto — DashboardJobsPage
 
-## Itens Pendentes (5)
+## Problema Atual
 
-### 1. Storage "sponsors" — políticas sem admin check
+A função `parseSimpleText` é extremamente básica: extrai apenas título (primeira linha), cidade, salário e WhatsApp via regex simples. Não detecta categoria, tipo de contrato, modelo de trabalho, requisitos, atividades, benefícios, horário, bairro ou nome de contato. Resultado: o usuário cola um texto e quase nada é preenchido.
 
-As políticas INSERT/UPDATE/DELETE do bucket `sponsors` ainda permitem qualquer usuário autenticado. Falta adicionar `has_role(auth.uid(), 'admin'::app_role)`.
+## Solução
 
-### 2. audit_log INSERT policy
-
-Atualmente restringe INSERT a admins, mas o código (`useAuditLog.ts`) insere para qualquer usuário. Criar política: `auth.uid() = user_id` para INSERT.
-
-### 3. Remover storage policies duplicadas
-
-Avatars e portfolio têm políticas redundantes (ex: "can upload avatars" + "can upload own avatars").
-
-### 4. LazyErrorBoundary com feedback visual
-
-Atualmente renderiza `null` ao falhar. Adicionar botão "Tentar novamente" mínimo.
-
-### 5. Leaked Password Protection
-
-O scan ainda mostra como desativado. Reativar via `configure_auth`.
+Criar um parser inteligente que analisa texto livre e extrai todos os campos do formulário, incluindo auto-seleção de categoria por fuzzy match contra a base de categorias existente.
 
 ---
 
 ## Plano de Execução
 
-### Migração SQL (1 arquivo)
+### 1. Criar módulo `src/lib/jobTextParser.ts`
 
-```sql
--- 1. Sponsors storage: restringir a admin
-DROP POLICY IF EXISTS "Admin insert sponsors" ON storage.objects;
-CREATE POLICY "Admin insert sponsors" ON storage.objects FOR INSERT
-  TO authenticated WITH CHECK (bucket_id = 'sponsors' AND has_role(auth.uid(), 'admin'::app_role));
--- (mesmo para UPDATE e DELETE)
+Parser dedicado com as seguintes capacidades:
 
--- 2. audit_log: permitir qualquer autenticado inserir próprio log
-DROP POLICY IF EXISTS "Admins can insert audit log" ON public.audit_log;
-CREATE POLICY "Authenticated users can insert own audit log" ON public.audit_log
-  FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+**Extração por seções** — Detectar blocos como "Requisitos:", "Atividades:", "Benefícios:", "Horário:", "Sobre:", "Descrição:" e mapear para os campos corretos do formulário.
 
--- 3. Remover políticas duplicadas de storage
-DROP POLICY IF EXISTS "Authenticated users can upload avatars" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated users can upload portfolio" ON storage.objects;
-```
+**Auto-detecção de categoria** — Receber a lista de categorias e fazer fuzzy match contra o texto completo (título + descrição). Ex: se o texto menciona "eletricista", selecionar automaticamente a categoria "Eletricista".
 
-### Código: LazyErrorBoundary (Index.tsx)
+**Auto-detecção de cidade** — Detectar padrões como "Curitiba - PR", "São Paulo/SP", "Local: Maringá", além de buscar na base IBGE para validar.
 
-Substituir `render() { return this.state.hasError ? null : this.props.children; }` por um fallback com botão de retry que chama `window.location.reload()`.
+**Detecção de tipo de contrato** — Keywords: "CLT", "PJ", "estágio", "temporário", "freelance", "meio período", "aprendiz" → mapear para `job_type`.
 
-### Auth: Leaked Password Protection
+**Detecção de modelo de trabalho** — Keywords: "presencial", "remoto", "híbrido", "home office" → mapear para `work_model`.
 
-Chamar `configure_auth` com `password_hibp_enabled: true`.
+**Detecção de contato** — Padrões de telefone/WhatsApp, nome de contato ("Contato:", "Falar com:").
 
-### Arquivos modificados
+**Salário inteligente** — "R$ 2.500", "a combinar", "de R$1.500 a R$3.000".
 
-- `src/pages/Index.tsx` — LazyErrorBoundary com feedback
-- `src/pages/Index02.tsx` — mesmo fix
-- 1 migração SQL (storage + audit_log)
-- Auth config
+**Bairro** — "Bairro:", "região:", localização mais específica.
 
-### O que NÃO será alterado
+### 2. Atualizar `parseSimpleText` em DashboardJobsPage
 
-- GeoEngine, SIL, searchIntelligence
+- Substituir a função atual pela chamada ao novo parser
+- Passar a lista de `categories` para o parser fazer o match
+- Auto-selecionar `category_id` no form
+- Auto-preencher `job_type` e `work_model`
+- Preencher `activities`, `requirements`, `benefits`, `schedule`, `contact_name`, `neighborhood`
+- Auto-preencher `citySearch` e validar contra IBGE
+
+### 3. Feedback visual pós-extração
+
+Ao clicar "Extrair dados e revisar", antes de ir para o modo estruturado:
+- Mostrar um resumo rápido (toast ou inline) do que foi detectado: "✓ Categoria: Eletricista · ✓ Cidade: Curitiba, PR · ✓ CLT · ✓ Presencial"
+- Campos não detectados ficam vazios para preenchimento manual
+- Campos detectados ficam com highlight sutil (borda accent) para o usuário validar
+
+### 4. Melhorar placeholder do textarea "Colar Texto"
+
+Atualizar o placeholder para mostrar exemplos mais ricos que guiem o usuário a colar textos completos com seções.
+
+---
+
+## Arquivos Modificados
+
+- **Novo**: `src/lib/jobTextParser.ts` — módulo de extração inteligente
+- **Editado**: `src/pages/DashboardJobsPage.tsx` — integrar parser, feedback visual, melhorar UX
+
+## O que NÃO será alterado
+
+- GeoEngine, SIL, Governance Engine
+- Tabela `jobs` (schema inalterado)
 - `client.ts`, `types.ts`, `.env`
-- Tabelas blindadas
 
-&nbsp;
-
-&nbsp;
-
-Sim — vou gerar o aditivo correto (cirúrgico e seguro) para fechar o único ponto sensível restante: storage sponsors + consistência de role + RLS runtime safety.
-
-&nbsp;
-
-&nbsp;
-
----
-
-&nbsp;
-
-📌 ADITIVO DE HARDENING — STORAGE + AUTH + RLS FINAL
-
-&nbsp;
-
--- =========================================================
-
--- ADITIVO DE SEGURANÇA FINAL (SPONSORS + AUTH HARDENING)
-
--- =========================================================
-
-&nbsp;
-
--- 1. GARANTIA: FUNÇÃO has_role EXISTS E É SEGURA
-
--- (evita falha silenciosa em produção caso não exista)
-
-create or replace function public.has_role(user_id uuid, role app_role)
-
-returns boolean
-
-language sql
-
-stable
-
-security definer
-
-as $$
-
-  select exists (
-
-    select 1
-
-    from public.user_roles ur
-
-    where ur.user_id = has_role.user_id
-
-      and ur.role = has_role.role
-
-  );
-
-$$;
-
-&nbsp;
-
--- =========================================================
-
--- 2. STORAGE SPONSORS — INSERT CONTROLADO (ADMIN ONLY)
-
--- =========================================================
-
-&nbsp;
-
-drop policy if exists "Admin insert sponsors" on storage.objects;
-
-create policy "Admin insert sponsors"
-
-on storage.objects
-
-for insert
-
-to authenticated
-
-with check (
-
-  bucket_id = 'sponsors'
-
-  and public.has_role(auth.uid(), 'admin'::app_role)
-
-);
-
-&nbsp;
-
--- =========================================================
-
--- 3. STORAGE SPONSORS — UPDATE CONTROLADO (ADMIN ONLY)
-
--- =========================================================
-
-&nbsp;
-
-drop policy if exists "Admin update sponsors" on storage.objects;
-
-create policy "Admin update sponsors"
-
-on storage.objects
-
-for update
-
-to authenticated
-
-using (
-
-  bucket_id = 'sponsors'
-
-  and public.has_role(auth.uid(), 'admin'::app_role)
-
-)
-
-with check (
-
-  bucket_id = 'sponsors'
-
-  and public.has_role(auth.uid(), 'admin'::app_role)
-
-);
-
-&nbsp;
-
--- =========================================================
-
--- 4. STORAGE SPONSORS — DELETE CONTROLADO (ADMIN ONLY)
-
--- =========================================================
-
-&nbsp;
-
-drop policy if exists "Admin delete sponsors" on storage.objects;
-
-create policy "Admin delete sponsors"
-
-on storage.objects
-
-for delete
-
-to authenticated
-
-using (
-
-  bucket_id = 'sponsors'
-
-  and public.has_role(auth.uid(), 'admin'::app_role)
-
-);
-
-&nbsp;
-
--- =========================================================
-
--- 5. HARDENING EXTRA (ANTI-BYPASS SAFETY NET)
-
--- =========================================================
-
-&nbsp;
-
--- garante que nenhum usuário autenticado acessa sponsors sem role
-
-create policy "Block non-admin sponsor access"
-
-on storage.objects
-
-for select
-
-to authenticated
-
-using (
-
-  bucket_id <> 'sponsors'
-
-  or public.has_role(auth.uid(), 'admin'::app_role)
-
-);
-
-&nbsp;
-
-&nbsp;
-
----
-
-&nbsp;
-
-🧠 O que esse aditivo garante (nível arquitetura)
-
-&nbsp;
-
-🔒 elimina bypass de storage via auth simples
-
-&nbsp;
-
-🔒 impede upload/overwrite/deletion não-admin
-
-&nbsp;
-
-🔒 protege SELECT de exposição indireta
-
-&nbsp;
-
-🔒 evita quebra por função inexistente (has_role blindada)
-
-&nbsp;
-
-🔒 fecha o último vetor crítico da auditoria
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
----
-
-&nbsp;
-
-✔️ Resultado final do sistema após isso
-
-&nbsp;
-
-Você fica com:
-
-&nbsp;
-
-GeoEngine → estável
-
-&nbsp;
-
-SIL → estável
-
-&nbsp;
-
-Ranking → integrado corretamente
-
-&nbsp;
-
-Frontend → resiliente
-
-&nbsp;
-
-RLS → consistente
-
-&nbsp;
-
-Storage → fechado corretamente
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
