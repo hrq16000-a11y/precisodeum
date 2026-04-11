@@ -223,6 +223,11 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                 <Badge variant={isInactive ? 'destructive' : 'default'} className="text-[10px]">
                   {isInactive ? '🔴 Inativo' : '🟢 Ativo'}
                 </Badge>
+                {provider && providerStatusBadge[provider.status] && (
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${providerStatusBadge[provider.status].cls}`}>
+                    {providerStatusBadge[provider.status].label}
+                  </span>
+                )}
               </div>
 
               {/* Info Row */}
