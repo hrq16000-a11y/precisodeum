@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard, Search as SearchIcon, ChevronDown, Star, Rocket, Receipt, UserPlus, Bell, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard, Search as SearchIcon, ChevronDown, Star, Rocket, Receipt, UserPlus, Bell, MessageSquare, Pin } from 'lucide-react';
 import AdminGroupNav, { AdminGroupTabs } from '@/components/admin/AdminGroupNav';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -112,12 +112,41 @@ const AdminMobileStats = () => {
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
   const { isAdmin } = useAdmin();
   const { hasPermission } = usePermissions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('admin_favorites') || '[]'); } catch { return []; }
+  });
+  const [pendingBadges, setPendingBadges] = useState<Record<string, number>>({});
+
+  // Fetch badge counts for sidebar items
+  useEffect(() => {
+    Promise.all([
+      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      (supabase.from('jobs').select('id', { count: 'exact', head: true }) as any).eq('approval_status', 'pending'),
+      supabase.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'new'),
+    ]).then(([p, j, l]) => {
+      setPendingBadges({
+        '/admin/prestadores': p.count ?? 0,
+        '/admin/vagas': j.count ?? 0,
+        '/admin/leads': l.count ?? 0,
+      });
+    });
+  }, []);
+
+  const toggleFavorite = (path: string) => {
+    setFavorites(prev => {
+      const next = prev.includes(path) ? prev.filter(p => p !== path) : [...prev, path];
+      localStorage.setItem('admin_favorites', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const allItems = menuGroups.flatMap(g => g.items);
 
   const toggleGroup = (label: string) => {
     setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
@@ -212,6 +241,28 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             </kbd>
           </div>
         </div>
+        {/* Favorites Section */}
+        {favorites.length > 0 && !sidebarSearch && (
+          <div className="px-3 pb-2 border-b border-sidebar-border/50 mb-1">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-sidebar-foreground/30 flex items-center gap-1 px-3 py-1">
+              <Pin className="h-2.5 w-2.5" /> Favoritos
+            </span>
+            <div className="space-y-0.5">
+              {favorites.map(path => {
+                const item = allItems.find(i => i.path === path);
+                if (!item) return null;
+                const active = location.pathname === path;
+                return (
+                  <Link key={path} to={path} onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/40'}`}>
+                    <item.icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <nav className="flex-1 overflow-y-auto overscroll-contain mt-1 space-y-1 px-3 pb-4">
           {filteredGroups.map((group) => {
             const isCollapsed = !!collapsedGroups[group.label] && !sidebarSearch;
@@ -265,7 +316,18 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                               >
                                 <item.icon className={`h-4 w-4 ${active ? 'text-accent' : 'group-hover:text-sidebar-foreground'}`} />
                               </motion.div>
-                              <span className="truncate">{item.label}</span>
+                              <span className="truncate flex-1">{item.label}</span>
+                              {(pendingBadges[item.path] ?? 0) > 0 && (
+                                <span className="ml-auto flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">
+                                  {pendingBadges[item.path] > 99 ? '99+' : pendingBadges[item.path]}
+                                </span>
+                              )}
+                              <button
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(item.path); }}
+                                className={`opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ${favorites.includes(item.path) ? 'opacity-100 text-amber-500' : 'text-sidebar-foreground/30'}`}
+                              >
+                                <Pin className={`h-3 w-3 ${favorites.includes(item.path) ? 'fill-current' : ''}`} />
+                              </button>
                             </Link>
                           );
                         })}
@@ -301,6 +363,45 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       </AnimatePresence>
 
       <main className="flex-1 min-w-0 overflow-x-hidden pt-14 lg:ml-64 lg:pt-0 flex flex-col">
+        {/* Desktop Header */}
+        <div className="hidden lg:flex h-12 items-center justify-between border-b border-border bg-background/80 backdrop-blur-sm px-6 shrink-0">
+          {/* Breadcrumb */}
+          {(() => {
+            const current = menuGroups.flatMap(g => g.items).find(i => i.path === location.pathname);
+            const group = menuGroups.find(g => g.items.some(i => i.path === location.pathname));
+            return (
+              <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Link to="/admin" className="hover:text-foreground transition-colors font-medium">Admin</Link>
+                {group && (
+                  <>
+                    <span className="text-muted-foreground/40">/</span>
+                    <motion.span key={group.label} layoutId="admin-breadcrumb-group" className="text-muted-foreground/60">
+                      {group.label}
+                    </motion.span>
+                  </>
+                )}
+                {current && (
+                  <>
+                    <span className="text-muted-foreground/40">/</span>
+                    <motion.span key={current.label} layoutId="admin-breadcrumb-page" className="font-medium text-foreground">
+                      {current.label}
+                    </motion.span>
+                  </>
+                )}
+              </nav>
+            );
+          })()}
+          <div className="flex items-center gap-2">
+            <Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">← Ver site</Link>
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" className="h-7 w-7 rounded-lg object-cover border border-border" />
+            ) : (
+              <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
+                {(profile?.full_name || 'A')[0].toUpperCase()}
+              </div>
+            )}
+          </div>
+        </div>
         <AdminGroupTabs />
         <motion.div
           className="flex-1 p-3 sm:p-6 max-w-full"
@@ -309,21 +410,23 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] }}
           key={location.pathname}
         >
-          {/* Auto Breadcrumb */}
-          {(() => {
-            const current = menuGroups.flatMap(g => g.items).find(i => i.path === location.pathname);
-            const group = menuGroups.find(g => g.items.some(i => i.path === location.pathname));
-            if (!current || !group) return null;
-            return (
-              <nav className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Link to="/admin" className="hover:text-foreground transition-colors">Admin</Link>
-                <span className="text-muted-foreground/40">/</span>
-                <span className="text-muted-foreground/60">{group.label}</span>
-                <span className="text-muted-foreground/40">/</span>
-                <span className="font-medium text-foreground">{current.label}</span>
-              </nav>
-            );
-          })()}
+          {/* Mobile Breadcrumb */}
+          <div className="lg:hidden">
+            {(() => {
+              const current = menuGroups.flatMap(g => g.items).find(i => i.path === location.pathname);
+              const group = menuGroups.find(g => g.items.some(i => i.path === location.pathname));
+              if (!current || !group) return null;
+              return (
+                <nav className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Link to="/admin" className="hover:text-foreground transition-colors">Admin</Link>
+                  <span className="text-muted-foreground/40">/</span>
+                  <span className="text-muted-foreground/60">{group.label}</span>
+                  <span className="text-muted-foreground/40">/</span>
+                  <span className="font-medium text-foreground">{current.label}</span>
+                </nav>
+              );
+            })()}
+          </div>
           <AdminGroupNav />
           {children}
         </motion.div>

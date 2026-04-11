@@ -14,6 +14,7 @@ import AdminHealthMonitor from '@/components/admin/AdminHealthMonitor';
 import AdminQuickActions from '@/components/admin/AdminQuickActions';
 import AdminPlatformPulse from '@/components/admin/AdminPlatformPulse';
 import AdminGrowthChart from '@/components/admin/AdminGrowthChart';
+import AdminKpiBar from '@/components/admin/AdminKpiBar';
 
 interface Stats {
   totalProviders: number;
@@ -236,8 +237,13 @@ const AdminPage = () => {
         </div>
       </motion.div>
 
-      {/* Quick Actions */}
+      {/* KPI Trend Bar */}
       <div className="mt-5">
+        <AdminKpiBar />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mt-4">
         <AdminQuickActions />
       </div>
 
