@@ -46,6 +46,8 @@ const AdminMediaPage = () => {
   const [batchCompressing, setBatchCompressing] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncDone, setSyncDone] = useState(false);
+  const [syncHistory, setSyncHistory] = useState<any[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const fetchMedia = useCallback(async () => {
     setLoading(true);
