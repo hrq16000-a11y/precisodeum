@@ -30,6 +30,7 @@ const AdminUsersPage = () => {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterProviderStatus, setFilterProviderStatus] = useState('all');
   const [page, setPage] = useState(1);
 
   const [editUser, setEditUser] = useState<any | null>(null);
