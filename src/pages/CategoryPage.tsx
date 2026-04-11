@@ -43,7 +43,7 @@ const stagger = {
 
 const CategoryPage = () => {
   const { slug } = useParams();
-  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, requestPreciseLocation } = useGeoCity();
+  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, setRadius, requestPreciseLocation } = useGeoCity();
   const { data, isLoading } = useCategoryProviders(slug || '');
   const [page, setPage] = useState(1);
   const [showAllLocations, setShowAllLocations] = useState(false);
@@ -346,10 +346,7 @@ const CategoryPage = () => {
             </div>
             <div className="flex gap-2">
               {radiusKm < 50 && (
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => {
-                  const { setRadius } = useGeoCity.getState?.() || {};
-                  // We can't call hook here, so use the outer setRadius via a workaround
-                }}>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setRadius(50)}>
                   Expandir para 50km
                 </Button>
               )}
