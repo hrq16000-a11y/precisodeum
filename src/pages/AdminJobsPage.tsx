@@ -235,7 +235,8 @@ const AdminJobsPage = () => {
       toast.success('Vaga criada com sucesso!');
       await logAuditAction({ action: 'create', resource_type: 'job' });
     } else {
-      const payload: any = { ...editForm, category_id: editForm.category_id || null, deadline: editForm.deadline || null };
+      const { user_id: formUserId, ...rest } = editForm;
+      const payload: any = { ...rest, category_id: editForm.category_id || null, deadline: editForm.deadline || null, ...(formUserId ? { user_id: formUserId } : {}) };
       const { error } = await supabase.from('jobs').update(payload).eq('id', editJob.id);
       if (error) { toast.error('Erro ao salvar: ' + error.message); return; }
       toast.success('Vaga atualizada');
