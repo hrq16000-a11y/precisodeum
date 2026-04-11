@@ -127,16 +127,16 @@ const SearchPage = () => {
 
   // Unique cities & neighborhoods from results for autocomplete
   const availableCities = useMemo(() => {
-    const cities = [...new Set(filtered.map(p => p.city).filter(Boolean))];
+    const cities = [...new Set(allProviders.map(p => p.city).filter(Boolean))];
     return cities.sort();
-  }, [filtered]);
+  }, [allProviders]);
 
   const availableNeighborhoods = useMemo(() => {
-    let source = filtered;
+    let source = allProviders;
     if (effectiveCity) source = source.filter(p => p.city.toLowerCase() === effectiveCity.toLowerCase());
     const nbs = [...new Set(source.map(p => p.neighborhood).filter(Boolean))];
     return nbs.sort();
-  }, [filtered, effectiveCity]);
+  }, [allProviders, effectiveCity]);
 
   // SEO
   const seoCity = effectiveCity || '';
