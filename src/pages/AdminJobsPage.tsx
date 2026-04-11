@@ -221,9 +221,11 @@ const AdminJobsPage = () => {
       const { data: adminUser } = await supabase.auth.getUser();
       if (!adminUser?.user) { toast.error('Não autenticado'); return; }
       const slug = generateSlug(editForm.title, editForm.city);
+      const userId = editForm.user_id || adminUser.user.id;
+      const { user_id: _uid, ...rest } = editForm;
       const payload: any = {
-        ...editForm,
-        user_id: adminUser.user.id,
+        ...rest,
+        user_id: userId,
         slug,
         category_id: editForm.category_id || null,
         deadline: editForm.deadline || null,
@@ -517,7 +519,7 @@ const AdminJobsPage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>Status</label>
                 <select value={editForm.status} onChange={e => setEditForm(p => ({ ...p, status: e.target.value }))} className={inputClass}>
@@ -533,6 +535,16 @@ const AdminJobsPage = () => {
                   <option value="rejected">Rejeitada</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Proprietário (user_id)</label>
+              <select value={editForm.user_id} onChange={e => setEditForm(p => ({ ...p, user_id: e.target.value }))} className={inputClass}>
+                <option value="">{isCreating ? 'Eu mesmo (admin)' : 'Selecionar usuário'}</option>
+                {profiles.map((p: any) => (
+                  <option key={p.id} value={p.id}>{p.full_name || p.email} ({p.id.slice(0, 8)})</option>
+                ))}
+              </select>
             </div>
 
             <Button variant="accent" className="w-full" onClick={handleSave}>
