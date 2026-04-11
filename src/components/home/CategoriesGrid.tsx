@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, icons } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -18,6 +18,16 @@ interface Props {
 }
 
 const HOME_COUNT_DESKTOP = 8;
+
+/** Render a Lucide icon by name, falling back to emoji if not found */
+const CategoryIcon = ({ icon }: { icon: string }) => {
+  const LucideIcon = (icons as Record<string, any>)[icon];
+  if (LucideIcon) {
+    return <LucideIcon size={28} strokeWidth={1.75} className="text-slate-600" />;
+  }
+  // Fallback: render as emoji/text
+  return <span className="text-2xl">{icon}</span>;
+};
 
 const CategoriesGrid = ({ categories, isLoading }: Props) => {
   const visible = useMemo(() => {
@@ -68,18 +78,16 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                 >
                   <Link
                     to={`/categoria/${cat.slug}`}
-                    className="group relative flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1.5 hover:border-accent/40 overflow-hidden text-center"
+                    className="group relative flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-accent/40 overflow-hidden text-center"
                   >
                     {/* Hover gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500 rounded-2xl" />
-                    
+
                     {/* Accent bar top */}
                     <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-accent/0 to-transparent group-hover:via-accent transition-all duration-500" />
-                    
-                    <span
-                      className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 text-2xl group-hover:from-primary/15 group-hover:to-accent/15 transition-all duration-300 hover:scale-110 hover:rotate-[8deg]"
-                    >
-                      {cat.icon}
+
+                    <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 group-hover:bg-sky-100 transition-all duration-300">
+                      <CategoryIcon icon={cat.icon} />
                     </span>
                     <div className="relative">
                       <span className="block text-sm font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2">
