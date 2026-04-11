@@ -25,6 +25,16 @@ const DashboardLeadsPage = () => {
   const navigate = useNavigate();
   const [leads, setLeads] = useState<any[]>([]);
 
+  const handleDelete = async (leadId: string) => {
+    const { error } = await supabase.from('leads').delete().eq('id', leadId);
+    if (error) {
+      toast.error('Erro ao excluir lead');
+      return;
+    }
+    setLeads(prev => prev.filter(l => l.id !== leadId));
+    toast.success('Lead excluído');
+  };
+
   useEffect(() => {
     if (!loading && !user) navigate('/login');
   }, [loading, user, navigate]);
