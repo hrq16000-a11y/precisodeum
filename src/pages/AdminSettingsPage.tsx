@@ -117,6 +117,9 @@ const AdminSettingsPage = () => {
         className="mt-4 max-w-sm"
       />
 
+      {/* ====== Badge Verificado Section ====== */}
+      <VerifiedBadgeSection settings={settings} onToggle={toggleSetting} onSaveText={updateTextSetting} onRefresh={fetchSettings} />
+
       {/* Boolean / Flags */}
       <h2 className="mt-6 font-display text-lg font-bold text-foreground">Feature Flags ({booleanSettings.length})</h2>
       <div className="mt-3 space-y-2">
