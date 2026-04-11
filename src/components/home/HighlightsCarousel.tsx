@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { icons } from 'lucide-react';
 
 interface Highlight {
@@ -31,14 +31,35 @@ const HighlightsCarousel = () => {
 
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
   const next = useCallback(() => setCurrent(prev => (prev + 1) % highlights.length), [highlights.length]);
+  const prev = useCallback(() => setCurrent(prev => (prev - 1 + highlights.length) % highlights.length), [highlights.length]);
 
   useEffect(() => {
     if (highlights.length <= 1 || paused) return;
     const timer = setInterval(next, 5000);
     return () => clearInterval(timer);
   }, [highlights.length, paused, next]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    setPaused(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) next();
+      else prev();
+    }
+    setPaused(false);
+  };
 
   if (highlights.length === 0) return null;
 
@@ -53,6 +74,9 @@ const HighlightsCarousel = () => {
           className="relative overflow-hidden rounded-2xl border border-border bg-slate-50 shadow-card"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           <div className="p-6">
             <div className="flex items-center gap-3 mb-2">
