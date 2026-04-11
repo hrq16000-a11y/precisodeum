@@ -6,6 +6,7 @@ import { normalize } from '@/lib/normalize';
 import GeoEngine from '@/lib/geoEngine';
 import type { GeoIntent } from '@/lib/geoEngine';
 import SearchIntelligence from '@/lib/searchIntelligence';
+import { sanitizeSearchTokens } from '@/lib/searchSanitizer';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
