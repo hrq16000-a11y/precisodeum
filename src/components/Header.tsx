@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -152,15 +151,12 @@ const Header = () => {
       <div className="container flex h-14 items-center justify-between md:h-16">
         <div className="flex items-center gap-3">
           <Link to="/" className="flex items-center">
-            <motion.img
+            <img
               src={logo}
               alt="Preciso de um - Profissionais Confiáveis Perto de Você"
-              className="h-10 md:h-12 drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] object-contain"
+              className="h-10 md:h-12 drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] object-contain animate-fade-in"
               width="166"
               height="48"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
             />
           </Link>
           <GeoBadge city={geoCity} temp={geoTemp} className="hidden sm:inline-flex" />

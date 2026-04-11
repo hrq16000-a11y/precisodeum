@@ -9,10 +9,10 @@ import { importWithRetry, prefetchImportWithRetry } from "@/lib/lazyWithRetry";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ModuleBoundary from "./components/ModuleBoundary";
-import MobileBottomNav from "./components/MobileBottomNav";
-import BackToTopButton from "./components/BackToTopButton";
-import ScrollProgressBar from "./components/ui/ScrollProgressBar";
-import ProfileTypeChooser from "./components/ProfileTypeChooser";
+const MobileBottomNav = reactLazy(() => importWithRetry(() => import("./components/MobileBottomNav")));
+const BackToTopButton = reactLazy(() => importWithRetry(() => import("./components/BackToTopButton")));
+const ScrollProgressBar = reactLazy(() => importWithRetry(() => import("./components/ui/ScrollProgressBar")));
+const ProfileTypeChooser = reactLazy(() => importWithRetry(() => import("./components/ProfileTypeChooser")));
 import { useAuth } from "@/hooks/useAuth";
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
@@ -127,10 +127,10 @@ const SponsorLandingPage = lazy(() => import("./pages/SponsorLandingPage"));
 const SponsorSlotsPage = lazy(() => import("./pages/SponsorSlotsPage"));
 const SponsorContractPage = lazy(() => import("./pages/SponsorContractPage"));
 
-import CookieConsent from "./components/CookieConsent";
-import PwaInstallBanner from "./components/PwaInstallBanner";
+const CookieConsent = reactLazy(() => importWithRetry(() => import("./components/CookieConsent")));
+const PwaInstallBanner = reactLazy(() => importWithRetry(() => import("./components/PwaInstallBanner")));
 import OAuthRedirectHandler from "./components/OAuthRedirectHandler";
-import FloatingHelpButton from "./components/FloatingHelpButton";
+const FloatingHelpButton = reactLazy(() => importWithRetry(() => import("./components/FloatingHelpButton")));
 
 // Sponsor Panel (CRM) — isolated module
 const SponsorDashboardPage = lazy(() => import("./pages/sponsor/SponsorDashboardPage"));
@@ -313,13 +313,15 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
-            <ScrollProgressBar />
-            <MobileBottomNav />
-            <FloatingHelpButton />
-            <BackToTopButton />
-            <CookieConsent />
-            <PwaInstallBanner />
-            <TypeSelectionGate />
+            <Suspense fallback={null}>
+              <ScrollProgressBar />
+              <MobileBottomNav />
+              <FloatingHelpButton />
+              <BackToTopButton />
+              <CookieConsent />
+              <PwaInstallBanner />
+              <TypeSelectionGate />
+            </Suspense>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

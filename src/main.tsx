@@ -99,9 +99,16 @@ const observeLazyImages = () => {
   });
 };
 
-// Run on mutations
-const bodyObs = new MutationObserver(() => observeLazyImages());
-bodyObs.observe(document.documentElement, { childList: true, subtree: true });
-observeLazyImages();
+// Defer MutationObserver to avoid blocking main thread during boot
+const startObserver = () => {
+  const bodyObs = new MutationObserver(() => observeLazyImages());
+  bodyObs.observe(document.documentElement, { childList: true, subtree: true });
+  observeLazyImages();
+};
+if ('requestIdleCallback' in window) {
+  (window as any).requestIdleCallback(startObserver);
+} else {
+  setTimeout(startObserver, 200);
+}
 
 createRoot(document.getElementById("root")!).render(<App />);
