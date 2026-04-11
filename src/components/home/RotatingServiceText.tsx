@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,29 +16,6 @@ const FALLBACK_SERVICES = [
   'manicure', 'cabeleireiro', 'maquiador', 'motorista particular', 'frete e mudança',
 ];
 
-type AnimationType = 'fade' | 'slideUp' | 'typing';
-type MotionProps = { opacity?: number; y?: number; width?: number | string };
-
-const animations: Record<AnimationType, { initial: MotionProps; animate: MotionProps; exit: MotionProps }> = {
-  fade: {
-    initial: { opacity: 0 },
-    animate: { opacity: 1 },
-    exit: { opacity: 0 },
-  },
-  slideUp: {
-    initial: { opacity: 0, y: 24 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -24 },
-  },
-  typing: {
-    initial: { opacity: 0, width: 0 },
-    animate: { opacity: 1, width: 'auto' },
-    exit: { opacity: 0, width: 0 },
-  },
-};
-
-const ANIMATION_TYPES: AnimationType[] = ['fade', 'slideUp', 'typing'];
-
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -50,7 +26,6 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 const RotatingServiceText = () => {
-  // Pull service names from popular_services table (admin-managed)
   const { data: dbServices } = useQuery({
     queryKey: ['rotating-service-names'],
     queryFn: async () => {
@@ -68,43 +43,48 @@ const RotatingServiceText = () => {
   const shuffled = useMemo(() => shuffle(serviceList), [serviceList]);
 
   const [index, setIndex] = useState(0);
-  const [animType, setAnimType] = useState<AnimationType>(() =>
-    ANIMATION_TYPES[Math.floor(Math.random() * ANIMATION_TYPES.length)]
-  );
+  const [phase, setPhase] = useState<'in' | 'out'>('in');
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const rotate = useCallback(() => {
-    setIndex((prev) => (prev + 1) % shuffled.length);
-    setAnimType(ANIMATION_TYPES[Math.floor(Math.random() * ANIMATION_TYPES.length)]);
+    // Start exit
+    setPhase('out');
+    // After exit animation, swap text and enter
+    timerRef.current = setTimeout(() => {
+      setIndex((prev) => (prev + 1) % shuffled.length);
+      setPhase('in');
+    }, 400);
   }, [shuffled.length]);
 
   useEffect(() => {
     const id = setInterval(rotate, 2500);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [rotate]);
-
-  const anim = animations[animType];
 
   return (
     <>
-      <span className="relative inline-block min-w-[180px] sm:min-w-[260px] text-left align-bottom" style={{ height: '1.2em' }}>
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={`${index}-${animType}`}
-            initial={anim.initial}
-            animate={anim.animate}
-            exit={anim.exit}
-            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className="text-secondary inline-block whitespace-nowrap"
-          >
-            {shuffled[index]}
-          </motion.span>
-        </AnimatePresence>
-        <motion.span
-          className="absolute -bottom-1 left-0 h-1 rounded-full bg-secondary/60"
-          initial={{ width: 0 }}
-          animate={{ width: '100%' }}
-          transition={{ delay: 0.3, duration: 0.5, ease: 'easeOut' }}
-          key={index}
+      <span
+        className="relative inline-block min-w-[180px] sm:min-w-[260px] text-left align-bottom"
+        style={{ height: '1.2em' }}
+      >
+        <span
+          className="text-secondary inline-block whitespace-nowrap transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+          style={{
+            opacity: phase === 'in' ? 1 : 0,
+            transform: phase === 'in' ? 'translateY(0)' : 'translateY(-20px)',
+          }}
+        >
+          {shuffled[index]}
+        </span>
+        <span
+          className="absolute -bottom-1 left-0 h-1 rounded-full bg-secondary/60 transition-[width] duration-500 ease-out"
+          style={{
+            width: phase === 'in' ? '100%' : '0%',
+            transitionDelay: phase === 'in' ? '200ms' : '0ms',
+          }}
         />
       </span>
 
