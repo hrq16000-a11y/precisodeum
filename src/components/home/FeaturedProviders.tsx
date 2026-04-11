@@ -7,6 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import type { DbProvider } from '@/hooks/useProviders';
 import { whatsappLink } from '@/lib/whatsapp';
+import { capitalizeName } from '@/lib/normalize';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import AdNativeCard from '@/components/ads/AdNativeCard';
@@ -115,7 +116,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
 function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
   const impressionRef = useCardImpression(p.id, p.slug, 'featured');
   const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
-  const displayName = p.name || p.businessName || p.category || 'Profissional';
+  const displayName = capitalizeName(p.name || p.businessName || p.category || 'Profissional');
   const hasOwnPhoto = !!(p.photo || p.serviceImage);
   const generatedAvatar = `https://api.dicebear.com/9.x/${avatarFallbackStyle}/svg?seed=${encodeURIComponent(p.userId || p.id)}`;
   const displayPhoto = p.photo || p.serviceImage || generatedAvatar;

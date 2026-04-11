@@ -3,7 +3,7 @@ import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThu
 import { handleImageError } from '@/lib/imageResolver';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye } from 'lucide-react';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
-import { formatLocationString } from '@/lib/normalize';
+import { formatLocationString, capitalizeName } from '@/lib/normalize';
 import ImageLightbox from '@/components/ImageLightbox';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
@@ -489,7 +489,7 @@ const ProviderProfile = () => {
   const destaqueMinPortfolio = Number(useSettingValue('destaque_min_portfolio')) || 1;
   const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
 
-  const name = provider ? ((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : '';
+  const name = provider ? capitalizeName((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : '';
   const hasOwnAvatar = !!(provider && ((provider.profiles as any)?.avatar_url || provider.photo_url));
   const diceBearAvatar = provider ? `https://api.dicebear.com/9.x/${avatarFallbackStyle}/svg?seed=${encodeURIComponent(provider.user_id || provider.id)}` : '';
   const avatarUrl = provider ? (hasOwnAvatar ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : diceBearAvatar) : '';
@@ -928,7 +928,7 @@ const ProviderProfile = () => {
 
       {!pageSettings.cover_image_url && (pageSettings.headline || pageSettings.tagline) && (
         <div className="container pt-6">
-          {pageSettings.headline && <h2 className="font-display text-xl font-bold text-foreground">{pageSettings.headline}</h2>}
+          {pageSettings.headline && <h2 className="font-display text-xl font-bold text-foreground line-clamp-2">{pageSettings.headline}</h2>}
           {pageSettings.tagline && <p className="mt-1 text-sm text-muted-foreground">{pageSettings.tagline}</p>}
         </div>
       )}
@@ -1005,12 +1005,6 @@ const ProviderProfile = () => {
                       <Crown className="h-3 w-3" /> DESTAQUE
                     </motion.span>
                   )}
-                  {provider.levelInfo && (
-                    <span className={`inline-flex items-center gap-1 ${tc.badge} px-2 py-0.5 text-xs font-medium`} style={{ backgroundColor: `${provider.levelInfo.color}20`, color: provider.levelInfo.color }}>
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: provider.levelInfo.color }} />
-                      {provider.levelInfo.name}
-                    </span>
-                  )}
                   {provider.accTypeInfo && (
                     <span className={`inline-flex items-center gap-1 ${tc.badge} border px-2 py-0.5 text-xs font-medium`} style={{ borderColor: `${provider.accTypeInfo.color}40`, color: provider.accTypeInfo.color }}>
                       {provider.accTypeInfo.name}
@@ -1026,15 +1020,9 @@ const ProviderProfile = () => {
                   <span className="flex items-center gap-1">
                     <MapPin className="h-4 w-4 text-accent" />
                     {provider.city
-                      ? `${provider.neighborhood ? `${provider.neighborhood}, ` : ''}${provider.city} - ${provider.state}`
+                      ? formatLocationString(`${provider.neighborhood ? `${provider.neighborhood}, ` : ''}${provider.city} - ${provider.state}`)
                       : 'Localização não informada'}
                   </span>
-                  {provider.years_experience > 0 && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4 text-accent" />
-                      {provider.years_experience} anos exp.
-                    </span>
-                  )}
                 </div>
                 {reviewsEnabled && (
                   <div className="mt-3 flex justify-center sm:justify-start">
@@ -1117,7 +1105,6 @@ const ProviderProfile = () => {
                   size="lg"
                   className={`${tc.button} gap-2 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto`}
                   onClick={() => setLeadDialogOpen(true)}
-                  style={accentBg ? { backgroundColor: accentBg } : undefined}
                 >
                   <Send className="h-4 w-4" />
                   {pageSettings.cta_text}
