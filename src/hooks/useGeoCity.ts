@@ -52,7 +52,7 @@ const PRECISE_KEY = 'geo_precise';
 const GEO_ASKED_KEY = 'geo_browser_asked';
 const RADIUS_KEY = 'geo_radius';
 const FETCH_TS_KEY = 'geo_fetch_ts';
-const GEO_TTL_MS = 30 * 60 * 1000; // 30 min
+const GEO_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 function safeGet(key: string): string | null {
   try {

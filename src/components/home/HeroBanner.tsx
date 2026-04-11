@@ -83,12 +83,17 @@ function useCountUp(target: number, duration = 1500) {
   return count;
 }
 
-/* Floating decorative dots — deferred to avoid blocking FCP */
+/* Floating decorative dots — deferred via requestIdleCallback to avoid blocking LCP */
 const FloatingDots = () => {
   const [show, setShow] = useState(false);
   useEffect(() => {
-    const id = requestAnimationFrame(() => setShow(true));
-    return () => cancelAnimationFrame(id);
+    const start = () => setShow(true);
+    if ('requestIdleCallback' in window) {
+      const id = (window as any).requestIdleCallback(start);
+      return () => (window as any).cancelIdleCallback(id);
+    }
+    const id = setTimeout(start, 200);
+    return () => clearTimeout(id);
   }, []);
   if (!show) return null;
   return (
