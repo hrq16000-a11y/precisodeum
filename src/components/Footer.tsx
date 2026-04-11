@@ -62,15 +62,11 @@ const itemVariants = {
 
 const FooterLinkItem = ({ item }: { item: any }) => {
   const isExternal = item.open_in_new_tab || item.url?.startsWith('http');
-  const isNewItem = item.icon === '🆕';
 
   if (isExternal) {
     return (
       <a href={item.url} target="_blank" rel="noopener noreferrer" className="story-link inline-flex items-center gap-1.5 transition-colors hover:text-primary-foreground">
         {item.label}
-        {isNewItem && (
-          <span className="rounded-full bg-accent/20 px-1.5 py-0.5 text-[8px] font-bold uppercase text-accent">Novo</span>
-        )}
       </a>
     );
   }
