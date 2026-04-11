@@ -161,6 +161,7 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
             >
               <Crown className="h-3 w-3" />
             </motion.div>
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <Link
