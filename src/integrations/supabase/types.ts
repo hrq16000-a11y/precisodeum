@@ -698,13 +698,16 @@ export type Database = {
         Row: {
           active: boolean
           button_text: string | null
+          click_count: number | null
           created_at: string
           description: string
           display_order: number
+          end_date: string | null
           icon: string | null
           id: string
           image_url: string | null
           link_url: string | null
+          start_date: string | null
           theme_color: string | null
           title: string
           updated_at: string
@@ -712,13 +715,16 @@ export type Database = {
         Insert: {
           active?: boolean
           button_text?: string | null
+          click_count?: number | null
           created_at?: string
           description?: string
           display_order?: number
+          end_date?: string | null
           icon?: string | null
           id?: string
           image_url?: string | null
           link_url?: string | null
+          start_date?: string | null
           theme_color?: string | null
           title: string
           updated_at?: string
@@ -726,13 +732,16 @@ export type Database = {
         Update: {
           active?: boolean
           button_text?: string | null
+          click_count?: number | null
           created_at?: string
           description?: string
           display_order?: number
+          end_date?: string | null
           icon?: string | null
           id?: string
           image_url?: string | null
           link_url?: string | null
+          start_date?: string | null
           theme_color?: string | null
           title?: string
           updated_at?: string
@@ -3340,6 +3349,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_highlight_clicks: {
+        Args: { highlight_id: string }
+        Returns: undefined
       }
       increment_job_view: { Args: { job_id: string }; Returns: undefined }
       increment_provider_impression: {

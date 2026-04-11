@@ -3,7 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Sparkles, Trash2, Save, Pencil } from 'lucide-react';
+import { Sparkles, Trash2, Save, Pencil, MousePointerClick, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImageUploadField from '@/components/ImageUploadField';
 
@@ -13,25 +13,28 @@ const AdminHighlightsPage = () => {
   const [form, setForm] = useState({
     title: '', description: '', image_url: '', link_url: '',
     display_order: 0, icon: 'Sparkles', theme_color: 'text-orange-500', button_text: 'Saiba mais',
+    start_date: '', end_date: '',
   });
   const [editing, setEditing] = useState<string | null>(null);
 
-  const fetch = async () => {
+  const fetchData = async () => {
     const { data } = await supabase.from('highlights' as any).select('*').order('display_order');
     if (data) setHighlights(data);
   };
 
-  useEffect(() => { if (isAdmin) fetch(); }, [isAdmin]);
+  useEffect(() => { if (isAdmin) fetchData(); }, [isAdmin]);
 
   const handleSave = async () => {
     if (!form.title.trim()) { toast.error('Título obrigatório'); return; }
-    const payload = {
+    const payload: any = {
       title: form.title, description: form.description,
       image_url: form.image_url || null, link_url: form.link_url || null,
       display_order: form.display_order,
       icon: form.icon || 'Sparkles',
       theme_color: form.theme_color || 'text-orange-500',
       button_text: form.button_text || 'Saiba mais',
+      start_date: form.start_date ? new Date(form.start_date).toISOString() : null,
+      end_date: form.end_date ? new Date(form.end_date).toISOString() : null,
     };
     if (editing) {
       const { error } = await (supabase.from('highlights' as any) as any).update({
@@ -45,18 +48,18 @@ const AdminHighlightsPage = () => {
       toast.success('Destaque criado!');
     }
     resetForm();
-    fetch();
+    fetchData();
   };
 
   const resetForm = () => {
-    setForm({ title: '', description: '', image_url: '', link_url: '', display_order: 0, icon: 'Sparkles', theme_color: 'text-orange-500', button_text: 'Saiba mais' });
+    setForm({ title: '', description: '', image_url: '', link_url: '', display_order: 0, icon: 'Sparkles', theme_color: 'text-orange-500', button_text: 'Saiba mais', start_date: '', end_date: '' });
     setEditing(null);
   };
 
   const handleDelete = async (id: string) => {
     await (supabase.from('highlights' as any) as any).delete().eq('id', id);
     toast.success('Destaque removido!');
-    fetch();
+    fetchData();
   };
 
   const startEdit = (h: any) => {
@@ -68,6 +71,8 @@ const AdminHighlightsPage = () => {
       icon: h.icon || 'Sparkles',
       theme_color: h.theme_color || 'text-orange-500',
       button_text: h.button_text || 'Saiba mais',
+      start_date: h.start_date ? h.start_date.slice(0, 16) : '',
+      end_date: h.end_date ? h.end_date.slice(0, 16) : '',
     });
   };
 
@@ -100,6 +105,18 @@ const AdminHighlightsPage = () => {
         </div>
         <input placeholder="Texto do botão (ex: Saiba mais →)" value={form.button_text} onChange={(e) => setForm(p => ({ ...p, button_text: e.target.value }))}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1"><CalendarClock className="h-3 w-3" /> Início</label>
+            <input type="datetime-local" value={form.start_date} onChange={(e) => setForm(p => ({ ...p, start_date: e.target.value }))}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1"><CalendarClock className="h-3 w-3" /> Fim</label>
+            <input type="datetime-local" value={form.end_date} onChange={(e) => setForm(p => ({ ...p, end_date: e.target.value }))}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+          </div>
+        </div>
         <ImageUploadField
           value={form.image_url}
           onChange={(url) => setForm(p => ({ ...p, image_url: url }))}
@@ -130,7 +147,23 @@ const AdminHighlightsPage = () => {
                   <span className="text-xs text-muted-foreground shrink-0">#{h.display_order}</span>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">{h.description}</p>
-                <p className="mt-0.5 text-[10px] text-muted-foreground">Ícone: {h.icon} | Cor: {h.theme_color} | Botão: {h.button_text}</p>
+                <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+                  <span>Ícone: {h.icon}</span>
+                  <span>|</span>
+                  <span>Cor: {h.theme_color}</span>
+                  <span>|</span>
+                  <span>Botão: {h.button_text}</span>
+                  <span>|</span>
+                  <span className="inline-flex items-center gap-0.5"><MousePointerClick className="h-3 w-3" /> {h.click_count ?? 0} cliques</span>
+                </div>
+                {(h.start_date || h.end_date) && (
+                  <p className="mt-0.5 text-[10px] text-muted-foreground flex items-center gap-1">
+                    <CalendarClock className="h-3 w-3" />
+                    {h.start_date ? new Date(h.start_date).toLocaleDateString('pt-BR') : '—'}
+                    {' → '}
+                    {h.end_date ? new Date(h.end_date).toLocaleDateString('pt-BR') : '—'}
+                  </p>
+                )}
               </div>
               <div className="flex gap-1 shrink-0">
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => startEdit(h)}><Pencil className="h-4 w-4" /></Button>

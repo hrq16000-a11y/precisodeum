@@ -4,6 +4,7 @@
  */
 
 type TrackEvent = 'card_view' | 'click_whatsapp' | 'click_profile' | 'click_banner'
+  | 'click_highlight'
   | 'geo_resolved_city' | 'geo_resolved_metro' | 'geo_resolved_uf'
   | 'geo_fallback_text_only' | 'geo_failed_resolution'
   | 'sil_intent_detected' | 'sil_route_selected' | 'sil_geo_used'
