@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { Shield, Users, Zap, Briefcase, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
@@ -93,9 +92,9 @@ const FloatingDots = () => {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       {[...Array(6)].map((_, i) => (
-        <motion.div
+        <div
           key={i}
-          className="absolute rounded-full"
+          className="absolute rounded-full animate-floating-dot"
           style={{
             width: 4 + i * 3,
             height: 4 + i * 3,
@@ -104,16 +103,9 @@ const FloatingDots = () => {
             background: i % 2 === 0
               ? 'hsl(var(--secondary) / 0.25)'
               : 'hsl(var(--primary-foreground) / 0.15)',
-          }}
-          animate={{
-            y: [0, -24 - i * 4, 0],
-            opacity: [0.2, 0.6, 0.2],
-          }}
-          transition={{
-            duration: 5 + i * 0.8,
-            repeat: Infinity,
-            ease: 'easeInOut',
-            delay: i * 0.5,
+            animationDuration: `${5 + i * 0.8}s`,
+            animationDelay: `${i * 0.5}s`,
+            ['--dot-distance' as any]: `${-24 - i * 4}px`,
           }}
         />
       ))}
