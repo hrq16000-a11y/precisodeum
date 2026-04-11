@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, ArrowRight } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
