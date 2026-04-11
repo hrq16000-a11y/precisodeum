@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Phone, MessageCircle, AlertTriangle, Inbox } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { whatsappLink } from '@/lib/whatsapp';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccountLimits } from '@/hooks/useAccountLimits';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const containerVariants = {
   hidden: {},
