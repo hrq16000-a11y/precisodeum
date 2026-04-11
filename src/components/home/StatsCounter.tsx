@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, memo } from 'react';
 import { Users, Briefcase, MapPin, Star } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { motion } from 'framer-motion';
+
 
 function useCountUp(target: number, duration = 2000, enabled = true) {
   const [value, setValue] = useState(0);
@@ -47,11 +47,8 @@ const StatItem = memo(({ stat, value, index }: { stat: typeof stats[number]; val
   const Icon = stat.icon;
 
   return (
-    <motion.div
+    <div
       ref={ref}
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.4, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="group relative flex flex-col items-center gap-2 py-4 px-3 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50 shadow-sm"
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-[0.06] transition-opacity duration-500 rounded-xl`} />
@@ -69,7 +66,7 @@ const StatItem = memo(({ stat, value, index }: { stat: typeof stats[number]; val
           {stat.label}
         </span>
       </div>
-    </motion.div>
+    </div>
   );
 });
 
