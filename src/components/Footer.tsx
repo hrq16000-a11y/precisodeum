@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MessageCircle, Users } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { useMemo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useSettingValue } from '@/hooks/useSiteSettings';
@@ -83,7 +83,6 @@ const FooterLinkItem = ({ item }: { item: any }) => {
 };
 
 const Footer = () => {
-  const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const logoFooterUrl = useSettingValue('logo_footer_url');
   const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : DEFAULT_LOGO_URL;
   const tagline = useMemo(() => footerTaglines[Math.floor(Math.random() * footerTaglines.length)], []);
