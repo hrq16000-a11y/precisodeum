@@ -6,8 +6,8 @@ import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
-import SponsorAd from '@/components/SponsorAd';
-import PwaFooterInstall from '@/components/PwaFooterInstall';
+const SponsorAd = lazy(() => importWithRetry(() => import('@/components/SponsorAd')));
+const PwaFooterInstall = lazy(() => importWithRetry(() => import('@/components/PwaFooterInstall')));
 
 const fallbackProfissionais = [
   { label: 'Cadastro', url: '/cadastro' },
@@ -136,9 +136,13 @@ const Footer = () => {
           </div>
         </div>
 
-        <PwaFooterInstall />
+        <Suspense fallback={null}>
+          <PwaFooterInstall />
+        </Suspense>
 
-        <SponsorAd position="footer" layout="inline" className="mt-6 border-t border-primary-foreground/10 pt-6" />
+        <Suspense fallback={null}>
+          <SponsorAd position="footer" layout="inline" className="mt-6 border-t border-primary-foreground/10 pt-6" />
+        </Suspense>
 
         <div className="mt-6 border-t border-primary-foreground/10 pt-6">
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-primary-foreground/50 mb-4">

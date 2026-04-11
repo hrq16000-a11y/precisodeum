@@ -158,37 +158,27 @@ const Index = () => {
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
 
-  // Consolidated counts query
-  const { data: counts } = useQuery({
-    queryKey: ['home-counts'],
-    queryFn: async () => {
-      const [servicesRes, jobsRes] = await Promise.all([
-        supabase.from('services').select('id', { count: 'exact', head: true }),
-        supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-      ]);
-      return {
-        services: servicesRes.count || 0,
-        jobs: jobsRes.count || 0,
-      };
-    },
-    staleTime: 1000 * 60 * 5,
-  });
-
   // Consolidated secondary data — deferred until primary content renders
   const primaryReady = categories.length > 0 || !catsLoading;
   const { data: secondaryData } = useQuery({
     queryKey: ['home-secondary-data'],
     queryFn: async () => {
-      const [citiesRes, allCatsRes, sponsorsRes] = await Promise.all([
+      const [citiesRes, allCatsRes, sponsorsRes, servicesRes, jobsRes] = await Promise.all([
         supabase.from('cities').select('name, slug, state').eq('has_providers', true).order('provider_count', { ascending: false }).limit(6).then(r => r.data || []),
         supabase.from('categories').select('name, slug').order('name').then(r => r.data || []),
         supabase.from('sponsors').select('id, title, company_name, image_url, logo_url, link_url, tier, position, active, display_order, short_description, max_width, max_height').eq('active', true).order('display_order').then(r => r.data || []),
+        supabase.from('services').select('id', { count: 'exact', head: true }),
+        supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'active'),
       ]);
       return {
         topCities: citiesRes,
         allCategories: allCatsRes,
         recentServices: [] as any[],
         sponsors: sponsorsRes,
+        counts: {
+          services: servicesRes.count || 0,
+          jobs: jobsRes.count || 0,
+        },
       };
     },
     staleTime: 1000 * 60 * 5,
@@ -199,6 +189,7 @@ const Index = () => {
   const allCategories = secondaryData?.allCategories || [];
   const recentServices = secondaryData?.recentServices || [];
   const sponsors = secondaryData?.sponsors || [];
+  const counts = secondaryData?.counts;
 
   // Section renderer — maps slug to component
   const renderSection = (slug: string) => {
@@ -274,13 +265,15 @@ const Index = () => {
         <Header />
         <HeroBanner />
 
-        {sectionOrder.map(slug => {
+        {sectionOrder.map((slug, i) => {
           const section = renderSection(slug);
           if (!section) return null;
+          // Apply content-visibility to sections below the fold (index >= 3)
+          const cvStyle = i >= 3 ? { contentVisibility: 'auto' as const, containIntrinsicSize: '0 400px' } : undefined;
           return (
             <LazyErrorBoundary key={slug}>
               <Suspense fallback={<SectionFallback slug={slug} />}>
-                {section}
+                <div style={cvStyle}>{section}</div>
               </Suspense>
             </LazyErrorBoundary>
           );
