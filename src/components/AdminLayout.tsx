@@ -363,6 +363,45 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       </AnimatePresence>
 
       <main className="flex-1 min-w-0 overflow-x-hidden pt-14 lg:ml-64 lg:pt-0 flex flex-col">
+        {/* Desktop Header */}
+        <div className="hidden lg:flex h-12 items-center justify-between border-b border-border bg-background/80 backdrop-blur-sm px-6 shrink-0">
+          {/* Breadcrumb */}
+          {(() => {
+            const current = menuGroups.flatMap(g => g.items).find(i => i.path === location.pathname);
+            const group = menuGroups.find(g => g.items.some(i => i.path === location.pathname));
+            return (
+              <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Link to="/admin" className="hover:text-foreground transition-colors font-medium">Admin</Link>
+                {group && (
+                  <>
+                    <span className="text-muted-foreground/40">/</span>
+                    <motion.span key={group.label} layoutId="admin-breadcrumb-group" className="text-muted-foreground/60">
+                      {group.label}
+                    </motion.span>
+                  </>
+                )}
+                {current && (
+                  <>
+                    <span className="text-muted-foreground/40">/</span>
+                    <motion.span key={current.label} layoutId="admin-breadcrumb-page" className="font-medium text-foreground">
+                      {current.label}
+                    </motion.span>
+                  </>
+                )}
+              </nav>
+            );
+          })()}
+          <div className="flex items-center gap-2">
+            <Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">← Ver site</Link>
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" className="h-7 w-7 rounded-lg object-cover border border-border" />
+            ) : (
+              <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
+                {(profile?.full_name || 'A')[0].toUpperCase()}
+              </div>
+            )}
+          </div>
+        </div>
         <AdminGroupTabs />
         <motion.div
           className="flex-1 p-3 sm:p-6 max-w-full"
@@ -371,21 +410,23 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] }}
           key={location.pathname}
         >
-          {/* Auto Breadcrumb */}
-          {(() => {
-            const current = menuGroups.flatMap(g => g.items).find(i => i.path === location.pathname);
-            const group = menuGroups.find(g => g.items.some(i => i.path === location.pathname));
-            if (!current || !group) return null;
-            return (
-              <nav className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Link to="/admin" className="hover:text-foreground transition-colors">Admin</Link>
-                <span className="text-muted-foreground/40">/</span>
-                <span className="text-muted-foreground/60">{group.label}</span>
-                <span className="text-muted-foreground/40">/</span>
-                <span className="font-medium text-foreground">{current.label}</span>
-              </nav>
-            );
-          })()}
+          {/* Mobile Breadcrumb */}
+          <div className="lg:hidden">
+            {(() => {
+              const current = menuGroups.flatMap(g => g.items).find(i => i.path === location.pathname);
+              const group = menuGroups.find(g => g.items.some(i => i.path === location.pathname));
+              if (!current || !group) return null;
+              return (
+                <nav className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Link to="/admin" className="hover:text-foreground transition-colors">Admin</Link>
+                  <span className="text-muted-foreground/40">/</span>
+                  <span className="text-muted-foreground/60">{group.label}</span>
+                  <span className="text-muted-foreground/40">/</span>
+                  <span className="font-medium text-foreground">{current.label}</span>
+                </nav>
+              );
+            })()}
+          </div>
           <AdminGroupNav />
           {children}
         </motion.div>
