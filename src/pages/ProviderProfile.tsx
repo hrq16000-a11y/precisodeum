@@ -654,7 +654,7 @@ const ProviderProfile = () => {
         className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line"
         variants={slideInLeft}
       >
-        {provider.description || 'Este profissional ainda não adicionou uma descrição.'}
+        {provider.description && !/cadastrado na plataforma|entre em contato para mais informa/i.test(provider.description) ? provider.description : 'Este profissional ainda não adicionou uma descrição.'}
       </motion.p>
 
       {/* Info grid */}
