@@ -150,7 +150,6 @@ const Index02 = () => {
           <TestimonialsSection />
           <FaqSection />
           <Footer />
-          <FloatingWhatsApp />
         </Suspense>
       </LazyErrorBoundary>
     </div>

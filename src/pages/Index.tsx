@@ -306,7 +306,6 @@ const Index = () => {
         <LazyErrorBoundary>
           <Suspense fallback={<SectionFallback />}>
             <Footer />
-            <FloatingWhatsApp />
           </Suspense>
         </LazyErrorBoundary>
       </div>

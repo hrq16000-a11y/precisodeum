@@ -195,7 +195,6 @@ const Index03 = () => {
           <SponsorFooterCTA city={geoCity || undefined} />
 
           <Footer />
-          <FloatingWhatsApp />
         </Suspense>
       </div>
     </PageTransition>
