@@ -184,7 +184,7 @@ const SmartCategoryPicker = ({
                 <div key={macro.id}>
                   {subs.length > 0 ? (
                     <div className="sticky top-0 bg-muted/60 backdrop-blur-sm px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                      <span>{macro.icon}</span> {macro.name}
+                      <CategoryIcon icon={macro.icon} size={12} className="text-muted-foreground" /> {macro.name}
                     </div>
                   ) : (
                     <button
@@ -200,7 +200,7 @@ const SmartCategoryPicker = ({
                         className="pointer-events-none h-3.5 w-3.5"
                         tabIndex={-1}
                       />
-                      <span>{macro.icon}</span>
+                      <CategoryIcon icon={macro.icon} size={14} className="text-current" />
                       <span className={cn(selectedIds.includes(macro.id) && 'text-accent font-medium')}>
                         {macro.name}
                       </span>
@@ -222,7 +222,7 @@ const SmartCategoryPicker = ({
                         className="pointer-events-none h-3.5 w-3.5"
                         tabIndex={-1}
                       />
-                      <span className="text-xs">{sub.icon}</span>
+                      <CategoryIcon icon={sub.icon || ''} size={12} className="text-current" />
                       <span className={cn('text-sm', selectedIds.includes(sub.id) && 'text-accent font-medium')}>
                         {sub.name}
                       </span>

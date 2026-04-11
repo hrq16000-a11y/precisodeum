@@ -368,7 +368,7 @@ const AdminProvidersPage = () => {
                 {/* Details */}
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
                   {(p.categories as any)?.name && (
-                    <p>{(p.categories as any)?.icon} {(p.categories as any)?.name}</p>
+                    <p className="flex items-center gap-1"><CategoryIcon icon={(p.categories as any)?.icon} size={12} className="text-muted-foreground" /> {(p.categories as any)?.name}</p>
                   )}
                   {(p.city || p.state) && (
                     <p className="flex items-center gap-1">
