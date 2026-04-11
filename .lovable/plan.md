@@ -1,51 +1,79 @@
+## Plano: Upgrade Premium do Carrossel de Destaques
 
+### Resumo
 
-## Plano: Adaptar Destaques com novos campos e 3 cards de vantagens
+Transformar o carrossel de destaques em um componente de alta conversão com efeito glow nos ícones, barra de progresso animada, micro-interações, ordem aleatória, agendamento por datas e rastreamento de cliques (CTR).
 
-### Situação atual
+---
 
-A tabela `highlights` possui: `id`, `title`, `description`, `image_url`, `link_url`, `display_order`, `active`, `created_at`, `updated_at`.
+### 1. Migration — Novos campos no banco
 
-Faltam os campos: `icon` (nome do ícone lucide), `theme_color` (classe Tailwind de cor), `button_text` (texto do botão).
-
-### Alterações
-
-**1. Migration — adicionar 3 colunas + seed dos 3 cards**
+Adicionar `start_date`, `end_date` e `click_count` à tabela `highlights`:
 
 ```sql
-ALTER TABLE public.highlights ADD COLUMN IF NOT EXISTS icon text DEFAULT 'Sparkles';
-ALTER TABLE public.highlights ADD COLUMN IF NOT EXISTS theme_color text DEFAULT 'text-orange-500';
-ALTER TABLE public.highlights ADD COLUMN IF NOT EXISTS button_text text DEFAULT 'Saiba mais';
-
--- Seed: 3 cards de vantagens
-INSERT INTO public.highlights (title, description, icon, theme_color, button_text, link_url, display_order, active)
-VALUES
-  ('Lucro 100% Seu', 'Não cobramos comissão sobre os serviços que você fecha através da plataforma.', 'Sparkles', 'text-orange-500', 'Saiba mais →', '/cadastro', 1, true),
-  ('Contato Direto', 'O cliente clica, o seu WhatsApp toca. Sem intermediários atrapalhando o negócio.', 'Smartphone', 'text-blue-500', 'Como funciona →', '/como-funciona', 2, true),
-  ('Transparência Total', 'Você negocia valores e prazos direto com o cliente. O acordo é 100% entre vocês.', 'Handshake', 'text-emerald-500', 'Ver vantagens →', '/vantagens', 3, true);
+ALTER TABLE public.highlights
+  ADD COLUMN IF NOT EXISTS start_date timestamptz DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS end_date timestamptz DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS click_count integer DEFAULT 0;
 ```
 
-**2. Componente `HighlightsCarousel.tsx` — redesign completo**
+---
 
-- Interface atualizada com `icon`, `theme_color`, `button_text`
-- Importação dinâmica de ícones via `icons` do lucide-react (mapa de ícones)
-- Ícone renderizado com `size={20}` fixo e `className={h.theme_color}`
-- Visual do card: `bg-slate-50` com bordas arredondadas, padding `p-6`
-- Título em negrito ao lado do ícone
-- Descrição em `text-slate-500`
-- Botão com cor dinâmica (`h.theme_color`) e seta
-- Dots de paginação: ativo = pílula `w-4 h-2 rounded-full bg-orange-500`, inativo = `w-2 h-2 rounded-full bg-gray-200`
-- Remover setas de navegação (não solicitadas no novo design)
-- Auto-play mantido (5s)
+### 2. Componente `HighlightsCarousel.tsx` — Redesign completo
 
-**3. Admin `AdminHighlightsPage.tsx` — campos novos no formulário**
+**Dados:**
 
-- Adicionar inputs para `icon`, `theme_color`, `button_text` no formulário
-- Atualizar `handleSave` para enviar os novos campos
-- Atualizar `startEdit` para preencher os novos campos
+- Query filtra `active = true` e aplica lógica de data (`start_date`/`end_date`) no cliente
+- Cards embaralhados aleatoriamente a cada render (Fisher-Yates shuffle)
+
+**Visual Premium:**
+
+- Ícone dentro de container arredondado (`rounded-xl p-2.5`) com fundo suave da `theme_color` (opacidade 10%) e `box-shadow` glow colorido
+- Card com `hover:-translate-y-1` e transição suave
+- Botão com seta animada (bounce horizontal infinito no hover do card)
+
+**Barra de Progresso:**
+
+- Substituir dots por pílulas de paginação onde a pílula ativa preenche progressivamente durante 5 segundos usando CSS `transition: width 5s linear`
+- Reset ao trocar de slide
+
+**UX:**
+
+- Autoplay 5s com pause em `onMouseEnter` e touch
+- Swipe touch mantido (já implementado)
+- Loop infinito via módulo (já funciona)
+
+**Tracking de cliques:**
+
+- Ao clicar no botão CTA, incrementar `click_count` via `supabase.rpc` ou update direto
+- Adicionar evento `click_highlight` ao sistema de tracking existente
+
+---
+
+### 3. Admin `AdminHighlightsPage.tsx` — Campos de agendamento e métricas
+
+**Formulário:**
+
+- Adicionar inputs de data/hora para `start_date` e `end_date` (type="datetime-local")
+
+**Lista de destaques:**
+
+- Exibir `click_count` ao lado de cada card com ícone de cursor
+- Exibir datas de agendamento quando definidas
+
+---
 
 ### Arquivos modificados
-- `src/components/home/HighlightsCarousel.tsx`
-- `src/pages/AdminHighlightsPage.tsx`
-- Migration SQL (via ferramenta de migração)
 
+- Migration SQL (novos campos `start_date`, `end_date`, `click_count`)
+- `src/components/home/HighlightsCarousel.tsx` (redesign completo)
+- `src/pages/AdminHighlightsPage.tsx` (campos de agendamento + métricas)
+- `src/lib/tracking.ts` (novo evento `click_highlight`)
+
+Aqui estão os pontos altos que garantem que o resultado vai ficar com visual e funcionamento de alto nível:
+
+Migration Precisa: A criação das colunas start_date, end_date e click_count direto no banco de dados (Supabase, pelo que vi) é a forma mais segura e profissional de gerenciar os dados.
+
+Performance na Contagem: O uso de supabase.rpc para registrar os cliques é perfeito, pois salva a métrica rapidamente sem travar a navegação do usuário.
+
+Animação Leve: A barra de progresso usando CSS nativo (transition: width 5s linear) é a melhor prática de programação para garantir que a animação rode lisa, sem gastar bateria ou processamento do celular de quem está acessando.
