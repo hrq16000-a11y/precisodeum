@@ -355,7 +355,53 @@ const AdminMediaPage = () => {
           </Card>
         </div>
 
-        {/* Compression Scanner */}
+        {/* Sync History */}
+        <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer hover:bg-muted/50 transition-colors">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  Histórico de Sincronizações
+                  <ChevronDown className={`h-4 w-4 ml-auto text-muted-foreground transition-transform ${historyOpen ? 'rotate-180' : ''}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                {syncHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhuma sincronização registrada</p>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {syncHistory.map((entry: any) => {
+                      const d = entry.details || {};
+                      return (
+                        <div key={entry.id} className="flex items-center justify-between rounded-lg border border-border p-2 text-sm">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-foreground">
+                              {new Date(entry.created_at).toLocaleDateString('pt-BR')} às {new Date(entry.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              Buckets: {Array.isArray(d.scanned_buckets) ? d.scanned_buckets.join(', ') : '—'}
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0 ml-2">
+                            <Badge variant={d.inserted > 0 ? 'default' : 'secondary'} className="text-[10px]">
+                              {d.inserted || 0} novo(s)
+                            </Badge>
+                            <p className="text-[9px] text-muted-foreground mt-0.5">
+                              {d.existing_tracked || 0} já indexados
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
         {showOversized && (
           <Card>
             <CardHeader className="pb-3">
