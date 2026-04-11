@@ -243,6 +243,7 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
             </Link>
           </Button>
         </div>
+        <p className="mt-1.5 text-center text-[10px] text-muted-foreground">Orçamento sem compromisso</p>
       </div>
     </motion.div>
   );
