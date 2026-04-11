@@ -241,6 +241,28 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             </kbd>
           </div>
         </div>
+        {/* Favorites Section */}
+        {favorites.length > 0 && !sidebarSearch && (
+          <div className="px-3 pb-2 border-b border-sidebar-border/50 mb-1">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-sidebar-foreground/30 flex items-center gap-1 px-3 py-1">
+              <Pin className="h-2.5 w-2.5" /> Favoritos
+            </span>
+            <div className="space-y-0.5">
+              {favorites.map(path => {
+                const item = allItems.find(i => i.path === path);
+                if (!item) return null;
+                const active = location.pathname === path;
+                return (
+                  <Link key={path} to={path} onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/40'}`}>
+                    <item.icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <nav className="flex-1 overflow-y-auto overscroll-contain mt-1 space-y-1 px-3 pb-4">
           {filteredGroups.map((group) => {
             const isCollapsed = !!collapsedGroups[group.label] && !sidebarSearch;
