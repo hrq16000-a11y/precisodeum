@@ -60,12 +60,3 @@ export function formatLocationString(text: string | null | undefined): string {
     .replace(/, E /gi, ' e ')
     .trim();
 }
-  if (!text) return '';
-  return text
-    .replace(/\s+,/g, ',')
-    .replace(/,\s*/g, ', ')
-    .replace(/,{2,}/g, ',')
-    .replace(/\s+/g, ' ')
-    .replace(/, E /gi, ' e ')
-    .trim();
-}
