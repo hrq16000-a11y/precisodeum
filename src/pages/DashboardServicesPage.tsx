@@ -110,6 +110,7 @@ const DashboardServicesPage = () => {
     } else {
       setForm(prev => ({ ...prev, [name]: value }));
     }
+    if (formErrors[name]) setFormErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const toggleCategory = (catId: string) => {
