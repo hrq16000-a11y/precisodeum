@@ -497,11 +497,13 @@ const ProviderProfile = () => {
   const categoryIcon = provider ? ((provider.categories as any)?.icon || '🔧') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
 
-  // DESTAQUE: replaces simple plan === 'premium' check
-  const isDestaque = !!provider && provider.plan === 'premium' && hasOwnAvatar &&
-    (!destaqueRequireServices || (provider.services_count || 0) >= destaqueMinServices) &&
-    (!destaqueRequirePortfolio || (provider.portfolio_album_count || 0) >= destaqueMinPortfolio) &&
-    (!destaqueRequireAvatar || hasOwnAvatar);
+  // DESTAQUE: OR logic — at least 1 criterion met
+  const isDestaque = !!provider && provider.plan === 'premium' && (
+    hasOwnAvatar ||
+    (provider.services_count || 0) >= (destaqueMinServices || 1) ||
+    (provider.portfolio_album_count || 0) > 0 ||
+    !!(provider.description && provider.description.trim())
+  );
   const effectiveWhatsApp = provider ? toCanonical(provider.whatsapp || provider.phone || '') : '';
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
