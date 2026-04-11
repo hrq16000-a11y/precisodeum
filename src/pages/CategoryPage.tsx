@@ -243,24 +243,37 @@ const CategoryPage = () => {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-8 flex justify-center"
+            className="mt-10 flex justify-center"
           >
-            <Button
-              variant="outline"
-              size="lg"
+            <button
               onClick={() => { setShowAllLocations(true); setPage(1); }}
-              className="gap-2"
+              className="group relative inline-flex items-center gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-4 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:scale-[1.02] active:scale-[0.98]"
             >
-              <MapPin className="h-4 w-4" />
-              Ver profissionais de outras localidades ({otherProviders.length})
-            </Button>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                <Globe className="h-5 w-5" />
+              </span>
+              <span className="text-left">
+                <span className="block text-sm font-semibold">Ver outras localidades</span>
+                <span className="block text-xs text-muted-foreground">+{otherProviders.length} profissional{otherProviders.length !== 1 ? 'is' : ''} em todo o Brasil</span>
+              </span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+            </button>
           </motion.div>
         )}
 
         {showAllLocations && otherProviders.length > 0 && (
-          <p className="mt-6 text-sm text-muted-foreground text-center">
-            Exibindo também profissionais de outras regiões
-          </p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-8 mb-2 flex items-center gap-3"
+          >
+            <div className="h-px flex-1 bg-border" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
+              <Globe className="h-3 w-3" />
+              Outras regiões
+            </span>
+            <div className="h-px flex-1 bg-border" />
+          </motion.div>
         )}
 
         {displayProviders.length === 0 && (
