@@ -359,13 +359,28 @@ const SearchPage = () => {
               </div>
             )}
 
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-muted-foreground">
-                {isLoading ? 'Buscando...' : `${fullyFiltered.length} profissional(is) encontrado(s)`}
+                {isLoading ? 'Buscando...' : `${displayProviders.length} profissional(is) encontrado(s)`}
                 {query && <> para "<span className="font-semibold text-foreground">{query}</span>"</>}
                 {effectiveCity && <> em <span className="font-semibold text-foreground">{effectiveCity}</span></>}
               </p>
+              {!isFallback && filteredLocal.length > 0 && effectiveCity && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                  <MapPin className="h-3 w-3" />
+                  {filteredLocal.length} na sua região
+                </span>
+              )}
             </div>
+
+            {isFallback && effectiveCity && (
+              <GeoFallbackBanner
+                originalCity={effectiveCity}
+                expansionLevel="all"
+                stateName={geoState || undefined}
+                resultCount={displayProviders.length}
+              />
+            )}
 
             {/* Active filter tags */}
             {activeFilterCount > 0 && (
@@ -435,6 +450,7 @@ const SearchPage = () => {
               </div>
             ) : (
               <>
+                {/* Local results */}
                 <motion.div
                   className="grid gap-4 sm:grid-cols-2"
                   initial="hidden"
@@ -448,17 +464,62 @@ const SearchPage = () => {
                       transition={{ duration: 0.35 }}
                       layout
                     >
-                      <ProviderCard provider={p} isFallback={!!effectiveCity && !matchesGeoContext(p, normalizeCityName(effectiveCity), geoState ? normalizeCityName(geoState) : undefined, userLat, userLon, radiusKm)} />
+                      <ProviderCard
+                        provider={p}
+                        isFallback={isFallback || (!filteredLocal.some(lp => lp.id === p.id) && !!effectiveCity)}
+                      />
                     </motion.div>
                   ))}
                 </motion.div>
-                {fullyFiltered.length === 0 && (
+
+                {/* Button to show other regions */}
+                {!showAllLocations && filteredOther.length > 0 && !isFallback && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-10 flex justify-center"
+                  >
+                    <button
+                      onClick={() => { setShowAllLocations(true); setPage(1); }}
+                      className="group relative inline-flex items-center gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-4 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                        <Globe className="h-5 w-5" />
+                      </span>
+                      <span className="text-left">
+                        <span className="block text-sm font-semibold">Ver outras localidades</span>
+                        <span className="block text-xs text-muted-foreground">
+                          +{filteredOther.length} profissional{filteredOther.length !== 1 ? 'is' : ''} em todo o Brasil
+                        </span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Separator for other regions */}
+                {showAllLocations && filteredOther.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-8 mb-2 flex items-center gap-3"
+                  >
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                      <Globe className="h-3 w-3" />
+                      Outras regiões
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </motion.div>
+                )}
+
+                {displayProviders.length === 0 && (
                   <EmptyStateFallback
                     title="Nenhum profissional encontrado"
                     message="Tente alterar os filtros ou buscar por outro termo."
                   />
                 )}
-                <PaginationControls currentPage={page} totalItems={fullyFiltered.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
+                <PaginationControls currentPage={page} totalItems={displayProviders.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
               </>
             )}
           </div>
