@@ -29,12 +29,7 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(({ userId, cu
     setUploading(true);
     try {
       const file = await compressImage(raw, { maxDimension: 512, targetKB: 200 });
-      toast.error('Imagem deve ter no máximo 5MB');
-      return;
-    }
 
-    setUploading(true);
-    try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         toast.error('Você precisa estar logado');
