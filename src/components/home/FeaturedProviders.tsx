@@ -117,10 +117,20 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
 
 function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
   const impressionRef = useCardImpression(p.id, p.slug, 'featured');
+  const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
   const displayName = p.name || p.businessName || p.category || 'Profissional';
-  const displayPhoto = p.photo || p.serviceImage || '';
+  const hasOwnPhoto = !!(p.photo || p.serviceImage);
+  const generatedAvatar = `https://api.dicebear.com/9.x/${avatarFallbackStyle}/svg?seed=${encodeURIComponent(p.userId || p.id)}`;
+  const displayPhoto = p.photo || p.serviceImage || generatedAvatar;
   const rating = p.rating ?? 0;
   const reviewCount = p.reviewCount ?? 0;
+
+  const isDestaque = p.plan === 'premium' && (
+    hasOwnPhoto ||
+    (p.servicesCount || 0) >= 1 ||
+    (p.portfolioAlbumCount || 0) > 0 ||
+    !!(p as any).description
+  );
 
   return (
     <motion.div
@@ -143,6 +153,7 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
                 {p.categoryIcon || '🔧'}
               </AvatarFallback>
             </Avatar>
+            {isDestaque && (
             <motion.div
               animate={{ rotate: [0, 15, -15, 0] }}
               transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
