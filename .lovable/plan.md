@@ -1,58 +1,56 @@
 
 
-# Correção: Ordenação por Proximidade no Dropdown de Cidades e Filtros
+# Correções de Lógica Geo + Melhorias Visuais no Card e Banners
 
-## Problema Identificado
+## 1. Correção Crítica: Contradição Geográfica (Cajuru dentro de Curitiba = "Outra região")
 
-A screenshot mostra dois problemas:
+**Causa raiz:** Quando o usuário tem GPS ativo, `matchesGeoContext` usa APENAS distância (linha 873-878 do geoEngine). Se o raio é 5km e o provider em Cajuru/Curitiba está a 6km, ele é classificado como "outra região" — mesmo estando na mesma cidade e região metropolitana.
 
-1. **Dropdown do GeoLocationChip**: Ao abrir, lista cidades em ordem alfabética (Abadia de Goiás, Abadia dos Dourados...) em vez de mostrar as cidades mais próximas do GPS do usuário
-2. **"0 profissionalis"**: O raio de 5km é muito restritivo — não encontra nenhum profissional na categoria, mas não oferece sugestão de expandir
+**Correção em `src/lib/geoEngine.ts`** (função `matchesGeoContext`):
+- Após o check de raio por distância (PRIMARY), adicionar fallback de **mesma cidade**: se `pCityNorm === ctx.coreCity` ou o provider pertence à mesma região metropolitana, retornar `true` mesmo que esteja fora do raio em km
+- Isso garante que um provider em Curitiba NUNCA seja "outra região" quando o usuário está em Curitiba
 
-## Causa Raiz
+```text
+Lógica atualizada:
+1. Se dist <= raio → local ✓
+2. Se dist > raio MAS mesma cidade ou metro → local ✓ (NOVO)
+3. Se dist > raio E outra cidade → outra região
+```
 
-- `GeoLocationChip` carrega 5.570 municípios da API IBGE sem coordenadas — impossível ordenar por distância
-- `citiesIndex.ts` tem todos os municípios mas sem lat/lon
-- `cityCoords.ts` tem ~200 cidades com coordenadas — suficiente para sortear as mais próximas no dropdown
-- Quando não há resultados locais, o raio deveria auto-expandir ou sugerir expansão
+## 2. Banner de Aviso — Diferenciação Visual
 
-## Solução
+**Arquivo:** `src/components/GeoFallbackBanner.tsx`
 
-### 1. GeoLocationChip — Cidades ordenadas por proximidade
+- Mudar de `border-accent/20 bg-accent/5` para `border-amber-200 bg-amber-50` (tom de alerta, não de resultado)
+- Remover estilo de "card" — usar visual flat de aviso do sistema
+- Adicionar botões de ação dentro do banner: "Ampliar raio para 50km" e "Buscar em outra cidade"
+- Evitar o "beco sem saída" que o usuário reportou
 
-**Arquivo:** `src/components/GeoLocationChip.tsx`
+## 3. Contraste das Tags (Acessibilidade)
 
-- Importar `cityCoords.ts` (lookup por nome normalizado)
-- Quando GPS disponível e sem texto de busca: calcular distância Haversine para cada cidade que tem coordenadas conhecidas, ordenar do mais próximo ao mais distante
-- Cidades sem coordenadas conhecidas ficam no final
-- Mostrar a distância ao lado de cada cidade no dropdown (ex: "Curitiba PR — 3km")
+**Arquivo:** `src/components/ProviderCard.tsx`
 
-### 2. Migração DB — Adicionar lat/lon à tabela `cities`
+- Tag "Perfil Completo": mudar de `bg-accent/10 text-accent` para `bg-emerald-100 text-emerald-700 border border-emerald-200` — mais legível
+- Tag "Outra região": mudar de `bg-muted text-muted-foreground` para `bg-amber-100 text-amber-700 border border-amber-200` — destaque de alerta
+- Tag "Verificado": manter accent mas aumentar saturação para `bg-accent/15 text-accent font-bold`
 
-- Adicionar colunas `latitude DOUBLE PRECISION` e `longitude DOUBLE PRECISION` à tabela `cities`
-- Backfill inicial usando média das coordenadas dos providers de cada cidade (já temos 100% de cobertura de coords nos providers)
+## 4. Botão "Ver Perfil" com Ícone
 
-### 3. GeoLocationChip — Priorizar cidades com providers
+**Arquivo:** `src/components/ProviderCard.tsx`
 
-- Em vez de carregar da API IBGE, carregar da tabela `cities` que agora tem coordenadas
-- Filtrar para mostrar apenas cidades que têm `has_providers = true` primeiro
-- Ordenar por distância GPS
-- Fallback para IBGE apenas quando o usuário busca uma cidade que não está na tabela
+- Adicionar ícone `ArrowRight` (→) no botão "Ver Perfil" para equilibrar visualmente com o ícone do WhatsApp
 
-### 4. CategoryPage — Auto-expansão inteligente do raio
+## 5. Card de Patrocínio
 
-**Arquivo:** `src/pages/CategoryPage.tsx`
-
-- Quando `localProviders.length === 0` e GPS está ativo, mostrar sugestão de expandir raio automaticamente
-- Botão "Expandir para 50km" ou "Expandir para todo o estado"
-- Exibir contagem de profissionais disponíveis em raios maiores
+Manter como está — o usuário aprovou o design atual.
 
 ## Detalhes Técnicos
 
 | Arquivo | Alteração |
 |---|---|
-| Migração SQL | `ALTER TABLE cities ADD COLUMN latitude/longitude` + backfill via subquery de providers |
-| `src/components/GeoLocationChip.tsx` | Carregar cidades do DB com coords, ordenar por proximidade GPS, mostrar distância |
-| `src/pages/CategoryPage.tsx` | Auto-sugestão de expansão de raio quando 0 resultados locais |
-| `src/lib/geoUtils.ts` | Nova função `fetchCitiesWithCoords()` que consulta tabela `cities` |
+| `src/lib/geoEngine.ts` | Adicionar fallback same-city/metro no `matchesGeoContext` |
+| `src/components/GeoFallbackBanner.tsx` | Visual de alerta + botões de ação (ampliar raio, buscar outra cidade) |
+| `src/components/ProviderCard.tsx` | Contraste de tags melhorado + ícone no "Ver Perfil" |
+
+Sem migração de banco. Sem nova edge function.
 
