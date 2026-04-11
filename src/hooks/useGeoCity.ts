@@ -189,10 +189,11 @@ function startFetchIfNeeded() {
     try {
       const edgeGeo = await fetchGeoFromEdge();
       if (edgeGeo.city || edgeGeo.state || edgeGeo.temp !== null) {
+        const uf = normalizeUF(edgeGeo.state);
         if (edgeGeo.city) safeSet(CITY_KEY, edgeGeo.city);
-        if (edgeGeo.state) safeSet(STATE_KEY, edgeGeo.state);
+        if (uf) safeSet(STATE_KEY, uf);
         if (edgeGeo.temp !== null) safeSet(TEMP_KEY, String(edgeGeo.temp));
-        setGeoState(edgeGeo);
+        setGeoState({ ...edgeGeo, state: uf });
       }
     } catch (error) {
       console.debug('[GeoCity] edge function failed:', error);
@@ -210,8 +211,9 @@ function startFetchIfNeeded() {
           ? await fetchTemp(result.lat, result.lon)
           : geoState.temp;
 
+        const uf = normalizeUF(result.state);
         if (result.city) safeSet(CITY_KEY, result.city);
-        if (result.state) safeSet(STATE_KEY, result.state);
+        if (uf) safeSet(STATE_KEY, uf);
         if (result.lat !== null) safeSet(LAT_KEY, String(result.lat));
         if (result.lon !== null) safeSet(LON_KEY, String(result.lon));
         if (temp !== null) safeSet(TEMP_KEY, String(temp));
@@ -219,7 +221,7 @@ function startFetchIfNeeded() {
 
         setGeoState({
           city: result.city || geoState.city,
-          state: result.state || geoState.state,
+          state: uf || geoState.state,
           temp,
           latitude: result.lat,
           longitude: result.lon,
