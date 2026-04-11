@@ -249,9 +249,10 @@ export function useGeoCity(): GeoStore {
   const data = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   const setCity = useCallback((city: string, state?: string, latitude?: number | null, longitude?: number | null) => {
+    const uf = normalizeUF(state) || undefined;
     safeSet(CITY_KEY, city);
     safeSet(OVERRIDE_KEY, 'true');
-    if (state) safeSet(STATE_KEY, state);
+    if (uf) safeSet(STATE_KEY, uf);
 
     if (latitude !== undefined && latitude !== null) safeSet(LAT_KEY, String(latitude));
     else {
@@ -265,7 +266,7 @@ export function useGeoCity(): GeoStore {
 
     setGeoState({
       city,
-      state: state || geoState.state,
+      state: uf || geoState.state,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
       manualOverride: true,
