@@ -156,19 +156,6 @@ const Footer = () => {
                   </a>
                 </li>
               ))}
-              {whatsappGroupUrl && (
-                <li>
-                  <a
-                    href={whatsappGroupUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#25D366]/20 px-3 py-2 text-[#25D366] transition-colors hover:bg-[#25D366]/30"
-                  >
-                    <Users className="h-4 w-4" />
-                    Grupo WhatsApp
-                  </a>
-                </li>
-              )}
             </ul>
           </motion.div>
         </div>
