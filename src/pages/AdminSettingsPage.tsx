@@ -325,6 +325,7 @@ const PROFILE_RULE_KEYS = [
   { key: 'destaque_require_avatar', label: 'DESTAQUE: Exigir avatar', type: 'boolean' },
   { key: 'destaque_require_portfolio', label: 'DESTAQUE: Exigir portfólio', type: 'boolean' },
   { key: 'destaque_require_services', label: 'DESTAQUE: Exigir serviços', type: 'boolean' },
+  { key: 'destaque_require_description', label: 'DESTAQUE: Exigir descrição', type: 'boolean' },
   { key: 'destaque_min_services', label: 'DESTAQUE: Mín. serviços', type: 'number' },
   { key: 'destaque_min_portfolio', label: 'DESTAQUE: Mín. álbuns', type: 'number' },
   { key: 'incomplete_profile_hide_public', label: 'Ocultar perfis incompletos', type: 'boolean' },
