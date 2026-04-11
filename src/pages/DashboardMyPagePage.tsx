@@ -185,14 +185,37 @@ const DashboardMyPagePage = () => {
     const file = e.target.files?.[0];
     if (!file || !provider) return;
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `covers/${provider.user_id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('portfolio').upload(path, file, { upsert: true });
-    if (error) { toast.error('Erro ao enviar imagem'); setUploading(false); return; }
-    const { data: { publicUrl } } = supabase.storage.from('portfolio').getPublicUrl(path);
-    setCoverImageUrl(publicUrl);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucket', 'portfolio');
+      formData.append('folder', `covers/${provider.user_id}`);
+
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/optimize-image`,
+        {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'apikey': anonKey,
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      setCoverImageUrl(data.url);
+      toast.success('Imagem de capa enviada e otimizada!');
+    } catch {
+      toast.error('Erro ao enviar imagem');
+    }
     setUploading(false);
-    toast.success('Imagem de capa enviada!');
   };
 
   const moveSection = (index: number, direction: 'up' | 'down') => {
