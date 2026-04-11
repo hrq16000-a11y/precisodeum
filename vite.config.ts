@@ -21,10 +21,17 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       devOptions: {
         enabled: false,
       },
-      includeAssets: ["favicon.ico", "icons/*.png", "hero-image.webp"],
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        globPatterns: ['**/*.{js,css,html,ico,woff,woff2}'],
+      },
+      includeAssets: ["favicon.ico", "icons/*.png"],
       manifest: {
         name: "Preciso de Um",
         short_name: "PrecisodeUm",
@@ -45,70 +52,6 @@ export default defineConfig(({ mode }) => ({
           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
           { src: "/icons/icon-384.png", sizes: "384x384", type: "image/png" },
           { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
-        ],
-      },
-      workbox: {
-        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
-        navigateFallbackDenylist: [/^\/~oauth/],
-        cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true,
-        globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,svg,webp,woff,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/qaftogrqeyymewoofexc\.supabase\.co\/storage\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "supabase-storage-cache",
-              expiration: { maxEntries: 80, maxAgeSeconds: 30 * 24 * 60 * 60 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/qaftogrqeyymewoofexc\.supabase\.co\/rest\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "api-cache",
-              networkTimeoutSeconds: 5,
-              expiration: { maxEntries: 50, maxAgeSeconds: 300 },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "fonts-cache",
-              expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "images-cache",
-              expiration: { maxEntries: 120, maxAgeSeconds: 30 * 24 * 60 * 60 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/lh3\.googleusercontent\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-avatars-cache",
-              expiration: { maxEntries: 30, maxAgeSeconds: 7 * 24 * 60 * 60 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /\/assets\/.*\.(?:js|css)$/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "hashed-assets-cache",
-              expiration: { maxEntries: 100, maxAgeSeconds: 365 * 24 * 60 * 60 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
         ],
       },
     }),

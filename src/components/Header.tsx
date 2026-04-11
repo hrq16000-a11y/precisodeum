@@ -225,6 +225,7 @@ const Header = () => {
               }`}
               width="166"
               height="48"
+              fetchPriority="high"
             />
           </Link>
 

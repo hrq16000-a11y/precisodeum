@@ -17,7 +17,8 @@ export function useSiteSettings() {
       });
       return { flags: map, values: raw };
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 30, // 30 min (rarely changes)
+    gcTime: 1000 * 60 * 60, // 1 hour
   });
 }
 
