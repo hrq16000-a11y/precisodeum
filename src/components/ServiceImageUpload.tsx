@@ -41,6 +41,9 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
     setUploading(true);
     try {
       const { userRef } = await resolveIdentity(userId);
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const { data: { session } } = await supabase.auth.getSession();
 
       for (const file of Array.from(files)) {
         if (file.size > 5 * 1024 * 1024) {
@@ -48,35 +51,55 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
           continue;
         }
 
-        const ext = file.name.split('.').pop();
-        const path = `${userId}/${serviceId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('bucket', 'service-images');
+        formData.append('folder', `${userId}/${serviceId}`);
 
-        const { error: uploadError } = await supabase.storage
-          .from('service-images')
-          .upload(path, file);
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/optimize-image`,
+          {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'apikey': anonKey,
+              'Authorization': `Bearer ${session?.access_token}`,
+            },
+          }
+        );
 
-        if (uploadError) {
-          toast.error('Erro no upload: ' + uploadError.message);
+        const data = await res.json();
+        if (data.error) {
+          toast.error('Erro no upload: ' + data.error);
           continue;
         }
 
-        const { data: urlData } = supabase.storage
-          .from('service-images')
-          .getPublicUrl(path);
+        const publicUrl = data.url;
+        const storagePath = data.path;
+
+        if (data.deduplicated) {
+          toast.info(`${file.name}: imagem reutilizada (duplicada)`);
+        } else if (data.savings_percent > 0) {
+          const origKB = Math.round((data.original_size || 0) / 1024);
+          const optKB = Math.round((data.optimized_size || 0) / 1024);
+          const origLabel = origKB >= 1024 ? `${(origKB / 1024).toFixed(1)}MB` : `${origKB}KB`;
+          const optLabel = optKB >= 1024 ? `${(optKB / 1024).toFixed(1)}MB` : `${optKB}KB`;
+          toast.success(`Imagem otimizada: ${origLabel} → ${optLabel} (-${data.savings_percent}%)`);
+        }
 
         const maxOrder = images.length > 0 ? Math.max(...images.map(i => i.display_order)) + 1 : 0;
 
         await supabase.from('service_images').insert({
           service_id: serviceId,
-          image_url: urlData.publicUrl,
+          image_url: publicUrl,
           display_order: maxOrder,
         });
 
         // Idempotent media upsert
         if (userRef) {
           await upsertMedia({
-            storagePath: `service-images/${path}`,
-            publicUrl: urlData.publicUrl,
+            storagePath: `service-images/${storagePath}`,
+            publicUrl,
             originalName: file.name,
             mimeType: file.type || 'image/jpeg',
             entityType: 'service',

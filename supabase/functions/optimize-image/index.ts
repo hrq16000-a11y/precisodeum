@@ -291,6 +291,51 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Upload failed" }, 500);
     }
 
+    const originalSize = uint8.length;
+    let optimizedSize = originalSize;
+    let savingsPercent = 0;
+    let finalContentType = uploadContentType;
+
+    // Post-upload optimization (skip GIFs)
+    if (!isGif && originalSize > TARGET_MAX_BYTES) {
+      let optimizedData = await optimizeViaTransform(
+        supabaseUrl, serviceRoleKey, bucket, uploadPath,
+        TARGET_MAX_WIDTH, TARGET_QUALITY
+      );
+
+      if (optimizedData && optimizedData.data.length > TARGET_MAX_BYTES && TARGET_QUALITY > 50) {
+        const retry = await optimizeViaTransform(
+          supabaseUrl, serviceRoleKey, bucket, uploadPath,
+          TARGET_MAX_WIDTH, Math.max(50, TARGET_QUALITY - 20)
+        );
+        if (retry && retry.data.length < (optimizedData?.data.length ?? Infinity)) {
+          optimizedData = retry;
+        }
+      }
+
+      if (optimizedData && optimizedData.data.length > TARGET_MAX_BYTES) {
+        const retry = await optimizeViaTransform(
+          supabaseUrl, serviceRoleKey, bucket, uploadPath, 800, 60
+        );
+        if (retry && retry.data.length < (optimizedData?.data.length ?? Infinity)) {
+          optimizedData = retry;
+        }
+      }
+
+      if (optimizedData && optimizedData.data.length < originalSize) {
+        const { error: updateErr } = await supabase.storage.from(bucket).update(uploadPath, optimizedData.data, {
+          contentType: optimizedData.contentType,
+          upsert: true,
+        });
+        if (!updateErr) {
+          optimizedSize = optimizedData.data.length;
+          finalContentType = optimizedData.contentType;
+          savingsPercent = Math.round((1 - optimizedSize / originalSize) * 100);
+          console.log(`Optimized ${uploadPath}: ${Math.round(originalSize/1024)}KB → ${Math.round(optimizedSize/1024)}KB (-${savingsPercent}%)`);
+        }
+      }
+    }
+
     const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(uploadPath);
     return jsonResponse({
       url: urlData.publicUrl,
@@ -298,6 +343,9 @@ Deno.serve(async (req) => {
       hash,
       deduplicated: false,
       mode: "upload",
+      original_size: originalSize,
+      optimized_size: optimizedSize,
+      savings_percent: savingsPercent,
     });
   } catch (err) {
     console.error("optimize-image error:", err);
