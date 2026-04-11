@@ -122,6 +122,12 @@ const AdminUsersPage = () => {
     let list = profiles;
     if (filterType !== 'all') list = list.filter(p => (p.profile_type || p.role) === filterType);
     if (filterStatus !== 'all') list = list.filter(p => (p.status || 'active') === filterStatus);
+    if (filterProviderStatus !== 'all') {
+      list = list.filter(p => {
+        const prov = providersMap[p.id];
+        return prov && prov.status === filterProviderStatus;
+      });
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(p =>
@@ -134,7 +140,7 @@ const AdminUsersPage = () => {
       );
     }
     return list;
-  }, [profiles, search, filterType, filterStatus]);
+  }, [profiles, search, filterType, filterStatus, filterProviderStatus, providersMap]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
