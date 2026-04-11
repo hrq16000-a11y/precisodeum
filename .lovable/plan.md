@@ -1,29 +1,44 @@
 
 
-# Correção: Texto genérico na descrição do profissional
+# Página "Como Funciona" — Guia Completo da Plataforma
 
-## Problema
+## Contexto
 
-Alguns profissionais têm a descrição salva no banco de dados como "Profissional cadastrado na plataforma Preciso de um. Entre em contato para mais informações." — um texto genérico/placeholder que não agrega valor. Esse texto aparece nos cards e no perfil.
+Já existem 3 páginas relacionadas:
+- `/ajuda` — Central de Ajuda (FAQ com busca)
+- `/faq` — Perguntas Frequentes (accordion)
+- `/sobre` — Sobre prestação de serviço (conceito genérico)
+
+Nenhuma delas explica **a plataforma em si**: como funciona, que é gratuita, o passo a passo para clientes e profissionais, com ilustrações visuais.
 
 ## Solução
 
-Tratar esse texto como se fosse uma descrição vazia. Nos dois lugares que exibem `provider.description`:
+Criar uma nova página `/como-funciona` rica e ilustrada, com seções visuais:
 
-### 1. `src/components/ProviderCard.tsx` (linha 166-169)
+### Seções da Página
 
-Criar uma função helper que detecta descrições genéricas (contendo "cadastrado na plataforma" ou "entre em contato para mais informações") e retorna `null` nesses casos. O card simplesmente não mostra a descrição — mesmo comportamento de quando está vazia.
+1. **Hero** — "Como funciona o Preciso de um?" com subtítulo e ilustração (ícones animados)
+2. **Para Clientes** — 3 passos ilustrados (Buscar → Comparar → Contratar) com ícones grandes e animação sequencial
+3. **Para Profissionais** — 3 passos (Cadastrar → Receber Leads → Crescer) mesmo padrão visual
+4. **É Gratuito!** — Seção destacada explicando que não há custos para clientes, e que profissionais têm plano gratuito
+5. **Diferenciais** — Grid com cards: Verificação, Avaliações, Geolocalização, Sem Intermediários, Chat Direto, Suporte
+6. **FAQ Rápido** — 4-5 perguntas inline mais comuns (hardcoded ou puxando do banco)
+7. **CTA Final** — Botões "Buscar Profissional" e "Cadastrar como Profissional"
 
-### 2. `src/pages/ProviderProfile.tsx` (linha 657)
+### Recursos Visuais
 
-Já tem o fallback correto ("Este profissional ainda não adicionou uma descrição."). Só precisa aplicar o mesmo filtro para que, se a descrição for o texto genérico, exiba o fallback em vez do boilerplate.
+- Ícones Lucide como ilustrações principais em containers coloridos (gradient)
+- Animações framer-motion: fade-in escalonado, parallax sutil, counters
+- Linha conectora animada entre os passos (padrão já usado no HowItWorksSection)
+- Cards com glassmorphism leve e hover scale
+- Badges coloridos por seção (azul = clientes, amarelo = profissionais, verde = gratuito)
 
-### Helper
+### Arquivos
 
-```ts
-const isBoilerplateDescription = (desc?: string | null) =>
-  !desc?.trim() || /cadastrado na plataforma|entre em contato para mais informa/i.test(desc);
-```
+| Arquivo | Ação |
+|---|---|
+| `src/pages/ComoFuncionaPage.tsx` | Novo — página completa |
+| `src/App.tsx` | Adicionar rota `/como-funciona` |
 
-Nenhuma mudança de banco — apenas filtragem client-side.
+Sem mudanças de banco de dados. Conteúdo hardcoded (pode ser migrado para CMS depois).
 
