@@ -49,6 +49,8 @@ const AdminMediaPage = () => {
   const [syncHistory, setSyncHistory] = useState<any[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [portfolioOptimizing, setPortfolioOptimizing] = useState(false);
+  const [allBucketsOptimizing, setAllBucketsOptimizing] = useState(false);
+  const [optimizeResult, setOptimizeResult] = useState<any>(null);
 
   const fetchMedia = useCallback(async () => {
     setLoading(true);
@@ -430,6 +432,35 @@ const AdminMediaPage = () => {
             </CollapsibleContent>
           </Card>
         </Collapsible>
+        {/* Optimize All Result */}
+        {optimizeResult && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  Resultado da Otimização — {optimizeResult.grand_total_optimized} arquivo(s), {optimizeResult.grand_total_savings_kb}KB economizados
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setOptimizeResult(null)}>Fechar</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {Object.entries(optimizeResult.buckets || {}).map(([bucket, info]: [string, any]) => (
+                  <div key={bucket} className="flex items-center justify-between rounded-lg border border-border p-2 text-sm">
+                    <div>
+                      <p className="font-medium text-foreground">{bucket}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {info.scanned} escaneados · {info.eligible} elegíveis · {info.optimized} otimizados · {info.skipped} ignorados
+                      </p>
+                    </div>
+                    <Badge variant={info.optimized > 0 ? 'default' : 'secondary'}>{info.savings_kb}KB salvos</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {showOversized && (
           <Card>
             <CardHeader className="pb-3">
@@ -501,6 +532,34 @@ const AdminMediaPage = () => {
           <Button variant="default" size="sm" onClick={optimizePortfolio} disabled={portfolioOptimizing}>
             {portfolioOptimizing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Zap className="mr-1 h-4 w-4" />}
             {portfolioOptimizing ? 'Otimizando...' : 'Otimizar Portfólio'}
+          </Button>
+          <Button variant="default" size="sm" onClick={async () => {
+            setAllBucketsOptimizing(true);
+            setOptimizeResult(null);
+            try {
+              const { data, error } = await supabase.functions.invoke('batch-optimize-all');
+              if (error) throw error;
+              setOptimizeResult(data);
+              toast.success(data?.message || 'Otimização concluída');
+              await logAuditAction({
+                action: 'batch_optimize_all',
+                resource_type: 'media',
+                details: {
+                  grand_total_optimized: data?.grand_total_optimized,
+                  grand_total_savings_kb: data?.grand_total_savings_kb,
+                  buckets: data?.buckets,
+                },
+              });
+              fetchMedia();
+              fetchStats();
+            } catch (err: any) {
+              toast.error('Erro: ' + (err.message || ''));
+            } finally {
+              setAllBucketsOptimizing(false);
+            }
+          }} disabled={allBucketsOptimizing}>
+            {allBucketsOptimizing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Zap className="mr-1 h-4 w-4" />}
+            {allBucketsOptimizing ? 'Otimizando Tudo...' : 'Otimizar Todos Buckets'}
           </Button>
         </div>
 
