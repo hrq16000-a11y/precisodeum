@@ -10,6 +10,7 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRight, DollarSign, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import CategoryIcon from '@/components/CategoryIcon';
 
 const PopularServicePage = () => {
   const { slug } = useParams<{ slug: string }>();
