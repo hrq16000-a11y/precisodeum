@@ -204,6 +204,7 @@ const TrustBadge = ({ icon: Icon, text, delay }: { icon: any; text: string; dela
 );
 
 const ProviderProfile = () => {
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const verifiedEnabled = useFeatureEnabled('verified_badge_enabled');
