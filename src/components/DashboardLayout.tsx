@@ -62,6 +62,23 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       });
   }, [user, profile]);
 
+  // Check if profile is incomplete and show countdown alert
+  useEffect(() => {
+    if (!user || !profile) return;
+    if (profile.profile_type === 'client') return;
+    const isIncomplete = !profile.full_name?.trim() || profile.full_name?.trim() === '';
+    if (!isIncomplete) { setIncompleteAlert(null); return; }
+    // Check provider creation date
+    supabase.from('providers').select('created_at').eq('user_id', user.id).limit(1)
+      .then(({ data: providers }) => {
+        if (!providers?.[0]) return;
+        const createdAt = new Date(providers[0].created_at);
+        const daysSince = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+        const daysLeft = Math.max(0, daysLimit - daysSince);
+        setIncompleteAlert({ daysLeft });
+      });
+  }, [user, profile, daysLimit]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
