@@ -241,6 +241,7 @@ const DashboardServicesPage = () => {
     setEditId(null);
     setNewServicePhoto(null);
     setNewServicePhotoPreview(null);
+    setFormErrors({});
   };
 
   const handleEdit = async (s: any) => {
