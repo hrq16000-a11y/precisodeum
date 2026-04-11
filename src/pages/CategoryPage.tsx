@@ -13,7 +13,7 @@ import GeoLocationChip from '@/components/GeoLocationChip';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { useCategoryProviders, matchesGeoContext, normalizeCityName } from '@/hooks/useProviders';
+import { useCategoryProviders, matchesGeoContext, normalizeCityName, type DbProvider } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useGeoCity } from '@/hooks/useGeoCity';
@@ -41,28 +41,37 @@ const CategoryPage = () => {
   const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm } = useGeoCity();
   const { data, isLoading } = useCategoryProviders(slug || '');
   const [page, setPage] = useState(1);
+  const [showAllLocations, setShowAllLocations] = useState(false);
 
   const category = data?.category;
   const allProviders = data?.providers || [];
 
-  const { displayProviders, isFallback, expansionLevel } = useMemo(() => {
+  const { localProviders, otherProviders, isFallback, expansionLevel } = useMemo(() => {
     if (!geoCity || allProviders.length === 0) {
-      return { displayProviders: allProviders, isFallback: false, expansionLevel: null };
+      return { localProviders: allProviders, otherProviders: [] as DbProvider[], isFallback: false, expansionLevel: null };
     }
 
     const cityNorm = normalizeCityName(geoCity);
     const stateNorm = geoState ? normalizeCityName(geoState) : undefined;
 
-    const localResults = allProviders.filter((p) =>
-      matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon, radiusKm)
-    );
+    const local: DbProvider[] = [];
+    const other: DbProvider[] = [];
+    allProviders.forEach((p) => {
+      if (matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon, radiusKm)) {
+        local.push(p);
+      } else {
+        other.push(p);
+      }
+    });
 
-    if (localResults.length > 0) {
-      return { displayProviders: localResults, isFallback: false, expansionLevel: null };
+    if (local.length > 0) {
+      return { localProviders: local, otherProviders: other, isFallback: false, expansionLevel: null };
     }
 
-    return { displayProviders: allProviders, isFallback: true, expansionLevel: 'all' as const };
+    return { localProviders: allProviders, otherProviders: [] as DbProvider[], isFallback: true, expansionLevel: 'all' as const };
   }, [allProviders, geoCity, geoState, userLat, userLon, radiusKm]);
+
+  const displayProviders = showAllLocations ? [...localProviders, ...otherProviders] : localProviders;
 
   useSeoHead({
     title: category ? `${category.name} - Profissionais` : 'Categoria',
@@ -171,7 +180,7 @@ const CategoryPage = () => {
           >
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1.5 text-sm font-medium text-primary-foreground">
               <Users className="h-3.5 w-3.5" />
-              {displayProviders.length} profissional(is)
+              {allProviders.length} profissional(is)
             </span>
             {geoCity && !isFallback && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1.5 text-sm font-medium text-primary-foreground">
@@ -220,6 +229,31 @@ const CategoryPage = () => {
             </motion.div>
           ))}
         </motion.div>
+
+        {/* Botão para ver profissionais de outras localidades */}
+        {!showAllLocations && otherProviders.length > 0 && !isFallback && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8 flex justify-center"
+          >
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => { setShowAllLocations(true); setPage(1); }}
+              className="gap-2"
+            >
+              <MapPin className="h-4 w-4" />
+              Ver profissionais de outras localidades ({otherProviders.length})
+            </Button>
+          </motion.div>
+        )}
+
+        {showAllLocations && otherProviders.length > 0 && (
+          <p className="mt-6 text-sm text-muted-foreground text-center">
+            Exibindo também profissionais de outras regiões
+          </p>
+        )}
 
         {displayProviders.length === 0 && (
           <EmptyStateFallback
