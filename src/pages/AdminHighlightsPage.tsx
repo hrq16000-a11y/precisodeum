@@ -10,7 +10,10 @@ import ImageUploadField from '@/components/ImageUploadField';
 const AdminHighlightsPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [highlights, setHighlights] = useState<any[]>([]);
-  const [form, setForm] = useState({ title: '', description: '', image_url: '', link_url: '', display_order: 0 });
+  const [form, setForm] = useState({
+    title: '', description: '', image_url: '', link_url: '',
+    display_order: 0, icon: 'Sparkles', theme_color: 'text-orange-500', button_text: 'Saiba mais',
+  });
   const [editing, setEditing] = useState<string | null>(null);
 
   const fetch = async () => {
@@ -22,26 +25,32 @@ const AdminHighlightsPage = () => {
 
   const handleSave = async () => {
     if (!form.title.trim()) { toast.error('Título obrigatório'); return; }
+    const payload = {
+      title: form.title, description: form.description,
+      image_url: form.image_url || null, link_url: form.link_url || null,
+      display_order: form.display_order,
+      icon: form.icon || 'Sparkles',
+      theme_color: form.theme_color || 'text-orange-500',
+      button_text: form.button_text || 'Saiba mais',
+    };
     if (editing) {
       const { error } = await (supabase.from('highlights' as any) as any).update({
-        title: form.title, description: form.description,
-        image_url: form.image_url || null, link_url: form.link_url || null,
-        display_order: form.display_order, updated_at: new Date().toISOString(),
+        ...payload, updated_at: new Date().toISOString(),
       }).eq('id', editing);
       if (error) { toast.error(error.message); return; }
       toast.success('Destaque atualizado!');
     } else {
-      const { error } = await (supabase.from('highlights' as any) as any).insert({
-        title: form.title, description: form.description,
-        image_url: form.image_url || null, link_url: form.link_url || null,
-        display_order: form.display_order,
-      });
+      const { error } = await (supabase.from('highlights' as any) as any).insert(payload);
       if (error) { toast.error(error.message); return; }
       toast.success('Destaque criado!');
     }
-    setForm({ title: '', description: '', image_url: '', link_url: '', display_order: 0 });
-    setEditing(null);
+    resetForm();
     fetch();
+  };
+
+  const resetForm = () => {
+    setForm({ title: '', description: '', image_url: '', link_url: '', display_order: 0, icon: 'Sparkles', theme_color: 'text-orange-500', button_text: 'Saiba mais' });
+    setEditing(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -52,7 +61,14 @@ const AdminHighlightsPage = () => {
 
   const startEdit = (h: any) => {
     setEditing(h.id);
-    setForm({ title: h.title, description: h.description, image_url: h.image_url || '', link_url: h.link_url || '', display_order: h.display_order });
+    setForm({
+      title: h.title, description: h.description,
+      image_url: h.image_url || '', link_url: h.link_url || '',
+      display_order: h.display_order,
+      icon: h.icon || 'Sparkles',
+      theme_color: h.theme_color || 'text-orange-500',
+      button_text: h.button_text || 'Saiba mais',
+    });
   };
 
   if (loading) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
@@ -70,6 +86,20 @@ const AdminHighlightsPage = () => {
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
         <textarea placeholder="Descrição" rows={2} value={form.description} onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Ícone (Lucide)</label>
+            <input placeholder="Ex: Sparkles, Smartphone" value={form.icon} onChange={(e) => setForm(p => ({ ...p, icon: e.target.value }))}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Cor tema (Tailwind)</label>
+            <input placeholder="Ex: text-orange-500" value={form.theme_color} onChange={(e) => setForm(p => ({ ...p, theme_color: e.target.value }))}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+          </div>
+        </div>
+        <input placeholder="Texto do botão (ex: Saiba mais →)" value={form.button_text} onChange={(e) => setForm(p => ({ ...p, button_text: e.target.value }))}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
         <ImageUploadField
           value={form.image_url}
           onChange={(url) => setForm(p => ({ ...p, image_url: url }))}
@@ -84,7 +114,7 @@ const AdminHighlightsPage = () => {
           className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
         <div className="flex gap-2">
           <Button variant="accent" onClick={handleSave}><Save className="mr-1 h-4 w-4" /> {editing ? 'Atualizar' : 'Criar'}</Button>
-          {editing && <Button variant="outline" onClick={() => { setEditing(null); setForm({ title: '', description: '', image_url: '', link_url: '', display_order: 0 }); }}>Cancelar</Button>}
+          {editing && <Button variant="outline" onClick={resetForm}>Cancelar</Button>}
         </div>
       </div>
 
@@ -100,6 +130,7 @@ const AdminHighlightsPage = () => {
                   <span className="text-xs text-muted-foreground shrink-0">#{h.display_order}</span>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">{h.description}</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">Ícone: {h.icon} | Cor: {h.theme_color} | Botão: {h.button_text}</p>
               </div>
               <div className="flex gap-1 shrink-0">
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => startEdit(h)}><Pencil className="h-4 w-4" /></Button>
