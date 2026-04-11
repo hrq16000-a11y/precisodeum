@@ -28,7 +28,7 @@ import { sanitizeSlug } from '@/lib/slugify';
 import { toast } from 'sonner';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 
 interface PageSettings {
   sections_order: string[];
@@ -199,6 +199,14 @@ const TrustBadge = ({ icon: Icon, text, delay }: { icon: any; text: string; dela
 const ProviderProfile = () => {
   const isMobile = useIsMobile();
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const verifiedEnabled = useFeatureEnabled('verified_badge_enabled');
+  const vMinServices = Number(useSettingValue('verified_badge_min_services')) || 2;
+  const vMinAlbums = Number(useSettingValue('verified_badge_min_albums')) || 1;
+  const vMinReviews = Number(useSettingValue('verified_badge_min_reviews')) || 1;
+  const vMinRating = Number(useSettingValue('verified_badge_min_rating')) || 0;
+  const vRequirePhoto = useSettingValue('verified_badge_require_photo') !== 'false';
+  const vRequireCnpj = useSettingValue('verified_badge_require_cnpj') !== 'false';
+  const vRequireCity = useSettingValue('verified_badge_require_city') !== 'false';
   const { slug } = useParams();
   const navigate = useNavigate();
   const [provider, setProvider] = useState<any>(null);
