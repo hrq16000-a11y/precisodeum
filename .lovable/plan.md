@@ -1,75 +1,71 @@
 
 
-## Plano: Otimizar velocidade de carregamento
+## Plano: Otimizacoes de Performance — Fase 2
 
-### Problemas identificados
+### Analise
 
-1. **`import * as LucideIcons` no MobileBottomNav** — importa TODOS os ~1500 icones do lucide-react no bundle principal. Impacto enorme no JS parse time.
-
-2. **Componentes nao-criticos carregados eagerly no App.tsx** — `CookieConsent`, `PwaInstallBanner`, `FloatingHelpButton`, `BackToTopButton`, `MobileBottomNav`, `ScrollProgressBar`, `ProfileTypeChooser` sao importados de forma sincrona mas nao sao necessarios para o First Contentful Paint.
-
-3. **framer-motion no Header** — o Header esta no critical path e importa `motion` de framer-motion apenas para a animacao da logo. Deveria usar CSS puro.
-
-4. **Query `home-secondary-data` com queries encadeadas** — faz 4 queries paralelas incluindo uma cadeia services → providers → cities que e desnecessariamente complexa para o carregamento inicial.
-
-5. **Preload de `hero-bg-1.jpg` no index.html** — forca download de uma imagem que pode nem ser a selecionada (o HeroBanner usa `pickRandom`).
+A fase anterior resolveu os maiores gargalos (wildcard lucide, lazy load de componentes, framer-motion no Header). Agora restam otimizacoes de medio impacto que, somadas, reduzem mais ~100-150ms do tempo de carregamento.
 
 ---
 
 ### Alteracoes
 
-**1. `src/components/MobileBottomNav.tsx`** — Eliminar `import * as LucideIcons`
-- Remover o wildcard import
-- Usar um mapa manual com os icones mais comuns (Home, Search, LayoutGrid, User, Plus, Bell, etc.)
-- Fallback para `Home` se o icone nao estiver no mapa
-- **Impacto estimado: -200KB+ do bundle principal**
+**1. `src/hooks/useSiteSettings.ts`** — staleTime 60s para 5min
 
-**2. `src/App.tsx`** — Lazy load componentes nao-criticos
-- Converter para lazy: `CookieConsent`, `PwaInstallBanner`, `FloatingHelpButton`, `BackToTopButton`, `MobileBottomNav`, `ScrollProgressBar`, `ProfileTypeChooser`
-- Manter eager apenas: `ScrollToTop`, `ProtectedRoute`, `ModuleBoundary` (leves e necessarios)
-- Usar `requestIdleCallback` wrapper para montar esses componentes apos o FCP
+O `site_settings` e consultado em cada pagina (via feature flags) com staleTime de apenas 60s, gerando refetches desnecessarios. Todas as outras queries usam 5min.
 
-**3. `src/components/Header.tsx`** — Remover framer-motion do critical path
-- Substituir `motion.img` da logo por CSS animation (`animate-fade-in` + scale via keyframe)
-- Remover import de `motion` do Header
+- Alterar `staleTime: 60000` para `staleTime: 1000 * 60 * 5`
 
-**4. `index.html`** — Remover preload da hero-bg-1.jpg
-- O HeroBanner seleciona imagens aleatoriamente, entao o preload pode carregar uma imagem que nao sera usada
-- Em vez disso, o HeroBanner pode usar `fetchpriority="high"` na imagem selecionada
+**2. `src/App.tsx`** — Lazy load do OAuthRedirectHandler
 
-**5. `src/pages/Index.tsx`** — Adiar query secundaria
-- Adicionar `enabled: !!categories.length` ou um `setTimeout` para que `home-secondary-data` so execute apos o conteudo principal renderizar
-- Simplificar a query de cities (usar dados ja existentes da tabela `cities` diretamente em vez da cadeia services→providers→cities)
+O `OAuthRedirectHandler` e importado eagerly (linha 132) mas so e necessario na rota `/~oauth`. Converte-lo para lazy reduz o bundle inicial.
 
-**6. `src/main.tsx`** — Adiar MutationObserver
-- Envolver o setup do MutationObserver em `requestIdleCallback` para nao bloquear o thread principal durante o boot
+- Trocar `import OAuthRedirectHandler` por `const OAuthRedirectHandler = reactLazy(...)`
+
+**3. `src/App.tsx`** — Lazy load do CurtainReveal
+
+O `CurtainReveal` e importado eagerly (linha 146) mas so executa em modo PWA standalone. Converte-lo para lazy evita carregar codigo inutil em 95%+ dos acessos.
+
+- Trocar `import CurtainReveal` por `const CurtainReveal = reactLazy(...)`
+
+**4. `vite.config.ts`** — Chunk separado para lucide-react
+
+Mesmo com o fix do wildcard no MobileBottomNav, `lucide-react` ainda e importado em dezenas de componentes e acaba no bundle principal. Isolar num chunk separado permite caching independente.
+
+- Adicionar `'vendor-icons': ['lucide-react']` ao `manualChunks`
+
+**5. `src/components/home/HeroBanner.tsx`** — fetchpriority="high" na imagem ativa
+
+A imagem do hero e o maior LCP candidate. Adicionar `fetchPriority="high"` garante que o browser priorize o download dela sobre outros recursos.
+
+- Na tag `<img>` da imagem ativa do carrossel, adicionar `fetchPriority="high"`
+
+**6. `src/hooks/useGeoCity.ts`** — Cache de 30 min para evitar refetches em navegacao
+
+Atualmente, `startFetchIfNeeded()` roda toda vez que o hook monta (toda navegacao). Adicionar um TTL de 30 min no localStorage para evitar chamadas repetidas a edge function e IP APIs durante a mesma sessao.
+
+- Adicionar `GEO_FETCH_TS` key e verificar se o ultimo fetch foi ha menos de 30 min antes de refazer
 
 ---
 
-### Arquivos modificados
-- `src/components/MobileBottomNav.tsx`
-- `src/App.tsx`
-- `src/components/Header.tsx`
-- `index.html`
-- `src/pages/Index.tsx`
-- `src/main.tsx`
-
-### Detalhes tecnicos
+### Resumo de impacto
 
 ```text
-Impacto esperado por mudanca:
-┌──────────────────────────────────┬────────────┐
-│ Mudanca                          │ Economia   │
-├──────────────────────────────────┼────────────┤
-│ Remover import * lucide-react    │ ~200KB JS  │
-│ Lazy load 7 componentes App.tsx  │ ~80KB JS   │
-│ framer-motion fora do Header     │ ~60KB JS*  │
-│ Adiar home-secondary-data        │ -4 queries │
-│ Remover preload hero desnecessario│ -1 request │
-│ Adiar MutationObserver           │ -5ms boot  │
-└──────────────────────────────────┴────────────┘
-* se Header for o unico eager que usa framer-motion
+Mudanca                              Economia estimada
+─────────────────────────────────────────────────────
+staleTime site_settings 60s → 5min   -4 queries/5min
+Lazy OAuthRedirectHandler            -5KB bundle inicial
+Lazy CurtainReveal                   -2KB bundle inicial
+Chunk separado lucide-react          cache independente
+fetchPriority="high" no hero         -100ms LCP
+Cache 30min no geoCity               -2 network requests
+─────────────────────────────────────────────────────
 ```
 
-Todas as mudancas sao retrocompativeis — nenhum comportamento visivel muda, apenas o timing de carregamento.
+### Arquivos modificados
+- `src/hooks/useSiteSettings.ts`
+- `src/App.tsx`
+- `vite.config.ts`
+- `src/components/home/HeroBanner.tsx`
+- `src/hooks/useGeoCity.ts`
 
