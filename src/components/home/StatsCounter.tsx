@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, memo } from 'react';
 import { Users, Briefcase, MapPin, Star } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { motion } from 'framer-motion';
+
 
 function useCountUp(target: number, duration = 2000, enabled = true) {
   const [value, setValue] = useState(0);
