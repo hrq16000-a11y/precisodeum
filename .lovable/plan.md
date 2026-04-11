@@ -1,79 +1,113 @@
-## Plano: Upgrade Premium do Carrossel de Destaques
 
-### Resumo
 
-Transformar o carrossel de destaques em um componente de alta conversão com efeito glow nos ícones, barra de progresso animada, micro-interações, ordem aleatória, agendamento por datas e rastreamento de cliques (CTR).
+# Plano de Otimizacao de Performance — Por Etapas
 
----
+## Diagnostico Atual
 
-### 1. Migration — Novos campos no banco
-
-Adicionar `start_date`, `end_date` e `click_count` à tabela `highlights`:
-
-```sql
-ALTER TABLE public.highlights
-  ADD COLUMN IF NOT EXISTS start_date timestamptz DEFAULT NULL,
-  ADD COLUMN IF NOT EXISTS end_date timestamptz DEFAULT NULL,
-  ADD COLUMN IF NOT EXISTS click_count integer DEFAULT 0;
-```
+O projeto ja possui uma base solida de otimizacao: code-splitting com lazy loading, content-visibility, consolidated queries, image transforms, prefetch, e cache agressivo via PWA. As melhorias abaixo focam no que ainda pode ser ganho.
 
 ---
 
-### 2. Componente `HighlightsCarousel.tsx` — Redesign completo
+## Etapa 1 — Reducao do Bundle Critico (FCP/LCP)
 
-**Dados:**
+**Problema**: `Header.tsx` importa 9 icones do lucide-react de forma estatica, e `HeroBanner.tsx` carrega componentes que poderiam ser deferidos.
 
-- Query filtra `active = true` e aplica lógica de data (`start_date`/`end_date`) no cliente
-- Cards embaralhados aleatoriamente a cada render (Fisher-Yates shuffle)
-
-**Visual Premium:**
-
-- Ícone dentro de container arredondado (`rounded-xl p-2.5`) com fundo suave da `theme_color` (opacidade 10%) e `box-shadow` glow colorido
-- Card com `hover:-translate-y-1` e transição suave
-- Botão com seta animada (bounce horizontal infinito no hover do card)
-
-**Barra de Progresso:**
-
-- Substituir dots por pílulas de paginação onde a pílula ativa preenche progressivamente durante 5 segundos usando CSS `transition: width 5s linear`
-- Reset ao trocar de slide
-
-**UX:**
-
-- Autoplay 5s com pause em `onMouseEnter` e touch
-- Swipe touch mantido (já implementado)
-- Loop infinito via módulo (já funciona)
-
-**Tracking de cliques:**
-
-- Ao clicar no botão CTA, incrementar `click_count` via `supabase.rpc` ou update direto
-- Adicionar evento `click_highlight` ao sistema de tracking existente
+**Acoes**:
+- Trocar imports estaticos de icones Lucide no Header por imports nomeados mais seletivos ou lazy-load dos icones menos criticos (ex: `Thermometer`, `ChevronRight`)
+- No `HeroBanner`, deferrar os `FloatingDots` decorativos para apos o LCP (ja usa requestAnimationFrame, mas pode usar `requestIdleCallback`)
+- Remover o `PageTransition` wrapper da pagina Index (e critico, nao precisa de animacao de entrada)
 
 ---
 
-### 3. Admin `AdminHighlightsPage.tsx` — Campos de agendamento e métricas
+## Etapa 2 — Otimizar Waterfall de Dados na Home
 
-**Formulário:**
+**Problema**: A home faz 2 queries sequenciais — categories+providers primeiro, depois `home-secondary-data` so quando `primaryReady=true`. Isso cria um waterfall de ~300-500ms.
 
-- Adicionar inputs de data/hora para `start_date` e `end_date` (type="datetime-local")
-
-**Lista de destaques:**
-
-- Exibir `click_count` ao lado de cada card com ícone de cursor
-- Exibir datas de agendamento quando definidas
+**Acoes**:
+- Disparar `home-secondary-data` em paralelo (remover `enabled: primaryReady`) ja que nao depende dos dados primarios
+- Adicionar `staleTime: Infinity` e `gcTime` maior para `site-settings` (atualmente 5min, pode ser 15-30min ja que muda raramente)
+- Pre-popular o cache do React Query com dados do localStorage para renderizacao instantanea no retorno
 
 ---
 
-### Arquivos modificados
+## Etapa 3 — Preload de Imagens Criticas (LCP)
 
-- Migration SQL (novos campos `start_date`, `end_date`, `click_count`)
-- `src/components/home/HighlightsCarousel.tsx` (redesign completo)
-- `src/pages/AdminHighlightsPage.tsx` (campos de agendamento + métricas)
-- `src/lib/tracking.ts` (novo evento `click_highlight`)
+**Problema**: As imagens do hero banner (`/hero-bg-*.jpg`) nao tem `<link rel="preload">` e dependem do JS para carregar.
 
-Aqui estão os pontos altos que garantem que o resultado vai ficar com visual e funcionamento de alto nível:
+**Acoes**:
+- Adicionar `<link rel="preload" as="image" fetchpriority="high">` no `index.html` para a primeira imagem do hero
+- Converter imagens hero para WebP e adicionar `fetchpriority="high"` no `<img>` do HeroBanner
+- Na logo do Header, adicionar `fetchpriority="high"` e remover `loading="lazy"`
 
-Migration Precisa: A criação das colunas start_date, end_date e click_count direto no banco de dados (Supabase, pelo que vi) é a forma mais segura e profissional de gerenciar os dados.
+---
 
-Performance na Contagem: O uso de supabase.rpc para registrar os cliques é perfeito, pois salva a métrica rapidamente sem travar a navegação do usuário.
+## Etapa 4 — Reducao de Re-renders
 
-Animação Leve: A barra de progresso usando CSS nativo (transition: width 5s linear) é a melhor prática de programação para garantir que a animação rode lisa, sem gastar bateria ou processamento do celular de quem está acessando.
+**Problema**: `useSiteSettings()` e chamado por multiplos hooks (`useFeatureEnabled` x7, `useSettingValue` x3 na home) — cada um cria uma subscription separada ao mesmo queryKey.
+
+**Acoes**:
+- Criar um unico hook `useHomeFeatureFlags()` que retorna todos os flags de uma vez, evitando 10+ re-renders individuais
+- Memoizar o `renderSection` com `useCallback` (ja e funcao inline que recria a cada render)
+- Envolver sections distantes da dobra em `memo()` para evitar re-render cascata
+
+---
+
+## Etapa 5 — Service Worker e PWA
+
+**Problema**: O SW custom (`src/sw.ts`) conflita com o SW gerado pelo vite-plugin-pwa (ambos registram rotas para API, fonts e imagens com estrategias diferentes).
+
+**Acoes**:
+- Remover `src/sw.ts` custom e consolidar toda a logica no `workbox` config do `vite.config.ts` (evita dois SWs competindo)
+- Ou: configurar o vite-plugin-pwa para usar `injectManifest` apontando para `src/sw.ts` (unificando)
+- Reduzir `globPatterns` para excluir imagens pesadas do precache (cacheadas on-demand ja)
+
+---
+
+## Etapa 6 — Fonts e CSS
+
+**Problema**: Google Fonts carrega 3 pesos de 2 familias (Plus Jakarta Sans + Inter) — ~120KB de fontes.
+
+**Acoes**:
+- Reduzir para apenas os pesos realmente usados no caminho critico (Inter 400,500 + Jakarta 700)
+- Adicionar `font-display: swap` explicito (ja vem do Google Fonts, mas confirmar)
+- Mover o critical CSS inline do `index.html` para incluir cores de fundo e tamanhos do header (evita flash)
+
+---
+
+## Etapa 7 — Geo/Weather Optimization
+
+**Problema**: A geolocalizacao faz ate 3 requests em cascata (edge function -> ipapi -> ipwho) + 1 para temperatura. Isso consome banda e atrasa o badge.
+
+**Acoes**:
+- Aumentar o TTL do cache geo de 30min para 2-4 horas (a cidade do usuario raramente muda)
+- Consolidar geo + weather em uma unica edge function que retorna tudo (ja existe `geo-city-weather`, mas os fallbacks IP fazem requests extras)
+- Cancelar requests de fallback se o edge function ja retornou dados validos
+
+---
+
+## Etapa 8 — Build e Chunks
+
+**Problema**: `manualChunks` ja separa vendor, mas componentes admin/dashboard/sponsor sao carregados no mesmo grafo.
+
+**Acoes**:
+- Verificar que nenhum import estatico puxa codigo admin para o bundle principal
+- Adicionar chunk separado para `recharts` (ja existe `vendor-charts`, confirmar isolamento)
+- Considerar `rollupOptions.treeshake.moduleSideEffects: false` para eliminacao mais agressiva
+
+---
+
+## Resumo de Impacto Esperado
+
+| Etapa | Metrica | Ganho estimado |
+|-------|---------|----------------|
+| 1 | FCP | -100-200ms |
+| 2 | TTI | -300-500ms |
+| 3 | LCP | -200-400ms |
+| 4 | INP | -50-100ms |
+| 5 | Cache hits | +30% |
+| 6 | Font load | -40KB |
+| 7 | Network | -2-3 requests |
+| 8 | Bundle | -50-100KB |
+
+Posso implementar todas as etapas sequencialmente ou voce prefere focar em alguma especifica?
+
