@@ -1476,7 +1476,7 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
                     <img
                       src={serviceImageThumb(s.serviceImages[0].image_url)}
                       alt=""
-                      className="h-full w-full object-contain bg-muted/20"
+                      className="h-full w-full object-cover"
                       loading="lazy"
                       onError={handleImageError}
                     />
@@ -1493,10 +1493,10 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
                       ))}
                     </div>
                   )}
-                  {s.description && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{s.description}</p>}
+                  {s.description && <p className="mt-1 line-clamp-2 text-xs text-foreground/70">{s.description}</p>}
                   <div className="mt-1.5 flex flex-wrap gap-3 text-xs text-muted-foreground">
                     {s.price && <span className="font-medium text-foreground">💰 {s.price}</span>}
-                    {s.service_area && <span>📍 {s.service_area}</span>}
+                    {s.service_area && <span>📍 {formatLocationString(s.service_area)}</span>}
                   </div>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity self-center shrink-0" />
@@ -1504,12 +1504,12 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
               {s.serviceImages?.length > 1 && (
                 <div className="mt-2 flex gap-1.5 overflow-hidden pl-[calc(5rem+0.75rem)]">
                   {s.serviceImages.slice(1, 4).map((img: any) => (
-                    <div key={img.id} className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border">
-                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-contain bg-muted/20" loading="lazy" onError={handleImageError} />
+                    <div key={img.id} className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border">
+                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
                     </div>
                   ))}
                   {s.serviceImages.length > 4 && (
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-medium text-muted-foreground">+{s.serviceImages.length - 4}</span>
+                    <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-muted text-[10px] font-medium text-muted-foreground">+{s.serviceImages.length - 4}</span>
                   )}
                 </div>
               )}
