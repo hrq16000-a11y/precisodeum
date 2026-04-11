@@ -26,7 +26,40 @@ export function normalize(value: string | null | undefined): string {
  * removes duplicate commas, and capitalizes each segment.
  * e.g. "Pinhais, Piraquara , São José , E região" → "Pinhais, Piraquara, São José e região"
  */
+/**
+ * Capitalizes a person's name respecting Portuguese prepositions.
+ * e.g. "luiz marcelo de sousa" → "Luiz Marcelo de Sousa"
+ */
+const LOWERCASE_WORDS = new Set(['de', 'do', 'da', 'dos', 'das', 'e', 'em', 'no', 'na', 'nos', 'nas']);
+
+export function capitalizeName(text: string | null | undefined): string {
+  if (!text) return '';
+  return text
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word, i) => {
+      if (i > 0 && LOWERCASE_WORDS.has(word)) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+}
+
+/**
+ * Formats a location string: trims, fixes spacing around commas/punctuation,
+ * removes duplicate commas, and capitalizes each segment.
+ * e.g. "Pinhais, Piraquara , São José , E região" → "Pinhais, Piraquara, São José e região"
+ */
 export function formatLocationString(text: string | null | undefined): string {
+  if (!text) return '';
+  return text
+    .replace(/\s+,/g, ',')
+    .replace(/,\s*/g, ', ')
+    .replace(/,{2,}/g, ',')
+    .replace(/\s+/g, ' ')
+    .replace(/, E /gi, ' e ')
+    .trim();
+}
   if (!text) return '';
   return text
     .replace(/\s+,/g, ',')
