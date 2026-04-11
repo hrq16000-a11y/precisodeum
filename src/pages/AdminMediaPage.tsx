@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Trash2, Eye, EyeOff, Search, Image as ImageIcon, RefreshCw, Download, AlertTriangle, Loader2, CloudUpload, History, ChevronDown } from 'lucide-react';
+import { Trash2, Eye, EyeOff, Search, Image as ImageIcon, RefreshCw, Download, AlertTriangle, Loader2, CloudUpload, History, ChevronDown, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
@@ -48,6 +48,7 @@ const AdminMediaPage = () => {
   const [syncDone, setSyncDone] = useState(false);
   const [syncHistory, setSyncHistory] = useState<any[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [portfolioOptimizing, setPortfolioOptimizing] = useState(false);
 
   const fetchMedia = useCallback(async () => {
     setLoading(true);
@@ -311,6 +312,33 @@ const AdminMediaPage = () => {
     fetchStats();
   };
 
+  const optimizePortfolio = async () => {
+    setPortfolioOptimizing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('batch-optimize-portfolio');
+      if (error) throw error;
+      toast.success(data?.message || 'Otimização concluída');
+      if (data?.errors?.length > 0) {
+        toast.warning(`${data.errors.length} erro(s) durante o processo`);
+      }
+      await logAuditAction({
+        action: 'batch_optimize',
+        resource_type: 'media',
+        details: {
+          total_scanned: data?.total_scanned,
+          total_optimized: data?.total_optimized,
+          savings_kb: data?.savings_kb,
+        },
+      });
+      fetchMedia();
+      fetchStats();
+    } catch (err: any) {
+      toast.error('Erro ao otimizar portfólio: ' + (err.message || ''));
+    } finally {
+      setPortfolioOptimizing(false);
+    }
+  };
+
   if (adminLoading || !isAdmin) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
 
   const totalPages = Math.ceil(total / PER_PAGE);
@@ -469,6 +497,10 @@ const AdminMediaPage = () => {
           </Button>
           <Button variant="outline" size="sm" onClick={scanOversized} disabled={scanLoading}>
             {scanLoading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-1 h-4 w-4" />} Escanear
+          </Button>
+          <Button variant="default" size="sm" onClick={optimizePortfolio} disabled={portfolioOptimizing}>
+            {portfolioOptimizing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Zap className="mr-1 h-4 w-4" />}
+            {portfolioOptimizing ? 'Otimizando...' : 'Otimizar Portfólio'}
           </Button>
         </div>
 
