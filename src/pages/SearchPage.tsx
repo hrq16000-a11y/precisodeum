@@ -150,7 +150,8 @@ const SearchPage = () => {
       : 'Busque e encontre profissionais confiáveis perto de você na maior plataforma de serviços do Brasil.';
   useSeoHead({ title: seoTitle, description: seoDesc, canonical: `${SITE_BASE_URL}/buscar` });
 
-  const paginatedResults = displayProviders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedLocal = filteredLocal.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedOther = showAllLocations ? filteredOther : [];
 
   // Quick suggestion chips
   const suggestionChips = useMemo(() => {
