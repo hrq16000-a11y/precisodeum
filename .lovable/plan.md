@@ -1,42 +1,69 @@
+# Correção do Badge "Verificado" + Gestão Admin
 
-# Correção Mobile + Admin 100% Gerenciável — Módulo Vagas
+## Problema
 
-## Problemas Identificados
+1. `**ProviderProfile.tsx` (linha 1008)** exibe "Perfil verificado" para TODOS os profissionais incondicionalmente — sem verificar nenhum critério.
+2. `**ProviderCard.tsx**` tem lógica de verificação mas não exige CNPJ nem cidade.
+3. **Não existe gestão administrativa** dedicada para as regras do badge verificado — as settings existem espalhadas na tabela `site_settings`, mas sem UI agrupada.
 
-1. **Dashboard Mobile quebrado**: Os botões "Importar CSV" e "Nova Vaga" ficam na mesma linha do título, comprimidos no celular. Os botões de ação por card (5 ícones lado a lado) não cabem no mobile.
-
-2. **Admin sem controle total**: O admin pode criar/editar/excluir, mas faltam:
-   - Ações em massa (aprovar/rejeitar) com notificação
-   - Edição do `user_id` (reassociar vaga a outro usuário)
-   - Toggle de status direto na listagem (ativar/desativar sem abrir modal)
-   - Restaurar vagas excluídas (lixeira)
-   - Visualização de quem criou a vaga (nome do usuário)
+**Exemplo real:** "silvio-gon-alves" — sem cidade, sem CNPJ, sem foto, 0 álbuns — aparece como "Perfil verificado".
 
 ## Plano de Execução
 
-### 1. Corrigir layout mobile — DashboardJobsPage
+### 1. Corrigir `ProviderProfile.tsx` — Aplicar mesma lógica de verificação
 
-- Header: empilhar título + botões verticalmente no mobile (`flex-col sm:flex-row`)
-- Botões: trocar "Importar CSV" para ícone-only no mobile
-- Cards de vagas: empilhar ações abaixo do conteúdo no mobile ao invés de lado a lado
-- Garantir que o botão "Nova Vaga" fique visível e clicável no celular
+- Importar `useSettingValue` e `useFeatureEnabled`
+- Replicar a lógica de `ProviderCard.tsx` para computar `isVerified` com base nas configurações do admin
+- Adicionar novas regras: **CNPJ obrigatório** (`verified_badge_require_cnpj`) e **Cidade obrigatória** (`verified_badge_require_city`)
+- Condicionar o badge "Perfil verificado" ao resultado da verificação
+- Se não verificado mas com imagens, exibir "Perfil Completo" como fallback (mesmo padrão do Card)
 
-### 2. Admin com controle absoluto — AdminJobsPage
+### 2. Atualizar `ProviderCard.tsx` — Adicionar critérios CNPJ e Cidade
 
-- Adicionar coluna "Criado por" com nome do usuário (join com `profiles`)
-- Toggle rápido de status (ativo/inativo) direto na listagem sem modal
-- Campo `user_id` no formulário de edição (select de usuários ou input UUID) para reassociar vagas
-- Link para a lixeira de vagas (`/admin/lixeira?type=job`)
-- Exibir resumo de stats no topo (total, ativas, pendentes, expiradas)
+- Ler novas settings: `verified_badge_require_cnpj` e `verified_badge_require_city`
+- Incluir na lógica `isVerified`: se `require_cnpj` estiver ativo, exigir `provider.cnpj` preenchido; se `require_city` ativo, exigir `provider.city` preenchido
+
+### 3. Criar settings no banco (via insert)
+
+- `verified_badge_require_cnpj` = `true`
+- `verified_badge_require_city` = `true`
+
+### 4. Criar seção administrativa dedicada — "Badge Verificado"
+
+Adicionar uma seção visual no `AdminSettingsPage.tsx` (ou como aba no `AdminAccountTypesPage`) que agrupe todas as settings do badge verificado em um painel único:
+
+- Toggle: Badge habilitado (`verified_badge_enabled`)
+- Toggle: Exigir CNPJ (`verified_badge_require_cnpj`)
+- Toggle: Exigir Cidade (`verified_badge_require_city`)
+- Toggle: Exigir Foto (`verified_badge_require_photo`)
+- Input numérico: Mínimo de serviços
+- Input numérico: Mínimo de álbuns
+- Input numérico: Mínimo de avaliações
+- Input numérico: Nota mínima
+
+Tudo gerenciável pelo admin, sem necessidade de código.
 
 ## Arquivos Modificados
 
-| Arquivo | Alteração |
-|---|---|
-| `src/pages/DashboardJobsPage.tsx` | Layout responsivo mobile — header empilhado, cards com ações embaixo |
-| `src/pages/AdminJobsPage.tsx` | Stats cards, toggle status, campo user_id, nome do criador, link lixeira |
+
+| Arquivo                           | Alteração                                                      |
+| --------------------------------- | -------------------------------------------------------------- |
+| `src/pages/ProviderProfile.tsx`   | Aplicar lógica condicional ao badge "Perfil verificado"        |
+| `src/components/ProviderCard.tsx` | Adicionar critérios CNPJ e cidade na verificação               |
+| `src/pages/AdminSettingsPage.tsx` | Criar seção agrupada "Badge Verificado" com todos os controles |
+| **Insert SQL**                    | 2 novas settings: `require_cnpj` e `require_city`              |
+
 
 ## O que NÃO será alterado
-- Schema de tabelas (sem migrations)
-- RLS policies existentes
+
+- Schema de tabelas (sem migrations — apenas inserts em `site_settings`)
 - `client.ts`, `types.ts`, `.env`
+- RLS policies existentes
+
+..
+
+&nbsp;
+
+&nbsp;
+
+Condições, criterios,  regras, lógica e etc devem ser gerenciáveis pelo painel administrativo 100%
