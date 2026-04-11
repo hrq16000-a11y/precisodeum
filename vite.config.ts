@@ -52,21 +52,61 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,svg,webp,woff,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/qaftogrqeyymewoofexc\.supabase\.co\/.*/i,
+            urlPattern: /^https:\/\/qaftogrqeyymewoofexc\.supabase\.co\/storage\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "supabase-storage-cache",
+              expiration: { maxEntries: 80, maxAgeSeconds: 30 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/qaftogrqeyymewoofexc\.supabase\.co\/rest\/.*/i,
             handler: "NetworkFirst",
-            options: { cacheName: "api-cache", networkTimeoutSeconds: 5, expiration: { maxEntries: 50, maxAgeSeconds: 300 } },
+            options: {
+              cacheName: "api-cache",
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+            },
           },
           {
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
-            handler: "StaleWhileRevalidate",
-            options: { cacheName: "fonts-cache", expiration: { maxEntries: 20, maxAgeSeconds: 86400 } },
+            handler: "CacheFirst",
+            options: {
+              cacheName: "fonts-cache",
+              expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
           },
           {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
-            handler: "StaleWhileRevalidate",
-            options: { cacheName: "images-cache", expiration: { maxEntries: 100, maxAgeSeconds: 86400 } },
+            handler: "CacheFirst",
+            options: {
+              cacheName: "images-cache",
+              expiration: { maxEntries: 120, maxAgeSeconds: 30 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/lh3\.googleusercontent\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-avatars-cache",
+              expiration: { maxEntries: 30, maxAgeSeconds: 7 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/assets\/.*\.(?:js|css)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "hashed-assets-cache",
+              expiration: { maxEntries: 100, maxAgeSeconds: 365 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
           },
         ],
       },
