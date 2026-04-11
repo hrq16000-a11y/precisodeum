@@ -1,73 +1,82 @@
 
 
-# Correção: Vincular Dados Reais de Avatar + Portfólio + Lógica DESTAQUE com OR
+# Plano: Sincronização de Portfólio + Migração para Álbuns + Admin
 
-## Diagnóstico dos Dados Reais
+## Situação Atual
 
-| Dado | Coluna providers | Dado real |
-|---|---|---|
-| Avatar/Foto | `photo_url` = NULL (100%) | 74 avatars no storage + Google photos nos profiles |
-| Portfólio | `portfolio_album_count` = 0 (100%) | 639 fotos no storage legado (flat) |
-| Serviços | `services_count` correto | 83 providers com serviços |
-| Descrição | campo OK | 146 providers com descrição |
+| Dado | Valor |
+|---|---|
+| Registros na `media` (portfolio) | 1.689 fotos de 58 profissionais |
+| `portfolio_albums` | 0 registros |
+| `portfolio_photos` | 0 registros |
+| `providers.portfolio_photo_count` | 0 para todos |
 
-**O problema**: os campos `photo_url`, `portfolio_album_count` e `portfolio_photo_count` nunca são sincronizados com os dados reais. O código do DESTAQUE verifica esses campos vazios, então nenhum provider ganha o selo.
+As fotos existem na `media` com `storage_path` tipo `portfolio/{user_uuid}/arquivo.jpg` e `user_ref` correto — mas nunca foram migradas para as tabelas `portfolio_albums` / `portfolio_photos`, e os contadores nos providers estão zerados.
 
-## Plano de Correção
+## Etapas
 
-### 1. Migration: Backfill `photo_url` e contadores de portfólio
+### 1. Migration SQL — Migrar fotos legadas para álbuns temáticos
 
-```sql
--- Sincronizar photo_url a partir da profiles.avatar_url
-UPDATE providers p SET photo_url = prof.avatar_url
-FROM profiles prof
-WHERE prof.id = p.user_id
-  AND (p.photo_url IS NULL OR p.photo_url = '')
-  AND prof.avatar_url IS NOT NULL AND prof.avatar_url != ''
-  AND prof.avatar_url NOT LIKE '%ui-avatars.com%';
+Para cada profissional com fotos na `media`:
+- Criar 1 álbum "Meus Trabalhos" na `portfolio_albums` (vinculado ao `provider_id` e `user_id`)
+- Inserir cada foto da `media` como registro em `portfolio_photos` (vinculado ao `album_id`)
+- Atualizar `providers.portfolio_photo_count` e `portfolio_album_count` com contagens reais
 
--- Sincronizar portfolio_photo_count a partir do storage real
-UPDATE providers p SET portfolio_photo_count = sub.cnt
-FROM (
-  SELECT SPLIT_PART(name, '/', 1)::uuid as uid, COUNT(*) as cnt
-  FROM storage.objects WHERE bucket_id = 'portfolio'
-  GROUP BY SPLIT_PART(name, '/', 1)
-) sub
-WHERE p.user_id = sub.uid AND (p.portfolio_photo_count IS NULL OR p.portfolio_photo_count = 0);
+```text
+media (entity_type=portfolio, user_ref)
+  → profiles (user_ref → id = user_id)
+    → providers (user_id → id = provider_id)
+      → portfolio_albums (provider_id, name="Meus Trabalhos")
+        → portfolio_photos (album_id, image_url, storage_path)
 ```
 
-### 2. Código: Avatar no mapeamento usa `profiles.avatar_url` (já funciona)
+### 2. Migration SQL — Trigger de sincronização automática
 
-Linha 228 do `useProviders.tsx` já faz `p.photo_url || profile?.avatar`. Após o backfill, `photo_url` estará preenchido para quem tem avatar real.
+Criar uma função `sync_portfolio_count_from_media()` que:
+- Dispara em INSERT/DELETE na tabela `media` quando `entity_type = 'portfolio'`
+- Localiza o `provider_id` via `user_ref → profiles → providers`
+- Recalcula `portfolio_photo_count` no provider
 
-### 3. Lógica DESTAQUE → OR (3 arquivos)
+Isso mantém os contadores atualizados automaticamente em novos uploads.
 
-Mudar a condição de AND para OR em `ProviderCard.tsx`, `FeaturedProviders.tsx` e `ProviderProfile.tsx`:
+### 3. Migration SQL — Inserir setting `destaque_require_description`
 
-```
-premium && (hasOwnPhoto || servicesCount >= min || portfolioPhotoCount > 0 || hasDescription)
-```
+A setting já existe no banco com valor `false`. Apenas garantir que o toggle está funcional no admin.
 
-Cada sub-critério continua respeitando o toggle do admin. O avatar **não** é obrigatório — basta ter pelo menos 1 dos critérios preenchidos.
+### 4. AdminSettingsPage.tsx — Botão "Migrar Fotos Legadas"
 
-### 4. Admin: adicionar `destaque_require_description` no painel
+Adicionar na seção "Regras de Perfil" um botão operacional que:
+- Chama uma edge function `migrate-portfolio-albums`
+- Cria álbuns "Meus Trabalhos" para profissionais que têm fotos na `media` mas 0 álbuns
+- Vincula as fotos existentes ao álbum
+- Mostra progresso e resultado (X álbuns criados, Y fotos vinculadas)
 
-- Inserir chave `destaque_require_description = true` em `site_settings`
-- Adicionar toggle na seção "Regras de Perfil" do `AdminSettingsPage.tsx`
+### 5. AdminSettingsPage.tsx — Toggle `destaque_require_description`
 
-### 5. FeaturedProviders: DiceBear avatar + lógica OR
+O array `PROFILE_RULE_KEYS` já contém `destaque_require_description` (verificado no código). Confirmar que está funcional e visível.
 
-O card `ProviderCardFeatured` atualmente usa fallback de iniciais. Trocar para DiceBear como nos demais cards e aplicar a mesma lógica OR do DESTAQUE.
+### 6. Edge Function `migrate-portfolio-albums`
+
+Função que:
+1. Busca profissionais com fotos na `media` (portfolio) sem álbuns em `portfolio_albums`
+2. Cria álbum "Meus Trabalhos" para cada um
+3. Insere registros em `portfolio_photos` com os dados da `media`
+4. Atualiza contadores nos providers
+5. Retorna relatório: `{ albumsCriados, fotosVinculadas }`
+
+### 7. Verificação do selo DESTAQUE
+
+Após a migração, os contadores `portfolio_photo_count` e `portfolio_album_count` terão valores reais. A lógica OR atual no `ProviderCard.tsx` (linha 106-110) já verifica `portfolioAlbumCount > 0`, então o selo passará a aparecer corretamente para os 58 profissionais com portfólio.
 
 ## Arquivos Modificados
 
 | Arquivo | Alteração |
 |---|---|
-| Data (INSERT/UPDATE) | Backfill photo_url e portfolio_photo_count |
-| `src/components/ProviderCard.tsx` | Lógica DESTAQUE com OR |
-| `src/components/home/FeaturedProviders.tsx` | DiceBear avatar + lógica DESTAQUE OR |
-| `src/pages/ProviderProfile.tsx` | Lógica DESTAQUE com OR |
-| `src/pages/AdminSettingsPage.tsx` | Toggle "Exigir descrição" |
+| Migration SQL | Migrar media → albums/photos + atualizar contadores + trigger automático |
+| Edge Function `migrate-portfolio-albums` | Migração operacional sob demanda |
+| `src/pages/AdminSettingsPage.tsx` | Botão "Migrar Fotos Legadas" + confirmar toggle descrição |
 
-Nenhum provider será escondido. Todos continuam aparecendo. Apenas o selo DESTAQUE (coroa) será concedido com critérios reais baseados nos dados que já existem.
+## Nenhum profissional será escondido
+
+Apenas dados internos (contadores e álbuns) serão criados/atualizados. A visibilidade dos profissionais não muda.
 
