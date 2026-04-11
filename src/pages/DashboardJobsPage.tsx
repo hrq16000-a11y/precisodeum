@@ -465,13 +465,44 @@ const DashboardJobsPage = () => {
                   <textarea
                     value={simpleText}
                     onChange={(e) => setSimpleText(e.target.value)}
-                    rows={10}
+                    rows={12}
                     className={inputClass}
-                    placeholder={"VAGA: Eletricista Residencial\nLocal: Curitiba - PR\nSalário: R$ 2.500\nWhatsApp: 41 99745-2053\n\nDescrição completa da vaga aqui..."}
+                    placeholder={`Eletricista Residencial
+
+Local: Curitiba - PR
+Bairro: Centro
+Salário: R$ 2.500
+Contrato: CLT
+Modelo: Presencial
+WhatsApp: 41 99745-2053
+Contato: João Silva
+
+Atividades:
+- Instalação elétrica residencial
+- Manutenção preventiva
+
+Requisitos:
+- Experiência mínima de 2 anos
+- Curso de NR10
+
+Benefícios:
+- Vale transporte
+- Vale refeição
+
+Horário: Segunda a sexta, 08h às 17h`}
                   />
                 </div>
-                <Button variant="outline" onClick={() => { parseSimpleText(simpleText); setMode('structured'); }}>
-                  Extrair dados e revisar →
+                {extractionSummary.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {extractionSummary.map((field, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
+                        <CheckCircle2 className="h-3 w-3" /> {field}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <Button variant="accent" onClick={() => { parseSimpleText(simpleText); setMode('structured'); }} disabled={!simpleText.trim()}>
+                  <Sparkles className="mr-1.5 h-4 w-4" /> Extrair dados e revisar →
                 </Button>
               </TabsContent>
 
