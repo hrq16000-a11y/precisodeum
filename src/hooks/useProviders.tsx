@@ -212,6 +212,17 @@ async function fetchProvidersLightweight(query: any) {
     }
   });
 
+  // Check if incomplete profiles should be hidden
+  let hideIncomplete = false;
+  try {
+    const { data: hideSetting } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'incomplete_profile_hide_public')
+      .maybeSingle();
+    hideIncomplete = (hideSetting as any)?.value === 'true';
+  } catch { /* ignore */ }
+
   return (data as any[]).map((p) => {
     const profile = profileMap[p.user_id];
     const rawPhoto = p.photo_url || profile?.avatar || '';
@@ -227,6 +238,12 @@ async function fetchProvidersLightweight(query: any) {
       hasPortfolio,
       serviceFallbackMap[p.id]
     );
+
+    // Mark incomplete profiles for filtering
+    const profileName = profile?.name?.trim() || '';
+    const provCity = p.city?.trim() || '';
+    const isIncomplete = !profileName || profileName === 'Profissional' || !provCity;
+    (mapped as any)._isIncomplete = isIncomplete;
 
     // Hybrid score
     // Capped content score (anti-abuse)
@@ -250,8 +267,7 @@ async function fetchProvidersLightweight(query: any) {
     (mapped as any)._finalScore = finalScore;
     (mapped as any)._boostScore = boostScore;
     return mapped;
-  });
-}
+  }).filter(p => !hideIncomplete || !(p as any)._isIncomplete);
 
 // fetchProvidersWithProfiles now uses the same fast path
 const fetchProvidersWithProfiles = fetchProvidersLightweight;
