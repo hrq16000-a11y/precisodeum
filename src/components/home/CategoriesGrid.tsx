@@ -85,11 +85,6 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                       <span className="block text-sm font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2">
                         {cat.name}
                       </span>
-                      {cat.count > 0 && (
-                        <span className="mt-1.5 inline-block rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-bold text-accent">
-                          {cat.count} {cat.count === 1 ? 'profissional' : 'profissionais'}
-                        </span>
-                      )}
                     </div>
                   </Link>
                 </div>
