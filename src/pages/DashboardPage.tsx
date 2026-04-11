@@ -338,7 +338,7 @@ const DashboardPage = () => {
       {/* Action Queue — what to do next */}
       <div className="mt-4">
         <ActionQueue />
-
+      </div>
       {/* Dominant CTA when no services */}
       <AnimatePresence>
         {servicesCount !== null && servicesCount === 0 && (
