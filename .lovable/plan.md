@@ -1,28 +1,33 @@
 
 
-# Melhorar Legibilidade dos Breadcrumbs
+# Compressão Automática WebP no Upload de Portfólio
 
 ## Problema
-Os breadcrumbs na página de categoria (e páginas similares com fundo escuro) estão ilegíveis — texto `text-primary-foreground/50` (50% de opacidade) sobre fundo azul escuro (`bg-hero`), como mostra o screenshot.
+O upload de portfólio envia o arquivo original direto ao storage sem otimização, resultando em imagens pesadas (JPEG/PNG de 2-5MB) que prejudicam o carregamento.
 
 ## Solução
-Redesenhar o componente Breadcrumbs com um fundo semi-transparente (glass pill), texto mais claro e tamanho ligeiramente maior quando usado sobre fundos escuros. Adicionar uma prop `variant` para alternar entre o estilo padrão (fundo claro) e o estilo "hero" (fundo escuro).
+Redirecionar o upload de portfólio pela Edge Function `optimize-image` já existente, que faz deduplicação SHA-256 e upload otimizado — e depois aplicar a transformação via `/render/image/` para servir WebP comprimido.
 
-## Alterações
+## Implementação
 
-### 1. `src/components/Breadcrumbs.tsx`
-- Adicionar prop `variant?: 'default' | 'hero'`
-- Quando `variant="hero"`:
-  - Envolve num pill com `bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/15`
-  - Texto base: `text-white/70`, links hover: `text-white`, último item: `text-white font-semibold`
-  - Separadores: `text-white/40`
-  - Ícone Home: `text-white/60`
-  - Fonte `text-sm` em vez de `text-xs`
+### 1. Alterar `DashboardPortfolioPage.tsx`
+No loop de upload de fotos (linhas ~182-222), substituir o upload direto (`supabase.storage.from('portfolio').upload(...)`) por uma chamada à Edge Function `optimize-image` via `fetch`, passando `bucket: 'portfolio'` e `folder: '{userId}/{albumId}'`. A edge function já faz:
+- Validação de tipo/tamanho
+- Hash SHA-256 para deduplicação
+- Upload ao storage
 
-### 2. `src/pages/CategoryPage.tsx`
-- Passar `variant="hero"` no Breadcrumbs
-- Remover a classe `text-primary-foreground/50` do className
+### 2. Alterar `DashboardMyPagePage.tsx`
+Aplicar a mesma mudança no upload de capa do portfólio (linha ~190).
 
-### 3. Outras páginas com fundo escuro (se aplicável)
-- `CityDetailPage.tsx`, `CityPage.tsx` — verificar se breadcrumbs estão sobre fundo escuro e aplicar `variant="hero"` se necessário
+### 3. Sem mudanças na Edge Function
+A `optimize-image` já suporta o bucket `portfolio` na lista `ALLOWED_BUCKETS` e o modo multipart/form-data com folder customizado.
+
+## Detalhes técnicos
+
+| Arquivo | Alteração |
+|---|---|
+| `src/pages/DashboardPortfolioPage.tsx` | Substituir `supabase.storage.upload` por chamada à edge function `optimize-image` |
+| `src/pages/DashboardMyPagePage.tsx` | Mesma substituição para upload de capa |
+
+Nenhuma migração de banco necessária. Nenhuma nova edge function.
 
