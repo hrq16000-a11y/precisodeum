@@ -54,10 +54,7 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
-      onClick={(e) => { if (!swiping.current) onClose(); }}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
+      onClick={(e) => { if (e.target === e.currentTarget && !swiping.current) onClose(); }}
     >
       <button
         onClick={onClose}
@@ -81,14 +78,21 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
         </button>
       )}
 
-      <img
-        src={fullUrl}
-        alt={`Imagem ${idx + 1}`}
-        className="max-h-[85vh] max-w-[92vw] rounded-lg object-contain select-none"
-        onClick={e => e.stopPropagation()}
-        draggable={false}
-        onError={handleImageError}
-      />
+      <div
+        className="flex items-center justify-center"
+        style={{ touchAction: 'pan-y' }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <img
+          src={fullUrl}
+          alt={`Imagem ${idx + 1}`}
+          className="max-h-[85vh] max-w-[92vw] rounded-lg object-contain select-none"
+          draggable={false}
+          onError={handleImageError}
+        />
+      </div>
 
       {images.length > 1 && (
         <button
