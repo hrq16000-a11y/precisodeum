@@ -1034,7 +1034,7 @@ const ProviderProfile = () => {
                 </div>
                 {provider.business_name && <p className="text-sm text-muted-foreground mt-1">{provider.business_name}</p>}
                 <p className="mt-1 text-sm font-semibold flex items-center justify-center sm:justify-start gap-1" style={accentBg ? { color: accentBg } : undefined}>
-                  <span className="text-base">{categoryIcon}</span>
+                  <CategoryIcon icon={categoryIcon} size={16} className="text-accent" />
                   {category || 'Categoria não informada'}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center justify-center sm:justify-start gap-3 text-sm text-muted-foreground">
@@ -1265,7 +1265,7 @@ const ProviderProfile = () => {
                             <p className="text-sm font-semibold text-foreground truncate">{rpName}</p>
                             {rpCategory && (
                               <p className="text-[11px] text-accent truncate flex items-center justify-center gap-0.5">
-                                <span>{rpCatIcon}</span> {rpCategory}
+                                <CategoryIcon icon={rpCatIcon} size={12} className="text-accent" /> {rpCategory}
                               </p>
                             )}
                             <p className="text-[11px] text-muted-foreground truncate mt-0.5">
