@@ -1,27 +1,28 @@
 
 
-# Histórico de Sincronizações na Página de Mídia
+# Melhorar Legibilidade dos Breadcrumbs
 
-## Abordagem
+## Problema
+Os breadcrumbs na página de categoria (e páginas similares com fundo escuro) estão ilegíveis — texto `text-primary-foreground/50` (50% de opacidade) sobre fundo azul escuro (`bg-hero`), como mostra o screenshot.
 
-Usar a tabela `audit_log` existente para registrar cada sincronização (já temos `logAuditAction`), e adicionar uma seção colapsável na página de mídia mostrando o histórico.
+## Solução
+Redesenhar o componente Breadcrumbs com um fundo semi-transparente (glass pill), texto mais claro e tamanho ligeiramente maior quando usado sobre fundos escuros. Adicionar uma prop `variant` para alternar entre o estilo padrão (fundo claro) e o estilo "hero" (fundo escuro).
 
-## Implementação
+## Alterações
 
-### 1. Registrar sincronizações no audit_log
-Alterar `syncStorage()` em `AdminMediaPage.tsx` para chamar `logAuditAction` após cada sincronização bem-sucedida, com action `media_uploaded`, resource_type `storage_sync`, e details contendo `{ inserted, scanned_buckets, existing_tracked, new_files_found }`.
+### 1. `src/components/Breadcrumbs.tsx`
+- Adicionar prop `variant?: 'default' | 'hero'`
+- Quando `variant="hero"`:
+  - Envolve num pill com `bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/15`
+  - Texto base: `text-white/70`, links hover: `text-white`, último item: `text-white font-semibold`
+  - Separadores: `text-white/40`
+  - Ícone Home: `text-white/60`
+  - Fonte `text-sm` em vez de `text-xs`
 
-### 2. Adicionar seção de histórico na UI
-Após os stats cards, adicionar um card colapsável "Histórico de Sincronizações" que:
-- Busca os últimos 20 registros de `audit_log` onde `resource_type = 'storage_sync'`
-- Mostra data/hora formatada, quantidade de arquivos sincronizados, e buckets escaneados
-- Inclui botão para expandir/recolher
+### 2. `src/pages/CategoryPage.tsx`
+- Passar `variant="hero"` no Breadcrumbs
+- Remover a classe `text-primary-foreground/50` do className
 
-## Arquivo modificado
-
-| Arquivo | Alteração |
-|---|---|
-| `src/pages/AdminMediaPage.tsx` | Adicionar log de auditoria no sync + seção de histórico com fetch do audit_log |
-
-Sem mudanças de banco de dados — reutiliza a tabela `audit_log` existente.
+### 3. Outras páginas com fundo escuro (se aplicável)
+- `CityDetailPage.tsx`, `CityPage.tsx` — verificar se breadcrumbs estão sobre fundo escuro e aplicar `variant="hero"` se necessário
 
