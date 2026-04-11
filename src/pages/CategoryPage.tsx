@@ -86,7 +86,7 @@ const CategoryPage = () => {
     return { localProviders: allProviders, otherProviders: [] as DbProvider[], isFallback: true, expansionLevel: 'all' as const };
   }, [allProviders, geoCity, geoState, userLat, userLon, radiusKm]);
 
-  const displayProviders = showAllLocations ? [...localProviders, ...otherProviders] : localProviders;
+  const totalDisplay = localProviders.length + (showAllLocations ? otherProviders.length : 0);
 
   useSeoHead({
     title: category ? `${category.name} - Profissionais` : 'Categoria',
