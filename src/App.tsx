@@ -296,6 +296,7 @@ const App = () => {
                 <Route path="/termos" element={<TermsPage />} />
                 <Route path="/cookies" element={<CookiesPage />} />
                 <Route path="/sobre" element={<AboutPage />} />
+                <Route path="/como-funciona" element={<ComoFuncionaPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/sitemap" element={<SitemapRedirect />} />
                 <Route path="/sitemap.xml" element={<SitemapRedirect />} />
