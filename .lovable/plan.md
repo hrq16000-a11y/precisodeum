@@ -1,32 +1,51 @@
 
 
-## Plan: Refinar Perfil do Profissional — Hierarquia, Dados e Consistência Visual
+## Plan: Deep Link WhatsApp (`whatsapp://send`) com fallback
 
-### 1. Criar função `capitalizeName` em `src/lib/normalize.ts`
-Função que capitaliza nomes próprios respeitando preposições portuguesas (de, dos, da, e, etc.).
-- `"luiz marcelo de sousa"` → `"Luiz Marcelo de Sousa"`
-- Aplicar no display do nome em `ProviderProfile.tsx` (linha 492), `FeaturedProviders.tsx`, e breadcrumbs.
+### Problema
+Atualmente, `whatsappLink()` em `src/lib/whatsapp.ts` gera URLs `https://wa.me/...` que abrem o navegador primeiro, causando fricção em dispositivos mobile. O ideal e usar o deep link `whatsapp://send?phone=...` que abre a app diretamente.
 
-### 2. Refatorar o Header do Perfil (`ProviderProfile.tsx`)
-**H1 limitado a 2 linhas** (linhas 929-933 e 996):
-- O `pageSettings.headline` (que recebe texto gigante de descrição) deve ser limitado com `line-clamp-2` no H1.
-- Se não houver headline customizado, usar `"{Nome} — {Categoria}"` como H1.
-- Mover o texto longo da descrição/headline para a seção "Sobre o Profissional" (`renderAbout`), que já existe.
+### Estrategia: Deep link com fallback inteligente
 
-### 3. Aplicar `formatLocationString` na localização do perfil
-Na linha 1029, a string de localização (`neighborhood, city - state`) não passa pela função de limpeza. Aplicar `formatLocationString` para corrigir espaços antes de vírgulas.
+Usar `whatsapp://send?phone=NUMERO&text=MENSAGEM` como esquema primario. Porem, em desktop, esse esquema pode falhar silenciosamente. A solucao e usar uma abordagem hibrida:
 
-### 4. Remover tag "Usuário" (levelInfo)
-Linhas 1008-1013: A tag `provider.levelInfo.name` (ex: "Usuário") é redundante em perfil profissional. Remover essa exibição, mantendo apenas `accTypeInfo` (Premium) e `DESTAQUE`.
+- **Mobile** (detectado via `navigator.userAgent` ou viewport): usar `whatsapp://send?phone=...`
+- **Desktop**: manter `https://wa.me/...` como fallback seguro
 
-### 5. Remover texto de experiência ao lado da localização
-Linhas 1032-1037: Remover o bloco `{provider.years_experience} anos exp.` que aparece junto da localização, já que essa info está no StatMiniCard.
+### Alteracoes
 
-### 6. Padronizar cor do botão "Solicitar Orçamento" para `variant="accent"`
-O botão já usa `variant="accent"` (linha 1117), que é o laranja da marca. O screenshot mostra azul provavelmente por `accentBg` override ou `pageSettings.accent_color`. Garantir que quando `accent_color` estiver vazio, o botão use a cor accent padrão (laranja) e não caia em fallback azul. Verificar se `variant="accent"` está corretamente definido no design system.
+**Arquivo: `src/lib/whatsapp.ts`**
 
-### Arquivos modificados:
-- `src/lib/normalize.ts` — adicionar `capitalizeName()`
-- `src/pages/ProviderProfile.tsx` — todas as 5 alterações acima
-- `src/components/home/FeaturedProviders.tsx` — aplicar `capitalizeName` no `displayName`
+1. Atualizar `whatsappLink()` para gerar `whatsapp://send?phone={canonical}&text={message}` por padrao
+2. Adicionar funcao `whatsappDeepLink()` que retorna o deep link nativo
+3. Adicionar funcao `whatsappWebLink()` que retorna o link wa.me (fallback)
+4. Adicionar helper `isMobileDevice()` para detectar mobile
+5. A funcao principal `whatsappLink()` passa a retornar automaticamente o deep link em mobile e o web link em desktop
+6. A mensagem padrao continua: `"Olá, vi o seu perfil no Preciso de um e gostaria de um orçamento."`
+7. O numero ja e sanitizado por `toCanonical()` (apenas digitos com codigo 55) -- nenhuma mudanca necessaria
+
+**Nenhuma alteracao nos consumidores** (`ProviderProfile.tsx`, `ServiceDetailPage.tsx`, `FloatingWhatsApp.tsx`, etc.) -- todos ja chamam `whatsappLink()` que passara a retornar o deep link correto automaticamente.
+
+### Detalhes tecnicos
+
+```typescript
+// Nova logica em whatsapp.ts
+const isMobile = (): boolean =>
+  typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+export const whatsappLink = (number: string, message?: string): string => {
+  const formatted = formatToWhatsApp(number);
+  if (!formatted) return '#';
+  const text = message || DEFAULT_MESSAGE;
+  const encoded = encodeURIComponent(text);
+  
+  if (isMobile()) {
+    return `whatsapp://send?phone=${formatted}&text=${encoded}`;
+  }
+  return `https://wa.me/${formatted}?text=${encoded}`;
+};
+```
+
+### Arquivos modificados
+- `src/lib/whatsapp.ts` -- unica alteracao necessaria (funcao centralizada)
 
