@@ -1,11 +1,12 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SearchBar from '@/components/SearchBar';
 import ProviderCard from '@/components/ProviderCard';
 import GeoLocationChip from '@/components/GeoLocationChip';
+import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import PaginationControls from '@/components/PaginationControls';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,11 +15,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useSearchProviders, useCategories, useSearchSuggestions, useGeoCategories, normalizeCityName, matchesGeoContext } from '@/hooks/useProviders';
+import { useSearchProvidersGrouped, useCategories, useSearchSuggestions, useGeoCategories, normalizeCityName, matchesGeoContext, type DbProvider } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -40,6 +41,7 @@ const SearchPage = () => {
   const [minRating, setMinRating] = useState(0);
   const [sortBy, setSortBy] = useState<SortOption>('relevance');
   const [showFilters, setShowFilters] = useState(false);
+  const [showAllLocations, setShowAllLocations] = useState(false);
   const [page, setPage] = useState(1);
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
 
@@ -55,45 +57,38 @@ const SearchPage = () => {
   }, [requestPreciseLocation]);
 
   const {
-    data: filtered = [],
+    data: grouped,
     isLoading,
     isError: searchError,
     refetch,
-  } = useSearchProviders(query, effectiveCity, selectedCategory, minRating, geoState || '', userLat, userLon, radiusKm);
+  } = useSearchProvidersGrouped(query, effectiveCity, selectedCategory, minRating, geoState || '', userLat, userLon, radiusKm);
+
+  const localProviders = grouped?.local || [];
+  const otherProviders = grouped?.other || [];
+  const isFallback = grouped?.isFallback || false;
+
+  // Combine for client-side filters
+  const allProviders = useMemo(() => [...localProviders, ...otherProviders], [localProviders, otherProviders]);
 
   // Apply additional client-side filters
-  const fullyFiltered = useMemo(() => {
-    let results = [...filtered];
+  const applyClientFilters = useCallback((list: DbProvider[]) => {
+    let results = [...list];
 
     if (selectedNeighborhood) {
       const nb = selectedNeighborhood.toLowerCase();
       results = results.filter(p => p.neighborhood.toLowerCase().includes(nb));
     }
-
     if (businessNameFilter) {
       const bn = businessNameFilter.toLowerCase();
-      results = results.filter(p =>
-        (p.businessName?.toLowerCase().includes(bn)) ||
-        p.name.toLowerCase().includes(bn)
-      );
+      results = results.filter(p => (p.businessName?.toLowerCase().includes(bn)) || p.name.toLowerCase().includes(bn));
     }
-
     if (phoneFilter) {
       const ph = phoneFilter.replace(/\D/g, '');
-      if (ph) {
-        results = results.filter(p =>
-          p.phone.includes(ph) || p.whatsapp.includes(ph)
-        );
-      }
+      if (ph) results = results.filter(p => p.phone.includes(ph) || p.whatsapp.includes(ph));
     }
+    if (featuredFilter === 'featured') results = results.filter(p => p.featured);
+    else if (featuredFilter === 'normal') results = results.filter(p => !p.featured);
 
-    if (featuredFilter === 'featured') {
-      results = results.filter(p => p.featured);
-    } else if (featuredFilter === 'normal') {
-      results = results.filter(p => !p.featured);
-    }
-
-    // Sort
     if (sortBy !== 'relevance') {
       results.sort((a, b) => {
         switch (sortBy) {
@@ -106,9 +101,14 @@ const SearchPage = () => {
         }
       });
     }
-
     return results;
-  }, [filtered, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy]);
+  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy]);
+
+  const filteredLocal = useMemo(() => applyClientFilters(localProviders), [applyClientFilters, localProviders]);
+  const filteredOther = useMemo(() => applyClientFilters(otherProviders), [applyClientFilters, otherProviders]);
+
+  const displayProviders = showAllLocations ? [...filteredLocal, ...filteredOther] : filteredLocal;
+  const fullyFiltered = [...filteredLocal, ...filteredOther];
 
   const activeFilterCount = [selectedCategory, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter !== 'all' ? 'x' : '', minRating > 0 ? 'x' : ''].filter(Boolean).length;
 
@@ -127,16 +127,16 @@ const SearchPage = () => {
 
   // Unique cities & neighborhoods from results for autocomplete
   const availableCities = useMemo(() => {
-    const cities = [...new Set(filtered.map(p => p.city).filter(Boolean))];
+    const cities = [...new Set(allProviders.map(p => p.city).filter(Boolean))];
     return cities.sort();
-  }, [filtered]);
+  }, [allProviders]);
 
   const availableNeighborhoods = useMemo(() => {
-    let source = filtered;
+    let source = allProviders;
     if (effectiveCity) source = source.filter(p => p.city.toLowerCase() === effectiveCity.toLowerCase());
     const nbs = [...new Set(source.map(p => p.neighborhood).filter(Boolean))];
     return nbs.sort();
-  }, [filtered, effectiveCity]);
+  }, [allProviders, effectiveCity]);
 
   // SEO
   const seoCity = effectiveCity || '';
@@ -150,7 +150,7 @@ const SearchPage = () => {
       : 'Busque e encontre profissionais confiáveis perto de você na maior plataforma de serviços do Brasil.';
   useSeoHead({ title: seoTitle, description: seoDesc, canonical: `${SITE_BASE_URL}/buscar` });
 
-  const paginatedResults = fullyFiltered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedResults = displayProviders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   // Quick suggestion chips
   const suggestionChips = useMemo(() => {
@@ -245,7 +245,7 @@ const SearchPage = () => {
                     <SelectTrigger className="mt-1"><SelectValue placeholder="Todas" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas as cidades</SelectItem>
-                      {availableCities.map(c => (
+                      {availableCities.map((c: string) => (
                         <SelectItem key={c} value={c}>{c}</SelectItem>
                       ))}
                     </SelectContent>
@@ -260,7 +260,7 @@ const SearchPage = () => {
                       <SelectTrigger className="mt-1"><SelectValue placeholder="Todos" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todos os bairros</SelectItem>
-                        {availableNeighborhoods.map(n => (
+                        {availableNeighborhoods.map((n: string) => (
                           <SelectItem key={n} value={n}>{n}</SelectItem>
                         ))}
                       </SelectContent>
@@ -359,13 +359,28 @@ const SearchPage = () => {
               </div>
             )}
 
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-muted-foreground">
-                {isLoading ? 'Buscando...' : `${fullyFiltered.length} profissional(is) encontrado(s)`}
+                {isLoading ? 'Buscando...' : `${displayProviders.length} profissional(is) encontrado(s)`}
                 {query && <> para "<span className="font-semibold text-foreground">{query}</span>"</>}
                 {effectiveCity && <> em <span className="font-semibold text-foreground">{effectiveCity}</span></>}
               </p>
+              {!isFallback && filteredLocal.length > 0 && effectiveCity && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                  <MapPin className="h-3 w-3" />
+                  {filteredLocal.length} na sua região
+                </span>
+              )}
             </div>
+
+            {isFallback && effectiveCity && (
+              <GeoFallbackBanner
+                originalCity={effectiveCity}
+                expansionLevel="all"
+                stateName={geoState || undefined}
+                resultCount={displayProviders.length}
+              />
+            )}
 
             {/* Active filter tags */}
             {activeFilterCount > 0 && (
@@ -435,6 +450,7 @@ const SearchPage = () => {
               </div>
             ) : (
               <>
+                {/* Local results */}
                 <motion.div
                   className="grid gap-4 sm:grid-cols-2"
                   initial="hidden"
@@ -448,17 +464,62 @@ const SearchPage = () => {
                       transition={{ duration: 0.35 }}
                       layout
                     >
-                      <ProviderCard provider={p} isFallback={!!effectiveCity && !matchesGeoContext(p, normalizeCityName(effectiveCity), geoState ? normalizeCityName(geoState) : undefined, userLat, userLon, radiusKm)} />
+                      <ProviderCard
+                        provider={p}
+                        isFallback={isFallback || (!filteredLocal.some(lp => lp.id === p.id) && !!effectiveCity)}
+                      />
                     </motion.div>
                   ))}
                 </motion.div>
-                {fullyFiltered.length === 0 && (
+
+                {/* Button to show other regions */}
+                {!showAllLocations && filteredOther.length > 0 && !isFallback && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-10 flex justify-center"
+                  >
+                    <button
+                      onClick={() => { setShowAllLocations(true); setPage(1); }}
+                      className="group relative inline-flex items-center gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-4 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                        <Globe className="h-5 w-5" />
+                      </span>
+                      <span className="text-left">
+                        <span className="block text-sm font-semibold">Ver outras localidades</span>
+                        <span className="block text-xs text-muted-foreground">
+                          +{filteredOther.length} profissional{filteredOther.length !== 1 ? 'is' : ''} em todo o Brasil
+                        </span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Separator for other regions */}
+                {showAllLocations && filteredOther.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-8 mb-2 flex items-center gap-3"
+                  >
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                      <Globe className="h-3 w-3" />
+                      Outras regiões
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </motion.div>
+                )}
+
+                {displayProviders.length === 0 && (
                   <EmptyStateFallback
                     title="Nenhum profissional encontrado"
                     message="Tente alterar os filtros ou buscar por outro termo."
                   />
                 )}
-                <PaginationControls currentPage={page} totalItems={fullyFiltered.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
+                <PaginationControls currentPage={page} totalItems={displayProviders.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
               </>
             )}
           </div>
