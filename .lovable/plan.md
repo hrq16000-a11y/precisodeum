@@ -1,60 +1,29 @@
 
-# Correção: Busca com Prioridade por Proximidade + Separação Regional
 
-## Problema Identificado
+# Correção: Texto genérico na descrição do profissional
 
-A `SearchPage` recebe os resultados de `filterAndRankProviders` como uma lista plana, sem distinção visual entre profissionais locais e de outras regiões. O ranking existe internamente (SIL + GeoEngine), mas:
+## Problema
 
-1. **Sem separação visual** — locais e remotos aparecem misturados
-2. **Sem distância real** — dentro dos locais, não ordena por km (usa geoScore genérico)
-3. **Sem botão "Ver outras regiões"** — como já existe na CategoryPage
-
-A CategoryPage já resolve isso com `localProviders` / `otherProviders` + botão de expansão. A SearchPage precisa do mesmo padrão.
-
----
+Alguns profissionais têm a descrição salva no banco de dados como "Profissional cadastrado na plataforma Preciso de um. Entre em contato para mais informações." — um texto genérico/placeholder que não agrega valor. Esse texto aparece nos cards e no perfil.
 
 ## Solução
 
-### 1. `useProviders.tsx` — Expor metadata de local/remoto
+Tratar esse texto como se fosse uma descrição vazia. Nos dois lugares que exibem `provider.description`:
 
-Criar uma nova função `filterAndRankProvidersGrouped` (ou modificar a existente) que retorna:
+### 1. `src/components/ProviderCard.tsx` (linha 166-169)
 
-```text
-{
-  local: DbProvider[],      // Matches geo context
-  other: DbProvider[],      // Doesn't match
-  intent: SearchIntent,
-  isFallback: boolean        // true when 0 local results
-}
+Criar uma função helper que detecta descrições genéricas (contendo "cadastrado na plataforma" ou "entre em contato para mais informações") e retorna `null` nesses casos. O card simplesmente não mostra a descrição — mesmo comportamento de quando está vazia.
+
+### 2. `src/pages/ProviderProfile.tsx` (linha 657)
+
+Já tem o fallback correto ("Este profissional ainda não adicionou uma descrição."). Só precisa aplicar o mesmo filtro para que, se a descrição for o texto genérico, exiba o fallback em vez do boilerplate.
+
+### Helper
+
+```ts
+const isBoilerplateDescription = (desc?: string | null) =>
+  !desc?.trim() || /cadastrado na plataforma|entre em contato para mais informa/i.test(desc);
 ```
 
-- Dentro de `local`, ordenar por **distância real** (Haversine) quando userLat/userLon disponíveis, depois por _finalScore
-- Dentro de `other`, manter ordem por _finalScore
+Nenhuma mudança de banco — apenas filtragem client-side.
 
-Criar `useSearchProvidersGrouped` que expõe essa estrutura ao invés do array plano.
-
-### 2. `SearchPage.tsx` — Separação visual + botão de expansão
-
-- Usar `useSearchProvidersGrouped` ao invés de `useSearchProviders`
-- Exibir seção **"Na sua região"** com contagem e badge de localização
-- Abaixo, botão **"Ver outras localidades"** (mesmo padrão visual da CategoryPage: ícone Globe, contagem, card-like button)
-- Ao expandir, mostrar separador **"Outras regiões"** com linha horizontal
-- Cards de "outras regiões" recebem `isFallback={true}` automaticamente (já mostra badge "Outra região")
-- Quando 0 locais: mostrar aviso + todos os resultados como fallback nacional
-
-### 3. Melhoria no ranking de proximidade
-
-Dentro dos resultados locais, adicionar **distância real em km** como critério primário de ordenação:
-- Se GPS disponível + provider tem coords → Haversine → sort ascending
-- Sem GPS → manter geoScore + _finalScore atual
-
----
-
-## Arquivos
-
-| Arquivo | Alteração |
-|---|---|
-| `src/hooks/useProviders.tsx` | Nova função `filterAndRankProvidersGrouped` + hook `useSearchProvidersGrouped` |
-| `src/pages/SearchPage.tsx` | Consumir grouped results, separar local/outros, botão expansão, contadores por seção |
-
-Sem mudanças de banco de dados. Reutiliza toda a infra de GeoEngine/SIL existente.
