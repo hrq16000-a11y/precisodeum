@@ -230,6 +230,31 @@ const CategoryPage = () => {
           ))}
         </motion.div>
 
+        {/* Botão para ver profissionais de outras localidades */}
+        {!showAllLocations && otherProviders.length > 0 && !isFallback && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8 flex justify-center"
+          >
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => { setShowAllLocations(true); setPage(1); }}
+              className="gap-2"
+            >
+              <MapPin className="h-4 w-4" />
+              Ver profissionais de outras localidades ({otherProviders.length})
+            </Button>
+          </motion.div>
+        )}
+
+        {showAllLocations && otherProviders.length > 0 && (
+          <p className="mt-6 text-sm text-muted-foreground text-center">
+            Exibindo também profissionais de outras regiões
+          </p>
+        )}
+
         {displayProviders.length === 0 && (
           <EmptyStateFallback
             title={`Nenhum profissional de ${category.name} encontrado`}
