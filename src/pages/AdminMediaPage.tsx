@@ -88,6 +88,16 @@ const AdminMediaPage = () => {
     });
   };
 
+  const fetchSyncHistory = useCallback(async () => {
+    const { data } = await supabase
+      .from('audit_log' as any)
+      .select('*')
+      .eq('resource_type', 'storage_sync')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    setSyncHistory((data || []) as any[]);
+  }, []);
+
   const syncStorage = async () => {
     setSyncing(true);
     try {
@@ -99,9 +109,20 @@ const AdminMediaPage = () => {
       } else {
         toast.info('Storage já está sincronizado');
       }
+      await logAuditAction({
+        action: 'media_uploaded',
+        resource_type: 'storage_sync',
+        details: {
+          inserted: data?.inserted || 0,
+          new_files_found: data?.new_files_found || 0,
+          existing_tracked: data?.existing_tracked || 0,
+          scanned_buckets: data?.scanned_buckets || [],
+        },
+      });
       setSyncDone(true);
       fetchMedia();
       fetchStats();
+      fetchSyncHistory();
     } catch (err: any) {
       toast.error('Erro ao sincronizar: ' + (err.message || ''));
     } finally {
