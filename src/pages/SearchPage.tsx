@@ -41,7 +41,7 @@ const SearchPage = () => {
   const [minRating, setMinRating] = useState(0);
   const [sortBy, setSortBy] = useState<SortOption>('relevance');
   const [showFilters, setShowFilters] = useState(false);
-  const [page, setPage] = useState(1);
+  const [showAllLocations, setShowAllLocations] = useState(false);
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
 
   const effectiveCity = selectedCity || cityParam || geoCity || '';
@@ -56,11 +56,15 @@ const SearchPage = () => {
   }, [requestPreciseLocation]);
 
   const {
-    data: filtered = [],
+    data: grouped,
     isLoading,
     isError: searchError,
     refetch,
-  } = useSearchProviders(query, effectiveCity, selectedCategory, minRating, geoState || '', userLat, userLon, radiusKm);
+  } = useSearchProvidersGrouped(query, effectiveCity, selectedCategory, minRating, geoState || '', userLat, userLon, radiusKm);
+
+  const localProviders = grouped?.local || [];
+  const otherProviders = grouped?.other || [];
+  const isFallback = grouped?.isFallback || false;
 
   // Apply additional client-side filters
   const fullyFiltered = useMemo(() => {
