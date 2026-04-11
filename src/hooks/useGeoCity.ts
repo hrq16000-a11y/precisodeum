@@ -203,7 +203,12 @@ async function fetchTemp(latitude: number, longitude: number): Promise<number | 
 function startFetchIfNeeded() {
   if (fetchStarted) return;
   if (geoState.manualOverride && geoState.city) return;
-  if (geoState.city && geoState.temp !== null && geoState.latitude !== null && geoState.longitude !== null) return;
+  if (geoState.city && geoState.temp !== null && geoState.latitude !== null && geoState.longitude !== null) {
+    // Check TTL — skip refetch if last fetch was recent
+    const lastTs = parseNumber(safeGet(FETCH_TS_KEY));
+    if (lastTs && Date.now() - lastTs < GEO_TTL_MS) return;
+  }
+  if (geoState.manualOverride && geoState.city) return;
 
   fetchStarted = true;
 
