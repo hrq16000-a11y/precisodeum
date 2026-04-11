@@ -78,12 +78,12 @@ const FallbackNav = () => {
 
   return (
     <>
-      <div className="h-16 md:hidden" />
+      <div className="h-12 md:hidden" />
       <nav
         className="fixed bottom-0 left-0 right-0 border-t border-border/40 bg-card/90 backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 md:hidden"
         style={{ zIndex: 1000, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="flex items-center justify-around px-2 py-1.5">
+        <div className="flex items-center justify-around px-1 py-1">
           <NavItem icon={Home} label="Início" isActive={location.pathname === '/' || location.pathname === '/index'} onClick={() => navigate('/')} />
           <NavItem icon={Search} label="Buscar" isActive={location.pathname === '/buscar'} onClick={() => navigate('/buscar')} />
           <FabButton icon={Plus} label="Criar" onClick={handleCriar} />
