@@ -41,28 +41,37 @@ const CategoryPage = () => {
   const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm } = useGeoCity();
   const { data, isLoading } = useCategoryProviders(slug || '');
   const [page, setPage] = useState(1);
+  const [showAllLocations, setShowAllLocations] = useState(false);
 
   const category = data?.category;
   const allProviders = data?.providers || [];
 
-  const { displayProviders, isFallback, expansionLevel } = useMemo(() => {
+  const { localProviders, otherProviders, isFallback, expansionLevel } = useMemo(() => {
     if (!geoCity || allProviders.length === 0) {
-      return { displayProviders: allProviders, isFallback: false, expansionLevel: null };
+      return { localProviders: allProviders, otherProviders: [] as DbProvider[], isFallback: false, expansionLevel: null };
     }
 
     const cityNorm = normalizeCityName(geoCity);
     const stateNorm = geoState ? normalizeCityName(geoState) : undefined;
 
-    const localResults = allProviders.filter((p) =>
-      matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon, radiusKm)
-    );
+    const local: DbProvider[] = [];
+    const other: DbProvider[] = [];
+    allProviders.forEach((p) => {
+      if (matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon, radiusKm)) {
+        local.push(p);
+      } else {
+        other.push(p);
+      }
+    });
 
-    if (localResults.length > 0) {
-      return { displayProviders: localResults, isFallback: false, expansionLevel: null };
+    if (local.length > 0) {
+      return { localProviders: local, otherProviders: other, isFallback: false, expansionLevel: null };
     }
 
-    return { displayProviders: allProviders, isFallback: true, expansionLevel: 'all' as const };
+    return { localProviders: allProviders, otherProviders: [] as DbProvider[], isFallback: true, expansionLevel: 'all' as const };
   }, [allProviders, geoCity, geoState, userLat, userLon, radiusKm]);
+
+  const displayProviders = showAllLocations ? [...localProviders, ...otherProviders] : localProviders;
 
   useSeoHead({
     title: category ? `${category.name} - Profissionais` : 'Categoria',
