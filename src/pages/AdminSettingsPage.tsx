@@ -339,6 +339,8 @@ const ProfileRulesSection = ({ settings, onToggle, onSaveText }: {
   onToggle: (key: string, currentValue: string) => Promise<void>;
   onSaveText: (key: string, value: string) => Promise<void>;
 }) => {
+  const [migrating, setMigrating] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<any>(null);
   const map = useMemo(() => {
     const m: Record<string, string> = {};
     settings.forEach((s: any) => { m[s.key] = s.value; });
