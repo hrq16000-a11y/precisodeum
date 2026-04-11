@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, ExternalLink, Copy, CopyPlus, Upload, MapPin, LocateFixed, Loader2, CheckCircle2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Copy, CopyPlus, Upload, MapPin, LocateFixed, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import { fetchAllMunicipalities, geocodeCity, reverseGeocode, normalize, type CityResult } from '@/lib/geoUtils';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp } from '@/lib/whatsapp';
+import { parseJobText } from '@/lib/jobTextParser';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
@@ -178,21 +179,39 @@ const DashboardJobsPage = () => {
     return `${base}-${Date.now().toString(36)}`;
   };
 
+  const [extractionSummary, setExtractionSummary] = useState<string[]>([]);
+
   const parseSimpleText = (text: string) => {
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    const title = lines[0] || '';
-    const cityMatch = text.match(/(?:local|cidade|localização)[:\s]*([^\n]+)/i);
-    const salaryMatch = text.match(/(?:salário|salario|remuneração)[:\s]*([^\n]+)/i);
-    const whatsappMatch = text.match(/(?:whatsapp|zap|wpp|contato)[:\s]*([\d\s()+-]+)/i);
+    const parsed = parseJobText(text, categories);
     setForm(prev => ({
       ...prev,
-      title: title.replace(/^vaga[:\s]*/i, ''),
-      description: text,
-      city: cityMatch?.[1]?.trim() || prev.city,
-      salary: salaryMatch?.[1]?.trim() || prev.salary,
-      whatsapp: whatsappMatch ? sanitizeWhatsapp(whatsappMatch[1]) : prev.whatsapp,
+      title: parsed.title || prev.title,
+      subtitle: parsed.subtitle || prev.subtitle,
+      description: parsed.description || text,
+      category_id: parsed.category_id || prev.category_id,
+      opportunity_type: parsed.opportunity_type || prev.opportunity_type,
+      job_type: parsed.job_type || prev.job_type,
+      work_model: parsed.work_model || prev.work_model,
+      activities: parsed.activities || prev.activities,
+      requirements: parsed.requirements || prev.requirements,
+      benefits: parsed.benefits || prev.benefits,
+      schedule: parsed.schedule || prev.schedule,
+      salary: parsed.salary || prev.salary,
+      city: parsed.city || prev.city,
+      state: parsed.state || prev.state,
+      neighborhood: parsed.neighborhood || prev.neighborhood,
+      contact_name: parsed.contact_name || prev.contact_name,
+      contact_phone: parsed.contact_phone || prev.contact_phone,
+      whatsapp: parsed.whatsapp || prev.whatsapp,
       deadline: prev.deadline || getDefaultDeadline(),
     }));
+    if (parsed.city) setCitySearch(`${parsed.city}${parsed.state ? ', ' + parsed.state : ''}`);
+    setExtractionSummary(parsed.detectedFields);
+    if (parsed.detectedFields.length > 0) {
+      toast.success(`✓ Detectados: ${parsed.detectedFields.join(' · ')}`, { duration: 5000 });
+    } else {
+      toast.info('Nenhum campo detectado automaticamente. Preencha manualmente.');
+    }
   };
 
   const getApprovalStatus = () => {
