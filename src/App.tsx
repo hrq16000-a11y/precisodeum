@@ -108,6 +108,7 @@ const StateProviderPage = lazy(() => import("./pages/StateProviderPage"));
 const CityDetailPage = lazy(() => import("./pages/CityDetailPage"));
 const CategoriesListPage = lazy(() => import("./pages/CategoriesListPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
+const ComoFuncionaPage = lazy(() => import("./pages/ComoFuncionaPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const SitemapRedirect = lazy(() => import("./pages/SitemapRedirect"));
 const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage"));
