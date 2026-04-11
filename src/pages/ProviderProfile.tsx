@@ -991,7 +991,7 @@ const ProviderProfile = () => {
               >
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
-                  {provider.plan === 'premium' && (
+                  {isDestaque && (
                     <motion.span
                       className={`inline-flex items-center gap-1 ${tc.badge} bg-gradient-to-r from-accent to-accent/80 px-2.5 py-0.5 text-xs font-semibold text-accent-foreground shadow-md`}
                       style={accentBg ? { background: `linear-gradient(135deg, ${accentBg}, ${accentBg}cc)` } : undefined}
