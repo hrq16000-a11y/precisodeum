@@ -129,7 +129,7 @@ const SponsorContractPage = lazy(() => import("./pages/SponsorContractPage"));
 
 const CookieConsent = reactLazy(() => importWithRetry(() => import("./components/CookieConsent")));
 const PwaInstallBanner = reactLazy(() => importWithRetry(() => import("./components/PwaInstallBanner")));
-import OAuthRedirectHandler from "./components/OAuthRedirectHandler";
+const OAuthRedirectHandler = reactLazy(() => importWithRetry(() => import("./components/OAuthRedirectHandler")));
 const FloatingHelpButton = reactLazy(() => importWithRetry(() => import("./components/FloatingHelpButton")));
 
 // Sponsor Panel (CRM) — isolated module
@@ -143,7 +143,7 @@ const SponsorDataPage = lazy(() => import("./pages/sponsor/SponsorDataPage"));
 
 // Cinematic loading fallback
 import CinematicLoader from './components/CinematicLoader';
-import CurtainReveal from './components/CurtainReveal';
+const CurtainReveal = reactLazy(() => importWithRetry(() => import("./components/CurtainReveal")));
 
 const PageFallback = () => <CinematicLoader />;
 
@@ -197,10 +197,10 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <CurtainReveal />
+          <Suspense fallback={null}><CurtainReveal /></Suspense>
           <ScrollToTop />
           <AuthProvider>
-            <OAuthRedirectHandler />
+            <Suspense fallback={null}><OAuthRedirectHandler /></Suspense>
             <Suspense fallback={<PageFallback />}>
               <Routes>
                 <Route path="/" element={<Index />} />

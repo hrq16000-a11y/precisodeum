@@ -51,6 +51,8 @@ const OVERRIDE_KEY = 'geo_override';
 const PRECISE_KEY = 'geo_precise';
 const GEO_ASKED_KEY = 'geo_browser_asked';
 const RADIUS_KEY = 'geo_radius';
+const FETCH_TS_KEY = 'geo_fetch_ts';
+const GEO_TTL_MS = 30 * 60 * 1000; // 30 min
 
 function safeGet(key: string): string | null {
   try {
@@ -201,7 +203,12 @@ async function fetchTemp(latitude: number, longitude: number): Promise<number | 
 function startFetchIfNeeded() {
   if (fetchStarted) return;
   if (geoState.manualOverride && geoState.city) return;
-  if (geoState.city && geoState.temp !== null && geoState.latitude !== null && geoState.longitude !== null) return;
+  if (geoState.city && geoState.temp !== null && geoState.latitude !== null && geoState.longitude !== null) {
+    // Check TTL — skip refetch if last fetch was recent
+    const lastTs = parseNumber(safeGet(FETCH_TS_KEY));
+    if (lastTs && Date.now() - lastTs < GEO_TTL_MS) return;
+  }
+  if (geoState.manualOverride && geoState.city) return;
 
   fetchStarted = true;
 
@@ -218,6 +225,7 @@ function startFetchIfNeeded() {
         if (edgeGeo.city) safeSet(CITY_KEY, edgeGeo.city);
         if (uf) safeSet(STATE_KEY, uf);
         if (edgeGeo.temp !== null) safeSet(TEMP_KEY, String(edgeGeo.temp));
+        safeSet(FETCH_TS_KEY, String(Date.now()));
         setGeoState({ ...edgeGeo, state: uf });
       }
     } catch (error) {
@@ -242,6 +250,7 @@ function startFetchIfNeeded() {
         if (result.lat !== null) safeSet(LAT_KEY, String(result.lat));
         if (result.lon !== null) safeSet(LON_KEY, String(result.lon));
         if (temp !== null) safeSet(TEMP_KEY, String(temp));
+        safeSet(FETCH_TS_KEY, String(Date.now()));
         safeSet(PRECISE_KEY, 'false');
 
         setGeoState({
