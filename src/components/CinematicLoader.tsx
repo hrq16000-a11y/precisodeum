@@ -1,5 +1,7 @@
+import { forwardRef } from 'react';
+
 /** Lightweight loading skeleton — no framer-motion to keep the initial bundle small */
-const CinematicLoader = () => (
+const CinematicLoader = forwardRef<HTMLDivElement>((_, ref) => (
   <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-6">
       <img src="/favicon.ico" alt="" className="h-12 w-12 animate-pulse" />
@@ -13,6 +15,7 @@ const CinematicLoader = () => (
       </div>
     </div>
   </div>
-);
+));
 
+CinematicLoader.displayName = 'CinematicLoader';
 export default CinematicLoader;
