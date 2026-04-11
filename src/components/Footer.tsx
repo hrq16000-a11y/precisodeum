@@ -30,7 +30,7 @@ const fallbackEco = [
 ];
 
 const fallbackSuporte = [
-  { label: '(41) 99745-2053', url: 'https://wa.me/5541997452053', open_in_new_tab: true, icon: '💬' },
+  { label: 'Central de Ajuda', url: '/ajuda', open_in_new_tab: false, icon: '❓' },
 ];
 
 const footerTaglines = [
