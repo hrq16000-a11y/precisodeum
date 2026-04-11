@@ -1,4 +1,4 @@
-import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star } from 'lucide-react';
+import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,6 +24,12 @@ const profileTypeIcon = (t: string) => {
   return '👤';
 };
 
+const providerStatusBadge: Record<string, { label: string; cls: string }> = {
+  pending: { label: '⏳ Pendente', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
+  approved: { label: '✅ Aprovado', cls: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
+  rejected: { label: '❌ Rejeitado', cls: 'bg-destructive/10 text-destructive' },
+};
+
 interface UserTableProps {
   users: any[];
   adminIds: Set<string>;
@@ -39,9 +45,11 @@ interface UserTableProps {
   onViewDetails: (u: any) => void;
   selectedIds?: Set<string>;
   onToggleSelection?: (id: string) => void;
+  onApproveProvider?: (providerId: string) => void;
+  onRejectProvider?: (providerId: string) => void;
 }
 
-const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
+const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection, onApproveProvider, onRejectProvider }: UserTableProps) => {
   if (users.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card p-12 text-center">
@@ -215,6 +223,11 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                 <Badge variant={isInactive ? 'destructive' : 'default'} className="text-[10px]">
                   {isInactive ? '🔴 Inativo' : '🟢 Ativo'}
                 </Badge>
+                {provider && providerStatusBadge[provider.status] && (
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${providerStatusBadge[provider.status].cls}`}>
+                    {providerStatusBadge[provider.status].label}
+                  </span>
+                )}
               </div>
 
               {/* Info Row */}
@@ -232,16 +245,26 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
             </div>
 
             {/* Quick Actions Footer */}
-            <div className="border-t border-border px-4 py-2 flex items-center gap-1">
+            <div className="border-t border-border px-3 py-2 flex items-center gap-1 flex-wrap">
               <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => onEdit(p)}>
                 <Edit2 className="h-3 w-3" /> Editar
               </Button>
               <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => onBlock(p)}>
-                <Ban className={`h-3 w-3 ${isInactive ? 'text-green-600' : 'text-destructive'}`} />
+                <Ban className={`h-3 w-3 ${isInactive ? 'text-emerald-600' : 'text-destructive'}`} />
                 {isInactive ? 'Ativar' : 'Bloquear'}
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1 text-destructive" onClick={() => onDelete(p)}>
-                <Trash2 className="h-3 w-3" /> Excluir
+              {provider && provider.status !== 'approved' && onApproveProvider && (
+                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-emerald-600" onClick={() => onApproveProvider(provider.id)}>
+                  <Check className="h-3 w-3" /> Aprovar
+                </Button>
+              )}
+              {provider && provider.status !== 'rejected' && onRejectProvider && (
+                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" onClick={() => onRejectProvider(provider.id)}>
+                  <X className="h-3 w-3" /> Rejeitar
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" onClick={() => onDelete(p)}>
+                <Trash2 className="h-3 w-3" />
               </Button>
             </div>
           </div>

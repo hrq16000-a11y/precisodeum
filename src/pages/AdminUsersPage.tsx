@@ -30,6 +30,7 @@ const AdminUsersPage = () => {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterProviderStatus, setFilterProviderStatus] = useState('all');
   const [page, setPage] = useState(1);
 
   const [editUser, setEditUser] = useState<any | null>(null);
@@ -87,7 +88,7 @@ const AdminUsersPage = () => {
     supabase.from('profiles').select('*').order('created_at', { ascending: false })
       .then(({ data }) => setProfiles(data || []));
     supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon)')
-      .eq('status', 'approved').is('deleted_at', null)
+      .is('deleted_at', null)
       .then(({ data }) => {
         const map: Record<string, any> = {};
         (data || []).forEach((p: any) => { map[p.user_id] = p; });
@@ -121,6 +122,12 @@ const AdminUsersPage = () => {
     let list = profiles;
     if (filterType !== 'all') list = list.filter(p => (p.profile_type || p.role) === filterType);
     if (filterStatus !== 'all') list = list.filter(p => (p.status || 'active') === filterStatus);
+    if (filterProviderStatus !== 'all') {
+      list = list.filter(p => {
+        const prov = providersMap[p.id];
+        return prov && prov.status === filterProviderStatus;
+      });
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(p =>
@@ -133,7 +140,7 @@ const AdminUsersPage = () => {
       );
     }
     return list;
-  }, [profiles, search, filterType, filterStatus]);
+  }, [profiles, search, filterType, filterStatus, filterProviderStatus, providersMap]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -288,6 +295,22 @@ const AdminUsersPage = () => {
     }
   };
 
+  const handleApproveProvider = async (providerId: string) => {
+    const { error } = await supabase.from('providers').update({ status: 'approved' }).eq('id', providerId);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Prestador aprovado!');
+    await logAuditAction({ action: 'approve', resource_type: 'provider', resource_id: providerId });
+    fetchProfiles();
+  };
+
+  const handleRejectProvider = async (providerId: string) => {
+    const { error } = await supabase.from('providers').update({ status: 'rejected' }).eq('id', providerId);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Prestador rejeitado');
+    await logAuditAction({ action: 'reject', resource_type: 'provider', resource_id: providerId });
+    fetchProfiles();
+  };
+
   const handleExport = () => {
     const csvHeader = 'Nome,Email,Telefone,WhatsApp,Tipo,Status,Criado em\n';
     const source = selectedIds.size > 0 ? filtered.filter(p => selectedIds.has(p.id)) : filtered;
@@ -368,6 +391,8 @@ const AdminUsersPage = () => {
           onFilterTypeChange={v => { setFilterType(v); setPage(1); }}
           filterStatus={filterStatus}
           onFilterStatusChange={v => { setFilterStatus(v); setPage(1); }}
+          filterProviderStatus={filterProviderStatus}
+          onFilterProviderStatusChange={v => { setFilterProviderStatus(v); setPage(1); }}
           totalResults={filtered.length}
           onExport={handleExport}
         />
@@ -462,6 +487,8 @@ const AdminUsersPage = () => {
           onViewDetails={setDetailUser}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
+          onApproveProvider={handleApproveProvider}
+          onRejectProvider={handleRejectProvider}
         />
       </div>
 
