@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, Clock, Phone, MessageCircle, Briefcase, ArrowLeft, Copy, CheckCircle2, DollarSign, Gift, ClipboardList, ShieldCheck } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -136,7 +137,7 @@ const JobDetailPage = () => {
                   {job.opportunity_type === 'emprego' ? 'Emprego' : job.opportunity_type === 'freelance' ? 'Freelance' : 'Serviço'}
                 </span>
                 {(job.categories as any)?.name && (
-                  <span className="text-xs text-muted-foreground">{(job.categories as any)?.icon} {(job.categories as any)?.name}</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><CategoryIcon icon={(job.categories as any)?.icon || 'Briefcase'} size={12} className="text-muted-foreground" /> {(job.categories as any)?.name}</span>
                 )}
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
                   {job.status === 'active' ? 'Ativa' : 'Encerrada'}

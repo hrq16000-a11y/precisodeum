@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { MapPin, Briefcase, Search, MessageCircle, Filter, Building2, X, Sparkles, ArrowRight, ChevronLeft, ChevronRight, SlidersHorizontal, Clock, ListOrdered, CalendarDays, Tag } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import Header from '@/components/Header';
@@ -593,8 +594,8 @@ const JobsPage = () => {
                           {job.cover_image_url ? (
                             <img src={job.cover_image_url} alt="" className="h-14 w-14 rounded-lg object-cover" loading="lazy" />
                           ) : (
-                            <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-muted text-xl">
-                              {(job.categories as any)?.icon || '💼'}
+                            <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-muted">
+                              <CategoryIcon icon={(job.categories as any)?.icon || 'Briefcase'} size={24} className="text-muted-foreground" />
                             </div>
                           )}
                         </div>
@@ -615,7 +616,7 @@ const JobsPage = () => {
 
                           {(job.categories as any)?.name && (
                             <p className="mt-0.5 text-[11px] text-muted-foreground">
-                              {(job.categories as any)?.icon} {(job.categories as any)?.name}
+                              <CategoryIcon icon={(job.categories as any)?.icon || 'Briefcase'} size={12} className="text-muted-foreground" /> {(job.categories as any)?.name}
                             </p>
                           )}
 

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, ArrowRight } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
@@ -96,11 +97,11 @@ const RecentServices = ({ services }: Props) => {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-out" />
                 
                 <motion.span
-                  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg"
+                  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"
                   whileHover={{ scale: 1.15, rotate: 5 }}
                   transition={{ type: 'spring', stiffness: 300 }}
                 >
-                  {catIcon}
+                  <CategoryIcon icon={catIcon} size={20} className="text-primary" />
                 </motion.span>
                 <div className="relative min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-primary transition-colors">

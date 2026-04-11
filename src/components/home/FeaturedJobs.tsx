@@ -1,6 +1,7 @@
 import { useMemo, useRef, useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, MessageCircle, Briefcase, ArrowRight, ChevronUp, ChevronDown, Clock } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,8 +82,8 @@ const FeaturedJobs = () => {
                 className="group flex flex-col gap-2 rounded-xl border border-border bg-card p-4 shadow-card transition-all duration-300 hover:shadow-card-hover hover:border-accent/30 hover:-translate-y-0.5"
               >
                 <div className="flex items-center gap-2">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-base">
-                    {(job.categories as any)?.icon || '💼'}
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+                    <CategoryIcon icon={(job.categories as any)?.icon || 'Briefcase'} size={18} className="text-accent" />
                   </span>
                   <div className="flex flex-wrap items-center gap-1.5 min-w-0 flex-1">
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${typeClass}`}>
