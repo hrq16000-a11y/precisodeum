@@ -624,6 +624,7 @@ Horário: Segunda a sexta, 08h às 17h`}
                       setForm(prev => ({ ...prev, city: '', state: '' }));
                     }}
                     onFocus={() => { setShowCitySuggestions(true); loadCities(); }}
+                    onBlur={() => { setTimeout(() => setShowCitySuggestions(false), 150); }}
                     placeholder="Digite sua cidade..."
                     className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground"
                   />
@@ -642,7 +643,7 @@ Horário: Segunda a sexta, 08h às 17h`}
                         <button
                           key={`${c.name}-${c.state}-${i}`}
                           type="button"
-                          onClick={() => handleCitySelect(c.name, c.state)}
+                          onMouseDown={(e) => { e.preventDefault(); handleCitySelect(c.name, c.state); }}
                           className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${
                             form.city === c.name && form.state === c.state ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'
                           }`}
@@ -654,9 +655,6 @@ Horário: Segunda a sexta, 08h às 17h`}
                         </button>
                       ))}
                     </div>
-                  )}
-                  {showCitySuggestions && (
-                    <div className="fixed inset-0 z-[5]" onClick={() => setShowCitySuggestions(false)} />
                   )}
                 </div>
               </div>
