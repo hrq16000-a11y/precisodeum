@@ -73,9 +73,6 @@ export default defineConfig(({ mode }) => ({
           'vendor-icons': ['lucide-react'],
         },
       },
-      treeshake: {
-        moduleSideEffects: false,
-      },
     },
   },
 }));
