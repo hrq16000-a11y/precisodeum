@@ -153,8 +153,8 @@ const Header = () => {
       className={`sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 transition-shadow duration-300 ${scrolled ? 'shadow-md' : 'shadow-sm'}`}
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
-      <div className="container flex h-14 items-center justify-between md:h-16">
-        <div className="flex items-center gap-3">
+      <div className="container flex h-14 items-center justify-between md:h-16 px-2 sm:px-4">
+        <div className="flex items-center gap-3 -ml-1 sm:-ml-2">
           <Link to="/" className="flex items-center">
             <img
               src={logo}
