@@ -295,6 +295,22 @@ const AdminUsersPage = () => {
     }
   };
 
+  const handleApproveProvider = async (providerId: string) => {
+    const { error } = await supabase.from('providers').update({ status: 'approved' }).eq('id', providerId);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Prestador aprovado!');
+    await logAuditAction({ action: 'approve', resource_type: 'provider', resource_id: providerId });
+    fetchProfiles();
+  };
+
+  const handleRejectProvider = async (providerId: string) => {
+    const { error } = await supabase.from('providers').update({ status: 'rejected' }).eq('id', providerId);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Prestador rejeitado');
+    await logAuditAction({ action: 'reject', resource_type: 'provider', resource_id: providerId });
+    fetchProfiles();
+  };
+
   const handleExport = () => {
     const csvHeader = 'Nome,Email,Telefone,WhatsApp,Tipo,Status,Criado em\n';
     const source = selectedIds.size > 0 ? filtered.filter(p => selectedIds.has(p.id)) : filtered;
