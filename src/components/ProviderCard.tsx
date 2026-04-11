@@ -103,10 +103,12 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
                   {displayName}
                 </h3>
-                {provider.plan === 'premium' && hasOwnPhoto &&
-                  (!destaqueRequireServices || provider.servicesCount >= destaqueMinServices) &&
-                  (!destaqueRequirePortfolio || provider.portfolioAlbumCount >= destaqueMinPortfolio) &&
-                  (!destaqueRequireAvatar || hasOwnPhoto) && (
+                {provider.plan === 'premium' && (
+                  hasOwnPhoto ||
+                  provider.servicesCount >= (destaqueMinServices || 1) ||
+                  (provider.portfolioAlbumCount || 0) > 0 ||
+                  !!(provider as any).description
+                ) && (
                   <motion.div animate={{ rotate: [0, 12, -12, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}>
                     <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />
                   </motion.div>

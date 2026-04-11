@@ -10,6 +10,7 @@ import { whatsappLink } from '@/lib/whatsapp';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import AdNativeCard from '@/components/ads/AdNativeCard';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 
 interface Props {
   providers: DbProvider[];
