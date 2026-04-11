@@ -57,6 +57,7 @@ const TermsPage = () => {
         </FadeInSection>
       </main>
       <Footer />
+    </div>
   );
 };
 
