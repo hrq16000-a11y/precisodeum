@@ -136,20 +136,22 @@ export const AdminGroupTabs = () => {
             const active = currentGroup?.label === group.label;
             const firstPath = group.items[0].path;
             const badge = groupBadges[group.label] || 0;
+            const colors = groupColors[group.label] || groupColors['Geral'];
             return (
               <Link
                 key={group.label}
                 to={firstPath}
-                className={`relative whitespace-nowrap rounded-md px-3 py-1.5 text-[11px] font-semibold transition-all duration-200 shrink-0 ${
+                className={`relative whitespace-nowrap rounded-md px-3 py-1.5 text-[11px] font-semibold transition-all duration-200 shrink-0 flex items-center gap-1.5 ${
                   active
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? `${colors.active} shadow-sm`
+                    : `text-muted-foreground ${colors.bg} hover:text-foreground`
                 }`}
               >
+                {!active && <span className={`h-1.5 w-1.5 rounded-full ${colors.dot} opacity-50`} />}
                 {group.label}
                 {badge > 0 && (
-                  <span className={`ml-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
-                    active ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-accent text-accent-foreground'
+                  <span className={`ml-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+                    active ? 'bg-white/20 text-white' : 'bg-accent text-accent-foreground'
                   }`}>
                     {badge > 99 ? '99+' : badge}
                   </span>

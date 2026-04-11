@@ -81,11 +81,10 @@ const ActionQueue = () => {
         });
       }
 
-      // 4. Reviews to respond (if any unread)
-      const { count: reviewCount } = await supabase.from('reviews')
+      // 4. Reviews to respond
+      const { count: reviewCount } = await (supabase.from('reviews')
         .select('id', { count: 'exact', head: true })
-        .eq('provider_id', provider.id).eq('reply', '');
-      // Only show if there are reviews without reply (approximate)
+        .eq('provider_id', provider.id) as any).eq('reply', '');
 
       setActions(pending);
     };
