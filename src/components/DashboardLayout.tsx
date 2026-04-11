@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera, LifeBuoy } from 'lucide-react';
+import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera, LifeBuoy, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,8 +30,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingLeads, setPendingLeads] = useState(0);
+  const [incompleteAlert, setIncompleteAlert] = useState<{ daysLeft: number } | null>(null);
   const logoUrl = useSettingValue('logo_url');
   const logo = logoUrl || DEFAULT_LOGO_URL;
+  const daysLimit = Number(useSettingValue('incomplete_profile_days_limit')) || 60;
 
   useEffect(() => {
     if (!user) return;
