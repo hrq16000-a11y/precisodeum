@@ -1399,15 +1399,15 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
         <DialogTitle className="text-lg font-bold">{service.service_name}</DialogTitle>
       </DialogHeader>
       {service.serviceImages?.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 md:grid md:grid-cols-2 md:overflow-visible md:snap-none" style={{ touchAction: 'pan-x' }}>
           {service.serviceImages.map((img: any, idx: number) => (
             <motion.div
               key={img.id}
-              className="aspect-[4/3] cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]"
+              className="aspect-[4/3] min-w-[75%] flex-shrink-0 snap-center cursor-pointer overflow-hidden rounded-lg border border-border md:min-w-0"
               onClick={() => onImageClick?.(service.serviceImages.map((i: any) => i.image_url), idx)}
               whileHover={{ scale: 1.03 }}
             >
-              <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-contain bg-muted/30" loading="lazy" onError={handleImageError} />
+              <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
             </motion.div>
           ))}
         </div>
@@ -1424,7 +1424,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
       {service.description && <p className="text-sm text-muted-foreground leading-relaxed">{service.description}</p>}
       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
         {service.price && <span className="font-semibold text-foreground">💰 {service.price}</span>}
-        {service.service_area && <span>📍 {service.service_area}</span>}
+        {service.service_area && <span>📍 {formatLocationString(service.service_area)}</span>}
         {service.working_hours && <span>🕐 {service.working_hours}</span>}
       </div>
       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>

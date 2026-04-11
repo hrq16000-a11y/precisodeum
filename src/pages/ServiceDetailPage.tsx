@@ -142,7 +142,7 @@ const ServiceDetailPage = () => {
 
               <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
                 {svc.price && <span className="font-semibold text-foreground">💰 {svc.price}</span>}
-                {svc.service_area && <span>🗺️ Atende: {svc.service_area}</span>}
+                {svc.service_area && <span>🗺️ Atende: {formatLocationString(svc.service_area)}</span>}
                 {svc.working_hours && <span><Clock className="mr-1 inline h-3.5 w-3.5" />{svc.working_hours}</span>}
               </div>
             </div>
