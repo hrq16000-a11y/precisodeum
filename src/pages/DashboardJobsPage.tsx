@@ -390,7 +390,7 @@ const DashboardJobsPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Minhas Vagas</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -400,9 +400,9 @@ const DashboardJobsPage = () => {
         <div className="flex gap-2">
           <input ref={fileRef} type="file" accept=".csv,.txt" onChange={handleFileUpload} className="hidden" />
           <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
-            <Upload className="mr-1 h-4 w-4" /> Importar CSV
+            <Upload className="h-4 w-4" /> <span className="hidden sm:inline ml-1">Importar CSV</span>
           </Button>
-          <Button variant="accent" onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nova Vaga</Button>
+          <Button variant="accent" size="sm" onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nova Vaga</Button>
         </div>
       </div>
 
@@ -416,7 +416,7 @@ const DashboardJobsPage = () => {
       ) : (
         <div className="mt-6 space-y-3">
           {jobs.map((job: any) => (
-            <div key={job.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-card">
+            <div key={job.id} className="rounded-xl border border-border bg-card p-4 shadow-card">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                    <h3 className="font-medium text-foreground truncate">{job.title}</h3>
@@ -438,12 +438,12 @@ const DashboardJobsPage = () => {
                    {(job as any).view_count > 0 && <> · 👁 {(job as any).view_count} views</>}
                  </p>
               </div>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={() => copyUrl(job)} title="Copiar link"><Copy className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDuplicate(job)} title="Duplicar vaga"><CopyPlus className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => window.open(`/vaga/${job.slug || job.id}`, '_blank')}><ExternalLink className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(job)}><Pencil className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(job.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+              <div className="flex items-center gap-1 mt-2 flex-wrap">
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => copyUrl(job)} title="Copiar link"><Copy className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Link</span></Button>
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleDuplicate(job)} title="Duplicar"><CopyPlus className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Duplicar</span></Button>
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => window.open(`/vaga/${job.slug || job.id}`, '_blank')}><ExternalLink className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Ver</span></Button>
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleEdit(job)}><Pencil className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Editar</span></Button>
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-destructive" onClick={() => handleDelete(job.id)}><Trash2 className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Excluir</span></Button>
               </div>
             </div>
           ))}

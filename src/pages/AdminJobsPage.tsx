@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Trash2, Pencil, ExternalLink, CheckCircle, XCircle, Search, Plus, Eye } from 'lucide-react';
+import { Trash2, Pencil, ExternalLink, CheckCircle, XCircle, Search, Plus, Eye, ToggleLeft, ToggleRight, Archive, Briefcase, Clock, AlertTriangle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
@@ -46,7 +47,7 @@ const emptyForm = {
   contact_name: '', contact_phone: '', whatsapp: '', salary: '',
   benefits: '', activities: '', requirements: '', schedule: '',
   deadline: '', status: 'active', approval_status: 'approved',
-  cover_image_url: '',
+  cover_image_url: '', user_id: '',
 };
 
 const AdminJobsPage = () => {
@@ -74,6 +75,22 @@ const AdminJobsPage = () => {
     },
     enabled: isAdmin,
   });
+
+  // Fetch profiles for creator names
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['admin-jobs-profiles'],
+    queryFn: async () => {
+      const { data } = await supabase.from('profiles').select('id, full_name, email');
+      return data || [];
+    },
+    enabled: isAdmin,
+  });
+
+  const profileMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    profiles.forEach((p: any) => { m[p.id] = p.full_name || p.email || p.id; });
+    return m;
+  }, [profiles]);
 
   const { data: categories = [] } = useQuery({
     queryKey: ['admin-jobs-categories'],
@@ -112,8 +129,17 @@ const AdminJobsPage = () => {
   }, [jobs, filter, search, cityFilter, categoryFilter]);
 
   const pendingCount = jobs.filter((j: any) => j.approval_status === 'pending').length;
+  const activeCount = jobs.filter((j: any) => j.status === 'active' && j.approval_status === 'approved').length;
+  const expiredCount = jobs.filter((j: any) => j.deadline && new Date(j.deadline) < new Date()).length;
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE));
   const paginated = filteredJobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleToggleStatus = async (job: any) => {
+    const newStatus = job.status === 'active' ? 'inactive' : 'active';
+    await supabase.from('jobs').update({ status: newStatus } as any).eq('id', job.id);
+    toast.success(newStatus === 'active' ? 'Vaga ativada' : 'Vaga desativada');
+    queryClient.invalidateQueries({ queryKey: ['admin-jobs'] });
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir esta vaga?')) return;
@@ -170,6 +196,7 @@ const AdminJobsPage = () => {
       deadline: job.deadline || '', status: job.status || 'active',
       approval_status: job.approval_status || 'approved',
       cover_image_url: job.cover_image_url || '',
+      user_id: job.user_id || '',
     });
   };
 
@@ -194,9 +221,11 @@ const AdminJobsPage = () => {
       const { data: adminUser } = await supabase.auth.getUser();
       if (!adminUser?.user) { toast.error('Não autenticado'); return; }
       const slug = generateSlug(editForm.title, editForm.city);
+      const userId = editForm.user_id || adminUser.user.id;
+      const { user_id: _uid, ...rest } = editForm;
       const payload: any = {
-        ...editForm,
-        user_id: adminUser.user.id,
+        ...rest,
+        user_id: userId,
         slug,
         category_id: editForm.category_id || null,
         deadline: editForm.deadline || null,
@@ -206,7 +235,8 @@ const AdminJobsPage = () => {
       toast.success('Vaga criada com sucesso!');
       await logAuditAction({ action: 'create', resource_type: 'job' });
     } else {
-      const payload: any = { ...editForm, category_id: editForm.category_id || null, deadline: editForm.deadline || null };
+      const { user_id: formUserId, ...rest } = editForm;
+      const payload: any = { ...rest, category_id: editForm.category_id || null, deadline: editForm.deadline || null, ...(formUserId ? { user_id: formUserId } : {}) };
       const { error } = await supabase.from('jobs').update(payload).eq('id', editJob.id);
       if (error) { toast.error('Erro ao salvar: ' + error.message); return; }
       toast.success('Vaga atualizada');
@@ -224,12 +254,41 @@ const AdminJobsPage = () => {
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Gestão de Vagas</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Crie, edite, modere e gerencie vagas da plataforma</p>
+          <p className="mt-1 text-sm text-muted-foreground">Controle absoluto sobre vagas da plataforma</p>
         </div>
-        <Button variant="accent" onClick={handleCreate}><Plus className="mr-1 h-4 w-4" /> Nova Vaga</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => window.location.href = '/admin/lixeira?type=job'}>
+            <Archive className="h-4 w-4 mr-1" /> Lixeira
+          </Button>
+          <Button variant="accent" size="sm" onClick={handleCreate}><Plus className="mr-1 h-4 w-4" /> Nova Vaga</Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="rounded-lg border border-border bg-card p-3 text-center">
+          <Briefcase className="mx-auto h-5 w-5 text-muted-foreground" />
+          <p className="mt-1 text-lg font-bold text-foreground">{jobs.length}</p>
+          <p className="text-xs text-muted-foreground">Total</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3 text-center">
+          <CheckCircle className="mx-auto h-5 w-5 text-green-600" />
+          <p className="mt-1 text-lg font-bold text-foreground">{activeCount}</p>
+          <p className="text-xs text-muted-foreground">Ativas</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3 text-center">
+          <Clock className="mx-auto h-5 w-5 text-amber-600" />
+          <p className="mt-1 text-lg font-bold text-foreground">{pendingCount}</p>
+          <p className="text-xs text-muted-foreground">Pendentes</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3 text-center">
+          <AlertTriangle className="mx-auto h-5 w-5 text-red-600" />
+          <p className="mt-1 text-lg font-bold text-foreground">{expiredCount}</p>
+          <p className="text-xs text-muted-foreground">Expiradas</p>
+        </div>
       </div>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
@@ -314,8 +373,16 @@ const AdminJobsPage = () => {
                     {(job.categories as any)?.name || 'Sem categoria'} · {job.city || '?'} · {new Date(job.created_at).toLocaleDateString('pt-BR')}
                     {job.view_count > 0 && <> · <Eye className="inline h-3 w-3" /> {job.view_count}</>}
                   </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Criado por: {profileMap[job.user_id] || job.user_id?.slice(0, 8)}
+                  </p>
                 </div>
-                <div className="flex items-center gap-0.5 shrink-0 flex-wrap justify-end">
+                <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+                  <Switch
+                    checked={job.status === 'active'}
+                    onCheckedChange={() => handleToggleStatus(job)}
+                    title={job.status === 'active' ? 'Desativar' : 'Ativar'}
+                  />
                   {job.approval_status === 'pending' && (
                     <>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleApprove(job.id)} title="Aprovar">
@@ -453,7 +520,7 @@ const AdminJobsPage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>Status</label>
                 <select value={editForm.status} onChange={e => setEditForm(p => ({ ...p, status: e.target.value }))} className={inputClass}>
@@ -469,6 +536,16 @@ const AdminJobsPage = () => {
                   <option value="rejected">Rejeitada</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Proprietário (user_id)</label>
+              <select value={editForm.user_id} onChange={e => setEditForm(p => ({ ...p, user_id: e.target.value }))} className={inputClass}>
+                <option value="">{isCreating ? 'Eu mesmo (admin)' : 'Selecionar usuário'}</option>
+                {profiles.map((p: any) => (
+                  <option key={p.id} value={p.id}>{p.full_name || p.email} ({p.id.slice(0, 8)})</option>
+                ))}
+              </select>
             </div>
 
             <Button variant="accent" className="w-full" onClick={handleSave}>
