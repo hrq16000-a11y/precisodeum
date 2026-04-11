@@ -1,157 +1,45 @@
-## Plano: Refatoracao Premium — Prova Social, Confianca e Conversao
 
-### Visao Geral
 
-Transformar a pagina de perfil e o card de listagem em "paginas de venda" do profissional, com prova social forte, selos de confianca e gatilhos de urgencia que guiam o olhar do usuario ate o botao de WhatsApp.
+## Plano: Integrar componentes premium no ProviderProfile, ProviderCard e FeaturedProviders
 
----
+### Estado atual
+Os 5 componentes ja foram criados na iteracao anterior (ProfileBadge, ReviewSummary, TestimonialsCarousel, ConversionTags, TrustGuarantee). Falta integrá-los nos 3 arquivos principais. Os componentes ja respeitam as regras de negocio (sem "Identidade Verificada", sem escudo verde, usando Handshake e "Negociacao Direta").
 
-### 1. Componente TrustShield — Selo de Verificacao Verde (Novo)
+### Alteracoes
 
-**Arquivo:** `src/components/TrustShield.tsx`
+**1. `src/pages/ProviderProfile.tsx`** — Integrar todos os componentes
 
-Criar componente reutilizavel com icone `ShieldCheck` verde e texto "Identidade Verificada" ou "Documentacao Verificada". Aparece no perfil (header card) e no ProviderCard. Substitui o badge atual de "Verificado" por algo mais visualmente impactante — fundo verde claro, borda verde, icone solido.
+- Adicionar imports: `ReviewSummary`, `ProfileBadge`, `ConversionTags`, `TrustGuarantee`, `TestimonialsCarousel`, `getRankTier` (de ReviewSummary)
+- **Linha ~1027-1031**: Substituir `StarRating` no header por `ReviewSummary` (versao full com ranking badge)
+- **Linha ~1033-1050**: Substituir o bloco `TrustBadge` por `ProfileBadge` (usa `hasOwnAvatar` e `services.length > 0`), mantendo badges de "Experiente" e "Responde em X"
+- **Linha ~1093-1094**: Apos Stats Mini Cards, adicionar `ConversionTags` com `reviewCount` e `responseTime`
+- **Linha ~1136**: Apos CTA buttons, adicionar microcopy: "Orcamento sem compromisso. Fale direto com o profissional."
+- **Linha ~892-897**: No `sectionMap`, adicionar `testimonials: renderTestimonials` que renderiza `TestimonialsCarousel` com `reviews`
+- Apos `renderAbout`, inserir `TrustGuarantee`
+- Renomear "Portfolio" para "Trabalhos Realizados" (linhas ~721 e ~785)
+- Confirmar que WhatsApp com deep link (`whatsappLink`) ja esta integrado nos CTAs (ja esta — linhas 1116, 1344)
 
-### 2. Componente ReviewSummary — Resumo de Avaliacoes (Novo)
+**2. `src/components/ProviderCard.tsx`** — Badges e microcopy
 
-**Arquivo:** `src/components/ReviewSummary.tsx`
+- Adicionar imports: `ProfileBadge`, `ReviewSummary` (compact), `getRankTier`
+- Substituir badge "Verificado" (linha ~131) por `ProfileBadge size="sm"`
+- Adicionar ranking badge (Ouro/Prata/Bronze) via `getRankTier` ao lado do nome
+- Adicionar microcopy "Orcamento sem compromisso" em `text-[10px]` abaixo dos botoes CTA
 
-Bloco compacto com: nota grande (ex: 4.9), estrelas preenchidas, total de avaliacoes, e badge de ranking (Top Rated Ouro/Prata/Bronze baseado na nota). Usado no topo do perfil logo apos o nome, e como versao compacta no ProviderCard.
+**3. `src/components/home/FeaturedProviders.tsx`** — Mesmo tratamento
 
-Ranking:
+- Adicionar imports: `ProfileBadge`, `getRankTier`
+- Na funcao `ProviderCardFeatured`, adicionar ranking badge e `ProfileBadge` compacto
+- Adicionar microcopy abaixo dos botoes
 
-- Ouro: rating >= 4.8 e reviewCount >= 10
-- Prata: rating >= 4.5 e reviewCount >= 5
-- Bronze: rating >= 4.0 e reviewCount >= 3
+### Confirmacoes
+- WhatsApp com deep link `whatsapp://send?phone=...` ja esta implementado via `whatsappLink()` em `src/lib/whatsapp.ts` — mantido em toda a hierarquia
+- Nenhum termo de "Identidade Verificada" ou "Contratacao Segura" sera usado
+- ProfileBadge usa cores accent (laranja da marca), nao verde-escudo
+- TrustGuarantee usa icone Handshake com texto "Negociacao Direta"
 
-### 3. Componente TestimonialsCarousel — "Resultados Reais" (Novo)
-
-**Arquivo:** `src/components/TestimonialsCarousel.tsx`
-
-Secao no perfil que mostra os ultimos 3 reviews em cards com aspas, nome do cliente e estrelas. Titulo: "O que dizem nossos clientes". Usa dados reais de `reviews[]`. Se nao houver reviews, nao renderiza.
-
-### 4. Tags de Urgencia e Microcopy de Conversao (Novo)
-
-**Arquivo:** `src/components/ConversionTags.tsx`
-
-Tags dinamicas renderizadas proximo ao CTA:
-
-- "🔥 Muito requisitado na sua regiao" — se `review_count >= 5`
-- "⚡ Responde rapido" — se `response_time` existe
-- "✅ Orcamento sem compromisso" — sempre visivel
-
-Microcopy abaixo dos botoes CTA: "Orcamento sem compromisso. Fale direto com o profissional."
-
-### 5. Banner de Garantia (Novo)
-
-**Arquivo:** `src/components/TrustGuarantee.tsx`
-
-Pequeno banner discreto no perfil: icone de escudo + "Contratacao Segura — O combinado nao sai caro." Aparece entre as secoes, usando fundo `accent/5`.
-
-### 6. Refatorar ProviderProfile.tsx
-
-**Arquivo:** `src/pages/ProviderProfile.tsx`
-
-Integrar todos os novos componentes no header card e nas secoes:
-
-- **ReviewSummary** logo apos o nome/categoria (substitui o StarRating atual no header)
-- **TrustShield** no bloco de badges (substitui o badge simples "Perfil verificado")
-- **ConversionTags** entre os stats mini cards e os botoes CTA
-- **Microcopy** abaixo dos botoes CTA: texto pequeno em `muted-foreground`
-- **TrustGuarantee** banner apos a secao "Sobre"
-- **TestimonialsCarousel** como nova secao no `sectionMap` (apos reviews ou apos about)
-- Renomear titulo do Portfolio de "Portfolio" para "Trabalhos Realizados"
-
-### 7. Refatorar ProviderCard.tsx (Card de Listagem)
-
-**Arquivo:** `src/components/ProviderCard.tsx`
-
-- Substituir badge "Verificado" pelo **TrustShield** compacto (versao `size="sm"`)
-- Adicionar badge de ranking (Ouro/Prata/Bronze) ao lado do nome quando aplicavel
-- Adicionar tag "⚡ Responde rapido" se `response_time` existe
-- Adicionar microcopy "Orcamento sem compromisso" em texto pequeno abaixo dos botoes
-
-### 8. Refatorar FeaturedProviders.tsx (Card da Home)
-
-**Arquivo:** `src/components/home/FeaturedProviders.tsx`
-
-- Mesmo tratamento do ProviderCard: badge de ranking, TrustShield compacto, microcopy
-
-### 9. Remover filtro "Menor Preco" e garantir ordenacao correta
-
-**Arquivo:** `src/pages/SearchPage.tsx`
-
-O sort atual ja nao tem "menor preco" (confirmado). Manter apenas: Relevancia, Melhor Avaliacao, Mais Avaliacoes, Mais Experiencia, Nome A-Z/Z-A. Nenhuma alteracao necessaria — ja esta correto.
-
----
-
-### Arquivos criados:
-
-- `src/components/TrustShield.tsx`
-- `src/components/ReviewSummary.tsx`
-- `src/components/TestimonialsCarousel.tsx`
-- `src/components/ConversionTags.tsx`
-- `src/components/TrustGuarantee.tsx`
-
-### Arquivos modificados:
-
+### Arquivos modificados
 - `src/pages/ProviderProfile.tsx`
 - `src/components/ProviderCard.tsx`
 - `src/components/home/FeaturedProviders.tsx`
 
-### Detalhes tecnicos
-
-```text
-Hierarquia visual do perfil (de cima para baixo):
-┌─────────────────────────────────────┐
-│  Avatar + Nome + Badges (Destaque,  │
-│  TrustShield, Ranking Ouro/Prata)   │
-│  Categoria + Localizacao            │
-│  ReviewSummary (4.9 ★★★★★ 23 av.)  │
-├─────────────────────────────────────┤
-│  Stats Mini Cards                   │
-├─────────────────────────────────────┤
-│  ConversionTags (🔥⚡✅)            │
-├─────────────────────────────────────┤
-│  [Solicitar Orcamento] [WhatsApp]   │
-│  "Orcamento sem compromisso..."     │
-├─────────────────────────────────────┤
-│  Sobre o profissional               │
-│  TrustGuarantee banner              │
-├─────────────────────────────────────┤
-│  Trabalhos Realizados (Portfolio)    │
-│  Servicos                           │
-│  Resultados Reais (Testimonials)    │
-│  Avaliacoes                         │
-└─────────────────────────────────────┘
-```
-
-Todos os componentes usam `framer-motion` para animacoes de entrada, cores do tema (`accent`, `muted-foreground`, `emerald` para trust), e sao responsivos mobile-first.
-
-&nbsp;
-
-.....
-
-&nbsp;
-
-&nbsp;
-
-Correção 
-
-&nbsp;
-
-&nbsp;
-
-Ajuste Crítico de Regra de Negócio:
-
-O plano geral está aprovado em termos de hierarquia e conversão, mas precisamos fazer um Ajuste Crítico de Escopo referente à responsabilidade da plataforma. Nossa plataforma é um guia comercial público. Nós NÃO fazemos validação de documentos (identidade, antecedentes) e NÃO intermediamos o serviço. Portanto, não podemos usar termos que impliquem responsabilidade jurídica da plataforma.
-
-Execute o plano com as seguintes modificações:
-
-Cancele o "TrustShield" de Identidade: Em vez de "Identidade Verificada", transforme o TrustShield no componente ProfileBadge. Ele deve exibir selos de engajamento na plataforma, como: "Perfil Completo" (se ele tem foto e serviços cadastrados) ou "Membro Ativo". A cor pode ser um azul de destaque ou laranja da marca, evitando o verde-escudo que remete à verificação governamental/bancária.
-
-Refatore o "TrustGuarantee" (Banner de Garantia): Como não garantimos o serviço, altere a cópia (texto) deste banner para focar na transparência da plataforma. O novo texto deve ser: "Negociação Direta: Sem taxas ocultas. Combine os detalhes do serviço diretamente com o profissional." Use um ícone de "Aperto de mãos" (Handshake) em vez de um Escudo.
-
-Confirmação do WhatsApp: Confirme se o Passo 7 (incluir o botão do WhatsApp lado a lado com o deep link whatsapp://send?phone=...) está mantido na nova hierarquia visual.
-
-Pode prosseguir com a implementação do plano atualizado.
