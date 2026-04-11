@@ -82,14 +82,34 @@ let geoState: GeoData = {
 
 let listeners = new Set<() => void>();
 let fetchStarted = false;
+let tempRefreshTimer: ReturnType<typeof setInterval> | null = null;
+const TEMP_REFRESH_MS = 15 * 60 * 1000; // 15 min
 
 function notify() {
   listeners.forEach((fn) => fn());
 }
 
 function setGeoState(patch: Partial<GeoData>) {
+  // Dedup: skip if nothing changed
+  const keys = Object.keys(patch) as (keyof GeoData)[];
+  const changed = keys.some((k) => patch[k] !== geoState[k]);
+  if (!changed) return;
   geoState = { ...geoState, ...patch };
   notify();
+}
+
+function startTempRefresh() {
+  if (tempRefreshTimer) return;
+  tempRefreshTimer = setInterval(async () => {
+    if (geoState.latitude === null || geoState.longitude === null) return;
+    try {
+      const newTemp = await fetchTemp(geoState.latitude, geoState.longitude);
+      if (newTemp !== null && newTemp !== geoState.temp) {
+        safeSet(TEMP_KEY, String(newTemp));
+        setGeoState({ temp: newTemp });
+      }
+    } catch { /* silent */ }
+  }, TEMP_REFRESH_MS);
 }
 
 async function reverseGeocode(latitude: number, longitude: number) {
@@ -243,6 +263,7 @@ function startFetchIfNeeded() {
 function subscribe(callback: () => void) {
   listeners.add(callback);
   startFetchIfNeeded();
+  startTempRefresh();
   return () => {
     listeners.delete(callback);
   };

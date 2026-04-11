@@ -13,6 +13,26 @@ import { useMenuItems } from '@/hooks/useMenuItems';
 
 const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
 
+const GeoBadge = ({ city, temp, className = '' }: { city: string | null; temp: number | null; className?: string }) => {
+  if (!city) return null;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all duration-500 ease-out ${className}`}
+      style={{ opacity: 1 }}
+    >
+      <MapPin className="h-3 w-3 text-accent" />
+      {city}
+      {temp !== null && (
+        <>
+          <span className="mx-0.5 text-border">·</span>
+          <Thermometer className="h-3 w-3 text-accent" />
+          {Math.round(temp)}°C
+        </>
+      )}
+    </span>
+  );
+};
+
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -30,93 +50,6 @@ const Header = () => {
 
   const { data: headerItems = [] } = useMenuItems('header');
   const { data: mobileItems = [] } = useMenuItems('mobile');
-
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && mobileOpen) setMobileOpen(false);
-    };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [mobileOpen]);
-
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
-        setMobileOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [mobileOpen]);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
-
-  const handleSearchSubmit = useCallback((e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/buscar?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchOpen(false);
-      setSearchQuery('');
-    }
-  }, [searchQuery, navigate]);
-
-  useEffect(() => {
-    if (searchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [searchOpen]);
-
-  const fallbackHeaderLinks = [
-    { label: 'Buscar', url: '/buscar' },
-    { label: 'Vagas', url: '/vagas' },
-    { label: 'Notícias', url: '/blog' },
-    { label: 'Como Funciona', url: '/sobre' },
-    { label: 'Seja Profissional', url: '/cadastro' },
-  ];
-
-  const fallbackMobileLinks = [
-    { label: 'Buscar Profissionais', url: '/buscar' },
-    { label: 'Vagas', url: '/vagas' },
-    { label: 'Notícias', url: '/blog' },
-    { label: 'Como Funciona', url: '/sobre' },
-    { label: 'Categorias', url: '/categorias' },
-    { label: 'Cidades', url: '/cidades' },
-    { label: 'Seja Profissional', url: '/cadastro' },
-  ];
-
-  const navLinks = headerItems.length > 0 ? headerItems : fallbackHeaderLinks.map((l, i) => ({ ...l, id: `fb-${i}`, icon: '', open_in_new_tab: false, parent_id: null, display_order: i, active: true, menu_location: 'header' }));
-  const mobileNavLinks = mobileItems.length > 0 ? mobileItems : (headerItems.length > 0 ? headerItems : fallbackMobileLinks.map((l, i) => ({ ...l, id: `fbm-${i}`, icon: '', open_in_new_tab: false, parent_id: null, display_order: i, active: true, menu_location: 'mobile' })));
-
-  const GeoBadge = ({ className = '' }: { className?: string }) => {
-    if (!geoCity) return null;
-    return (
-      <span
-        className={`inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground animate-fade-in ${className}`}
-      >
-        <MapPin className="h-3 w-3 text-accent" />
-        {geoCity}
-        {geoTemp !== null && (
-          <>
-            <span className="mx-0.5 text-border">·</span>
-            <Thermometer className="h-3 w-3 text-accent" />
-            {Math.round(geoTemp)}°C
-          </>
-        )}
-      </span>
-    );
-  };
 
   const isActiveLink = (url: string) => location.pathname === url;
 
@@ -161,7 +94,7 @@ const Header = () => {
               transition={{ duration: 0.4, ease: "easeOut" }}
             />
           </Link>
-          <GeoBadge className="hidden sm:inline-flex" />
+          <GeoBadge city={geoCity} temp={geoTemp} className="hidden sm:inline-flex" />
         </div>
 
         <nav className="hidden items-center gap-5 md:flex">
@@ -217,7 +150,7 @@ const Header = () => {
         </div>
 
         <div className="flex items-center gap-1.5 md:hidden">
-          <GeoBadge className="text-[10px] px-1.5 py-0.5" />
+          <GeoBadge city={geoCity} temp={geoTemp} className="text-[10px] px-1.5 py-0.5" />
           <NotificationBell />
           <button
             className="text-foreground p-1 rounded-lg active:scale-90 transition-transform"
