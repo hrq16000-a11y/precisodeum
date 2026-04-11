@@ -1,76 +1,42 @@
-# Melhorias no Módulo de Vagas
 
-Após auditoria completa dos 4 arquivos do módulo (Dashboard, Listagem pública, Detalhe, Admin), identifiquei **7 melhorias** concretas.
+# Correção Mobile + Admin 100% Gerenciável — Módulo Vagas
 
----
+## Problemas Identificados
 
-## 1. Vagas Expiradas — Auto-desativação
+1. **Dashboard Mobile quebrado**: Os botões "Importar CSV" e "Nova Vaga" ficam na mesma linha do título, comprimidos no celular. Os botões de ação por card (5 ícones lado a lado) não cabem no mobile.
 
-**Problema:** Vagas com `deadline` vencido continuam aparecendo como "Ativa" na listagem pública. Não há filtro por prazo.
+2. **Admin sem controle total**: O admin pode criar/editar/excluir, mas faltam:
+   - Ações em massa (aprovar/rejeitar) com notificação
+   - Edição do `user_id` (reassociar vaga a outro usuário)
+   - Toggle de status direto na listagem (ativar/desativar sem abrir modal)
+   - Restaurar vagas excluídas (lixeira)
+   - Visualização de quem criou a vaga (nome do usuário)
 
-**Ação:** Adicionar filtro `deadline >= today OR deadline IS NULL` na query pública do `JobsPage.tsx`. Na listagem do dashboard, exibir badge "Expirada" em vermelho para vagas com prazo vencido.
+## Plano de Execução
 
-## 2. Busca por Descrição e Categoria (Listagem Pública)
+### 1. Corrigir layout mobile — DashboardJobsPage
 
-**Problema:** A busca pública (`JobsPage`) filtra apenas por `title` (`ilike`). Se o usuário buscar "eletricista" e o título for "Técnico Residencial", não encontra.
+- Header: empilhar título + botões verticalmente no mobile (`flex-col sm:flex-row`)
+- Botões: trocar "Importar CSV" para ícone-only no mobile
+- Cards de vagas: empilhar ações abaixo do conteúdo no mobile ao invés de lado a lado
+- Garantir que o botão "Nova Vaga" fique visível e clicável no celular
 
-**Ação:** Expandir a busca para incluir `description` e o nome da categoria usando `or()` do Supabase. Isso melhora drasticamente a relevância dos resultados.
+### 2. Admin com controle absoluto — AdminJobsPage
 
-## 3. Contador de Visualizações por Vaga
-
-**Problema:** Não há métricas de visualização. O anunciante não sabe se sua vaga está sendo vista.
-
-**Ação:**
-
-- Adicionar coluna `view_count integer default 0` na tabela `jobs`
-- Incrementar via RPC (`increment_job_view`) chamado no `JobDetailPage`
-- Exibir o contador no card do dashboard e na página de detalhe
-
-## 4. Compartilhamento Social (JobDetailPage)
-
-**Problema:** A página de detalhe tem apenas "Copiar link". Faltam botões de compartilhar no WhatsApp, Facebook, LinkedIn.
-
-**Ação:** Adicionar botões de compartilhamento social na sidebar do `JobDetailPage` com links nativos (WhatsApp API, Facebook sharer, LinkedIn share).
-
-## 5. Notificação ao Anunciante (Aprovação/Rejeição)
-
-**Problema:** Quando o admin aprova ou rejeita uma vaga, o anunciante não é notificado. Só descobre ao acessar o dashboard.
-
-**Ação:** No `AdminJobsPage`, ao aprovar/rejeitar, inserir um registro na tabela `notifications` para o `user_id` da vaga, com mensagem contextual.
-
-## 6. Filtros no Admin — Cidade e Categoria
-
-**Problema:** O painel admin filtra apenas por `approval_status` e texto livre. Não há filtro por cidade ou categoria.
-
-**Ação:** Adicionar selects de filtro por cidade e categoria no `AdminJobsPage`, usando os dados já disponíveis na query.
-
-## 7. Edição Completa no Admin
-
-**Problema:** O dialog de edição no admin só permite alterar título, descrição, status e aprovação. Campos como cidade, salário, WhatsApp, categoria não são editáveis.
-
-**Ação:** Expandir o formulário de edição do admin para incluir todos os campos relevantes (cidade, estado, categoria, salário, WhatsApp, tipo de contrato, modelo de trabalho).
-
----
+- Adicionar coluna "Criado por" com nome do usuário (join com `profiles`)
+- Toggle rápido de status (ativo/inativo) direto na listagem sem modal
+- Campo `user_id` no formulário de edição (select de usuários ou input UUID) para reassociar vagas
+- Link para a lixeira de vagas (`/admin/lixeira?type=job`)
+- Exibir resumo de stats no topo (total, ativas, pendentes, expiradas)
 
 ## Arquivos Modificados
 
-
-| Arquivo                           | Alterações                                                                                 |
-| --------------------------------- | ------------------------------------------------------------------------------------------ |
-| `src/pages/JobsPage.tsx`          | Busca expandida (descrição + categoria); filtro de deadline                                |
-| `src/pages/JobDetailPage.tsx`     | Botões de compartilhamento social; chamada de view_count                                   |
-| `src/pages/DashboardJobsPage.tsx` | Badge "Expirada"; exibir view_count no card                                                |
-| `src/pages/AdminJobsPage.tsx`     | Filtros cidade/categoria; formulário de edição completo; notificação na aprovação/rejeição |
-| **Migration SQL**                 | Coluna `view_count`; função RPC `increment_job_view`                                       |
-
+| Arquivo | Alteração |
+|---|---|
+| `src/pages/DashboardJobsPage.tsx` | Layout responsivo mobile — header empilhado, cards com ações embaixo |
+| `src/pages/AdminJobsPage.tsx` | Stats cards, toggle status, campo user_id, nome do criador, link lixeira |
 
 ## O que NÃO será alterado
-
-- Schema blindado (`client.ts`, `types.ts`, `.env`)
-- Parser de texto (`jobTextParser.ts`) — já funciona bem
-- GeoEngine, SIL, Governance Engine
+- Schema de tabelas (sem migrations)
 - RLS policies existentes
-
-Permitir que o administrativo tenha gestão de criar Editar e excluir vagas.
-
-&nbsp;
+- `client.ts`, `types.ts`, `.env`
