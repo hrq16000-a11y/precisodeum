@@ -277,6 +277,26 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             key={location.pathname}
           >
             <DashboardGroupNav />
+            {incompleteAlert && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4"
+              >
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-destructive">Complete seu cadastro!</p>
+                  <p className="text-xs text-muted-foreground">
+                    {incompleteAlert.daysLeft > 0
+                      ? `Você tem ${incompleteAlert.daysLeft} dias para preencher seus dados básicos (nome, cidade) antes que seu perfil seja removido.`
+                      : 'Seu prazo expirou. Complete seus dados imediatamente para evitar a remoção do perfil.'}
+                  </p>
+                </div>
+                <Button variant="accent" size="sm" asChild>
+                  <Link to="/dashboard/perfil">Completar</Link>
+                </Button>
+              </motion.div>
+            )}
             {children}
           </motion.div>
         </AnimatePresence>
