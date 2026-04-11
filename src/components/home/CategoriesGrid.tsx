@@ -20,6 +20,26 @@ interface Props {
 
 const HOME_COUNT_DESKTOP = 8;
 
+/** Full-width CTA button — text & bg from admin */
+const CategoriesViewAllButton = () => {
+  const { data } = useSiteSettings();
+  const text = data?.values?.['categories_cta_text'] || 'Ver Todas as Categorias';
+  const bg = data?.values?.['categories_cta_bg'] || '';
+
+  return (
+    <div className="mt-6 animate-fade-in" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
+      <Link
+        to="/categorias"
+        className="group flex w-full items-center justify-between rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+        style={{ backgroundColor: bg || undefined }}
+      >
+        <span className={`text-sm font-bold ${bg ? 'text-foreground' : 'text-foreground'}`}>{text}</span>
+        <ChevronRight className="h-4 w-4 text-accent transition-transform group-hover:translate-x-1" />
+      </Link>
+    </div>
+  );
+};
+
 
 const CategoriesGrid = ({ categories, isLoading }: Props) => {
   const visible = useMemo(() => {
