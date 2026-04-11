@@ -47,7 +47,7 @@ async function flushErrors() {
   for (const [componentName, { count, lastError }] of entries) {
     const status: ComponentStatus = count >= 5 ? 'failing' : count >= 2 ? 'degraded' : 'healthy';
 
-    await (supabase.from('runtime_component_health' as any) as any).upsert(
+    const { error } = await (supabase.from('runtime_component_health' as any) as any).upsert(
       {
         component_name: componentName,
         failure_count: count,
@@ -57,6 +57,10 @@ async function flushErrors() {
       },
       { onConflict: 'component_name' }
     );
+    // Graceful: if RLS blocks non-admin writes, just skip silently
+    if (error) {
+      console.debug(`[RuntimeStability] Flush skipped for "${componentName}": ${error.message}`);
+    }
   }
 }
 
