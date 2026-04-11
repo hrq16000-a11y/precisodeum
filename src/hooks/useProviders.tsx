@@ -490,6 +490,109 @@ export function filterAndRankProviders(
   return results;
 }
 
+export interface GroupedSearchResult {
+  local: DbProvider[];
+  other: DbProvider[];
+  isFallback: boolean;
+}
+
+export function filterAndRankProvidersGrouped(
+  providers: DbProvider[],
+  query: string,
+  city: string,
+  categorySlug: string,
+  minRating: number,
+  state?: string,
+  userLat?: number | null,
+  userLon?: number | null,
+  radiusKm?: number,
+): GroupedSearchResult {
+  let results = [...providers];
+
+  if (minRating > 0) {
+    results = results.filter((p) => p.rating >= minRating);
+  }
+  if (categorySlug) {
+    results = results.filter((p) => p.categorySlug === categorySlug);
+  }
+
+  const sil = SearchIntelligence.analyze(query, city, state, userLat, userLon);
+  const { intent, geoIntent, geoContext, serviceQuery } = sil;
+  if (radiusKm) (geoContext as any).radius = radiusKm;
+
+  // Text filter
+  if (serviceQuery) {
+    const terms = sanitizeSearchTokens(serviceQuery);
+    if (terms.length > 0) {
+      results = results.filter((p) => {
+        const searchable = [p.name, p.category, p.description, p.businessName || '', p.city, p.neighborhood, p.state]
+          .join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/-/g, ' ');
+        let matched = 0;
+        for (const term of terms) { if (searchable.includes(term)) matched++; }
+        const threshold = terms.length === 1 ? 1 : Math.ceil(terms.length * 0.5);
+        return matched >= threshold;
+      });
+    }
+  }
+
+  // Enrich with geo + relevance scores
+  const enriched = results.map((p) => {
+    const isLocal = (intent !== 'SERVICE_ONLY' && (geoContext.cityNorm || geoContext.stateNorm))
+      ? SearchIntelligence.matchesGeo(p, geoContext)
+      : false;
+    const gs = isLocal ? SearchIntelligence.providerGeoScore(p, geoContext, geoIntent.confidence) : 0;
+    const relevance = SearchIntelligence.computeRelevanceScore(p, serviceQuery);
+    const scored = SearchIntelligence.computeFinalScore(gs, relevance, intent);
+
+    // Real distance in km for proximity sorting
+    let distanceKm = Infinity;
+    if (userLat != null && userLon != null && Number.isFinite(userLat) && Number.isFinite(userLon)
+        && p.latitude != null && p.longitude != null && Number.isFinite(p.latitude) && Number.isFinite(p.longitude)) {
+      distanceKm = calculateDistanceKmSimple(userLat, userLon, p.latitude, p.longitude);
+    }
+
+    return { p, isLocal, scored, distanceKm };
+  });
+
+  const hasGeoContext = !!(geoContext.cityNorm || geoContext.stateNorm);
+
+  const localArr = hasGeoContext ? enriched.filter(e => e.isLocal) : enriched;
+  const otherArr = hasGeoContext ? enriched.filter(e => !e.isLocal) : [];
+
+  // Sort local by distance first (if available), then by score
+  localArr.sort((a, b) => {
+    // Both have real distance → sort by distance
+    if (a.distanceKm !== Infinity && b.distanceKm !== Infinity) {
+      const distDiff = a.distanceKm - b.distanceKm;
+      if (Math.abs(distDiff) > 1) return distDiff; // >1km difference matters
+    }
+    if (a.scored.finalScore !== b.scored.finalScore) return b.scored.finalScore - a.scored.finalScore;
+    const aS = (a.p as any)._finalScore || 0;
+    const bS = (b.p as any)._finalScore || 0;
+    if (aS !== bS) return bS - aS;
+    return b.p.rating - a.p.rating;
+  });
+
+  // Sort other by score
+  otherArr.sort((a, b) => {
+    if (a.scored.finalScore !== b.scored.finalScore) return b.scored.finalScore - a.scored.finalScore;
+    const aS = (a.p as any)._finalScore || 0;
+    const bS = (b.p as any)._finalScore || 0;
+    if (aS !== bS) return bS - aS;
+    return b.p.rating - a.p.rating;
+  });
+
+  const isFallback = hasGeoContext && localArr.length === 0;
+
+  SearchIntelligence.trackFinalScore(query, intent, localArr.length + otherArr.length);
+
+  return {
+    local: (isFallback ? [...localArr, ...otherArr] : localArr).map(e => e.p),
+    other: isFallback ? [] : otherArr.map(e => e.p),
+    isFallback,
+  };
+}
+
 export function useSearchProviders(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null, radiusKm?: number) {
   const baseQuery = useQuery({
     queryKey: ['search-providers-base'],
@@ -516,6 +619,35 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
   return {
     ...baseQuery,
     data: filteredData,
+  };
+}
+
+export function useSearchProvidersGrouped(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null, radiusKm?: number) {
+  const baseQuery = useQuery({
+    queryKey: ['search-providers-base'],
+    queryFn: async () => {
+      return fetchProvidersWithProfiles(
+        supabase
+        .from('providers')
+        .select(providerSelect)
+        .eq('status', 'approved')
+        .order('rating_avg', { ascending: false })
+        .order('review_count', { ascending: false })
+      );
+    },
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+  });
+
+  const grouped = useMemo(
+    () => filterAndRankProvidersGrouped(baseQuery.data || [], query, city, categorySlug, minRating, state, userLat, userLon, radiusKm),
+    [baseQuery.data, query, city, categorySlug, minRating, state, userLat, userLon, radiusKm]
+  );
+
+  return {
+    ...baseQuery,
+    data: grouped,
   };
 }
 
