@@ -40,7 +40,7 @@ const FloatingHelpButton = forwardRef<HTMLDivElement>((_, ref) => {
   ];
 
   return (
-    <>
+    <div ref={ref}>
       {/* Backdrop */}
       <AnimatePresence>
         {open && (

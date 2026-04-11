@@ -83,7 +83,7 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(({ userId, cu
   };
 
   return (
-    <div className="relative inline-block">
+    <div ref={ref} className="relative inline-block">
       <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
         <AvatarImage src={currentUrl || undefined} alt="Avatar" />
         <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
