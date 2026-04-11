@@ -316,7 +316,18 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                               >
                                 <item.icon className={`h-4 w-4 ${active ? 'text-accent' : 'group-hover:text-sidebar-foreground'}`} />
                               </motion.div>
-                              <span className="truncate">{item.label}</span>
+                              <span className="truncate flex-1">{item.label}</span>
+                              {(pendingBadges[item.path] ?? 0) > 0 && (
+                                <span className="ml-auto flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">
+                                  {pendingBadges[item.path] > 99 ? '99+' : pendingBadges[item.path]}
+                                </span>
+                              )}
+                              <button
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(item.path); }}
+                                className={`opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ${favorites.includes(item.path) ? 'opacity-100 text-amber-500' : 'text-sidebar-foreground/30'}`}
+                              >
+                                <Pin className={`h-3 w-3 ${favorites.includes(item.path) ? 'fill-current' : ''}`} />
+                              </button>
                             </Link>
                           );
                         })}
