@@ -1,63 +1,75 @@
 
 
-## Plano: Compartilhamento, Solicitação de Avaliação e SEO Dinâmico
+## Plano: Otimizar velocidade de carregamento
 
-### Estado Atual
-- **SEO já implementado** (linha 516-522): `useSeoHead` já gera título dinâmico `[Nome] - [Categoria] em [Cidade] | Preciso de um` e meta description com avaliações. ✅
-- **Botão "Copiar Link"** já existe (linha 1148-1152), mas sem Web Share API. Precisa upgrade.
-- **Não existe** lógica de `isOwner` nem botão "Pedir Avaliação".
+### Problemas identificados
 
----
+1. **`import * as LucideIcons` no MobileBottomNav** — importa TODOS os ~1500 icones do lucide-react no bundle principal. Impacto enorme no JS parse time.
 
-### 1. Botão "Compartilhar Perfil" — Upgrade do "Copiar Link" existente
+2. **Componentes nao-criticos carregados eagerly no App.tsx** — `CookieConsent`, `PwaInstallBanner`, `FloatingHelpButton`, `BackToTopButton`, `MobileBottomNav`, `ScrollProgressBar`, `ProfileTypeChooser` sao importados de forma sincrona mas nao sao necessarios para o First Contentful Paint.
 
-**Arquivo: `src/pages/ProviderProfile.tsx`**
+3. **framer-motion no Header** — o Header esta no critical path e importa `motion` de framer-motion apenas para a animacao da logo. Deveria usar CSS puro.
 
-Substituir o botão "Copiar Link" (linha 1148-1152) por um botão "Compartilhar" que:
-- Usa `navigator.share()` se disponível (mobile), com título e texto do profissional
-- Fallback: `navigator.clipboard.writeText()` + toast "Link do perfil copiado!"
-- Ícone: `Share2` (Lucide) em vez de `Copy`
-- Mover para posição mais proeminente — ao lado dos botões CTA principais (não escondido num flex secundário)
+4. **Query `home-secondary-data` com queries encadeadas** — faz 4 queries paralelas incluindo uma cadeia services → providers → cities que e desnecessariamente complexa para o carregamento inicial.
 
-### 2. Botão "Pedir Avaliação" — Exclusivo para o dono do perfil
-
-**Arquivo: `src/pages/ProviderProfile.tsx`**
-
-- Importar `useAuth` e obter `user`
-- Calcular `isOwner = user?.id === provider?.user_id`
-- Se `isOwner`, renderizar um botão destacado "⭐ Pedir Avaliação" logo após os CTAs
-- Ao clicar, gera link WhatsApp com mensagem pré-pronta:
-  `"Olá! Agradeço por escolher meus serviços. Poderia me avaliar rapidinho na plataforma? Isso fortalece meu trabalho! {profileUrl}"`
-- Usa `whatsappLink('', mensagem)` — abre WhatsApp sem número pré-definido (o profissional escolhe o contato)
-- Fallback: se WhatsApp indisponível, copia a mensagem para clipboard
-
-### 3. SEO Dinâmico — Já implementado ✅
-
-O `useSeoHead` na linha 516-522 já gera:
-- `<title>`: "Henrique da Cruz - Manutenção em São José dos Pinhais | Preciso de um"
-- `<meta description>`: com nome, categoria, cidade, avaliações e nota
-- `og:title`, `og:description`, `og:url`, canonical — todos dinâmicos
-- JSON-LD LocalBusiness com aggregateRating (linhas 534-549)
-
-Apenas ajustar: passar `ogImage` com o avatar do profissional para que o compartilhamento social mostre a foto dele.
+5. **Preload de `hero-bg-1.jpg` no index.html** — forca download de uma imagem que pode nem ser a selecionada (o HeroBanner usa `pickRandom`).
 
 ---
 
-### Detalhes técnicos
+### Alteracoes
+
+**1. `src/components/MobileBottomNav.tsx`** — Eliminar `import * as LucideIcons`
+- Remover o wildcard import
+- Usar um mapa manual com os icones mais comuns (Home, Search, LayoutGrid, User, Plus, Bell, etc.)
+- Fallback para `Home` se o icone nao estiver no mapa
+- **Impacto estimado: -200KB+ do bundle principal**
+
+**2. `src/App.tsx`** — Lazy load componentes nao-criticos
+- Converter para lazy: `CookieConsent`, `PwaInstallBanner`, `FloatingHelpButton`, `BackToTopButton`, `MobileBottomNav`, `ScrollProgressBar`, `ProfileTypeChooser`
+- Manter eager apenas: `ScrollToTop`, `ProtectedRoute`, `ModuleBoundary` (leves e necessarios)
+- Usar `requestIdleCallback` wrapper para montar esses componentes apos o FCP
+
+**3. `src/components/Header.tsx`** — Remover framer-motion do critical path
+- Substituir `motion.img` da logo por CSS animation (`animate-fade-in` + scale via keyframe)
+- Remover import de `motion` do Header
+
+**4. `index.html`** — Remover preload da hero-bg-1.jpg
+- O HeroBanner seleciona imagens aleatoriamente, entao o preload pode carregar uma imagem que nao sera usada
+- Em vez disso, o HeroBanner pode usar `fetchpriority="high"` na imagem selecionada
+
+**5. `src/pages/Index.tsx`** — Adiar query secundaria
+- Adicionar `enabled: !!categories.length` ou um `setTimeout` para que `home-secondary-data` so execute apos o conteudo principal renderizar
+- Simplificar a query de cities (usar dados ja existentes da tabela `cities` diretamente em vez da cadeia services→providers→cities)
+
+**6. `src/main.tsx`** — Adiar MutationObserver
+- Envolver o setup do MutationObserver em `requestIdleCallback` para nao bloquear o thread principal durante o boot
+
+---
+
+### Arquivos modificados
+- `src/components/MobileBottomNav.tsx`
+- `src/App.tsx`
+- `src/components/Header.tsx`
+- `index.html`
+- `src/pages/Index.tsx`
+- `src/main.tsx`
+
+### Detalhes tecnicos
 
 ```text
-Hierarquia dos CTAs (atualizada):
-┌────────────────────────────────────────┐
-│  [Solicitar Orçamento] [WhatsApp]      │
-│  [Compartilhar] [Ligar]                │
-│  "Orçamento sem compromisso..."        │
-├────────────────────────────────────────┤
-│  (se isOwner):                         │
-│  [⭐ Pedir Avaliação via WhatsApp]     │
-│  "Envie para clientes recentes"        │
-└────────────────────────────────────────┘
+Impacto esperado por mudanca:
+┌──────────────────────────────────┬────────────┐
+│ Mudanca                          │ Economia   │
+├──────────────────────────────────┼────────────┤
+│ Remover import * lucide-react    │ ~200KB JS  │
+│ Lazy load 7 componentes App.tsx  │ ~80KB JS   │
+│ framer-motion fora do Header     │ ~60KB JS*  │
+│ Adiar home-secondary-data        │ -4 queries │
+│ Remover preload hero desnecessario│ -1 request │
+│ Adiar MutationObserver           │ -5ms boot  │
+└──────────────────────────────────┴────────────┘
+* se Header for o unico eager que usa framer-motion
 ```
 
-### Arquivo modificado
-- `src/pages/ProviderProfile.tsx` — único arquivo alterado
+Todas as mudancas sao retrocompativeis — nenhum comportamento visivel muda, apenas o timing de carregamento.
 
