@@ -241,10 +241,12 @@ async function fetchProvidersLightweight(query: any) {
       serviceFallbackMap[p.id]
     );
 
-    // Mark incomplete profiles for filtering
-    const profileName = profile?.name?.trim() || '';
+    // Mark incomplete profiles for filtering — use fallback hierarchy so
+    // a missing public_profiles response never hides providers that have
+    // business_name or slug filled in.
+    const displayName = (profile?.name?.trim()) || (p.business_name?.trim()) || (p.slug?.trim()) || '';
     const provCity = p.city?.trim() || '';
-    const isIncomplete = !profileName || profileName === 'Profissional' || !provCity;
+    const isIncomplete = !displayName || !provCity;
     (mapped as any)._isIncomplete = isIncomplete;
 
     // Hybrid score
