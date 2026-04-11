@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useSearchProviders, useCategories, useSearchSuggestions, normalizeCityName, matchesGeoContext } from '@/hooks/useProviders';
+import { useSearchProviders, useCategories, useSearchSuggestions, useGeoCategories, normalizeCityName, matchesGeoContext } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
@@ -29,7 +29,7 @@ const SearchPage = () => {
   const navigate = useNavigate();
   const query = searchParams.get('q') || '';
   const cityParam = searchParams.get('cidade') || '';
-  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm } = useGeoCity();
+  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, requestPreciseLocation } = useGeoCity();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('categoria') || '');
   const [selectedCity, setSelectedCity] = useState(cityParam);
   const [selectedNeighborhood, setSelectedNeighborhood] = useState(searchParams.get('bairro') || '');
@@ -47,6 +47,13 @@ const SearchPage = () => {
 
   const { data: categories = [], isError: categoriesError } = useCategories();
   const { data: suggestions } = useSearchSuggestions();
+  const { data: geoCategories = [] } = useGeoCategories(userLat, userLon);
+
+  // Request GPS on mount for better proximity filtering
+  useEffect(() => {
+    requestPreciseLocation();
+  }, [requestPreciseLocation]);
+
   const {
     data: filtered = [],
     isLoading,
@@ -147,12 +154,12 @@ const SearchPage = () => {
 
   // Quick suggestion chips
   const suggestionChips = useMemo(() => {
-    const chips: { label: string; type: string; value: string }[] = [];
-    (suggestions?.categories || []).slice(0, 6).forEach(c => {
-      chips.push({ label: c.name, type: 'categoria', value: c.slug });
-    });
-    return chips;
-  }, [suggestions]);
+    return geoCategories.slice(0, 8).map(c => ({
+      label: `${c.icon} ${c.name}`,
+      type: 'categoria',
+      value: c.slug,
+    }));
+  }, [geoCategories]);
 
   return (
     <div className="flex min-h-screen flex-col">
