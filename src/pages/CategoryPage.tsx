@@ -166,7 +166,8 @@ const CategoryPage = () => {
               { label: 'Categorias', url: '/categorias' },
               { label: category.name },
             ]}
-            className="justify-center text-primary-foreground/50 mb-6 text-xs"
+            variant="hero"
+            className="justify-center mb-6"
           />
           
           <motion.div
