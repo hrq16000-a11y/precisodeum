@@ -419,20 +419,24 @@ const DashboardJobsPage = () => {
             <div key={job.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-card">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-medium text-foreground truncate">{job.title}</h3>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
-                    {job.status === 'active' ? 'Ativa' : 'Inativa'}
-                  </span>
-                  {(job as any).approval_status === 'pending' && (
-                    <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Aguardando aprovação</span>
-                  )}
-                  {(job as any).approval_status === 'rejected' && (
-                    <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Rejeitada</span>
-                  )}
-                </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {(job.categories as any)?.icon} {(job.categories as any)?.name || 'Sem categoria'} · {job.city}{job.state ? `, ${job.state}` : ''}
-                </p>
+                   <h3 className="font-medium text-foreground truncate">{job.title}</h3>
+                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+                     {job.status === 'active' ? 'Ativa' : 'Inativa'}
+                   </span>
+                   {job.deadline && new Date(job.deadline) < new Date() && (
+                     <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Expirada</span>
+                   )}
+                   {(job as any).approval_status === 'pending' && (
+                     <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Aguardando aprovação</span>
+                   )}
+                   {(job as any).approval_status === 'rejected' && (
+                     <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Rejeitada</span>
+                   )}
+                 </div>
+                 <p className="mt-0.5 text-xs text-muted-foreground">
+                   {(job.categories as any)?.icon} {(job.categories as any)?.name || 'Sem categoria'} · {job.city}{job.state ? `, ${job.state}` : ''}
+                   {(job as any).view_count > 0 && <> · 👁 {(job as any).view_count} views</>}
+                 </p>
               </div>
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" onClick={() => copyUrl(job)} title="Copiar link"><Copy className="h-4 w-4" /></Button>
