@@ -88,7 +88,7 @@ const AdminUsersPage = () => {
     supabase.from('profiles').select('*').order('created_at', { ascending: false })
       .then(({ data }) => setProfiles(data || []));
     supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon)')
-      .eq('status', 'approved').is('deleted_at', null)
+      .is('deleted_at', null)
       .then(({ data }) => {
         const map: Record<string, any> = {};
         (data || []).forEach((p: any) => { map[p.user_id] = p; });
