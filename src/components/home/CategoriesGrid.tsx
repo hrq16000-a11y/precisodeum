@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 interface CategoryItem {
   id: string;
@@ -19,6 +19,26 @@ interface Props {
 }
 
 const HOME_COUNT_DESKTOP = 8;
+
+/** Full-width CTA button — text & bg from admin */
+const CategoriesViewAllButton = () => {
+  const { data } = useSiteSettings();
+  const text = data?.values?.['categories_cta_text'] || 'Ver Todas as Categorias';
+  const bg = data?.values?.['categories_cta_bg'] || '';
+
+  return (
+    <div className="mt-6 animate-fade-in" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
+      <Link
+        to="/categorias"
+        className={`group flex w-full items-center justify-between rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${!bg ? 'bg-accent/5 border border-accent/10' : ''}`}
+        style={bg ? { backgroundColor: bg } : undefined}
+      >
+        <span className="text-sm font-bold text-foreground">{text}</span>
+        <ChevronRight className="h-4 w-4 text-accent transition-transform group-hover:translate-x-1" />
+      </Link>
+    </div>
+  );
+};
 
 
 const CategoriesGrid = ({ categories, isLoading }: Props) => {
@@ -91,14 +111,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
               ))}
             </div>
 
-            <div className="mt-6 text-center animate-fade-in" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
-              <Button variant="outline" size="sm" className="gap-1.5 rounded-full hover:bg-accent hover:text-accent-foreground transition-colors" asChild>
-                <Link to="/categorias">
-                  Ver Todas as Categorias
-                  <ChevronRight className="h-3 w-3" />
-                </Link>
-              </Button>
-            </div>
+            <CategoriesViewAllButton />
           </>
         )}
       </div>

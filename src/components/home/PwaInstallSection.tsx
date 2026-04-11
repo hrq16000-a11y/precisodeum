@@ -4,29 +4,35 @@
  * Respeita show_homepage_section da tabela pwa_install_settings.
  * Ao clicar, dispara PWA_OPEN_INSTALL_MODAL_EVENT para abrir o popup central.
  */
-import { Download, Zap, Check, Star } from 'lucide-react';
+import { Download, Zap, Check, Star, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   PWA_OPEN_INSTALL_MODAL_EVENT,
   usePwaInstallPrompt,
   usePwaSettings,
 } from '@/hooks/usePwaInstall';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import playStoreIcon from '@/assets/play-store-icon.png';
 
 const PwaInstallSection = () => {
   const { isStandalone } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
+  const { data: siteData } = useSiteSettings();
 
   if (!settings?.enabled) return null;
   if (!settings?.show_homepage_section) return null;
 
-  const sectionTitle = settings?.homepage_section_title || 'Tenha o app na palma da mão';
-  const sectionSubtitle =
-    settings?.homepage_section_subtitle ||
-    'Instale gratuitamente e acesse profissionais, serviços e vagas com um toque.';
-  const sectionCta = settings?.homepage_section_cta || 'Instalar Agora';
+  const sectionTitle = siteData?.values?.['pwa_section_title'] || settings?.homepage_section_title || 'Tenha o app na palma da mão';
+  const sectionSubtitle = siteData?.values?.['pwa_section_subtitle'] || settings?.homepage_section_subtitle || 'Instale gratuitamente e acesse profissionais, serviços e vagas com um toque.';
+  const sectionCta = siteData?.values?.['pwa_section_cta'] || settings?.homepage_section_cta || 'Baixar App';
+  const ctaLink = siteData?.values?.['pwa_section_link'] || '';
+  const bgColor = siteData?.values?.['pwa_section_bg'] || '';
 
   const openInstallPopup = () => {
+    if (ctaLink) {
+      window.open(ctaLink, '_blank', 'noopener');
+      return;
+    }
     if (isStandalone) return;
     window.dispatchEvent(
       new CustomEvent(PWA_OPEN_INSTALL_MODAL_EVENT, { detail: { source: 'homepage' } }),
@@ -36,12 +42,15 @@ const PwaInstallSection = () => {
   return (
     <section className="py-8">
       <div className="container mx-auto px-4">
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-accent/5 p-6 shadow-card md:p-8">
-          {/* Decorative background */}
-          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/5 blur-3xl" />
+        <div
+          className={`relative overflow-hidden rounded-3xl p-6 md:p-8 ${!bgColor ? 'bg-accent/5 border border-accent/10' : ''}`}
+          style={bgColor ? { backgroundColor: bgColor } : undefined}
+        >
+          {/* Decorative background elements */}
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
           <div className="absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-primary/5 blur-3xl" />
 
-          <div className="relative flex flex-col items-center gap-6 md:flex-row md:justify-between">
+          <div className="relative flex flex-col items-center gap-5 md:flex-row md:justify-between">
             {/* Left: icon + text */}
             <div className="flex items-center gap-4 text-center md:text-left">
               <img
@@ -74,15 +83,20 @@ const PwaInstallSection = () => {
             </div>
 
             {/* Right: CTA */}
-            <div className="flex shrink-0 flex-col items-center gap-2">
+            <div className="flex w-full shrink-0 flex-col items-center gap-2 md:w-auto">
               {isStandalone ? (
-                <Button size="lg" variant="secondary" disabled className="gap-2 rounded-xl">
+                <Button size="lg" variant="secondary" disabled className="w-full gap-2 rounded-xl md:w-auto">
                   <Check className="h-5 w-5" /> App instalado
                 </Button>
               ) : (
-                <Button onClick={openInstallPopup} size="lg" className="gap-2 rounded-xl px-6 shadow-lg">
-                  <img src={playStoreIcon} alt="" className="h-5 w-5" />
+                <Button
+                  onClick={openInstallPopup}
+                  size="lg"
+                  className="w-full gap-2 rounded-xl bg-accent px-8 text-accent-foreground shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl md:w-auto"
+                >
+                  <Download className="h-5 w-5" />
                   {sectionCta}
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               )}
               <span className="text-[10px] text-muted-foreground">Sem ocupar espaço no celular</span>
