@@ -10,7 +10,7 @@ interface LogoProps {
   height?: string;
 }
 
-const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-9 md:h-10' }: LogoProps) => {
+const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-12 md:h-14' }: LogoProps) => {
   const logoUrl = useSettingValue('logo_url');
   const logo = logoUrl || DEFAULT_LOGO_URL;
 
