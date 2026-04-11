@@ -54,7 +54,7 @@ const PrivacyPage = () => {
               <p className="mt-2">Para questões relacionadas à privacidade, entre em contato pelo WhatsApp (41) 99745-2053 ou envie uma mensagem pela plataforma.</p>
             </section>
           </div>
-        </div>
+        </FadeInSection>
       </main>
       <Footer />
     </div>
