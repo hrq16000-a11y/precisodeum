@@ -87,11 +87,11 @@ const Footer = () => {
   const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : DEFAULT_LOGO_URL;
   const tagline = useMemo(() => footerTaglines[Math.floor(Math.random() * footerTaglines.length)], []);
 
-  const { data: menuGroups } = useMenuItemsByLocations(['footer', 'footer_eco', 'footer_suporte']);
+  const { data: menuGroups } = useMenuItemsByLocations(['footer', 'footer_eco']);
 
   const profLinks = menuGroups?.footer?.length ? menuGroups.footer : fallbackProfissionais;
   const ecoLinks = menuGroups?.footer_eco?.length ? menuGroups.footer_eco : fallbackEco;
-  const suporteLinks = menuGroups?.footer_suporte?.length ? menuGroups.footer_suporte : fallbackSuporte;
+  const suporteLinks = fallbackSuporte;
 
   return (
     <footer className="border-t border-border bg-primary text-primary-foreground">
@@ -144,15 +144,13 @@ const Footer = () => {
             <ul className="space-y-3 text-sm text-primary-foreground/70">
               {suporteLinks.map((item: any) => (
                 <li key={item.id || item.url}>
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    to={item.url}
                     className="inline-flex items-center gap-2 rounded-lg bg-primary-foreground/10 px-3 py-2 transition-colors hover:bg-primary-foreground/20"
                   >
                     <MessageCircle className="h-4 w-4" />
                     {item.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
