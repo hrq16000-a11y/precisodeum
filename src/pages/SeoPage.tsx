@@ -58,6 +58,7 @@ const SeoPage = () => {
   const [page, setPage] = useState(1);
   const { latitude: userLat, longitude: userLon } = useGeoCity();
 
+  // Parse slug to extract category/city/neighborhood
   const { data, isLoading } = useQuery({
     queryKey: ['seo-page', slug],
     queryFn: async () => {
@@ -114,8 +115,34 @@ const SeoPage = () => {
     enabled: !!slug,
   });
 
-  const parsed = data?.parsed;
-  const providers = data?.providers || [];
+  // Use PostGIS RPC for distance when user has GPS
+  const parsedCatSlug = data?.parsed?.categorySlug || undefined;
+  const { data: nearbyData } = useNearbyProviders({
+    lat: userLat,
+    lng: userLon,
+    radiusM: 100000,
+    categorySlug: parsedCatSlug,
+    limit: 200,
+  });
+
+  // Build distance map from RPC results
+  const distanceMap = new Map<string, number>();
+  (nearbyData || []).forEach((p) => {
+    distanceMap.set(p.id, p.distanceKm);
+  });
+
+  // Merge distance into providers and sort by proximity when available
+  const baseProviders = data?.providers || [];
+  const providers = baseProviders.map((p) => ({
+    ...p,
+    distanceKm: distanceMap.get(p.id),
+  })).sort((a, b) => {
+    // Sort by distance if available, otherwise keep rating order
+    if (a.distanceKm != null && b.distanceKm != null) return a.distanceKm - b.distanceKm;
+    if (a.distanceKm != null) return -1;
+    if (b.distanceKm != null) return 1;
+    return 0;
+  });
   const locationLabel = parsed?.neighborhood ? `${parsed.neighborhood}, ${parsed.city}` : parsed?.city || '';
   const seoTitle = locationLabel ? `${parsed?.categoryName} em ${locationLabel}` : parsed?.categoryName || '';
   const seoDesc = locationLabel
