@@ -2291,7 +2291,9 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           description: string
+          facebook_url: string | null
           id: string
+          instagram_url: string | null
           price: string | null
           provider_id: string
           service_area: string
@@ -2301,6 +2303,7 @@ export type Database = {
           website: string | null
           whatsapp: string
           working_hours: string
+          youtube_url: string | null
         }
         Insert: {
           address?: string
@@ -2308,7 +2311,9 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           description?: string
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
           price?: string | null
           provider_id: string
           service_area?: string
@@ -2318,6 +2323,7 @@ export type Database = {
           website?: string | null
           whatsapp?: string
           working_hours?: string
+          youtube_url?: string | null
         }
         Update: {
           address?: string
@@ -2325,7 +2331,9 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           description?: string
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
           price?: string | null
           provider_id?: string
           service_area?: string
@@ -2335,6 +2343,7 @@ export type Database = {
           website?: string | null
           whatsapp?: string
           working_hours?: string
+          youtube_url?: string | null
         }
         Relationships: [
           {
