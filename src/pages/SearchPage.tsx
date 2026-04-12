@@ -195,7 +195,8 @@ const SearchPage = () => {
   useSeoHead({ title: seoTitle, description: seoDesc, canonical: `${SITE_BASE_URL}/buscar` });
 
   const paginatedLocal = filteredLocal.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
-  const paginatedOther = showAllLocations ? filteredOther : [];
+  const paginatedNearby = filteredNearby;
+  const paginatedOutOfState = showOutOfState ? filteredOutOfState : [];
 
   // Quick suggestion chips
   const suggestionChips = useMemo(() => {
