@@ -20,15 +20,27 @@ const GeoPromptBanner = ({ showRadius = true }: GeoPromptBannerProps) => {
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-4 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm"
+        className="mb-4 flex flex-col gap-1.5 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm"
       >
-        <Navigation className="h-4 w-4 text-primary shrink-0" />
-        <span className="text-foreground">
-          📍 Buscando profissionais a até <strong>{radiusKm}km</strong> de{' '}
-          <strong>{city}</strong>
-        </span>
-        {precise && (
-          <span className="ml-auto text-[10px] font-medium text-primary/60 uppercase tracking-wider">GPS Preciso</span>
+        <div className="flex items-center gap-2">
+          <Navigation className="h-4 w-4 text-primary shrink-0" />
+          <span className="text-foreground">
+            📍 Buscando profissionais a até <strong>{radiusKm}km</strong> de{' '}
+            <strong>{city}</strong>
+          </span>
+          {precise ? (
+            <span className="ml-auto text-[10px] font-medium text-primary/60 uppercase tracking-wider">GPS Preciso</span>
+          ) : (
+            <span className="ml-auto text-[10px] font-medium text-amber-600/80 uppercase tracking-wider flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              Ref. aproximada
+            </span>
+          )}
+        </div>
+        {!precise && (
+          <p className="text-[11px] text-muted-foreground leading-tight pl-6">
+            A ordenação por distância pode ter variações. Ative o GPS para resultados mais precisos.
+          </p>
         )}
       </motion.div>
     );

@@ -579,11 +579,19 @@ export function filterAndRankProvidersGrouped(
   const otherArr = hasGeoContext ? enriched.filter(e => !e.isLocal) : [];
 
   // Sort local by distance first (if available), then by score
+  // City-match priority: providers in user's exact city sort first
+  const userCityNorm = city ? normalize(city) : '';
   localArr.sort((a, b) => {
-    // Both have real distance → sort by distance
+    // Tier 1: same city as user
+    if (userCityNorm) {
+      const aMatch = normalize(a.p.city) === userCityNorm;
+      const bMatch = normalize(b.p.city) === userCityNorm;
+      if (aMatch !== bMatch) return aMatch ? -1 : 1;
+    }
+    // Tier 2: distance
     if (a.distanceKm !== Infinity && b.distanceKm !== Infinity) {
       const distDiff = a.distanceKm - b.distanceKm;
-      if (Math.abs(distDiff) > 1) return distDiff; // >1km difference matters
+      if (Math.abs(distDiff) > 1) return distDiff;
     }
     if (a.scored.finalScore !== b.scored.finalScore) return b.scored.finalScore - a.scored.finalScore;
     const aS = (a.p as any)._finalScore || 0;

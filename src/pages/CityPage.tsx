@@ -1,4 +1,5 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
+import { normalize } from '@/lib/normalize';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -105,22 +106,31 @@ const CityPage = () => {
 
   // Sort by GPS distance when available, attach distanceKm
   const providers = useMemo(() => {
-    if (userLat == null || userLon == null) return rawProviders;
-    return rawProviders
-      .map((p) => {
-        let dist: number | undefined;
-        if (p.latitude != null && p.longitude != null) {
-          dist = Math.round(haversine(userLat, userLon, p.latitude, p.longitude) * 10) / 10;
-        }
-        return { ...p, distanceKm: dist };
-      })
-      .sort((a, b) => {
+    const cityNorm = city ? normalize(city.name) : '';
+    const enriched = rawProviders.map((p) => {
+      let dist: number | undefined;
+      if (userLat != null && userLon != null && p.latitude != null && p.longitude != null) {
+        dist = Math.round(haversine(userLat, userLon, p.latitude, p.longitude) * 10) / 10;
+      }
+      return { ...p, distanceKm: dist };
+    });
+
+    return enriched.sort((a, b) => {
+      // Tier 1: same city as user always first
+      if (cityNorm) {
+        const aMatch = normalize(a.city || '') === cityNorm;
+        const bMatch = normalize(b.city || '') === cityNorm;
+        if (aMatch !== bMatch) return aMatch ? -1 : 1;
+      }
+      // Tier 2: distance
+      if (userLat != null && userLon != null) {
         const dA = a.distanceKm ?? Infinity;
         const dB = b.distanceKm ?? Infinity;
         if (dA !== dB) return dA - dB;
-        return b.rating - a.rating;
-      });
-  }, [rawProviders, userLat, userLon]);
+      }
+      return b.rating - a.rating;
+    });
+  }, [rawProviders, userLat, userLon, city]);
 
   useSeoHead({
     title: city ? `Profissionais em ${city.name} - ${city.state}` : 'Cidade',
