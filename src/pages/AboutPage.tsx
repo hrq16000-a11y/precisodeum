@@ -14,7 +14,7 @@ import PageTransition from '@/components/PageTransition';
 import { Button } from '@/components/ui/button';
 
 /* ── animation variants ── */
-const easeOut = [0.22, 1, 0.36, 1] as const;
+
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
