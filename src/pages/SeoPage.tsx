@@ -10,6 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useGeoCity } from '@/hooks/useGeoCity';
+import { useNearbyProviders } from '@/hooks/useNearbyProviders';
 
 const ITEMS_PER_PAGE = 12;
 
