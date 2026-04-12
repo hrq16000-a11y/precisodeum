@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl, isVideoUrl } from '@/lib/imageOptimizer';
+import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
@@ -1499,6 +1499,38 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
         </div>
       )}
       {service.description && <p className="text-sm text-muted-foreground leading-relaxed">{service.description}</p>}
+      {/* Social links for service */}
+      {(service.instagram_url || service.facebook_url || service.youtube_url) && (
+        <div className="flex items-center gap-2">
+          {service.instagram_url && (
+            <a href={service.instagram_url} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all">
+              <Instagram className="h-4 w-4" />
+            </a>
+          )}
+          {service.facebook_url && (
+            <a href={service.facebook_url} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all">
+              <Facebook className="h-4 w-4" />
+            </a>
+          )}
+          {service.youtube_url && (
+            <a href={service.youtube_url} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all">
+              <Youtube className="h-4 w-4" />
+            </a>
+          )}
+        </div>
+      )}
+      {/* YouTube embed */}
+      {service.youtube_url && isYouTubeUrl(service.youtube_url) && (
+        <div className="aspect-video rounded-lg overflow-hidden border border-border">
+          <iframe
+            src={getYouTubeEmbedUrl(service.youtube_url)}
+            title="YouTube video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full"
+          />
+        </div>
+      )}
       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
         {service.price && <span className="font-semibold text-foreground">💰 {service.price}</span>}
         {service.service_area && <span>📍 {formatLocationString(service.service_area)}</span>}
@@ -1570,9 +1602,16 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
                     </div>
                   )}
                   {s.description && <p className="mt-1 line-clamp-2 text-xs text-foreground/70">{s.description}</p>}
-                  <div className="mt-1.5 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                     {s.price && <span className="font-medium text-foreground">💰 {s.price}</span>}
                     {s.service_area && <span>📍 {formatLocationString(s.service_area)}</span>}
+                    {(s.instagram_url || s.facebook_url || s.youtube_url) && (
+                      <span className="flex items-center gap-1">
+                        {s.instagram_url && <Instagram className="h-3 w-3 text-accent" />}
+                        {s.facebook_url && <Facebook className="h-3 w-3 text-accent" />}
+                        {s.youtube_url && <Youtube className="h-3 w-3 text-accent" />}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity self-center shrink-0" />

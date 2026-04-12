@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Play } from 'lucide-react';
-import { portfolioFull, isVideoUrl } from '@/lib/imageOptimizer';
+import { portfolioFull, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
 
 interface ImageLightboxProps {
@@ -40,6 +40,18 @@ const LightboxVideo = ({ url, opacity }: { url: string; opacity: number }) => (
     autoPlay
     playsInline
     className="max-h-[90vh] max-w-[95vw] select-none rounded-lg"
+    style={{ transition: 'opacity 150ms ease', opacity }}
+  />
+);
+
+/* ── Lightbox YouTube ── */
+const LightboxYouTube = ({ url, opacity }: { url: string; opacity: number }) => (
+  <iframe
+    src={getYouTubeEmbedUrl(url, true)}
+    title="YouTube video"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowFullScreen
+    className="max-h-[90vh] max-w-[95vw] w-[90vw] aspect-video select-none rounded-lg"
     style={{ transition: 'opacity 150ms ease', opacity }}
   />
 );
@@ -176,6 +188,7 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
   const idx = Math.min(current, images.length - 1);
   const currentUrl = images[idx];
   const isVideo = isVideoUrl(currentUrl);
+  const isYT = isYouTubeUrl(currentUrl);
 
   return (
     <div
@@ -216,7 +229,9 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
         onTouchEnd={onTouchEnd}
         onClick={handleTap}
       >
-        {isVideo ? (
+        {isYT ? (
+          <LightboxYouTube url={currentUrl} opacity={opacity} />
+        ) : isVideo ? (
           <LightboxVideo url={currentUrl} opacity={opacity} />
         ) : (
           <LightboxImage url={currentUrl} idx={idx} opacity={opacity} scale={scale} translate={translate} onError={handleImageError} />

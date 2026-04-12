@@ -55,6 +55,9 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   const [serviceArea, setServiceArea] = useState('');
   const [workingHours, setWorkingHours] = useState(provider?.working_hours || '');
   const [website, setWebsite] = useState(provider?.website || '');
+  const [instagramUrl, setInstagramUrl] = useState('');
+  const [facebookUrl, setFacebookUrl] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
 
   // Outside click for category dropdown
   useEffect(() => {
@@ -99,6 +102,9 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           address,
           working_hours: workingHours,
           website,
+          instagram_url: instagramUrl,
+          facebook_url: facebookUrl,
+          youtube_url: youtubeUrl,
         })
         .select('id')
         .single();
@@ -352,9 +358,34 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">🌐 Site / Rede Social</label>
                   <Input
-                    placeholder="https://instagram.com/sualoja"
+                    placeholder="https://seusite.com.br"
                     value={website}
                     onChange={e => setWebsite(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">📸 Instagram</label>
+                  <Input
+                    placeholder="https://instagram.com/seu_perfil"
+                    value={instagramUrl}
+                    onChange={e => setInstagramUrl(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">📘 Facebook</label>
+                  <Input
+                    placeholder="https://facebook.com/sua_pagina"
+                    value={facebookUrl}
+                    onChange={e => setFacebookUrl(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">🎬 YouTube</label>
+                  <Input
+                    placeholder="https://youtube.com/watch?v=..."
+                    value={youtubeUrl}
+                    onChange={e => setYoutubeUrl(e.target.value)}
                   />
                 </div>
               </>
