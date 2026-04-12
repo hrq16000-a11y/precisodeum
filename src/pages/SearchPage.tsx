@@ -59,7 +59,7 @@ const SearchPage = () => {
   const [sortBy, setSortBy] = useState<SortOption>('relevance');
   const [showFilters, setShowFilters] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [showAllLocations, setShowAllLocations] = useState(false);
+  
   const [showOutOfState, setShowOutOfState] = useState(false);
   const [page, setPage] = useState(1);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
