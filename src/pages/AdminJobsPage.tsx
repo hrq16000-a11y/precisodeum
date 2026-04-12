@@ -136,6 +136,7 @@ const AdminJobsPage = () => {
     toast.success(`IA extraiu ${parsed.detectedFields.length} campos automaticamente!`);
   };
 
+  const bulk = useAdminBulkActions({
     table: 'jobs',
     resourceType: 'job',
     onComplete: () => queryClient.invalidateQueries({ queryKey: ['admin-jobs'] }),
