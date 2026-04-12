@@ -322,7 +322,7 @@ const Header = () => {
         </div>
 
         {/* Mobile right actions */}
-        <div className="flex items-center gap-1.5 md:hidden">
+        <div className="flex items-center gap-1.5 md:hidden min-h-[28px]">
           {isCompact ? (
             <>
               {/* Compact search on mobile */}
