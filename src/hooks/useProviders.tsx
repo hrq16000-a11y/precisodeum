@@ -308,7 +308,7 @@ export function useCategoriesWithCount() {
     queryKey: ['categories-with-count'],
     queryFn: async () => {
       const [catsRes, provsRes] = await Promise.all([
-        supabase.from('categories').select('id, name, slug, icon').order('name'),
+        supabase.from('categories').select('id, name, slug, icon, parent_id').is('deleted_at', null).order('name'),
         supabase.from('providers').select('category_id').eq('status', 'approved'),
       ]);
 
@@ -324,6 +324,7 @@ export function useCategoriesWithCount() {
         name: c.name,
         slug: c.slug,
         icon: c.icon,
+        parent_id: c.parent_id as string | null,
         count: countMap[c.id] || 0,
       }));
     },
