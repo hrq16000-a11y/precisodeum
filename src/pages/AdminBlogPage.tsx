@@ -10,10 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Eye, Rss, Loader2, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Rss, Loader2, Search, AlertTriangle, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import ImageUploadField from '@/components/ImageUploadField';
@@ -30,6 +31,7 @@ const autoSlug = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u030
 const AdminBlogPage = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
+  const blogEnabled = useFeatureEnabled('module_blog');
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -130,6 +132,18 @@ const AdminBlogPage = () => {
 
   return (
     <AdminLayout>
+      {!blogEnabled && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Módulo Blog desabilitado</p>
+            <p className="text-xs text-amber-700 dark:text-amber-300">O blog está invisível para os visitantes. Você pode habilitá-lo em Módulos do Sistema.</p>
+          </div>
+          <Button variant="outline" size="sm" className="shrink-0 gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-100" onClick={() => navigate('/admin/modulos')}>
+            <ToggleRight className="h-4 w-4" /> Habilitar
+          </Button>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Blog / Notícias</h1>
