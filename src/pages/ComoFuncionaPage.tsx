@@ -6,6 +6,7 @@ import {
   BadgeCheck, Star, MapPin, MessageCircle, HeadphonesIcon, Ban,
   ChevronDown, Sparkles, Heart
 } from 'lucide-react';
+import OurStoryBanner from '@/components/OurStoryBanner';
 import { Button } from '@/components/ui/button';
 import FadeInSection from '@/components/FadeInSection';
 import Header from '@/components/Header';
@@ -223,6 +224,9 @@ const ComoFuncionaPage = () => {
           </div>
         </div>
       </section>
+
+      {/* ═══ NOSSA HISTÓRIA ═══ */}
+      <OurStoryBanner variant="full" />
 
       {/* ═══ CTA FINAL ═══ */}
       <section className="py-16">

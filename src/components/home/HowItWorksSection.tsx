@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 import FadeInSection from '@/components/FadeInSection';
 import ParallaxSection from '@/components/ParallaxSection';
+import OurStoryBanner from '@/components/OurStoryBanner';
 
 const HowItWorksSection = () => {
   const { data: steps = [] } = useQuery({
@@ -83,6 +84,10 @@ const HowItWorksSection = () => {
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">{item.description}</p>
             </FadeInSection>
           ))}
+        </div>
+
+        <div className="mt-12">
+          <OurStoryBanner variant="compact" />
         </div>
       </div>
     </ParallaxSection>
