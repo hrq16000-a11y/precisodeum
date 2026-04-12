@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
@@ -127,8 +127,70 @@ const AdminMenuPage = () => {
     }
   };
 
+  const [dragItemId, setDragItemId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [dragLocation, setDragLocation] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, item: any) => {
+    setDragItemId(item.id);
+    setDragLocation(item.menu_location);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, item: any) => {
+    e.preventDefault();
+    if (item.menu_location !== dragLocation) return;
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverId(item.id);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetItem: any) => {
+    e.preventDefault();
+    setDragOverId(null);
+    setDragItemId(null);
+    setDragLocation(null);
+    if (!dragItemId || dragItemId === targetItem.id) return;
+    if (targetItem.menu_location !== dragLocation) return;
+
+    const locationItems = items
+      .filter(i => i.menu_location === targetItem.menu_location)
+      .sort((a, b) => a.display_order - b.display_order);
+
+    const fromIdx = locationItems.findIndex(i => i.id === dragItemId);
+    const toIdx = locationItems.findIndex(i => i.id === targetItem.id);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    const reordered = [...locationItems];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+
+    const updates = reordered.map((item, idx) =>
+      supabase.from('menu_items').update({ display_order: idx } as any).eq('id', item.id)
+    );
+    await Promise.all(updates);
+    toast.success('Ordem atualizada!');
+    fetchItems();
+  };
+
+  const handleDragEnd = () => {
+    setDragItemId(null);
+    setDragOverId(null);
+    setDragLocation(null);
+  };
+
   const moveItem = async (item: any, direction: number) => {
-    await supabase.from('menu_items').update({ display_order: item.display_order + direction } as any).eq('id', item.id);
+    const locationItems = items
+      .filter(i => i.menu_location === item.menu_location)
+      .sort((a, b) => a.display_order - b.display_order);
+    const idx = locationItems.findIndex(i => i.id === item.id);
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= locationItems.length) return;
+
+    const updates = [
+      supabase.from('menu_items').update({ display_order: locationItems[targetIdx].display_order } as any).eq('id', item.id),
+      supabase.from('menu_items').update({ display_order: item.display_order } as any).eq('id', locationItems[targetIdx].id),
+    ];
+    await Promise.all(updates);
     fetchItems();
   };
 
@@ -167,13 +229,18 @@ const AdminMenuPage = () => {
             <div key={group.value}>
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">{group.label}</h2>
               <div className="space-y-1">
-                {group.items.map(item => (
-                  <Card key={item.id} className={!item.active ? 'opacity-50' : ''}>
+                {group.items.map((item, idx) => (
+                  <Card
+                    key={item.id}
+                    draggable
+                    onDragStart={e => handleDragStart(e, item)}
+                    onDragOver={e => handleDragOver(e, item)}
+                    onDrop={e => handleDrop(e, item)}
+                    onDragEnd={handleDragEnd}
+                    className={`transition-all cursor-grab active:cursor-grabbing ${!item.active ? 'opacity-50' : ''} ${dragOverId === item.id ? 'ring-2 ring-primary/50 scale-[1.01]' : ''} ${dragItemId === item.id ? 'opacity-40' : ''}`}
+                  >
                     <CardContent className="flex items-center gap-3 py-2 px-4">
-                      <div className="flex flex-col gap-0.5">
-                        <button onClick={() => moveItem(item, -1)} className="text-muted-foreground hover:text-foreground"><GripVertical className="h-3 w-3 rotate-180" /></button>
-                        <button onClick={() => moveItem(item, 1)} className="text-muted-foreground hover:text-foreground"><GripVertical className="h-3 w-3" /></button>
-                      </div>
+                      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           {item.icon && <CategoryIcon icon={item.icon} size={16} className="text-muted-foreground" />}
@@ -184,6 +251,12 @@ const AdminMenuPage = () => {
                         <p className="text-xs text-muted-foreground truncate">{item.url}</p>
                       </div>
                       <div className="flex items-center gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => moveItem(item, -1)} disabled={idx === 0} className="h-7 w-7">
+                          <span className="text-xs">↑</span>
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => moveItem(item, 1)} disabled={idx === group.items.length - 1} className="h-7 w-7">
+                          <span className="text-xs">↓</span>
+                        </Button>
                         <Switch checked={item.active} onCheckedChange={() => handleToggle(item)} />
                         <Button size="sm" variant="ghost" onClick={() => openEdit(item)}>Editar</Button>
                         <Button size="icon" variant="ghost" onClick={() => handleDelete(item)} className="text-destructive">
