@@ -1,41 +1,53 @@
 
 
-# Respeitar Flag `module_blog` em Toda a Plataforma
+# Corrigir Aprovação Automática de Prestadores
 
 ## Problema
-O blog pode ser desativado no painel administrativo (`module_blog = false`), mas ele continua aparecendo no menu do Header, Footer, EmptyStateFallback e nas ações rápidas do admin.
+Dois problemas encontrados:
+
+1. **Trigger inexistente**: Não existe nenhum trigger na tabela `providers`. O trigger `auto_approve_provider_trigger` nunca foi criado no banco de dados real.
+2. **Tabela errada**: A função `auto_approve_provider()` consulta a tabela `governance_rules`, mas a configuração está salva na tabela `site_settings` (onde `auto_approve_providers = 'true'`).
 
 ## Solução
-Consultar a flag `module_blog` via `useFeatureEnabled('module_blog')` ou `useSiteSettings()` em todos os pontos onde o blog aparece, e ocultar os links/seções quando desativado.
+Criar uma migração SQL que:
 
-## Alterações
+1. **Corrige a função** `auto_approve_provider()` para consultar `site_settings` em vez de `governance_rules`
+2. **Recria o trigger** `auto_approve_provider_trigger` na tabela `providers` (BEFORE INSERT)
+3. Mantém as validações de cidade/estado já existentes
 
-| Arquivo | O que muda |
-|---------|-----------|
-| `src/components/Header.tsx` | Filtrar links de fallback que apontam para `/blog` quando `module_blog` está desativado |
-| `src/components/Footer.tsx` | Filtrar fallback "Notícias" (`/blog`) quando `module_blog` está desativado |
-| `src/components/EmptyStateFallback.tsx` | Ocultar botão "Notícias" (`/blog`) quando `module_blog` está desativado |
-| `src/components/admin/AdminQuickActions.tsx` | Ocultar ação "Novo Post" (`/admin/blog`) quando `module_blog` está desativado |
-| `src/pages/BlogPage.tsx` | Redirecionar para home se blog desativado |
-| `src/pages/BlogPostPage.tsx` | Redirecionar para home se blog desativado |
+## Migração SQL
 
-## Lógica
-Cada componente importa `useFeatureEnabled` e filtra condicionalmente:
+```sql
+CREATE OR REPLACE FUNCTION public.auto_approve_provider()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  should_auto boolean;
+BEGIN
+  SELECT (value = 'true') INTO should_auto
+  FROM public.site_settings
+  WHERE key = 'auto_approve_providers'
+  LIMIT 1;
 
-```typescript
-import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+  IF should_auto IS TRUE
+     AND NEW.status = 'pending'
+     AND COALESCE(NEW.city, '') <> ''
+     AND NEW.city <> 'Não informada'
+     AND COALESCE(NEW.state, '') <> ''
+  THEN
+    NEW.status := 'approved';
+  END IF;
 
-const blogEnabled = useFeatureEnabled('module_blog');
+  RETURN NEW;
+END;
+$$;
 
-// Filtrar arrays de links
-const links = allLinks.filter(l => blogEnabled || !l.url.includes('/blog'));
-
-// Ou condição direta
-{blogEnabled && <BlogButton />}
+CREATE OR REPLACE TRIGGER auto_approve_provider_trigger
+  BEFORE INSERT ON public.providers
+  FOR EACH ROW EXECUTE FUNCTION public.auto_approve_provider();
 ```
 
 ## Resultado
-- Blog desativado no painel → desaparece de menus, footer, fallbacks e ações rápidas
-- Blog ativado → tudo funciona normalmente
-- Rotas públicas `/blog` redirecionam para home quando desativado
+- Toggle no painel admin (`site_settings.auto_approve_providers`) passa a funcionar
+- Novos prestadores com cidade/estado preenchidos são aprovados automaticamente
+- Nenhuma alteração de código frontend necessária
 
