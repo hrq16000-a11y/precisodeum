@@ -591,12 +591,14 @@ export function filterAndRankProvidersGrouped(
     return b.p.rating - a.p.rating;
   });
 
-  // Sort other by score
+  // Sort other by distance first when available, then by score
   otherArr.sort((a, b) => {
-    if (a.scored.finalScore !== b.scored.finalScore) return b.scored.finalScore - a.scored.finalScore;
-    const aS = (a.p as any)._finalScore || 0;
-    const bS = (b.p as any)._finalScore || 0;
-    if (aS !== bS) return bS - aS;
+    if (a.distanceKm !== Infinity && b.distanceKm !== Infinity) {
+      const distDiff = a.distanceKm - b.distanceKm;
+      if (Math.abs(distDiff) > 1) return distDiff;
+    }
+    if (a.distanceKm === Infinity && b.distanceKm !== Infinity) return 1;
+    if (b.distanceKm === Infinity && a.distanceKm !== Infinity) return -1;
     return b.p.rating - a.p.rating;
   });
 
@@ -604,8 +606,19 @@ export function filterAndRankProvidersGrouped(
 
   SearchIntelligence.trackFinalScore(query, intent, localArr.length + otherArr.length);
 
+  // In fallback, combine and re-sort by distance
+  const fallbackArr = isFallback ? [...localArr, ...otherArr].sort((a, b) => {
+    if (a.distanceKm !== Infinity && b.distanceKm !== Infinity) {
+      const distDiff = a.distanceKm - b.distanceKm;
+      if (Math.abs(distDiff) > 1) return distDiff;
+    }
+    if (a.distanceKm === Infinity && b.distanceKm !== Infinity) return 1;
+    if (b.distanceKm === Infinity && a.distanceKm !== Infinity) return -1;
+    return b.p.rating - a.p.rating;
+  }) : localArr;
+
   return {
-    local: (isFallback ? [...localArr, ...otherArr] : localArr).map(e => ({
+    local: fallbackArr.map(e => ({
       ...e.p,
       distanceKm: e.distanceKm !== Infinity ? Math.round(e.distanceKm * 10) / 10 : undefined,
     })),

@@ -67,33 +67,48 @@ const CategoryPage = () => {
     const stateNorm = geoState ? normalizeCityName(geoState) : undefined;
 
     const local: (DbProvider & { _dist?: number })[] = [];
-    const other: DbProvider[] = [];
+    const other: (DbProvider & { _dist?: number })[] = [];
     allProviders.forEach((p) => {
+      let dist: number | undefined;
+      if (userLat != null && userLon != null && p.latitude != null && p.longitude != null) {
+        dist = Math.round(haversine(userLat, userLon, p.latitude, p.longitude) * 10) / 10;
+      }
       if (matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon, radiusKm)) {
-        let dist: number | undefined;
-        if (userLat != null && userLon != null && p.latitude != null && p.longitude != null) {
-          dist = Math.round(haversine(userLat, userLon, p.latitude, p.longitude) * 10) / 10;
-        }
         local.push({ ...p, distanceKm: dist, _dist: dist });
       } else {
-        other.push(p);
+        other.push({ ...p, distanceKm: dist, _dist: dist });
       }
     });
 
-    // Sort local by real distance when possible
+    // Sort by real distance when possible
+    const distSort = (a: { _dist?: number }, b: { _dist?: number }) => {
+      const distA = a._dist ?? Infinity;
+      const distB = b._dist ?? Infinity;
+      if (distA !== Infinity && distB !== Infinity) return distA - distB;
+      if (distA === Infinity && distB !== Infinity) return 1;
+      if (distB === Infinity && distA !== Infinity) return -1;
+      return 0;
+    };
+
     if (userLat != null && userLon != null) {
-      local.sort((a, b) => {
-        const distA = a._dist ?? Infinity;
-        const distB = b._dist ?? Infinity;
-        return distA - distB;
-      });
+      local.sort(distSort);
+      other.sort(distSort);
     }
 
     if (local.length > 0) {
-      return { localProviders: local as DbProvider[], otherProviders: other, isFallback: false, expansionLevel: null };
+      return { localProviders: local as DbProvider[], otherProviders: other as DbProvider[], isFallback: false, expansionLevel: null };
     }
 
-    return { localProviders: allProviders, otherProviders: [] as DbProvider[], isFallback: true, expansionLevel: 'all' as const };
+    // Fallback: show all sorted by distance
+    const allSorted = [...allProviders].map(p => {
+      let dist: number | undefined;
+      if (userLat != null && userLon != null && p.latitude != null && p.longitude != null) {
+        dist = Math.round(haversine(userLat, userLon, p.latitude, p.longitude) * 10) / 10;
+      }
+      return { ...p, distanceKm: dist, _dist: dist };
+    });
+    if (userLat != null && userLon != null) allSorted.sort(distSort);
+    return { localProviders: allSorted as DbProvider[], otherProviders: [] as DbProvider[], isFallback: true, expansionLevel: 'all' as const };
   }, [allProviders, geoCity, geoState, userLat, userLon, radiusKm]);
 
   const nearestDistanceKm = localProviders.length > 0 ? (localProviders[0] as any)._dist : undefined;
