@@ -1,8 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check, X, Eye, Search, MapPin, Edit2, MoreHorizontal, ExternalLink, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, X, Eye, Search, MapPin, Edit2, MoreHorizontal, ExternalLink, Download, ChevronDown, ChevronUp, CheckCheck, XCircle, ToggleRight } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -49,6 +51,73 @@ const AdminProvidersPage = () => {
   const [rules, setRules] = useState(defaultRules);
   const [allProviders, setAllProviders] = useState<any[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [autoApprove, setAutoApprove] = useState(false);
+  const [autoApproveLoading, setAutoApproveLoading] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+
+  // Fetch auto-approve setting
+  const fetchAutoApprove = useCallback(async () => {
+    const { data } = await supabase
+      .from('site_settings' as any)
+      .select('value')
+      .eq('key', 'auto_approve_providers')
+      .maybeSingle();
+    setAutoApprove((data as any)?.value === 'true');
+  }, []);
+
+  const toggleAutoApprove = useCallback(async (checked: boolean) => {
+    setAutoApproveLoading(true);
+    const { error } = await supabase
+      .from('site_settings' as any)
+      .update({ value: checked ? 'true' : 'false' } as any)
+      .eq('key', 'auto_approve_providers');
+    if (error) {
+      toast.error('Erro ao atualizar configuração');
+    } else {
+      setAutoApprove(checked);
+      toast.success(checked ? 'Aprovação automática ativada' : 'Aprovação automática desativada');
+      await logAuditAction({ action: 'update', resource_type: 'site_settings', resource_id: 'auto_approve_providers', details: { value: checked } });
+    }
+    setAutoApproveLoading(false);
+  }, []);
+
+  const approveAllPending = useCallback(async () => {
+    setBulkActionLoading(true);
+    const pendingIds = allProviders
+      .filter(p => p.status === 'pending' && p.city && p.city !== 'Não informada' && p.state)
+      .map(p => p.id);
+    if (pendingIds.length === 0) {
+      toast.info('Nenhum prestador pendente qualificado');
+      setBulkActionLoading(false);
+      return;
+    }
+    const { error } = await supabase.from('providers').update({ status: 'approved' }).in('id', pendingIds);
+    if (error) { toast.error(error.message); }
+    else {
+      toast.success(`${pendingIds.length} prestador(es) aprovado(s)!`);
+      await logAuditAction({ action: 'bulk_active', resource_type: 'provider', details: { ids: pendingIds, count: pendingIds.length } });
+      fetchProviders();
+    }
+    setBulkActionLoading(false);
+  }, [allProviders]);
+
+  const rejectAllPending = useCallback(async () => {
+    setBulkActionLoading(true);
+    const pendingIds = allProviders.filter(p => p.status === 'pending').map(p => p.id);
+    if (pendingIds.length === 0) {
+      toast.info('Nenhum prestador pendente');
+      setBulkActionLoading(false);
+      return;
+    }
+    const { error } = await supabase.from('providers').update({ status: 'rejected' }).in('id', pendingIds);
+    if (error) { toast.error(error.message); }
+    else {
+      toast.success(`${pendingIds.length} prestador(es) rejeitado(s)`);
+      await logAuditAction({ action: 'bulk_inactive', resource_type: 'provider', details: { ids: pendingIds, count: pendingIds.length } });
+      fetchProviders();
+    }
+    setBulkActionLoading(false);
+  }, [allProviders]);
 
   const fetchRules = async () => {
     const { data } = await supabase.from('site_settings').select('key, value')
@@ -92,7 +161,7 @@ const AdminProvidersPage = () => {
     })));
   };
 
-  useEffect(() => { if (isAdmin) { fetchProviders(); fetchRules(); } }, [isAdmin]);
+  useEffect(() => { if (isAdmin) { fetchProviders(); fetchRules(); fetchAutoApprove(); } }, [isAdmin]);
 
   const bulk = useAdminBulkActions({
     table: 'providers',
@@ -266,7 +335,60 @@ const AdminProvidersPage = () => {
         </div>
       </div>
 
-      {/* Bulk Actions */}
+      {/* Auto-approve toggle + Bulk actions */}
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+            <ToggleRight className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-foreground">Aprovação automática</span>
+            <Switch checked={autoApprove} onCheckedChange={toggleAutoApprove} disabled={autoApproveLoading} />
+          </div>
+        </div>
+        {stats.pending > 0 && (
+          <div className="flex gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="text-emerald-600 border-emerald-200" disabled={bulkActionLoading}>
+                  <CheckCheck className="mr-1.5 h-4 w-4" /> Aprovar Todos ({stats.pending})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Aprovar todos os pendentes?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Isso aprovará {allProviders.filter(p => p.status === 'pending' && p.city && p.city !== 'Não informada' && p.state).length} prestador(es) pendentes com cidade/estado preenchidos. Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={approveAllPending} className="bg-emerald-600 hover:bg-emerald-700">Aprovar Todos</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="text-destructive border-destructive/30" disabled={bulkActionLoading}>
+                  <XCircle className="mr-1.5 h-4 w-4" /> Rejeitar Todos ({stats.pending})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Rejeitar todos os pendentes?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Isso rejeitará {stats.pending} prestador(es) pendentes. Esta ação não pode ser desfeita facilmente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={rejectAllPending} className="bg-destructive hover:bg-destructive/90">Rejeitar Todos</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
+      </div>
+
+      {/* Bulk Actions (selection-based) */}
       {bulk.hasSelection && (
         <div className="mt-3">
           <BulkActionsBar count={bulk.selectionCount} onClear={bulk.clearSelection} onDelete={bulk.bulkSoftDelete} onExport={() => bulk.exportSelected(filtered, 'prestadores')} loading={bulk.bulkLoading}>
