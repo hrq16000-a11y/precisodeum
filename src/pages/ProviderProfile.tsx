@@ -413,14 +413,14 @@ const ProviderProfile = () => {
           // Flatten all photos for lightbox compatibility
           const allPhotos = preparedAlbums.flatMap(a => a.photos);
           preparedPortfolioRawUrls = allPhotos.map(p => p.image_url);
-          preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
+          preparedPortfolioImages = preparedPortfolioRawUrls.map(u => isVideoUrl(u) ? u : portfolioThumb(u));
         } else {
           // Fallback: legacy flat storage for old profiles
           const { data: files } = await supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 });
           if (files) {
             const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
             preparedPortfolioRawUrls = filtered.map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl);
-            preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
+            preparedPortfolioImages = preparedPortfolioRawUrls.map(u => isVideoUrl(u) ? u : portfolioThumb(u));
           }
         }
 
