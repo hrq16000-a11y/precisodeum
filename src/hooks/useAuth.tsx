@@ -66,6 +66,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (providerRows && providerRows.length > 0) {
       const best = providerRows.find(p => p.city && p.description) || providerRows[0];
       setProvider(best);
+
+      // Auto-geocode providers missing coordinates on login
+      for (const prov of providerRows) {
+        if (prov.city && prov.city !== 'Não informada' && prov.state && (prov.latitude == null || prov.longitude == null)) {
+          geocodeCity(prov.city, prov.state).then(({ latitude, longitude }) => {
+            if (latitude != null && longitude != null) {
+              supabase.from('providers').update({ latitude, longitude }).eq('id', prov.id).then(() => {
+                if (prov.id === best.id) {
+                  setProvider(prev => prev ? { ...prev, latitude, longitude } : prev);
+                }
+              });
+            }
+          }).catch(() => {});
+        }
+      }
     } else {
       setProvider(null);
     }
