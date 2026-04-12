@@ -130,6 +130,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 {provider.distanceKm != null && (
                   <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
                     📍 {provider.distanceKm < 1 ? '< 1' : provider.distanceKm.toFixed(1)} km
+                    <span className="opacity-70">· ~{provider.distanceKm < 2 ? '< 5' : Math.ceil(provider.distanceKm * 60 / 25)} min</span>
                   </span>
                 )}
               </div>
@@ -157,6 +158,20 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               {isOnline && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
                   <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online
+                </span>
+              )}
+              {provider.distanceKm != null && provider.distanceKm < 2 && (
+                <motion.span
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 px-2 py-0.5 text-[11px] font-bold text-accent border border-accent/30"
+                >
+                  ⚡ Super Perto!
+                </motion.span>
+              )}
+              {provider.distanceKm != null && provider.distanceKm >= 2 && provider.distanceKm < 5 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
+                  ⚡ Atendimento Rápido
                 </span>
               )}
             </div>

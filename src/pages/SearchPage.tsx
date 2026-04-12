@@ -21,11 +21,13 @@ import { useSearchProvidersGrouped, useCategories, useSearchSuggestions, useGeoC
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation } from 'lucide-react';
+import RouteSearchModal, { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchModal';
+import { calculateDistanceKm } from '@/lib/geoDistance';
 
 const ITEMS_PER_PAGE = 12;
 
-type SortOption = 'relevance' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
+type SortOption = 'relevance' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
 
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -45,6 +47,8 @@ const SearchPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showAllLocations, setShowAllLocations] = useState(false);
   const [page, setPage] = useState(1);
+  const [routeModalOpen, setRouteModalOpen] = useState(false);
+  const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
 
   const effectiveCity = selectedCity || cityParam || geoCity || '';
@@ -92,7 +96,9 @@ const SearchPage = () => {
     else if (featuredFilter === 'normal') results = results.filter(p => !p.featured);
 
     // Sort within group — never mix local/other ordering
-    if (sortBy !== 'relevance') {
+    if (sortBy === 'nearest') {
+      results.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
+    } else if (sortBy !== 'relevance') {
       const sortFn = (a: DbProvider, b: DbProvider) => {
         switch (sortBy) {
           case 'rating': return b.rating - a.rating;
@@ -105,8 +111,23 @@ const SearchPage = () => {
       };
       results.sort(sortFn);
     }
+
+    // Route corridor filter
+    if (routeCorridor) {
+      results = results.filter(p => {
+        if (p.latitude == null || p.longitude == null) return false;
+        return isInsideCorridor(p.latitude, p.longitude, routeCorridor);
+      });
+      // Sort by distance to midpoint
+      results.sort((a, b) => {
+        const dA = calculateDistanceKm({ latitude: routeCorridor.midLat, longitude: routeCorridor.midLon }, { latitude: a.latitude!, longitude: a.longitude! });
+        const dB = calculateDistanceKm({ latitude: routeCorridor.midLat, longitude: routeCorridor.midLon }, { latitude: b.latitude!, longitude: b.longitude! });
+        return dA - dB;
+      });
+    }
+
     return results;
-  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy]);
+  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor]);
 
   const filteredLocal = useMemo(() => applyClientFilters(localProviders), [applyClientFilters, localProviders]);
   const filteredOther = useMemo(() => applyClientFilters(otherProviders), [applyClientFilters, otherProviders]);
@@ -338,6 +359,7 @@ const SearchPage = () => {
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="relevance">Relevância</SelectItem>
+                      <SelectItem value="nearest">📍 Mais Perto</SelectItem>
                       <SelectItem value="rating">Melhor avaliação</SelectItem>
                       <SelectItem value="reviews">Mais avaliações</SelectItem>
                       <SelectItem value="experience">Mais experiência</SelectItem>
@@ -345,6 +367,20 @@ const SearchPage = () => {
                       <SelectItem value="name_desc">Nome Z–A</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+                {/* Route search */}
+                <div className="pt-2 border-t border-border">
+                  <Button
+                    variant={routeCorridor ? 'accent' : 'outline'}
+                    size="sm"
+                    className="w-full text-xs gap-1.5"
+                    onClick={() => routeCorridor ? setRouteCorridor(null) : setRouteModalOpen(true)}
+                  >
+                    <Navigation className="h-3.5 w-3.5" />
+                    {routeCorridor ? 'Limpar rota Casa→Trabalho' : 'Buscar no caminho Casa→Trabalho'}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -573,6 +609,7 @@ const SearchPage = () => {
         </div>
       </div>
       <Footer />
+      <RouteSearchModal open={routeModalOpen} onOpenChange={setRouteModalOpen} onRouteReady={setRouteCorridor} />
     </div>
   );
 };
