@@ -101,7 +101,7 @@ const TopBannerCarousel = ({ sponsors }: { sponsors: SponsorFull[] }) => {
   );
 };
 
-
+const CourseDetailPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
 
   const { data: course, isLoading } = useQuery({
