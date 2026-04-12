@@ -56,6 +56,7 @@ const parseSeoSlug = async (slug: string) => {
 const SeoPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const [page, setPage] = useState(1);
+  const { latitude: userLat, longitude: userLon } = useGeoCity();
 
   const { data, isLoading } = useQuery({
     queryKey: ['seo-page', slug],
