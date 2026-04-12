@@ -31,6 +31,7 @@ const autoSlug = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u030
 const AdminBlogPage = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
+  const blogEnabled = useFeatureEnabled('module_blog');
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
