@@ -250,15 +250,42 @@ const AdminSponsorsPage = () => {
     const items: { type: string; msg: string; id: string; title: string }[] = [];
     const now = new Date();
     sponsors.forEach(s => {
+      const m30 = metricsMap.get(s.id);
       if (s.end_date) {
         const diff = differenceInDays(new Date(s.end_date), now);
         if (diff < 0) items.push({ type: 'expired', msg: `Expirado há ${Math.abs(diff)}d`, id: s.id, title: s.title });
         else if (diff <= 7) items.push({ type: 'expiring', msg: `Expira em ${diff}d`, id: s.id, title: s.title });
       }
       if (!s.active) items.push({ type: 'inactive', msg: 'Inativo', id: s.id, title: s.title });
+      // Low CTR alert
+      if (s.active && s.impressions > 500 && (s.clicks / s.impressions) * 100 < 0.3) {
+        items.push({ type: 'low_ctr', msg: `CTR ${((s.clicks / s.impressions) * 100).toFixed(2)}%`, id: s.id, title: s.title });
+      }
+      // No banner
+      if (s.active && !s.image_url) {
+        items.push({ type: 'no_banner', msg: 'Sem banner', id: s.id, title: s.title });
+      }
+      // Guaranteed impressions behind pace
+      const guaranteed = (s as any).guaranteed_impressions || 0;
+      const delivered = (s as any).delivered_impressions || 0;
+      if (s.active && guaranteed > 0 && s.start_date && s.end_date) {
+        const totalDays = differenceInDays(new Date(s.end_date), new Date(s.start_date));
+        const elapsed = differenceInDays(now, new Date(s.start_date));
+        if (totalDays > 0 && elapsed > 0) {
+          const expectedPct = (elapsed / totalDays) * 100;
+          const actualPct = (delivered / guaranteed) * 100;
+          if (actualPct < expectedPct * 0.7) {
+            items.push({ type: 'pacing', msg: `Pacing: ${actualPct.toFixed(0)}% vs ${expectedPct.toFixed(0)}% esperado`, id: s.id, title: s.title });
+          }
+        }
+      }
+      // No link
+      if (s.active && !s.link_url) {
+        items.push({ type: 'no_link', msg: 'Sem link', id: s.id, title: s.title });
+      }
     });
     return items;
-  }, [sponsors]);
+  }, [sponsors, metricsMap]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
