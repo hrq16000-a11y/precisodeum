@@ -511,12 +511,22 @@ const SearchPage = () => {
                 {query && <> para "<span className="font-semibold text-foreground">{query}</span>"</>}
                 {effectiveCity && <> em <span className="font-semibold text-foreground">{effectiveCity}</span></>}
               </p>
-              {!isFallback && filteredLocal.length > 0 && effectiveCity && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-medium text-primary">
-                  <MapPin className="h-3 w-3" />
-                  {filteredLocal.length} na sua região
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {!isFallback && filteredLocal.length > 0 && effectiveCity && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-medium text-primary">
+                    <MapPin className="h-3 w-3" />
+                    {filteredLocal.length} na sua região
+                  </span>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={() => setViewMode(v => v === 'list' ? 'map' : 'list')}
+                >
+                  {viewMode === 'list' ? <><MapIcon className="h-3.5 w-3.5" /> Mapa</> : <><List className="h-3.5 w-3.5" /> Lista</>}
+                </Button>
+              </div>
             </div>
 
             {isFallback && effectiveCity && (
