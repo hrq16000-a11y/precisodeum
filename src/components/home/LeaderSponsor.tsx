@@ -2,6 +2,7 @@ import { useEffect, useState, memo, useCallback, useRef, forwardRef } from 'reac
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink } from 'lucide-react';
 import { handleImageError } from '@/lib/imageResolver';
+import { optimizedImageUrl } from '@/lib/imageOptimizer';
 
 interface LeaderSponsorData {
   id: string;
@@ -56,7 +57,8 @@ const LeaderSponsor = memo(forwardRef<HTMLElement, Props>(({ sponsors, onClickTr
   if (!current) return null;
 
   const displayName = current.company_name || current.title;
-  const imageSrc = current.image_url || current.logo_url;
+  const rawSrc = current.image_url || current.logo_url;
+  const imageSrc = optimizedImageUrl(rawSrc, { width: 800, quality: 70, resize: 'contain' });
 
   return (
     <motion.section
