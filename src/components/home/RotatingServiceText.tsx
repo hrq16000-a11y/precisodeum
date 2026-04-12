@@ -70,7 +70,7 @@ const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
   }, [shuffled, onServiceChange]);
 
   useEffect(() => {
-    const id = setInterval(rotate, 2500);
+    const id = setInterval(rotate, 4000);
     return () => {
       clearInterval(id);
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -101,11 +101,9 @@ const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
         />
       </span>
 
-      {/* Hidden SEO block with all services */}
+      {/* Hidden SEO block — single string to reduce DOM nodes */}
       <span className="sr-only" aria-hidden="false">
-        {serviceList.map((s) => (
-          <span key={s}>{s}, </span>
-        ))}
+        {serviceList.join(', ')}
       </span>
     </>
   );

@@ -69,7 +69,7 @@ export function useTypingPlaceholder(city: string | null, enabled = true) {
           }, 1800);
           return;
         }
-        frameId = setTimeout(tick, 55 + Math.random() * 35);
+        frameId = setTimeout(tick, 70 + Math.random() * 30);
       } else {
         charIdx--;
         setPlaceholder(full.slice(0, charIdx));
@@ -85,7 +85,7 @@ export function useTypingPlaceholder(city: string | null, enabled = true) {
       }
     };
 
-    frameId = setTimeout(tick, 600);
+    frameId = setTimeout(tick, 1200);
 
     return () => {
       if (frameId) clearTimeout(frameId);
