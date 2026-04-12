@@ -672,33 +672,8 @@ const SearchPage = () => {
                   </>
                 )}
 
-                {/* Button to show other regions */}
-                {!showAllLocations && filteredOther.length > 0 && !isFallback && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-8 sm:mt-10 flex justify-center"
-                  >
-                    <button
-                      onClick={() => { setShowAllLocations(true); setPage(1); }}
-                      className="group relative inline-flex items-center gap-2 sm:gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-4 py-3 sm:px-6 sm:py-4 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      <span className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
-                        <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
-                      </span>
-                      <span className="text-left">
-                        <span className="block text-xs sm:text-sm font-semibold">Ver outras localidades</span>
-                        <span className="block text-[11px] sm:text-xs text-muted-foreground">
-                          +{filteredOther.length} profissional{filteredOther.length !== 1 ? 'is' : ''} em todo o Brasil
-                        </span>
-                      </span>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                    </button>
-                  </motion.div>
-                )}
-
-                {/* Other regions grid — completely separate */}
-                {showAllLocations && paginatedOther.length > 0 && (
+                {/* Nearby cities section (same state / <100km) */}
+                {paginatedNearby.length > 0 && (
                   <>
                     <motion.div
                       initial={{ opacity: 0 }}
@@ -707,8 +682,8 @@ const SearchPage = () => {
                     >
                       <div className="h-px flex-1 bg-border" />
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                        <Globe className="h-3 w-3" />
-                        Outras regiões ({filteredOther.length})
+                        <Building2 className="h-3 w-3" />
+                        Cidades próximas ({filteredNearby.length})
                       </span>
                       <div className="h-px flex-1 bg-border" />
                     </motion.div>
@@ -718,7 +693,66 @@ const SearchPage = () => {
                       animate="show"
                       variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
                     >
-                      {paginatedOther.map((p) => (
+                      {paginatedNearby.map((p) => (
+                        <motion.div
+                          key={p.id}
+                          variants={{ hidden: { opacity: 0, y: 16, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1 } }}
+                          transition={{ duration: 0.35 }}
+                          layout
+                        >
+                          <ProviderCard provider={p} isFallback={isFallback} />
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+
+                {/* Out of state — collapsed by default */}
+                {filteredOutOfState.length > 0 && !showOutOfState && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-8 sm:mt-10 flex justify-center"
+                  >
+                    <button
+                      onClick={() => { setShowOutOfState(true); setPage(1); }}
+                      className="group relative inline-flex items-center gap-2 sm:gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-4 py-3 sm:px-6 sm:py-4 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <span className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                        <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </span>
+                      <span className="text-left">
+                        <span className="block text-xs sm:text-sm font-semibold">Profissionais de outro estado ({filteredOutOfState.length})</span>
+                        <span className="block text-[11px] sm:text-xs text-muted-foreground">
+                          Deseja ver? Ver mais...
+                        </span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                    </button>
+                  </motion.div>
+                )}
+
+                {showOutOfState && paginatedOutOfState.length > 0 && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="mt-6 sm:mt-8 mb-3 flex items-center gap-3"
+                    >
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                        <Globe className="h-3 w-3" />
+                        Outro estado ({filteredOutOfState.length})
+                      </span>
+                      <div className="h-px flex-1 bg-border" />
+                    </motion.div>
+                    <motion.div
+                      className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2"
+                      initial="hidden"
+                      animate="show"
+                      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
+                    >
+                      {paginatedOutOfState.map((p) => (
                         <motion.div
                           key={p.id}
                           variants={{ hidden: { opacity: 0, y: 16, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1 } }}
