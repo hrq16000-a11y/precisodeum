@@ -286,6 +286,7 @@ const App = () => {
                 <Route path="/admin/governanca" element={<AdminGovernancePage />} />
                 <Route path="/admin/cursos" element={<AdminCoursesPage />} />
                 <Route path="/cursos" element={<CoursesPage />} />
+                <Route path="/cursos/:courseId" element={<CourseDetailPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
