@@ -3,35 +3,41 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LayoutList, Save, Eye, EyeOff, GripVertical, RotateCcw } from 'lucide-react';
+import {
+  LayoutList, Save, Eye, EyeOff, GripVertical, RotateCcw,
+  AlertTriangle, Megaphone, Sparkles, BarChart3, FolderOpen,
+  Smartphone, Puzzle, Volume2, Star, Flame, Clock,
+  Briefcase, Newspaper, Building2, Rocket, Image, Handshake,
+  ClipboardList, Search, MessageSquare, HelpCircle, type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const DEFAULT_ORDER = 'urgency,sponsor_top,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
 
-const SECTION_LABELS: Record<string, string> = {
-  urgency: '🔴 Banner de Urgência',
-  sponsor_top: '📢 Patrocinador Topo',
-  highlights: '🎠 Destaques Rotativos',
-  stats: '📊 Contador de Estatísticas',
-  categories: '📂 Categorias',
-  pwa: '📱 Instalar App (PWA)',
-  dynamic: '🧩 Blocos Dinâmicos',
-  ad1: '📣 Anúncio (entre seções)',
-  featured: '⭐ Profissionais em Destaque',
-  popular: '🔥 Serviços Populares',
-  recent: '🕐 Serviços Recentes',
-  ad2: '📣 Anúncio (meio)',
-  jobs: '💼 Vagas em Destaque',
-  blog: '📰 Blog / Notícias',
-  cities: '🏙️ Cidades',
-  cta: '🚀 Chamada para Ação (CTA)',
-  showcase: '🖼️ Vitrine de Anúncios',
-  sponsors: '🤝 Patrocinadores',
-  howitworks: '📋 Como Funciona',
-  searches: '🔍 Buscas Populares',
-  testimonials: '💬 Depoimentos',
-  faq: '❓ Perguntas Frequentes',
-  sponsor_cta: '📢 CTA Patrocinador (rodapé)',
+const SECTION_META: Record<string, { label: string; icon: LucideIcon }> = {
+  urgency:      { label: 'Banner de Urgência',           icon: AlertTriangle },
+  sponsor_top:  { label: 'Patrocinador Topo',            icon: Megaphone },
+  highlights:   { label: 'Destaques Rotativos',          icon: Sparkles },
+  stats:        { label: 'Contador de Estatísticas',     icon: BarChart3 },
+  categories:   { label: 'Categorias',                   icon: FolderOpen },
+  pwa:          { label: 'Instalar App (PWA)',           icon: Smartphone },
+  dynamic:      { label: 'Blocos Dinâmicos',             icon: Puzzle },
+  ad1:          { label: 'Anúncio (entre seções)',       icon: Volume2 },
+  featured:     { label: 'Profissionais em Destaque',    icon: Star },
+  popular:      { label: 'Serviços Populares',           icon: Flame },
+  recent:       { label: 'Serviços Recentes',            icon: Clock },
+  ad2:          { label: 'Anúncio (meio)',               icon: Volume2 },
+  jobs:         { label: 'Vagas em Destaque',            icon: Briefcase },
+  blog:         { label: 'Blog / Notícias',              icon: Newspaper },
+  cities:       { label: 'Cidades',                      icon: Building2 },
+  cta:          { label: 'Chamada para Ação (CTA)',      icon: Rocket },
+  showcase:     { label: 'Vitrine de Anúncios',          icon: Image },
+  sponsors:     { label: 'Patrocinadores',               icon: Handshake },
+  howitworks:   { label: 'Como Funciona',                icon: ClipboardList },
+  searches:     { label: 'Buscas Populares',             icon: Search },
+  testimonials: { label: 'Depoimentos',                  icon: MessageSquare },
+  faq:          { label: 'Perguntas Frequentes',         icon: HelpCircle },
+  sponsor_cta:  { label: 'CTA Patrocinador (rodapé)',    icon: Megaphone },
 };
 
 const AdminHomeSectionsPage = () => {
