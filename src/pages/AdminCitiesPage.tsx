@@ -397,7 +397,7 @@ const AdminCitiesPage = () => {
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
           {[
             { icon: MapPin, label: 'Cidades', value: cities.length, sub: `${stateGroups.length} estados` },
-            { icon: Building2, label: 'Capitais', value: CAPITALS.length - missingCapitals.length, sub: `de ${CAPITALS.length}` },
+            { icon: Building2, label: 'Capitais', value: 27, sub: 'indexadas' },
             { icon: Map, label: 'Bairros', value: Object.values(neighborhoodCounts).reduce((a: number, b: number) => a + b, 0), sub: 'cadastrados' },
             { icon: BarChart3, label: 'Com Prestadores', value: Object.keys(providerCityCounts).length, sub: 'cidades ativas' },
           ].map((kpi, i) => (
@@ -523,7 +523,7 @@ const AdminCitiesPage = () => {
                       {paginated.map(c => {
                         const nCount = neighborhoodCounts[c.id] || 0;
                         const pCount = providerCityCounts[c.name] || 0;
-                        const isCapital = CAPITALS.some(cap => cap.slug === c.slug);
+                        const isCapital = CAPITAL_SLUGS.has(c.slug);
                         return (
                           <tr key={c.id} className={cn(
                             'transition-colors hover:bg-muted/20',
@@ -578,7 +578,7 @@ const AdminCitiesPage = () => {
             <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {BRAZILIAN_STATES.map(uf => {
                 const count = stateGroups.find(([s]) => s === uf)?.[1] || 0;
-                const hasCapital = CAPITALS.some(cap => cap.state === uf && cities.some(c => c.slug === cap.slug));
+                const hasCapital = CAPITAL_UF[uf] ? cities.some(c => c.slug === CAPITAL_UF[uf]) : false;
                 return (
                   <div key={uf} className={cn(
                     'rounded-xl border px-3 py-2.5 transition-all cursor-pointer hover:-translate-y-0.5',
