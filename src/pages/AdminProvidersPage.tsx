@@ -51,6 +51,73 @@ const AdminProvidersPage = () => {
   const [rules, setRules] = useState(defaultRules);
   const [allProviders, setAllProviders] = useState<any[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [autoApprove, setAutoApprove] = useState(false);
+  const [autoApproveLoading, setAutoApproveLoading] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+
+  // Fetch auto-approve setting
+  const fetchAutoApprove = useCallback(async () => {
+    const { data } = await supabase
+      .from('site_settings' as any)
+      .select('value')
+      .eq('key', 'auto_approve_providers')
+      .maybeSingle();
+    setAutoApprove((data as any)?.value === 'true');
+  }, []);
+
+  const toggleAutoApprove = useCallback(async (checked: boolean) => {
+    setAutoApproveLoading(true);
+    const { error } = await supabase
+      .from('site_settings' as any)
+      .update({ value: checked ? 'true' : 'false' } as any)
+      .eq('key', 'auto_approve_providers');
+    if (error) {
+      toast.error('Erro ao atualizar configuração');
+    } else {
+      setAutoApprove(checked);
+      toast.success(checked ? 'Aprovação automática ativada' : 'Aprovação automática desativada');
+      await logAuditAction({ action: 'update', resource_type: 'site_settings', resource_id: 'auto_approve_providers', details: { value: checked } });
+    }
+    setAutoApproveLoading(false);
+  }, []);
+
+  const approveAllPending = useCallback(async () => {
+    setBulkActionLoading(true);
+    const pendingIds = allProviders
+      .filter(p => p.status === 'pending' && p.city && p.city !== 'Não informada' && p.state)
+      .map(p => p.id);
+    if (pendingIds.length === 0) {
+      toast.info('Nenhum prestador pendente qualificado');
+      setBulkActionLoading(false);
+      return;
+    }
+    const { error } = await supabase.from('providers').update({ status: 'approved' }).in('id', pendingIds);
+    if (error) { toast.error(error.message); }
+    else {
+      toast.success(`${pendingIds.length} prestador(es) aprovado(s)!`);
+      await logAuditAction({ action: 'bulk_active', resource_type: 'provider', details: { ids: pendingIds, count: pendingIds.length } });
+      fetchProviders();
+    }
+    setBulkActionLoading(false);
+  }, [allProviders]);
+
+  const rejectAllPending = useCallback(async () => {
+    setBulkActionLoading(true);
+    const pendingIds = allProviders.filter(p => p.status === 'pending').map(p => p.id);
+    if (pendingIds.length === 0) {
+      toast.info('Nenhum prestador pendente');
+      setBulkActionLoading(false);
+      return;
+    }
+    const { error } = await supabase.from('providers').update({ status: 'rejected' }).in('id', pendingIds);
+    if (error) { toast.error(error.message); }
+    else {
+      toast.success(`${pendingIds.length} prestador(es) rejeitado(s)`);
+      await logAuditAction({ action: 'bulk_inactive', resource_type: 'provider', details: { ids: pendingIds, count: pendingIds.length } });
+      fetchProviders();
+    }
+    setBulkActionLoading(false);
+  }, [allProviders]);
 
   const fetchRules = async () => {
     const { data } = await supabase.from('site_settings').select('key, value')
