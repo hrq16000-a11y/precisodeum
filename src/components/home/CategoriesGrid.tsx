@@ -58,7 +58,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
   }, [categories.length]);
 
   return (
-    <section className="py-12">
+    <section className="py-8 md:py-12">
       <div className="container">
         <div className="mb-8 text-center animate-fade-in">
           <span className="inline-block rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent mb-2">
@@ -73,14 +73,14 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
         </div>
 
         {isLoading ? (
-          <div className="grid gap-[0.75rem]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}>
+          <div className="grid gap-[0.75rem]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(5rem, 100%), 1fr))' }}>
             {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-28 rounded-2xl" />
+              <Skeleton key={i} className="h-24 sm:h-28 rounded-2xl" />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid gap-[0.75rem]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}>
+            <div className="grid gap-[0.75rem]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(5.5rem, 100%), 1fr))' }}>
               {visible.map((cat, i) => (
                 <div
                   key={cat.id}
@@ -97,8 +97,9 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                     {/* Accent bar top */}
                     <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-accent/0 to-transparent group-hover:via-accent transition-all duration-500" />
 
-                    <span className="relative flex min-h-[3.5rem] min-w-[3.5rem] h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 group-hover:bg-sky-100 transition-all duration-300">
-                      <CategoryIcon icon={cat.icon} size={28} />
+                    <span className="relative flex min-h-[2.5rem] min-w-[2.5rem] h-10 w-10 sm:min-h-[3.5rem] sm:min-w-[3.5rem] sm:h-14 sm:w-14 items-center justify-center rounded-xl sm:rounded-2xl bg-sky-50 group-hover:bg-sky-100 transition-all duration-300">
+                      <CategoryIcon icon={cat.icon} size={22} className="sm:hidden" />
+                      <CategoryIcon icon={cat.icon} size={28} className="hidden sm:block" />
                     </span>
                     <div className="relative w-full">
                       <span className="block text-xs font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words" style={{ hyphens: 'auto' }}>

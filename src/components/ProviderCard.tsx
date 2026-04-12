@@ -23,6 +23,8 @@ interface ProviderCardProps {
   index?: number;
 }
 
+const MAX_BADGES_MOBILE = 3;
+
 const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', index = 0 }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const verifiedEnabled = useFeatureEnabled('verified_badge_enabled');
@@ -34,7 +36,6 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const requireCnpj = useSettingValue('verified_badge_require_cnpj') !== 'false';
   const requireCity = useSettingValue('verified_badge_require_city') !== 'false';
 
-  // DESTAQUE criteria (admin-configurable, replaces plan === 'premium')
   const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
   const destaqueRequirePortfolio = useSettingValue('destaque_require_portfolio') !== 'false';
   const destaqueRequireServices = useSettingValue('destaque_require_services') !== 'false';
@@ -54,12 +55,10 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const locationText = locationParts.join(', ');
 
   const displayName = provider.name || provider.businessName || 'Profissional';
-  // DiceBear avatar instead of initials
   const generatedAvatar = `https://api.dicebear.com/9.x/${avatarFallbackStyle}/svg?seed=${encodeURIComponent(provider.userId || provider.id)}`;
   const hasOwnPhoto = !!(provider.photo || provider.serviceImage);
   const displayPhoto = provider.photo || provider.serviceImage || generatedAvatar;
 
-  // Verified badge — computed from admin-configurable rules
   const isVerified = verifiedEnabled && (
     provider.servicesCount >= minServices &&
     provider.portfolioAlbumCount >= minAlbums &&
@@ -69,6 +68,62 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     (!requireCnpj || !!(provider as any).cnpj) &&
     (!requireCity || !!provider.city)
   );
+
+  // Build badges array for mobile limiting
+  const badges: React.ReactNode[] = [];
+  badges.push(
+    <ProfileBadge key="profile" hasPhoto={hasOwnPhoto} hasServices={(provider.servicesCount || 0) >= 1} size="sm" />
+  );
+  const tier = getRankTier(provider.rating, provider.reviewCount);
+  if (tier) {
+    badges.push(
+      <span key="tier" className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${tier.bg} ${tier.color} border ${tier.border}`}>
+        <Trophy className="h-2.5 w-2.5" /> {tier.label}
+      </span>
+    );
+  }
+  if (provider.distanceKm != null && provider.distanceKm < 2) {
+    badges.push(
+      <motion.span
+        key="super-perto"
+        animate={{ scale: [1, 1.08, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 px-2 py-0.5 text-[11px] font-bold text-accent border border-accent/30"
+      >
+        ⚡ Super Perto!
+      </motion.span>
+    );
+  } else if (provider.distanceKm != null && provider.distanceKm < 5) {
+    badges.push(
+      <span key="rapido" className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
+        ⚡ Atendimento Rápido
+      </span>
+    );
+  }
+  if ((provider as any).response_time) {
+    badges.push(
+      <span key="response" className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
+        <Clock className="h-3 w-3" /> {(provider as any).response_time}
+      </span>
+    );
+  }
+  if (isFallback) {
+    badges.push(
+      <span key="fallback" className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200">
+        <MapPin className="h-3 w-3" /> Outra região
+      </span>
+    );
+  }
+  if (isOnline) {
+    badges.push(
+      <span key="online" className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+        <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online
+      </span>
+    );
+  }
+
+  const visibleBadges = badges.slice(0, MAX_BADGES_MOBILE);
+  const hiddenCount = badges.length - visibleBadges.length;
 
   return (
     <motion.div
@@ -86,9 +141,9 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       {/* Shine sweep */}
       <div className="card-shine-sweep pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent" style={{ left: '-100%', width: '50%' }} />
 
-      <div className="flex flex-1 flex-col p-[1.25rem] relative">
-        <div className="flex gap-4">
-           <Avatar className="h-14 w-14 shrink-0 transition-transform duration-300 group-hover:scale-105 ring-2 ring-transparent group-hover:ring-accent/20">
+      <div className="flex flex-1 flex-col p-3 sm:p-[1.25rem] relative">
+        <div className="flex gap-3 sm:gap-4">
+           <Avatar className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 transition-transform duration-300 group-hover:scale-105 ring-2 ring-transparent group-hover:ring-accent/20">
             <AvatarImage src={displayPhoto || undefined} alt={displayName} loading="lazy" decoding="async" onError={handleImageError} />
             <AvatarFallback className="bg-primary/10 text-2xl">
               {provider.categoryIcon || '🔧'}
@@ -102,7 +157,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               {...handlers}
             >
               <div className="flex items-start justify-between gap-2">
-                <h3 className="line-clamp-2 break-words font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
+                <h3 className="line-clamp-2 break-words font-display text-sm sm:text-base font-bold text-foreground group-hover:text-accent transition-colors">
                   {displayName}
                 </h3>
                 {provider.plan === 'premium' && (
@@ -121,80 +176,55 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               <p className="line-clamp-1 break-words text-xs text-muted-foreground">{provider.businessName}</p>
             )}
             {provider.category && (
-              <p className="mt-0.5 text-sm font-medium text-accent">{provider.category}</p>
+              <p className="mt-0.5 text-xs sm:text-sm font-medium text-accent">{provider.category}</p>
             )}
             {hasLocation && (
               <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
-                {locationText}
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate">{locationText}</span>
                 {provider.distanceKm != null && (
-                  <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                  <span className="ml-1 shrink-0 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
                     📍 {provider.distanceKm < 1 ? '< 1' : provider.distanceKm.toFixed(1)} km
                     <span className="opacity-70">· ~{provider.distanceKm < 2 ? '< 5' : Math.ceil(provider.distanceKm * 60 / 25)} min</span>
                   </span>
                 )}
               </div>
             )}
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <ProfileBadge hasPhoto={hasOwnPhoto} hasServices={(provider.servicesCount || 0) >= 1} size="sm" />
-              {(() => {
-                const tier = getRankTier(provider.rating, provider.reviewCount);
-                return tier ? (
-                  <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${tier.bg} ${tier.color} border ${tier.border}`}>
-                    <Trophy className="h-2.5 w-2.5" /> {tier.label}
+            {/* Badges — limited on mobile */}
+            <div className="mt-1.5 flex flex-wrap items-center gap-1 sm:gap-1.5">
+              {/* Show all on sm+, limited on mobile */}
+              <span className="contents sm:hidden">
+                {visibleBadges}
+                {hiddenCount > 0 && (
+                  <span className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    +{hiddenCount}
                   </span>
-                ) : null;
-              })()}
-              {(provider as any).response_time && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
-                  <Clock className="h-3 w-3" /> {(provider as any).response_time}
-                </span>
-              )}
-              {isFallback && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200">
-                  <MapPin className="h-3 w-3" /> Outra região
-                </span>
-              )}
-              {isOnline && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
-                  <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online
-                </span>
-              )}
-              {provider.distanceKm != null && provider.distanceKm < 2 && (
-                <motion.span
-                  animate={{ scale: [1, 1.08, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 px-2 py-0.5 text-[11px] font-bold text-accent border border-accent/30"
-                >
-                  ⚡ Super Perto!
-                </motion.span>
-              )}
-              {provider.distanceKm != null && provider.distanceKm >= 2 && provider.distanceKm < 5 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
-                  ⚡ Atendimento Rápido
-                </span>
-              )}
+                )}
+              </span>
+              <span className="hidden sm:contents">
+                {badges}
+              </span>
             </div>
           </div>
         </div>
 
         {reviewsEnabled && provider.reviewCount > 0 && (
-          <div className="mt-3">
+          <div className="mt-2 sm:mt-3">
             <StarRating rating={provider.rating} count={provider.reviewCount} size={14} />
           </div>
         )}
 
         {provider.description && !/cadastrado na plataforma|entre em contato para mais informa/i.test(provider.description) && (
-          <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
+          <p className="mt-2 sm:mt-3 line-clamp-2 text-xs sm:text-sm text-muted-foreground">
             {provider.description}
           </p>
         )}
 
         <div className="flex-1" />
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
           {provider.whatsapp && (
-            <Button variant="accent" size="sm" className="flex-1 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" asChild>
+            <Button variant="accent" size="sm" className="flex-1 h-8 sm:h-9 text-xs sm:text-sm transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" asChild>
               <a
                 href={whatsappLink(provider.whatsapp, `Olá! Vi seu perfil "${displayName}" no Preciso de um e gostaria de mais informações.`)}
                 target="_blank"
@@ -208,7 +238,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               </a>
             </Button>
           )}
-          <Button variant="outline" size="sm" className={`transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] ${provider.whatsapp ? '' : 'flex-1'}`} asChild>
+          <Button variant="outline" size="sm" className={`h-8 sm:h-9 text-xs sm:text-sm transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] ${provider.whatsapp ? '' : 'flex-1'}`} asChild>
             <Link
               to={`/profissional/${provider.slug}`}
               onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource)}
@@ -218,7 +248,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
             </Link>
           </Button>
         </div>
-        <p className="mt-1.5 text-center text-[10px] text-muted-foreground">Orçamento sem compromisso</p>
+        <p className="mt-1 sm:mt-1.5 text-center text-[10px] text-muted-foreground">Orçamento sem compromisso</p>
       </div>
     </motion.div>
   );
