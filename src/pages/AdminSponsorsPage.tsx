@@ -246,6 +246,18 @@ const AdminSponsorsPage = () => {
   });
 
   // ── Computed ──
+  // per-sponsor metrics from last 30 days (must be before alerts)
+  const metricsMap = useMemo(() => {
+    const m = new Map<string, { imp: number; clk: number }>();
+    metrics.forEach((row: any) => {
+      const e = m.get(row.sponsor_id) || { imp: 0, clk: 0 };
+      if (row.event_type === 'impression') e.imp += row.count;
+      else if (row.event_type === 'click') e.clk += row.count;
+      m.set(row.sponsor_id, e);
+    });
+    return m;
+  }, [metrics]);
+
   const alerts = useMemo(() => {
     const items: { type: string; msg: string; id: string; title: string }[] = [];
     const now = new Date();
@@ -257,15 +269,12 @@ const AdminSponsorsPage = () => {
         else if (diff <= 7) items.push({ type: 'expiring', msg: `Expira em ${diff}d`, id: s.id, title: s.title });
       }
       if (!s.active) items.push({ type: 'inactive', msg: 'Inativo', id: s.id, title: s.title });
-      // Low CTR alert
       if (s.active && s.impressions > 500 && (s.clicks / s.impressions) * 100 < 0.3) {
         items.push({ type: 'low_ctr', msg: `CTR ${((s.clicks / s.impressions) * 100).toFixed(2)}%`, id: s.id, title: s.title });
       }
-      // No banner
       if (s.active && !s.image_url) {
         items.push({ type: 'no_banner', msg: 'Sem banner', id: s.id, title: s.title });
       }
-      // Guaranteed impressions behind pace
       const guaranteed = (s as any).guaranteed_impressions || 0;
       const delivered = (s as any).delivered_impressions || 0;
       if (s.active && guaranteed > 0 && s.start_date && s.end_date) {
@@ -279,7 +288,6 @@ const AdminSponsorsPage = () => {
           }
         }
       }
-      // No link
       if (s.active && !s.link_url) {
         items.push({ type: 'no_link', msg: 'Sem link', id: s.id, title: s.title });
       }
@@ -308,17 +316,12 @@ const AdminSponsorsPage = () => {
   const activeCount = sponsors.filter(s => s.active).length;
   const revenue = contracts.reduce((a: number, c: any) => a + (c.value || 0), 0);
 
-  // per-sponsor metrics from last 30 days
-  const metricsMap = useMemo(() => {
-    const m = new Map<string, { imp: number; clk: number }>();
-    metrics.forEach((row: any) => {
-      const e = m.get(row.sponsor_id) || { imp: 0, clk: 0 };
-      if (row.event_type === 'impression') e.imp += row.count;
-      else if (row.event_type === 'click') e.clk += row.count;
-      m.set(row.sponsor_id, e);
-    });
-    return m;
-  }, [metrics]);
+  // Health scores
+  const avgHealthScore = useMemo(() => {
+    if (sponsors.length === 0) return 0;
+    const total = sponsors.reduce((s, sp) => s + computeHealthScore(sp, metricsMap.get(sp.id)).score, 0);
+    return Math.round(total / sponsors.length);
+  }, [sponsors, metricsMap]);
 
   // ── Mutations ──
   const saveMutation = useMutation({
