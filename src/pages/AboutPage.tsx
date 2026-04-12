@@ -1,21 +1,21 @@
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import {
   ArrowRight, Hammer, ShieldCheck, Eye, Users, Heart,
   Ban, Handshake, Calculator, MessageCircle, Briefcase,
   TrendingUp, GraduationCap, Award, Sparkles, Star,
   Crown, Wrench, Camera, Zap, Home, CheckCircle2,
-  Rocket, Trophy, Target, ThumbsUp
+  Rocket, Trophy, Target, ThumbsUp, Building2, BookOpen,
+  Globe, Calendar, Flag, Milestone
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PageTransition from '@/components/PageTransition';
 import { Button } from '@/components/ui/button';
+import AnimatedCounter from '@/components/ui/AnimatedCounter';
 
 /* ── animation variants ── */
-
-
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
@@ -73,11 +73,11 @@ const exampleProviders = [
   'Passeador de Cães', 'Sapateiro',
 ];
 
-const stats = [
-  { value: '100%', label: 'Lucro é seu', icon: <TrendingUp className="h-5 w-5" /> },
-  { value: '0%', label: 'De taxas', icon: <ShieldCheck className="h-5 w-5" /> },
-  { value: '50+', label: 'Profissões', icon: <Wrench className="h-5 w-5" /> },
-  { value: '24/7', label: 'Visibilidade', icon: <Eye className="h-5 w-5" /> },
+const heroStats = [
+  { value: 5000, label: 'Profissionais', suffix: '+', icon: <Users className="h-5 w-5" /> },
+  { value: 200, label: 'Cidades', suffix: '+', icon: <Globe className="h-5 w-5" /> },
+  { value: 50, label: 'Profissões', suffix: '+', icon: <Wrench className="h-5 w-5" /> },
+  { value: 100, label: 'Lucro é seu', suffix: '%', icon: <TrendingUp className="h-5 w-5" /> },
 ];
 
 const commitments = [
@@ -85,6 +85,20 @@ const commitments = [
   { icon: <Target className="h-5 w-5" />, text: 'Foco total na valorização do prestador' },
   { icon: <Trophy className="h-5 w-5" />, text: 'Meritocracia: quem se dedica, ganha destaque' },
   { icon: <Rocket className="h-5 w-5" />, text: 'Ferramentas gratuitas para crescer na carreira' },
+];
+
+const timeline = [
+  { year: '2024', title: 'A ideia nasceu', desc: 'Identificamos a necessidade de uma plataforma que valorizasse o profissional, sem leilão de preços.', icon: <Sparkles className="h-5 w-5" /> },
+  { year: '2024', title: 'MVP lançado', desc: 'Primeira versão com cadastro de profissionais e busca por categoria no Paraná.', icon: <Rocket className="h-5 w-5" /> },
+  { year: '2025', title: 'Expansão nacional', desc: 'Cobertura em todas as capitais brasileiras com mais de 50 categorias profissionais.', icon: <Globe className="h-5 w-5" /> },
+  { year: '2025', title: 'Portal de cursos', desc: 'Parcerias com SEBRAE, SENAI e FGV para oferecer capacitação gratuita.', icon: <GraduationCap className="h-5 w-5" /> },
+  { year: '2026', title: 'Comunidade ativa', desc: 'Mais de 5.000 profissionais ativos, grupos de apoio e sistema de gamificação.', icon: <Users className="h-5 w-5" /> },
+  { year: '2026', title: 'O futuro', desc: 'App mobile, IA para matching inteligente e muito mais em desenvolvimento.', icon: <Flag className="h-5 w-5" /> },
+];
+
+const partners = [
+  'SEBRAE', 'SENAI', 'FGV', 'SENAC', 'Coursera', 'Google', 'Meta', 'YouTube',
+  'SEBRAE', 'SENAI', 'FGV', 'SENAC', 'Coursera', 'Google', 'Meta', 'YouTube',
 ];
 
 /* ── floating particles (decorative) ── */
@@ -111,6 +125,169 @@ const FloatingParticles = () => (
   </div>
 );
 
+/* ── Hero animated visual ── */
+const HeroAnimation = () => (
+  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    {/* Pulsing rings */}
+    {[0, 1, 2].map(i => (
+      <motion.div
+        key={`ring-${i}`}
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent/10"
+        style={{ width: 200 + i * 200, height: 200 + i * 200 }}
+        animate={{
+          scale: [1, 1.1, 1],
+          opacity: [0.08, 0.15, 0.08],
+        }}
+        transition={{ duration: 4 + i, repeat: Infinity, delay: i * 0.8 }}
+      />
+    ))}
+    {/* Orbiting dots */}
+    {[0, 1, 2, 3, 4].map(i => (
+      <motion.div
+        key={`orbit-${i}`}
+        className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full"
+        style={{ background: i % 2 === 0 ? 'hsl(var(--accent))' : 'hsl(var(--secondary))' }}
+        animate={{
+          x: [Math.cos(i * 1.25) * 120, Math.cos(i * 1.25 + Math.PI) * 120],
+          y: [Math.sin(i * 1.25) * 80, Math.sin(i * 1.25 + Math.PI) * 80],
+          opacity: [0.2, 0.5, 0.2],
+        }}
+        transition={{ duration: 6 + i, repeat: Infinity, ease: 'linear' }}
+      />
+    ))}
+    {/* Central glow */}
+    <motion.div
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full"
+      style={{ background: 'radial-gradient(circle, hsl(var(--accent) / 0.15), transparent)' }}
+      animate={{ scale: [1, 1.5, 1] }}
+      transition={{ duration: 3, repeat: Infinity }}
+    />
+  </div>
+);
+
+/* ── Partners Marquee ── */
+const PartnersMarquee = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
+
+  return (
+    <section ref={ref} className="py-16 bg-muted/20 overflow-hidden">
+      <div className="container">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          className="text-center mb-10"
+        >
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-accent mb-5">
+            <Building2 className="h-3.5 w-3.5" /> Parceiros & Instituições
+          </span>
+          <h2 className="font-display text-3xl font-extrabold text-foreground md:text-4xl">
+            Quem caminha conosco
+          </h2>
+          <p className="mt-3 max-w-2xl mx-auto text-muted-foreground text-lg">
+            Parcerias com as melhores instituições do Brasil para capacitação gratuita.
+          </p>
+        </motion.div>
+      </div>
+
+      {/* Marquee row */}
+      <div className="relative">
+        <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-background to-transparent z-10" />
+        <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-background to-transparent z-10" />
+        <motion.div
+          className="flex gap-6 w-max"
+          animate={{ x: ['0%', '-50%'] }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+        >
+          {partners.map((name, i) => (
+            <div
+              key={`${name}-${i}`}
+              className="flex items-center gap-3 bg-card border border-border rounded-2xl px-8 py-5 shadow-sm shrink-0 hover:border-accent/30 hover:shadow-md transition-all"
+            >
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-accent" />
+              </div>
+              <span className="text-base font-bold text-foreground whitespace-nowrap">{name}</span>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+/* ── Timeline ── */
+const TimelineSection = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-80px' });
+
+  return (
+    <section ref={ref} className="py-20 md:py-24 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] via-transparent to-accent/[0.02]" />
+      <div className="container relative max-w-4xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          className="text-center mb-14"
+        >
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-accent mb-5">
+            <Calendar className="h-3.5 w-3.5" /> Nossa Jornada
+          </span>
+          <h2 className="font-display text-3xl font-extrabold text-foreground md:text-4xl">
+            De uma ideia a um movimento
+          </h2>
+        </motion.div>
+
+        {/* Timeline line */}
+        <div className="relative">
+          {/* Vertical line */}
+          <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-accent/40 via-accent/20 to-transparent md:-translate-x-px" />
+
+          {timeline.map((item, i) => {
+            const isLeft = i % 2 === 0;
+            return (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, x: isLeft ? -30 : 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className={`relative flex items-start mb-10 ${
+                  isLeft ? 'md:flex-row' : 'md:flex-row-reverse'
+                } flex-row`}
+              >
+                {/* Dot on line */}
+                <div className="absolute left-6 md:left-1/2 -translate-x-1/2 z-10">
+                  <motion.div
+                    whileInView={{ scale: [0, 1.2, 1] }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 + 0.2 }}
+                    className="w-12 h-12 rounded-full bg-card border-2 border-accent/40 flex items-center justify-center shadow-lg shadow-accent/10"
+                  >
+                    <span className="text-accent">{item.icon}</span>
+                  </motion.div>
+                </div>
+
+                {/* Content card */}
+                <div className={`ml-20 md:ml-0 md:w-[calc(50%-2rem)] ${isLeft ? 'md:pr-8 md:text-right' : 'md:pl-8 md:ml-auto'}`}>
+                  <motion.div
+                    whileHover={{ y: -4 }}
+                    className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-accent/30 transition-all"
+                  >
+                    <span className="text-xs font-bold text-accent bg-accent/10 rounded-full px-3 py-1">{item.year}</span>
+                    <h3 className="font-display text-base font-bold text-foreground mt-3 mb-1">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                  </motion.div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const AboutPage = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
@@ -125,6 +302,7 @@ const AboutPage = () => {
         {/* ═══════ HERO — Manifesto ═══════ */}
         <section ref={heroRef} className="relative bg-hero py-24 md:py-32 overflow-hidden">
           <FloatingParticles />
+          <HeroAnimation />
 
           {/* Decorative shapes */}
           <div className="absolute top-8 left-8 opacity-[0.06]">
@@ -192,14 +370,14 @@ const AboutPage = () => {
               <strong className="text-primary-foreground font-semibold">dignidade, preço justo</strong> e sem leilão de mão de obra.
             </motion.p>
 
-            {/* Stats bar */}
+            {/* Animated Stats bar */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.6 }}
               className="mt-12 flex flex-wrap justify-center gap-3 md:gap-6"
             >
-              {stats.map((stat, i) => (
+              {heroStats.map((stat) => (
                 <motion.div
                   key={stat.label}
                   whileHover={{ scale: 1.05, y: -3 }}
@@ -207,7 +385,12 @@ const AboutPage = () => {
                 >
                   <span className="text-accent">{stat.icon}</span>
                   <div className="text-left">
-                    <span className="block text-2xl font-extrabold text-primary-foreground">{stat.value}</span>
+                    <AnimatedCounter
+                      value={stat.value}
+                      suffix={stat.suffix}
+                      duration={1800}
+                      className="block text-2xl font-extrabold text-primary-foreground"
+                    />
                     <span className="text-[11px] uppercase tracking-wider text-primary-foreground/50 font-medium">{stat.label}</span>
                   </div>
                 </motion.div>
@@ -260,11 +443,8 @@ const AboutPage = () => {
                   whileHover={{ y: -8, scale: 1.02 }}
                   className="group relative rounded-3xl border border-border bg-card p-7 shadow-[var(--card-shadow)] hover:shadow-[var(--card-shadow-hover)] transition-all duration-400 overflow-hidden"
                 >
-                  {/* Gradient overlay on hover */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${pillar.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                  {/* Glow dot */}
                   <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-accent/30 group-hover:bg-accent group-hover:shadow-[var(--glow-orange)] transition-all duration-300" />
-
                   <div className="relative">
                     <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-all duration-300 group-hover:shadow-lg group-hover:shadow-accent/20">
                       {pillar.icon}
@@ -280,7 +460,6 @@ const AboutPage = () => {
 
         {/* ═══════ Quote / Manifesto ═══════ */}
         <section className="relative py-16 overflow-hidden">
-          {/* Gradient background */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-accent/[0.02] to-transparent" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--accent)/0.06),transparent_70%)]" />
 
@@ -306,6 +485,9 @@ const AboutPage = () => {
           </div>
         </section>
 
+        {/* ═══════ Timeline ═══════ */}
+        <TimelineSection />
+
         {/* ═══════ 5 Values ═══════ */}
         <section className="py-20 md:py-24 bg-muted/30">
           <div className="container">
@@ -319,16 +501,14 @@ const AboutPage = () => {
             </motion.div>
 
             <motion.div {...staggerContainer} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-              {characteristics.map((item, i) => (
+              {characteristics.map((item) => (
                 <motion.div
                   key={item.title}
                   {...staggerChild}
                   whileHover={{ y: -6, scale: 1.03 }}
                   className="group relative rounded-2xl border border-border bg-card p-6 shadow-[var(--card-shadow)] text-center hover:shadow-[var(--card-shadow-hover)] hover:border-accent/30 transition-all duration-300 overflow-hidden"
                 >
-                  {/* Shine effect */}
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[linear-gradient(105deg,transparent_40%,hsl(var(--accent)/0.04)_45%,hsl(var(--accent)/0.08)_50%,hsl(var(--accent)/0.04)_55%,transparent_60%)]" />
-
                   <div className="relative">
                     <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-all duration-300 group-hover:shadow-lg group-hover:shadow-accent/20">
                       {item.icon}
@@ -342,9 +522,11 @@ const AboutPage = () => {
           </div>
         </section>
 
+        {/* ═══════ Partners Marquee ═══════ */}
+        <PartnersMarquee />
+
         {/* ═══════ How it works ═══════ */}
         <section className="py-20 relative overflow-hidden">
-          {/* Background pattern */}
           <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
           <div className="container relative max-w-5xl">
@@ -365,26 +547,20 @@ const AboutPage = () => {
                   whileHover={{ y: -6 }}
                   className="relative rounded-3xl border border-border bg-card p-8 text-center shadow-[var(--card-shadow)] hover:shadow-[var(--card-shadow-hover)] transition-all duration-300"
                 >
-                  {/* Step number badge */}
                   <motion.span
                     className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-xs font-extrabold px-5 py-1.5 rounded-full shadow-lg shadow-accent/25"
                     whileHover={{ scale: 1.1 }}
                   >
                     {item.step}
                   </motion.span>
-
-                  {/* Connector line (not on last) */}
                   {i < 2 && (
                     <div className="hidden md:block absolute top-1/2 -right-4 w-8 border-t-2 border-dashed border-accent/30" />
                   )}
-
                   <div className="mx-auto mt-4 mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/15 to-accent/5 text-accent">
                     {item.icon}
                   </div>
                   <h3 className="font-display text-base font-bold text-foreground mb-2">{item.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
-
-                  {/* Check mark */}
                   <div className="mt-4 flex justify-center">
                     <CheckCircle2 className="h-5 w-5 text-accent/40" />
                   </div>
@@ -438,7 +614,6 @@ const AboutPage = () => {
 
         {/* ═══════ Final CTA ═══════ */}
         <section className="relative bg-hero py-24 md:py-28 overflow-hidden">
-          {/* Animated orbs */}
           <motion.div
             className="absolute top-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-[120px]"
             animate={{ scale: [1, 1.4, 1], x: [0, 30, 0] }}
@@ -449,8 +624,6 @@ const AboutPage = () => {
             animate={{ scale: [1.2, 1, 1.2] }}
             transition={{ duration: 5, repeat: Infinity, delay: 1 }}
           />
-
-          {/* Dot pattern */}
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, hsl(var(--primary-foreground)) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
 
           <div className="container relative z-10 text-center">
