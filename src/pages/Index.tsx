@@ -253,6 +253,7 @@ const Index = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <Header />
       <HeroBanner />
       <Suspense fallback={null}><ActiveProvidersCounter /></Suspense>
 
