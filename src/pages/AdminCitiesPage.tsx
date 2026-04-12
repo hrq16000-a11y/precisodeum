@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Plus, Trash2, Pencil, Search, Upload, Download, MapPin, Filter,
-  Globe, Building2, BarChart3, FileText, CheckCircle2, AlertTriangle, Map
+  Building2, BarChart3, FileText, CheckCircle2, Map
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/hooks/useAdmin';
