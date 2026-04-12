@@ -22,7 +22,7 @@ const AdminCategoriesPage = () => {
   const [form, setForm] = useState({ name: '', slug: '', icon: 'Wrench', parent_id: '' });
 
   const fetchCategories = async () => {
-    const { data } = await supabase.from('categories').select('*').order('name');
+    const { data } = await supabase.from('categories').select('*').is('deleted_at', null).order('name');
     setCategories(data || []);
   };
 
