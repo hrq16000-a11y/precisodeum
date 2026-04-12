@@ -1297,8 +1297,9 @@ const AdminSponsorsPage = () => {
                 </Popover>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div><Label>Ordem</Label><Input type="number" value={form.display_order} onChange={e => setForm({ ...form, display_order: Number(e.target.value) })} /></div>
+              <div><Label>Impressões Garantidas</Label><Input type="number" value={form.guaranteed_impressions} onChange={e => setForm({ ...form, guaranteed_impressions: Number(e.target.value) })} placeholder="0 = sem garantia" /></div>
               <div className="flex items-end gap-2 pb-0.5"><Switch checked={form.active} onCheckedChange={v => setForm({ ...form, active: v })} /><Label>Ativo</Label></div>
             </div>
             <div className="flex justify-end gap-2">
