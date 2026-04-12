@@ -290,11 +290,10 @@ const DashboardServicesPage = () => {
 
   return (
     <DashboardLayout>
-      {/* Limits banner */}
+      {/* Upsell / Limits banner */}
       {!limitsLoading && limits && limits.can_create_services && remainingServices !== null && remainingServices === 0 && (
-        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span>Limite de {limits.max_services} serviço(s) atingido. Atualize seu plano.</span>
+        <div className="mb-4">
+          <UpsellBanner />
         </div>
       )}
 
