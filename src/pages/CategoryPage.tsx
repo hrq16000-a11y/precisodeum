@@ -48,7 +48,7 @@ const CategoryPage = () => {
   const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, setRadius, requestPreciseLocation } = useGeoCity();
   const { data, isLoading } = useCategoryProviders(slug || '');
   const [page, setPage] = useState(1);
-  const [showAllLocations, setShowAllLocations] = useState(false);
+  
   const [showOutOfState, setShowOutOfState] = useState(false);
 
   // Request GPS proactively on mount
