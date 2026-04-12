@@ -59,13 +59,14 @@ const CategoryPage = () => {
   const category = data?.category;
   const allProviders = data?.providers || [];
 
-  const { localProviders, otherProviders, isFallback, expansionLevel } = useMemo(() => {
+  const { localProviders, nearbyProviders, outOfStateProviders, isFallback, expansionLevel } = useMemo(() => {
     if (!geoCity || allProviders.length === 0) {
-      return { localProviders: allProviders, otherProviders: [] as DbProvider[], isFallback: false, expansionLevel: null };
+      return { localProviders: allProviders, nearbyProviders: [] as DbProvider[], outOfStateProviders: [] as DbProvider[], isFallback: false, expansionLevel: null };
     }
 
     const cityNorm = normalizeCityName(geoCity);
     const stateNorm = geoState ? normalizeCityName(geoState) : undefined;
+    const userStateNorm = geoState ? normalizeCityName(geoState) : '';
 
     const local: (DbProvider & { _dist?: number })[] = [];
     const other: (DbProvider & { _dist?: number })[] = [];
@@ -81,11 +82,13 @@ const CategoryPage = () => {
       }
     });
 
-    // Sort by real distance when possible
     const distSort = (a: { _dist?: number }, b: { _dist?: number }) => {
       const distA = a._dist ?? Infinity;
       const distB = b._dist ?? Infinity;
-      if (distA !== Infinity && distB !== Infinity) return distA - distB;
+      if (distA !== Infinity && distB !== Infinity) {
+        const diff = distA - distB;
+        if (Math.abs(diff) > 1) return diff;
+      }
       if (distA === Infinity && distB !== Infinity) return 1;
       if (distB === Infinity && distA !== Infinity) return -1;
       return 0;
@@ -96,20 +99,29 @@ const CategoryPage = () => {
       other.sort(distSort);
     }
 
+    // Split other into nearby (same state or <100km) vs outOfState
+    const splitNearbyOutOfState = (arr: typeof other) => {
+      const nearby: typeof other = [];
+      const outOfState: typeof other = [];
+      arr.forEach(p => {
+        const provStateNorm = normalizeCityName(p.state);
+        const isNearby = (userStateNorm && provStateNorm === userStateNorm) || ((p._dist ?? Infinity) < 100);
+        if (isNearby) nearby.push(p);
+        else outOfState.push(p);
+      });
+      return { nearby, outOfState };
+    };
+
     if (local.length > 0) {
-      return { localProviders: local as DbProvider[], otherProviders: other as DbProvider[], isFallback: false, expansionLevel: null };
+      const { nearby, outOfState } = splitNearbyOutOfState(other);
+      return { localProviders: local as DbProvider[], nearbyProviders: nearby as DbProvider[], outOfStateProviders: outOfState as DbProvider[], isFallback: false, expansionLevel: null };
     }
 
-    // Fallback: show all sorted by distance
-    const allSorted = [...allProviders].map(p => {
-      let dist: number | undefined;
-      if (userLat != null && userLon != null && p.latitude != null && p.longitude != null) {
-        dist = Math.round(haversine(userLat, userLon, p.latitude, p.longitude) * 10) / 10;
-      }
-      return { ...p, distanceKm: dist, _dist: dist };
-    });
+    // Fallback: 0 local → combine and split
+    const allSorted = [...local, ...other];
     if (userLat != null && userLon != null) allSorted.sort(distSort);
-    return { localProviders: allSorted as DbProvider[], otherProviders: [] as DbProvider[], isFallback: true, expansionLevel: 'all' as const };
+    const { nearby, outOfState } = splitNearbyOutOfState(allSorted);
+    return { localProviders: [] as DbProvider[], nearbyProviders: nearby as DbProvider[], outOfStateProviders: outOfState as DbProvider[], isFallback: true, expansionLevel: 'all' as const };
   }, [allProviders, geoCity, geoState, userLat, userLon, radiusKm]);
 
   const nearestDistanceKm = localProviders.length > 0 ? (localProviders[0] as any)._dist : undefined;
