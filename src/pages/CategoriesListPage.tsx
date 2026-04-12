@@ -90,12 +90,6 @@ const CategoriesListPage = () => {
                       <span className="text-xs sm:text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2 break-words">
                         {cat.name}
                       </span>
-                      {cat.count > 0 && (
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent/60" />
-                          {cat.count} profissional{cat.count !== 1 ? 'is' : ''}
-                        </span>
-                      )}
                     </div>
                   </Link>
                 </motion.div>

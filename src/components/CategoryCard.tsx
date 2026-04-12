@@ -42,7 +42,7 @@ const CategoryCard = ({ category, index = 0 }: CategoryCardProps) => {
         <span className="text-center text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
           {category.name}
         </span>
-        <span className="text-xs text-muted-foreground">{category.count.toLocaleString('pt-BR')} profissionais</span>
+        
       </Link>
     </motion.div>
   );
