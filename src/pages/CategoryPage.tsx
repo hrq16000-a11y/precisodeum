@@ -95,6 +95,7 @@ const CategoryPage = () => {
     return { localProviders: allProviders, otherProviders: [] as DbProvider[], isFallback: true, expansionLevel: 'all' as const };
   }, [allProviders, geoCity, geoState, userLat, userLon, radiusKm]);
 
+  const nearestDistanceKm = localProviders.length > 0 ? (localProviders[0] as any)._dist : undefined;
   const totalDisplay = localProviders.length + (showAllLocations ? otherProviders.length : 0);
 
   useSeoHead({
@@ -248,6 +249,17 @@ const CategoryPage = () => {
             expansionLevel={expansionLevel}
             stateName={geoState || undefined}
             resultCount={allProviders.length}
+            nearestDistanceKm={nearestDistanceKm}
+          />
+        )}
+
+        {!isFallback && nearestDistanceKm != null && nearestDistanceKm > 50 && (
+          <GeoFallbackBanner
+            originalCity={geoCity || ''}
+            expansionLevel="all"
+            stateName={geoState || undefined}
+            resultCount={localProviders.length}
+            nearestDistanceKm={nearestDistanceKm}
           />
         )}
 
