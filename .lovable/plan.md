@@ -1,45 +1,47 @@
 
 
-# Ajuste de Header Sticky — Refinamentos
+# Modernização do Grid de Categorias — Home
 
-## Status Atual
-O Header **já possui** `sticky top-0 z-50`, backdrop-blur, shadow dinâmica e modo compacto no scroll. As bases estão corretas.
+## O que será feito
 
-## Problemas a Corrigir
+### 1. Grid Responsivo Inteligente
+- Mobile: `grid-cols-3` fixo para cards compactos com `equal height` via CSS grid `auto-rows: 1fr`
+- Tablet+: manter `auto-fit` com `minmax(6rem, 1fr)`
+- Cards sem `border` — usar apenas `shadow-[0_4px_6px_-1px_rgb(0_0_0/0.1)]`
 
-1. **Fundo semi-transparente** — `bg-card/90` e `bg-card/95` permitem que texto do conteúdo "sangre" visualmente por trás do header ao rolar. Precisa ser **sólido** quando scrolled.
-2. **Shadow condicional** — Atualmente aplica `shadow-sm` mesmo sem scroll. Deveria ser `shadow-none` no estado inicial e `shadow-md` apenas após scroll.
-3. **Conteúdo atrás do header** — Como `sticky` naturalmente ocupa espaço no flow, não há problema de overlap. Mas o `AdSlot global-top` dentro do `<header>` pode causar saltos de layout.
+### 2. Cards Modernos
+- Remover bordas, usar sombra sutil
+- Ícone protagonista: aumentar para `h-12 w-12` no mobile (era `h-10 w-10`), com `size={26}`
+- Texto `text-[0.6875rem]` compacto, `line-clamp-2`, `hyphens: auto`
+- Hover: escala sutil + sombra elevada
 
-## Alterações
+### 3. Chips de Filtro Rápido
+- Linha horizontal scrollável acima do grid com os 7 macro-grupos do banco (categorias com `parent_id IS NULL`)
+- Chip "Todos" selecionado por padrão
+- Ao clicar num chip, filtra as subcategorias visíveis daquele grupo
+- Estilo: `rounded-full bg-muted text-xs px-3 py-1.5`, ativo: `bg-accent text-white`
 
-### `src/components/Header.tsx` (linha 205-209)
-- Estado **sem scroll**: `bg-card` (100% opaco, sem transparência) + `shadow-none`
-- Estado **com scroll** (compact): `bg-card shadow-md` (100% opaco) + manter backdrop-blur como fallback visual
-- Remover as opacidades `/80`, `/90`, `/95` que causam bleed-through
+### 4. Animação de Entrada
+- Usar `framer-motion` com stagger fade-in + slide-up (já existe padrão no projeto via `StaggeredList`)
+- Cada card entra com delay escalonado de 0.04s
 
-**De:**
-```
-isCompact
-  ? 'bg-card/90 backdrop-blur-lg supports-[backdrop-filter]:bg-card/80 shadow-md'
-  : 'bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 shadow-sm'
-```
-
-**Para:**
-```
-isCompact
-  ? 'bg-card backdrop-blur-lg shadow-md'
-  : 'bg-card shadow-none'
-```
+### 5. Empty State
+- Se o filtro por chip não retorna resultados: ilustração com ícone `SearchX` + texto "Nenhuma categoria encontrada" + botão "Sugerir Categoria" (link para WhatsApp ou formulário)
 
 ## Arquivos alterados
 
 | Arquivo | Ação |
 |---------|------|
-| `src/components/Header.tsx` | Fundo sólido + shadow condicional |
+| `src/components/home/CategoriesGrid.tsx` | Reescrever: chips de macro-categorias, grid 3-col mobile, cards sem borda, empty state, framer-motion stagger |
+
+## Dados
+- Macro-categorias vêm do mesmo array `categories` (filtrar `parent_id IS NULL`)
+- Subcategorias: filtrar `parent_id === selectedMacro.id`
+- O hook `useCategoriesWithCount` já traz todas as categorias — preciso verificar se traz `parent_id`
 
 ## Impacto
-- Header 100% opaco em todos os estados — texto nunca sangra
-- Shadow aparece apenas no scroll — visual mais limpo
-- Zero breaking changes, apenas refinamento de classes CSS
+- Visual premium tipo app nativo
+- Filtro rápido melhora descoberta de serviços
+- Zero breaking changes — apenas componente da home alterado
+- Animações consistentes com o design system existente
 
