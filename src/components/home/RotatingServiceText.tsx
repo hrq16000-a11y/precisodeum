@@ -25,7 +25,11 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-const RotatingServiceText = () => {
+interface RotatingServiceTextProps {
+  onServiceChange?: (service: string) => void;
+}
+
+const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
   const { data: dbServices } = useQuery({
     queryKey: ['rotating-service-names'],
     queryFn: async () => {
@@ -46,15 +50,24 @@ const RotatingServiceText = () => {
   const [phase, setPhase] = useState<'in' | 'out'>('in');
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
+  // Notify parent of initial service
+  useEffect(() => {
+    if (shuffled.length > 0) {
+      onServiceChange?.(shuffled[0]);
+    }
+  }, [shuffled]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const rotate = useCallback(() => {
-    // Start exit
     setPhase('out');
-    // After exit animation, swap text and enter
     timerRef.current = setTimeout(() => {
-      setIndex((prev) => (prev + 1) % shuffled.length);
+      setIndex((prev) => {
+        const next = (prev + 1) % shuffled.length;
+        onServiceChange?.(shuffled[next]);
+        return next;
+      });
       setPhase('in');
     }, 400);
-  }, [shuffled.length]);
+  }, [shuffled, onServiceChange]);
 
   useEffect(() => {
     const id = setInterval(rotate, 2500);
