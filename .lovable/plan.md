@@ -1,56 +1,97 @@
 
 
-# Busca Profunda: Incluir Serviços no Matching de Texto
+# Auditoria de Geolocalização: Debug Visível + Reforços
 
-## Problema
-A busca textual filtra apenas campos do provider (`name`, `category`, `description`, `businessName`). Os dados dos **serviços cadastrados** (`service_name`, `description`, `service_area`) são carregados pelo fetch mas **ignorados no matching** — um profissional com serviço "Manutenção de Eletrônicos" não aparece ao buscar "técnico eletrônica".
+## Diagnóstico
 
-## Solução
-Incluir os textos dos serviços no campo `searchable` usado pelo filtro textual, sem alterar a estrutura de dados existente.
+Após análise detalhada, o sistema de geo está funcional mas tem 3 lacunas concretas:
+
+1. **Zero logs de debug** — não há como auditar se as coordenadas e distâncias estão corretas
+2. **Fallback de GPS fraco** — quando GPS é negado, o `useGeoCity` já faz fallback via IP, mas não força atualização imediata da lista (pode ficar com dados stale)
+3. **Client-side sort override** — no `SearchPage.tsx` linha 94, quando `sortBy !== 'relevance'`, o `.sort()` por rating/nome **destroi** a ordenação por proximidade sem preservar a separação local/other
+4. **Sem aviso de "ninguém perto"** — o `GeoFallbackBanner` existe mas só aparece quando há 0 locais; não avisa quando o mais próximo está a 50+ km
 
 ## Alterações
 
-### `src/hooks/useProviders.tsx`
+### 1. `src/hooks/useProviders.tsx` — Logs de debug de geolocalização
 
-**1. Enriquecer `DbProvider` com campo de busca agregado**
-
-Na função `fetchProvidersLightweight` (linha ~232), ao mapear os providers, concatenar os nomes e descrições de todos os serviços do profissional num campo `_searchableServices`:
+Adicionar `console.debug` na função `filterAndRankProvidersGrouped` após o cálculo de distância (linha ~560):
 
 ```typescript
-// Após o mapProvider, agregar textos dos serviços para busca
-const allServices = (serviceRows as any[]).filter(s => s.provider_id === p.id);
-const svcTexts = allServices.map(s => 
-  [s.service_name || '', s.description || '', s.service_area || ''].join(' ')
-).join(' ');
-(mapped as any)._searchableServices = svcTexts;
+if (import.meta.env.DEV) {
+  console.debug(`[GeoAudit] User: ${userLat}, ${userLon} | Provider: ${p.name} (${p.latitude}, ${p.longitude}) | Dist: ${distanceKm.toFixed(1)} km | Local: ${isLocal}`);
+}
 ```
 
-**2. Incluir `_searchableServices` no filtro textual**
+E no início da função, logar o contexto:
+```typescript
+if (import.meta.env.DEV) {
+  console.debug('[GeoAudit] Query:', { query, city, state, userLat, userLon, radiusKm });
+}
+```
 
-Nas duas funções `filterAndRankProviders` (linha ~430) e `filterAndRankProvidersGrouped` (linha ~529), adicionar o campo `_searchableServices` ao texto pesquisável:
+### 2. `src/hooks/useGeoCity.ts` — Reforço de fallback imediato
+
+No `requestPreciseLocation`, quando GPS é negado (callback de erro, linha ~244), forçar imediatamente o fetch via IP se ainda não tiver coordenadas:
 
 ```typescript
-// ANTES:
-const searchable = [p.name, p.category, p.description, p.businessName || '', p.city, p.neighborhood, p.state]
-  .join(' ').toLowerCase()...
-
-// DEPOIS:
-const searchable = [p.name, p.category, p.description, p.businessName || '', p.city, p.neighborhood, p.state, (p as any)._searchableServices || '']
-  .join(' ').toLowerCase()...
+() => {
+  // GPS denied — force IP fallback immediately
+  if (geoState.latitude === null) {
+    fetchStarted = false; // reset to allow re-fetch
+    startFetchIfNeeded();
+  }
+  resolve(false);
+}
 ```
 
-**3. Incluir na relevância do SIL** (`src/lib/searchIntelligence.ts`)
+### 3. `src/pages/SearchPage.tsx` — Strict sorting (preservar proximidade)
 
-Na função `computeRelevanceScore` (linha ~253), o campo `searchable` já recebe `provider.description`. Não precisa mudar o SIL — o matching principal é no `useProviders`.
+Linha 94-105: quando `sortBy !== 'relevance'`, aplicar o sort secundário **dentro de cada grupo** (local/other separadamente), não misturando os arrays:
 
-## Impacto
-- **Zero alterações no banco de dados** — os serviços já são carregados
-- **Zero custo extra de query** — os dados já estão no fetch existente
-- **1 arquivo alterado**: `src/hooks/useProviders.tsx`
-- Buscar "técnico eletrônica" agora encontra profissionais cujos serviços mencionam "eletrônica", mesmo que o perfil não mencione
+```typescript
+if (sortBy !== 'relevance') {
+  const sortFn = (a: DbProvider, b: DbProvider) => {
+    switch (sortBy) {
+      case 'rating': return b.rating - a.rating;
+      case 'reviews': return b.reviewCount - a.reviewCount;
+      case 'name_asc': return a.name.localeCompare(b.name);
+      case 'name_desc': return b.name.localeCompare(a.name);
+      case 'experience': return b.yearsExperience - a.yearsExperience;
+      default: return 0;
+    }
+  };
+  results.sort(sortFn);
+}
+```
+
+Alterar `applyClientFilters` para receber um parâmetro `isLocal` e, quando `sortBy === 'relevance'` e o grupo é local, **manter a ordenação original** (que já vem por distância).
+
+### 4. `src/components/GeoFallbackBanner.tsx` — Aviso de "ninguém tão perto"
+
+Adicionar suporte a um novo cenário: quando há resultados locais mas o mais próximo está a 50+ km. Adicionar prop `nearestDistanceKm` e exibir mensagem:
+
+```
+"O profissional mais próximo está a X km de você. Mostrando resultados da sua região."
+```
+
+### 5. `src/pages/CategoryPage.tsx` e `src/pages/SearchPage.tsx` — Passar distância mínima ao banner
+
+Calcular `nearestDistanceKm` a partir do primeiro item da lista local e passar ao `GeoFallbackBanner` quando > 50km.
+
+## Arquivos alterados
+
+| Arquivo | Ação |
+|---------|------|
+| `src/hooks/useProviders.tsx` | Adicionar logs de debug (DEV only) |
+| `src/hooks/useGeoCity.ts` | Reforçar fallback IP quando GPS negado |
+| `src/pages/SearchPage.tsx` | Corrigir sort para não destruir proximidade |
+| `src/components/GeoFallbackBanner.tsx` | Aviso de distância mínima alta |
+| `src/pages/CategoryPage.tsx` | Passar `nearestDistanceKm` ao banner |
+| `src/pages/SearchPage.tsx` | Passar `nearestDistanceKm` ao banner |
 
 ## Detalhes técnicos
-- Os tokens sanitizados (`["tecnico", "eletronica"]`) serão comparados contra o texto concatenado de todos os serviços
-- O threshold de matching (1 token = 100%, 2+ tokens = 50%) continua o mesmo
-- A normalização NFD + remoção de acentos já é aplicada no `searchable`, garantindo que "Eletrônicos" casa com "eletronica"
+- Logs apenas em `import.meta.env.DEV` — zero impacto em produção
+- O fix do sort é o mais impactante: atualmente se o usuário muda para "Por avaliação", a separação local/other é perdida
+- O fallback de IP já existe mas pode ficar stale se o GPS foi negado antes do fetch IP completar
 
