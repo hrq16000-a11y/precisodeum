@@ -4,7 +4,13 @@
  * All keys MUST be pre-normalized (lowercase, no accents, alpha only).
  */
 import { normalize } from './normalize';
-import { isKnownCity } from './citiesIndex';
+
+// Lazy-load the 229KB cities index only when needed
+let _isKnownCity: ((n: string) => boolean) | null = null;
+const loadCitiesIndex = () => import('./citiesIndex').then(m => { _isKnownCity = m.isKnownCity; return m; });
+// Pre-warm in idle
+if (typeof requestIdleCallback === 'function') requestIdleCallback(() => loadCitiesIndex());
+else setTimeout(() => loadCitiesIndex(), 2000);
 
 interface CityCoord {
   lat: number;
@@ -273,7 +279,14 @@ export function getCityCoords(city: string): { lat: number; lon: number } | null
  * Does NOT require coordinates — just validates the city name exists.
  */
 export function isRecognizedCity(normCity: string): boolean {
-  return normCity in CITY_COORDS || isKnownCity(normCity);
+  return normCity in CITY_COORDS || (_isKnownCity ? _isKnownCity(normCity) : false);
+}
+
+/** Async version that ensures citiesIndex is loaded */
+export async function isRecognizedCityAsync(normCity: string): Promise<boolean> {
+  if (normCity in CITY_COORDS) return true;
+  if (!_isKnownCity) await loadCitiesIndex();
+  return _isKnownCity ? _isKnownCity(normCity) : false;
 }
 
 export { CITY_COORDS };

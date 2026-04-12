@@ -258,7 +258,7 @@ const Index = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <HeroBanner />
-      <Suspense fallback={null}><ActiveProvidersCounter /></Suspense>
+      <Suspense fallback={<div className="h-8" />}><ActiveProvidersCounter /></Suspense>
 
       {sectionOrder.map((slug, i) => {
         const section = renderSection(slug);
