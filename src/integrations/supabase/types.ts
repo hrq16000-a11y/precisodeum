@@ -1629,6 +1629,7 @@ export type Database = {
           created_at: string
           department: string | null
           email: string | null
+          engagement_points: number
           full_name: string
           id: string
           level_id: string | null
@@ -1647,6 +1648,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           email?: string | null
+          engagement_points?: number
           full_name?: string
           id: string
           level_id?: string | null
@@ -1665,6 +1667,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           email?: string | null
+          engagement_points?: number
           full_name?: string
           id?: string
           level_id?: string | null
@@ -3456,6 +3459,14 @@ export type Database = {
       }
     }
     Functions: {
+      admin_adjust_points: {
+        Args: {
+          point_delta: number
+          reset_to_zero?: boolean
+          target_user_id: string
+        }
+        Returns: number
+      }
       audit_user_ref_full: {
         Args: never
         Returns: {
@@ -3534,6 +3545,10 @@ export type Database = {
           whatsapp: string
           years_experience: number
         }[]
+      }
+      recalculate_engagement_points: {
+        Args: { target_user_id: string }
+        Returns: number
       }
       track_sponsor_metric: {
         Args: {

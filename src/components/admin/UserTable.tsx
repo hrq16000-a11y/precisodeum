@@ -1,4 +1,5 @@
-import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
+import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink, Zap, RotateCcw, Plus, Minus } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { getEngagementTier } from '@/lib/engagementTiers';
 
 const profileTypeLabel = (t: string) => {
   if (t === 'rh') return 'Agência/RH';
@@ -50,6 +54,26 @@ interface UserTableProps {
 }
 
 const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
+
+  const handleAdjustPoints = async (userId: string, delta: number, reset = false) => {
+    setAdjustingId(userId);
+    try {
+      const { data, error } = await supabase.rpc('admin_adjust_points', {
+        target_user_id: userId,
+        point_delta: delta,
+        reset_to_zero: reset,
+      });
+      if (error) throw error;
+      toast.success(reset ? 'Pontos zerados!' : `Pontos ${delta > 0 ? 'adicionados' : 'removidos'}! Novo total: ${data}`);
+      // Force re-render by triggering parent refresh
+      window.dispatchEvent(new CustomEvent('engagement-points-updated'));
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'Falha ao ajustar pontos'));
+    }
+    setAdjustingId(null);
+  };
+
   if (users.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card p-12 text-center">
@@ -210,6 +234,54 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                   </div>
                 )}
               </div>
+
+              {/* Engagement Points */}
+              {(() => {
+                const pts = p.engagement_points || 0;
+                const tier = getEngagementTier(pts);
+                return (
+                  <div className="mt-2 rounded-lg bg-muted/50 border border-border px-2.5 py-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Zap className="h-3 w-3 text-accent" />
+                        <span className="text-xs font-semibold">{pts} pts</span>
+                        <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${tier.badgeClass}`}>
+                          {tier.icon} {tier.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-6 w-6 p-0 text-xs"
+                          disabled={adjustingId === p.id}
+                          onClick={(e) => { e.stopPropagation(); handleAdjustPoints(p.id, 10); }}
+                          title="Adicionar 10 pontos"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-6 w-6 p-0 text-xs"
+                          disabled={adjustingId === p.id || pts === 0}
+                          onClick={(e) => { e.stopPropagation(); handleAdjustPoints(p.id, -10); }}
+                          title="Remover 10 pontos"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-6 w-6 p-0 text-xs text-destructive"
+                          disabled={adjustingId === p.id || pts === 0}
+                          onClick={(e) => { e.stopPropagation(); handleAdjustPoints(p.id, 0, true); }}
+                          title="Zerar pontos"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Badges */}
               <div className="mt-2 flex flex-wrap items-center gap-1.5">

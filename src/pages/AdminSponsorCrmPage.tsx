@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { format, differenceInDays } from 'date-fns';
 import {
   Megaphone, Users, FileText, StickyNote, AlertTriangle, Eye, MousePointerClick,
-  Plus, Trash2, Search, Filter, Calendar, TrendingUp, ArrowRight, Settings2
+  Plus, Trash2, Search, Filter, Calendar, TrendingUp, ArrowRight, Settings2, Download
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -287,16 +287,110 @@ const AdminSponsorCrmPage = () => {
 
   const getSponsorTitle = (id: string) => sponsors.find(s => s.id === id)?.title || id;
 
-  if (adminLoading) return <AdminLayout><div className="h-8 w-1/3 animate-pulse rounded-lg bg-muted" /></AdminLayout>;
-  if (!isAdmin) { navigate('/'); return null; }
+  // ─── CRM Export ────────────────────────────────────────────────────
+  const handleCrmExport = async () => {
+    try {
+      // Fetch engagement metrics
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, engagement_points, profile_type, status, created_at');
+
+      const { data: leadsData } = await supabase
+        .from('leads')
+        .select('id, created_at, provider_id')
+        .gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString());
+
+      const { data: providersData } = await supabase
+        .from('providers')
+        .select('id, city, state, services_count, status')
+        .eq('status', 'approved')
+        .is('deleted_at', null);
+
+      const profiles = profilesData || [];
+      const leads = leadsData || [];
+      const providers = providersData || [];
+
+      // Calculate tier distribution
+      const tierDist = { basic: 0, engaged: 0, featured: 0 };
+      profiles.forEach((p: any) => {
+        const pts = p.engagement_points || 0;
+        if (pts >= 70) tierDist.featured++;
+        else if (pts >= 30) tierDist.engaged++;
+        else tierDist.basic++;
+      });
+
+      // Services by state
+      const stateServices: Record<string, number> = {};
+      providers.forEach((p: any) => {
+        const st = p.state || 'N/A';
+        stateServices[st] = (stateServices[st] || 0) + (p.services_count || 0);
+      });
+
+      // Build CSV
+      const lines = [
+        'RELATÓRIO CRM - MÉTRICAS DE ENGAJAMENTO PARA PATROCINADORES',
+        `Data: ${new Date().toLocaleDateString('pt-BR')}`,
+        '',
+        '=== DISTRIBUIÇÃO POR NÍVEL DE ENGAJAMENTO ===',
+        `Básico (0-29 pts),${tierDist.basic}`,
+        `Engajado (30-69 pts),${tierDist.engaged}`,
+        `Destaque (70+ pts),${tierDist.featured}`,
+        `Total de Usuários,${profiles.length}`,
+        '',
+        '=== LEADS GERADOS (ÚLTIMOS 30 DIAS) ===',
+        `Total de Leads,${leads.length}`,
+        '',
+        '=== SERVIÇOS ATIVOS POR ESTADO ===',
+        'Estado,Serviços Ativos',
+        ...Object.entries(stateServices)
+          .sort((a, b) => b[1] - a[1])
+          .map(([state, count]) => `${state},${count}`),
+        '',
+        '=== PROFISSIONAIS ATIVOS POR ESTADO ===',
+        'Estado,Profissionais',
+        ...Object.entries(
+          providers.reduce((acc: Record<string, number>, p: any) => {
+            const st = p.state || 'N/A';
+            acc[st] = (acc[st] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>)
+        )
+          .sort((a, b) => b[1] - a[1])
+          .map(([state, count]) => `${state},${count}`),
+        '',
+        '=== PATROCINADORES ===',
+        'Nome,Tier,Impressões,Cliques,CTR%,Status',
+        ...sponsors.map(s => {
+          const ctr = s.impressions > 0 ? ((s.clicks / s.impressions) * 100).toFixed(1) : '0.0';
+          return `"${s.title}",${s.tier},${s.impressions},${s.clicks},${ctr}%,${s.active ? 'Ativo' : 'Inativo'}`;
+        }),
+      ];
+
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-crm-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Relatório exportado com sucesso!');
+    } catch (err: any) {
+      toast.error('Erro ao exportar: ' + (err.message || 'Falha'));
+    }
+  };
 
   // ─── Render ───────────────────────────────────────────────────────
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">CRM Patrocinadores</h1>
-          <p className="text-sm text-muted-foreground">Gestão completa de relacionamento comercial</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">CRM Patrocinadores</h1>
+            <p className="text-sm text-muted-foreground">Gestão completa de relacionamento comercial</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={handleCrmExport} className="gap-1.5">
+            <Download className="h-4 w-4" /> Exportar Relatório
+          </Button>
         </div>
 
         {/* Alerts */}

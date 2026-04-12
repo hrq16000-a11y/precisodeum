@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Crown, Clock, Circle, ArrowRight, Trophy } from 'lucide-react';
+import { MapPin, Crown, Clock, Circle, ArrowRight, Trophy, Sparkles } from 'lucide-react';
 import { usePrefetchProvider, usePrefetchHandlers } from '@/hooks/usePrefetch';
 import { Button } from '@/components/ui/button';
 import ProfileBadge from '@/components/ProfileBadge';
@@ -17,6 +17,8 @@ import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
+import { useEngagementPoints } from '@/hooks/useEngagementPoints';
+import { getEngagementTier } from '@/lib/engagementTiers';
 
 interface ProviderCardProps {
   provider: DbProvider;
@@ -48,6 +50,8 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const { user } = useAuth();
   const { city: geoCity, state: geoState } = useGeoCity();
   const isOnline = useIsProviderOnline(provider.userId);
+  const { data: engagementPoints = 0 } = useEngagementPoints(provider.userId);
+  const engTier = getEngagementTier(engagementPoints);
   const prefetch = usePrefetchProvider();
   const handlers = usePrefetchHandlers(prefetch, provider.slug);
   const hasImages = !!provider.serviceImage || !!provider.hasPortfolio;
@@ -77,6 +81,13 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   badges.push(
     <ProfileBadge key="profile" hasPhoto={hasOwnPhoto} hasServices={(provider.servicesCount || 0) >= 1} size="sm" />
   );
+  if (engTier.tier !== 'basic') {
+    badges.push(
+      <span key="eng-tier" className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${engTier.badgeClass}`}>
+        {engTier.icon} {engTier.label}
+      </span>
+    );
+  }
   const tier = getRankTier(provider.rating, provider.reviewCount);
   if (tier) {
     badges.push(
@@ -136,7 +147,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       viewport={{ once: true, margin: '-30px' }}
       transition={{ duration: 0.45, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
       whileHover={{ y: -4 }}
-      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-shadow duration-300 hover:shadow-card-hover ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`}
+      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-shadow duration-300 hover:shadow-card-hover ${engTier.borderClass}`}
       {...handlers}
     >
       {/* Hover gradient glow */}
@@ -163,15 +174,13 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 <h3 className="line-clamp-2 break-words font-display text-sm sm:text-base font-bold text-foreground group-hover:text-accent transition-colors">
                   {displayName}
                 </h3>
-                {provider.plan === 'premium' && (
-                  hasOwnPhoto ||
-                  provider.servicesCount >= (destaqueMinServices || 1) ||
-                  (provider.portfolioAlbumCount || 0) > 0 ||
-                  !!(provider as any).description
-                ) && (
+                {engTier.showCrown && (
                   <motion.div animate={{ rotate: [0, 12, -12, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}>
                     <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />
                   </motion.div>
+                )}
+                {engTier.tier === 'engaged' && (
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-label="Engajado" />
                 )}
               </div>
             </Link>
