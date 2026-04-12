@@ -1,56 +1,78 @@
 
 
-# UX de Localização e Engajamento — Implementação
+# PostGIS para Coordenadas dos Profissionais
 
-## Funcionalidades
+## Situação Atual
+- Colunas `latitude` e `longitude` são do tipo `numeric` (não texto — já é razoável)
+- PostGIS **não está habilitado** no banco
+- 152 de 168 profissionais já têm coordenadas preenchidas
+- Toda a lógica de distância é feita no **client-side** via Haversine em JavaScript
 
-### 1. Estimativa de tempo de deslocamento nos cards
-Converter distância em tempo estimado usando velocidade urbana (~25 km/h) no `ProviderCard`.
-- **Arquivo**: `src/components/ProviderCard.tsx`
-- Onde hoje mostra "📍 2.5 km", adicionar "~6 min"
-- Fórmula: `Math.ceil(distanceKm / 25 * 60)` minutos (velocidade média urbana)
+## O que muda com PostGIS
 
-### 2. Badge "Super Perto!" (< 2km)
-- **Arquivo**: `src/components/ProviderCard.tsx`
-- Quando `distanceKm < 2`, exibir badge pulsante "Super Perto!" com gradiente sutil
-- Usar `motion.span` com animação de pulse
+PostGIS permite fazer cálculos de distância **no banco de dados**, o que possibilita:
+- Queries como "profissionais num raio de 30km" diretamente no SQL (muito mais rápido)
+- Índices espaciais (GiST) para buscas ultra-rápidas
+- Ordenação por proximidade sem trazer todos os registros para o frontend
 
-### 3. Tag "Atendimento Rápido na Vizinhança" (< 5km)
-- **Arquivo**: `src/components/ProviderCard.tsx`
-- Quando `distanceKm < 5`, exibir tag "Atendimento Rápido" com ícone de raio
+## Plano de Implementação
 
-### 4. Smart Cache de Localização (já existe parcialmente)
-- **Arquivo**: `src/hooks/useGeoCity.ts`
-- O localStorage já salva lat/lng/city/state com TTL de 2h
-- **Melhoria**: ao inicializar, se há dados em cache válidos (< 2h), pular o pedido de GPS e usar os dados cacheados imediatamente; só pedir GPS em background para atualizar silenciosamente
+### Migration 1: Habilitar PostGIS + adicionar coluna geography
+```sql
+-- Habilitar extensão
+CREATE EXTENSION IF NOT EXISTS postgis SCHEMA extensions;
 
-### 5. Busca por "Caminho do Trabalho"
-- **Novo arquivo**: `src/components/RouteSearchModal.tsx`
-  - Modal com dois inputs de endereço (Casa e Trabalho)
-  - Geocodificação via Nominatim (gratuito, OpenStreetMap)
-  - Calcula corredor retangular entre os dois pontos (bounding box expandida ~3km)
-  - Filtra profissionais cujas coordenadas estão dentro do corredor
-  - Exibe resultados ordenados por distância ao ponto médio
-- **Arquivo**: `src/pages/SearchPage.tsx`
-  - Adicionar botão "Buscar no caminho Casa→Trabalho" nos filtros
-  - Quando ativado, substituir o filtro de cidade pela lógica de corredor
+-- Adicionar coluna geográfica na tabela providers
+ALTER TABLE public.providers 
+  ADD COLUMN IF NOT EXISTS geog extensions.geography(Point, 4326);
 
-### 6. Filtro visual de proximidade na SearchPage
-- **Arquivo**: `src/pages/SearchPage.tsx`
-  - Adicionar opção de sort "Mais Perto" explícita no dropdown (alias de 'relevance' quando tem GPS)
+-- Preencher geog a partir das coordenadas existentes
+UPDATE public.providers 
+SET geog = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::extensions.geography
+WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
+
+-- Índice espacial GiST para buscas rápidas
+CREATE INDEX IF NOT EXISTS idx_providers_geog ON public.providers USING GIST (geog);
+```
+
+### Migration 2: Trigger para manter geog sincronizado
+```sql
+CREATE OR REPLACE FUNCTION public.sync_provider_geog()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
+BEGIN
+  IF NEW.latitude IS NOT NULL AND NEW.longitude IS NOT NULL THEN
+    NEW.geog := ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), 4326)::extensions.geography;
+  ELSE
+    NEW.geog := NULL;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_sync_provider_geog
+BEFORE INSERT OR UPDATE OF latitude, longitude ON public.providers
+FOR EACH ROW EXECUTE FUNCTION public.sync_provider_geog();
+```
+
+### Frontend: Nenhuma alteração obrigatória agora
+- O cálculo Haversine no client continua funcionando normalmente
+- A coluna `geog` fica pronta para futuras queries server-side (ex: `ST_DWithin`, `ST_Distance`)
+- Quando quiser migrar a busca para o backend, basta criar uma função SQL:
+  ```sql
+  SELECT id, name, ST_Distance(geog, ST_MakePoint($lon, $lat)::geography) AS dist_m
+  FROM providers
+  WHERE ST_DWithin(geog, ST_MakePoint($lon, $lat)::geography, 50000) -- 50km
+  ORDER BY dist_m;
+  ```
+
+## Impacto
+- **Zero breaking changes** — as colunas `latitude`/`longitude` numeric continuam existindo
+- A coluna `geog` é preenchida automaticamente via trigger
+- 152 profissionais terão `geog` populado imediatamente
+- Índice GiST otimiza buscas espaciais futuras
 
 ## Arquivos alterados
-
 | Arquivo | Ação |
 |---------|------|
-| `src/components/ProviderCard.tsx` | Badge "Super Perto!", tag "Atendimento Rápido", estimativa de tempo |
-| `src/hooks/useGeoCity.ts` | Smart cache: não pedir GPS se cache < 2h válido |
-| `src/components/RouteSearchModal.tsx` | **Criar** — modal Casa→Trabalho com Nominatim |
-| `src/pages/SearchPage.tsx` | Botão de rota + sort "Mais Perto" |
-
-## Detalhes técnicos
-- Nominatim (gratuito, sem API key): `https://nominatim.openstreetmap.org/search?q=...&format=json`
-- Corredor Casa→Trabalho: bounding box entre os dois pontos expandida 3km em cada direção, filtragem client-side
-- Estimativa de tempo: `Math.ceil(distKm * 60 / 25)` min (25km/h média urbana), com mínimo "< 5 min" para < 2km
-- Zero dependências externas novas
+| Nova migration | Habilitar PostGIS, criar coluna `geog`, trigger de sync |
 
