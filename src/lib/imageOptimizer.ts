@@ -8,6 +8,14 @@
  * to fallback to original URLs gracefully.
  */
 
+const VIDEO_EXTENSIONS = /\.(mp4|mov|webm|avi|mkv|m4v)(\?|$)/i;
+
+/** Check if a URL points to a video file */
+export function isVideoUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return VIDEO_EXTENSIONS.test(url);
+}
+
 interface ImageOptions {
   width?: number;
   height?: number;
@@ -25,6 +33,9 @@ export function optimizedImageUrl(
   options: ImageOptions = {}
 ): string {
   if (!url) return '';
+
+  // Never transform video URLs
+  if (isVideoUrl(url)) return url;
 
   // Only transform Supabase storage URLs
   if (!url.includes('/storage/v1/object/public/')) return url;

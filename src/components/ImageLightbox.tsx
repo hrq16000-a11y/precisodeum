@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { portfolioFull } from '@/lib/imageOptimizer';
+import { X, ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { portfolioFull, isVideoUrl } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
 
 interface ImageLightboxProps {
@@ -11,6 +11,38 @@ interface ImageLightboxProps {
 }
 
 const SWIPE_THRESHOLD = 50;
+
+/* ── Lightbox Image ── */
+const LightboxImage = ({ url, idx, opacity, scale, translate, onError }: {
+  url: string; idx: number; opacity: number;
+  scale: number; translate: { x: number; y: number };
+  onError: React.ReactEventHandler<HTMLImageElement>;
+}) => (
+  <img
+    src={portfolioFull(url)}
+    alt={`Imagem ${idx + 1}`}
+    className="max-h-[90vh] max-w-[95vw] select-none rounded-lg object-contain"
+    draggable={false}
+    onError={onError}
+    style={{
+      transition: 'opacity 150ms ease, transform 100ms ease',
+      opacity,
+      transform: `scale(${scale}) translate(${translate.x / scale}px, ${translate.y / scale}px)`,
+    }}
+  />
+);
+
+/* ── Lightbox Video ── */
+const LightboxVideo = ({ url, opacity }: { url: string; opacity: number }) => (
+  <video
+    src={url}
+    controls
+    autoPlay
+    playsInline
+    className="max-h-[90vh] max-w-[95vw] select-none rounded-lg"
+    style={{ transition: 'opacity 150ms ease', opacity }}
+  />
+);
 
 const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightboxProps) => {
   const [current, setCurrent] = useState(initialIndex);
@@ -87,7 +119,6 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
   }, [scale, translate, flashControls]);
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
-    // Pinch zoom
     if (e.touches.length === 2 && pinchStartDist.current !== null) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
@@ -98,7 +129,6 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
       e.preventDefault();
       return;
     }
-    // Pan when zoomed
     if (e.touches.length === 1 && scale > 1 && panStart.current) {
       const dx = e.touches[0].clientX - panStart.current.x;
       const dy = e.touches[0].clientY - panStart.current.y;
@@ -106,7 +136,6 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
       swiping.current = true;
       return;
     }
-    // Swipe detection (only when not zoomed)
     if (!touchStart.current || scale > 1) return;
     const dxAbs = Math.abs(e.touches[0].clientX - touchStart.current.x);
     const dyAbs = Math.abs(e.touches[0].clientY - touchStart.current.y);
@@ -145,7 +174,8 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
   if (!open || images.length === 0) return null;
 
   const idx = Math.min(current, images.length - 1);
-  const fullUrl = portfolioFull(images[idx]);
+  const currentUrl = images[idx];
+  const isVideo = isVideoUrl(currentUrl);
 
   return (
     <div
@@ -177,7 +207,7 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
         </button>
       )}
 
-      {/* Image area */}
+      {/* Media area */}
       <div
         className="flex h-full w-full items-center justify-center"
         style={{ touchAction: 'none' }}
@@ -186,18 +216,11 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
         onTouchEnd={onTouchEnd}
         onClick={handleTap}
       >
-        <img
-          src={fullUrl}
-          alt={`Imagem ${idx + 1}`}
-          className="max-h-[90vh] max-w-[95vw] select-none rounded-lg object-contain"
-          draggable={false}
-          onError={handleImageError}
-          style={{
-            transition: 'opacity 150ms ease, transform 100ms ease',
-            opacity,
-            transform: `scale(${scale}) translate(${translate.x / scale}px, ${translate.y / scale}px)`,
-          }}
-        />
+        {isVideo ? (
+          <LightboxVideo url={currentUrl} opacity={opacity} />
+        ) : (
+          <LightboxImage url={currentUrl} idx={idx} opacity={opacity} scale={scale} translate={translate} onError={handleImageError} />
+        )}
       </div>
 
       {/* Next arrow */}
