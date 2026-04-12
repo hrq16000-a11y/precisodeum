@@ -1,62 +1,51 @@
 
 
-# Fix: Priority sorting for user's detected city + IP precision indicator
+# Add Social Media Links & YouTube Videos to Services/Portfolio
 
-## Problem
+## What we're building
 
-Providers are sorted strictly by Haversine distance from the user's coordinates. When coordinates come from IP geolocation (imprecise, ~5-20km error), a provider in Fazenda Rio Grande (different city) can appear closer than one in São José dos Pinhais (user's own city). The system doesn't distinguish "same city as user" from "nearby city" when sorting.
+Adding Instagram, Facebook, and YouTube link fields to the service registration form, and supporting YouTube video embeds in the portfolio/profile display.
 
-Additionally, there's no visual indicator that the location is IP-based and may be inaccurate.
+## Database Migration
 
-## Root Cause
+Add 3 new columns to the `services` table:
+```sql
+ALTER TABLE public.services ADD COLUMN instagram_url text DEFAULT '';
+ALTER TABLE public.services ADD COLUMN facebook_url text DEFAULT '';
+ALTER TABLE public.services ADD COLUMN youtube_url text DEFAULT '';
+```
 
-1. All providers in a city share the same city-center coordinates (geocoded fallback), so distance differences between nearby cities are tiny (2-5km) — well within IP geolocation error margins.
-2. The sorting algorithm treats all distance calculations equally regardless of coordinate precision.
-3. The `GeoPromptBanner` shows a generic radius banner for IP-based location without indicating it's approximate.
+## Changes
 
-## Plan
+### 1. Service form — DashboardServicesPage.tsx
+- Add `instagram_url`, `facebook_url`, `youtube_url` to the form state
+- Add input fields with Instagram/Facebook/YouTube icons in the dialog (after the photo upload section)
+- Include these fields in the save/edit payload and in `handleEdit` pre-fill
 
-### 1. Add "same city as user" priority boost in sorting (CategoryPage.tsx)
+### 2. Service Wizard — ServiceWizard.tsx (onboarding)
+- Add social link fields in Step 2 (Details) — optional inputs for Instagram, Facebook, YouTube URLs
 
-In the sorting logic within `CategoryPage.tsx`, before distance sorting, add a priority tier:
-- **Tier 1**: Provider's city matches user's detected city (exact name match) — always ranked first
-- **Tier 2**: Within radius, sorted by distance
-- This ensures that São José dos Pinhais providers always appear before Fazenda Rio Grande providers when the user is detected in SJP, regardless of imprecise IP coordinates.
+### 3. Admin ServiceEditDialog.tsx
+- Add the 3 social URL fields to the edit form and save payload
 
-Apply the same logic in:
-- `CategoryPage.tsx` (category listing — the main issue shown)
-- `CityPage.tsx` (city listing)
-- `useProviders.tsx` `filterAndRankProvidersGrouped()` (search results)
+### 4. YouTube URL detection — imageOptimizer.ts
+- Add `isYouTubeUrl(url)` helper that detects `youtube.com/watch`, `youtu.be/`, `youtube.com/shorts/` patterns
+- Add `getYouTubeEmbedUrl(url)` to convert any YouTube URL to an embeddable `youtube.com/embed/` URL
+- Add `getYouTubeThumbnail(url)` to extract the video thumbnail
 
-### 2. Show "approximate location" indicator in GeoPromptBanner
+### 5. Provider Profile — ProviderProfile.tsx
+- In the services section, display social media icon links (Instagram, Facebook, YouTube) when populated
+- For YouTube URLs: render an embedded iframe or clickable thumbnail with play overlay
+- In portfolio rendering, detect YouTube URLs and render embedded iframe instead of `<video>` tag
 
-When `precise === false` (IP-based), update the banner to show:
-- "GPS PRECISO" → keep as-is when GPS is active
-- New: "Localização aproximada" with a subtle warning icon when IP-based
-- Add small text: "A ordenação por distância pode ter variações. Ative o GPS para resultados mais precisos."
-
-### 3. Add precision label in header GeoLocationChip area
-
-In the `GeoPromptBanner` component, when `precise === false` and `hasGps === true` (has IP coords but not GPS), change the label from the current generic radius display to include "Ref. aproximada" to match what the user sees in the screenshot ("GPS PRECISO" vs approximate).
+### 6. ImageLightbox.tsx
+- Add YouTube embed support: when current item is a YouTube URL, render an iframe instead of `<img>` or `<video>`
 
 ## Technical Details
 
-**Files to modify:**
-- `src/pages/CategoryPage.tsx` — add city-match priority tier in `distSort`
-- `src/pages/CityPage.tsx` — same sorting fix in the providers `useMemo`
-- `src/hooks/useProviders.tsx` — add city-match priority in `filterAndRankProvidersGrouped()` local sorting
-- `src/components/GeoPromptBanner.tsx` — show "approximate" indicator when `precise === false`
+- Social URL fields are optional (nullable, default empty string)
+- YouTube detection covers: `youtube.com/watch?v=`, `youtu.be/`, `youtube.com/shorts/`
+- Embed format: `https://www.youtube.com/embed/{videoId}` with `autoplay=1` in lightbox
+- All fields use `encodeURIComponent` where needed and validate URL format client-side
+- No breaking changes to existing data or UI
 
-**Sorting logic change (pseudo-code):**
-```
-sort(a, b):
-  // Tier 1: same city as user comes first
-  aCityMatch = normalize(a.city) === normalize(userCity)
-  bCityMatch = normalize(b.city) === normalize(userCity)
-  if (aCityMatch !== bCityMatch) return aCityMatch ? -1 : 1
-  
-  // Tier 2: sort by distance (existing logic)
-  return distSort(a, b)
-```
-
-**No database changes needed.**
