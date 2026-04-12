@@ -1,39 +1,56 @@
 
 
-# Análise: Busca por Proximidade e Ordenação Geográfica
+# Busca Profunda: Incluir Serviços no Matching de Texto
 
-## Diagnóstico
+## Problema
+A busca textual filtra apenas campos do provider (`name`, `category`, `description`, `businessName`). Os dados dos **serviços cadastrados** (`service_name`, `description`, `service_area`) são carregados pelo fetch mas **ignorados no matching** — um profissional com serviço "Manutenção de Eletrônicos" não aparece ao buscar "técnico eletrônica".
 
-Após análise detalhada do código, **o sistema já possui TODAS as funcionalidades solicitadas implementadas e funcionais**:
+## Solução
+Incluir os textos dos serviços no campo `searchable` usado pelo filtro textual, sem alterar a estrutura de dados existente.
 
-| Funcionalidade | Status | Onde |
-|---|---|---|
-| Captura de GPS + fallback IP | ✅ Implementado | `useGeoCity.ts` — `requestPreciseLocation()` + ipapi.co + ipwho.is |
-| Cálculo Haversine de distância | ✅ Implementado | `geoDistance.ts` + `geoEngine.ts` |
-| Ordenação por proximidade | ✅ Implementado | `filterAndRankProvidersGrouped()` — sort by `distanceKm` first |
-| Filtro por raio (5/10/30/50/100km) | ✅ Implementado | `GeoLocationChip` com seletor de raio |
-| Badge de distância no card | ✅ Implementado | `ProviderCard` mostra "📍 X km" |
-| Separação Local/Outra região | ✅ Implementado | `GroupedSearchResult` com arrays separados |
-| Fallback por cidade quando sem GPS | ✅ Implementado | `matchesGeoContext` com name matching |
-| Coordenadas nos 150 providers | ✅ 100% preenchido | Verificado no banco de dados |
-| GPS solicitado ao abrir busca | ✅ Implementado | `SearchPage` e `CategoryPage` chamam `requestPreciseLocation()` no mount |
-| Search Intelligence Layer | ✅ Implementado | `searchIntelligence.ts` com detecção de intent geo/serviço/híbrido |
+## Alterações
 
-## Por que pode parecer que não funciona
+### `src/hooks/useProviders.tsx`
 
-O problema mais provável é um destes cenários:
+**1. Enriquecer `DbProvider` com campo de busca agregado**
 
-1. **GPS negado pelo navegador** — sem coordenadas precisas, o sistema usa IP (menos preciso)
-2. **Raio padrão de 50km** — pode incluir cidades distantes como Pontal do Paraná (se estiver dentro do raio)
-3. **Cache do navegador** — dados de localização antigos em `localStorage`
+Na função `fetchProvidersLightweight` (linha ~232), ao mapear os providers, concatenar os nomes e descrições de todos os serviços do profissional num campo `_searchableServices`:
 
-## Recomendação
+```typescript
+// Após o mapProvider, agregar textos dos serviços para busca
+const allServices = (serviceRows as any[]).filter(s => s.provider_id === p.id);
+const svcTexts = allServices.map(s => 
+  [s.service_name || '', s.description || '', s.service_area || ''].join(' ')
+).join(' ');
+(mapped as any)._searchableServices = svcTexts;
+```
 
-Não há alterações de código necessárias. O sistema já está completo. Se você está vendo resultados fora de ordem, sugiro:
+**2. Incluir `_searchableServices` no filtro textual**
 
-1. **Verificar se o GPS está ativado** — o banner "Ativar GPS" aparece na página de busca
-2. **Reduzir o raio** — de 50km para 10km ou 30km no seletor do `GeoLocationChip`
-3. **Limpar cache** — apagar `localStorage` do navegador para forçar nova detecção
+Nas duas funções `filterAndRankProviders` (linha ~430) e `filterAndRankProvidersGrouped` (linha ~529), adicionar o campo `_searchableServices` ao texto pesquisável:
 
-Se quiser, posso investigar um cenário específico (ex: buscar a partir de uma cidade X e ver os resultados) para identificar se há algum bug pontual. Basta me informar a cidade e categoria que está testando.
+```typescript
+// ANTES:
+const searchable = [p.name, p.category, p.description, p.businessName || '', p.city, p.neighborhood, p.state]
+  .join(' ').toLowerCase()...
+
+// DEPOIS:
+const searchable = [p.name, p.category, p.description, p.businessName || '', p.city, p.neighborhood, p.state, (p as any)._searchableServices || '']
+  .join(' ').toLowerCase()...
+```
+
+**3. Incluir na relevância do SIL** (`src/lib/searchIntelligence.ts`)
+
+Na função `computeRelevanceScore` (linha ~253), o campo `searchable` já recebe `provider.description`. Não precisa mudar o SIL — o matching principal é no `useProviders`.
+
+## Impacto
+- **Zero alterações no banco de dados** — os serviços já são carregados
+- **Zero custo extra de query** — os dados já estão no fetch existente
+- **1 arquivo alterado**: `src/hooks/useProviders.tsx`
+- Buscar "técnico eletrônica" agora encontra profissionais cujos serviços mencionam "eletrônica", mesmo que o perfil não mencione
+
+## Detalhes técnicos
+- Os tokens sanitizados (`["tecnico", "eletronica"]`) serão comparados contra o texto concatenado de todos os serviços
+- O threshold de matching (1 token = 100%, 2+ tokens = 50%) continua o mesmo
+- A normalização NFD + remoção de acentos já é aplicada no `searchable`, garantindo que "Eletrônicos" casa com "eletronica"
 
