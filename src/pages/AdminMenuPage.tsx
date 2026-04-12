@@ -229,13 +229,18 @@ const AdminMenuPage = () => {
             <div key={group.value}>
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">{group.label}</h2>
               <div className="space-y-1">
-                {group.items.map(item => (
-                  <Card key={item.id} className={!item.active ? 'opacity-50' : ''}>
+                {group.items.map((item, idx) => (
+                  <Card
+                    key={item.id}
+                    draggable
+                    onDragStart={e => handleDragStart(e, item)}
+                    onDragOver={e => handleDragOver(e, item)}
+                    onDrop={e => handleDrop(e, item)}
+                    onDragEnd={handleDragEnd}
+                    className={`transition-all cursor-grab active:cursor-grabbing ${!item.active ? 'opacity-50' : ''} ${dragOverId === item.id ? 'ring-2 ring-primary/50 scale-[1.01]' : ''} ${dragItemId === item.id ? 'opacity-40' : ''}`}
+                  >
                     <CardContent className="flex items-center gap-3 py-2 px-4">
-                      <div className="flex flex-col gap-0.5">
-                        <button onClick={() => moveItem(item, -1)} className="text-muted-foreground hover:text-foreground"><GripVertical className="h-3 w-3 rotate-180" /></button>
-                        <button onClick={() => moveItem(item, 1)} className="text-muted-foreground hover:text-foreground"><GripVertical className="h-3 w-3" /></button>
-                      </div>
+                      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           {item.icon && <CategoryIcon icon={item.icon} size={16} className="text-muted-foreground" />}
@@ -246,6 +251,12 @@ const AdminMenuPage = () => {
                         <p className="text-xs text-muted-foreground truncate">{item.url}</p>
                       </div>
                       <div className="flex items-center gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => moveItem(item, -1)} disabled={idx === 0} className="h-7 w-7">
+                          <span className="text-xs">↑</span>
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => moveItem(item, 1)} disabled={idx === group.items.length - 1} className="h-7 w-7">
+                          <span className="text-xs">↓</span>
+                        </Button>
                         <Switch checked={item.active} onCheckedChange={() => handleToggle(item)} />
                         <Button size="sm" variant="ghost" onClick={() => openEdit(item)}>Editar</Button>
                         <Button size="icon" variant="ghost" onClick={() => handleDelete(item)} className="text-destructive">
