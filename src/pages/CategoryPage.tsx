@@ -124,8 +124,8 @@ const CategoryPage = () => {
     return { localProviders: [] as DbProvider[], nearbyProviders: nearby as DbProvider[], outOfStateProviders: outOfState as DbProvider[], isFallback: true, expansionLevel: 'all' as const };
   }, [allProviders, geoCity, geoState, userLat, userLon, radiusKm]);
 
-  const nearestDistanceKm = localProviders.length > 0 ? (localProviders[0] as any)._dist : undefined;
-  const totalDisplay = localProviders.length + (showAllLocations ? otherProviders.length : 0);
+  const nearestDistanceKm = localProviders.length > 0 ? (localProviders[0] as any)._dist : (nearbyProviders.length > 0 ? (nearbyProviders[0] as any)._dist : undefined);
+  const totalDisplay = localProviders.length + nearbyProviders.length + (showOutOfState ? outOfStateProviders.length : 0);
 
   useSeoHead({
     title: category ? `${category.name} - Profissionais` : 'Categoria',
@@ -147,7 +147,8 @@ const CategoryPage = () => {
   useJsonLd(breadcrumbLd);
 
   const paginatedLocal = localProviders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
-  const paginatedOther = showAllLocations ? otherProviders : [];
+  const paginatedNearby = nearbyProviders;
+  const paginatedOutOfState = showOutOfState ? outOfStateProviders : [];
 
   if (isLoading) {
     return (
@@ -317,30 +318,8 @@ const CategoryPage = () => {
           ))}
         </motion.div>
 
-        {/* Botão para ver profissionais de outras localidades */}
-        {!showAllLocations && otherProviders.length > 0 && !isFallback && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-10 flex justify-center"
-          >
-            <button
-              onClick={() => { setShowAllLocations(true); setPage(1); }}
-              className="group relative inline-flex items-center gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-4 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
-                <Globe className="h-5 w-5" />
-              </span>
-              <span className="text-left">
-                <span className="block text-sm font-semibold">Ver outras localidades</span>
-                <span className="block text-xs text-muted-foreground">+{otherProviders.length} profissional{otherProviders.length !== 1 ? 'is' : ''} em todo o Brasil</span>
-              </span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
-            </button>
-          </motion.div>
-        )}
-
-        {showAllLocations && paginatedOther.length > 0 && (
+        {/* Nearby cities section (same state / <100km) */}
+        {paginatedNearby.length > 0 && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
@@ -349,8 +328,8 @@ const CategoryPage = () => {
             >
               <div className="h-px flex-1 bg-border" />
               <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                <Globe className="h-3 w-3" />
-                Outras regiões ({otherProviders.length})
+                <MapPin className="h-3 w-3" />
+                Cidades próximas ({nearbyProviders.length})
               </span>
               <div className="h-px flex-1 bg-border" />
             </motion.div>
@@ -360,7 +339,59 @@ const CategoryPage = () => {
               animate="visible"
               className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
             >
-              {paginatedOther.map((p, i) => (
+              {paginatedNearby.map((p, i) => (
+                <motion.div key={p.id} variants={fadeUp}>
+                  <ProviderCard provider={p} isFallback={isFallback} index={i} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </>
+        )}
+
+        {/* Out of state — collapsed by default */}
+        {outOfStateProviders.length > 0 && !showOutOfState && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-10 flex justify-center"
+          >
+            <button
+              onClick={() => { setShowOutOfState(true); setPage(1); }}
+              className="group relative inline-flex items-center gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-4 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                <Globe className="h-5 w-5" />
+              </span>
+              <span className="text-left">
+                <span className="block text-sm font-semibold">Profissionais de outro estado ({outOfStateProviders.length})</span>
+                <span className="block text-xs text-muted-foreground">Deseja ver? Ver mais...</span>
+              </span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+            </button>
+          </motion.div>
+        )}
+
+        {showOutOfState && paginatedOutOfState.length > 0 && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-8 mb-3 flex items-center gap-3"
+            >
+              <div className="h-px flex-1 bg-border" />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                <Globe className="h-3 w-3" />
+                Outro estado ({outOfStateProviders.length})
+              </span>
+              <div className="h-px flex-1 bg-border" />
+            </motion.div>
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              animate="visible"
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              {paginatedOutOfState.map((p, i) => (
                 <motion.div key={p.id} variants={fadeUp}>
                   <ProviderCard provider={p} isFallback={true} index={i} />
                 </motion.div>
@@ -369,8 +400,8 @@ const CategoryPage = () => {
           </>
         )}
 
-        {/* Auto-expand suggestion when 0 local results but others exist */}
-        {!isFallback && localProviders.length === 0 && otherProviders.length > 0 && userLat != null && (
+        {/* Auto-expand suggestion when 0 local results and 0 nearby */}
+        {!isFallback && localProviders.length === 0 && nearbyProviders.length === 0 && outOfStateProviders.length > 0 && userLat != null && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -382,7 +413,7 @@ const CategoryPage = () => {
                 Nenhum profissional de {category.name} a até {radiusKm}km
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Encontramos {otherProviders.length} profissional{otherProviders.length !== 1 ? 'is' : ''} em outras regiões
+                Encontramos {outOfStateProviders.length} profissional{outOfStateProviders.length !== 1 ? 'is' : ''} em outros estados
               </p>
             </div>
             <div className="flex gap-2">
@@ -391,15 +422,15 @@ const CategoryPage = () => {
                   Expandir para 50km
                 </Button>
               )}
-              <Button size="sm" className="gap-1.5" onClick={() => { setShowAllLocations(true); setPage(1); }}>
+              <Button size="sm" className="gap-1.5" onClick={() => { setShowOutOfState(true); setPage(1); }}>
                 <Globe className="h-3.5 w-3.5" />
-                Ver todas as regiões
+                Ver outros estados
               </Button>
             </div>
           </motion.div>
         )}
 
-        {totalDisplay === 0 && otherProviders.length === 0 && (
+        {totalDisplay === 0 && outOfStateProviders.length === 0 && (
           <EmptyStateFallback
             title={`Nenhum profissional de ${category.name} encontrado`}
             message="Seja o primeiro a se cadastrar nesta categoria!"
