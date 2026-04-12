@@ -28,6 +28,9 @@ const ServiceEditDialog = ({ service, onClose, onSaved }: ServiceEditDialogProps
     address: '',
     category_id: '',
     provider_id: '',
+    instagram_url: '',
+    facebook_url: '',
+    youtube_url: '',
   });
   const [categories, setCategories] = useState<any[]>([]);
   const [providers, setProviders] = useState<any[]>([]);
@@ -45,6 +48,9 @@ const ServiceEditDialog = ({ service, onClose, onSaved }: ServiceEditDialogProps
         address: service.address || '',
         category_id: service.category_id || '',
         provider_id: service.provider_id || '',
+        instagram_url: service.instagram_url || '',
+        facebook_url: service.facebook_url || '',
+        youtube_url: service.youtube_url || '',
       });
     }
   }, [service]);
@@ -69,6 +75,9 @@ const ServiceEditDialog = ({ service, onClose, onSaved }: ServiceEditDialogProps
       working_hours: form.working_hours,
       address: form.address,
       provider_id: form.provider_id,
+      instagram_url: form.instagram_url,
+      facebook_url: form.facebook_url,
+      youtube_url: form.youtube_url,
     };
     if (form.category_id) updateData.category_id = form.category_id;
 
@@ -124,6 +133,18 @@ const ServiceEditDialog = ({ service, onClose, onSaved }: ServiceEditDialogProps
               <Label>Horário</Label>
               <Input value={form.working_hours} onChange={e => setForm(f => ({ ...f, working_hours: e.target.value }))} />
             </div>
+          </div>
+          <div>
+            <Label>Instagram</Label>
+            <Input value={form.instagram_url} onChange={e => setForm(f => ({ ...f, instagram_url: e.target.value }))} placeholder="https://instagram.com/..." />
+          </div>
+          <div>
+            <Label>Facebook</Label>
+            <Input value={form.facebook_url} onChange={e => setForm(f => ({ ...f, facebook_url: e.target.value }))} placeholder="https://facebook.com/..." />
+          </div>
+          <div>
+            <Label>YouTube</Label>
+            <Input value={form.youtube_url} onChange={e => setForm(f => ({ ...f, youtube_url: e.target.value }))} placeholder="https://youtube.com/watch?v=..." />
           </div>
           <div>
             <Label>Endereço</Label>

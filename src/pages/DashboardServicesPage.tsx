@@ -45,6 +45,9 @@ const DashboardServicesPage = () => {
     address: '',
     working_hours: '',
     website: '',
+    instagram_url: '',
+    facebook_url: '',
+    youtube_url: '',
   });
 
   useEffect(() => {
@@ -192,6 +195,9 @@ const DashboardServicesPage = () => {
       working_hours: form.working_hours,
       website: form.website,
       price: form.price || null,
+      instagram_url: form.instagram_url,
+      facebook_url: form.facebook_url,
+      youtube_url: form.youtube_url,
     } as any;
 
     let serviceId = editId;
@@ -239,6 +245,9 @@ const DashboardServicesPage = () => {
       address: provider ? [provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') : '',
       working_hours: provider?.working_hours || '',
       website: provider?.website || '',
+      instagram_url: '',
+      facebook_url: '',
+      youtube_url: '',
     });
     setSelectedCategoryIds([]);
     setEditId(null);
@@ -257,7 +266,9 @@ const DashboardServicesPage = () => {
       address: s.address || '',
       working_hours: s.working_hours || '',
       website: (s as any).website || provider?.website || '',
-      
+      instagram_url: s.instagram_url || '',
+      facebook_url: s.facebook_url || '',
+      youtube_url: s.youtube_url || '',
     });
     setEditId(s.id);
     const { data } = await supabase.from('service_categories').select('category_id').eq('service_id', s.id);
@@ -531,6 +542,41 @@ const DashboardServicesPage = () => {
                   </div>
                 </label>
               )}
+            </div>
+
+            {/* Social / YouTube links */}
+            <div className="space-y-2">
+              <label className="mb-1 block text-sm font-medium text-foreground">Redes Sociais & YouTube</label>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-sm">📸</span>
+                <input
+                  name="instagram_url"
+                  value={form.instagram_url}
+                  onChange={handleChange}
+                  placeholder="https://instagram.com/seu_perfil"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-sm">📘</span>
+                <input
+                  name="facebook_url"
+                  value={form.facebook_url}
+                  onChange={handleChange}
+                  placeholder="https://facebook.com/sua_pagina"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-sm">🎬</span>
+                <input
+                  name="youtube_url"
+                  value={form.youtube_url}
+                  onChange={handleChange}
+                  placeholder="https://youtube.com/watch?v=... ou youtu.be/..."
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                />
+              </div>
             </div>
 
             {/* Actions */}

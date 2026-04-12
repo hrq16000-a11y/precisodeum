@@ -102,3 +102,33 @@ export function originalUrl(url: string | null | undefined): string {
     .replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
     .split('?')[0];
 }
+
+/* ── YouTube helpers ── */
+
+const YT_REGEX = /(?:youtube\.com\/(?:watch\?.*v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/;
+
+/** Check if a URL is a YouTube video link */
+export function isYouTubeUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return YT_REGEX.test(url);
+}
+
+/** Extract the 11-char video ID from any YouTube URL format */
+export function getYouTubeId(url: string): string | null {
+  const m = url.match(YT_REGEX);
+  return m ? m[1] : null;
+}
+
+/** Convert any YouTube URL to an embeddable URL */
+export function getYouTubeEmbedUrl(url: string, autoplay = false): string {
+  const id = getYouTubeId(url);
+  if (!id) return url;
+  return `https://www.youtube.com/embed/${id}${autoplay ? '?autoplay=1' : ''}`;
+}
+
+/** Get the default thumbnail for a YouTube video */
+export function getYouTubeThumbnail(url: string): string {
+  const id = getYouTubeId(url);
+  if (!id) return '';
+  return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+}
