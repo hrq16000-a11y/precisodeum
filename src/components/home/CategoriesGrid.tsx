@@ -158,8 +158,8 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                         {/* Hover overlay */}
                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500" />
 
-                        <span className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 group-hover:bg-sky-100 transition-colors duration-300">
-                          <CategoryIcon icon={cat.icon} size={26} />
+                        <span className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 group-hover:bg-accent/20 transition-colors duration-300">
+                          <CategoryIcon icon={cat.icon} size={26} className="text-accent" />
                         </span>
                         <span className="relative text-[0.6875rem] font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words w-full" style={{ hyphens: 'auto' }}>
                           {cat.name}
