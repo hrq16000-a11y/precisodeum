@@ -1,21 +1,15 @@
-import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
 import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { importWithRetry } from '@/lib/lazyWithRetry';
+import { getCategoryForService, CATEGORY_IMAGES, type ServiceCategory } from '@/lib/serviceCategoryMap';
 
 const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBar')));
 const GeoLocationChip = lazy(() => importWithRetry(() => import('@/components/GeoLocationChip')));
 
-const FALLBACK_BG_IMAGES = [
-  '/hero-bg-1.jpg', '/hero-bg-2.jpg', '/hero-bg-3.jpg', '/hero-bg-4.jpg',
-  '/hero-bg-5.jpg', '/hero-bg-6.jpg', '/hero-bg-7.jpg', '/hero-bg-8.jpg',
-  '/hero-bg-9.jpg', '/hero-bg-10.jpg', '/hero-bg-11.jpg', '/hero-bg-12.jpg',
-  '/hero-bg-13.jpg', '/hero-bg-14.jpg', '/hero-bg-15.jpg', '/hero-bg-16.jpg',
-  '/hero-bg-17.jpg', '/hero-bg-18.jpg', '/hero-bg-19.jpg', '/hero-bg-20.jpg',
-];
 const FALLBACK_PREFIXES = ['Encontre o melhor', 'Preciso de'];
 
 const HeroPrefixRotator = ({ prefixes }: { prefixes: string[] }) => {
@@ -59,30 +53,6 @@ const HeroPrefixRotator = ({ prefixes }: { prefixes: string[] }) => {
   );
 };
 
-function useCountUp(target: number, duration = 1500) {
-  const [count, setCount] = useState(0);
-  const prevTarget = useRef(0);
-
-  useEffect(() => {
-    if (!target || target <= 0) return;
-    const start = prevTarget.current;
-    prevTarget.current = target;
-    const startTime = performance.now();
-
-    const tick = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(start + (target - start) * eased));
-      if (progress < 1) requestAnimationFrame(tick);
-    };
-
-    requestAnimationFrame(tick);
-  }, [target, duration]);
-
-  return count;
-}
-
 /* Floating decorative dots — deferred via requestIdleCallback to avoid blocking LCP */
 const FloatingDots = () => {
   const [show, setShow] = useState(false);
@@ -120,41 +90,21 @@ const FloatingDots = () => {
   );
 };
 
-/** Pick N random items from an array (Fisher-Yates partial shuffle) */
-function pickRandom<T>(arr: T[], n: number): T[] {
-  const copy = [...arr];
-  const result: T[] = [];
-  for (let i = 0; i < Math.min(n, copy.length); i++) {
-    const j = i + Math.floor(Math.random() * (copy.length - i));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-    result.push(copy[i]);
-  }
-  return result;
-}
+// All category images for preloading
+const ALL_CATEGORY_IMAGES = Object.values(CATEGORY_IMAGES);
 
 const HeroBanner = () => {
-  const [bgIndex, setBgIndex] = useState(0);
+  const [currentCategory, setCurrentCategory] = useState<ServiceCategory>('instalacoes');
+  const [displayedImage, setDisplayedImage] = useState(CATEGORY_IMAGES.instalacoes);
+  const [nextImage, setNextImage] = useState<string | null>(null);
   const { city: geoCity } = useGeoCity();
 
   // Dynamic settings from admin
-  const bgImagesRaw = useSettingValue('hero_bg_images');
   const prefixesRaw = useSettingValue('hero_prefixes');
-  const bgIntervalRaw = useSettingValue('hero_bg_interval');
-  const ctaPrimaryText = useSettingValue('hero_cta_primary_text');
   const ctaPrimaryLinkText = useSettingValue('hero_cta_primary_link_text');
   const ctaPrimaryLink = useSettingValue('hero_cta_primary_link');
   const ctaSecondaryText = useSettingValue('hero_cta_secondary_text');
   const ctaSecondaryLink = useSettingValue('hero_cta_secondary_link');
-
-  // Pick 3 random images once per mount (session) from the full list
-  const bgImages = useMemo(() => {
-    const pool = bgImagesRaw
-      ? bgImagesRaw.split(',').map(s => s.trim()).filter(Boolean)
-      : [];
-    const source = pool.length > 0 ? pool : FALLBACK_BG_IMAGES;
-    return pickRandom(source, 3);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bgImagesRaw]);
 
   const prefixes = useMemo(() => {
     if (!prefixesRaw) return FALLBACK_PREFIXES;
@@ -162,38 +112,56 @@ const HeroBanner = () => {
     return parsed.length > 0 ? parsed : FALLBACK_PREFIXES;
   }, [prefixesRaw]);
 
-  const bgInterval = Number(bgIntervalRaw) || 7000;
+  // When rotating text changes service, update background
+  const handleServiceChange = useCallback((service: string) => {
+    const cat = getCategoryForService(service);
+    const newImg = CATEGORY_IMAGES[cat];
+    if (newImg !== displayedImage) {
+      setNextImage(newImg);
+      setCurrentCategory(cat);
+      // After crossfade, swap
+      setTimeout(() => {
+        setDisplayedImage(newImg);
+        setNextImage(null);
+      }, 800);
+    }
+  }, [displayedImage]);
 
-  // Background image rotation
+  // Preload all category images on mount
   useEffect(() => {
-    const interval = setInterval(() => {
-      setBgIndex((prev) => (prev + 1) % bgImages.length);
-    }, bgInterval);
-    return () => clearInterval(interval);
-  }, [bgImages.length, bgInterval]);
-
-  // Only render current + next image to avoid loading all 20
-  const visibleIndices = useMemo(() => {
-    const next = (bgIndex + 1) % bgImages.length;
-    return [bgIndex, next];
-  }, [bgIndex, bgImages.length]);
+    ALL_CATEGORY_IMAGES.forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
 
   return (
     <section className="relative min-h-[280px] overflow-visible py-6 sm:min-h-[320px] sm:py-8 md:min-h-[480px] md:overflow-hidden md:py-20">
-      {/* Background images — only current + next preloaded */}
-      {visibleIndices.map((i) => (
+      {/* Current background image */}
+      <img
+        src={displayedImage}
+        alt="Profissionais de serviços"
+        width={1920}
+        height={768}
+        fetchPriority="high"
+        loading="eager"
+        decoding="sync"
+        className="absolute inset-0 h-full w-full object-cover object-center hero-img-cinematic transition-opacity duration-[800ms]"
+      />
+
+      {/* Next image crossfading in */}
+      {nextImage && (
         <img
-          key={bgImages[i]}
-          src={bgImages[i]}
+          src={nextImage}
           alt="Profissionais de serviços"
           width={1920}
           height={768}
-          fetchPriority={i === bgIndex ? 'high' : 'low'}
-          loading={i === bgIndex ? 'eager' : 'lazy'}
-          decoding={i === bgIndex ? 'sync' : 'async'}
-          className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[1500ms] ease-in-out ${i === bgIndex ? 'opacity-100 hero-img-cinematic' : 'opacity-0'}`}
+          loading="eager"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover object-center animate-fade-in"
+          style={{ animationDuration: '800ms' }}
         />
-      ))}
+      )}
 
       {/* Gradient overlay */}
       <div
@@ -213,7 +181,7 @@ const HeroBanner = () => {
           <h1 className="font-display text-2xl font-extrabold tracking-tight text-primary-foreground sm:text-3xl md:text-5xl lg:text-6xl drop-shadow-sm max-w-full overflow-hidden">
             <HeroPrefixRotator prefixes={prefixes} />
             <br />
-            <RotatingServiceText />
+            <RotatingServiceText onServiceChange={handleServiceChange} />
           </h1>
         </div>
 
