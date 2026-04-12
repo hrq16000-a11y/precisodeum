@@ -127,6 +127,8 @@ const CookiesPage = lazy(() => import("./pages/CookiesPage"));
 const SponsorLandingPage = lazy(() => import("./pages/SponsorLandingPage"));
 const SponsorSlotsPage = lazy(() => import("./pages/SponsorSlotsPage"));
 const SponsorContractPage = lazy(() => import("./pages/SponsorContractPage"));
+const CoursesPage = lazy(() => import("./pages/CoursesPage"));
+const AdminCoursesPage = lazy(() => import("./pages/AdminCoursesPage"));
 
 const CookieConsent = reactLazy(() => importWithRetry(() => import("./components/CookieConsent")));
 const PwaInstallBanner = reactLazy(() => importWithRetry(() => import("./components/PwaInstallBanner")));
@@ -281,6 +283,8 @@ const App = () => {
                 <Route path="/admin/boosts" element={<AdminBoostsPage />} />
                 <Route path="/admin/barra-inferior" element={<AdminBottomNavPage />} />
                 <Route path="/admin/governanca" element={<AdminGovernancePage />} />
+                <Route path="/admin/cursos" element={<AdminCoursesPage />} />
+                <Route path="/cursos" element={<CoursesPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
