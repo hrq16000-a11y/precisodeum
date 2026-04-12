@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import CategoryIcon from '@/components/CategoryIcon';
 import { ExternalLink, Award, Clock, Sparkles, Heart, TrendingUp } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const LEVEL_COLORS: Record<string, string> = {
   iniciante: 'bg-success/15 text-success dark:bg-success/10',
