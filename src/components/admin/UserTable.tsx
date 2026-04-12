@@ -235,6 +235,54 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                 )}
               </div>
 
+              {/* Engagement Points */}
+              {(() => {
+                const pts = p.engagement_points || 0;
+                const tier = getEngagementTier(pts);
+                return (
+                  <div className="mt-2 rounded-lg bg-muted/50 border border-border px-2.5 py-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Zap className="h-3 w-3 text-accent" />
+                        <span className="text-xs font-semibold">{pts} pts</span>
+                        <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${tier.badgeClass}`}>
+                          {tier.icon} {tier.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-6 w-6 p-0 text-xs"
+                          disabled={adjustingId === p.id}
+                          onClick={(e) => { e.stopPropagation(); handleAdjustPoints(p.id, 10); }}
+                          title="Adicionar 10 pontos"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-6 w-6 p-0 text-xs"
+                          disabled={adjustingId === p.id || pts === 0}
+                          onClick={(e) => { e.stopPropagation(); handleAdjustPoints(p.id, -10); }}
+                          title="Remover 10 pontos"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-6 w-6 p-0 text-xs text-destructive"
+                          disabled={adjustingId === p.id || pts === 0}
+                          onClick={(e) => { e.stopPropagation(); handleAdjustPoints(p.id, 0, true); }}
+                          title="Zerar pontos"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Badges */}
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 {isAdminUser && (
