@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Crown, Clock, Circle, ArrowRight, Trophy } from 'lucide-react';
+import { MapPin, Crown, Clock, Circle, ArrowRight, Trophy, Sparkles } from 'lucide-react';
 import { usePrefetchProvider, usePrefetchHandlers } from '@/hooks/usePrefetch';
 import { Button } from '@/components/ui/button';
 import ProfileBadge from '@/components/ProfileBadge';
@@ -17,6 +17,8 @@ import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
+import { useEngagementPoints } from '@/hooks/useEngagementPoints';
+import { getEngagementTier } from '@/lib/engagementTiers';
 
 interface ProviderCardProps {
   provider: DbProvider;
