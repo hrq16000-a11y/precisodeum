@@ -218,6 +218,8 @@ const AdminJobsPage = () => {
   const handleEdit = (job: any) => {
     setEditJob(job);
     setIsCreating(false);
+    setDialogTab('form');
+    setDetectedFields([]);
     setEditForm({
       title: job.title || '', subtitle: job.subtitle || '',
       description: job.description || '', category_id: job.category_id || '',
