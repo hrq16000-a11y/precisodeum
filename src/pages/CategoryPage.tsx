@@ -49,6 +49,7 @@ const CategoryPage = () => {
   const { data, isLoading } = useCategoryProviders(slug || '');
   const [page, setPage] = useState(1);
   const [showAllLocations, setShowAllLocations] = useState(false);
+  const [showOutOfState, setShowOutOfState] = useState(false);
 
   // Request GPS proactively on mount
   useEffect(() => {
