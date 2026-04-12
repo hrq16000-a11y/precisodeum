@@ -1,26 +1,44 @@
 
-# Correção: Categorias sem Prestadores — Ocultar ou Sinalizar
 
-## Problema
-A página `/categorias` exibe todas as categorias do banco, inclusive as que não possuem nenhum prestador inscrito, sem distinção visual.
+# Ajuste de UI: Responsividade Global e Suporte a Fontes Grandes
 
-## Solução
-Separar categorias **com** prestadores (exibir normalmente como links clicáveis) das **sem** prestadores (exibir em seção separada, visualmente desabilitadas, com mensagem "Ainda não temos prestadores nessa categoria. Participe!").
+## Arquivos a alterar
 
-## Alterações
+### 1. `src/index.css` — Regras globais de tipografia e acessibilidade
+Adicionar na `@layer base`:
+```css
+* {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+```
 
-### 1. `src/pages/CategoriesListPage.tsx`
-- Dividir `filtered` em dois arrays: `withProviders` (count > 0) e `withoutProviders` (count === 0).
-- Renderizar `withProviders` no grid principal (com links clicáveis, como hoje).
-- Abaixo, renderizar `withoutProviders` em um grid separado com:
-  - Estilo opaco/desabilitado (`opacity-50`, sem hover, sem link)
-  - Texto pequeno abaixo do nome: "Ainda não temos prestadores. Participe!"
-  - Separador visual com título "Categorias em breve"
-- O botão "Ver Mais" aplica-se apenas às categorias com prestadores.
+### 2. `src/pages/CategoriesListPage.tsx` — Grid adaptativo + padding relativo
+- **Grids** (linhas 78, 86, 135): trocar `grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4` por grid CSS com `auto-fit`:
+  - Usar `style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}` + `className="grid gap-3"`
+- **Cards** (linhas 99, 139): trocar `p-3` por `p-[0.75rem]`, `min-h-[56px]` por `min-h-[3.5rem]`, e `gap-2.5` por `gap-[0.625rem]` (unidades rem)
+- **Textos**: adicionar `hyphens-auto` style nos labels de nome de categoria
+- **Ícone container**: trocar `h-10 w-10` por `min-h-[2.5rem] min-w-[2.5rem]` para flexibilidade
 
-### 2. `src/components/home/CategoriesGrid.tsx`
-- Filtrar para exibir apenas categorias com `count > 0` na Home (ocultar totalmente as sem prestadores na página inicial).
+### 3. `src/components/home/CategoriesGrid.tsx` — Grid adaptativo + cards flexíveis
+- **Grids** (linhas 76, 83): trocar `grid-cols-2 gap-3 md:grid-cols-4` por `grid gap-3` com `style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}`
+- **Card** (linha 92): trocar `min-h-[120px]` por `min-h-[7.5rem]`, `p-5` por `p-[1.25rem]`
+- **Ícone**: trocar `h-14 w-14` por `min-h-[3.5rem] min-w-[3.5rem] h-14 w-14`
+- **Texto**: adicionar `style={{ hyphens: 'auto', overflowWrap: 'break-word' }}`
 
-### Arquivos modificados
-- `src/pages/CategoriesListPage.tsx`
-- `src/components/home/CategoriesGrid.tsx`
+### 4. `src/components/CategoryCard.tsx` — Card flexível
+- Trocar `p-5` por `p-[1.25rem]`
+- Trocar `h-12 w-12` por `min-h-[3rem] min-w-[3rem] h-12 w-12`
+- Adicionar `style={{ hyphens: 'auto', overflowWrap: 'break-word' }}` no label de texto
+
+### 5. `src/components/SearchBar.tsx` — Container flex-wrap
+- Garantir que o container de input + botões use `flex-wrap` para não cortar em telas menores
+
+## Resumo
+- Grids com `auto-fit + minmax` em vez de colunas fixas
+- `overflow-wrap: break-word` global + `hyphens: auto` nos labels
+- Unidades `rem` para paddings/margins
+- `min-h` em vez de `h` fixo nos cards
+- `flex-wrap` na barra de busca
+- Tudo compatível com zoom de fonte até 150%
+
