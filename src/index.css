@@ -84,6 +84,7 @@
     @apply border-border;
     overflow-wrap: break-word;
     word-break: break-word;
+    white-space: normal;
   }
 
   html, body {
