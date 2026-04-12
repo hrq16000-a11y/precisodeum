@@ -53,29 +53,31 @@ const HeroPrefixRotator = ({ prefixes }: { prefixes: string[] }) => {
   );
 };
 
-/* Floating decorative dots — deferred via requestIdleCallback to avoid blocking LCP */
+/* Floating decorative dots — hidden on mobile to reduce paint cost */
 const FloatingDots = () => {
   const [show, setShow] = useState(false);
   useEffect(() => {
+    // Skip on mobile for performance
+    if (window.innerWidth < 768) return;
     const start = () => setShow(true);
     if ('requestIdleCallback' in window) {
       const id = (window as any).requestIdleCallback(start);
       return () => (window as any).cancelIdleCallback(id);
     }
-    const id = setTimeout(start, 200);
+    const id = setTimeout(start, 500);
     return () => clearTimeout(id);
   }, []);
   if (!show) return null;
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      {[...Array(6)].map((_, i) => (
+      {[...Array(4)].map((_, i) => (
         <div
           key={i}
           className="absolute rounded-full animate-floating-dot"
           style={{
             width: 4 + i * 3,
             height: 4 + i * 3,
-            left: `${10 + i * 15}%`,
+            left: `${10 + i * 20}%`,
             top: `${15 + (i % 3) * 25}%`,
             background: i % 2 === 0
               ? 'hsl(var(--secondary) / 0.25)'
@@ -90,8 +92,7 @@ const FloatingDots = () => {
   );
 };
 
-// All category images for preloading
-const ALL_CATEGORY_IMAGES = Object.values(CATEGORY_IMAGES);
+// Preload only adjacent images, not all at once
 
 const HeroBanner = () => {
   const [currentCategory, setCurrentCategory] = useState<ServiceCategory>('instalacoes');
@@ -127,13 +128,14 @@ const HeroBanner = () => {
     }
   }, [displayedImage]);
 
-  // Preload all category images on mount
+  // Preload only the next category image (not all) to save bandwidth
   useEffect(() => {
-    ALL_CATEGORY_IMAGES.forEach(src => {
-      const img = new Image();
-      img.src = src;
-    });
-  }, []);
+    const allImages = Object.values(CATEGORY_IMAGES);
+    const currentIdx = allImages.indexOf(displayedImage);
+    const nextIdx = (currentIdx + 1) % allImages.length;
+    const img = new Image();
+    img.src = allImages[nextIdx];
+  }, [displayedImage]);
 
   return (
     <section className="relative min-h-[280px] overflow-visible py-6 sm:min-h-[320px] sm:py-8 md:min-h-[480px] md:overflow-hidden md:py-20">

@@ -189,7 +189,7 @@ const App = () => {
         prefetchImportWithRetry("route-provider-profile", () => import("./pages/ProviderProfile")),
         prefetchImportWithRetry("route-category-page", () => import("./pages/CategoryPage")),
       ]);
-    }, 900);
+    }, 3000);
 
     return () => window.clearTimeout(timeoutId);
   }, []);
