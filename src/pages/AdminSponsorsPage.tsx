@@ -715,6 +715,9 @@ const AdminSponsorsPage = () => {
                           {expired ? '🔴 Expirado' : s.active ? '🟢 Ativo' : '⏸️ Inativo'}
                         </Badge>
                         {hasContact && <Badge variant="outline" className="text-[10px] text-accent"><Link2 className="h-2.5 w-2.5 mr-0.5" /> Vinculado</Badge>}
+                        <Badge variant="outline" className={cn('text-[10px]', health.color)}>
+                          <Gauge className="h-2.5 w-2.5 mr-0.5" /> {health.score}%
+                        </Badge>
                       </div>
 
                       {/* Context info */}
