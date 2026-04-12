@@ -24,9 +24,22 @@ const CategoriesListPage = () => {
     canonical: `${SITE_BASE_URL}/categorias`,
   });
 
+  const shuffled = useMemo(() => {
+    const shuffle = <T,>(arr: T[]): T[] => {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+    return shuffle(categories);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categories.length]);
+
   const filtered = search.trim()
-    ? categories.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
-    : categories;
+    ? shuffled.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+    : shuffled;
 
   const withProviders = filtered.filter((c) => c.count > 0);
   const withoutProviders = filtered.filter((c) => c.count === 0);
