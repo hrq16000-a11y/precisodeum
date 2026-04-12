@@ -8,15 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import CategoryIcon from '@/components/CategoryIcon';
-import { useSponsorsBySlot } from '@/hooks/useSponsors';
-import { type SponsorFull } from '@/hooks/useSponsors';
-import { motion, AnimatePresence } from 'framer-motion';
+import AdSlot from '@/components/ads/AdSlot';
+import { motion } from 'framer-motion';
 import {
   ArrowLeft, ExternalLink, Award, Clock, GraduationCap,
   BookOpen, Share2, Users, Sparkles, TrendingUp, ChevronRight,
-  CheckCircle2, ChevronLeft,
+  CheckCircle2,
 } from 'lucide-react';
-import { useEffect, useRef, useState, useCallback } from 'react';
 
 const LEVEL_LABELS: Record<string, { label: string; color: string }> = {
   iniciante: { label: 'Iniciante', color: 'bg-success/15 text-success' },
@@ -32,74 +30,6 @@ const BENEFITS = [
   'Acesse de qualquer dispositivo',
   'Material complementar incluso',
 ];
-
-/** Rotating single-banner carousel for top sponsor slot */
-const TopBannerCarousel = ({ sponsors }: { sponsors: SponsorFull[] }) => {
-  const [idx, setIdx] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
-
-  const next = useCallback(() => setIdx(i => (i + 1) % sponsors.length), [sponsors.length]);
-
-  useEffect(() => {
-    if (sponsors.length <= 1) return;
-    timerRef.current = setInterval(next, 5000);
-    return () => clearInterval(timerRef.current);
-  }, [sponsors.length, next]);
-
-  const s = sponsors[idx];
-  if (!s) return null;
-
-  return (
-    <div className="relative mb-6 rounded-xl overflow-hidden group">
-      <AnimatePresence mode="wait">
-        <motion.a
-          key={s.id}
-          href={s.link_url || s.external_link}
-          target="_blank"
-          rel="noopener noreferrer sponsored"
-          className="block"
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -40 }}
-          transition={{ duration: 0.4 }}
-        >
-          <img
-            src={s.image_url || s.logo_url}
-            alt={s.title}
-            className="w-full h-auto rounded-xl object-cover max-h-28"
-            loading="lazy"
-          />
-        </motion.a>
-      </AnimatePresence>
-
-      {sponsors.length > 1 && (
-        <>
-          <button
-            onClick={() => { clearInterval(timerRef.current); setIdx(i => (i - 1 + sponsors.length) % sponsors.length); }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-card/70 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <ChevronLeft className="h-4 w-4 text-foreground" />
-          </button>
-          <button
-            onClick={() => { clearInterval(timerRef.current); next(); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-card/70 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <ChevronRight className="h-4 w-4 text-foreground" />
-          </button>
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-            {sponsors.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => { clearInterval(timerRef.current); setIdx(i); }}
-                className={`h-1.5 rounded-full transition-all ${i === idx ? 'w-5 bg-accent' : 'w-1.5 bg-card/60'}`}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
 
 const CourseDetailPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -133,22 +63,6 @@ const CourseDetailPage = () => {
     },
     enabled: !!course?.category,
   });
-
-  // Sponsor slots
-  const { data: topSponsors = [], trackImpression: trackTopImp } = useSponsorsBySlot('banner');
-  const { data: sideSponsors = [], trackImpression: trackSideImp } = useSponsorsBySlot('sidebar');
-  const { data: midSponsors = [], trackImpression: trackMidImp } = useSponsorsBySlot('mid-content');
-
-  const topRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    topSponsors.forEach(s => trackTopImp(s.id));
-  }, [topSponsors]);
-  useEffect(() => {
-    sideSponsors.forEach(s => trackSideImp(s.id));
-  }, [sideSponsors]);
-  useEffect(() => {
-    midSponsors.forEach(s => trackMidImp(s.id));
-  }, [midSponsors]);
 
   const level = LEVEL_LABELS[course?.level ?? ''] ?? LEVEL_LABELS.iniciante;
 
@@ -206,10 +120,8 @@ const CourseDetailPage = () => {
           <span className="text-foreground font-medium truncate max-w-[200px]">{course.title}</span>
         </nav>
 
-        {/* Top sponsor banner — single rotating */}
-        {topSponsors.length > 0 && (
-          <TopBannerCarousel sponsors={topSponsors} />
-        )}
+        {/* Slot: Banner topo do detalhe (rotativo, gerenciável) */}
+        <AdSlot slotSlug="course-detail-top" layout="banner" className="mb-6" />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main content */}
@@ -291,27 +203,8 @@ const CourseDetailPage = () => {
               </Card>
             </motion.div>
 
-            {/* Mid-content sponsor */}
-            {midSponsors.length > 0 && (
-              <div className="space-y-3">
-                {midSponsors.map(s => (
-                  <a key={s.id} href={s.link_url || s.external_link} target="_blank" rel="noopener noreferrer sponsored" className="block">
-                    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                      <div className="flex items-center gap-4 p-4">
-                        {(s.image_url || s.logo_url) && (
-                          <img src={s.image_url || s.logo_url} alt={s.title} className="h-16 w-16 rounded-lg object-cover" />
-                        )}
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-0.5">Patrocinado</p>
-                          <p className="font-semibold text-sm text-foreground">{s.title}</p>
-                          {s.short_description && <p className="text-xs text-muted-foreground line-clamp-1">{s.short_description}</p>}
-                        </div>
-                      </div>
-                    </Card>
-                  </a>
-                ))}
-              </div>
-            )}
+            {/* Slot: Meio do conteúdo (gerenciável) */}
+            <AdSlot slotSlug="course-detail-mid" layout="native" />
 
             {/* Benefits section */}
             <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
@@ -411,24 +304,8 @@ const CourseDetailPage = () => {
               </CardContent>
             </Card>
 
-            {/* Sidebar sponsors */}
-            {sideSponsors.length > 0 && (
-              <div className="space-y-3">
-                {sideSponsors.map(s => (
-                  <a key={s.id} href={s.link_url || s.external_link} target="_blank" rel="noopener noreferrer sponsored">
-                    <Card className="overflow-hidden hover:shadow-md transition-shadow">
-                      <CardContent className="p-3 text-center">
-                        <p className="text-[10px] text-muted-foreground mb-2">Patrocinado</p>
-                        {(s.image_url || s.logo_url) && (
-                          <img src={s.image_url || s.logo_url} alt={s.title} className="w-full h-auto rounded-lg object-cover mb-2" loading="lazy" />
-                        )}
-                        <p className="text-xs font-semibold text-foreground">{s.title}</p>
-                      </CardContent>
-                    </Card>
-                  </a>
-                ))}
-              </div>
-            )}
+            {/* Slot: Sidebar (gerenciável) */}
+            <AdSlot slotSlug="course-detail-sidebar" layout="sidebar" />
 
             {/* CTA card */}
             <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-accent/20">
