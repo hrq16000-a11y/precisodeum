@@ -8,6 +8,7 @@ import CategoryIcon from '@/components/CategoryIcon';
 import SmartCategoryPicker from '@/components/SmartCategoryPicker';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccountLimits } from '@/hooks/useAccountLimits';
+import UpsellBanner from '@/components/dashboard/UpsellBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ServiceImageUpload from '@/components/ServiceImageUpload';
