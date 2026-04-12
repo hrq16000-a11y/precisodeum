@@ -77,8 +77,6 @@ const BlogPage = () => {
     canonical: `${SITE_BASE_URL}/blog`,
   });
 
-  if (!blogEnabled) return <Navigate to="/" replace />;
-
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['blog-posts-public'],
     queryFn: async () => {
@@ -99,6 +97,8 @@ const BlogPage = () => {
   const highlights = useMemo(() => shuffle(posts).slice(0, Math.min(6, posts.length)), [posts]);
   const highlightIds = new Set(highlights.map((h) => h.id));
   const rest = posts.filter((p) => !highlightIds.has(p.id));
+
+  if (!blogEnabled) return <Navigate to="/" replace />;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

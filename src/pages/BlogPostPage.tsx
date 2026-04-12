@@ -42,8 +42,6 @@ const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const blogEnabled = useFeatureEnabled('module_blog');
 
-  if (!blogEnabled) return <Navigate to="/" replace />;
-
   const { data: post, isLoading } = useQuery({
     queryKey: ['blog-post', slug],
     queryFn: async () => {
@@ -78,6 +76,8 @@ const BlogPostPage = () => {
     description: post?.excerpt || 'Confira as últimas notícias e dicas do Preciso de um.',
     canonical: `${SITE_BASE_URL}/blog/${slug}`,
   });
+
+  if (!blogEnabled) return <Navigate to="/" replace />;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
