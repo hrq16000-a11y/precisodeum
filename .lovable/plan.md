@@ -1,78 +1,74 @@
 
 
-# PostGIS para Coordenadas dos Profissionais
+# Mobile First — Melhorias de UX
 
-## Situação Atual
-- Colunas `latitude` e `longitude` são do tipo `numeric` (não texto — já é razoável)
-- PostGIS **não está habilitado** no banco
-- 152 de 168 profissionais já têm coordenadas preenchidas
-- Toda a lógica de distância é feita no **client-side** via Haversine em JavaScript
+## Problemas Identificados
 
-## O que muda com PostGIS
+1. **SearchPage: Filtros ocupam muito espaço no mobile** — A sidebar de filtros aparece inteira no topo no mobile, empurrando os resultados para baixo. Deveria ser um bottom sheet / drawer.
+2. **SearchPage: Grid `sm:grid-cols-2` desperdiça espaço** — Em telas 375px os cards ficam em 1 coluna, mas a grid gap de 16px e padding poderiam ser reduzidos.
+3. **ProviderCard: Badges demais em tela pequena** — "Super Perto!", "Atendimento Rápido", "Online", "Outra região", ProfileBadge, RankTier — todos em `flex-wrap` criam até 3 linhas de badges em mobile.
+4. **SearchPage: Botão "Casa→Trabalho" escondido dentro dos filtros** — No mobile os filtros começam fechados, então o botão de rota é invisível.
+5. **CategoryPage: Hero section muito alto no mobile** — `py-12` + ícone 80px + badges + GeoLocationChip consome quase toda a viewport.
+6. **FeaturedProviders: Cards com padding excessivo** — `p-5` no mobile poderia ser `p-4`.
+7. **HeroBanner: CTAs empilhados sem hierarquia visual** — Os dois links de CTA ficam muito pequenos e sem destaque visual no mobile.
+8. **Container padding** — `container` do Tailwind usa padding padrão, mas várias seções adicionam `px-4` manualmente criando inconsistência.
 
-PostGIS permite fazer cálculos de distância **no banco de dados**, o que possibilita:
-- Queries como "profissionais num raio de 30km" diretamente no SQL (muito mais rápido)
-- Índices espaciais (GiST) para buscas ultra-rápidas
-- Ordenação por proximidade sem trazer todos os registros para o frontend
+## Alterações
 
-## Plano de Implementação
+### 1. `src/pages/SearchPage.tsx` — Filtros como Drawer no mobile
+- No mobile, converter a sidebar de filtros em um `Drawer` (bottom sheet) ativado por botão flutuante
+- Mover o botão "Casa→Trabalho" para fora dos filtros, visível como chip no topo dos resultados
+- Reduzir padding do container de resultados: `py-6` → `py-4` no mobile
+- Sort rápido: adicionar chips horizontais scrolláveis (Relevância, Mais Perto, Avaliação) acima da grid no mobile em vez de select
 
-### Migration 1: Habilitar PostGIS + adicionar coluna geography
-```sql
--- Habilitar extensão
-CREATE EXTENSION IF NOT EXISTS postgis SCHEMA extensions;
+### 2. `src/components/ProviderCard.tsx` — Layout compacto mobile
+- Reduzir padding: `p-[1.25rem]` → `p-3 sm:p-[1.25rem]`
+- Avatar: `h-14 w-14` → `h-12 w-12 sm:h-14 sm:w-14`
+- Limitar badges visíveis no mobile a 3 (mais relevantes), com "..." overflow
+- Distância + tempo estimado: combinar numa única linha mais compacta
+- Botões de ação: altura reduzida no mobile
 
--- Adicionar coluna geográfica na tabela providers
-ALTER TABLE public.providers 
-  ADD COLUMN IF NOT EXISTS geog extensions.geography(Point, 4326);
+### 3. `src/pages/CategoryPage.tsx` — Hero compacto mobile
+- Reduzir padding do hero: `py-12` → `py-6 md:py-12`
+- Ícone da categoria: `h-20 w-20` → `h-14 w-14 md:h-20 md:w-20`
+- Título: `text-3xl` → `text-2xl md:text-3xl`
+- Grid: `gap-4` → `gap-3 sm:gap-4`
 
--- Preencher geog a partir das coordenadas existentes
-UPDATE public.providers 
-SET geog = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::extensions.geography
-WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
+### 4. `src/components/home/HeroBanner.tsx` — CTA com mais destaque mobile
+- CTA primário: converter em botão com fundo `bg-secondary` no mobile em vez de apenas texto link
+- Reduzir `min-h-[320px]` → `min-h-[280px]` no mobile
+- Título: `text-3xl` → `text-2xl sm:text-3xl`
 
--- Índice espacial GiST para buscas rápidas
-CREATE INDEX IF NOT EXISTS idx_providers_geog ON public.providers USING GIST (geog);
-```
+### 5. `src/components/home/FeaturedProviders.tsx` — Grid e padding otimizados
+- Padding dos cards: `p-5` → `p-3.5 sm:p-5`
+- Grid gap: `gap-4` → `gap-3 sm:gap-4`
+- Avatar: `h-16 w-16` → `h-12 w-12 sm:h-16 sm:w-16`
+- Seção: `py-14` → `py-8 md:py-14`
 
-### Migration 2: Trigger para manter geog sincronizado
-```sql
-CREATE OR REPLACE FUNCTION public.sync_provider_geog()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
-BEGIN
-  IF NEW.latitude IS NOT NULL AND NEW.longitude IS NOT NULL THEN
-    NEW.geog := ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), 4326)::extensions.geography;
-  ELSE
-    NEW.geog := NULL;
-  END IF;
-  RETURN NEW;
-END;
-$$;
+### 6. `src/components/home/CategoriesGrid.tsx` — Micro-ajustes
+- Seção: `py-12` → `py-8 md:py-12`
+- Grid `minmax(9rem, 1fr)` → `minmax(5rem, 1fr) sm:minmax(9rem, 1fr)` para 3 colunas em telas 320px
+- Ícone de categoria: `h-14 w-14` → `h-10 w-10 sm:h-14 sm:w-14`
 
-CREATE TRIGGER trg_sync_provider_geog
-BEFORE INSERT OR UPDATE OF latitude, longitude ON public.providers
-FOR EACH ROW EXECUTE FUNCTION public.sync_provider_geog();
-```
-
-### Frontend: Nenhuma alteração obrigatória agora
-- O cálculo Haversine no client continua funcionando normalmente
-- A coluna `geog` fica pronta para futuras queries server-side (ex: `ST_DWithin`, `ST_Distance`)
-- Quando quiser migrar a busca para o backend, basta criar uma função SQL:
-  ```sql
-  SELECT id, name, ST_Distance(geog, ST_MakePoint($lon, $lat)::geography) AS dist_m
-  FROM providers
-  WHERE ST_DWithin(geog, ST_MakePoint($lon, $lat)::geography, 50000) -- 50km
-  ORDER BY dist_m;
-  ```
-
-## Impacto
-- **Zero breaking changes** — as colunas `latitude`/`longitude` numeric continuam existindo
-- A coluna `geog` é preenchida automaticamente via trigger
-- 152 profissionais terão `geog` populado imediatamente
-- Índice GiST otimiza buscas espaciais futuras
+### 7. `src/components/RouteSearchModal.tsx` — Full screen no mobile
+- Usar `DialogContent` com `className="sm:max-w-md max-h-[90vh]"` e scroll interno
 
 ## Arquivos alterados
+
 | Arquivo | Ação |
 |---------|------|
-| Nova migration | Habilitar PostGIS, criar coluna `geog`, trigger de sync |
+| `src/pages/SearchPage.tsx` | Filtros como Drawer mobile, chips de sort, padding reduzido |
+| `src/components/ProviderCard.tsx` | Layout compacto: padding, avatar, badges limitados |
+| `src/pages/CategoryPage.tsx` | Hero compacto mobile |
+| `src/components/home/HeroBanner.tsx` | CTA destacado, altura reduzida |
+| `src/components/home/FeaturedProviders.tsx` | Grid e padding otimizados |
+| `src/components/home/CategoriesGrid.tsx` | Grid responsivo para 320px |
+| `src/components/RouteSearchModal.tsx` | Fullscreen mobile |
+
+## Impacto
+- Mais conteúdo visível above-the-fold no mobile
+- Filtros não empurram resultados — ficam num drawer
+- Cards mais compactos = menos scroll para encontrar profissionais
+- CTAs maiores = mais conversão mobile
+- Zero breaking changes desktop — todas as mudanças são `sm:` / `md:` condicionais
 
