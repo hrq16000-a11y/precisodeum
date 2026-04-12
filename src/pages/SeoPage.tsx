@@ -143,6 +143,7 @@ const SeoPage = () => {
     if (b.distanceKm != null) return 1;
     return 0;
   });
+  const parsed = data?.parsed;
   const locationLabel = parsed?.neighborhood ? `${parsed.neighborhood}, ${parsed.city}` : parsed?.city || '';
   const seoTitle = locationLabel ? `${parsed?.categoryName} em ${locationLabel}` : parsed?.categoryName || '';
   const seoDesc = locationLabel
