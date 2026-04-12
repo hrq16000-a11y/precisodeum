@@ -68,35 +68,6 @@ const AdminJobsPage = () => {
   const [detectedFields, setDetectedFields] = useState<string[]>([]);
   const [dialogTab, setDialogTab] = useState<'paste' | 'form'>('paste');
 
-  const handleSmartParse = useCallback(() => {
-    if (!pasteText.trim()) return;
-    const parsed = parseJobText(pasteText, categories);
-    setEditForm(prev => ({
-      ...prev,
-      title: parsed.title || prev.title,
-      subtitle: parsed.subtitle || prev.subtitle,
-      description: parsed.description || prev.description,
-      category_id: parsed.category_id || prev.category_id,
-      opportunity_type: parsed.opportunity_type || prev.opportunity_type,
-      job_type: parsed.job_type || prev.job_type,
-      work_model: parsed.work_model || prev.work_model,
-      activities: parsed.activities || prev.activities,
-      requirements: parsed.requirements || prev.requirements,
-      benefits: parsed.benefits || prev.benefits,
-      schedule: parsed.schedule || prev.schedule,
-      salary: parsed.salary || prev.salary,
-      city: parsed.city || prev.city,
-      state: parsed.state || prev.state,
-      neighborhood: parsed.neighborhood || prev.neighborhood,
-      contact_name: parsed.contact_name || prev.contact_name,
-      contact_phone: parsed.contact_phone || prev.contact_phone,
-      whatsapp: parsed.whatsapp || prev.whatsapp,
-    }));
-    setDetectedFields(parsed.detectedFields);
-    setDialogTab('form');
-    toast.success(`IA extraiu ${parsed.detectedFields.length} campos automaticamente!`);
-  }, [pasteText, categories]);
-
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['admin-jobs'],
     queryFn: async () => {
