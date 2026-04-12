@@ -14,6 +14,22 @@
 
 const DEFAULT_MESSAGE = 'Olá, vi o seu perfil no Preciso de um e gostaria de um orçamento.';
 
+/**
+ * Build a structured WhatsApp message with provider name, category, and user location.
+ * Falls back to a simpler message if fields are missing.
+ */
+export const buildSmartMessage = (
+  providerName: string,
+  category?: string | null,
+  userCity?: string | null,
+  userState?: string | null,
+): string => {
+  const catPart = category ? ` Preciso de ajuda com ${category}.` : '';
+  const locationParts = [userCity, userState].filter(Boolean).join('/');
+  const locPart = locationParts ? ` Minha localização aproximada é ${locationParts}.` : '';
+  return `Olá ${providerName}! Vi seu perfil no Preciso de Um.${catPart}${locPart} Podemos conversar?`;
+};
+
 /** Detect mobile device via user agent */
 const isMobileDevice = (): boolean =>
   typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);

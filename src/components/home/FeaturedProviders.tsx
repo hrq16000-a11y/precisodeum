@@ -8,7 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import ProfileBadge from '@/components/ProfileBadge';
 import { getRankTier } from '@/components/ReviewSummary';
 import type { DbProvider } from '@/hooks/useProviders';
-import { whatsappLink } from '@/lib/whatsapp';
+import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
+import { useGeoCity } from '@/hooks/useGeoCity';
+import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import { capitalizeName } from '@/lib/normalize';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
@@ -70,9 +72,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
 
         {isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-72 rounded-2xl" />
-            ))}
+            <ProviderCardSkeleton count={6} />
           </div>
         ) : providers.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground">Nenhum profissional em destaque ainda.</p>
@@ -118,6 +118,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
 function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
   const impressionRef = useCardImpression(p.id, p.slug, 'featured');
   const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
+  const { city: geoCity, state: geoState } = useGeoCity();
   const displayName = capitalizeName(p.name || p.businessName || p.category || 'Profissional');
   const hasOwnPhoto = !!(p.photo || p.serviceImage);
   const generatedAvatar = `https://api.dicebear.com/9.x/${avatarFallbackStyle}/svg?seed=${encodeURIComponent(p.userId || p.id)}`;
@@ -225,7 +226,7 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
           {p.whatsapp && (
             <Button variant="accent" size="sm" className="flex-1 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" asChild>
               <a
-                href={whatsappLink(p.whatsapp, `Olá! Vi seu perfil "${displayName}" no Preciso de um e gostaria de mais informações.`)}
+                href={whatsappLink(p.whatsapp, buildSmartMessage(displayName, p.category, geoCity, geoState))}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackWhatsAppClick(p.id, p.slug, 'featured')}

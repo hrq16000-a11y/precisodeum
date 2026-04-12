@@ -14,6 +14,7 @@ import GeoLocationChip from '@/components/GeoLocationChip';
 import GeoPromptBanner from '@/components/GeoPromptBanner';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
+import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { useCategoryProviders, matchesGeoContext, normalizeCityName, type DbProvider } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
@@ -133,9 +134,7 @@ const CategoryPage = () => {
         </section>
         <div className="container py-8">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-72 rounded-2xl" />
-            ))}
+            <ProviderCardSkeleton count={6} />
           </div>
         </div>
         <Footer />
