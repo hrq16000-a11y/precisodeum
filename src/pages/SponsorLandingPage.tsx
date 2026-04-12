@@ -15,11 +15,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import {
   Eye, BarChart3, Award, Globe, CheckCircle2, Rocket,
   TrendingUp, Shield, Zap, ArrowRight, FileText, Download, Star,
   Sparkles, Crown, Target, Users, MousePointerClick, LayoutGrid,
-  Timer, Phone, Mail, Building2, ChevronDown
+  Timer, Phone, Mail, Building2, ChevronDown, ChevronLeft, ChevronRight,
+  Monitor, PieChart, Activity, X, Check, Minus, MessageSquare, HelpCircle
 } from 'lucide-react';
 
 const sponsorSchema = z.object({
@@ -85,6 +87,37 @@ const steps = [
   { step: 3, title: 'Ative sua campanha', desc: 'Nossa equipe configura tudo e sua marca começa a brilhar', icon: Rocket },
 ];
 
+const testimonials = [
+  { name: 'Carlos M.', role: 'Gestor de Marketing', company: 'AutoPeças Express', rating: 5, text: 'A plataforma transformou nossa visibilidade. Em 3 meses, triplicamos os contatos qualificados.', avatar: 'CM' },
+  { name: 'Fernanda S.', role: 'Diretora Comercial', company: 'Clean House SP', rating: 5, text: 'O dashboard de métricas é sensacional. Consigo acompanhar cada centavo investido em tempo real.', avatar: 'FS' },
+  { name: 'Roberto L.', role: 'CEO', company: 'TechFix Soluções', rating: 5, text: 'Melhor investimento em marketing digital que fizemos. O suporte é excepcional e os resultados são reais.', avatar: 'RL' },
+  { name: 'Ana Paula R.', role: 'Coord. de Marketing', company: 'Bella Reformas', rating: 4, text: 'A segmentação por cidade nos permitiu focar exatamente no público que queríamos. Retorno em 2 semanas!', avatar: 'AP' },
+  { name: 'Diego F.', role: 'Proprietário', company: 'DF Climatização', rating: 5, text: 'Desde que começamos a patrocinar, nosso telefone não para. A visibilidade é incomparável.', avatar: 'DF' },
+];
+
+const comparisonFeatures = [
+  { label: 'Banners ativos', basic: '1', pro: '3', premium: 'Ilimitados' },
+  { label: 'Relatórios', basic: 'Mensal', pro: 'Semanal', premium: 'Diário' },
+  { label: 'Impressões garantidas', basic: false, pro: true, premium: true },
+  { label: 'Pacing inteligente', basic: false, pro: true, premium: true },
+  { label: 'Segmentação por cidade', basic: true, pro: true, premium: true },
+  { label: 'Segmentação por categoria', basic: false, pro: true, premium: true },
+  { label: 'Posições exclusivas', basic: false, pro: false, premium: true },
+  { label: 'Prioridade máxima', basic: false, pro: false, premium: true },
+  { label: 'Dashboard de métricas', basic: true, pro: true, premium: true },
+  { label: 'Suporte prioritário', basic: false, pro: true, premium: true },
+];
+
+const faqs = [
+  { q: 'Como funciona o pagamento?', a: 'Os pagamentos são mensais via boleto, PIX ou cartão de crédito. Não há taxa de adesão e você pode cancelar a qualquer momento com aviso prévio de 30 dias.' },
+  { q: 'Posso trocar de plano depois?', a: 'Sim! Você pode fazer upgrade ou downgrade do plano a qualquer momento. As alterações entram em vigor no próximo ciclo de cobrança.' },
+  { q: 'Como funciona a segmentação?', a: 'Dependendo do seu plano, você pode segmentar por cidade, estado, categoria de serviço e até palavras-chave. Isso garante que sua marca apareça exatamente para o público certo.' },
+  { q: 'O que são "Impressões Garantidas"?', a: 'Nos planos PRO e Premium, garantimos um número mínimo de visualizações dos seus banners por mês. Se não atingirmos a meta, estendemos a campanha sem custo adicional.' },
+  { q: 'Preciso fornecer o material do banner?', a: 'Você pode enviar seu próprio banner (recomendamos 1600x200px) ou nossa equipe de design pode criar um para você sem custo adicional nos planos PRO e Premium.' },
+  { q: 'Quanto tempo leva para ativar minha campanha?', a: 'Após a aprovação do cadastro e pagamento, sua campanha é ativada em até 24 horas úteis. Campanhas Premium têm prioridade na ativação.' },
+  { q: 'Consigo acompanhar os resultados?', a: 'Sim! Todos os planos incluem acesso ao dashboard com métricas de impressões, cliques e CTR em tempo real. Planos superiores têm relatórios mais detalhados.' },
+];
+
 const contractText = `CONTRATO DE PATROCÍNIO
 
 Entre:
@@ -127,7 +160,6 @@ function AnimatedNumber({ target, suffix = '' }: { target: string; suffix?: stri
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true });
   const [count, setCount] = useState(0);
-
   const numericTarget = parseInt(target.replace(/\D/g, '')) || 0;
 
   useEffect(() => {
@@ -187,7 +219,7 @@ function FloatingParticles() {
   );
 }
 
-// Animated gradient orbs
+// Gradient orbs
 function GradientOrbs() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -210,6 +242,223 @@ function GradientOrbs() {
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
     </div>
+  );
+}
+
+// Dashboard Mockup
+function DashboardMockup() {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+  const mockMetrics = [
+    { label: 'Impressões', value: '12.847', change: '+18%', icon: Eye },
+    { label: 'Cliques', value: '934', change: '+12%', icon: MousePointerClick },
+    { label: 'CTR', value: '7.2%', change: '+0.8%', icon: Target },
+    { label: 'Conversões', value: '47', change: '+23%', icon: TrendingUp },
+  ];
+
+  const chartBars = [65, 78, 45, 89, 72, 95, 83];
+  const days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+  return (
+    <div ref={ref}>
+      <motion.div
+        initial={{ opacity: 0, y: 40, rotateX: 10 }}
+        animate={isInView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        className="relative max-w-4xl mx-auto"
+        style={{ perspective: '1000px' }}
+      >
+        {/* Browser chrome */}
+        <div className="bg-card rounded-t-2xl border border-border/50 shadow-2xl shadow-secondary/10">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50">
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-destructive/60" />
+              <div className="w-3 h-3 rounded-full bg-yellow-400/60" />
+              <div className="w-3 h-3 rounded-full bg-green-400/60" />
+            </div>
+            <div className="flex-1 mx-4">
+              <div className="bg-muted/50 rounded-lg px-3 py-1.5 text-xs text-muted-foreground flex items-center gap-2">
+                <Shield className="w-3 h-3 text-green-500" />
+                sponsor-panel.precisodeum.com/dashboard
+              </div>
+            </div>
+          </div>
+
+          {/* Dashboard content */}
+          <div className="p-4 md:p-6 space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <motion.h3
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={isInView ? { opacity: 1, x: 0 } : {}}
+                  transition={{ delay: 0.3 }}
+                  className="text-lg font-bold text-foreground"
+                >
+                  Painel do Patrocinador
+                </motion.h3>
+                <p className="text-xs text-muted-foreground">Últimos 7 dias</p>
+              </div>
+              <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                <Activity className="w-3 h-3 mr-1" /> Ativo
+              </Badge>
+            </div>
+
+            {/* KPI cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {mockMetrics.map((m, i) => (
+                <motion.div
+                  key={m.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={isInView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ delay: 0.4 + i * 0.1 }}
+                  className="bg-muted/30 rounded-xl p-3 border border-border/30"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <m.icon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">{m.label}</span>
+                  </div>
+                  <p className="text-xl font-bold text-foreground">{m.value}</p>
+                  <span className="text-xs text-green-500 font-medium">{m.change}</span>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Chart */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={isInView ? { opacity: 1 } : {}}
+              transition={{ delay: 0.8 }}
+              className="bg-muted/20 rounded-xl p-4 border border-border/30"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-foreground">Impressões por dia</span>
+                <PieChart className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex items-end gap-2 h-24">
+                {chartBars.map((height, i) => (
+                  <motion.div
+                    key={i}
+                    className="flex-1 flex flex-col items-center gap-1"
+                    initial={{ scaleY: 0 }}
+                    animate={isInView ? { scaleY: 1 } : {}}
+                    transition={{ delay: 1 + i * 0.08, duration: 0.5 }}
+                    style={{ originY: 1 }}
+                  >
+                    <div
+                      className="w-full rounded-t-md bg-gradient-to-t from-secondary to-secondary/60"
+                      style={{ height: `${height}%` }}
+                    />
+                    <span className="text-[10px] text-muted-foreground">{days[i]}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+        <div className="bg-card rounded-b-2xl border-x border-b border-border/50 h-2" />
+
+        {/* Floating glow */}
+        <div className="absolute -inset-4 bg-gradient-to-r from-secondary/5 via-accent/5 to-secondary/5 rounded-3xl -z-10 blur-xl" />
+      </motion.div>
+    </div>
+  );
+}
+
+// Testimonials Carousel
+function TestimonialsCarousel() {
+  const [current, setCurrent] = useState(0);
+  const [autoplay, setAutoplay] = useState(true);
+
+  useEffect(() => {
+    if (!autoplay) return;
+    const timer = setInterval(() => {
+      setCurrent(c => (c + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [autoplay]);
+
+  const prev = () => { setAutoplay(false); setCurrent(c => (c - 1 + testimonials.length) % testimonials.length); };
+  const next = () => { setAutoplay(false); setCurrent(c => (c + 1) % testimonials.length); };
+
+  return (
+    <div className="relative max-w-4xl mx-auto">
+      <div className="overflow-hidden rounded-2xl">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={current}
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -60 }}
+            transition={{ duration: 0.4 }}
+          >
+            <Card className="border-2 border-secondary/10 shadow-xl bg-card/80 backdrop-blur-sm">
+              <CardContent className="p-8 md:p-12">
+                <div className="flex items-center gap-1 mb-6">
+                  {[1, 2, 3, 4, 5].map(s => (
+                    <Star
+                      key={s}
+                      className={`w-5 h-5 ${s <= testimonials[current].rating ? 'fill-amber-400 text-amber-400' : 'text-muted'}`}
+                    />
+                  ))}
+                </div>
+
+                <blockquote className="text-xl md:text-2xl text-foreground font-medium italic leading-relaxed mb-8">
+                  "{testimonials[current].text}"
+                </blockquote>
+
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-secondary to-accent flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                    {testimonials[current].avatar}
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground">{testimonials[current].name}</p>
+                    <p className="text-sm text-muted-foreground">{testimonials[current].role}</p>
+                    <p className="text-xs text-secondary font-medium">{testimonials[current].company}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex items-center justify-center gap-4 mt-6">
+        <Button variant="outline" size="icon" onClick={prev} className="rounded-full w-10 h-10">
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+
+        <div className="flex gap-2">
+          {testimonials.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => { setAutoplay(false); setCurrent(i); }}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                i === current ? 'w-8 bg-secondary' : 'w-2 bg-muted-foreground/20 hover:bg-muted-foreground/40'
+              }`}
+            />
+          ))}
+        </div>
+
+        <Button variant="outline" size="icon" onClick={next} className="rounded-full w-10 h-10">
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Comparison cell renderer
+function ComparisonCell({ value }: { value: boolean | string }) {
+  if (typeof value === 'string') {
+    return <span className="text-sm font-medium text-foreground">{value}</span>;
+  }
+  return value ? (
+    <Check className="w-5 h-5 text-green-500 mx-auto" />
+  ) : (
+    <Minus className="w-5 h-5 text-muted-foreground/30 mx-auto" />
   );
 }
 
@@ -308,8 +557,6 @@ export default function SponsorLandingPage() {
         <section ref={heroRef} className="relative min-h-[90vh] flex items-center overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/90">
           <GradientOrbs />
           <FloatingParticles />
-
-          {/* Grid pattern overlay */}
           <div className="absolute inset-0 opacity-[0.03]" style={{
             backgroundImage: 'linear-gradient(hsl(var(--primary-foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary-foreground)) 1px, transparent 1px)',
             backgroundSize: '60px 60px',
@@ -317,7 +564,6 @@ export default function SponsorLandingPage() {
 
           <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative w-full">
             <div className="max-w-5xl mx-auto px-4 py-20 text-center">
-              {/* Floating badge */}
               <motion.div
                 initial={{ opacity: 0, y: -20, scale: 0.8 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -331,7 +577,6 @@ export default function SponsorLandingPage() {
                 </Badge>
               </motion.div>
 
-              {/* Title with gradient text */}
               <motion.h1
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -365,7 +610,6 @@ export default function SponsorLandingPage() {
                 Visibilidade real, métricas comprovadas e retorno garantido.
               </motion.p>
 
-              {/* CTA buttons */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -390,7 +634,6 @@ export default function SponsorLandingPage() {
                 </Button>
               </motion.div>
 
-              {/* Stats row */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -418,7 +661,6 @@ export default function SponsorLandingPage() {
             </div>
           </motion.div>
 
-          {/* Bottom wave */}
           <div className="absolute bottom-0 left-0 right-0">
             <svg viewBox="0 0 1440 120" className="w-full h-16 md:h-24 fill-background">
               <path d="M0,60 C360,120 720,0 1080,60 C1260,90 1380,60 1440,40 L1440,120 L0,120 Z" />
@@ -464,15 +706,12 @@ export default function SponsorLandingPage() {
                       : 'border-transparent hover:border-border/50'
                   }`}>
                     <CardContent className="p-6 relative overflow-hidden">
-                      {/* Glow effect */}
                       <motion.div
                         className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-secondary/5"
                         animate={hoveredBenefit === i ? { scale: 2, opacity: 1 } : { scale: 1, opacity: 0 }}
                         transition={{ duration: 0.5 }}
                       />
-
                       <div className="relative">
-                        {/* Icon + metric */}
                         <div className="flex items-start justify-between mb-4">
                           <motion.div
                             className="w-14 h-14 bg-gradient-to-br from-secondary/10 to-secondary/5 rounded-2xl flex items-center justify-center border border-secondary/10"
@@ -486,7 +725,6 @@ export default function SponsorLandingPage() {
                             <p className="text-[10px] text-muted-foreground">{b.metricLabel}</p>
                           </div>
                         </div>
-
                         <h3 className="font-bold text-foreground text-lg mb-2 group-hover:text-secondary transition-colors">{b.title}</h3>
                         <p className="text-muted-foreground text-sm leading-relaxed">{b.desc}</p>
                       </div>
@@ -498,12 +736,36 @@ export default function SponsorLandingPage() {
           </div>
         </section>
 
-        {/* ====== HOW IT WORKS ====== */}
-        <section className="py-20 px-4 bg-muted/30 relative overflow-hidden">
+        {/* ====== DASHBOARD MOCKUP ====== */}
+        <section className="py-20 md:py-28 px-4 bg-muted/20 relative overflow-hidden">
           <div className="absolute inset-0 opacity-[0.02]" style={{
             backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--foreground)) 1px, transparent 0)',
             backgroundSize: '40px 40px',
           }} />
+          <div className="max-w-6xl mx-auto relative">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <Badge variant="outline" className="mb-4 text-secondary border-secondary/30">
+                <Monitor className="w-3 h-3 mr-1" /> Preview do Dashboard
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Acompanhe tudo em <span className="text-secondary">tempo real</span>
+              </h2>
+              <p className="text-muted-foreground max-w-xl mx-auto">
+                Dashboard completo com impressões, cliques, CTR e muito mais — tudo ao seu alcance
+              </p>
+            </motion.div>
+
+            <DashboardMockup />
+          </div>
+        </section>
+
+        {/* ====== HOW IT WORKS ====== */}
+        <section className="py-20 px-4 relative overflow-hidden">
           <div className="max-w-5xl mx-auto relative">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -520,9 +782,7 @@ export default function SponsorLandingPage() {
             </motion.div>
 
             <div className="grid md:grid-cols-3 gap-8 relative">
-              {/* Connection line */}
               <div className="hidden md:block absolute top-16 left-[20%] right-[20%] h-px bg-gradient-to-r from-transparent via-secondary/30 to-transparent" />
-
               {steps.map((s, i) => (
                 <motion.div
                   key={s.step}
@@ -550,7 +810,7 @@ export default function SponsorLandingPage() {
         </section>
 
         {/* ====== PLANS ====== */}
-        <section id="plans-section" className="py-20 md:py-28 px-4 relative">
+        <section id="plans-section" className="py-20 md:py-28 px-4 bg-muted/30 relative">
           <div className="max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -587,7 +847,6 @@ export default function SponsorLandingPage() {
                     } ${plan.featured ? 'border-2 border-secondary' : 'border'}`}
                     onClick={() => { setSelectedPlan(plan.id); setValue('plan', plan.id); }}
                   >
-                    {/* Top gradient bar */}
                     <div className={`h-1.5 bg-gradient-to-r ${plan.gradient}`} />
 
                     {plan.featured && (
@@ -649,36 +908,153 @@ export default function SponsorLandingPage() {
                 </motion.div>
               ))}
             </div>
+
+            {/* ====== COMPARISON TABLE ====== */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-16"
+            >
+              <div className="text-center mb-8">
+                <h3 className="text-xl font-bold text-foreground">Comparativo detalhado</h3>
+                <p className="text-sm text-muted-foreground mt-1">Veja tudo que cada plano oferece</p>
+              </div>
+
+              <Card className="overflow-hidden border-2">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="text-left px-6 py-4 font-medium text-muted-foreground">Recurso</th>
+                        <th className="text-center px-4 py-4 font-bold text-foreground">
+                          <div className="flex flex-col items-center gap-1">
+                            <span>Básico</span>
+                            <span className="text-xs font-normal text-muted-foreground">R$ 199/mês</span>
+                          </div>
+                        </th>
+                        <th className="text-center px-4 py-4 font-bold text-secondary relative">
+                          <div className="flex flex-col items-center gap-1">
+                            <Badge className="bg-secondary/10 text-secondary text-[10px] px-2 py-0 mb-1">Popular</Badge>
+                            <span>PRO</span>
+                            <span className="text-xs font-normal text-muted-foreground">R$ 499/mês</span>
+                          </div>
+                        </th>
+                        <th className="text-center px-4 py-4 font-bold text-foreground">
+                          <div className="flex flex-col items-center gap-1">
+                            <Crown className="w-4 h-4 text-amber-500 mb-1" />
+                            <span>Premium</span>
+                            <span className="text-xs font-normal text-muted-foreground">R$ 999/mês</span>
+                          </div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {comparisonFeatures.map((feat, i) => (
+                        <motion.tr
+                          key={feat.label}
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: i * 0.03 }}
+                          className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="px-6 py-3.5 text-foreground font-medium">{feat.label}</td>
+                          <td className="px-4 py-3.5 text-center"><ComparisonCell value={feat.basic} /></td>
+                          <td className="px-4 py-3.5 text-center bg-secondary/[0.03]"><ComparisonCell value={feat.pro} /></td>
+                          <td className="px-4 py-3.5 text-center"><ComparisonCell value={feat.premium} /></td>
+                        </motion.tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </motion.div>
           </div>
         </section>
 
-        {/* ====== SOCIAL PROOF ====== */}
-        <section className="py-16 px-4 bg-muted/30">
-          <div className="max-w-4xl mx-auto">
+        {/* ====== TESTIMONIALS CAROUSEL ====== */}
+        <section className="py-20 md:py-28 px-4 relative">
+          <div className="max-w-6xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <Badge variant="outline" className="mb-4 text-secondary border-secondary/30">
+                <MessageSquare className="w-3 h-3 mr-1" /> Depoimentos
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                O que nossos patrocinadores <span className="text-secondary">dizem</span>
+              </h2>
+              <p className="text-muted-foreground max-w-xl mx-auto">
+                Empresas reais, resultados reais
+              </p>
+            </motion.div>
+
+            <TestimonialsCarousel />
+          </div>
+        </section>
+
+        {/* ====== FAQ ====== */}
+        <section className="py-20 md:py-28 px-4 bg-muted/20 relative overflow-hidden">
+          <div className="max-w-3xl mx-auto relative">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <Badge variant="outline" className="mb-4">
+                <HelpCircle className="w-3 h-3 mr-1" /> Dúvidas frequentes
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Perguntas frequentes
+              </h2>
+              <p className="text-muted-foreground">
+                Tire suas dúvidas sobre o programa de patrocínio
+              </p>
+            </motion.div>
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center"
             >
-              <div className="flex items-center justify-center gap-1 mb-4">
-                {[1, 2, 3, 4, 5].map(s => (
+              <Accordion type="single" collapsible className="space-y-3">
+                {faqs.map((faq, i) => (
                   <motion.div
-                    key={s}
-                    initial={{ opacity: 0, scale: 0 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: s * 0.1 }}
+                    transition={{ delay: i * 0.05 }}
                   >
-                    <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+                    <AccordionItem value={`faq-${i}`} className="bg-card border rounded-xl px-6 shadow-sm hover:shadow-md transition-shadow">
+                      <AccordionTrigger className="text-left text-foreground font-medium hover:text-secondary transition-colors py-5">
+                        {faq.q}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
+                        {faq.a}
+                      </AccordionContent>
+                    </AccordionItem>
                   </motion.div>
                 ))}
-              </div>
-              <blockquote className="text-xl md:text-2xl text-foreground font-medium italic leading-relaxed mb-4">
-                "A plataforma transformou nossa visibilidade. Em 3 meses, triplicamos os contatos qualificados."
-              </blockquote>
-              <p className="text-muted-foreground text-sm">
-                — <strong>Carlos M.</strong>, Gestor de Marketing
+              </Accordion>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-center mt-8"
+            >
+              <p className="text-sm text-muted-foreground">
+                Ainda tem dúvidas?{' '}
+                <a href="mailto:contato@precisodeum.com" className="text-secondary font-medium hover:underline">
+                  Fale conosco
+                </a>
               </p>
             </motion.div>
           </div>
@@ -686,7 +1062,6 @@ export default function SponsorLandingPage() {
 
         {/* ====== FORM ====== */}
         <section id="form-section" className="py-20 md:py-28 px-4 relative">
-          {/* Background decoration */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-secondary/3 blur-3xl pointer-events-none" />
 
           <div className="max-w-2xl mx-auto relative">
@@ -708,7 +1083,6 @@ export default function SponsorLandingPage() {
               </div>
 
               <Card className="border-2 shadow-xl shadow-secondary/5 overflow-hidden">
-                {/* Top accent */}
                 <div className="h-1 bg-gradient-to-r from-secondary via-accent to-primary" />
 
                 <CardContent className="p-6 md:p-10">
@@ -766,7 +1140,7 @@ export default function SponsorLandingPage() {
                       </Select>
                     </div>
 
-                    {/* Contract acceptance */}
+                    {/* Contract */}
                     <div className="rounded-xl border border-border bg-muted/30 p-4">
                       <div className="flex items-start gap-3">
                         <Checkbox
@@ -820,7 +1194,6 @@ export default function SponsorLandingPage() {
                         className="w-full text-lg py-7 bg-gradient-to-r from-secondary via-accent to-primary text-white shadow-xl shadow-secondary/20 hover:shadow-2xl hover:shadow-secondary/30 transition-all relative overflow-hidden group"
                         disabled={!contractAccepted || submitting}
                       >
-                        {/* Shimmer effect */}
                         <motion.div
                           className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                           animate={{ x: ['-100%', '100%'] }}
@@ -845,7 +1218,6 @@ export default function SponsorLandingPage() {
                       </Button>
                     </motion.div>
 
-                    {/* Trust indicators */}
                     <div className="flex items-center justify-center gap-6 text-muted-foreground text-xs pt-2">
                       <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> Dados protegidos</span>
                       <span className="flex items-center gap-1"><Zap className="w-3 h-3" /> Resposta em 24h</span>
