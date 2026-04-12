@@ -340,6 +340,7 @@ const AdminSponsorsPage = () => {
         external_link: form.external_link, linked_city: form.linked_city,
         linked_category: form.linked_category, plan_tier: form.plan_tier,
         badge_type: form.badge_type, status: form.status,
+        guaranteed_impressions: form.guaranteed_impressions || 0,
       };
       if (editingId) {
         const { error } = await supabase.from('sponsors').update(payload).eq('id', editingId);
