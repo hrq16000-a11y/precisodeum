@@ -1,31 +1,71 @@
 
 
-# Melhorar Banner de Fallback Geográfico
+# Contador de Profissionais Online — Baseado em Presença Real
 
 ## Problema
-O banner atual mostra uma mensagem genérica e negativa: "Não encontramos resultados em São José dos Pinhais. Exibindo X resultado(s) em todo o Brasil. Esses profissionais são de outras regiões e podem não atender sua localidade." — tom alarmista com ícone de warning amarelo.
+O componente `ActiveProvidersCounter` conta **todos** os profissionais aprovados no banco, não os que estão realmente online. Exibe "58 profissionais prontos" quando na verdade nenhum pode estar conectado.
 
 ## Solução
-Trocar para um tom positivo e informativo, focando nas cidades próximas encontradas:
+Substituir a query ao banco pelo sistema de presença real (`useOnlineProviders`), cruzando os user_ids online com os providers da região do usuário.
 
-**Novo texto:**
-- Título: `Não encontramos profissionais em {cidade}, mas encontramos em cidades próximas!`
-- Se tem `nearestDistanceKm`: `O mais próximo está a apenas {X} km, em {cidadeMaisPróxima}. Gostaria de ver?`
-- Se não tem distância: `Encontramos {N} profissional(is) em cidades vizinhas. Gostaria de ver?`
+### Alterações
 
-**Novo visual:**
-- Trocar `AlertTriangle` amarelo por `MapPin` azul/primary
-- Fundo: `bg-blue-50 border-blue-200` em vez de amber (tom informativo, não alarmante)
-- Botão CTA: "Ver profissionais próximos" com estilo primary
+**1. `src/hooks/useOnlinePresence.ts`** — Incluir `city` no track de presença
+- Na função `usePresenceTracker`, aceitar um segundo parâmetro opcional `meta?: { city?: string }`
+- Enviar `{ user_id, city }` no `ch.track()`
+- Atualizar `syncPresenceState` para armazenar um Map `<userId, { city }>` em vez de um Set
+- Exportar novo hook `useOnlineProvidersByCity(city)` que filtra o Map pela cidade
 
-## Props adicionais
-Adicionar prop opcional `nearestCity?: string` para exibir o nome da cidade mais próxima quando disponível.
+**2. `src/hooks/useAuth.tsx`** — Passar cidade do perfil ao tracker
+- Buscar a cidade do provider do usuário logado (já disponível no perfil/provider)
+- Passar `{ city }` como meta para `usePresenceTracker`
 
-## Alterações
+**3. `src/components/home/ActiveProvidersCounter.tsx`** — Usar presença real
+- Trocar a query ao Supabase por `useOnlineProvidersByCity(geoCity)`
+- Contar apenas providers realmente online na cidade/região
+- Se nenhum online → `return null` (não exibe nada)
+- Texto: "X profissional(is) online agora em {cidade}"
 
-| Arquivo | O que muda |
-|---------|-----------|
-| `src/components/GeoFallbackBanner.tsx` | Novo texto positivo, ícone MapPin azul, nova prop `nearestCity` |
-| `src/pages/CategoryPage.tsx` | Passar `nearestCity` ao GeoFallbackBanner (extrair da lista de nearby/outOfState) |
-| `src/pages/SearchPage.tsx` | Idem — passar `nearestCity` |
+### Dados enviados no Presence
+
+```typescript
+// Antes
+ch.track({ user_id: userId });
+
+// Depois  
+ch.track({ user_id: userId, city: meta?.city });
+```
+
+### Lógica de filtragem
+
+```typescript
+// Novo Map interno
+let onlineUsersMap = new Map<string, { city?: string }>();
+
+// Hook filtrado por cidade
+export function useOnlineCountByCity(city: string | null): number {
+  const map = useOnlineUsersMap();
+  return useMemo(() => {
+    if (!city) return map.size; // total online
+    let count = 0;
+    map.forEach(v => {
+      if (v.city?.toLowerCase() === city.toLowerCase()) count++;
+    });
+    return count;
+  }, [map, city]);
+}
+```
+
+### Arquivos alterados
+
+| Arquivo | Mudança |
+|---------|---------|
+| `src/hooks/useOnlinePresence.ts` | Track com `city`, Map em vez de Set, novo hook `useOnlineCountByCity` |
+| `src/hooks/useAuth.tsx` | Buscar cidade do provider e passar ao tracker |
+| `src/components/home/ActiveProvidersCounter.tsx` | Usar presença real; ocultar se 0 online |
+
+### Resultado
+- Contador mostra apenas profissionais **realmente conectados** na plataforma
+- Se ninguém está online na região, o componente não aparece
+- Mantém o badge pulsante verde para indicar presença real
 
