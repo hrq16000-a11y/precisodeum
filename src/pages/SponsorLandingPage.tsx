@@ -65,7 +65,7 @@ const plans = [
     id: 'premium' as const,
     name: 'Premium',
     price: '999',
-    features: ['Banners ilimitados', 'Posições exclusivas', 'Relatório diário', 'Gerente dedicado', 'Prioridade máxima', 'Impressões garantidas', 'API de métricas'],
+    features: ['Banners ilimitados', 'Posições exclusivas', 'Relatório diário', 'Prioridade máxima', 'Impressões garantidas', 'Segmentação total'],
     gradient: 'from-amber-500 to-orange-600',
     glow: 'shadow-amber-500/30',
     iconColor: 'text-amber-400',
