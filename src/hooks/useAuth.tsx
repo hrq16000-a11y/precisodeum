@@ -114,8 +114,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProvider(null);
     setNeedsTypeSelection(false);
   };
-  // Track online presence for the current user
-  usePresenceTracker(user?.id);
+  // Track online presence for the current user, including their city
+  const providerCity = provider?.city;
+  const presenceMeta = useMemo(() => (providerCity ? { city: providerCity } : undefined), [providerCity]);
+  usePresenceTracker(user?.id, presenceMeta);
 
   return (
     <AuthContext.Provider value={{ session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile }}>

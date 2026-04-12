@@ -2,19 +2,10 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
-/**
- * Lightweight online-presence system using Supabase Realtime Presence.
- *
- * • usePresenceTracker(userId)  — call once in AuthProvider / App to announce
- *   that the current user is online.
- * • useOnlineProviders()        — returns Set<userId> of providers currently online.
- */
-
 const CHANNEL_NAME = 'online-presence';
 
-// ─── Singleton channel ───────────────────────────────────────────────
 let channel: RealtimeChannel | null = null;
-let onlineUsers = new Set<string>();
+let onlineUsers = new Map<string, { city?: string }>();
 let listeners = new Set<() => void>();
 let subscriberCount = 0;
 
@@ -24,11 +15,11 @@ function notify() {
 
 function syncPresenceState() {
   if (!channel) return;
-  const state = channel.presenceState<{ user_id: string }>();
-  const next = new Set<string>();
+  const state = channel.presenceState<{ user_id: string; city?: string }>();
+  const next = new Map<string, { city?: string }>();
   for (const key in state) {
     for (const presence of state[key]) {
-      if (presence.user_id) next.add(presence.user_id);
+      if (presence.user_id) next.set(presence.user_id, { city: presence.city });
     }
   }
   onlineUsers = next;
@@ -52,21 +43,20 @@ function destroyChannel() {
   if (!channel) return;
   supabase.removeChannel(channel);
   channel = null;
-  onlineUsers = new Set();
+  onlineUsers = new Map();
   notify();
 }
 
 // ─── Hook: track current user as online ──────────────────────────────
-export function usePresenceTracker(userId: string | undefined) {
+export function usePresenceTracker(userId: string | undefined, meta?: { city?: string }) {
   useEffect(() => {
     if (!userId) return;
 
     const ch = ensureChannel();
     subscriberCount++;
 
-    // Small delay so the channel is fully subscribed before tracking
     const timer = setTimeout(() => {
-      ch.track({ user_id: userId });
+      ch.track({ user_id: userId, city: meta?.city });
     }, 500);
 
     return () => {
@@ -78,10 +68,10 @@ export function usePresenceTracker(userId: string | undefined) {
         destroyChannel();
       }
     };
-  }, [userId]);
+  }, [userId, meta?.city]);
 }
 
-// ─── Hook: read online user set ──────────────────────────────────────
+// ─── Hook: read online user map ──────────────────────────────────────
 function subscribe(cb: () => void) {
   listeners.add(cb);
   subscriberCount++;
@@ -100,11 +90,31 @@ function getSnapshot() {
   return onlineUsers;
 }
 
-export function useOnlineProviders(): Set<string> {
+export function useOnlineUsersMap(): Map<string, { city?: string }> {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
+/** Legacy: returns Set<userId> for backward compat */
+export function useOnlineProviders(): Set<string> {
+  const map = useOnlineUsersMap();
+  return useMemo(() => new Set(map.keys()), [map]);
+}
+
 export function useIsProviderOnline(userId: string | undefined): boolean {
-  const online = useOnlineProviders();
-  return useMemo(() => !!userId && online.has(userId), [online, userId]);
+  const map = useOnlineUsersMap();
+  return useMemo(() => !!userId && map.has(userId), [map, userId]);
+}
+
+/** Count online users in a specific city */
+export function useOnlineCountByCity(city: string | null): number {
+  const map = useOnlineUsersMap();
+  return useMemo(() => {
+    if (!city) return map.size;
+    const normalized = city.toLowerCase();
+    let count = 0;
+    map.forEach((v) => {
+      if (v.city?.toLowerCase() === normalized) count++;
+    });
+    return count;
+  }, [map, city]);
 }
