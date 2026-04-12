@@ -320,15 +320,26 @@ const Header = () => {
 
         {/* Mobile right actions */}
         <div className="flex items-center gap-1.5 md:hidden">
-          {/* On mobile compact: show only city abbreviation + temp */}
           {isCompact ? (
-            <GeoBadge city={geoCity} temp={geoTemp} compact className="text-[10px] px-1.5 py-0.5" />
+            <>
+              {/* Compact search on mobile */}
+              <form onSubmit={(e) => { e.preventDefault(); handleCompactSearch(searchQuery); }} className="flex-1 min-w-0 mr-1">
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar..."
+                  className="h-7 text-xs rounded-full bg-muted border-0 px-3"
+                  onKeyDown={(e) => { if (e.key === 'Escape') setSearchQuery(''); }}
+                />
+              </form>
+              <GeoBadge city={geoCity} temp={geoTemp} compact className="text-[10px] px-1.5 py-0.5 shrink-0" />
+            </>
           ) : (
             <GeoBadge city={geoCity} temp={geoTemp} className="text-[10px] px-1.5 py-0.5" />
           )}
           <NotificationBell />
           <button
-            className="text-foreground p-1 rounded-lg active:scale-90 transition-transform"
+            className="text-foreground p-1 rounded-lg active:scale-90 transition-transform shrink-0"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Menu"
             aria-expanded={mobileOpen}
