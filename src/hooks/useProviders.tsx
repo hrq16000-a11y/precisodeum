@@ -534,7 +534,7 @@ export function filterAndRankProvidersGrouped(
     const terms = sanitizeSearchTokens(serviceQuery);
     if (terms.length > 0) {
       results = results.filter((p) => {
-        const searchable = [p.name, p.category, p.description, p.businessName || '', p.city, p.neighborhood, p.state]
+        const searchable = [p.name, p.category, p.description, p.businessName || '', p.city, p.neighborhood, p.state, (p as any)._searchableServices || '']
           .join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/-/g, ' ');
         let matched = 0;
         for (const term of terms) { if (searchable.includes(term)) matched++; }
