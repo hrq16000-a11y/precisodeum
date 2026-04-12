@@ -339,6 +339,11 @@ const DashboardPage = () => {
         <UpsellBanner />
       </div>
 
+      {/* Courses promotion */}
+      <div className="mt-4">
+        <CoursesBanner />
+      </div>
+
       <QuickStatsBar pendingLeads={pendingLeads} providerSlug={provider?.slug} />
 
       {/* Action Queue — what to do next */}
