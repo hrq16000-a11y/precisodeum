@@ -118,10 +118,16 @@ const AdminHomeSectionsPage = () => {
           return (
             <div key={slug} className={`flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-card transition-opacity ${isHidden ? 'opacity-50' : ''}`}>
               <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm font-bold text-foreground flex-1">
-                {SECTION_LABELS[slug] || slug}
-              </span>
-              <span className="text-xs text-muted-foreground font-mono">{slug}</span>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {(() => {
+                  const meta = SECTION_META[slug];
+                  const SectionIcon = meta?.icon;
+                  return SectionIcon ? <SectionIcon className="h-4 w-4 text-muted-foreground shrink-0" strokeWidth={1.75} /> : null;
+                })()}
+                <span className="text-sm font-bold text-foreground truncate">
+                  {SECTION_META[slug]?.label || slug}
+                </span>
+              </div>
               <div className="flex gap-1 shrink-0">
                 <Button variant="ghost" size="sm" onClick={() => moveSection(index, -1)} disabled={index === 0}>↑</Button>
                 <Button variant="ghost" size="sm" onClick={() => moveSection(index, 1)} disabled={index === sections.length - 1}>↓</Button>
