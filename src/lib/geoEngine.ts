@@ -1085,9 +1085,7 @@ export const GeoEngine = {
   dynamicRadius,
 } as const;
 
-// Pre-warm citiesIndex in idle time so it's ready for first search
-if (typeof requestIdleCallback === 'function') requestIdleCallback(() => ensureLookupCity());
-else setTimeout(() => ensureLookupCity(), 2000);
+// citiesIndex loaded on-demand when first search occurs (saves 227KB from initial load)
 
 export default GeoEngine;
 
