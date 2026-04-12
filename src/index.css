@@ -84,10 +84,18 @@
     @apply border-border;
     overflow-wrap: break-word;
     word-break: break-word;
+    white-space: normal;
   }
 
   html, body {
     overflow-x: hidden;
+  }
+
+  /* Bottom nav safe padding for mobile */
+  @media (max-width: 767px) {
+    body {
+      padding-bottom: 4.5rem;
+    }
   }
 
   body {

@@ -55,18 +55,7 @@ const SORT_OPTIONS = [
 const PER_PAGE_OPTIONS = [10, 20, 30, 50];
 const NATIVE_AD_INTERVAL = 8;
 
-function timeAgo(dateStr: string) {
-  const now = new Date();
-  const d = new Date(dateStr);
-  const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
-  if (diff < 3600) return `${Math.floor(diff / 60)}min atrás`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h atrás`;
-  const days = Math.floor(diff / 86400);
-  if (days === 1) return 'ontem';
-  if (days < 7) return `${days} dias atrás`;
-  if (days < 30) return `${Math.floor(days / 7)} sem atrás`;
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-}
+import { timeAgo } from '@/lib/formatters';
 
 const JobsPage = () => {
   const { city: geoCity } = useGeoCity();
