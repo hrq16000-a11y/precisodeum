@@ -1,4 +1,5 @@
-import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
+import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink, Zap, RotateCcw, Plus, Minus } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { getEngagementTier } from '@/lib/engagementTiers';
 
 const profileTypeLabel = (t: string) => {
   if (t === 'rh') return 'Agência/RH';
