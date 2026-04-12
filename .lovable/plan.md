@@ -1,36 +1,49 @@
 
 
-# Header Sticky + Busca Mobile no Scroll + Fix Texto Overflow
+# Upgrade de Inteligência e Conversão
 
-## Status do Sticky
-O Header **já tem** `sticky top-0 z-50` (linha 205). Com o fix anterior de `overflow-x: clip`, o sticky deve estar funcionando. Nenhuma alteração necessária aqui.
+## 1. WhatsApp Smart-Link (mensagem estruturada)
 
-## Alterações Necessárias
+O `ProviderCard` (linha 232) já tem uma mensagem contextual com nome e categoria. Vamos melhorar para incluir bairro/cidade do usuário e a categoria do profissional de forma mais natural.
 
-### 1. Barra de Busca no Header Mobile ao Rolar
-Atualmente, o `CompactSearch` tem `hidden md:block` — só aparece no desktop. Vamos adicionar uma barra de busca compacta no mobile quando o usuário rolar.
+**Arquivos:** `src/components/ProviderCard.tsx`, `src/pages/ServiceDetailPage.tsx`, `src/components/home/FeaturedProviders.tsx`
 
-**`src/components/Header.tsx`**
-- No bloco mobile (linha 322-338): quando `isCompact` for true, mostrar um campo de busca inline compacto ao lado dos ícones
-- Usar um ícone de busca que expande um input ao clicar, ou um input compacto fixo com `flex-1`
-- Layout: `[Logo compacto] [🔍 input busca] [📍geo] [🔔] [☰]`
+- Padronizar a mensagem em todos os pontos de contato WhatsApp:
+  ```
+  Olá {Nome}! Vi seu perfil no Preciso de Um. Preciso de ajuda com {Categoria}. Minha localização aproximada é {Bairro/Cidade}. Podemos conversar?
+  ```
+- Usar `geoCity` e neighborhood do hook `useGeoCity` para preencher a localização do usuário automaticamente
+- Criar helper `buildSmartMessage()` em `src/lib/whatsapp.ts` para centralizar a lógica
 
-### 2. Fix Texto Overflow no Hero (RotatingServiceText)
-**`src/components/home/RotatingServiceText.tsx`**
-- Linha 70: remover `min-w-[180px] sm:min-w-[260px]` — usar `w-full max-w-full min-w-0`
-- Linha 74: remover `whitespace-nowrap` — permitir quebra de linha no mobile
-- Ajustar `height: 1.2em` para `min-height: 1.2em` para acomodar 2 linhas no mobile
-- Manter `whitespace-nowrap` apenas em `sm:` para telas maiores onde cabe
+## 2. Contador de Profissionais Ativos na Cidade
 
-### 3. Ajuste no h1 do HeroBanner
-**`src/components/home/HeroBanner.tsx`**
-- Garantir que o `h1` tenha `overflow-hidden` e `max-w-full` para nunca ultrapassar a viewport
-- Adicionar `px-4` no container do texto para margem segura no mobile
+**Novo componente:** `src/components/home/ActiveProvidersCounter.tsx`
+
+- Query em `providers` filtrando `status = 'approved'` e `city = geoCity`
+- Exibir: "🟢 **25** profissionais prontos para te atender em **Curitiba** agora"
+- Usar `AnimatedCounter` existente para animação do número
+- Posicionar logo abaixo do hero na home e nas páginas de categoria
+- Se não houver geolocalização, mostrar o total geral da plataforma
+
+## 3. Skeleton Loading Profissional
+
+**Novo componente:** `src/components/ProviderCardSkeleton.tsx`
+
+- Skeleton que replica exatamente o layout do `ProviderCard`: avatar circular, linhas de texto, badges, botões
+- Substituir os `<Skeleton className="h-72" />` genéricos em `FeaturedProviders` (linha 74), `CategoryPage`, e `SearchPage`
+- Também criar skeleton para o `ProviderCardFeatured` dentro de `FeaturedProviders`
 
 ## Arquivos alterados
-| Arquivo | O que muda |
+
+| Arquivo | Alteração |
 |---------|-----------|
-| `src/components/Header.tsx` | Busca compacta visível no mobile ao rolar |
-| `src/components/home/RotatingServiceText.tsx` | Remover nowrap/min-w, permitir wrap no mobile |
-| `src/components/home/HeroBanner.tsx` | Overflow seguro no h1 |
+| `src/lib/whatsapp.ts` | Novo `buildSmartMessage()` |
+| `src/components/ProviderCard.tsx` | Usar `buildSmartMessage` |
+| `src/components/home/FeaturedProviders.tsx` | Usar `buildSmartMessage` + skeleton |
+| `src/pages/ServiceDetailPage.tsx` | Usar `buildSmartMessage` |
+| `src/components/home/ActiveProvidersCounter.tsx` | **Novo** — contador dinâmico |
+| `src/components/ProviderCardSkeleton.tsx` | **Novo** — skeleton realista |
+| `src/pages/Index.tsx` | Incluir `ActiveProvidersCounter` |
+| `src/pages/CategoryPage.tsx` | Incluir `ActiveProvidersCounter` + skeleton |
+| `src/pages/SearchPage.tsx` | Usar skeleton |
 
