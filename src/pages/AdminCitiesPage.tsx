@@ -30,7 +30,19 @@ const BRAZILIAN_STATES = [
   'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA',
   'PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'
 ];
-
+const CAPITAL_SLUGS = new Set([
+  'rio-branco','maceio','manaus','macapa','salvador','fortaleza','brasilia','vitoria',
+  'goiania','sao-luis','belo-horizonte','campo-grande','cuiaba','belem','joao-pessoa',
+  'recife','teresina','curitiba','rio-de-janeiro','natal','porto-velho','boa-vista',
+  'porto-alegre','florianopolis','aracaju','sao-paulo','palmas'
+]);
+const CAPITAL_UF: Record<string, string> = {
+  AC:'rio-branco',AL:'maceio',AM:'manaus',AP:'macapa',BA:'salvador',CE:'fortaleza',
+  DF:'brasilia',ES:'vitoria',GO:'goiania',MA:'sao-luis',MG:'belo-horizonte',
+  MS:'campo-grande',MT:'cuiaba',PA:'belem',PB:'joao-pessoa',PE:'recife',PI:'teresina',
+  PR:'curitiba',RJ:'rio-de-janeiro',RN:'natal',RO:'porto-velho',RR:'boa-vista',
+  RS:'porto-alegre',SC:'florianopolis',SE:'aracaju',SP:'sao-paulo',TO:'palmas'
+};
 
 interface City { id: string; name: string; slug: string; state: string; created_at: string; }
 
