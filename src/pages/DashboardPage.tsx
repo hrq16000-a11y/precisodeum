@@ -23,6 +23,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import ActionQueue from '@/components/dashboard/ActionQueue';
+import UpsellBanner from '@/components/dashboard/UpsellBanner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const DashboardPage = () => {
@@ -332,7 +333,11 @@ const DashboardPage = () => {
         <AvatarReminder avatarUrl={profile?.avatar_url} />
       </div>
 
-      {/* Quick Actions Bar */}
+      {/* Upsell Banner */}
+      <div className="mt-4">
+        <UpsellBanner />
+      </div>
+
       <QuickStatsBar pendingLeads={pendingLeads} providerSlug={provider?.slug} />
 
       {/* Action Queue — what to do next */}
