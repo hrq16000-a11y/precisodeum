@@ -81,6 +81,13 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   badges.push(
     <ProfileBadge key="profile" hasPhoto={hasOwnPhoto} hasServices={(provider.servicesCount || 0) >= 1} size="sm" />
   );
+  if (engTier.tier !== 'basic') {
+    badges.push(
+      <span key="eng-tier" className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${engTier.badgeClass}`}>
+        {engTier.icon} {engTier.label}
+      </span>
+    );
+  }
   const tier = getRankTier(provider.rating, provider.reviewCount);
   if (tier) {
     badges.push(
