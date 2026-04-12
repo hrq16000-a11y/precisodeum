@@ -1,110 +1,108 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { cleanupFrequencyData } from "@/lib/sponsorRanking";
 
-// Defer non-critical cleanup to idle time
-if ('requestIdleCallback' in window) {
-  (window as any).requestIdleCallback(() => cleanupFrequencyData());
-} else {
-  setTimeout(cleanupFrequencyData, 300);
-}
+// ── RENDER FIRST — everything else deferred ──
+createRoot(document.getElementById("root")!).render(<App />);
 
-// ── Auto-clear caches after every new deploy ──
-// @ts-ignore — injected by Vite define config at build time
-const BUILD_VERSION: string = __BUILD_TIMESTAMP__;
-const STORED_VERSION_KEY = 'app-build-version';
+// Remove static shell once React has painted
+requestAnimationFrame(() => {
+  const shell = document.getElementById('app-shell');
+  if (shell) shell.remove();
+});
 
-const storedVersion = localStorage.getItem(STORED_VERSION_KEY);
-if (storedVersion !== String(BUILD_VERSION)) {
-  if ('caches' in window) {
-    caches.keys().then(names => names.forEach(n => caches.delete(n)));
-  }
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(r => r.unregister());
-    });
-  }
-  localStorage.setItem(STORED_VERSION_KEY, String(BUILD_VERSION));
-  console.log('[Cache] New build detected, caches cleared.');
-}
-
-// ── Daily cache purge (24 h) ──
-const PURGE_KEY = 'cache-last-purge';
-const PURGE_INTERVAL = 86_400_000; // 24 h in ms
-const PRESERVE_KEYS = new Set([
-  STORED_VERSION_KEY,
-  PURGE_KEY,
-  'app-build-version',
-  'sb-qaftogrqeyymewoofexc-auth-token',  // keep auth
-  'cookie-consent',
-  'pwa-dismiss-ts',
-  'pwa-visit-count',
-  'theme',
-]);
-
-const lastPurge = Number(localStorage.getItem(PURGE_KEY) || '0');
-const now = Date.now();
-
-if (now - lastPurge > PURGE_INTERVAL) {
-  // 1. Purge Cache API
-  if ('caches' in window) {
-    caches.keys().then(names => names.forEach(n => caches.delete(n)));
-  }
-
-  // 2. Clear localStorage except preserved keys
-  const keysToRemove: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k && !PRESERVE_KEYS.has(k) && !k.startsWith('sb-')) {
-      keysToRemove.push(k);
-    }
-  }
-  keysToRemove.forEach(k => localStorage.removeItem(k));
-
-  // 3. Signal Service Worker
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'PURGE_CACHES' });
-  }
-
-  // 4. Flag for React Query invalidation (picked up by App.tsx)
-  (window as any).__DAILY_PURGE_TRIGGERED__ = true;
-
-  localStorage.setItem(PURGE_KEY, String(now));
-  console.log('[Cache] Daily purge executed.');
-}
-
-// ── Lazy image reveal via IntersectionObserver ──
-const revealImage = (img: HTMLImageElement) => {
-  if (img.complete && img.naturalWidth > 0) {
-    img.classList.add('img-revealed');
+// ── All non-critical work runs AFTER first paint ──
+const deferWork = (fn: () => void) => {
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(fn);
   } else {
-    img.addEventListener('load', () => img.classList.add('img-revealed'), { once: true });
-    img.addEventListener('error', () => img.classList.add('img-revealed'), { once: true });
+    setTimeout(fn, 300);
   }
 };
 
-const imgObserver = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((e) => {
-      if (e.isIntersecting) {
-        revealImage(e.target as HTMLImageElement);
-        imgObserver.unobserve(e.target);
+deferWork(() => {
+  // Cleanup sponsor frequency data
+  import("@/lib/sponsorRanking").then(m => m.cleanupFrequencyData());
+
+  // ── Auto-clear caches after every new deploy ──
+  // @ts-ignore — injected by Vite define config at build time
+  const BUILD_VERSION: string = __BUILD_TIMESTAMP__;
+  const STORED_VERSION_KEY = 'app-build-version';
+
+  const storedVersion = localStorage.getItem(STORED_VERSION_KEY);
+  if (storedVersion !== String(BUILD_VERSION)) {
+    if ('caches' in window) {
+      caches.keys().then(names => names.forEach(n => caches.delete(n)));
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(r => r.unregister());
+      });
+    }
+    localStorage.setItem(STORED_VERSION_KEY, String(BUILD_VERSION));
+  }
+
+  // ── Daily cache purge (24 h) ──
+  const PURGE_KEY = 'cache-last-purge';
+  const PURGE_INTERVAL = 86_400_000;
+  const PRESERVE_KEYS = new Set([
+    STORED_VERSION_KEY, PURGE_KEY, 'app-build-version',
+    'sb-qaftogrqeyymewoofexc-auth-token', 'cookie-consent',
+    'pwa-dismiss-ts', 'pwa-visit-count', 'theme',
+  ]);
+
+  const lastPurge = Number(localStorage.getItem(PURGE_KEY) || '0');
+  const now = Date.now();
+
+  if (now - lastPurge > PURGE_INTERVAL) {
+    if ('caches' in window) {
+      caches.keys().then(names => names.forEach(n => caches.delete(n)));
+    }
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && !PRESERVE_KEYS.has(k) && !k.startsWith('sb-')) {
+        keysToRemove.push(k);
       }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'PURGE_CACHES' });
+    }
+    (window as any).__DAILY_PURGE_TRIGGERED__ = true;
+    localStorage.setItem(PURGE_KEY, String(now));
+  }
+});
+
+// ── Lazy image reveal via IntersectionObserver (deferred) ──
+deferWork(() => {
+  const revealImage = (img: HTMLImageElement) => {
+    if (img.complete && img.naturalWidth > 0) {
+      img.classList.add('img-revealed');
+    } else {
+      img.addEventListener('load', () => img.classList.add('img-revealed'), { once: true });
+      img.addEventListener('error', () => img.classList.add('img-revealed'), { once: true });
+    }
+  };
+
+  const imgObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          revealImage(e.target as HTMLImageElement);
+          imgObserver.unobserve(e.target);
+        }
+      });
+    },
+    { rootMargin: '200px' }
+  );
+
+  const observeLazyImages = () => {
+    document.querySelectorAll<HTMLImageElement>('img[loading="lazy"]:not(.img-revealed)').forEach((img) => {
+      imgObserver.observe(img);
     });
-  },
-  { rootMargin: '200px' }
-);
+  };
 
-// Observe current and future lazy images (debounced, scoped to #root)
-const observeLazyImages = () => {
-  document.querySelectorAll<HTMLImageElement>('img[loading="lazy"]:not(.img-revealed)').forEach((img) => {
-    imgObserver.observe(img);
-  });
-};
-
-// Defer MutationObserver — scope to #root only
-const startObserver = () => {
   let debounceId: number | undefined;
   const root = document.getElementById('root');
   if (!root) return;
@@ -117,29 +115,11 @@ const startObserver = () => {
   });
   bodyObs.observe(root, { childList: true, subtree: true });
   observeLazyImages();
-};
-if ('requestIdleCallback' in window) {
-  (window as any).requestIdleCallback(startObserver);
-} else {
-  setTimeout(startObserver, 300);
-}
-
-createRoot(document.getElementById("root")!).render(<App />);
-
-// Remove static shell once React has painted
-requestAnimationFrame(() => {
-  const shell = document.getElementById('app-shell');
-  if (shell) shell.remove();
 });
 
-// ── Deferred Service Worker registration (non-render-blocking) ──
-const registerSW = () => {
+// ── Deferred Service Worker registration ──
+deferWork(() => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
   }
-};
-if ('requestIdleCallback' in window) {
-  (window as any).requestIdleCallback(registerSW);
-} else {
-  setTimeout(registerSW, 2000);
-}
+});
