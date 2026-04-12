@@ -96,32 +96,32 @@ const imgObserver = new IntersectionObserver(
   { rootMargin: '200px' }
 );
 
-// Observe current and future lazy images
+// Observe current and future lazy images (debounced, scoped to #root)
 const observeLazyImages = () => {
   document.querySelectorAll<HTMLImageElement>('img[loading="lazy"]:not(.img-revealed)').forEach((img) => {
     imgObserver.observe(img);
   });
 };
 
-// Defer MutationObserver to avoid blocking main thread during boot
+// Defer MutationObserver — scope to #root only
 const startObserver = () => {
-  let rafPending = false;
+  let debounceId: number | undefined;
+  const root = document.getElementById('root');
+  if (!root) return;
   const bodyObs = new MutationObserver(() => {
-    if (!rafPending) {
-      rafPending = true;
-      requestAnimationFrame(() => {
-        observeLazyImages();
-        rafPending = false;
-      });
-    }
+    if (debounceId) return;
+    debounceId = requestAnimationFrame(() => {
+      observeLazyImages();
+      debounceId = undefined;
+    });
   });
-  bodyObs.observe(document.documentElement, { childList: true, subtree: true });
+  bodyObs.observe(root, { childList: true, subtree: true });
   observeLazyImages();
 };
 if ('requestIdleCallback' in window) {
   (window as any).requestIdleCallback(startObserver);
 } else {
-  setTimeout(startObserver, 200);
+  setTimeout(startObserver, 300);
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

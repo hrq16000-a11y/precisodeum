@@ -1,8 +1,7 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Crown, Star, MapPin, MessageCircle, Sparkles, Trophy } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import ProfileBadge from '@/components/ProfileBadge';
@@ -24,16 +23,6 @@ interface Props {
 
 const AD_INTERVAL = 4;
 
-const container = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
-};
-
-const cardVariant = {
-  hidden: { opacity: 0, y: 28, scale: 0.96 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as const } },
-};
-
 const FeaturedProviders = ({ providers, isLoading }: Props) => {
   const items: ({ type: 'provider'; data: DbProvider; index: number } | { type: 'ad'; adIndex: number })[] = [];
   let adCounter = 0;
@@ -51,11 +40,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
       <div className="absolute top-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
       
       <div className="container relative">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-col items-center text-center md:flex-row md:items-end md:justify-between md:text-left"
-        >
+        <div className="mb-8 flex flex-col items-center text-center md:flex-row md:items-end md:justify-between md:text-left animate-fade-in">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent mb-3">
               <Sparkles className="h-3 w-3" /> Destaque
@@ -68,7 +53,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
           <Button variant="ghost" size="sm" className="hidden text-accent md:flex mt-4 md:mt-0" asChild>
             <Link to="/buscar">Ver todos <ArrowRight className="h-4 w-4" /></Link>
           </Button>
-        </motion.div>
+        </div>
 
         {isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -77,45 +62,35 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
         ) : providers.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground">Nenhum profissional em destaque ainda.</p>
         ) : (
-          <motion.div
-            variants={container}
-            initial="hidden"
-            animate="visible"
-            className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3"
-          >
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((item, idx) => {
               if (item.type === 'ad') {
                 return (
-                  <motion.div key={`ad-${item.adIndex}`} variants={cardVariant}>
+                  <div key={`ad-${item.adIndex}`} className="animate-fade-in" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
                     <AdNativeCard sponsorIndex={item.adIndex} className="h-full" />
-                  </motion.div>
+                  </div>
                 );
               }
               return (
-                <motion.div key={item.data.id} variants={cardVariant}>
+                <div key={item.data.id} className="animate-fade-in" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
                   <ProviderCardFeatured provider={item.data} />
-                </motion.div>
+                </div>
               );
             })}
-          </motion.div>
+          </div>
         )}
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="mt-8 text-center md:hidden"
-        >
+        <div className="mt-8 text-center md:hidden animate-fade-in" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
           <Button variant="outline" className="rounded-full" asChild>
             <Link to="/buscar">Ver todos os profissionais</Link>
           </Button>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
 };
 
-function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
+const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
   const impressionRef = useCardImpression(p.id, p.slug, 'featured');
   const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
   const { city: geoCity, state: geoState } = useGeoCity();
@@ -134,11 +109,9 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
   );
 
   return (
-    <motion.div
+    <div
       ref={impressionRef}
-      whileHover={{ y: -6 }}
-      transition={{ duration: 0.25 }}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow duration-300 hover:shadow-xl h-full"
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full"
     >
       {/* Shine sweep */}
       <div className="card-shine-sweep pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent" style={{ left: '-100%', width: '50%' }} />
@@ -155,13 +128,9 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
               </AvatarFallback>
             </Avatar>
             {isDestaque && (
-            <motion.div
-              animate={{ rotate: [0, 15, -15, 0] }}
-              transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
-              className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md"
-            >
+            <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md">
               <Crown className="h-3 w-3" />
-            </motion.div>
+            </div>
             )}
           </div>
           <div className="min-w-0 flex-1">
@@ -246,8 +215,8 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
         </div>
         <p className="mt-1.5 text-center text-[10px] text-muted-foreground">Orçamento sem compromisso</p>
       </div>
-    </motion.div>
+    </div>
   );
-}
+});
 
 export default FeaturedProviders;
