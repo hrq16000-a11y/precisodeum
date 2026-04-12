@@ -3,7 +3,8 @@ import { format } from 'date-fns';
 import {
   Shield, Mail, Phone, Calendar, UserCheck, Briefcase, FileText, History,
   ImageIcon, Settings, Camera, Loader2, Trash2, Plus, ExternalLink,
-  Eye, MapPin, Globe, MessageCircle, ArrowUp, ArrowDown, Upload, Key, Lock
+  Eye, MapPin, Globe, MessageCircle, ArrowUp, ArrowDown, Upload, Key, Lock,
+  Tag, Ban, AlertTriangle, X, Clock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -26,6 +27,15 @@ interface UserDetailSheetProps {
   onClose: () => void;
   onRefresh?: () => void;
 }
+
+const PRESET_TAGS = [
+  { name: 'VIP', color: '#f59e0b' },
+  { name: 'Inadimplente', color: '#ef4444' },
+  { name: 'Teste', color: '#8b5cf6' },
+  { name: 'Parceiro', color: '#10b981' },
+  { name: 'Prioritário', color: '#3b82f6' },
+  { name: 'Inativo', color: '#6b7280' },
+];
 
 const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetProps) => {
   const [services, setServices] = useState<any[]>([]);
@@ -68,6 +78,19 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const [newPassword, setNewPassword] = useState('');
   const [resettingPw, setResettingPw] = useState(false);
 
+  // Tags state
+  const [userTags, setUserTags] = useState<any[]>([]);
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState('#3b82f6');
+  const [tagsLoading, setTagsLoading] = useState(false);
+
+  // Suspension state
+  const [suspendReason, setSuspendReason] = useState('');
+  const [suspendLoading, setSuspendLoading] = useState(false);
+
+  // Activity timeline
+  const [activityTimeline, setActivityTimeline] = useState<any[]>([]);
+
   useEffect(() => {
     if (!user) return;
     setTab('profile');
@@ -78,6 +101,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     setEditingProvider(false);
     setShowResetPw(false);
     setNewPassword('');
+    setSuspendReason('');
     setProfileForm({
       full_name: user.full_name || '',
       phone: user.phone || '',
@@ -109,6 +133,9 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       .then(({ data }) => setLevels(data || []));
     supabase.from('account_types').select('id, name, color').order('display_order')
       .then(({ data }) => setAccountTypes(data || []));
+
+    // Fetch tags
+    fetchTags(user.id);
 
     // Fetch provider + related data
     supabase.from('providers').select('*, categories(name, icon)').eq('user_id', user.id).maybeSingle().then(({ data: prov }) => {
@@ -179,7 +206,6 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 })),
               })));
             } else {
-              // Fallback: legacy storage
               const { data: files } = await supabase.storage.from('portfolio').list(user.id, { limit: 100 });
               if (files) {
                 const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
@@ -213,11 +239,161 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       setMedia([]);
     }
 
-    // Audit
+    // Audit (both by user_id and resource_id for comprehensive timeline)
+    fetchActivityTimeline(user.id);
+
     supabase.from('audit_log').select('*').eq('resource_id', user.id).eq('resource_type', 'user')
       .order('created_at', { ascending: false }).limit(50)
       .then(({ data }) => setAuditLogs(data || []));
   }, [user?.id]);
+
+  // === Fetch Tags ===
+  const fetchTags = async (userId: string) => {
+    const { data } = await supabase.from('user_tags').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    setUserTags(data || []);
+  };
+
+  // === Add Tag ===
+  const addTag = async (tagName?: string, tagColor?: string) => {
+    if (!user) return;
+    const name = (tagName || newTagName).trim();
+    if (!name) return;
+    setTagsLoading(true);
+    const { error } = await supabase.from('user_tags').insert({
+      user_id: user.id,
+      tag_name: name,
+      color: tagColor || newTagColor,
+    } as any);
+    if (error) {
+      if (error.code === '23505') toast.error('Tag já existe para este usuário');
+      else toast.error('Erro: ' + error.message);
+    } else {
+      await logAuditAction({ action: 'tag_added', resource_type: 'user', resource_id: user.id, details: { tag: name } });
+      toast.success(`Tag "${name}" adicionada`);
+      setNewTagName('');
+      fetchTags(user.id);
+    }
+    setTagsLoading(false);
+  };
+
+  // === Remove Tag ===
+  const removeTag = async (tagId: string, tagName: string) => {
+    if (!user) return;
+    await supabase.from('user_tags').delete().eq('id', tagId);
+    await logAuditAction({ action: 'tag_removed', resource_type: 'user', resource_id: user.id, details: { tag: tagName } });
+    toast.success(`Tag "${tagName}" removida`);
+    fetchTags(user.id);
+  };
+
+  // === Suspend User ===
+  const suspendUser = async () => {
+    if (!user || !suspendReason.trim()) {
+      toast.error('Informe o motivo da suspensão');
+      return;
+    }
+    setSuspendLoading(true);
+    const { error } = await supabase.from('profiles').update({
+      status: 'suspended',
+      suspended_at: new Date().toISOString(),
+      suspended_reason: suspendReason.trim(),
+      suspended_by: (await supabase.auth.getUser()).data.user?.id,
+    } as any).eq('id', user.id);
+    if (error) { toast.error('Erro: ' + error.message); }
+    else {
+      await logAuditAction({ action: 'suspend', resource_type: 'user', resource_id: user.id, details: { reason: suspendReason } });
+      // Send notification
+      await supabase.from('notifications').insert({
+        user_id: user.id,
+        title: '⚠️ Conta Suspensa',
+        message: `Sua conta foi suspensa. Motivo: ${suspendReason}`,
+        type: 'system',
+      });
+      toast.success('Usuário suspenso');
+      setSuspendReason('');
+      onRefresh?.();
+    }
+    setSuspendLoading(false);
+  };
+
+  // === Ban User ===
+  const banUser = async () => {
+    if (!user) return;
+    setSuspendLoading(true);
+    const { error } = await supabase.from('profiles').update({
+      status: 'banned',
+      suspended_at: new Date().toISOString(),
+      suspended_reason: suspendReason.trim() || 'Banido pelo administrador',
+      suspended_by: (await supabase.auth.getUser()).data.user?.id,
+    } as any).eq('id', user.id);
+    if (error) { toast.error('Erro: ' + error.message); }
+    else {
+      await logAuditAction({ action: 'ban', resource_type: 'user', resource_id: user.id, details: { reason: suspendReason || 'Banido' } });
+      await supabase.from('notifications').insert({
+        user_id: user.id,
+        title: '🚫 Conta Banida',
+        message: `Sua conta foi banida permanentemente.`,
+        type: 'system',
+      });
+      toast.success('Usuário banido');
+      onRefresh?.();
+    }
+    setSuspendLoading(false);
+  };
+
+  // === Reactivate User ===
+  const reactivateUser = async () => {
+    if (!user) return;
+    setSuspendLoading(true);
+    const { error } = await supabase.from('profiles').update({
+      status: 'active',
+      suspended_at: null,
+      suspended_reason: '',
+      suspended_by: null,
+    } as any).eq('id', user.id);
+    if (error) { toast.error('Erro: ' + error.message); }
+    else {
+      await logAuditAction({ action: 'reactivate', resource_type: 'user', resource_id: user.id, details: {} });
+      await supabase.from('notifications').insert({
+        user_id: user.id,
+        title: '✅ Conta Reativada',
+        message: 'Sua conta foi reativada pelo administrador.',
+        type: 'system',
+      });
+      toast.success('Usuário reativado');
+      onRefresh?.();
+    }
+    setSuspendLoading(false);
+  };
+
+  // === Activity Timeline ===
+  const fetchActivityTimeline = async (userId: string) => {
+    // Combine multiple sources into a single timeline
+    const timeline: any[] = [];
+
+    // Audit actions by this user
+    const { data: userActions } = await supabase.from('audit_log')
+      .select('id, action, resource_type, resource_id, details, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(30);
+    (userActions || []).forEach(a => timeline.push({ ...a, source: 'audit', type: 'action' }));
+
+    // Audit actions on this user
+    const { data: onUser } = await supabase.from('audit_log')
+      .select('id, action, resource_type, resource_id, details, created_at, user_id')
+      .eq('resource_id', userId).eq('resource_type', 'user')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    (onUser || []).forEach(a => {
+      if (!timeline.find(t => t.id === a.id)) {
+        timeline.push({ ...a, source: 'audit', type: 'admin_action' });
+      }
+    });
+
+    // Sort by date desc
+    timeline.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setActivityTimeline(timeline.slice(0, 50));
+  };
 
   // === Avatar Upload ===
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -329,6 +505,10 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       reset_password: 'Senha redefinida', soft_delete: 'Soft-deleted',
       bulk_active: 'Ativação em massa', bulk_inactive: 'Desativação em massa',
       export: 'Exportação', create: 'Criado',
+      suspend: '⛔ Suspenso', ban: '🚫 Banido', reactivate: '✅ Reativado',
+      tag_added: '🏷️ Tag adicionada', tag_removed: '🏷️ Tag removida',
+      update_permissions: '🔐 Permissões',
+      plan_synced: '📦 Plano sincronizado',
     };
     return map[action] || action;
   };
@@ -404,15 +584,17 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const levelColor = levels.find(l => l.id === user.level_id)?.color;
   const accountTypeName = accountTypes.find(a => a.id === user.account_type_id)?.name;
   const accountTypeColor = accountTypes.find(a => a.id === user.account_type_id)?.color;
+  const isSuspended = user.status === 'suspended';
+  const isBanned = user.status === 'banned';
 
   return (
     <Sheet open={!!user} onOpenChange={open => !open && onClose()}>
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0">
         {/* Hero Header */}
-        <div className="relative bg-gradient-to-r from-primary/10 to-accent/10 px-4 sm:px-6 pt-6 pb-4">
+        <div className={`relative px-4 sm:px-6 pt-6 pb-4 ${isBanned ? 'bg-gradient-to-r from-destructive/15 to-destructive/5' : isSuspended ? 'bg-gradient-to-r from-amber-500/15 to-amber-500/5' : 'bg-gradient-to-r from-primary/10 to-accent/10'}`}>
           <div className="flex items-start gap-3 sm:gap-4">
             <div className="relative shrink-0">
-              <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-background shadow-lg">
+              <Avatar className={`h-16 w-16 sm:h-20 sm:w-20 border-4 shadow-lg ${isBanned ? 'border-destructive/50' : isSuspended ? 'border-amber-400/50' : 'border-background'}`}>
                 <AvatarImage src={currentAvatar || undefined} alt={user.full_name} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-xl sm:text-2xl font-bold">{initials}</AvatarFallback>
               </Avatar>
@@ -431,9 +613,15 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               <div className="flex flex-wrap items-center gap-1 mt-1.5">
                 {isAdmin && <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">👑 Admin</Badge>}
                 {userIsModerator && <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-[10px]">🛡️ Mod</Badge>}
-                <Badge variant={user.status === 'inactive' ? 'destructive' : 'default'} className="text-[10px]">
-                  {user.status === 'inactive' ? '🔴 Inativo' : '🟢 Ativo'}
-                </Badge>
+                {isBanned ? (
+                  <Badge variant="destructive" className="text-[10px]">🚫 Banido</Badge>
+                ) : isSuspended ? (
+                  <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">⛔ Suspenso</Badge>
+                ) : (
+                  <Badge variant={user.status === 'inactive' ? 'destructive' : 'default'} className="text-[10px]">
+                    {user.status === 'inactive' ? '🔴 Inativo' : '🟢 Ativo'}
+                  </Badge>
+                )}
                 <Badge variant="outline" className="text-[10px] capitalize">
                   {user.profile_type === 'provider' ? '🔧 Profissional' : user.profile_type === 'rh' ? '🏢 Agência' : '👤 Cliente'}
                 </Badge>
@@ -449,8 +637,32 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                   </Badge>
                 )}
               </div>
+              {/* User Tags in header */}
+              {userTags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {userTags.map(t => (
+                    <Badge key={t.id} className="text-[9px] text-white" style={{ backgroundColor: t.color }}>
+                      {t.tag_name}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
+          {/* Suspension banner */}
+          {(isSuspended || isBanned) && (
+            <div className={`mt-3 rounded-lg p-2.5 text-xs ${isBanned ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'}`}>
+              <div className="flex items-center gap-2 font-medium">
+                {isBanned ? <Ban className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                {isBanned ? 'Conta banida permanentemente' : 'Conta suspensa temporariamente'}
+              </div>
+              {user.suspended_reason && <p className="mt-1 opacity-80">Motivo: {user.suspended_reason}</p>}
+              {user.suspended_at && <p className="mt-0.5 opacity-60">Em: {format(new Date(user.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
+              <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" onClick={reactivateUser} disabled={suspendLoading}>
+                ✅ Reativar Conta
+              </Button>
+            </div>
+          )}
           {/* Quick links */}
           <div className="flex flex-wrap gap-2 mt-3">
             {user.whatsapp && (
@@ -476,23 +688,26 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
         {/* Tabs */}
         <div className="px-4 sm:px-6 pt-4 pb-6">
           <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="w-full grid grid-cols-4 sm:grid-cols-8 mb-4 h-auto">
+            <TabsList className="w-full grid grid-cols-5 sm:grid-cols-10 mb-4 h-auto">
               <TabsTrigger value="profile" className="text-xs gap-1 px-1"><UserCheck className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Perfil</span></TabsTrigger>
               <TabsTrigger value="provider" className="text-xs gap-1 px-1"><Briefcase className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Negócio</span></TabsTrigger>
               <TabsTrigger value="services" className="text-xs gap-1 px-1"><FileText className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Serviços</span></TabsTrigger>
               <TabsTrigger value="portfolio" className="text-xs gap-1 px-1"><ImageIcon className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Fotos</span></TabsTrigger>
+              <TabsTrigger value="tags" className="text-xs gap-1 px-1"><Tag className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Tags</span></TabsTrigger>
               <TabsTrigger value="leads" className="text-xs gap-1 px-1 hidden sm:flex"><MessageCircle className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Leads</span></TabsTrigger>
+              <TabsTrigger value="moderation" className="text-xs gap-1 px-1 hidden sm:flex"><Ban className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Moderação</span></TabsTrigger>
               <TabsTrigger value="perms" className="text-xs gap-1 px-1 hidden sm:flex"><Lock className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Permissões</span></TabsTrigger>
               <TabsTrigger value="page" className="text-xs gap-1 px-1 hidden sm:flex"><Settings className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Página</span></TabsTrigger>
-              <TabsTrigger value="audit" className="text-xs gap-1 px-1 hidden sm:flex"><History className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Logs</span></TabsTrigger>
+              <TabsTrigger value="timeline" className="text-xs gap-1 px-1 hidden sm:flex"><Clock className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Timeline</span></TabsTrigger>
             </TabsList>
             {/* Mobile extra tabs row */}
             <div className="sm:hidden mb-4">
-              <TabsList className="w-full grid grid-cols-4 h-auto">
+              <TabsList className="w-full grid grid-cols-5 h-auto">
                 <TabsTrigger value="leads" className="text-xs gap-1 px-1"><MessageCircle className="h-3.5 w-3.5" /> Leads</TabsTrigger>
+                <TabsTrigger value="moderation" className="text-xs gap-1 px-1"><Ban className="h-3.5 w-3.5" /> Mod.</TabsTrigger>
                 <TabsTrigger value="perms" className="text-xs gap-1 px-1"><Lock className="h-3.5 w-3.5" /> Perm.</TabsTrigger>
                 <TabsTrigger value="page" className="text-xs gap-1 px-1"><Settings className="h-3.5 w-3.5" /> Página</TabsTrigger>
-                <TabsTrigger value="audit" className="text-xs gap-1 px-1"><History className="h-3.5 w-3.5" /> Logs</TabsTrigger>
+                <TabsTrigger value="timeline" className="text-xs gap-1 px-1"><Clock className="h-3.5 w-3.5" /> Timeline</TabsTrigger>
               </TabsList>
             </div>
 
@@ -596,13 +811,14 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     <InfoRow icon={<Phone className="h-4 w-4" />} label="Telefone" value={user.phone || '—'} />
                     <InfoRow icon={<MessageCircle className="h-4 w-4" />} label="WhatsApp" value={user.whatsapp || '—'} />
                     <InfoRow icon={<UserCheck className="h-4 w-4" />} label="Tipo" value={user.profile_type === 'provider' ? 'Profissional' : user.profile_type === 'rh' ? 'Agência/RH' : 'Cliente'} />
-                    <InfoRow icon={<Shield className="h-4 w-4" />} label="Status" value={user.status === 'inactive' ? '🔴 Inativo' : '🟢 Ativo'} />
+                    <InfoRow icon={<Shield className="h-4 w-4" />} label="Status" value={isBanned ? '🚫 Banido' : isSuspended ? '⛔ Suspenso' : user.status === 'inactive' ? '🔴 Inativo' : '🟢 Ativo'} />
                     <InfoRow icon={<Calendar className="h-4 w-4" />} label="Cadastro" value={user.created_at ? format(new Date(user.created_at), 'dd/MM/yyyy HH:mm') : '—'} />
                     {user.user_ref && <InfoRow icon={<Shield className="h-4 w-4" />} label="Ref" value={user.user_ref} />}
                     {user.department && <InfoRow icon={<Briefcase className="h-4 w-4" />} label="Depto" value={user.department} />}
                     {provider?.plan && <InfoRow icon={<Eye className="h-4 w-4" />} label="Plano" value={provider.plan} />}
                     {levelName && <InfoRow icon={<ArrowUp className="h-4 w-4" />} label="Nível" value={levelName} />}
                     {accountTypeName && <InfoRow icon={<Shield className="h-4 w-4" />} label="Tipo Conta" value={accountTypeName} />}
+                    <InfoRow icon={<ArrowUp className="h-4 w-4" />} label="Pontos" value={String(user.engagement_points || 0)} />
                   </div>
                 )}
               </div>
@@ -693,9 +909,9 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     </div>
                     {!userIsSponsor && (
                       <div>
-                        <Label className="text-xs">Vincular ao patrocinador</Label>
+                        <Label className="text-xs">Vincular a</Label>
                         <Select value={selectedSponsorId} onValueChange={setSelectedSponsorId}>
-                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Selecione patrocinador..." /></SelectTrigger>
                           <SelectContent>
                             {sponsors.map(s => (
                               <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
@@ -905,6 +1121,69 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               </div>
             </TabsContent>
 
+            {/* ====== TAGS TAB ====== */}
+            <TabsContent value="tags" className="space-y-4 mt-0">
+              <div className="rounded-xl border border-border p-3 sm:p-4 space-y-4">
+                <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                  <Tag className="h-4 w-4" /> Tags de Segmentação
+                </h3>
+                <p className="text-xs text-muted-foreground">Adicione tags para classificar e filtrar este usuário em campanhas.</p>
+
+                {/* Current tags */}
+                {userTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {userTags.map(t => (
+                      <div key={t.id} className="flex items-center gap-1 rounded-full px-3 py-1 text-xs text-white" style={{ backgroundColor: t.color }}>
+                        {t.tag_name}
+                        <button onClick={() => removeTag(t.id, t.tag_name)} className="ml-1 hover:bg-white/20 rounded-full p-0.5">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Preset tags */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Tags rápidas:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {PRESET_TAGS.filter(pt => !userTags.find(ut => ut.tag_name === pt.name)).map(pt => (
+                      <button
+                        key={pt.name}
+                        onClick={() => addTag(pt.name, pt.color)}
+                        disabled={tagsLoading}
+                        className="flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs hover:bg-muted transition-colors"
+                      >
+                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: pt.color }} />
+                        {pt.name}
+                        <Plus className="h-3 w-3 ml-0.5" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom tag */}
+                <div className="flex gap-2">
+                  <Input
+                    value={newTagName}
+                    onChange={e => setNewTagName(e.target.value)}
+                    placeholder="Tag personalizada..."
+                    className="h-8 text-sm flex-1"
+                    onKeyDown={e => e.key === 'Enter' && addTag()}
+                  />
+                  <input
+                    type="color"
+                    value={newTagColor}
+                    onChange={e => setNewTagColor(e.target.value)}
+                    className="h-8 w-8 rounded border border-border cursor-pointer"
+                  />
+                  <Button size="sm" className="h-8 text-xs shrink-0" onClick={() => addTag()} disabled={!newTagName.trim() || tagsLoading}>
+                    <Plus className="h-3 w-3 mr-1" /> Adicionar
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+
             {/* ====== LEADS TAB ====== */}
             <TabsContent value="leads" className="space-y-3 mt-0">
               <p className="text-xs text-muted-foreground">{leads.length} lead(s)</p>
@@ -928,6 +1207,68 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                   ))}
                 </div>
               )}
+            </TabsContent>
+
+            {/* ====== MODERATION TAB ====== */}
+            <TabsContent value="moderation" className="space-y-4 mt-0">
+              <div className="rounded-xl border border-border p-3 sm:p-4 space-y-4">
+                <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                  <Ban className="h-4 w-4" /> Moderação de Conta
+                </h3>
+
+                {(isSuspended || isBanned) ? (
+                  <div className={`rounded-lg p-4 space-y-3 ${isBanned ? 'bg-destructive/5 border border-destructive/20' : 'bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800'}`}>
+                    <div className="flex items-center gap-2">
+                      {isBanned ? <Ban className="h-5 w-5 text-destructive" /> : <AlertTriangle className="h-5 w-5 text-amber-600" />}
+                      <span className="font-medium text-sm">{isBanned ? 'Usuário Banido' : 'Usuário Suspenso'}</span>
+                    </div>
+                    {user.suspended_reason && <p className="text-xs text-muted-foreground">Motivo: {user.suspended_reason}</p>}
+                    {user.suspended_at && <p className="text-xs text-muted-foreground">Data: {format(new Date(user.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
+                    <Button size="sm" onClick={reactivateUser} disabled={suspendLoading} className="w-full">
+                      ✅ Reativar Conta
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs">Motivo (obrigatório para suspensão)</Label>
+                        <Textarea
+                          value={suspendReason}
+                          onChange={e => setSuspendReason(e.target.value)}
+                          placeholder="Ex: Violação dos termos de uso, spam, conteúdo impróprio..."
+                          className="text-sm min-h-[60px]"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-9 text-xs border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/20"
+                          onClick={suspendUser}
+                          disabled={suspendLoading || !suspendReason.trim()}
+                        >
+                          <AlertTriangle className="h-3.5 w-3.5 mr-1" />
+                          Suspender
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="h-9 text-xs"
+                          onClick={banUser}
+                          disabled={suspendLoading}
+                        >
+                          <Ban className="h-3.5 w-3.5 mr-1" />
+                          Banir Permanente
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      ⚠️ A suspensão é temporária e reversível. O banimento é permanente e notifica o usuário automaticamente.
+                    </p>
+                  </>
+                )}
+              </div>
             </TabsContent>
 
             {/* ====== PAGE SETTINGS TAB ====== */}
@@ -978,28 +1319,61 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               <UserPermissionsPanel user={user} onRefresh={onRefresh} />
             </TabsContent>
 
-            {/* ====== AUDIT TAB ====== */}
-            <TabsContent value="audit" className="space-y-2 mt-0">
-              {auditLogs.length === 0 ? (
-                <EmptyState icon={<History />} text="Nenhum registro de auditoria" />
+            {/* ====== TIMELINE TAB ====== */}
+            <TabsContent value="timeline" className="space-y-2 mt-0">
+              <h3 className="font-semibold text-foreground text-sm flex items-center gap-2 mb-3">
+                <Clock className="h-4 w-4" /> Histórico de Atividade
+              </h3>
+              {activityTimeline.length === 0 ? (
+                <EmptyState icon={<History />} text="Nenhuma atividade registrada" />
               ) : (
-                auditLogs.map(log => (
-                  <div key={log.id} className="rounded-lg border border-border p-3 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="text-[10px]">{actionLabel(log.action)}</Badge>
-                      <span className="text-[10px] text-muted-foreground">
-                        {log.created_at ? format(new Date(log.created_at), 'dd/MM/yy HH:mm') : ''}
-                      </span>
-                    </div>
-                    {log.details?.changes && (
-                      <div className="text-xs text-muted-foreground space-y-0.5">
-                        {Object.entries(log.details.changes as Record<string, { from: any; to: any }>).map(([field, val]) => (
-                          <p key={field}><span className="font-medium">{field}:</span> {String(val.from)} → {String(val.to)}</p>
-                        ))}
+                <div className="relative">
+                  {/* Timeline line */}
+                  <div className="absolute left-3 top-0 bottom-0 w-px bg-border" />
+                  <div className="space-y-0">
+                    {activityTimeline.map((item, idx) => (
+                      <div key={item.id + '-' + idx} className="relative pl-8 pb-4">
+                        {/* Dot */}
+                        <div className={`absolute left-1.5 top-1 h-3 w-3 rounded-full border-2 border-background ${
+                          item.type === 'admin_action' ? 'bg-amber-400' : 'bg-primary'
+                        }`} />
+                        <div className="rounded-lg border border-border p-3 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Badge variant="outline" className="text-[10px] shrink-0">{actionLabel(item.action)}</Badge>
+                              <span className="text-[10px] text-muted-foreground capitalize">{item.resource_type}</span>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                              {item.created_at ? format(new Date(item.created_at), 'dd/MM/yy HH:mm') : ''}
+                            </span>
+                          </div>
+                          {item.type === 'admin_action' && item.user_id !== user.id && (
+                            <p className="text-[10px] text-amber-600 dark:text-amber-400">Ação administrativa</p>
+                          )}
+                          {item.details?.changes && (
+                            <div className="text-xs text-muted-foreground space-y-0.5">
+                              {Object.entries(item.details.changes as Record<string, any>).slice(0, 3).map(([field, val]) => (
+                                <p key={field}>
+                                  <span className="font-medium">{field}:</span>{' '}
+                                  {typeof val === 'object' && val?.from !== undefined
+                                    ? `${String(val.from)} → ${String(val.to)}`
+                                    : String(val)
+                                  }
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                          {item.details?.reason && (
+                            <p className="text-xs text-muted-foreground">Motivo: {item.details.reason}</p>
+                          )}
+                          {item.details?.tag && (
+                            <p className="text-xs text-muted-foreground">Tag: {item.details.tag}</p>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    ))}
                   </div>
-                ))
+                </div>
               )}
             </TabsContent>
           </Tabs>
