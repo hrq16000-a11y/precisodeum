@@ -87,7 +87,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <Link to="/">
-              <img src={logoVertical} alt="Preciso de um" className="mb-4 h-12 w-auto max-w-[220px] object-contain" width="133" height="48" loading="lazy" />
+              <img src={logoVertical} alt="Preciso de um" className="mb-4 object-contain" width="133" height="48" loading="lazy" style={{ width: '133px', height: '48px', maxWidth: '220px' }} />
             </Link>
             <p className="text-sm font-semibold text-primary-foreground/90 mb-1">{tagline.headline}</p>
             <p className="text-sm leading-relaxed text-primary-foreground/70">
