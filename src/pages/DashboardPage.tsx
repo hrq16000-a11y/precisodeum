@@ -186,6 +186,11 @@ const DashboardPage = () => {
             Alterar tipo de conta <ArrowRight className="h-3 w-3" />
           </button>
         </GlassCard>
+
+        {/* Courses promotion */}
+        <div className="mt-4">
+          <CoursesBanner />
+        </div>
       </DashboardLayout>
     );
   }
