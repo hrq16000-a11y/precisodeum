@@ -54,6 +54,26 @@ interface UserTableProps {
 }
 
 const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
+
+  const handleAdjustPoints = async (userId: string, delta: number, reset = false) => {
+    setAdjustingId(userId);
+    try {
+      const { data, error } = await supabase.rpc('admin_adjust_points', {
+        target_user_id: userId,
+        point_delta: delta,
+        reset_to_zero: reset,
+      });
+      if (error) throw error;
+      toast.success(reset ? 'Pontos zerados!' : `Pontos ${delta > 0 ? 'adicionados' : 'removidos'}! Novo total: ${data}`);
+      // Force re-render by triggering parent refresh
+      window.dispatchEvent(new CustomEvent('engagement-points-updated'));
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'Falha ao ajustar pontos'));
+    }
+    setAdjustingId(null);
+  };
+
   if (users.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card p-12 text-center">
