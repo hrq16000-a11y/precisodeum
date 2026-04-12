@@ -659,6 +659,8 @@ const AdminSponsorsPage = () => {
                 const hasContact = contacts.some((c: any) => c.sponsor_id === s.id);
                 const m30 = metricsMap.get(s.id);
                 const health = computeHealthScore(s, m30);
+
+                return (
                   <div key={s.id} className={cn(
                     'group relative rounded-xl border bg-card shadow-card transition-all hover:shadow-card-hover',
                     !s.active ? 'opacity-60 border-muted' : expired ? 'border-destructive/30' : 'border-border',
