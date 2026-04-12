@@ -6,8 +6,9 @@ import { toast } from 'sonner';
 import {
   Users, UserCheck, Briefcase, Building2, TrendingUp, ArrowRight,
   Filter, Download, Send, Search, ChevronDown, BarChart3, Target,
-  UserPlus, Clock, Eye, Mail, Tag, X, Plus, Activity
+  UserPlus, Clock, Eye, Mail, Tag, X, Plus, Activity, FileText
 } from 'lucide-react';
+import { exportCrmPdf } from '@/lib/exportCrmPdf';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -445,6 +446,13 @@ const AdminUsersCrmPage = () => {
                 </button>
                 <button onClick={exportMetricsCsv} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
                   <BarChart3 className="h-4 w-4" /> Métricas (CSV)
+                </button>
+                <div className="border-t border-border my-1" />
+                <button onClick={() => {
+                  exportCrmPdf({ stats, funnelData, growthData, retentionData, typeDistribution, totalLeads: leads.length });
+                  toast.success('PDF gerado — use Ctrl+P para salvar');
+                }} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
+                  <FileText className="h-4 w-4" /> Relatório (PDF)
                 </button>
               </PopoverContent>
             </Popover>
