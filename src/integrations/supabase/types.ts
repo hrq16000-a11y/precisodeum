@@ -1638,6 +1638,9 @@ export type Database = {
           profile_type: string
           role: string
           status: string
+          suspended_at: string | null
+          suspended_by: string | null
+          suspended_reason: string | null
           updated_at: string
           user_ref: string
           whatsapp: string | null
@@ -1657,6 +1660,9 @@ export type Database = {
           profile_type?: string
           role?: string
           status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_reason?: string | null
           updated_at?: string
           user_ref: string
           whatsapp?: string | null
@@ -1676,6 +1682,9 @@ export type Database = {
           profile_type?: string
           role?: string
           status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_reason?: string | null
           updated_at?: string
           user_ref?: string
           whatsapp?: string | null
@@ -3200,6 +3209,7 @@ export type Database = {
           color: string
           created_at: string
           id: string
+          notes: string | null
           tag_name: string
           user_id: string
         }
@@ -3207,6 +3217,7 @@ export type Database = {
           color?: string
           created_at?: string
           id?: string
+          notes?: string | null
           tag_name: string
           user_id: string
         }
@@ -3214,6 +3225,7 @@ export type Database = {
           color?: string
           created_at?: string
           id?: string
+          notes?: string | null
           tag_name?: string
           user_id?: string
         }
