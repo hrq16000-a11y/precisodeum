@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, ArrowLeft, ExternalLink, User, Newspaper } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { Navigate } from 'react-router-dom';
 
 /** Strip HTML tags and decode common entities */
 function stripHtmlTags(rawHtml: string): string {
@@ -38,6 +40,7 @@ function stripHtmlTags(rawHtml: string): string {
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const blogEnabled = useFeatureEnabled('module_blog');
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['blog-post', slug],
@@ -73,6 +76,8 @@ const BlogPostPage = () => {
     description: post?.excerpt || 'Confira as últimas notícias e dicas do Preciso de um.',
     canonical: `${SITE_BASE_URL}/blog/${slug}`,
   });
+
+  if (!blogEnabled) return <Navigate to="/" replace />;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

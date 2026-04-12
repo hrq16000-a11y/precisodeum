@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowRight, ChevronLeft, ChevronRight, Newspaper, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FadeInSection from '@/components/FadeInSection';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -21,6 +22,8 @@ function formatDate(dateStr: string) {
 }
 
 const BlogHighlight = () => {
+  const blogEnabled = useFeatureEnabled('module_blog');
+
   const { data: posts = [] } = useQuery({
     queryKey: ['blog-highlight-home'],
     queryFn: async () => {
@@ -57,7 +60,7 @@ const BlogHighlight = () => {
     el.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' });
   }, []);
 
-  if (displayed.length === 0) return null;
+  if (!blogEnabled || displayed.length === 0) return null;
 
   return (
     <section className="bg-gradient-to-b from-muted/40 to-background py-10">

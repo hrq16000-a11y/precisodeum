@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import { useMemo, lazy, Suspense } from 'react';
-import { useSettingValue } from '@/hooks/useSiteSettings';
+import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 
@@ -9,7 +9,7 @@ const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
 const SponsorAd = lazy(() => importWithRetry(() => import('@/components/SponsorAd')));
 const PwaFooterInstall = lazy(() => importWithRetry(() => import('@/components/PwaFooterInstall')));
 
-const fallbackProfissionais = [
+const fallbackProfissionaisAll = [
   { label: 'Cadastro', url: '/cadastro' },
   { label: 'Login', url: '/login' },
   { label: 'Dashboard', url: '/dashboard' },
@@ -71,10 +71,12 @@ const Footer = () => {
   const logoFooterUrl = useSettingValue('logo_footer_url');
   const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : DEFAULT_LOGO_URL;
   const tagline = useMemo(() => footerTaglines[Math.floor(Math.random() * footerTaglines.length)], []);
+  const blogEnabled = useFeatureEnabled('module_blog');
 
   const { data: menuGroups } = useMenuItemsByLocations(['footer', 'footer_eco']);
 
-  const profLinks = menuGroups?.footer?.length ? menuGroups.footer : fallbackProfissionais;
+  const blogFilter = (items: any[]) => blogEnabled ? items : items.filter((l: any) => !(l.url || '').includes('/blog'));
+  const profLinks = blogFilter(menuGroups?.footer?.length ? menuGroups.footer : fallbackProfissionaisAll);
   const ecoLinks = menuGroups?.footer_eco?.length ? menuGroups.footer_eco : fallbackEco;
   const suporteLinks = fallbackSuporte;
 

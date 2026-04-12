@@ -10,6 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, ArrowRight, Sparkles, Newspaper, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { Navigate } from 'react-router-dom';
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -67,6 +69,8 @@ const PostCard = ({ post, highlight = false }: { post: any; highlight?: boolean 
 );
 
 const BlogPage = () => {
+  const blogEnabled = useFeatureEnabled('module_blog');
+
   useSeoHead({
     title: 'Notícias | Preciso de um',
     description: 'Dicas, novidades e conteúdos sobre serviços profissionais.',
@@ -93,6 +97,8 @@ const BlogPage = () => {
   const highlights = useMemo(() => shuffle(posts).slice(0, Math.min(6, posts.length)), [posts]);
   const highlightIds = new Set(highlights.map((h) => h.id));
   const rest = posts.filter((p) => !highlightIds.has(p.id));
+
+  if (!blogEnabled) return <Navigate to="/" replace />;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
