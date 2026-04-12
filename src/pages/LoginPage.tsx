@@ -28,9 +28,20 @@ const LoginPage = () => {
   const [forgotLoading, setForgotLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, profile, loading: authLoading } = useAuth();
 
   // Get the URL to redirect back to after login
   const from = (location.state as any)?.from || null;
+
+  // If already authenticated, redirect away from login page
+  useEffect(() => {
+    if (authLoading || !user) return;
+    const redirect = async () => {
+      const dest = await getRedirectForProfile(user.id);
+      navigate(dest, { replace: true });
+    };
+    redirect();
+  }, [user, authLoading]);
 
   useSeoHead({ title: 'Entrar', description: 'Faça login na plataforma Preciso de um.', noindex: true });
 
