@@ -502,7 +502,8 @@ export function filterAndRankProviders(
 
 export interface GroupedSearchResult {
   local: DbProvider[];
-  other: DbProvider[];
+  nearby: DbProvider[];
+  outOfState: DbProvider[];
   isFallback: boolean;
 }
 
@@ -606,26 +607,54 @@ export function filterAndRankProvidersGrouped(
 
   SearchIntelligence.trackFinalScore(query, intent, localArr.length + otherArr.length);
 
-  // In fallback, combine and re-sort by distance
-  const fallbackArr = isFallback ? [...localArr, ...otherArr].sort((a, b) => {
-    if (a.distanceKm !== Infinity && b.distanceKm !== Infinity) {
-      const distDiff = a.distanceKm - b.distanceKm;
-      if (Math.abs(distDiff) > 1) return distDiff;
-    }
-    if (a.distanceKm === Infinity && b.distanceKm !== Infinity) return 1;
-    if (b.distanceKm === Infinity && a.distanceKm !== Infinity) return -1;
-    return b.p.rating - a.p.rating;
-  }) : localArr;
+  // Split other into nearby (same state OR <100km) vs outOfState
+  const userState = state ? normalize(state) : '';
+  const splitOther = (arr: typeof otherArr) => {
+    const nearbyArr: typeof otherArr = [];
+    const outOfStateArr: typeof otherArr = [];
+    arr.forEach(e => {
+      const provState = normalize(e.p.state);
+      const isNearby = (userState && provState === userState) || (e.distanceKm < 100);
+      if (isNearby) nearbyArr.push(e);
+      else outOfStateArr.push(e);
+    });
+    return { nearbyArr, outOfStateArr };
+  };
+
+  // In fallback, combine and re-sort by distance, then split
+  if (isFallback) {
+    const combined = [...localArr, ...otherArr].sort((a, b) => {
+      if (a.distanceKm !== Infinity && b.distanceKm !== Infinity) {
+        const distDiff = a.distanceKm - b.distanceKm;
+        if (Math.abs(distDiff) > 1) return distDiff;
+      }
+      if (a.distanceKm === Infinity && b.distanceKm !== Infinity) return 1;
+      if (b.distanceKm === Infinity && a.distanceKm !== Infinity) return -1;
+      return b.p.rating - a.p.rating;
+    });
+    const { nearbyArr, outOfStateArr } = splitOther(combined);
+    const toProvider = (e: typeof combined[0]) => ({
+      ...e.p,
+      distanceKm: e.distanceKm !== Infinity ? Math.round(e.distanceKm * 10) / 10 : undefined,
+    });
+    return {
+      local: [],
+      nearby: nearbyArr.map(toProvider),
+      outOfState: outOfStateArr.map(toProvider),
+      isFallback,
+    };
+  }
+
+  const { nearbyArr, outOfStateArr } = splitOther(otherArr);
+  const toProvider = (e: typeof otherArr[0]) => ({
+    ...e.p,
+    distanceKm: e.distanceKm !== Infinity ? Math.round(e.distanceKm * 10) / 10 : undefined,
+  });
 
   return {
-    local: fallbackArr.map(e => ({
-      ...e.p,
-      distanceKm: e.distanceKm !== Infinity ? Math.round(e.distanceKm * 10) / 10 : undefined,
-    })),
-    other: isFallback ? [] : otherArr.map(e => ({
-      ...e.p,
-      distanceKm: e.distanceKm !== Infinity ? Math.round(e.distanceKm * 10) / 10 : undefined,
-    })),
+    local: localArr.map(toProvider),
+    nearby: nearbyArr.map(toProvider),
+    outOfState: outOfStateArr.map(toProvider),
     isFallback,
   };
 }
