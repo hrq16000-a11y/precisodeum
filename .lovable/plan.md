@@ -1,49 +1,48 @@
 
 
-# Upgrade de Inteligência e Conversão
+# Ordenar Resultados por Proximidade Geográfica Nacional
 
-## 1. WhatsApp Smart-Link (mensagem estruturada)
+## Problema
+Quando não há resultados locais (ex: São José dos Pinhais), os profissionais de "outras regiões" aparecem ordenados por nota/score, não por distância. Resultado: Recife aparece antes de Curitiba (15km), o que não faz sentido.
 
-O `ProviderCard` (linha 232) já tem uma mensagem contextual com nome e categoria. Vamos melhorar para incluir bairro/cidade do usuário e a categoria do profissional de forma mais natural.
+## Solução
+Ordenar **sempre por distância real** (Haversine) quando o usuário tem coordenadas GPS, em dois locais:
 
-**Arquivos:** `src/components/ProviderCard.tsx`, `src/pages/ServiceDetailPage.tsx`, `src/components/home/FeaturedProviders.tsx`
+### 1. `src/hooks/useProviders.tsx` — `filterAndRankProvidersGrouped` (SearchPage)
 
-- Padronizar a mensagem em todos os pontos de contato WhatsApp:
-  ```
-  Olá {Nome}! Vi seu perfil no Preciso de Um. Preciso de ajuda com {Categoria}. Minha localização aproximada é {Bairro/Cidade}. Podemos conversar?
-  ```
-- Usar `geoCity` e neighborhood do hook `useGeoCity` para preencher a localização do usuário automaticamente
-- Criar helper `buildSmartMessage()` em `src/lib/whatsapp.ts` para centralizar a lógica
+**Linha 594-601** — Alterar sort do `otherArr` para priorizar distância:
+```typescript
+otherArr.sort((a, b) => {
+  // Distance first when available
+  if (a.distanceKm !== Infinity && b.distanceKm !== Infinity) {
+    const distDiff = a.distanceKm - b.distanceKm;
+    if (Math.abs(distDiff) > 1) return distDiff;
+  }
+  // No coords → push to end
+  if (a.distanceKm === Infinity && b.distanceKm !== Infinity) return 1;
+  if (b.distanceKm === Infinity && a.distanceKm !== Infinity) return -1;
+  return b.p.rating - a.p.rating;
+});
+```
 
-## 2. Contador de Profissionais Ativos na Cidade
+**Linha 608** — No fallback (0 locais), também ordenar o array combinado por distância antes de retornar.
 
-**Novo componente:** `src/components/home/ActiveProvidersCounter.tsx`
+### 2. `src/pages/CategoryPage.tsx` — Separação local/other
 
-- Query em `providers` filtrando `status = 'approved'` e `city = geoCity`
-- Exibir: "🟢 **25** profissionais prontos para te atender em **Curitiba** agora"
-- Usar `AnimatedCounter` existente para animação do número
-- Posicionar logo abaixo do hero na home e nas páginas de categoria
-- Se não houver geolocalização, mostrar o total geral da plataforma
-
-## 3. Skeleton Loading Profissional
-
-**Novo componente:** `src/components/ProviderCardSkeleton.tsx`
-
-- Skeleton que replica exatamente o layout do `ProviderCard`: avatar circular, linhas de texto, badges, botões
-- Substituir os `<Skeleton className="h-72" />` genéricos em `FeaturedProviders` (linha 74), `CategoryPage`, e `SearchPage`
-- Também criar skeleton para o `ProviderCardFeatured` dentro de `FeaturedProviders`
+**Linha 69-96** — Enriquecer `other` com distância e ordenar por proximidade:
+- Calcular `distanceKm` para cada provider no array `other` (não só os locais)
+- Ordenar `other` por distância crescente
+- No fallback (linha 96), ordenar `allProviders` por distância antes de retornar
 
 ## Arquivos alterados
 
-| Arquivo | Alteração |
+| Arquivo | O que muda |
 |---------|-----------|
-| `src/lib/whatsapp.ts` | Novo `buildSmartMessage()` |
-| `src/components/ProviderCard.tsx` | Usar `buildSmartMessage` |
-| `src/components/home/FeaturedProviders.tsx` | Usar `buildSmartMessage` + skeleton |
-| `src/pages/ServiceDetailPage.tsx` | Usar `buildSmartMessage` |
-| `src/components/home/ActiveProvidersCounter.tsx` | **Novo** — contador dinâmico |
-| `src/components/ProviderCardSkeleton.tsx` | **Novo** — skeleton realista |
-| `src/pages/Index.tsx` | Incluir `ActiveProvidersCounter` |
-| `src/pages/CategoryPage.tsx` | Incluir `ActiveProvidersCounter` + skeleton |
-| `src/pages/SearchPage.tsx` | Usar skeleton |
+| `src/hooks/useProviders.tsx` | `otherArr.sort` prioriza distância; fallback também ordena por distância |
+| `src/pages/CategoryPage.tsx` | `other` array recebe distância e é ordenado por proximidade; fallback ordena por distância |
+
+## Resultado
+- Curitiba (15km) sempre aparece antes de Recife (2500km)
+- Funciona nacionalmente para qualquer cidade
+- Quando GPS não disponível, mantém ordenação por rating como fallback
 
