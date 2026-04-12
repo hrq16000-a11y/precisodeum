@@ -21,7 +21,15 @@ import { normalize } from './normalize';
 import { getCityCoords, isRecognizedCity, CITY_COORDS } from './cityCoords';
 import { resolveMetroRegion, isMemberOfMetro, type MetroRegion } from './metroRegions';
 import { extractUFFromQuery, isUF, getUFCapital } from './ufIndex';
-import { lookupCity } from './citiesIndex';
+// citiesIndex (229KB) loaded lazily — lookupCity accessed via async import
+let _lookupCity: ((n: string, s?: string) => { name: string; state: string } | null) | null = null;
+const ensureLookupCity = async () => {
+  if (!_lookupCity) {
+    const m = await import('./citiesIndex');
+    _lookupCity = m.lookupCity;
+  }
+  return _lookupCity!;
+};
 import { calculateDistanceKm, hasCoordinates } from './geoDistance';
 
 // ═══════════════════════════════════════════════════════════════════════
