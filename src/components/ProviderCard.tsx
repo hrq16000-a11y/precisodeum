@@ -86,7 +86,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       {/* Shine sweep */}
       <div className="card-shine-sweep pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent" style={{ left: '-100%', width: '50%' }} />
 
-      <div className="flex flex-1 flex-col p-5 relative">
+      <div className="flex flex-1 flex-col p-[1.25rem] relative">
         <div className="flex gap-4">
            <Avatar className="h-14 w-14 shrink-0 transition-transform duration-300 group-hover:scale-105 ring-2 ring-transparent group-hover:ring-accent/20">
             <AvatarImage src={displayPhoto || undefined} alt={displayName} loading="lazy" decoding="async" onError={handleImageError} />
@@ -102,7 +102,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               {...handlers}
             >
               <div className="flex items-start justify-between gap-2">
-                <h3 className="truncate font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
+                <h3 className="line-clamp-2 break-words font-display text-base font-bold text-foreground group-hover:text-accent transition-colors">
                   {displayName}
                 </h3>
                 {provider.plan === 'premium' && (
@@ -118,7 +118,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               </div>
             </Link>
             {provider.businessName && provider.businessName !== displayName && (
-              <p className="truncate text-xs text-muted-foreground">{provider.businessName}</p>
+              <p className="line-clamp-1 break-words text-xs text-muted-foreground">{provider.businessName}</p>
             )}
             {provider.category && (
               <p className="mt-0.5 text-sm font-medium text-accent">{provider.category}</p>
@@ -177,7 +177,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
 
         <div className="flex-1" />
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           {provider.whatsapp && (
             <Button variant="accent" size="sm" className="flex-1 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" asChild>
               <a
