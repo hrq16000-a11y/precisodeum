@@ -20,7 +20,7 @@ const deferWork = (fn: () => void) => {
   if ("requestIdleCallback" in window) {
     (window as Window & { requestIdleCallback: (callback: () => void) => number }).requestIdleCallback(fn);
   } else {
-    window.setTimeout(fn, 300);
+    globalThis.setTimeout(fn, 300);
   }
 };
 
