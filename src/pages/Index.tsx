@@ -264,7 +264,25 @@ const Index = () => {
         const section = renderSection(slug);
         if (!section) return null;
         // Apply content-visibility to sections below the fold (index >= 3)
-        const cvStyle = i >= 3 ? { contentVisibility: 'auto' as const, containIntrinsicSize: '0 400px' } : undefined;
+        // Use section-specific intrinsic heights to minimise CLS
+        const sectionHeights: Record<string, string> = {
+          categories: '0 800px',
+          featured: '0 600px',
+          popular: '0 500px',
+          howitworks: '0 450px',
+          testimonials: '0 500px',
+          faq: '0 600px',
+          highlights: '0 350px',
+          jobs: '0 450px',
+          blog: '0 450px',
+          courses: '0 400px',
+          cta: '0 300px',
+          pwa: '0 300px',
+          sponsors: '0 250px',
+          searches: '0 300px',
+          showcase: '0 400px',
+        };
+        const cvStyle = i >= 3 ? { contentVisibility: 'auto' as const, containIntrinsicSize: sectionHeights[slug] || '0 400px' } : undefined;
         return (
           <LazyErrorBoundary key={slug}>
             <Suspense fallback={<SectionFallback slug={slug} />}>
