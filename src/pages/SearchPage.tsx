@@ -63,6 +63,7 @@ const SearchPage = () => {
   const [page, setPage] = useState(1);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
 
   const effectiveCity = selectedCity || cityParam || geoCity || '';
