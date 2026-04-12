@@ -4,6 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SearchBar from '@/components/SearchBar';
+import CategoryIcon from '@/components/CategoryIcon';
 import ProviderCard from '@/components/ProviderCard';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';
@@ -232,7 +233,7 @@ const SearchPage = () => {
                     <SelectContent>
                       <SelectItem value="all">Todas as categorias</SelectItem>
                       {categories.map(c => (
-                        <SelectItem key={c.id} value={c.slug}>{c.icon} {c.name}</SelectItem>
+                        <SelectItem key={c.id} value={c.slug}><span className="inline-flex items-center gap-1.5"><CategoryIcon icon={c.icon} size={14} /> {c.name}</span></SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

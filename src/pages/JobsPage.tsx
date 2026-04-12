@@ -408,7 +408,7 @@ const JobsPage = () => {
                       <label className="mb-0.5 block text-[10px] font-medium text-muted-foreground">Categoria</label>
                       <select value={categoryFilter} onChange={(e) => updateFilter(setCategoryFilter)(e.target.value)} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs text-foreground">
                         <option value="">Todas</option>
-                        {categories.map((c: any) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                        {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
                     </div>
                     <div className="flex items-end">
@@ -472,7 +472,7 @@ const JobsPage = () => {
                       onClick={() => updateFilter(setCategoryFilter)(categoryFilter === c.id ? '' : c.id)}
                       className={`w-full rounded px-2 py-1.5 text-left text-xs transition-colors ${categoryFilter === c.id ? 'bg-accent/10 font-medium text-accent' : 'text-muted-foreground hover:bg-muted/50'}`}
                     >
-                      {c.icon} {c.name}
+                      <CategoryIcon icon={c.icon} size={14} /> {c.name}
                     </button>
                   ))}
                 </div>

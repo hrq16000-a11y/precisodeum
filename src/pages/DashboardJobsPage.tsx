@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, ExternalLink, Copy, CopyPlus, Upload, MapPin, LocateFixed, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { fetchAllMunicipalities, geocodeCity, reverseGeocode, normalize, type CityResult } from '@/lib/geoUtils';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -434,7 +435,7 @@ const DashboardJobsPage = () => {
                    )}
                  </div>
                  <p className="mt-0.5 text-xs text-muted-foreground">
-                   {(job.categories as any)?.icon} {(job.categories as any)?.name || 'Sem categoria'} · {job.city}{job.state ? `, ${job.state}` : ''}
+                   <CategoryIcon icon={(job.categories as any)?.icon} size={12} className="inline-block text-muted-foreground" /> {(job.categories as any)?.name || 'Sem categoria'} · {job.city}{job.state ? `, ${job.state}` : ''}
                    {(job as any).view_count > 0 && <> · 👁 {(job as any).view_count} views</>}
                  </p>
               </div>
