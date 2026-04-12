@@ -5,12 +5,9 @@
  */
 import { normalize } from './normalize';
 
-// Lazy-load the 229KB cities index only when needed
+// Lazy-load the 229KB cities index only when actually needed (no pre-warm)
 let _isKnownCity: ((n: string) => boolean) | null = null;
 const loadCitiesIndex = () => import('./citiesIndex').then(m => { _isKnownCity = m.isKnownCity; return m; });
-// Pre-warm in idle
-if (typeof requestIdleCallback === 'function') requestIdleCallback(() => loadCitiesIndex());
-else setTimeout(() => loadCitiesIndex(), 2000);
 
 interface CityCoord {
   lat: number;
