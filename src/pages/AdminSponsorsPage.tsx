@@ -448,6 +448,7 @@ const AdminSponsorsPage = () => {
       external_link: s.external_link || '', linked_city: s.linked_city || '',
       linked_category: s.linked_category || '', plan_tier: s.plan_tier || 'basic',
       badge_type: s.badge_type || 'Patrocinado', status: s.status || 'active',
+      guaranteed_impressions: (s as any).guaranteed_impressions || 0,
     });
     setDialogOpen(true);
   };
