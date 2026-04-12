@@ -24,6 +24,7 @@ import ProgressRing from '@/components/ui/ProgressRing';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import ActionQueue from '@/components/dashboard/ActionQueue';
 import UpsellBanner from '@/components/dashboard/UpsellBanner';
+import CoursesBanner from '@/components/dashboard/CoursesBanner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const DashboardPage = () => {
@@ -185,6 +186,11 @@ const DashboardPage = () => {
             Alterar tipo de conta <ArrowRight className="h-3 w-3" />
           </button>
         </GlassCard>
+
+        {/* Courses promotion */}
+        <div className="mt-4">
+          <CoursesBanner />
+        </div>
       </DashboardLayout>
     );
   }
@@ -336,6 +342,11 @@ const DashboardPage = () => {
       {/* Upsell Banner */}
       <div className="mt-4">
         <UpsellBanner />
+      </div>
+
+      {/* Courses promotion */}
+      <div className="mt-4">
+        <CoursesBanner />
       </div>
 
       <QuickStatsBar pendingLeads={pendingLeads} providerSlug={provider?.slug} />

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { GraduationCap, BookOpen, Lightbulb, Trophy, Star, Heart, Award } from 'lucide-react';
-import heroBanner from '@/assets/courses/hero-banner.jpg';
+import { GraduationCap, BookOpen, Lightbulb, Trophy, Star, Heart, Award, Sparkles, TrendingUp } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const floatingIcons = [
   { Icon: BookOpen, x: '8%', y: '25%', delay: 0, size: 20 },
@@ -13,24 +13,33 @@ const floatingIcons = [
 
 const CoursesHero = () => (
   <div className="relative mb-12 overflow-hidden rounded-3xl">
-    {/* Background image */}
-    <div className="relative h-[320px] md:h-[380px]">
-      <img
-        src={heroBanner}
-        alt="Profissionais celebrando conquistas"
-        className="w-full h-full object-cover"
-        width={1280}
-        height={512}
+    {/* Full gradient background */}
+    <div className="relative min-h-[340px] md:min-h-[420px] bg-gradient-to-br from-primary via-primary to-primary/90">
+      {/* Pattern overlay */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--primary-foreground)) 1px, transparent 0)',
+        backgroundSize: '32px 32px',
+      }} />
+
+      {/* Gradient orbs */}
+      <motion.div
+        className="absolute w-[400px] h-[400px] rounded-full opacity-20"
+        style={{ background: 'radial-gradient(circle, hsl(var(--secondary)), transparent 70%)', top: '-15%', right: '-5%' }}
+        animate={{ scale: [1, 1.15, 1] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
-      {/* Dark overlay for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/30" />
-      <div className="absolute inset-0 bg-gradient-to-r from-background/50 to-transparent" />
+      <motion.div
+        className="absolute w-[300px] h-[300px] rounded-full opacity-15"
+        style={{ background: 'radial-gradient(circle, hsl(var(--accent)), transparent 70%)', bottom: '-10%', left: '-5%' }}
+        animate={{ scale: [1.1, 1, 1.1] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+      />
 
       {/* Floating icons */}
       {floatingIcons.map(({ Icon, x, y, delay, size }, i) => (
         <motion.div
           key={i}
-          className="absolute pointer-events-none text-accent/20"
+          className="absolute pointer-events-none text-white/10"
           style={{ left: x, top: y }}
           animate={{ y: [0, -12, 0], rotate: [0, 10, -10, 0] }}
           transition={{ duration: 4 + i, repeat: Infinity, ease: 'easeInOut', delay }}
@@ -39,21 +48,20 @@ const CoursesHero = () => (
         </motion.div>
       ))}
 
-      {/* Content overlay */}
-      <div className="absolute inset-0 flex flex-col items-center justify-end pb-8 px-4 text-center">
+      {/* Content */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 16, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="inline-flex items-center gap-2 bg-accent/15 backdrop-blur-md rounded-full px-5 py-2 mb-4 border border-accent/20 shadow-lg shadow-accent/5">
-            <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 2 }}>
-              <GraduationCap className="h-4 w-4 text-accent" />
-            </motion.div>
-            <span className="text-sm font-semibold text-accent tracking-wide">100% Gratuito</span>
-            <Heart className="h-3.5 w-3.5 text-accent/60" />
-          </div>
+          <Badge className="mb-5 bg-white/10 backdrop-blur-md text-primary-foreground text-sm px-5 py-2 border border-white/20 shadow-lg">
+            <motion.span animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 2 }}>
+              <GraduationCap className="h-4 w-4 mr-2 inline text-amber-300" />
+            </motion.span>
+            100% Gratuito — Invista em você!
+          </Badge>
         </motion.div>
 
         {/* Title */}
@@ -61,11 +69,19 @@ const CoursesHero = () => (
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.15 }}
-          className="font-display text-3xl md:text-5xl font-bold text-foreground mb-3 leading-tight drop-shadow-sm"
+          className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-primary-foreground mb-4 leading-tight"
         >
           Invista no seu{' '}
-          <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-            Futuro Profissional
+          <span className="relative inline-block">
+            <span className="bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 bg-clip-text text-transparent">
+              Futuro Profissional
+            </span>
+            <motion.span
+              className="absolute -bottom-1 left-0 right-0 h-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 0.8, duration: 0.6 }}
+            />
           </span>
         </motion.h1>
 
@@ -74,10 +90,9 @@ const CoursesHero = () => (
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="text-muted-foreground max-w-2xl mx-auto text-sm md:text-base leading-relaxed"
+          className="text-primary-foreground/60 max-w-2xl mx-auto text-sm md:text-lg leading-relaxed mb-6"
         >
-          Você merece se valorizar. Cursos gratuitos das melhores instituições do Brasil
-          para elevar sua carreira e conquistar mais clientes.
+          Cursos gratuitos das melhores instituições do Brasil para elevar sua carreira e conquistar mais clientes.
         </motion.p>
 
         {/* Stats pills */}
@@ -85,20 +100,23 @@ const CoursesHero = () => (
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="flex items-center justify-center gap-2.5 mt-5 flex-wrap"
+          className="flex items-center justify-center gap-3 flex-wrap"
         >
           {[
-            { icon: '🎓', label: 'Com certificado' },
-            { icon: '🏆', label: 'Instituições renomadas' },
-            { icon: '⚡', label: 'No seu ritmo' },
-            { icon: '💪', label: 'Valorize-se' },
-          ].map((item) => (
+            { icon: Award, label: 'Com certificado', color: 'text-amber-300' },
+            { icon: BookOpen, label: 'SEBRAE, SENAI, FGV', color: 'text-amber-300/80' },
+            { icon: Sparkles, label: 'No seu ritmo', color: 'text-amber-300/80' },
+            { icon: TrendingUp, label: 'Mais clientes', color: 'text-amber-300/80' },
+          ].map((item, i) => (
             <motion.div
               key={item.label}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.6 + i * 0.1 }}
               whileHover={{ scale: 1.05, y: -2 }}
-              className="flex items-center gap-1.5 bg-card/80 backdrop-blur-md border border-border/40 rounded-full px-3 py-1.5 text-xs text-muted-foreground shadow-sm cursor-default"
+              className="flex items-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 text-xs text-primary-foreground/70 shadow-sm cursor-default"
             >
-              <span>{item.icon}</span>
+              <item.icon className={`w-3.5 h-3.5 ${item.color}`} />
               <span className="font-medium">{item.label}</span>
             </motion.div>
           ))}

@@ -41,6 +41,7 @@ const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
 const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
 const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
 const CmsBannersCarousel = lazy(() => import('@/components/home/CmsBannersCarousel'));
+const CoursesPromo = lazy(() => import('@/components/home/CoursesPromo'));
 
 const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
@@ -89,7 +90,7 @@ const SectionFallback = ({ slug }: { slug?: string }) => {
 };
 
 // Default section order
-const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
+const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,courses,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
 
 const Index = () => {
   const { city: geoCity } = useGeoCity();
@@ -223,6 +224,8 @@ const Index = () => {
         return jobsEnabled ? <FeaturedJobs key={slug} /> : null;
       case 'blog':
         return blogEnabled ? <BlogHighlight key={slug} /> : null;
+      case 'courses':
+        return <CoursesPromo key={slug} />;
       case 'cities':
         return null;
       case 'cta':
