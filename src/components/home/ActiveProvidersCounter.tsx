@@ -1,30 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { useOnlineCountByCity } from '@/hooks/useOnlinePresence';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import { motion } from 'framer-motion';
 
 const ActiveProvidersCounter = () => {
   const { city: geoCity } = useGeoCity();
-
-  const { data: count } = useQuery({
-    queryKey: ['active-providers-count', geoCity],
-    queryFn: async () => {
-      let query = supabase
-        .from('providers')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'approved')
-        .is('deleted_at', null);
-
-      if (geoCity) {
-        query = query.ilike('city', geoCity);
-      }
-
-      const { count: c } = await query;
-      return c || 0;
-    },
-    staleTime: 1000 * 60 * 5,
-  });
+  const count = useOnlineCountByCity(geoCity);
 
   if (!count || count === 0) return null;
 
@@ -44,8 +25,8 @@ const ActiveProvidersCounter = () => {
         </span>
         <span className="text-muted-foreground">
           <AnimatedCounter value={count} className="font-bold text-foreground" />{' '}
-          profissionais prontos para te atender em{' '}
-          <span className="font-semibold text-foreground">{cityLabel}</span> agora
+          {count === 1 ? 'profissional online' : 'profissionais online'} agora em{' '}
+          <span className="font-semibold text-foreground">{cityLabel}</span>
         </span>
       </div>
     </motion.div>

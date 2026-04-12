@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresenceTracker } from '@/hooks/useOnlinePresence';
@@ -114,8 +114,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProvider(null);
     setNeedsTypeSelection(false);
   };
-  // Track online presence for the current user
-  usePresenceTracker(user?.id);
+  // Track online presence for the current user, including their city
+  const providerCity = provider?.city;
+  const presenceMeta = useMemo(() => (providerCity ? { city: providerCity } : undefined), [providerCity]);
+  usePresenceTracker(user?.id, presenceMeta);
 
   return (
     <AuthContext.Provider value={{ session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile }}>
