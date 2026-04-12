@@ -43,7 +43,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
   });
 
   return (
-    <section className="relative py-14 overflow-hidden">
+    <section className="relative py-8 md:py-14 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-muted/50 via-background to-muted/50" />
       <div className="absolute top-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
@@ -81,7 +81,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
             variants={container}
             initial="hidden"
             animate="visible"
-            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
             {items.map((item, idx) => {
               if (item.type === 'ad') {
@@ -144,10 +144,10 @@ function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
       {/* Premium accent bar */}
       <div className="h-1 bg-gradient-to-r from-accent via-amber-400 to-accent" />
       
-      <div className="flex flex-1 flex-col p-5">
+      <div className="flex flex-1 flex-col p-3.5 sm:p-5">
         <div className="flex gap-4">
           <div className="relative">
-            <Avatar className="h-16 w-16 shrink-0 ring-2 ring-accent/20 transition-transform duration-300 group-hover:scale-105">
+            <Avatar className="h-12 w-12 sm:h-16 sm:w-16 shrink-0 ring-2 ring-accent/20 transition-transform duration-300 group-hover:scale-105">
               <AvatarImage src={displayPhoto || undefined} alt={displayName} />
               <AvatarFallback className="bg-accent/10 text-2xl">
                 {p.categoryIcon || '🔧'}

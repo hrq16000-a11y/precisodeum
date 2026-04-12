@@ -179,7 +179,7 @@ const HeroBanner = () => {
   }, [bgIndex, bgImages.length]);
 
   return (
-    <section className="relative min-h-[320px] overflow-visible py-8 md:min-h-[480px] md:overflow-hidden md:py-20">
+    <section className="relative min-h-[280px] overflow-visible py-6 sm:min-h-[320px] sm:py-8 md:min-h-[480px] md:overflow-hidden md:py-20">
       {/* Background images — only current + next preloaded */}
       {visibleIndices.map((i) => (
         <img
@@ -210,7 +210,7 @@ const HeroBanner = () => {
 
       <div className="container relative z-10 flex flex-col items-center text-center hero-entrance">
         <div>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight text-primary-foreground sm:text-4xl md:text-5xl lg:text-6xl drop-shadow-sm">
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-primary-foreground sm:text-3xl md:text-5xl lg:text-6xl drop-shadow-sm">
             <HeroPrefixRotator prefixes={prefixes} />
             <br />
             <RotatingServiceText />
@@ -230,14 +230,14 @@ const HeroBanner = () => {
         </div>
 
         <div className="relative z-10 mt-4 flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
-          <p className="text-sm text-primary-foreground/80">
-            {ctaPrimaryText || 'Cadastre seus serviços gratuitamente.'}{' '}
-            <Link to={ctaPrimaryLink || '/cadastro'} className="font-semibold text-secondary hover:underline underline-offset-2">
-              {ctaPrimaryLinkText || 'Cadastrar agora →'}
-            </Link>
-          </p>
+          <Link
+            to={ctaPrimaryLink || '/cadastro'}
+            className="inline-flex items-center justify-center rounded-full bg-secondary px-5 py-2.5 text-sm font-bold text-secondary-foreground shadow-md transition-transform hover:scale-105 active:scale-95 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:text-primary-foreground/80 sm:font-semibold sm:hover:underline sm:underline-offset-2"
+          >
+            {ctaPrimaryLinkText || 'Cadastrar agora →'}
+          </Link>
           <span className="hidden text-primary-foreground/40 sm:inline">|</span>
-          <p className="text-sm text-primary-foreground/80">
+          <p className="text-xs sm:text-sm text-primary-foreground/80">
             <Link to={ctaSecondaryLink || '/dashboard/vagas'} className="font-semibold text-secondary hover:underline underline-offset-2">
               {ctaSecondaryText || 'Cadastre uma vaga / oportunidade →'}
             </Link>

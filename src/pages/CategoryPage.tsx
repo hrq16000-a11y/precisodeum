@@ -160,7 +160,7 @@ const CategoryPage = () => {
       <Header />
 
       {/* Hero section with enhanced visual */}
-      <section className="relative bg-hero py-12 md:py-20 overflow-x-clip">
+      <section className="relative bg-hero py-6 md:py-20 overflow-x-clip">
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/10" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-accent/8 rounded-full blur-[120px] -translate-y-1/2" />
         <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-primary/5 rounded-full blur-[80px] translate-y-1/2" />
@@ -184,16 +184,17 @@ const CategoryPage = () => {
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-md shadow-xl ring-1 ring-white/10"
+            className="inline-flex h-14 w-14 md:h-20 md:w-20 items-center justify-center rounded-2xl md:rounded-3xl bg-white/10 backdrop-blur-md shadow-xl ring-1 ring-white/10"
           >
-            <CategoryIcon icon={category.icon} size={40} className="text-white" />
+            <CategoryIcon icon={category.icon} size={28} className="text-white md:hidden" />
+            <CategoryIcon icon={category.icon} size={40} className="text-white hidden md:block" />
           </motion.div>
           
           <motion.h1
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="mt-5 font-display text-3xl font-bold text-primary-foreground md:text-5xl tracking-tight"
+            className="mt-3 md:mt-5 font-display text-2xl font-bold text-primary-foreground md:text-5xl tracking-tight"
           >
             {category.name}
           </motion.h1>
@@ -278,7 +279,7 @@ const CategoryPage = () => {
           variants={stagger}
           initial="hidden"
           animate="visible"
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3"
         >
           {paginatedLocal.map((p, i) => (
             <motion.div key={p.id} variants={fadeUp}>
