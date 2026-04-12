@@ -335,7 +335,60 @@ const AdminProvidersPage = () => {
         </div>
       </div>
 
-      {/* Bulk Actions */}
+      {/* Auto-approve toggle + Bulk actions */}
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+            <ToggleRight className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-foreground">Aprovação automática</span>
+            <Switch checked={autoApprove} onCheckedChange={toggleAutoApprove} disabled={autoApproveLoading} />
+          </div>
+        </div>
+        {stats.pending > 0 && (
+          <div className="flex gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="text-emerald-600 border-emerald-200" disabled={bulkActionLoading}>
+                  <CheckCheck className="mr-1.5 h-4 w-4" /> Aprovar Todos ({stats.pending})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Aprovar todos os pendentes?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Isso aprovará {allProviders.filter(p => p.status === 'pending' && p.city && p.city !== 'Não informada' && p.state).length} prestador(es) pendentes com cidade/estado preenchidos. Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={approveAllPending} className="bg-emerald-600 hover:bg-emerald-700">Aprovar Todos</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="text-destructive border-destructive/30" disabled={bulkActionLoading}>
+                  <XCircle className="mr-1.5 h-4 w-4" /> Rejeitar Todos ({stats.pending})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Rejeitar todos os pendentes?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Isso rejeitará {stats.pending} prestador(es) pendentes. Esta ação não pode ser desfeita facilmente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={rejectAllPending} className="bg-destructive hover:bg-destructive/90">Rejeitar Todos</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
+      </div>
+
+      {/* Bulk Actions (selection-based) */}
       {bulk.hasSelection && (
         <div className="mt-3">
           <BulkActionsBar count={bulk.selectionCount} onClear={bulk.clearSelection} onDelete={bulk.bulkSoftDelete} onExport={() => bulk.exportSelected(filtered, 'prestadores')} loading={bulk.bulkLoading}>
