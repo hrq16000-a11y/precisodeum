@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,9 @@ import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
+import { parseJobText } from '@/lib/jobTextParser';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Sparkles } from 'lucide-react';
 
 const PAGE_SIZE = 20;
 
@@ -61,6 +64,9 @@ const AdminJobsPage = () => {
   const [cityFilter, setCityFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [pasteText, setPasteText] = useState('');
+  const [detectedFields, setDetectedFields] = useState<string[]>([]);
+  const [dialogTab, setDialogTab] = useState<'paste' | 'form'>('paste');
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['admin-jobs'],
@@ -100,6 +106,35 @@ const AdminJobsPage = () => {
     },
     enabled: isAdmin,
   });
+
+  const handleSmartParse = () => {
+    if (!pasteText.trim()) return;
+    const parsed = parseJobText(pasteText, categories);
+    setEditForm(prev => ({
+      ...prev,
+      title: parsed.title || prev.title,
+      subtitle: parsed.subtitle || prev.subtitle,
+      description: parsed.description || prev.description,
+      category_id: parsed.category_id || prev.category_id,
+      opportunity_type: parsed.opportunity_type || prev.opportunity_type,
+      job_type: parsed.job_type || prev.job_type,
+      work_model: parsed.work_model || prev.work_model,
+      activities: parsed.activities || prev.activities,
+      requirements: parsed.requirements || prev.requirements,
+      benefits: parsed.benefits || prev.benefits,
+      schedule: parsed.schedule || prev.schedule,
+      salary: parsed.salary || prev.salary,
+      city: parsed.city || prev.city,
+      state: parsed.state || prev.state,
+      neighborhood: parsed.neighborhood || prev.neighborhood,
+      contact_name: parsed.contact_name || prev.contact_name,
+      contact_phone: parsed.contact_phone || prev.contact_phone,
+      whatsapp: parsed.whatsapp || prev.whatsapp,
+    }));
+    setDetectedFields(parsed.detectedFields);
+    setDialogTab('form');
+    toast.success(`IA extraiu ${parsed.detectedFields.length} campos automaticamente!`);
+  };
 
   const bulk = useAdminBulkActions({
     table: 'jobs',
@@ -183,6 +218,8 @@ const AdminJobsPage = () => {
   const handleEdit = (job: any) => {
     setEditJob(job);
     setIsCreating(false);
+    setDialogTab('form');
+    setDetectedFields([]);
     setEditForm({
       title: job.title || '', subtitle: job.subtitle || '',
       description: job.description || '', category_id: job.category_id || '',
@@ -204,6 +241,9 @@ const AdminJobsPage = () => {
     setEditJob({ _new: true });
     setIsCreating(true);
     setEditForm({ ...emptyForm });
+    setPasteText('');
+    setDetectedFields([]);
+    setDialogTab('paste');
   };
 
   const generateSlug = (title: string, city: string) => {
@@ -414,7 +454,55 @@ const AdminJobsPage = () => {
       <Dialog open={!!editJob} onOpenChange={() => setEditJob(null)}>
         <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{isCreating ? 'Nova Vaga' : 'Editar Vaga'}</DialogTitle></DialogHeader>
-          <div className="space-y-4 mt-4">
+
+          {isCreating && (
+            <Tabs value={dialogTab} onValueChange={v => setDialogTab(v as any)} className="mt-2">
+              <TabsList className="w-full">
+                <TabsTrigger value="paste" className="flex-1 gap-1.5">
+                  <Sparkles className="h-4 w-4" /> Colar Texto
+                </TabsTrigger>
+                <TabsTrigger value="form" className="flex-1">Formulário</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="paste" className="space-y-3 mt-3">
+                <p className="text-sm text-muted-foreground">
+                  Cole o texto da vaga abaixo e a IA irá extrair os campos automaticamente.
+                </p>
+                <textarea
+                  value={pasteText}
+                  onChange={e => setPasteText(e.target.value)}
+                  rows={10}
+                  placeholder="Cole aqui o texto da vaga (ex: título, descrição, requisitos, salário, cidade...)"
+                  className={inputClass}
+                />
+                <Button variant="accent" className="w-full gap-2" onClick={handleSmartParse} disabled={!pasteText.trim()}>
+                  <Sparkles className="h-4 w-4" /> Extrair Dados com IA
+                </Button>
+                {detectedFields.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {detectedFields.map((f, i) => (
+                      <span key={i} className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">{f}</span>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="form" className="mt-3">
+                {detectedFields.length > 0 && (
+                  <div className="mb-4 rounded-lg border border-accent/20 bg-accent/5 p-3">
+                    <p className="text-xs font-medium text-accent mb-1.5">✨ Campos extraídos automaticamente:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {detectedFields.map((f, i) => (
+                        <span key={i} className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent">{f}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+          </TabsContent>
+            </Tabs>
+          )}
+
+          <div className={`space-y-4 ${isCreating && dialogTab === 'paste' ? 'hidden' : ''} ${isCreating ? '' : 'mt-4'}`}>
             <div>
               <label className={labelClass}>Título *</label>
               <input value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} className={inputClass} />
