@@ -17,11 +17,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Progress } from '@/components/ui/progress';
 import {
   Plus, Pencil, Trash2, ExternalLink, CalendarIcon, Eye, MousePointerClick, Search,
   Megaphone, Users, FileText, StickyNote, AlertTriangle, TrendingUp, Settings2,
   Link2, Globe, MapPin, Building2, Phone, Mail, Star, Crown, Zap,
-  PanelTop, Columns, Monitor, BarChart3, ArrowRight, Image as ImageIcon, Filter
+  PanelTop, Columns, Monitor, BarChart3, ArrowRight, Image as ImageIcon, Filter,
+  Download, Bell, Power, Activity, Send, Heart, HeartCrack, Gauge
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -36,7 +38,6 @@ import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
-
 const PAGE_SIZE = 20;
 
 /* ─── Visual position map — from central config ─── */
@@ -79,12 +80,77 @@ const emptyForm = {
   sponsor_type: 'global', short_description: '', full_description: '',
   phone: '', whatsapp: '', external_link: '', linked_city: '', linked_category: '',
   plan_tier: 'basic', badge_type: 'Patrocinado', status: 'active',
+  guaranteed_impressions: 0,
 };
 
 const PERM_LABELS: Record<string, string> = {
   banners: 'Meus Banners', campanhas: 'Campanhas', metricas: 'Métricas',
   contratos: 'Contratos', notificacoes: 'Notificações', dados: 'Meus Dados',
 };
+
+/** Compute a 0-100 health score for a sponsor */
+function computeHealthScore(s: Sponsor, m30?: { imp: number; clk: number }): { score: number; label: string; color: string; issues: string[] } {
+  let score = 100;
+  const issues: string[] = [];
+
+  // No banner image = -30
+  if (!s.image_url) { score -= 30; issues.push('Sem banner'); }
+
+  // Inactive = -20
+  if (!s.active) { score -= 20; issues.push('Inativo'); }
+
+  // Expired = -25
+  if (s.end_date && new Date(s.end_date) < new Date()) { score -= 25; issues.push('Expirado'); }
+
+  // Expiring soon (≤7d) = -10
+  if (s.end_date && !issues.includes('Expirado')) {
+    const d = differenceInDays(new Date(s.end_date), new Date());
+    if (d <= 7) { score -= 10; issues.push(`Expira em ${d}d`); }
+  }
+
+  // Low CTR (< 0.5%) when impressions > 100
+  if (s.impressions > 100) {
+    const ctr = (s.clicks / s.impressions) * 100;
+    if (ctr < 0.5) { score -= 15; issues.push(`CTR baixo (${ctr.toFixed(2)}%)`); }
+  }
+
+  // No recent metrics (30d impressions == 0 while active)
+  if (s.active && m30 && m30.imp === 0) { score -= 10; issues.push('Sem impressões recentes'); }
+
+  // No link
+  if (!s.link_url) { score -= 5; issues.push('Sem link de destino'); }
+
+  score = Math.max(0, Math.min(100, score));
+
+  if (score >= 80) return { score, label: 'Saudável', color: 'text-green-600', issues };
+  if (score >= 50) return { score, label: 'Atenção', color: 'text-amber-600', issues };
+  return { score, label: 'Crítico', color: 'text-destructive', issues };
+}
+
+/** Export sponsors CSV with metrics */
+function exportSponsorsCsv(sponsors: Sponsor[], metricsMap: Map<string, { imp: number; clk: number }>) {
+  const bom = '\uFEFF';
+  const header = ['Título', 'Empresa', 'Plano', 'Tipo', 'Posição', 'Ativo', 'Impressões', 'Cliques', 'CTR%', '30d Impressões', '30d Cliques', 'Início', 'Fim', 'Score'];
+  const rows = sponsors.map(s => {
+    const m30 = metricsMap.get(s.id);
+    const h = computeHealthScore(s, m30);
+    const ctr = s.impressions > 0 ? ((s.clicks / s.impressions) * 100).toFixed(2) : '0';
+    return [
+      s.title, s.company_name || '', s.tier || s.plan_tier, s.sponsor_type, s.position,
+      s.active ? 'Sim' : 'Não', String(s.impressions), String(s.clicks), ctr,
+      String(m30?.imp || 0), String(m30?.clk || 0),
+      s.start_date ? format(new Date(s.start_date), 'dd/MM/yyyy') : '',
+      s.end_date ? format(new Date(s.end_date), 'dd/MM/yyyy') : '',
+      String(h.score),
+    ];
+  });
+  const csv = bom + [header, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `patrocinadores_${format(new Date(), 'yyyyMMdd')}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
 
 const AdminSponsorsPage = () => {
   const { user, loading: authLoading } = useAuth();
@@ -180,19 +246,54 @@ const AdminSponsorsPage = () => {
   });
 
   // ── Computed ──
+  // per-sponsor metrics from last 30 days (must be before alerts)
+  const metricsMap = useMemo(() => {
+    const m = new Map<string, { imp: number; clk: number }>();
+    metrics.forEach((row: any) => {
+      const e = m.get(row.sponsor_id) || { imp: 0, clk: 0 };
+      if (row.event_type === 'impression') e.imp += row.count;
+      else if (row.event_type === 'click') e.clk += row.count;
+      m.set(row.sponsor_id, e);
+    });
+    return m;
+  }, [metrics]);
+
   const alerts = useMemo(() => {
     const items: { type: string; msg: string; id: string; title: string }[] = [];
     const now = new Date();
     sponsors.forEach(s => {
+      const m30 = metricsMap.get(s.id);
       if (s.end_date) {
         const diff = differenceInDays(new Date(s.end_date), now);
         if (diff < 0) items.push({ type: 'expired', msg: `Expirado há ${Math.abs(diff)}d`, id: s.id, title: s.title });
         else if (diff <= 7) items.push({ type: 'expiring', msg: `Expira em ${diff}d`, id: s.id, title: s.title });
       }
       if (!s.active) items.push({ type: 'inactive', msg: 'Inativo', id: s.id, title: s.title });
+      if (s.active && s.impressions > 500 && (s.clicks / s.impressions) * 100 < 0.3) {
+        items.push({ type: 'low_ctr', msg: `CTR ${((s.clicks / s.impressions) * 100).toFixed(2)}%`, id: s.id, title: s.title });
+      }
+      if (s.active && !s.image_url) {
+        items.push({ type: 'no_banner', msg: 'Sem banner', id: s.id, title: s.title });
+      }
+      const guaranteed = (s as any).guaranteed_impressions || 0;
+      const delivered = (s as any).delivered_impressions || 0;
+      if (s.active && guaranteed > 0 && s.start_date && s.end_date) {
+        const totalDays = differenceInDays(new Date(s.end_date), new Date(s.start_date));
+        const elapsed = differenceInDays(now, new Date(s.start_date));
+        if (totalDays > 0 && elapsed > 0) {
+          const expectedPct = (elapsed / totalDays) * 100;
+          const actualPct = (delivered / guaranteed) * 100;
+          if (actualPct < expectedPct * 0.7) {
+            items.push({ type: 'pacing', msg: `Pacing: ${actualPct.toFixed(0)}% vs ${expectedPct.toFixed(0)}% esperado`, id: s.id, title: s.title });
+          }
+        }
+      }
+      if (s.active && !s.link_url) {
+        items.push({ type: 'no_link', msg: 'Sem link', id: s.id, title: s.title });
+      }
     });
     return items;
-  }, [sponsors]);
+  }, [sponsors, metricsMap]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -215,17 +316,12 @@ const AdminSponsorsPage = () => {
   const activeCount = sponsors.filter(s => s.active).length;
   const revenue = contracts.reduce((a: number, c: any) => a + (c.value || 0), 0);
 
-  // per-sponsor metrics from last 30 days
-  const metricsMap = useMemo(() => {
-    const m = new Map<string, { imp: number; clk: number }>();
-    metrics.forEach((row: any) => {
-      const e = m.get(row.sponsor_id) || { imp: 0, clk: 0 };
-      if (row.event_type === 'impression') e.imp += row.count;
-      else if (row.event_type === 'click') e.clk += row.count;
-      m.set(row.sponsor_id, e);
-    });
-    return m;
-  }, [metrics]);
+  // Health scores
+  const avgHealthScore = useMemo(() => {
+    if (sponsors.length === 0) return 0;
+    const total = sponsors.reduce((s, sp) => s + computeHealthScore(sp, metricsMap.get(sp.id)).score, 0);
+    return Math.round(total / sponsors.length);
+  }, [sponsors, metricsMap]);
 
   // ── Mutations ──
   const saveMutation = useMutation({
@@ -244,6 +340,7 @@ const AdminSponsorsPage = () => {
         external_link: form.external_link, linked_city: form.linked_city,
         linked_category: form.linked_category, plan_tier: form.plan_tier,
         badge_type: form.badge_type, status: form.status,
+        guaranteed_impressions: form.guaranteed_impressions || 0,
       };
       if (editingId) {
         const { error } = await supabase.from('sponsors').update(payload).eq('id', editingId);
@@ -339,6 +436,31 @@ const AdminSponsorsPage = () => {
     },
   });
 
+  // Quick toggle active
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from('sponsors').update({ active }).eq('id', id);
+      if (error) throw error;
+      await logAuditAction({ action: active ? 'reactivate' : 'suspend', resource_type: 'sponsor', resource_id: id });
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-sponsors'] }); toast({ title: 'Status atualizado' }); },
+  });
+
+  // Send notification to sponsor contacts
+  const sendNotification = useMutation({
+    mutationFn: async ({ sponsorId, title: nTitle, message }: { sponsorId: string; title: string; message: string }) => {
+      const { error } = await supabase.from('sponsor_notifications' as any).insert({
+        sponsor_id: sponsorId, title: nTitle, message, read: false,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast({ title: 'Notificação enviada ao patrocinador!' }); },
+    onError: () => toast({ title: 'Erro ao enviar notificação', variant: 'destructive' }),
+  });
+
+  const [notifDialog, setNotifDialog] = useState(false);
+  const [notifForm, setNotifForm] = useState({ sponsor_id: '', title: '', message: '' });
+
   const unlinkMutation = useMutation({
     mutationFn: async (id: string) => { await supabase.from('sponsor_contacts' as any).delete().eq('id', id); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-sponsor-contacts'] }); toast({ title: 'Vínculo removido' }); },
@@ -382,6 +504,7 @@ const AdminSponsorsPage = () => {
       external_link: s.external_link || '', linked_city: s.linked_city || '',
       linked_category: s.linked_category || '', plan_tier: s.plan_tier || 'basic',
       badge_type: s.badge_type || 'Patrocinado', status: s.status || 'active',
+      guaranteed_impressions: (s as any).guaranteed_impressions || 0,
     });
     setDialogOpen(true);
   };
@@ -410,6 +533,9 @@ const AdminSponsorsPage = () => {
             <p className="text-sm text-muted-foreground">Painel completo: cadastro, vínculos, campanhas, contratos e métricas</p>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Button size="sm" variant="outline" onClick={() => exportSponsorsCsv(sponsors, metricsMap)}>
+              <Download className="h-4 w-4 mr-1" /> Exportar CSV
+            </Button>
             <Button size="sm" variant="outline" onClick={() => { setLinkForm({ sponsor_id: '', user_email: '', company_name: '', contact_name: '', phone: '' }); setLinkDialog(true); }}>
               <Link2 className="h-4 w-4 mr-1" /> Vincular Usuário
             </Button>
@@ -440,7 +566,7 @@ const AdminSponsorsPage = () => {
         )}
 
         {/* ── KPIs ── */}
-        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
           {[
             { icon: Megaphone, label: 'Patrocinadores', value: sponsors.length, sub: `${activeCount} ativos` },
             { icon: Users, label: 'Vínculos', value: contacts.length, sub: 'Usuários associados' },
@@ -448,6 +574,8 @@ const AdminSponsorsPage = () => {
             { icon: FileText, label: 'Contratos', value: contracts.length, sub: `R$ ${revenue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}` },
             { icon: Eye, label: 'Impressões', value: totalImpressions.toLocaleString('pt-BR'), sub: 'Total acumulado' },
             { icon: MousePointerClick, label: 'Cliques', value: totalClicks.toLocaleString('pt-BR'), sub: `${totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(1) : '0'}% CTR` },
+            { icon: Gauge, label: 'Saúde Média', value: `${avgHealthScore}%`, sub: avgHealthScore >= 80 ? 'Saudável' : avgHealthScore >= 50 ? 'Atenção' : 'Crítico' },
+            { icon: AlertTriangle, label: 'Alertas', value: alerts.length, sub: alerts.length > 0 ? 'Pendentes' : 'Nenhum' },
           ].map((kpi, i) => (
             <Card key={i}>
               <CardContent className="pt-3 pb-2 flex items-center gap-2.5">
@@ -530,6 +658,7 @@ const AdminSponsorsPage = () => {
                 const PosIcon = pos?.icon || ImageIcon;
                 const hasContact = contacts.some((c: any) => c.sponsor_id === s.id);
                 const m30 = metricsMap.get(s.id);
+                const health = computeHealthScore(s, m30);
 
                 return (
                   <div key={s.id} className={cn(
@@ -586,6 +715,9 @@ const AdminSponsorsPage = () => {
                           {expired ? '🔴 Expirado' : s.active ? '🟢 Ativo' : '⏸️ Inativo'}
                         </Badge>
                         {hasContact && <Badge variant="outline" className="text-[10px] text-accent"><Link2 className="h-2.5 w-2.5 mr-0.5" /> Vinculado</Badge>}
+                        <Badge variant="outline" className={cn('text-[10px]', health.color)}>
+                          <Gauge className="h-2.5 w-2.5 mr-0.5" /> {health.score}%
+                        </Badge>
                       </div>
 
                       {/* Context info */}
@@ -619,13 +751,16 @@ const AdminSponsorsPage = () => {
 
                     {/* Actions footer */}
                     <div className="border-t border-border px-3 py-1.5 flex items-center gap-1">
+                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={(e) => { e.stopPropagation(); toggleActive.mutate({ id: s.id, active: !s.active }); }}>
+                        <Power className="h-3 w-3" /> {s.active ? 'Off' : 'On'}
+                      </Button>
                       <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => openEdit(s)}>
                         <Pencil className="h-3 w-3" /> Editar
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => {
-                        setLinkForm(p => ({ ...p, sponsor_id: s.id })); setLinkDialog(true);
+                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => {
+                        setNotifForm({ sponsor_id: s.id, title: '', message: '' }); setNotifDialog(true);
                       }}>
-                        <Link2 className="h-3 w-3" /> Vincular
+                        <Bell className="h-3 w-3" />
                       </Button>
                       <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" onClick={() => handleSoftDelete(s.id)}>
                         <Trash2 className="h-3 w-3" />
@@ -1011,8 +1146,26 @@ const AdminSponsorsPage = () => {
                     </div>
                   )}
 
+                  {/* Guaranteed impressions */}
+                  {(() => {
+                    const guaranteed = (s as any).guaranteed_impressions || 0;
+                    const delivered = (s as any).delivered_impressions || 0;
+                    if (guaranteed <= 0) return null;
+                    const pct = Math.min((delivered / guaranteed) * 100, 100);
+                    return (
+                      <div className="rounded-lg border border-border p-3 space-y-1.5">
+                        <h3 className="text-xs font-semibold flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Impressões Garantidas</h3>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{delivered.toLocaleString('pt-BR')} / {guaranteed.toLocaleString('pt-BR')}</span>
+                          <span className="font-medium">{pct.toFixed(1)}%</span>
+                        </div>
+                        <Progress value={pct} className="h-1.5" />
+                      </div>
+                    );
+                  })()}
+
                   {/* Quick actions */}
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-2 pt-2 flex-wrap">
                     <Button size="sm" variant="outline" className="flex-1" onClick={() => { openEdit(s); setDetailSponsor(null); }}>
                       <Pencil className="h-3 w-3 mr-1" /> Editar
                     </Button>
@@ -1021,6 +1174,12 @@ const AdminSponsorsPage = () => {
                     </Button>
                     <Button size="sm" variant="outline" className="flex-1" onClick={() => { setCampaignForm({ sponsor_id: s.id, name: '', description: '', status: 'draft', start_date: '', end_date: '', budget: '' }); setCampaignDialog(true); }}>
                       <TrendingUp className="h-3 w-3 mr-1" /> Campanha
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => { setNotifForm({ sponsor_id: s.id, title: '', message: '' }); setNotifDialog(true); }}>
+                      <Send className="h-3 w-3 mr-1" /> Notificar
+                    </Button>
+                    <Button size="sm" variant={s.active ? 'outline' : 'default'} className="flex-1" onClick={() => { toggleActive.mutate({ id: s.id, active: !s.active }); setDetailSponsor(null); }}>
+                      <Power className="h-3 w-3 mr-1" /> {s.active ? 'Desativar' : 'Ativar'}
                     </Button>
                   </div>
                 </div>
@@ -1138,8 +1297,9 @@ const AdminSponsorsPage = () => {
                 </Popover>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div><Label>Ordem</Label><Input type="number" value={form.display_order} onChange={e => setForm({ ...form, display_order: Number(e.target.value) })} /></div>
+              <div><Label>Impressões Garantidas</Label><Input type="number" value={form.guaranteed_impressions} onChange={e => setForm({ ...form, guaranteed_impressions: Number(e.target.value) })} placeholder="0 = sem garantia" /></div>
               <div className="flex items-end gap-2 pb-0.5"><Switch checked={form.active} onCheckedChange={v => setForm({ ...form, active: v })} /><Label>Ativo</Label></div>
             </div>
             <div className="flex justify-end gap-2">
@@ -1273,6 +1433,22 @@ const AdminSponsorsPage = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ NOTIFICATION DIALOG ═══ */}
+      <Dialog open={notifDialog} onOpenChange={setNotifDialog}>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Send className="h-4 w-4" /> Enviar Notificação ao Patrocinador</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); sendNotification.mutate({ sponsorId: notifForm.sponsor_id, title: notifForm.title, message: notifForm.message }); setNotifDialog(false); }} className="space-y-4">
+            <div><Label>Patrocinador *</Label><SponsorSelect value={notifForm.sponsor_id} onChange={v => setNotifForm(p => ({ ...p, sponsor_id: v }))} /></div>
+            <div><Label>Título *</Label><Input required value={notifForm.title} onChange={e => setNotifForm(p => ({ ...p, title: e.target.value }))} placeholder="Ex: Atualização do seu contrato" /></div>
+            <div><Label>Mensagem *</Label><Textarea required rows={3} value={notifForm.message} onChange={e => setNotifForm(p => ({ ...p, message: e.target.value }))} placeholder="Detalhe da notificação..." /></div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setNotifDialog(false)}>Cancelar</Button>
+              <Button type="submit" disabled={sendNotification.isPending}><Send className="h-4 w-4 mr-1" /> Enviar</Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </AdminLayout>
