@@ -63,7 +63,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
 
   // Subcategories (those with parent_id set)
   const subcategories = useMemo(() => {
-    return categories.filter(c => c.parent_id);
+    return categories.filter(c => c.parent_id && c.count > 0);
   }, [categories]);
 
   // Visible items based on chip filter
@@ -83,7 +83,8 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
 
   // Chips that have at least one subcategory with providers
   const activeChips = useMemo(() => {
-    return macros;
+    const subParentIds = new Set(subcategories.map(s => s.parent_id));
+    return macros.filter(m => subParentIds.has(m.id));
   }, [macros, subcategories]);
 
   return (
@@ -152,13 +153,8 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                     <motion.div key={cat.id} variants={itemVariants}>
                       <Link
                         to={`/categoria/${cat.slug}`}
-                        className={`group relative flex flex-col items-center justify-center gap-2 rounded-2xl bg-card p-3 text-center shadow-[0_4px_6px_-1px_rgb(0_0_0/0.1)] transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-full min-h-[6.5rem] ${cat.count === 0 ? 'opacity-50' : ''}`}
+                        className="group relative flex flex-col items-center justify-center gap-2 rounded-2xl bg-card p-3 text-center shadow-[0_4px_6px_-1px_rgb(0_0_0/0.1)] transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-full min-h-[6.5rem]"
                       >
-                        {cat.count === 0 && (
-                          <span className="absolute top-1 right-1 rounded-full bg-muted px-1.5 py-0.5 text-[0.5rem] font-bold text-muted-foreground">
-                            Em breve
-                          </span>
-                        )}
                         {/* Hover overlay */}
                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500" />
 
