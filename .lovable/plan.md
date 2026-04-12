@@ -1,78 +1,39 @@
 
 
-# Reestruturação Global: Padronização de UI/UX e Tratamento de Dados
+# Análise: Busca por Proximidade e Ordenação Geográfica
 
-## Problema
-Os screenshots mostram: datas cortadas/truncadas na página de vagas, texto transbordando em cards de profissionais, botões de WhatsApp cortados nas laterais, e falta de espaçamento consistente em mobile.
+## Diagnóstico
 
-## Alterações
+Após análise detalhada do código, **o sistema já possui TODAS as funcionalidades solicitadas implementadas e funcionais**:
 
-### 1. Utilitários centralizados de formatação (`src/lib/formatters.ts` - NOVO)
-Criar arquivo com funções reutilizáveis:
-- `formatDate(dateStr)` — usa `Intl.DateTimeFormat('pt-BR')` para datas legíveis
-- `formatCurrency(value)` — usa `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })`
-- `formatDeadline(dateStr)` — formata prazo como "27 de mar. de 2026"
+| Funcionalidade | Status | Onde |
+|---|---|---|
+| Captura de GPS + fallback IP | ✅ Implementado | `useGeoCity.ts` — `requestPreciseLocation()` + ipapi.co + ipwho.is |
+| Cálculo Haversine de distância | ✅ Implementado | `geoDistance.ts` + `geoEngine.ts` |
+| Ordenação por proximidade | ✅ Implementado | `filterAndRankProvidersGrouped()` — sort by `distanceKm` first |
+| Filtro por raio (5/10/30/50/100km) | ✅ Implementado | `GeoLocationChip` com seletor de raio |
+| Badge de distância no card | ✅ Implementado | `ProviderCard` mostra "📍 X km" |
+| Separação Local/Outra região | ✅ Implementado | `GroupedSearchResult` com arrays separados |
+| Fallback por cidade quando sem GPS | ✅ Implementado | `matchesGeoContext` com name matching |
+| Coordenadas nos 150 providers | ✅ 100% preenchido | Verificado no banco de dados |
+| GPS solicitado ao abrir busca | ✅ Implementado | `SearchPage` e `CategoryPage` chamam `requestPreciseLocation()` no mount |
+| Search Intelligence Layer | ✅ Implementado | `searchIntelligence.ts` com detecção de intent geo/serviço/híbrido |
 
-### 2. `src/index.css` — Regras globais adicionais
-- Adicionar `white-space: normal` no `@layer base` para evitar truncamentos indesejados
-- Adicionar regra `.info-row` (componente padronizado de ícone+texto com `display: flex; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap`)
-- Garantir `padding-bottom` no body para não sobrepor MobileBottomNav
+## Por que pode parecer que não funciona
 
-### 3. `src/pages/JobDetailPage.tsx` — Correção de datas e layout
-- Substituir `job.deadline` raw por `formatDate(job.deadline)` 
-- Substituir `new Date(job.created_at).toLocaleDateString('pt-BR')` por `formatDate(job.created_at)`
-- Linha 150: adicionar `white-space: normal` no container de metadados para que datas não sejam cortadas
-- Usar `formatCurrency` no campo de salário quando numérico
-- Sidebar (linha 246): adicionar `flex-wrap` nos botões de compartilhamento para mobile
+O problema mais provável é um destes cenários:
 
-### 4. `src/components/ProviderCard.tsx` — Cards sem truncamento
-- Linha 105: remover `truncate` do nome e substituir por `line-clamp-2 break-words`
-- Linha 121: remover `truncate` do businessName, usar `line-clamp-1 break-words`
-- Linha 89: trocar `p-5` por `p-[1.25rem]`
-- Linha 180: adicionar `flex-wrap` nos botões de ação para que WhatsApp + Ver Perfil não sejam cortados em mobile
-- Texto "Orçamento sem compromisso" (linha 206): garantir visibilidade com `white-space: normal`
+1. **GPS negado pelo navegador** — sem coordenadas precisas, o sistema usa IP (menos preciso)
+2. **Raio padrão de 50km** — pode incluir cidades distantes como Pontal do Paraná (se estiver dentro do raio)
+3. **Cache do navegador** — dados de localização antigos em `localStorage`
 
-### 5. `src/pages/CategoryPage.tsx` — Container e espaçamento
-- Garantir que o container principal tenha `px-4` em mobile para conteúdo não encostar nas bordas
+## Recomendação
 
-### 6. `src/pages/JobsPage.tsx` — Formatação de datas
-- Substituir todas as referências a `timeAgo()` e datas raw por `formatDate()` do novo utilitário
-- Cards de vagas: aplicar `flex-wrap` e `white-space: normal` nos metadados
+Não há alterações de código necessárias. O sistema já está completo. Se você está vendo resultados fora de ordem, sugiro:
 
-### 7. `src/pages/SearchPage.tsx` — Filtros responsivos
-- Container de filtros: garantir `flex-wrap` para não cortar em mobile
+1. **Verificar se o GPS está ativado** — o banner "Ativar GPS" aparece na página de busca
+2. **Reduzir o raio** — de 50km para 10km ou 30km no seletor do `GeoLocationChip`
+3. **Limpar cache** — apagar `localStorage` do navegador para forçar nova detecção
 
-### 8. `src/components/MobileBottomNav.tsx` — Z-index e espaçamento
-- Confirmar `z-50` no nav fixo
-- Adicionar `pb-[4.5rem]` global via CSS para páginas com bottom nav não terem conteúdo sobreposto
-
-### 9. Componente padrão `InfoRow` (`src/components/ui/InfoRow.tsx` - NOVO)
-Componente reutilizável para blocos ícone + texto:
-```tsx
-const InfoRow = ({ icon: Icon, children }) => (
-  <div className="flex items-start gap-[0.5rem] flex-wrap text-sm text-muted-foreground" style={{ whiteSpace: 'normal' }}>
-    <Icon className="h-4 w-4 shrink-0 mt-0.5" />
-    <span className="min-w-0 flex-1">{children}</span>
-  </div>
-);
-```
-Usar em `JobDetailPage` nos campos de localização, prazo, data de publicação, salário, horário.
-
-## Detalhes Técnicos
-- Todas as unidades de padding/margin em `rem` (já parcialmente implementado)
-- `Intl.DateTimeFormat` e `Intl.NumberFormat` nativos do browser, sem dependência externa
-- `line-clamp` via Tailwind (já disponível no projeto) substitui `truncate` para permitir 2+ linhas
-- `flex-wrap: wrap` em todos os containers de botões e metadados para suporte a 320px
-
-## Arquivos modificados/criados
-| Arquivo | Ação |
-|---------|------|
-| `src/lib/formatters.ts` | **Criar** — funções de formatação centralizadas |
-| `src/components/ui/InfoRow.tsx` | **Criar** — componente ícone+texto padronizado |
-| `src/index.css` | Editar — regras globais |
-| `src/pages/JobDetailPage.tsx` | Editar — datas, layout, InfoRow |
-| `src/pages/JobsPage.tsx` | Editar — datas, flex-wrap |
-| `src/components/ProviderCard.tsx` | Editar — truncamento, flex-wrap, rem |
-| `src/pages/CategoryPage.tsx` | Editar — padding mobile |
-| `src/pages/SearchPage.tsx` | Editar — filtros flex-wrap |
+Se quiser, posso investigar um cenário específico (ex: buscar a partir de uma cidade X e ver os resultados) para identificar se há algum bug pontual. Basta me informar a cidade e categoria que está testando.
 
