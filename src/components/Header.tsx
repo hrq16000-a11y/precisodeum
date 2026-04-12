@@ -323,7 +323,7 @@ const Header = () => {
           {isCompact ? (
             <>
               {/* Compact search on mobile */}
-              <form onSubmit={handleCompactSearch} className="flex-1 min-w-0 mr-1">
+              <form onSubmit={(e) => { e.preventDefault(); handleCompactSearch(searchQuery); }} className="flex-1 min-w-0 mr-1">
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
