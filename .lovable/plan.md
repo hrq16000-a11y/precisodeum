@@ -1,74 +1,65 @@
 
 
-# Mobile First — Melhorias de UX
+# RPC de Proximidade com PostGIS + Bairro
 
-## Problemas Identificados
+## Situação Atual
 
-1. **SearchPage: Filtros ocupam muito espaço no mobile** — A sidebar de filtros aparece inteira no topo no mobile, empurrando os resultados para baixo. Deveria ser um bottom sheet / drawer.
-2. **SearchPage: Grid `sm:grid-cols-2` desperdiça espaço** — Em telas 375px os cards ficam em 1 coluna, mas a grid gap de 16px e padding poderiam ser reduzidos.
-3. **ProviderCard: Badges demais em tela pequena** — "Super Perto!", "Atendimento Rápido", "Online", "Outra região", ProfileBadge, RankTier — todos em `flex-wrap` criam até 3 linhas de badges em mobile.
-4. **SearchPage: Botão "Casa→Trabalho" escondido dentro dos filtros** — No mobile os filtros começam fechados, então o botão de rota é invisível.
-5. **CategoryPage: Hero section muito alto no mobile** — `py-12` + ícone 80px + badges + GeoLocationChip consome quase toda a viewport.
-6. **FeaturedProviders: Cards com padding excessivo** — `p-5` no mobile poderia ser `p-4`.
-7. **HeroBanner: CTAs empilhados sem hierarquia visual** — Os dois links de CTA ficam muito pequenos e sem destaque visual no mobile.
-8. **Container padding** — `container` do Tailwind usa padding padrão, mas várias seções adicionam `px-4` manualmente criando inconsistência.
+- **PostGIS ativo** com coluna `geog` + índice GiST na tabela `providers` ✓
+- **Tabela `neighborhoods`** existe mas está **vazia** (0 registros) e **não tem coluna de polígono** (só id, city_id, name, slug)
+- Profissionais já têm campo `neighborhood` (texto) preenchido manualmente
 
-## Alterações
+## Problema com "tabela de polígonos"
 
-### 1. `src/pages/SearchPage.tsx` — Filtros como Drawer no mobile
-- No mobile, converter a sidebar de filtros em um `Drawer` (bottom sheet) ativado por botão flutuante
-- Mover o botão "Casa→Trabalho" para fora dos filtros, visível como chip no topo dos resultados
-- Reduzir padding do container de resultados: `py-6` → `py-4` no mobile
-- Sort rápido: adicionar chips horizontais scrolláveis (Relevância, Mais Perto, Avaliação) acima da grid no mobile em vez de select
+Não existe dados de polígonos de bairros no banco. Criar isso do zero exigiria importar shapefiles do IBGE (~300k setores censitários) ou de fontes como OpenStreetMap — um trabalho pesado e separado.
 
-### 2. `src/components/ProviderCard.tsx` — Layout compacto mobile
-- Reduzir padding: `p-[1.25rem]` → `p-3 sm:p-[1.25rem]`
-- Avatar: `h-14 w-14` → `h-12 w-12 sm:h-14 sm:w-14`
-- Limitar badges visíveis no mobile a 3 (mais relevantes), com "..." overflow
-- Distância + tempo estimado: combinar numa única linha mais compacta
-- Botões de ação: altura reduzida no mobile
+## Solução Prática (2 partes)
 
-### 3. `src/pages/CategoryPage.tsx` — Hero compacto mobile
-- Reduzir padding do hero: `py-12` → `py-6 md:py-12`
-- Ícone da categoria: `h-20 w-20` → `h-14 w-14 md:h-20 md:w-20`
-- Título: `text-3xl` → `text-2xl md:text-3xl`
-- Grid: `gap-4` → `gap-3 sm:gap-4`
+### Parte 1: RPC `nearby_providers` — implementar agora
 
-### 4. `src/components/home/HeroBanner.tsx` — CTA com mais destaque mobile
-- CTA primário: converter em botão com fundo `bg-secondary` no mobile em vez de apenas texto link
-- Reduzir `min-h-[320px]` → `min-h-[280px]` no mobile
-- Título: `text-3xl` → `text-2xl sm:text-3xl`
+Função que recebe coordenadas do usuário e retorna profissionais ordenados por distância, incluindo o bairro do profissional (campo texto existente):
 
-### 5. `src/components/home/FeaturedProviders.tsx` — Grid e padding otimizados
-- Padding dos cards: `p-5` → `p-3.5 sm:p-5`
-- Grid gap: `gap-4` → `gap-3 sm:gap-4`
-- Avatar: `h-16 w-16` → `h-12 w-12 sm:h-16 sm:w-16`
-- Seção: `py-14` → `py-8 md:py-14`
+```sql
+CREATE FUNCTION public.nearby_providers(
+  _lat double precision,
+  _lng double precision,
+  _radius_m integer DEFAULT 50000,  -- 50km padrão
+  _category_slug text DEFAULT NULL,
+  _limit integer DEFAULT 50
+)
+RETURNS TABLE (
+  id uuid, slug text, business_name text,
+  category_name text, category_slug text, category_icon text,
+  city text, state text, neighborhood text,
+  latitude numeric, longitude numeric,
+  distance_m double precision,
+  rating_avg numeric, review_count integer,
+  photo_url text, plan text, featured boolean
+)
+```
 
-### 6. `src/components/home/CategoriesGrid.tsx` — Micro-ajustes
-- Seção: `py-12` → `py-8 md:py-12`
-- Grid `minmax(9rem, 1fr)` → `minmax(5rem, 1fr) sm:minmax(9rem, 1fr)` para 3 colunas em telas 320px
-- Ícone de categoria: `h-14 w-14` → `h-10 w-10 sm:h-14 sm:w-14`
+- Usa `ST_DWithin(geog, point, _radius_m)` para filtro rápido pelo índice GiST
+- Usa `ST_Distance(geog, point)` para distância exata em metros
+- Filtra por categoria opcional
+- Ordena por distância
 
-### 7. `src/components/RouteSearchModal.tsx` — Full screen no mobile
-- Usar `DialogContent` com `className="sm:max-w-md max-h-[90vh]"` e scroll interno
+### Parte 2: Preparar `neighborhoods` para polígonos futuros
+
+Adicionar coluna `geom geometry(MultiPolygon, 4326)` + índice GiST na tabela `neighborhoods`, deixando pronta para importação futura de shapefiles. Criar também uma função auxiliar `get_neighborhood_by_point` que faz `ST_Contains` quando houver dados.
+
+### Parte 3: Integrar no frontend (SeoPage + SearchPage)
+
+Chamar `supabase.rpc('nearby_providers', { _lat, _lng })` em vez de trazer todos os providers e calcular Haversine no client.
 
 ## Arquivos alterados
 
 | Arquivo | Ação |
 |---------|------|
-| `src/pages/SearchPage.tsx` | Filtros como Drawer mobile, chips de sort, padding reduzido |
-| `src/components/ProviderCard.tsx` | Layout compacto: padding, avatar, badges limitados |
-| `src/pages/CategoryPage.tsx` | Hero compacto mobile |
-| `src/components/home/HeroBanner.tsx` | CTA destacado, altura reduzida |
-| `src/components/home/FeaturedProviders.tsx` | Grid e padding otimizados |
-| `src/components/home/CategoriesGrid.tsx` | Grid responsivo para 320px |
-| `src/components/RouteSearchModal.tsx` | Fullscreen mobile |
+| Nova migration | RPC `nearby_providers`, coluna `geom` em `neighborhoods`, função `get_neighborhood_by_point` |
+| `src/pages/SeoPage.tsx` | Usar RPC quando coordenadas disponíveis |
+| `src/pages/SearchPage.tsx` | Usar RPC para sort "Mais Perto" |
 
 ## Impacto
-- Mais conteúdo visível above-the-fold no mobile
-- Filtros não empurram resultados — ficam num drawer
-- Cards mais compactos = menos scroll para encontrar profissionais
-- CTAs maiores = mais conversão mobile
-- Zero breaking changes desktop — todas as mudanças são `sm:` / `md:` condicionais
+- Busca por proximidade passa de O(n) client-side para O(log n) server-side com índice espacial
+- Bairro do profissional já aparece (campo texto existente)
+- Infraestrutura de polígonos fica pronta para importação futura
 
