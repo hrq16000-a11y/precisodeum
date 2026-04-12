@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -27,9 +28,20 @@ const LoginPage = () => {
   const [forgotLoading, setForgotLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, profile, loading: authLoading } = useAuth();
 
   // Get the URL to redirect back to after login
   const from = (location.state as any)?.from || null;
+
+  // If already authenticated, redirect away from login page
+  useEffect(() => {
+    if (authLoading || !user) return;
+    const redirect = async () => {
+      const dest = await getRedirectForProfile(user.id);
+      navigate(dest, { replace: true });
+    };
+    redirect();
+  }, [user, authLoading]);
 
   useSeoHead({ title: 'Entrar', description: 'Faça login na plataforma Preciso de um.', noindex: true });
 
