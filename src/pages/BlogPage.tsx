@@ -77,6 +77,8 @@ const BlogPage = () => {
     canonical: `${SITE_BASE_URL}/blog`,
   });
 
+  if (!blogEnabled) return <Navigate to="/" replace />;
+
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['blog-posts-public'],
     queryFn: async () => {

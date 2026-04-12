@@ -40,6 +40,9 @@ function stripHtmlTags(rawHtml: string): string {
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const blogEnabled = useFeatureEnabled('module_blog');
+
+  if (!blogEnabled) return <Navigate to="/" replace />;
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['blog-post', slug],
