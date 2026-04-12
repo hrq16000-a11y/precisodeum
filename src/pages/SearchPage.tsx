@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -22,10 +22,12 @@ import { useSearchProvidersGrouped, useCategories, useSearchSuggestions, useGeoC
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List } from 'lucide-react';
 import RouteSearchModal, { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchModal';
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+const ProvidersMap = lazy(() => import('@/components/ProvidersMap'));
 
 const ITEMS_PER_PAGE = 12;
 
