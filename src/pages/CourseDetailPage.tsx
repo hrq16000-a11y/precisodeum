@@ -9,13 +9,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, ExternalLink, Award, Clock, GraduationCap,
   BookOpen, Share2, Users, Sparkles, TrendingUp, ChevronRight,
-  CheckCircle2,
+  CheckCircle2, ChevronLeft,
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 const LEVEL_LABELS: Record<string, { label: string; color: string }> = {
   iniciante: { label: 'Iniciante', color: 'bg-success/15 text-success' },
