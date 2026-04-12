@@ -67,7 +67,7 @@ const ConversionTags = ({ reviewCount, responseTime, showMicrocopy = true, compa
       </div>
       {showMicrocopy && (
         <p className="text-[11px] text-muted-foreground">
-          Orçamento sem compromisso. Fale direto com o profissional.
+          Fale direto com o profissional.
         </p>
       )}
     </motion.div>
