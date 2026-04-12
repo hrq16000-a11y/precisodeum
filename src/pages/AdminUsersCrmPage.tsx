@@ -430,9 +430,24 @@ const AdminUsersCrmPage = () => {
             <p className="text-sm text-muted-foreground mt-1">Funil, segmentação, métricas, tags e retenção</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportCsv}>
-              <Download className="h-4 w-4 mr-1" /> Exportar CSV
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-1" /> Exportar <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-1" align="end">
+                <button onClick={exportUsersCsv} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
+                  <Users className="h-4 w-4" /> Usuários (CSV)
+                </button>
+                <button onClick={exportLeadsCsv} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
+                  <Briefcase className="h-4 w-4" /> Leads (CSV)
+                </button>
+                <button onClick={exportMetricsCsv} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
+                  <BarChart3 className="h-4 w-4" /> Métricas (CSV)
+                </button>
+              </PopoverContent>
+            </Popover>
             <Button size="sm" onClick={() => setShowNotifyDialog(true)}>
               <Send className="h-4 w-4 mr-1" /> Enviar Notificação
             </Button>
