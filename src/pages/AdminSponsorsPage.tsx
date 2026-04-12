@@ -1440,7 +1440,7 @@ const AdminSponsorsPage = () => {
       <Dialog open={notifDialog} onOpenChange={setNotifDialog}>
         <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Send className="h-4 w-4" /> Enviar Notificação ao Patrocinador</DialogTitle></DialogHeader>
-          <form onSubmit={e => { e.preventDefault(); sendNotification.mutate(notifForm); setNotifDialog(false); }} className="space-y-4">
+          <form onSubmit={e => { e.preventDefault(); sendNotification.mutate({ sponsorId: notifForm.sponsor_id, title: notifForm.title, message: notifForm.message }); setNotifDialog(false); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={notifForm.sponsor_id} onChange={v => setNotifForm(p => ({ ...p, sponsor_id: v }))} /></div>
             <div><Label>Título *</Label><Input required value={notifForm.title} onChange={e => setNotifForm(p => ({ ...p, title: e.target.value }))} placeholder="Ex: Atualização do seu contrato" /></div>
             <div><Label>Mensagem *</Label><Textarea required rows={3} value={notifForm.message} onChange={e => setNotifForm(p => ({ ...p, message: e.target.value }))} placeholder="Detalhe da notificação..." /></div>
