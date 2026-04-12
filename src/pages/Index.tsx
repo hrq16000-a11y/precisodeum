@@ -41,6 +41,7 @@ const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
 const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
 const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
 const CmsBannersCarousel = lazy(() => import('@/components/home/CmsBannersCarousel'));
+const CoursesPromo = lazy(() => import('@/components/home/CoursesPromo'));
 
 const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
