@@ -3,7 +3,8 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { FileText, Search, Edit2, Trash2 } from 'lucide-react';
+import { FileText, Search, Edit2, Trash2, TrendingUp } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,7 +31,7 @@ const AdminLeadsPage = () => {
     let query = supabase
       .from('leads')
       .select('*, providers(business_name)')
-      .order('created_at', { ascending: false });
+      .order('lead_score', { ascending: false });
 
     if (statusFilter !== 'all') query = query.eq('status', statusFilter);
 
@@ -75,6 +76,25 @@ const AdminLeadsPage = () => {
     if (s === 'contacted') return 'bg-amber-100 text-amber-800';
     if (s === 'converted') return 'bg-green-100 text-green-800';
     return 'bg-muted text-muted-foreground';
+  };
+
+  const scoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600 bg-green-50 border-green-200';
+    if (score >= 60) return 'text-amber-600 bg-amber-50 border-amber-200';
+    if (score >= 40) return 'text-orange-600 bg-orange-50 border-orange-200';
+    return 'text-red-500 bg-red-50 border-red-200';
+  };
+
+  const scoreLabel = (score: number) => {
+    if (score >= 80) return 'Excelente';
+    if (score >= 60) return 'Bom';
+    if (score >= 40) return 'Regular';
+    return 'Baixo';
+  };
+
+  const factorLabels: Record<string, string> = {
+    name: 'Nome', phone: 'Telefone', service: 'Serviço',
+    message: 'Mensagem', provider_plan: 'Plano', recency: 'Recência',
   };
 
   if (loading) return <AdminLayout><p className="p-4 text-muted-foreground">Carregando...</p></AdminLayout>;
@@ -124,6 +144,7 @@ const AdminLeadsPage = () => {
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className="px-3 py-2.5 w-8"></th>
+              <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Score</th>
               <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Cliente</th>
               <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden sm:table-cell">Telefone</th>
               <th className="px-3 py-2.5 text-left font-medium text-muted-foreground hidden md:table-cell">Serviço</th>
@@ -138,6 +159,25 @@ const AdminLeadsPage = () => {
               <tr key={l.id} className="border-b border-border bg-card hover:bg-muted/30 transition-colors">
                 <td className="px-3 py-2.5">
                   <SelectionCheckbox checked={bulk.selectedIds.has(l.id)} onCheckedChange={() => bulk.toggleSelection(l.id)} />
+                </td>
+                <td className="px-3 py-2.5">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold cursor-default ${scoreColor(l.lead_score || 0)}`}>
+                        <TrendingUp className="h-3 w-3" />
+                        {l.lead_score || 0}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="text-xs max-w-[200px]">
+                      <p className="font-bold mb-1">{scoreLabel(l.lead_score || 0)}</p>
+                      {l.score_factors && typeof l.score_factors === 'object' && Object.entries(l.score_factors).map(([k, v]) => (
+                        <div key={k} className="flex justify-between gap-3">
+                          <span>{factorLabels[k] || k}</span>
+                          <span className="font-mono">{String(v)}</span>
+                        </div>
+                      ))}
+                    </TooltipContent>
+                  </Tooltip>
                 </td>
                 <td className="px-3 py-2.5 font-medium text-foreground truncate max-w-[150px]">{l.client_name}</td>
                 <td className="px-3 py-2.5 hidden sm:table-cell text-muted-foreground text-xs">{l.phone}</td>
@@ -162,7 +202,7 @@ const AdminLeadsPage = () => {
               </tr>
             ))}
             {paginated.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Nenhum lead encontrado</td></tr>
+              <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Nenhum lead encontrado</td></tr>
             )}
           </tbody>
         </table>

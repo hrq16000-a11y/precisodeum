@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2 } from 'lucide-react';
+import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { whatsappLink } from '@/lib/whatsapp';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,7 +44,7 @@ const DashboardLeadsPage = () => {
     supabase.from('leads')
       .select('*')
       .eq('provider_id', provider.id)
-      .order('created_at', { ascending: false })
+      .order('lead_score', { ascending: false })
       .then(({ data }) => { if (data) setLeads(data); });
   }, [provider]);
 
@@ -130,7 +130,19 @@ const DashboardLeadsPage = () => {
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-semibold text-foreground">{lead.client_name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-foreground">{lead.client_name}</p>
+                  {lead.lead_score != null && (
+                    <span className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0 text-[10px] font-bold ${
+                      lead.lead_score >= 80 ? 'text-green-600 bg-green-50 border-green-200' :
+                      lead.lead_score >= 60 ? 'text-amber-600 bg-amber-50 border-amber-200' :
+                      lead.lead_score >= 40 ? 'text-orange-600 bg-orange-50 border-orange-200' :
+                      'text-red-500 bg-red-50 border-red-200'
+                    }`}>
+                      <TrendingUp className="h-2.5 w-2.5" />{lead.lead_score}
+                    </span>
+                  )}
+                </div>
                 {lead.service_needed && <p className="text-xs text-accent font-medium">{lead.service_needed}</p>}
                 {lead.message && <p className="mt-1 text-xs text-muted-foreground">{lead.message}</p>}
               </div>
