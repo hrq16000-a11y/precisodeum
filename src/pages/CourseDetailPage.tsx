@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
+import { type SponsorFull } from '@/hooks/useSponsors';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, ExternalLink, Award, Clock, GraduationCap,
