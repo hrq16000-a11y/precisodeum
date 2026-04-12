@@ -127,8 +127,70 @@ const AdminMenuPage = () => {
     }
   };
 
+  const [dragItemId, setDragItemId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [dragLocation, setDragLocation] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, item: any) => {
+    setDragItemId(item.id);
+    setDragLocation(item.menu_location);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, item: any) => {
+    e.preventDefault();
+    if (item.menu_location !== dragLocation) return;
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverId(item.id);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetItem: any) => {
+    e.preventDefault();
+    setDragOverId(null);
+    setDragItemId(null);
+    setDragLocation(null);
+    if (!dragItemId || dragItemId === targetItem.id) return;
+    if (targetItem.menu_location !== dragLocation) return;
+
+    const locationItems = items
+      .filter(i => i.menu_location === targetItem.menu_location)
+      .sort((a, b) => a.display_order - b.display_order);
+
+    const fromIdx = locationItems.findIndex(i => i.id === dragItemId);
+    const toIdx = locationItems.findIndex(i => i.id === targetItem.id);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    const reordered = [...locationItems];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+
+    const updates = reordered.map((item, idx) =>
+      supabase.from('menu_items').update({ display_order: idx } as any).eq('id', item.id)
+    );
+    await Promise.all(updates);
+    toast.success('Ordem atualizada!');
+    fetchItems();
+  };
+
+  const handleDragEnd = () => {
+    setDragItemId(null);
+    setDragOverId(null);
+    setDragLocation(null);
+  };
+
   const moveItem = async (item: any, direction: number) => {
-    await supabase.from('menu_items').update({ display_order: item.display_order + direction } as any).eq('id', item.id);
+    const locationItems = items
+      .filter(i => i.menu_location === item.menu_location)
+      .sort((a, b) => a.display_order - b.display_order);
+    const idx = locationItems.findIndex(i => i.id === item.id);
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= locationItems.length) return;
+
+    const updates = [
+      supabase.from('menu_items').update({ display_order: locationItems[targetIdx].display_order } as any).eq('id', item.id),
+      supabase.from('menu_items').update({ display_order: item.display_order } as any).eq('id', locationItems[targetIdx].id),
+    ];
+    await Promise.all(updates);
     fetchItems();
   };
 
