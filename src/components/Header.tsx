@@ -204,8 +204,8 @@ const Header = () => {
       ref={headerRef}
       className={`sticky top-0 z-50 border-b border-border transition-all duration-300 ease-in-out ${
         isCompact
-          ? 'bg-card/90 backdrop-blur-lg supports-[backdrop-filter]:bg-card/80 shadow-md'
-          : 'bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 shadow-sm'
+          ? 'bg-card backdrop-blur-lg shadow-md'
+          : 'bg-card shadow-none'
       }`}
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
