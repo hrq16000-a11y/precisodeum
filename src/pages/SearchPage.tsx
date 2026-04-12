@@ -151,7 +151,9 @@ const SearchPage = () => {
   const filteredOutOfState = useMemo(() => applyClientFilters(outOfStateProviders), [applyClientFilters, outOfStateProviders]);
 
   const fullyFiltered = [...filteredLocal, ...filteredNearby, ...filteredOutOfState];
-  const nearestDistanceKm = filteredLocal.length > 0 ? filteredLocal[0].distanceKm : (filteredNearby.length > 0 ? filteredNearby[0].distanceKm : undefined);
+  const nearestFiltered = filteredLocal.length > 0 ? filteredLocal[0] : (filteredNearby.length > 0 ? filteredNearby[0] : undefined);
+  const nearestDistanceKm = nearestFiltered?.distanceKm;
+  const nearestCity = nearestFiltered?.city;
   const totalDisplay = filteredLocal.length + filteredNearby.length + (showOutOfState ? filteredOutOfState.length : 0);
 
   const activeFilterCount = [selectedCategory, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter !== 'all' ? 'x' : '', minRating > 0 ? 'x' : ''].filter(Boolean).length;
@@ -540,6 +542,7 @@ const SearchPage = () => {
                 stateName={geoState || undefined}
                 resultCount={fullyFiltered.length}
                 nearestDistanceKm={nearestDistanceKm}
+                nearestCity={nearestCity}
               />
             )}
 
@@ -550,6 +553,7 @@ const SearchPage = () => {
                 stateName={geoState || undefined}
                 resultCount={filteredLocal.length}
                 nearestDistanceKm={nearestDistanceKm}
+                nearestCity={nearestCity}
               />
             )}
 

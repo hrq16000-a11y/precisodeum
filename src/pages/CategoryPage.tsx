@@ -124,7 +124,9 @@ const CategoryPage = () => {
     return { localProviders: [] as DbProvider[], nearbyProviders: nearby as DbProvider[], outOfStateProviders: outOfState as DbProvider[], isFallback: true, expansionLevel: 'all' as const };
   }, [allProviders, geoCity, geoState, userLat, userLon, radiusKm]);
 
-  const nearestDistanceKm = localProviders.length > 0 ? (localProviders[0] as any)._dist : (nearbyProviders.length > 0 ? (nearbyProviders[0] as any)._dist : undefined);
+  const nearestProvider = localProviders.length > 0 ? localProviders[0] : (nearbyProviders.length > 0 ? nearbyProviders[0] : undefined);
+  const nearestDistanceKm = (nearestProvider as any)?._dist;
+  const nearestCity = nearestProvider?.city;
   const totalDisplay = localProviders.length + nearbyProviders.length + (showOutOfState ? outOfStateProviders.length : 0);
 
   useSeoHead({
@@ -279,6 +281,7 @@ const CategoryPage = () => {
             stateName={geoState || undefined}
             resultCount={allProviders.length}
             nearestDistanceKm={nearestDistanceKm}
+            nearestCity={nearestCity}
           />
         )}
 
@@ -289,6 +292,7 @@ const CategoryPage = () => {
             stateName={geoState || undefined}
             resultCount={localProviders.length}
             nearestDistanceKm={nearestDistanceKm}
+            nearestCity={nearestCity}
           />
         )}
 
