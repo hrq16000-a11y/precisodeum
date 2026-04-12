@@ -138,7 +138,7 @@ const HeroBanner = () => {
   }, [displayedImage]);
 
   return (
-    <section className="relative min-h-[280px] overflow-visible py-6 sm:min-h-[320px] sm:py-8 md:min-h-[480px] md:overflow-hidden md:py-20">
+    <section className="relative h-[280px] overflow-visible py-6 sm:h-[320px] sm:py-8 md:min-h-[480px] md:overflow-hidden md:py-20">
       {/* Current background image */}
       <img
         src={displayedImage}
