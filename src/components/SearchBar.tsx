@@ -280,7 +280,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
     return (
       <div ref={wrapperRef} className="relative">
         <form onSubmit={handleSearch} className={`flex items-center gap-2 rounded-xl border bg-card p-1.5 transition-all ${searchError ? 'border-destructive' : isFocused ? 'border-accent/50 shadow-md' : 'border-border'}`}>
-          <div className="flex flex-1 items-center gap-2 px-2">
+          <div className="flex flex-1 flex-wrap items-center gap-2 px-2">
             <Search className={`h-4 w-4 transition-colors ${isFocused ? 'text-accent' : 'text-muted-foreground'}`} />
             <input
               ref={inputRef}

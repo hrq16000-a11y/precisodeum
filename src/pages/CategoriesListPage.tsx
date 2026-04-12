@@ -75,15 +75,16 @@ const CategoriesListPage = () => {
 
       <div className="container flex-1 py-8">
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-[0.75rem]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}>
             {Array.from({ length: 12 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 rounded-xl" />
+              <Skeleton key={i} className="min-h-[3.5rem] rounded-xl" />
             ))}
           </div>
         ) : (
           <>
             <motion.div
-              className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4"
+              className="grid gap-[0.75rem]"
+              style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}
               initial="hidden"
               animate="show"
               variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
@@ -96,14 +97,14 @@ const CategoriesListPage = () => {
                 >
                   <Link
                     to={`/categoria/${cat.slug}`}
-                    className="group relative flex items-center gap-2.5 rounded-xl border border-border bg-card p-3 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30 overflow-hidden min-h-[56px]"
+                    className="group relative flex items-center gap-[0.625rem] rounded-xl border border-border bg-card p-[0.75rem] shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30 overflow-hidden min-h-[3.5rem]"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/[0.03] to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
-                    <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                    <span className="relative flex min-h-[2.5rem] min-w-[2.5rem] h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                       <CategoryIcon icon={cat.icon} size={22} className="text-primary" />
                     </span>
                     <div className="relative min-w-0 flex-1">
-                      <span className="text-xs sm:text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2 break-words">
+                      <span className="text-xs sm:text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2 break-words" style={{ hyphens: 'auto' }}>
                         {cat.name}
                       </span>
                     </div>
@@ -132,17 +133,17 @@ const CategoriesListPage = () => {
                   </span>
                   <div className="h-px flex-1 bg-border" />
                 </div>
-                <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid gap-[0.75rem]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}>
                   {withoutProviders.map((cat) => (
                     <div
                       key={cat.id}
-                      className="flex items-center gap-2.5 rounded-xl border border-border bg-card/50 p-3 opacity-50 cursor-default min-h-[56px]"
+                      className="flex items-center gap-[0.625rem] rounded-xl border border-border bg-card/50 p-[0.75rem] opacity-50 cursor-default min-h-[3.5rem]"
                     >
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                      <span className="flex min-h-[2.5rem] min-w-[2.5rem] h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
                         <CategoryIcon icon={cat.icon} size={22} className="text-muted-foreground" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <span className="text-xs sm:text-sm font-semibold leading-tight text-muted-foreground line-clamp-2 break-words">
+                        <span className="text-xs sm:text-sm font-semibold leading-tight text-muted-foreground line-clamp-2 break-words" style={{ hyphens: 'auto' }}>
                           {cat.name}
                         </span>
                         <p className="text-[10px] leading-tight text-muted-foreground/70 mt-0.5">

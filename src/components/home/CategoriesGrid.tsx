@@ -73,14 +73,14 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid gap-[0.75rem]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}>
             {Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} className="h-28 rounded-2xl" />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="grid gap-[0.75rem]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}>
               {visible.map((cat, i) => (
                 <div
                   key={cat.id}
@@ -89,7 +89,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                 >
                   <Link
                     to={`/categoria/${cat.slug}`}
-                    className="group relative flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-accent/40 overflow-hidden text-center min-h-[120px]"
+                    className="group relative flex flex-col items-center gap-[0.75rem] rounded-2xl border border-border bg-card p-[1.25rem] shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-accent/40 overflow-hidden text-center min-h-[7.5rem]"
                   >
                     {/* Hover gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500 rounded-2xl" />
@@ -97,11 +97,11 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                     {/* Accent bar top */}
                     <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-accent/0 to-transparent group-hover:via-accent transition-all duration-500" />
 
-                    <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 group-hover:bg-sky-100 transition-all duration-300">
+                    <span className="relative flex min-h-[3.5rem] min-w-[3.5rem] h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 group-hover:bg-sky-100 transition-all duration-300">
                       <CategoryIcon icon={cat.icon} size={28} />
                     </span>
                     <div className="relative w-full">
-                      <span className="block text-xs font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words">
+                      <span className="block text-xs font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words" style={{ hyphens: 'auto' }}>
                         {cat.name}
                       </span>
                     </div>
