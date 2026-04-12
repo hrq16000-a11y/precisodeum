@@ -14,6 +14,7 @@ import { Plus, Pencil, Trash2, Eye, Rss, Loader2, Search, AlertTriangle, ToggleL
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import ImageUploadField from '@/components/ImageUploadField';
