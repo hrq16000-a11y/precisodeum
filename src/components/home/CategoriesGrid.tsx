@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, SearchX, Trophy } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
@@ -64,15 +63,7 @@ const CategoriesViewAllButton = () => {
   );
 };
 
-const containerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.04 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 16, scale: 0.97 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] } },
-};
+// CSS-only animations — no framer-motion needed for this grid
 
 const CategoriesGrid = ({ categories, isLoading }: Props) => {
   const [activeChip, setActiveChip] = useState(ALL_CHIP);
@@ -176,15 +167,10 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {topCategories.map(cat => (
-                    <motion.div
-                      key={cat.id}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4 }}
-                    >
+                  {topCategories.map((cat, i) => (
+                    <div key={cat.id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}>
                       <CategoryCard cat={cat} featured />
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -220,42 +206,31 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
             )}
 
             {/* Grid */}
-            <AnimatePresence mode="wait">
-              {visible.length > 0 ? (
-                <motion.div
-                  key={activeChip}
-                  className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="show"
+            {visible.length > 0 ? (
+              <div
+                key={activeChip}
+                className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr"
+              >
+                {visible.map((cat, i) => (
+                  <div key={cat.id} className="animate-fade-in" style={{ animationDelay: `${i * 40}ms`, animationFillMode: 'both' }}>
+                    <CategoryCard cat={cat} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center animate-fade-in">
+                <SearchX className="h-12 w-12 text-muted-foreground/40 mb-3" />
+                <p className="text-sm font-semibold text-muted-foreground">Nenhuma categoria encontrada</p>
+                <a
+                  href="https://wa.me/5500000000000?text=Gostaria%20de%20sugerir%20uma%20categoria"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 rounded-full bg-accent px-4 py-2 text-xs font-bold text-accent-foreground transition-transform hover:scale-105"
                 >
-                  {visible.map(cat => (
-                    <motion.div key={cat.id} variants={itemVariants}>
-                      <CategoryCard cat={cat} />
-                    </motion.div>
-                  ))}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="empty"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  className="flex flex-col items-center justify-center py-12 text-center"
-                >
-                  <SearchX className="h-12 w-12 text-muted-foreground/40 mb-3" />
-                  <p className="text-sm font-semibold text-muted-foreground">Nenhuma categoria encontrada</p>
-                  <a
-                    href="https://wa.me/5500000000000?text=Gostaria%20de%20sugerir%20uma%20categoria"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 rounded-full bg-accent px-4 py-2 text-xs font-bold text-accent-foreground transition-transform hover:scale-105"
-                  >
-                    Sugerir Categoria
-                  </a>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  Sugerir Categoria
+                </a>
+              </div>
+            )}
 
             <CategoriesViewAllButton />
           </>
