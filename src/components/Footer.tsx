@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import { useMemo, lazy, Suspense } from 'react';
-import { useSettingValue } from '@/hooks/useSiteSettings';
+import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 
@@ -9,7 +9,7 @@ const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
 const SponsorAd = lazy(() => importWithRetry(() => import('@/components/SponsorAd')));
 const PwaFooterInstall = lazy(() => importWithRetry(() => import('@/components/PwaFooterInstall')));
 
-const fallbackProfissionais = [
+const fallbackProfissionaisAll = [
   { label: 'Cadastro', url: '/cadastro' },
   { label: 'Login', url: '/login' },
   { label: 'Dashboard', url: '/dashboard' },

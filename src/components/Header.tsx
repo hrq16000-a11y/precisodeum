@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSettingValue } from '@/hooks/useSiteSettings';
+import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
 const LazyNotificationBell = lazy(() => importWithRetry(() => import('@/components/NotificationCenter').then(m => ({ default: m.NotificationBell }))));
 const NotificationBell = (props: any) => (
@@ -154,6 +154,9 @@ const Header = () => {
   }, [searchOpen]);
 
   const isCompact = isCompactEnabled && scrolled;
+  const blogEnabled = useFeatureEnabled('module_blog');
+
+  const blogFilter = (items: any[]) => blogEnabled ? items : items.filter((l: any) => !l.url?.includes('/blog'));
 
   const fallbackHeaderLinks = [
     { label: 'Buscar', url: '/buscar' },
@@ -173,8 +176,8 @@ const Header = () => {
     { label: 'Seja Profissional', url: '/cadastro' },
   ];
 
-  const navLinks = headerItems.length > 0 ? headerItems : fallbackHeaderLinks.map((l, i) => ({ ...l, id: `fb-${i}`, icon: '', open_in_new_tab: false, parent_id: null, display_order: i, active: true, menu_location: 'header' }));
-  const mobileNavLinks = mobileItems.length > 0 ? mobileItems : (headerItems.length > 0 ? headerItems : fallbackMobileLinks.map((l, i) => ({ ...l, id: `fbm-${i}`, icon: '', open_in_new_tab: false, parent_id: null, display_order: i, active: true, menu_location: 'mobile' })));
+  const navLinks = blogFilter(headerItems.length > 0 ? headerItems : fallbackHeaderLinks.map((l, i) => ({ ...l, id: `fb-${i}`, icon: '', open_in_new_tab: false, parent_id: null, display_order: i, active: true, menu_location: 'header' })));
+  const mobileNavLinks = blogFilter(mobileItems.length > 0 ? mobileItems : (headerItems.length > 0 ? headerItems : fallbackMobileLinks.map((l, i) => ({ ...l, id: `fbm-${i}`, icon: '', open_in_new_tab: false, parent_id: null, display_order: i, active: true, menu_location: 'mobile' }))));
 
   const isActiveLink = (url: string) => location.pathname === url;
 

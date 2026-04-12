@@ -1,18 +1,22 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus, FolderPlus, Megaphone, FileText, Image, Settings, Zap } from 'lucide-react';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 
-const actions = [
-  { icon: UserPlus, label: 'Novo Usuário', path: '/admin/usuarios', color: 'text-blue-500 bg-blue-500/10' },
-  { icon: FolderPlus, label: 'Nova Categoria', path: '/admin/categorias', color: 'text-emerald-500 bg-emerald-500/10' },
-  { icon: Megaphone, label: 'Nova Vaga', path: '/admin/vagas', color: 'text-purple-500 bg-purple-500/10' },
-  { icon: FileText, label: 'Novo Post', path: '/admin/blog', color: 'text-amber-500 bg-amber-500/10' },
-  { icon: Image, label: 'Mídia', path: '/admin/midia', color: 'text-pink-500 bg-pink-500/10' },
-  { icon: Settings, label: 'Configurações', path: '/admin/configuracoes', color: 'text-slate-500 bg-slate-500/10' },
+const allActions = [
+  { icon: UserPlus, label: 'Novo Usuário', path: '/admin/usuarios', color: 'text-blue-500 bg-blue-500/10', module: null },
+  { icon: FolderPlus, label: 'Nova Categoria', path: '/admin/categorias', color: 'text-emerald-500 bg-emerald-500/10', module: null },
+  { icon: Megaphone, label: 'Nova Vaga', path: '/admin/vagas', color: 'text-purple-500 bg-purple-500/10', module: null },
+  { icon: FileText, label: 'Novo Post', path: '/admin/blog', color: 'text-amber-500 bg-amber-500/10', module: 'module_blog' },
+  { icon: Image, label: 'Mídia', path: '/admin/midia', color: 'text-pink-500 bg-pink-500/10', module: null },
+  { icon: Settings, label: 'Configurações', path: '/admin/configuracoes', color: 'text-slate-500 bg-slate-500/10', module: null },
 ];
 
 const AdminQuickActions = () => {
   const navigate = useNavigate();
+  const blogEnabled = useFeatureEnabled('module_blog');
+  const actions = useMemo(() => allActions.filter(a => !a.module || (a.module === 'module_blog' && blogEnabled)), [blogEnabled]);
 
   return (
     <motion.div

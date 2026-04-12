@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, ArrowLeft, ExternalLink, User, Newspaper } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { Navigate } from 'react-router-dom';
 
 /** Strip HTML tags and decode common entities */
 function stripHtmlTags(rawHtml: string): string {
