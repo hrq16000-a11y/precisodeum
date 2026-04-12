@@ -132,6 +132,18 @@ const AdminBlogPage = () => {
 
   return (
     <AdminLayout>
+      {!blogEnabled && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Módulo Blog desabilitado</p>
+            <p className="text-xs text-amber-700 dark:text-amber-300">O blog está invisível para os visitantes. Você pode habilitá-lo em Módulos do Sistema.</p>
+          </div>
+          <Button variant="outline" size="sm" className="shrink-0 gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-100" onClick={() => navigate('/admin/modulos')}>
+            <ToggleRight className="h-4 w-4" /> Habilitar
+          </Button>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Blog / Notícias</h1>
