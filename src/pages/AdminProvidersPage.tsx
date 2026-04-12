@@ -182,7 +182,7 @@ const AdminProvidersPage = () => {
     const cats = new Map<string, string>();
     allProviders.forEach(p => {
       const cat = p.categories as any;
-      if (cat?.name) cats.set(cat.name, `${cat.icon || ''} ${cat.name}`);
+      if (cat?.name) cats.set(cat.name, cat.name);
     });
     return Array.from(cats.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [allProviders]);
