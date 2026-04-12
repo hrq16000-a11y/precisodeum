@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useHeroBanners, type HeroBannerData } from '@/hooks/useHeroBanners';
 
@@ -42,32 +41,24 @@ const CmsBannersCarousel = () => {
       />
 
       <div className={`container relative z-10 flex flex-col ${alignClass}`}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={banner.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="font-display text-2xl font-extrabold tracking-tight text-primary-foreground sm:text-3xl md:text-4xl drop-shadow-sm">
-              {banner.title}
-            </h2>
-            {banner.subtitle && (
-              <p className="mt-3 text-sm text-primary-foreground/80 md:text-base max-w-2xl leading-relaxed">
-                {banner.subtitle}
-              </p>
-            )}
-            {banner.cta_text && (
-              <Link
-                to={banner.cta_link || '/cadastro'}
-                className="mt-4 inline-block rounded-lg bg-secondary px-6 py-2.5 text-sm font-semibold text-secondary-foreground shadow-md hover:opacity-90 transition-opacity"
-              >
-                {banner.cta_text}
-              </Link>
-            )}
-          </motion.div>
-        </AnimatePresence>
+        <div key={banner.id} className="animate-fade-in">
+          <h2 className="font-display text-2xl font-extrabold tracking-tight text-primary-foreground sm:text-3xl md:text-4xl drop-shadow-sm">
+            {banner.title}
+          </h2>
+          {banner.subtitle && (
+            <p className="mt-3 text-sm text-primary-foreground/80 md:text-base max-w-2xl leading-relaxed">
+              {banner.subtitle}
+            </p>
+          )}
+          {banner.cta_text && (
+            <Link
+              to={banner.cta_link || '/cadastro'}
+              className="mt-4 inline-block rounded-lg bg-secondary px-6 py-2.5 text-sm font-semibold text-secondary-foreground shadow-md hover:opacity-90 transition-opacity"
+            >
+              {banner.cta_text}
+            </Link>
+          )}
+        </div>
 
         {banners.length > 1 && (
           <div className="mt-5 flex gap-2">
