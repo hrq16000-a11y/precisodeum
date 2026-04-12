@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, SearchX } from 'lucide-react';
+import { ChevronRight, SearchX, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,6 +21,28 @@ interface Props {
 }
 
 const ALL_CHIP = '__all__';
+
+/** Emoji map for macro categories */
+const MACRO_EMOJI: Record<string, string> = {
+  'servicos-domesticos': '🏠',
+  'servicos-tecnicos': '🛠️',
+  'construcao-e-reforma': '🧱',
+  'saude-e-estetica': '🩺',
+  'transporte-e-logistica': '🚚',
+  'alimentacao-e-eventos': '🍽️',
+  'negocios-e-consultoria': '💼',
+};
+
+const getMacroEmoji = (slug: string, name: string): string => {
+  if (MACRO_EMOJI[slug]) return MACRO_EMOJI[slug];
+  const n = name.toLowerCase();
+  if (n.includes('urgên') || n.includes('urgenc')) return '🔥';
+  if (n.includes('reform')) return '🏠';
+  if (n.includes('consert')) return '🛠️';
+  if (n.includes('saúde') || n.includes('saude') || n.includes('estétic')) return '🩺';
+  if (n.includes('serviço') || n.includes('servico')) return '⚖️';
+  return '📋';
+};
 
 /** Full-width CTA button — text & bg from admin */
 const CategoriesViewAllButton = () => {
@@ -66,10 +88,14 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
     return categories.filter(c => c.parent_id && c.count > 0);
   }, [categories]);
 
+  // Top 4 categories by count
+  const topCategories = useMemo(() => {
+    return [...subcategories].sort((a, b) => b.count - a.count).slice(0, 4);
+  }, [subcategories]);
+
   // Visible items based on chip filter
   const visible = useMemo(() => {
     if (activeChip === ALL_CHIP) {
-      // Show subcategories with providers, shuffled
       const arr = [...subcategories];
       for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -87,6 +113,36 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
     return macros.filter(m => subParentIds.has(m.id));
   }, [macros, subcategories]);
 
+  const CategoryCard = ({ cat, featured = false }: { cat: CategoryItem; featured?: boolean }) => (
+    <Link
+      to={`/categoria/${cat.slug}`}
+      className={`group relative flex flex-col items-center justify-center gap-2 rounded-3xl bg-card text-center shadow-[0_2px_12px_-2px_rgb(0_0_0/0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgb(0_0_0/0.12)] hover:-translate-y-1 h-full ${
+        featured ? 'min-h-[8rem] p-4' : 'min-h-[6.5rem] p-3'
+      }`}
+    >
+      {/* Badge de quantidade */}
+      {cat.count > 0 && (
+        <span className="absolute -top-1.5 -right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-card">
+          {cat.count > 99 ? '99+' : cat.count}
+        </span>
+      )}
+
+      {/* Hover overlay */}
+      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500" />
+
+      <span className={`relative flex items-center justify-center rounded-2xl bg-accent/10 group-hover:bg-accent/20 transition-colors duration-300 ${
+        featured ? 'h-14 w-14' : 'h-12 w-12'
+      }`}>
+        <CategoryIcon icon={cat.icon} size={featured ? 30 : 26} className="text-accent" />
+      </span>
+      <span className={`relative font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words w-full ${
+        featured ? 'text-xs' : 'text-[0.6875rem]'
+      }`} style={{ hyphens: 'auto' }}>
+        {cat.name}
+      </span>
+    </Link>
+  );
+
   return (
     <section className="py-8 md:py-12">
       <div className="container">
@@ -103,37 +159,61 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {Array.from({ length: 9 }).map((_, i) => (
-              <Skeleton key={i} className="aspect-square rounded-2xl" />
+              <Skeleton key={i} className="aspect-square rounded-3xl" />
             ))}
           </div>
         ) : (
           <>
-            {/* Filter Chips */}
+            {/* Top Categories */}
+            {topCategories.length >= 4 && activeChip === ALL_CHIP && (
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <Trophy className="h-4 w-4 text-accent" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Mais Buscadas
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {topCategories.map(cat => (
+                    <motion.div
+                      key={cat.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      <CategoryCard cat={cat} featured />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Filter Chips with Emojis */}
             {activeChips.length > 0 && (
               <div className="mb-4 flex gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap md:justify-center">
                 <button
                   onClick={() => setActiveChip(ALL_CHIP)}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                  className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition-all duration-200 ${
                     activeChip === ALL_CHIP
                       ? 'bg-accent text-accent-foreground shadow-sm'
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
-                  Todos
+                  ✨ Todos
                 </button>
                 {activeChips.map(macro => (
                   <button
                     key={macro.id}
                     onClick={() => setActiveChip(macro.id)}
-                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
+                    className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
                       activeChip === macro.id
                         ? 'bg-accent text-accent-foreground shadow-sm'
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
                     }`}
                   >
-                    {macro.name}
+                    {getMacroEmoji(macro.slug, macro.name)} {macro.name}
                   </button>
                 ))}
               </div>
@@ -144,27 +224,14 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
               {visible.length > 0 ? (
                 <motion.div
                   key={activeChip}
-                  className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 auto-rows-fr"
+                  className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr"
                   variants={containerVariants}
                   initial="hidden"
                   animate="show"
                 >
                   {visible.map(cat => (
                     <motion.div key={cat.id} variants={itemVariants}>
-                      <Link
-                        to={`/categoria/${cat.slug}`}
-                        className="group relative flex flex-col items-center justify-center gap-2 rounded-2xl bg-card p-3 text-center shadow-[0_4px_6px_-1px_rgb(0_0_0/0.1)] transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-full min-h-[6.5rem]"
-                      >
-                        {/* Hover overlay */}
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500" />
-
-                        <span className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 group-hover:bg-accent/20 transition-colors duration-300">
-                          <CategoryIcon icon={cat.icon} size={26} className="text-accent" />
-                        </span>
-                        <span className="relative text-[0.6875rem] font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words w-full" style={{ hyphens: 'auto' }}>
-                          {cat.name}
-                        </span>
-                      </Link>
+                      <CategoryCard cat={cat} />
                     </motion.div>
                   ))}
                 </motion.div>

@@ -11,6 +11,7 @@ import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import GeoPromptBanner from '@/components/GeoPromptBanner';
 import PaginationControls from '@/components/PaginationControls';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
+import PriceEstimateWidget from '@/components/home/PriceEstimateWidget';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -498,6 +499,16 @@ const SearchPage = () => {
           {/* Results */}
           <div className="flex-1">
             <GeoPromptBanner />
+
+            {/* Price Estimate Widget */}
+            {selectedCategory && (() => {
+              const cat = categories.find(c => c.slug === selectedCategory);
+              return cat ? (
+                <div className="mb-4">
+                  <PriceEstimateWidget categorySlug={cat.slug} categoryName={cat.name} city={effectiveCity} />
+                </div>
+              ) : null;
+            })()}
             {(categoriesError || searchError) && (
               <div className="mb-4 rounded-xl border border-border bg-card p-3 sm:p-4 text-sm text-muted-foreground">
                 Falha temporária ao carregar dados.{' '}
