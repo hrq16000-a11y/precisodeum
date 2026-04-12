@@ -533,6 +533,9 @@ const AdminSponsorsPage = () => {
             <p className="text-sm text-muted-foreground">Painel completo: cadastro, vínculos, campanhas, contratos e métricas</p>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Button size="sm" variant="outline" onClick={() => exportSponsorsCsv(sponsors, metricsMap)}>
+              <Download className="h-4 w-4 mr-1" /> Exportar CSV
+            </Button>
             <Button size="sm" variant="outline" onClick={() => { setLinkForm({ sponsor_id: '', user_email: '', company_name: '', contact_name: '', phone: '' }); setLinkDialog(true); }}>
               <Link2 className="h-4 w-4 mr-1" /> Vincular Usuário
             </Button>
