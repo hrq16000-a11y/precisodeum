@@ -1,47 +1,21 @@
 
 
-# Modernização do Grid de Categorias — Home
+# Exibir Todas as Categorias na Home (incluindo sem cadastros)
 
-## O que será feito
+## Problema
+O `CategoriesGrid` filtra subcategorias com `c.count > 0` (linha 66) e só mostra chips de macro-categorias que têm subcategorias com prestadores (linha 86-87). Isso esconde categorias vazias tanto no grid quanto nas guias.
 
-### 1. Grid Responsivo Inteligente
-- Mobile: `grid-cols-3` fixo para cards compactos com `equal height` via CSS grid `auto-rows: 1fr`
-- Tablet+: manter `auto-fit` com `minmax(6rem, 1fr)`
-- Cards sem `border` — usar apenas `shadow-[0_4px_6px_-1px_rgb(0_0_0/0.1)]`
+## Alterações
 
-### 2. Cards Modernos
-- Remover bordas, usar sombra sutil
-- Ícone protagonista: aumentar para `h-12 w-12` no mobile (era `h-10 w-10`), com `size={26}`
-- Texto `text-[0.6875rem]` compacto, `line-clamp-2`, `hyphens: auto`
-- Hover: escala sutil + sombra elevada
+### `src/components/home/CategoriesGrid.tsx`
 
-### 3. Chips de Filtro Rápido
-- Linha horizontal scrollável acima do grid com os 7 macro-grupos do banco (categorias com `parent_id IS NULL`)
-- Chip "Todos" selecionado por padrão
-- Ao clicar num chip, filtra as subcategorias visíveis daquele grupo
-- Estilo: `rounded-full bg-muted text-xs px-3 py-1.5`, ativo: `bg-accent text-white`
+1. **Subcategorias**: remover o filtro `c.count > 0` na linha 66 — mostrar todas as subcategorias independente de terem prestadores
+2. **Chips**: remover o filtro na linha 86-87 — mostrar todas as macro-categorias como chips, não apenas as que têm subcategorias com providers
+3. **Visual diferenciado**: categorias sem prestadores (`count === 0`) terão opacidade reduzida e um badge "Em breve" para indicar que ainda não há profissionais, mas continuam clicáveis
 
-### 4. Animação de Entrada
-- Usar `framer-motion` com stagger fade-in + slide-up (já existe padrão no projeto via `StaggeredList`)
-- Cada card entra com delay escalonado de 0.04s
-
-### 5. Empty State
-- Se o filtro por chip não retorna resultados: ilustração com ícone `SearchX` + texto "Nenhuma categoria encontrada" + botão "Sugerir Categoria" (link para WhatsApp ou formulário)
-
-## Arquivos alterados
-
-| Arquivo | Ação |
-|---------|------|
-| `src/components/home/CategoriesGrid.tsx` | Reescrever: chips de macro-categorias, grid 3-col mobile, cards sem borda, empty state, framer-motion stagger |
-
-## Dados
-- Macro-categorias vêm do mesmo array `categories` (filtrar `parent_id IS NULL`)
-- Subcategorias: filtrar `parent_id === selectedMacro.id`
-- O hook `useCategoriesWithCount` já traz todas as categorias — preciso verificar se traz `parent_id`
-
-## Impacto
-- Visual premium tipo app nativo
-- Filtro rápido melhora descoberta de serviços
-- Zero breaking changes — apenas componente da home alterado
-- Animações consistentes com o design system existente
+| Linha | De | Para |
+|-------|-----|------|
+| 66 | `categories.filter(c => c.parent_id && c.count > 0)` | `categories.filter(c => c.parent_id)` |
+| 86-87 | `macros.filter(m => subParentIds.has(m.id))` | `macros` (sem filtro) |
+| 156 | Card sempre com mesma opacidade | Se `count === 0`, adicionar `opacity-50` e badge "Em breve" |
 
