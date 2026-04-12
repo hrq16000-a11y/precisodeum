@@ -383,9 +383,14 @@ const AdminSponsorCrmPage = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">CRM Patrocinadores</h1>
-          <p className="text-sm text-muted-foreground">Gestão completa de relacionamento comercial</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">CRM Patrocinadores</h1>
+            <p className="text-sm text-muted-foreground">Gestão completa de relacionamento comercial</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={handleCrmExport} className="gap-1.5">
+            <Download className="h-4 w-4" /> Exportar Relatório
+          </Button>
         </div>
 
         {/* Alerts */}
