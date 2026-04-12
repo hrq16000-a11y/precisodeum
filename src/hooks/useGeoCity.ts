@@ -352,7 +352,14 @@ export function useGeoCity(): GeoStore {
           setGeoState({ city, state, temp, latitude, longitude, precise: true });
           resolve(true);
         },
-        () => resolve(false),
+        () => {
+          // GPS denied — force IP fallback immediately if no coordinates
+          if (geoState.latitude === null) {
+            fetchStarted = false;
+            startFetchIfNeeded();
+          }
+          resolve(false);
+        },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
       );
     });

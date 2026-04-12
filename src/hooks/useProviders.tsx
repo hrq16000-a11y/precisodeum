@@ -544,6 +544,10 @@ export function filterAndRankProvidersGrouped(
     }
   }
 
+  if (import.meta.env.DEV) {
+    console.debug('[GeoAudit] Query:', { query, city, state, userLat, userLon, radiusKm, resultsBefore: results.length });
+  }
+
   // Enrich with geo + relevance scores
   const enriched = results.map((p) => {
     const isLocal = (intent !== 'SERVICE_ONLY' && (geoContext.cityNorm || geoContext.stateNorm))
@@ -558,6 +562,10 @@ export function filterAndRankProvidersGrouped(
     if (userLat != null && userLon != null && Number.isFinite(userLat) && Number.isFinite(userLon)
         && p.latitude != null && p.longitude != null && Number.isFinite(p.latitude) && Number.isFinite(p.longitude)) {
       distanceKm = calculateDistanceKmSimple(userLat, userLon, p.latitude, p.longitude);
+    }
+
+    if (import.meta.env.DEV) {
+      console.debug(`[GeoAudit] Provider: ${p.name} (${p.latitude}, ${p.longitude}) | Dist: ${distanceKm === Infinity ? 'N/A' : distanceKm.toFixed(1) + ' km'} | Local: ${isLocal}`);
     }
 
     return { p, isLocal, scored, distanceKm };

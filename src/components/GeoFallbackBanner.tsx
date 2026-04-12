@@ -9,17 +9,20 @@ interface Props {
   onClearCity?: () => void;
   radiusKm?: number;
   onExpandRadius?: (km: number) => void;
+  nearestDistanceKm?: number;
 }
 
-const GeoFallbackBanner = ({ originalCity, expansionLevel, stateName, resultCount, onClearCity, radiusKm, onExpandRadius }: Props) => {
+const GeoFallbackBanner = ({ originalCity, expansionLevel, stateName, resultCount, onClearCity, radiusKm, onExpandRadius, nearestDistanceKm }: Props) => {
   const levelText =
     expansionLevel === 'state'
       ? `no estado${stateName ? ` de ${stateName}` : ''}`
       : 'em todo o Brasil';
 
-  const title = radiusKm
-    ? `Não encontramos resultados em até ${radiusKm} km de ${originalCity}`
-    : `Não encontramos resultados em ${originalCity}`;
+  const title = nearestDistanceKm && nearestDistanceKm > 50
+    ? `O profissional mais próximo está a ${Math.round(nearestDistanceKm)} km de você`
+    : radiusKm
+      ? `Não encontramos resultados em até ${radiusKm} km de ${originalCity}`
+      : `Não encontramos resultados em ${originalCity}`;
 
   return (
     <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4">
