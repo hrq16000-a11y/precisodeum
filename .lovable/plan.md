@@ -1,21 +1,19 @@
 
-
-# Exibir Todas as Categorias na Home (incluindo sem cadastros)
+# Ocultar Categorias Sem Cadastros na Home
 
 ## Problema
-O `CategoriesGrid` filtra subcategorias com `c.count > 0` (linha 66) e só mostra chips de macro-categorias que têm subcategorias com prestadores (linha 86-87). Isso esconde categorias vazias tanto no grid quanto nas guias.
+Após a última alteração, o grid da home exibe todas as subcategorias, incluindo as que têm `count === 0`. O usuário quer voltar ao comportamento anterior: só mostrar categorias com prestadores ativos.
 
-## Alterações
+## Alterações em `src/components/home/CategoriesGrid.tsx`
 
-### `src/components/home/CategoriesGrid.tsx`
+1. **Linha 66** — Filtrar subcategorias: adicionar `&& c.count > 0`
+2. **Linha 86** — Filtrar chips: mostrar apenas macros que têm pelo menos uma subcategoria com providers
+3. **Remover** o badge "Em breve" e a classe `opacity-50` dos cards (já não haverá cards com count 0)
 
-1. **Subcategorias**: remover o filtro `c.count > 0` na linha 66 — mostrar todas as subcategorias independente de terem prestadores
-2. **Chips**: remover o filtro na linha 86-87 — mostrar todas as macro-categorias como chips, não apenas as que têm subcategorias com providers
-3. **Visual diferenciado**: categorias sem prestadores (`count === 0`) terão opacidade reduzida e um badge "Em breve" para indicar que ainda não há profissionais, mas continuam clicáveis
+### De → Para
 
-| Linha | De | Para |
-|-------|-----|------|
-| 66 | `categories.filter(c => c.parent_id && c.count > 0)` | `categories.filter(c => c.parent_id)` |
-| 86-87 | `macros.filter(m => subParentIds.has(m.id))` | `macros` (sem filtro) |
-| 156 | Card sempre com mesma opacidade | Se `count === 0`, adicionar `opacity-50` e badge "Em breve" |
-
+| Local | Atual | Novo |
+|-------|-------|------|
+| Subcategorias (L66) | `categories.filter(c => c.parent_id)` | `categories.filter(c => c.parent_id && c.count > 0)` |
+| Chips (L85-87) | `return macros` | `const subParentIds = new Set(subcategories.map(s => s.parent_id)); return macros.filter(m => subParentIds.has(m.id));` |
+| Card (L156~) | Lógica de `opacity-50` + badge "Em breve" | Remover ambos (não necessários) |
