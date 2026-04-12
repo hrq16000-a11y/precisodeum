@@ -598,6 +598,18 @@ const SearchPage = () => {
               </div>
             )}
 
+            {/* Map View */}
+            {viewMode === 'map' && !isLoading && (
+              <Suspense fallback={<Skeleton className="h-[60vh] rounded-xl" />}>
+                <ProvidersMap
+                  providers={fullyFiltered}
+                  userLat={userLat}
+                  userLon={userLon}
+                  className="mb-4"
+                />
+              </Suspense>
+            )}
+
             {isLoading ? (
               <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                 {Array.from({ length: 4 }).map((_, i) => (
