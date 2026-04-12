@@ -333,7 +333,11 @@ const DashboardPage = () => {
         <AvatarReminder avatarUrl={profile?.avatar_url} />
       </div>
 
-      {/* Quick Actions Bar */}
+      {/* Upsell Banner */}
+      <div className="mt-4">
+        <UpsellBanner />
+      </div>
+
       <QuickStatsBar pendingLeads={pendingLeads} providerSlug={provider?.slug} />
 
       {/* Action Queue — what to do next */}
