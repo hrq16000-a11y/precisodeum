@@ -55,7 +55,7 @@ const CoursesPage = () => {
   });
 
   const filtered = useMemo(() => {
-    return courses.filter((c: any) => {
+    const matched = courses.filter((c: any) => {
       if (category !== 'all' && c.category !== category) return false;
       if (provider !== 'all' && c.provider !== provider) return false;
       if (search) {
@@ -69,6 +69,13 @@ const CoursesPage = () => {
       }
       return true;
     });
+    // Shuffle (Fisher-Yates)
+    const arr = [...matched];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   }, [courses, search, category, provider]);
 
   const featuredCourses = filtered.filter((c: any) => c.featured);
