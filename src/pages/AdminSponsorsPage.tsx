@@ -441,7 +441,7 @@ const AdminSponsorsPage = () => {
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
       const { error } = await supabase.from('sponsors').update({ active }).eq('id', id);
       if (error) throw error;
-      await logAuditAction({ action: active ? 'activate' : 'deactivate', resource_type: 'sponsor', resource_id: id });
+      await logAuditAction({ action: active ? 'reactivate' : 'suspend', resource_type: 'sponsor', resource_id: id });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-sponsors'] }); toast({ title: 'Status atualizado' }); },
   });
