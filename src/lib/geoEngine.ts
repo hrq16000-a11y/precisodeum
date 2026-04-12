@@ -407,7 +407,7 @@ function tryMetro(queryNorm: string, detectedUF?: string): StrategyResult | null
 function tryCityIndex(queryNorm: string, detectedUF?: string): StrategyResult | null {
   const coords = getCityCoords(queryNorm);
   if (coords) {
-    const entry = _config.features.ibgeIndex ? lookupCity(queryNorm, detectedUF) : null;
+    const entry = _config.features.ibgeIndex && _lookupCity ? _lookupCity(queryNorm, detectedUF) : null;
     return {
       city: queryNorm,
       state: entry?.state || (detectedUF?.toUpperCase() || ''),
@@ -417,7 +417,7 @@ function tryCityIndex(queryNorm: string, detectedUF?: string): StrategyResult | 
     };
   }
   if (_config.features.ibgeIndex && isRecognizedCity(queryNorm)) {
-    const entry = lookupCity(queryNorm, detectedUF);
+    const entry = _lookupCity ? _lookupCity(queryNorm, detectedUF) : null;
     return {
       city: queryNorm,
       state: entry?.state || (detectedUF?.toUpperCase() || ''),
