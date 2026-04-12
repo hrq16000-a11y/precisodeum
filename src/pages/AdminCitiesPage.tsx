@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Plus, Trash2, Pencil, Search, Upload, Download, MapPin, Filter,
-  Globe, Building2, BarChart3, FileText, CheckCircle2, AlertTriangle, Map
+  Building2, BarChart3, FileText, CheckCircle2, Map
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -30,36 +30,19 @@ const BRAZILIAN_STATES = [
   'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA',
   'PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'
 ];
-
-const CAPITALS: { name: string; slug: string; state: string }[] = [
-  { name: 'Rio Branco', slug: 'rio-branco', state: 'AC' },
-  { name: 'Maceió', slug: 'maceio', state: 'AL' },
-  { name: 'Manaus', slug: 'manaus', state: 'AM' },
-  { name: 'Macapá', slug: 'macapa', state: 'AP' },
-  { name: 'Salvador', slug: 'salvador', state: 'BA' },
-  { name: 'Fortaleza', slug: 'fortaleza', state: 'CE' },
-  { name: 'Brasília', slug: 'brasilia', state: 'DF' },
-  { name: 'Vitória', slug: 'vitoria', state: 'ES' },
-  { name: 'Goiânia', slug: 'goiania', state: 'GO' },
-  { name: 'São Luís', slug: 'sao-luis', state: 'MA' },
-  { name: 'Belo Horizonte', slug: 'belo-horizonte', state: 'MG' },
-  { name: 'Campo Grande', slug: 'campo-grande', state: 'MS' },
-  { name: 'Cuiabá', slug: 'cuiaba', state: 'MT' },
-  { name: 'Belém', slug: 'belem', state: 'PA' },
-  { name: 'João Pessoa', slug: 'joao-pessoa', state: 'PB' },
-  { name: 'Recife', slug: 'recife', state: 'PE' },
-  { name: 'Teresina', slug: 'teresina', state: 'PI' },
-  { name: 'Curitiba', slug: 'curitiba', state: 'PR' },
-  { name: 'Rio de Janeiro', slug: 'rio-de-janeiro', state: 'RJ' },
-  { name: 'Natal', slug: 'natal', state: 'RN' },
-  { name: 'Porto Velho', slug: 'porto-velho', state: 'RO' },
-  { name: 'Boa Vista', slug: 'boa-vista', state: 'RR' },
-  { name: 'Porto Alegre', slug: 'porto-alegre', state: 'RS' },
-  { name: 'Florianópolis', slug: 'florianopolis', state: 'SC' },
-  { name: 'Aracaju', slug: 'aracaju', state: 'SE' },
-  { name: 'São Paulo', slug: 'sao-paulo', state: 'SP' },
-  { name: 'Palmas', slug: 'palmas', state: 'TO' },
-];
+const CAPITAL_SLUGS = new Set([
+  'rio-branco','maceio','manaus','macapa','salvador','fortaleza','brasilia','vitoria',
+  'goiania','sao-luis','belo-horizonte','campo-grande','cuiaba','belem','joao-pessoa',
+  'recife','teresina','curitiba','rio-de-janeiro','natal','porto-velho','boa-vista',
+  'porto-alegre','florianopolis','aracaju','sao-paulo','palmas'
+]);
+const CAPITAL_UF: Record<string, string> = {
+  AC:'rio-branco',AL:'maceio',AM:'manaus',AP:'macapa',BA:'salvador',CE:'fortaleza',
+  DF:'brasilia',ES:'vitoria',GO:'goiania',MA:'sao-luis',MG:'belo-horizonte',
+  MS:'campo-grande',MT:'cuiaba',PA:'belem',PB:'joao-pessoa',PE:'recife',PI:'teresina',
+  PR:'curitiba',RJ:'rio-de-janeiro',RN:'natal',RO:'porto-velho',RR:'boa-vista',
+  RS:'porto-alegre',SC:'florianopolis',SE:'aracaju',SP:'sao-paulo',TO:'palmas'
+};
 
 interface City { id: string; name: string; slug: string; state: string; created_at: string; }
 
@@ -301,10 +284,6 @@ const AdminCitiesPage = () => {
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [cities]);
 
-  const missingCapitals = useMemo(() => {
-    const existingSlugs = new Set(cities.map(c => c.slug));
-    return CAPITALS.filter(cap => !existingSlugs.has(cap.slug));
-  }, [cities]);
 
   // ── Auto-slug ──
   const autoSlug = (name: string) => name.toLowerCase()
@@ -343,19 +322,6 @@ const AdminCitiesPage = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const seedCapitalsMutation = useMutation({
-    mutationFn: async () => {
-      if (missingCapitals.length === 0) throw new Error('Todas as capitais já estão cadastradas');
-      const { error } = await supabase.from('cities').insert(missingCapitals);
-      if (error) throw error;
-      await logAuditAction({ action: 'seed_capitals', resource_type: 'city', details: { count: missingCapitals.length } });
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-cities'] });
-      toast.success(`${missingCapitals.length} capitais importadas!`);
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
 
   const importMutation = useMutation({
     mutationFn: async () => {
@@ -419,13 +385,6 @@ const AdminCitiesPage = () => {
             <Button size="sm" variant="outline" onClick={() => setImportDialog(true)}>
               <Upload className="h-4 w-4 mr-1" /> Importar
             </Button>
-            {missingCapitals.length > 0 && (
-              <Button size="sm" variant="outline" onClick={() => seedCapitalsMutation.mutate()}
-                disabled={seedCapitalsMutation.isPending}
-                className="text-accent border-accent/30">
-                <Globe className="h-4 w-4 mr-1" /> +{missingCapitals.length} Capitais
-              </Button>
-            )}
             <Button size="sm" onClick={openNew}>
               <Plus className="h-4 w-4 mr-1" /> Nova Cidade
             </Button>
@@ -433,26 +392,12 @@ const AdminCitiesPage = () => {
         </div>
 
         {/* Alerts */}
-        {missingCapitals.length > 0 && (
-          <Card className="border-amber-300/40 bg-amber-50/30 dark:bg-amber-950/10">
-            <CardContent className="py-3 flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-foreground">{missingCapitals.length} capital(is) faltando</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {missingCapitals.slice(0, 6).map(c => c.name).join(', ')}
-                  {missingCapitals.length > 6 && ` e mais ${missingCapitals.length - 6}`}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* KPIs */}
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
           {[
             { icon: MapPin, label: 'Cidades', value: cities.length, sub: `${stateGroups.length} estados` },
-            { icon: Building2, label: 'Capitais', value: CAPITALS.length - missingCapitals.length, sub: `de ${CAPITALS.length}` },
+            { icon: Building2, label: 'Capitais', value: 27, sub: 'indexadas' },
             { icon: Map, label: 'Bairros', value: Object.values(neighborhoodCounts).reduce((a: number, b: number) => a + b, 0), sub: 'cadastrados' },
             { icon: BarChart3, label: 'Com Prestadores', value: Object.keys(providerCityCounts).length, sub: 'cidades ativas' },
           ].map((kpi, i) => (
@@ -578,7 +523,7 @@ const AdminCitiesPage = () => {
                       {paginated.map(c => {
                         const nCount = neighborhoodCounts[c.id] || 0;
                         const pCount = providerCityCounts[c.name] || 0;
-                        const isCapital = CAPITALS.some(cap => cap.slug === c.slug);
+                        const isCapital = CAPITAL_SLUGS.has(c.slug);
                         return (
                           <tr key={c.id} className={cn(
                             'transition-colors hover:bg-muted/20',
@@ -633,7 +578,7 @@ const AdminCitiesPage = () => {
             <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {BRAZILIAN_STATES.map(uf => {
                 const count = stateGroups.find(([s]) => s === uf)?.[1] || 0;
-                const hasCapital = CAPITALS.some(cap => cap.state === uf && cities.some(c => c.slug === cap.slug));
+                const hasCapital = CAPITAL_UF[uf] ? cities.some(c => c.slug === CAPITAL_UF[uf]) : false;
                 return (
                   <div key={uf} className={cn(
                     'rounded-xl border px-3 py-2.5 transition-all cursor-pointer hover:-translate-y-0.5',
