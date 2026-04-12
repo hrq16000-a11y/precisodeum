@@ -1,53 +1,54 @@
+# Revolução UI/UX — Busca Preditiva e Grid Premium
+
+## Escopo
+
+Transformar o grid de categorias e a barra de busca em uma experiência de alta conversão, com badges de quantidade, chips com emojis, seção "Top Categories", busca por problema com NLP, dropdown de buscas em alta, estimativa de preço, WhatsApp contextual e skeleton loading aprimorado.
+
+## O que será implementado
+
+### 1. Grid de Categorias Premium (CategoriesGrid.tsx)
+
+- **Cards modernos**: Cantos 24px, fundo branco, sombra suave (já parcialmente implementado — refinar)
+- **Seção "Top Categories"**: Grid destacado com as 4 categorias mais populares (maior count) com ícones maiores, antes do grid principal
+
+### 2. Barra de Busca Inteligente (SearchBar.tsx)
+
+- **Busca por problema**: Já existe o `naturalLanguageMap.ts` — integrar o resultado NLP diretamente no dropdown com um card visual ("Entendemos: você precisa de um Encanador 🔧")
+- **Dropdown "Buscas em Alta"**: Já implementado — aprimorar com ícone Lucide-React de 🔥 e badge "Popular" mais visível
+- **Sugestão contextual**: Ao detectar NLP match, mostrar card destacado no topo do dropdown
+
+### 3. Estimativa de Preço (novo componente)
+
+- **PriceEstimateWidget**: Card flutuante na SearchPage que exibe "Faixa de preço estimada para [Categoria] em [Cidade]: R$ X - R$ Y"
+- **Lógica**: Tabela `price_estimates` com faixas por categoria (seed com dados altos) ou cálculo simples baseado em médias altas hardcoded por categoria
+- **Abordagem simples**: Mapa estático de faixas de preço por slug de categoria (sem tabela extra inicialmente)
+
+### 4. WhatsApp Smart-Link (ProviderCard + CategoryCard)
+
+- **Mensagem contextual**: Já implementado em `whatsapp.ts` com `buildSmartMessage` — garantir que todos os cards usem essa função
+- **Botão WhatsApp no card de categoria**: Se houver profissionais com `is_online = true` dentro de 5km, mostrar botão "WhatsApp Rápido" no card
+
+### 5. Performance Visual
+
+- **Skeleton loading**: Já implementado — refinar com skeleton no formato exato dos novos cards
+- **Contador de confiança**: O `ActiveProvidersCounter` já existe — reposicionar abaixo da busca no hero
+
+## Arquivos a criar/modificar
 
 
-# Ações em Massa e Aprovação Automática Sincronizada no Painel Admin
+| Arquivo                                       | Ação                                                  |
+| --------------------------------------------- | ----------------------------------------------------- |
+| `src/components/home/CategoriesGrid.tsx`      | Redesign com badges, top categories, chips com emojis |
+| `src/components/SearchBar.tsx`                | Integrar NLP match visual no dropdown                 |
+| `src/components/home/PriceEstimateWidget.tsx` | Novo — card de estimativa de preço                    |
+| `src/lib/priceEstimates.ts`                   | Novo — mapa de faixas de preço por categoria          |
+| `src/pages/SearchPage.tsx`                    | Adicionar PriceEstimateWidget                         |
+| `src/components/CategoryCard.tsx`             | Adicionar badge de quantidade                         |
+| `src/pages/CategoriesListPage.tsx`            | Adicionar badge de quantidade nos cards               |
 
-## Problema
-O painel já tem seleção individual + bulk actions, mas falta um botão rápido "Aprovar Todos Pendentes" sem precisar selecionar um a um. O toggle de aprovação automática está nas configurações gerais mas não é visível/acessível diretamente na página de prestadores.
 
-## Solução
+**NLP no dropdown**: Usar `matchNaturalLanguage(query)` do mapa existente. Se match, renderizar um card destacado no topo: "Entendemos: você precisa de um **{categoria}** → Ver profissionais".
 
-### 1. Botão "Aprovar Todos Pendentes" no header da página
-Adicionar botão no topo (ao lado de "Exportar CSV") que aprova todos os prestadores pendentes com cidade/estado preenchidos de uma vez, com confirmação via AlertDialog.
+**Estimativa de preço**: Mapa estático `Record<string, {min: number, max: number}>` com ~15 categorias principais. Exibido como card sutil na SearchPage quando há match de categoria.
 
-### 2. Toggle de Aprovação Automática inline
-Exibir o toggle `auto_approve_providers` diretamente na página de prestadores (acima dos cards), sincronizado com `site_settings`. O admin pode ligar/desligar sem ir à página de configurações.
-
-### 3. Botão "Rejeitar Todos Pendentes"
-Adicionar também opção de rejeitar todos pendentes em massa.
-
-## Alterações
-
-| Arquivo | O que muda |
-|---------|-----------|
-| `src/pages/AdminProvidersPage.tsx` | Adicionar botões "Aprovar Todos" e "Rejeitar Todos" no header; toggle inline de auto-approve sincronizado com `site_settings`; funções `approveAllPending` e `rejectAllPending` com confirmação |
-
-## Lógica
-
-```typescript
-// Aprovar todos pendentes com cidade/estado
-const approveAllPending = async () => {
-  const pendingIds = allProviders
-    .filter(p => p.status === 'pending' && p.city && p.state)
-    .map(p => p.id);
-  
-  await supabase.from('providers')
-    .update({ status: 'approved' })
-    .in('id', pendingIds);
-  
-  await logAuditAction({ action: 'bulk_active', resource_type: 'provider', details: { count: pendingIds.length } });
-  fetchProviders();
-};
-
-// Toggle auto-approve sincronizado
-const [autoApprove, setAutoApprove] = useState(false);
-// Buscar valor atual de site_settings ao carregar
-// Ao mudar toggle → update site_settings + toast
-```
-
-## Resultado
-- "Aprovar Todos" aprova instantaneamente todos os pendentes qualificados (com cidade/estado)
-- Toggle de aprovação automática visível e funcional direto na página de prestadores
-- Todas as ações registradas no audit_log
-- Interface 100% sincronizada com o banco
-
+**Chips com emojis**: Mapeamento emoji Lucide-React por macro-categoria baseado no nome/slug existente.
