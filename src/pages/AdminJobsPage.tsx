@@ -239,6 +239,9 @@ const AdminJobsPage = () => {
     setEditJob({ _new: true });
     setIsCreating(true);
     setEditForm({ ...emptyForm });
+    setPasteText('');
+    setDetectedFields([]);
+    setDialogTab('paste');
   };
 
   const generateSlug = (title: string, city: string) => {
