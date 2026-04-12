@@ -1,19 +1,39 @@
 
-# Ocultar Categorias Sem Cadastros na Home
 
-## Problema
-Após a última alteração, o grid da home exibe todas as subcategorias, incluindo as que têm `count === 0`. O usuário quer voltar ao comportamento anterior: só mostrar categorias com prestadores ativos.
+# Fix: Header Sticky Não Funciona ao Rolar
 
-## Alterações em `src/components/home/CategoriesGrid.tsx`
+## Causa Raiz
 
-1. **Linha 66** — Filtrar subcategorias: adicionar `&& c.count > 0`
-2. **Linha 86** — Filtrar chips: mostrar apenas macros que têm pelo menos uma subcategoria com providers
-3. **Remover** o badge "Em breve" e a classe `opacity-50` dos cards (já não haverá cards com count 0)
+A regra `overflow-x: hidden` aplicada ao `html` e `body` em `src/index.css` (linha 92-94) **quebra o `position: sticky`** na maioria dos navegadores. Quando `overflow-x: hidden` está no `html`, o navegador cria um novo contexto de rolagem que impede o sticky de funcionar.
 
-### De → Para
+## Solução
 
-| Local | Atual | Novo |
-|-------|-------|------|
-| Subcategorias (L66) | `categories.filter(c => c.parent_id)` | `categories.filter(c => c.parent_id && c.count > 0)` |
-| Chips (L85-87) | `return macros` | `const subParentIds = new Set(subcategories.map(s => s.parent_id)); return macros.filter(m => subParentIds.has(m.id));` |
-| Card (L156~) | Lógica de `opacity-50` + badge "Em breve" | Remover ambos (não necessários) |
+### `src/index.css`
+
+Remover `overflow-x: hidden` do `html` e manter apenas no `body`. Isso preserva a proteção contra scroll horizontal sem quebrar o sticky:
+
+```css
+/* De: */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Para: */
+body {
+  overflow-x: clip;
+}
+```
+
+Usar `overflow-x: clip` no `body` em vez de `hidden` — `clip` previne scroll horizontal mas **não cria um novo contexto de rolagem**, preservando o sticky do Header.
+
+## Arquivo alterado
+
+| Arquivo | Ação |
+|---------|------|
+| `src/index.css` | Trocar `overflow-x: hidden` em html,body por `overflow-x: clip` apenas no body |
+
+## Impacto
+- Header sticky funciona corretamente em todos os navegadores
+- Sem scroll horizontal indesejado
+- Zero breaking changes
+
