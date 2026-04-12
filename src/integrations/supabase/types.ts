@@ -474,6 +474,69 @@ export type Database = {
         }
         Relationships: []
       }
+      courses: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          description: string
+          display_order: number
+          duration: string
+          featured: boolean
+          has_certificate: boolean
+          icon: string
+          id: string
+          image_url: string | null
+          level: string
+          provider: string
+          provider_logo_url: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string
+          display_order?: number
+          duration?: string
+          featured?: boolean
+          has_certificate?: boolean
+          icon?: string
+          id?: string
+          image_url?: string | null
+          level?: string
+          provider?: string
+          provider_logo_url?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          url?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string
+          display_order?: number
+          duration?: string
+          featured?: boolean
+          has_certificate?: boolean
+          icon?: string
+          id?: string
+          image_url?: string | null
+          level?: string
+          provider?: string
+          provider_logo_url?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           active: boolean
