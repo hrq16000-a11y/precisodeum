@@ -32,7 +32,75 @@ const BENEFITS = [
   'Material complementar incluso',
 ];
 
-const CourseDetailPage = () => {
+/** Rotating single-banner carousel for top sponsor slot */
+const TopBannerCarousel = ({ sponsors }: { sponsors: SponsorFull[] }) => {
+  const [idx, setIdx] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
+
+  const next = useCallback(() => setIdx(i => (i + 1) % sponsors.length), [sponsors.length]);
+
+  useEffect(() => {
+    if (sponsors.length <= 1) return;
+    timerRef.current = setInterval(next, 5000);
+    return () => clearInterval(timerRef.current);
+  }, [sponsors.length, next]);
+
+  const s = sponsors[idx];
+  if (!s) return null;
+
+  return (
+    <div className="relative mb-6 rounded-xl overflow-hidden group">
+      <AnimatePresence mode="wait">
+        <motion.a
+          key={s.id}
+          href={s.link_url || s.external_link}
+          target="_blank"
+          rel="noopener noreferrer sponsored"
+          className="block"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -40 }}
+          transition={{ duration: 0.4 }}
+        >
+          <img
+            src={s.image_url || s.logo_url}
+            alt={s.title}
+            className="w-full h-auto rounded-xl object-cover max-h-28"
+            loading="lazy"
+          />
+        </motion.a>
+      </AnimatePresence>
+
+      {sponsors.length > 1 && (
+        <>
+          <button
+            onClick={() => { clearInterval(timerRef.current); setIdx(i => (i - 1 + sponsors.length) % sponsors.length); }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-card/70 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <ChevronLeft className="h-4 w-4 text-foreground" />
+          </button>
+          <button
+            onClick={() => { clearInterval(timerRef.current); next(); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-card/70 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <ChevronRight className="h-4 w-4 text-foreground" />
+          </button>
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {sponsors.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => { clearInterval(timerRef.current); setIdx(i); }}
+                className={`h-1.5 rounded-full transition-all ${i === idx ? 'w-5 bg-accent' : 'w-1.5 bg-card/60'}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+
   const { courseId } = useParams<{ courseId: string }>();
 
   const { data: course, isLoading } = useQuery({
