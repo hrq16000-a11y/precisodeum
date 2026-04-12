@@ -1079,9 +1079,11 @@ export type Database = {
           client_name: string
           created_at: string
           id: string
+          lead_score: number
           message: string | null
           phone: string
           provider_id: string
+          score_factors: Json | null
           service_needed: string | null
           status: string
           user_id: string | null
@@ -1091,9 +1093,11 @@ export type Database = {
           client_name: string
           created_at?: string
           id?: string
+          lead_score?: number
           message?: string | null
           phone: string
           provider_id: string
+          score_factors?: Json | null
           service_needed?: string | null
           status?: string
           user_id?: string | null
@@ -1103,9 +1107,11 @@ export type Database = {
           client_name?: string
           created_at?: string
           id?: string
+          lead_score?: number
           message?: string | null
           phone?: string
           provider_id?: string
+          score_factors?: Json | null
           service_needed?: string | null
           status?: string
           user_id?: string | null
