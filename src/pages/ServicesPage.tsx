@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, DollarSign, ArrowRight, Sparkles, Filter } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -181,8 +182,8 @@ const ServicesPage = () => {
                       <span className="absolute inset-0 bg-gradient-to-br from-transparent to-transparent group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500" />
 
                       <div className="relative flex items-start gap-4">
-                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-2xl transition-transform duration-300 group-hover:scale-110">
-                          {s.icon}
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 transition-transform duration-300 group-hover:scale-110">
+                          <CategoryIcon icon={s.icon} size={24} className="text-accent" />
                         </span>
                         <div className="min-w-0 flex-1">
                           <h3 className="font-display text-base font-bold text-foreground group-hover:text-accent transition-colors line-clamp-1">
