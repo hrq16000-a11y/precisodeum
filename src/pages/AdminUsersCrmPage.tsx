@@ -819,7 +819,7 @@ const AdminUsersCrmPage = () => {
                         <Tag className="h-3 w-3 mr-1" /> Aplicar Tag ({selectedIds.size})
                       </Button>
                     )}
-                    <Button variant="outline" size="sm" onClick={exportCsv}>
+                    <Button variant="outline" size="sm" onClick={exportUsersCsv}>
                       <Download className="h-3 w-3 mr-1" /> CSV
                     </Button>
                     <Button size="sm" onClick={() => setShowNotifyDialog(true)}>
