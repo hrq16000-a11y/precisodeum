@@ -3,14 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import CategoryIcon from '@/components/CategoryIcon';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, ExternalLink, Award, Clock, GraduationCap, Star, Filter } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Search, Star, Filter, GraduationCap, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import CoursesHero from '@/components/courses/CoursesHero';
+import CourseCard from '@/components/courses/CourseCard';
+import CoursesSkeleton from '@/components/courses/CoursesSkeleton';
+import CoursesCta from '@/components/courses/CoursesCta';
 
 const CATEGORIES = [
   { value: 'all', label: 'Todas' },
@@ -33,12 +33,6 @@ const PROVIDERS = [
   { value: 'Fundação Bradesco', label: 'Fundação Bradesco' },
   { value: 'Google', label: 'Google' },
 ];
-
-const LEVEL_COLORS: Record<string, string> = {
-  iniciante: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-  intermediário: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  avançado: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-};
 
 const CoursesPage = () => {
   const [search, setSearch] = useState('');
@@ -78,39 +72,32 @@ const CoursesPage = () => {
 
   const featuredCourses = filtered.filter((c: any) => c.featured);
   const regularCourses = filtered.filter((c: any) => !c.featured);
+  const hasActiveFilters = search || category !== 'all' || provider !== 'all';
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Hero */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 bg-accent/10 rounded-full px-4 py-1.5 mb-4">
-            <GraduationCap className="h-4 w-4 text-accent" />
-            <span className="text-sm font-medium text-accent">100% Gratuito</span>
-          </div>
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-3">
-            Portal de Cursos Gratuitos
-          </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Capacite-se gratuitamente com cursos das melhores instituições do Brasil.
-            Valorize seu perfil profissional e conquiste mais clientes.
-          </p>
-        </div>
+        <CoursesHero />
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="flex flex-col sm:flex-row gap-3 mb-8 bg-card/50 backdrop-blur-sm border border-border/40 rounded-2xl p-4"
+        >
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar cursos..."
+              placeholder="Buscar cursos, instituições, tags..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-background/80"
             />
           </div>
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-full sm:w-44">
+            <SelectTrigger className="w-full sm:w-48 bg-background/80">
               <Filter className="h-4 w-4 mr-1.5 text-muted-foreground" />
               <SelectValue placeholder="Categoria" />
             </SelectTrigger>
@@ -119,124 +106,102 @@ const CoursesPage = () => {
             </SelectContent>
           </Select>
           <Select value={provider} onValueChange={setProvider}>
-            <SelectTrigger className="w-full sm:w-44">
+            <SelectTrigger className="w-full sm:w-48 bg-background/80">
               <SelectValue placeholder="Instituição" />
             </SelectTrigger>
             <SelectContent>
               {PROVIDERS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
+        </motion.div>
 
-        <p className="text-sm text-muted-foreground mb-4">{filtered.length} curso(s) encontrado(s)</p>
+        {/* Results count */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={filtered.length}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 8 }}
+            className="flex items-center gap-2 text-sm text-muted-foreground mb-6"
+          >
+            <span className="font-semibold text-foreground">{filtered.length}</span> curso(s) encontrado(s)
+            {hasActiveFilters && (
+              <button
+                onClick={() => { setSearch(''); setCategory('all'); setProvider('all'); }}
+                className="ml-2 text-xs text-accent hover:underline"
+              >
+                Limpar filtros
+              </button>
+            )}
+          </motion.div>
+        </AnimatePresence>
 
-        {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-56 rounded-xl bg-muted animate-pulse" />
-            ))}
-          </div>
-        )}
+        {isLoading && <CoursesSkeleton />}
 
         {/* Featured */}
         {featuredCourses.length > 0 && (
-          <div className="mb-10">
-            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Star className="h-5 w-5 text-amber-500" /> Destaques
-            </h2>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-12"
+          >
+            <div className="flex items-center gap-2 mb-5">
+              <div className="flex items-center gap-2 bg-warning/10 rounded-full px-4 py-1.5">
+                <Sparkles className="h-4 w-4 text-warning" />
+                <h2 className="text-sm font-bold text-warning">Destaques</h2>
+              </div>
+              <div className="flex-1 h-px bg-gradient-to-r from-warning/20 to-transparent" />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {featuredCourses.map((course: any, i: number) => (
                 <CourseCard key={course.id} course={course} index={i} featured />
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Regular */}
         {regularCourses.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {regularCourses.map((course: any, i: number) => (
-              <CourseCard key={course.id} course={course} index={i} />
-            ))}
-          </div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            {featuredCourses.length > 0 && (
+              <div className="flex items-center gap-2 mb-5">
+                <h2 className="text-sm font-semibold text-foreground">Todos os cursos</h2>
+                <div className="flex-1 h-px bg-border/50" />
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {regularCourses.map((course: any, i: number) => (
+                <CourseCard key={course.id} course={course} index={i + featuredCourses.length} />
+              ))}
+            </div>
+          </motion.div>
         )}
 
+        {/* Empty */}
         {!isLoading && filtered.length === 0 && (
-          <div className="text-center py-16">
-            <GraduationCap className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-            <p className="text-muted-foreground">Nenhum curso encontrado para esta busca.</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-20"
+          >
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted/50 mb-4">
+              <GraduationCap className="h-8 w-8 text-muted-foreground/40" />
+            </div>
+            <p className="text-muted-foreground font-medium">Nenhum curso encontrado para esta busca.</p>
+            <button
+              onClick={() => { setSearch(''); setCategory('all'); setProvider('all'); }}
+              className="mt-3 text-sm text-accent hover:underline"
+            >
+              Ver todos os cursos
+            </button>
+          </motion.div>
         )}
 
-        {/* CTA */}
-        <div className="mt-16 text-center bg-gradient-to-br from-accent/5 to-accent/10 rounded-2xl p-8">
-          <h2 className="text-xl font-bold text-foreground mb-2">Quer aparecer para mais clientes?</h2>
-          <p className="text-muted-foreground mb-4">
-            Complete cursos, adicione certificados ao seu perfil e destaque-se na plataforma.
-          </p>
-          <Button asChild>
-            <a href="/cadastro">Criar meu perfil gratuito</a>
-          </Button>
-        </div>
+        <CoursesCta />
       </main>
       <Footer />
     </div>
   );
 };
-
-const CourseCard = ({ course, index, featured = false }: { course: any; index: number; featured?: boolean }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: index * 0.05, duration: 0.3 }}
-  >
-    <a href={course.url} target="_blank" rel="noopener noreferrer" className="block group">
-      <Card className={`h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${featured ? 'ring-1 ring-accent/30' : ''}`}>
-        <CardContent className="p-5">
-          <div className="flex items-start gap-3 mb-3">
-            <div className={`flex-shrink-0 h-11 w-11 rounded-xl flex items-center justify-center ${featured ? 'bg-accent/15' : 'bg-muted'}`}>
-              <CategoryIcon icon={course.icon} size={22} className={featured ? 'text-accent' : 'text-muted-foreground'} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-2 leading-snug">
-                {course.title}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">{course.provider}</p>
-            </div>
-            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-accent transition-colors flex-shrink-0 mt-0.5" />
-          </div>
-
-          <p className="text-xs text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
-            {course.description}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-              <Clock className="h-2.5 w-2.5 mr-0.5" /> {course.duration}
-            </Badge>
-            <Badge className={`text-[10px] px-1.5 py-0 border-0 ${LEVEL_COLORS[course.level] || 'bg-muted text-muted-foreground'}`}>
-              {course.level}
-            </Badge>
-            {course.has_certificate && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-accent/30 text-accent">
-                <Award className="h-2.5 w-2.5 mr-0.5" /> Certificado
-              </Badge>
-            )}
-          </div>
-
-          {(course.tags as string[])?.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2.5">
-              {(course.tags as string[]).slice(0, 3).map((tag: string) => (
-                <span key={tag} className="text-[9px] bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </a>
-  </motion.div>
-);
 
 export default CoursesPage;
