@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Wrench, ShieldCheck, Lightbulb, Users, Clock } from 'lucide-react';
+import {
+  ArrowRight, Hammer, ShieldCheck, Eye, Users, Heart,
+  Ban, Handshake, Calculator, MessageCircle, Briefcase,
+  TrendingUp, GraduationCap, Award, Sparkles, Star,
+  Crown, Wrench, Camera, Zap, Home
+} from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PageTransition from '@/components/PageTransition';
@@ -14,61 +19,83 @@ const fadeIn = {
   transition: { duration: 0.5 },
 };
 
-const characteristics = [
+const philosophyPillars = [
   {
-    icon: <Lightbulb className="h-6 w-6" />,
-    title: 'Intangibilidade',
-    description: 'Não há itens físicos envolvidos na transação. O contratante não é dono do serviço prestado — ele recebe o resultado do trabalho.',
+    icon: <Ban className="h-6 w-6" />,
+    title: 'Não ao Leilão de Preços',
+    description: 'Combatemos a desvalorização da mão de obra. Qualidade tem valor e defendemos o preço justo para todo profissional.',
+    accent: 'from-destructive/20 to-destructive/5',
   },
   {
-    icon: <Clock className="h-6 w-6" />,
-    title: 'Simultaneidade',
-    description: 'O serviço é executado e entregue ao cliente de forma simultânea. O combinado é realizado e pago ao mesmo tempo ou na sequência.',
+    icon: <Handshake className="h-6 w-6" />,
+    title: 'Negociação Direta',
+    description: 'Não intermediamos nem cobramos taxas sobre seus orçamentos. O lucro é 100% seu, sempre.',
+    accent: 'from-accent/20 to-accent/5',
+  },
+  {
+    icon: <Calculator className="h-6 w-6" />,
+    title: 'Tabela de Referência',
+    description: 'Oferecemos uma tabela de valores sugeridos para ajudar o profissional a cobrar com segurança e confiança.',
+    accent: 'from-primary/20 to-primary/5',
+  },
+  {
+    icon: <MessageCircle className="h-6 w-6" />,
+    title: 'Rede de Apoio',
+    description: 'Grupos de WhatsApp para suporte entre colegas, troca de experiências e crescimento mútuo na profissão.',
+    accent: 'from-success/20 to-success/5',
+  },
+];
+
+const characteristics = [
+  {
+    icon: <Briefcase className="h-6 w-6" />,
+    title: 'Independência',
+    description: 'Você é dono da sua agenda e do seu negócio. Sem patrão, sem horário fixo — você decide como e quando trabalhar.',
+  },
+  {
+    icon: <Eye className="h-6 w-6" />,
+    title: 'Visibilidade',
+    description: 'Posicionamento de destaque para quem busca qualidade. Seu perfil é visto por quem realmente precisa do seu trabalho.',
+  },
+  {
+    icon: <GraduationCap className="h-6 w-6" />,
+    title: 'Comunidade',
+    description: 'Acesso a cursos gratuitos, certificações e suporte técnico para evoluir constantemente na sua carreira.',
+  },
+  {
+    icon: <Award className="h-6 w-6" />,
+    title: 'Dignidade',
+    description: 'Ferramentas para ser visto como um especialista. Portfolio profissional, avaliações e selo de destaque.',
   },
   {
     icon: <ShieldCheck className="h-6 w-6" />,
-    title: 'Exclusividade',
-    description: 'Todo serviço é único. Sua realização e resultado variam de acordo com as circunstâncias e os envolvidos.',
+    title: 'Sem Taxas Ocultas',
+    description: 'Tudo o que você combina com o cliente é seu. Zero comissão, zero intermediação, zero surpresas.',
   },
-  {
-    icon: <Users className="h-6 w-6" />,
-    title: 'Inseparabilidade',
-    description: 'A interação entre contratante e contratado se mantém desde o primeiro contato até a conclusão do trabalho.',
-  },
-  {
-    icon: <Wrench className="h-6 w-6" />,
-    title: 'Personalização',
-    description: 'É possível fazer adaptações na contratação em tempo real, de acordo com as necessidades específicas do cliente.',
-  },
-];
-
-const serviceTypes = [
-  { emoji: '💆', name: 'Serviços Pessoais', desc: 'Esteticistas, cabeleireiros, massagistas e outros profissionais que atendem necessidades pessoais.' },
-  { emoji: '⚖️', name: 'Serviços Especializados', desc: 'Advogados, consultores e profissionais com habilidades técnicas específicas.' },
-  { emoji: '🏥', name: 'Serviços de Saúde', desc: 'Médicos, nutricionistas, fisioterapeutas e outros profissionais da área da saúde.' },
-  { emoji: '📚', name: 'Serviços Educacionais', desc: 'Professores particulares, tutores e instrutores de idiomas.' },
-  { emoji: '🚗', name: 'Serviços de Transporte', desc: 'Motoristas, motoboys e ciclistas que movimentam pessoas ou entregam produtos.' },
-  { emoji: '💻', name: 'Serviços Tecnológicos', desc: 'Desenvolvedores, técnicos de informática e especialistas em TI.' },
-  { emoji: '🛡️', name: 'Serviços de Segurança', desc: 'Segurança patrimonial, pessoal, de eventos e monitoramento por câmeras.' },
-  { emoji: '💰', name: 'Serviços Financeiros', desc: 'Contadores, consultores de investimento e operações bancárias.' },
-  { emoji: '🧹', name: 'Serviços de Limpeza', desc: 'Profissionais especializados na higienização de itens ou ambientes.' },
-  { emoji: '✈️', name: 'Serviços de Turismo', desc: 'Guias turísticos, agentes de viagem e serviços de hospedagem.' },
 ];
 
 const exampleProviders = [
-  'Consultor empresarial', 'Cabeleireiro', 'Contador', 'Profissional de transporte de carga',
-  'Desenvolvedor de software', 'Mecânico de veículos', 'Faxineiro', 'Segurança',
-  'Assistente técnico', 'Radiologista', 'Produtor de conteúdo', 'Marketing digital',
-  'Organizador de eventos', 'Advogado', 'Professor particular', 'Entregador',
-  'Eletricista', 'Designer gráfico', 'Psicólogo', 'Guia de turismo',
-  'Jardineiro', 'Produtor audiovisual', 'Assessor de imprensa', 'Tradutor',
-  'Intérprete', 'Fotógrafo', 'Filmmaker', 'Web Designer',
-  'Montador de móveis', 'Babá', 'Passeador de cães', 'Limpador de vidros',
-  'Sapateiro', 'Cuidador de idosos', 'Manicure', 'Bicicleteiro',
-  'Encanador', 'Costureiro(a)', 'Motorista escolar', 'Instalador de ar-condicionado',
-  'Cerimonialista', 'Banhista de animais', 'Editor de vídeo', 'Pintor',
-  'Pedreiro', 'Consultor de moda', 'Corretor de seguros', 'Recreador infantil',
-  'Detetive particular', 'Marceneiro',
+  'Eletricista', 'Encanador', 'Pintor', 'Pedreiro', 'Marceneiro',
+  'Mecânico', 'Cabeleireiro', 'Manicure', 'Costureira', 'Fotógrafo',
+  'Designer Gráfico', 'Desenvolvedor Web', 'Contador', 'Advogado',
+  'Professor Particular', 'Personal Trainer', 'Nutricionista',
+  'Psicólogo', 'Jardineiro', 'Limpeza Profissional', 'Babá',
+  'Cuidador de Idosos', 'Montador de Móveis', 'Instalador de Ar-Condicionado',
+  'Serralheiro', 'Vidraceiro', 'Técnico de Informática', 'Editor de Vídeo',
+  'Marketing Digital', 'Consultor Empresarial', 'Motorista Particular',
+  'Entregador', 'Organizador de Eventos', 'Produtor Audiovisual',
+  'Tradutor', 'Veterinário', 'Detetizador', 'Gesseiro',
+  'Azulejista', 'Soldador', 'Chaveiro', 'Tapeceiro',
+  'Desentupidor', 'Impermeabilizador', 'Técnico em Segurança Eletrônica',
+  'Corretor de Seguros', 'Massagista', 'Recreador Infantil',
+  'Passeador de Cães', 'Sapateiro',
+];
+
+const stats = [
+  { value: '100%', label: 'Lucro é seu', icon: <TrendingUp className="h-5 w-5" /> },
+  { value: '0%', label: 'De taxas', icon: <ShieldCheck className="h-5 w-5" /> },
+  { value: '50+', label: 'Profissões', icon: <Wrench className="h-5 w-5" /> },
+  { value: '24/7', label: 'Visibilidade', icon: <Eye className="h-5 w-5" /> },
 ];
 
 const AboutPage = () => {
@@ -77,54 +104,141 @@ const AboutPage = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      {/* Hero */}
-      <section className="bg-hero py-16 md:py-24">
+      {/* Hero — Manifesto */}
+      <section className="relative bg-hero py-20 md:py-28 overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-10 left-10 opacity-10">
+          <Hammer className="h-20 w-20 text-primary-foreground" />
+        </div>
+        <div className="absolute bottom-10 right-10 opacity-10">
+          <Crown className="h-16 w-16 text-primary-foreground" />
+        </div>
+        <motion.div
+          className="absolute top-1/2 left-1/4 w-64 h-64 bg-accent/10 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+          transition={{ duration: 6, repeat: Infinity }}
+        />
+
         <div className="container relative z-10 text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 rounded-full bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 px-4 py-2 mb-6"
+          >
+            <Heart className="h-4 w-4 text-accent" />
+            <span className="text-sm font-semibold text-primary-foreground/90 tracking-wide">Manifesto de Valorização</span>
+          </motion.div>
+
           <motion.h1
             {...fadeIn}
-            className="font-display text-3xl font-extrabold tracking-tight text-primary-foreground md:text-5xl"
+            className="font-display text-3xl font-extrabold tracking-tight text-primary-foreground md:text-5xl lg:text-6xl leading-tight"
           >
-            O que é prestação de serviço?
+            Mais que uma plataforma,
+            <br />
+            <span className="bg-gradient-to-r from-accent to-amber-300 bg-clip-text text-transparent">
+              um movimento de valorização
+            </span>
+            <br />
+            do profissional.
           </motion.h1>
           <motion.p
             {...fadeIn}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="mx-auto mt-4 max-w-2xl text-lg text-primary-foreground/70"
+            className="mx-auto mt-6 max-w-3xl text-lg md:text-xl text-primary-foreground/70 leading-relaxed"
           >
-            Entenda tudo sobre o universo dos serviços, tipos de profissionais e como encontrar o prestador ideal para as suas necessidades.
+            Unimos quem precisa de soluções a profissionais que entregam excelência, com <strong className="text-primary-foreground">dignidade, preço justo</strong> e sem leilão de mão de obra.
           </motion.p>
-        </div>
-      </section>
 
-      {/* Definition */}
-      <section className="py-16">
-        <div className="container max-w-3xl">
-          <motion.div {...fadeIn} className="space-y-5 text-foreground">
-            <h2 className="font-display text-2xl font-bold md:text-3xl">Entendendo a prestação de serviço</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Qualquer atividade econômica em que alguém atende a um chamado de outra pessoa <strong className="text-foreground">sem que seja necessário vender produtos</strong> — prestando exclusivamente algum tipo de serviço — é chamada de <em>"prestação de serviço"</em>.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              Na compra de produtos há a transferência de propriedade de um item entre quem vende e quem adquire. Na prestação de serviço, o prestador dedica <strong className="text-foreground">tempo, esforço e conhecimento</strong> para resolver um problema do contratante.
-            </p>
-            <div className="rounded-xl border border-border bg-muted/50 p-5">
-              <p className="text-sm text-muted-foreground">
-                <strong className="text-foreground">Exemplo prático:</strong> Quando você compra pneus novos para o carro, está adquirindo itens com um vendedor. Por outro lado, se alguém entrega os pneus no seu endereço ou se alguém os troca, você está contratando um <span className="text-accent font-semibold">prestador de serviço</span>.
-              </p>
-            </div>
+          {/* Stats bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="mt-10 flex flex-wrap justify-center gap-4 md:gap-8"
+          >
+            {stats.map((stat) => (
+              <div key={stat.label} className="flex items-center gap-2.5 bg-primary-foreground/5 backdrop-blur-sm border border-primary-foreground/10 rounded-xl px-5 py-3">
+                <span className="text-accent">{stat.icon}</span>
+                <div className="text-left">
+                  <span className="block text-xl font-bold text-primary-foreground">{stat.value}</span>
+                  <span className="text-[11px] text-primary-foreground/60">{stat.label}</span>
+                </div>
+              </div>
+            ))}
           </motion.div>
         </div>
       </section>
 
-      {/* 5 Characteristics */}
-      <ParallaxSection speed={0.12} orb orbColor="primary" className="bg-muted/50 py-16">
+      {/* Philosophy — Trabalho Digno */}
+      <section className="py-16 md:py-20">
+        <div className="container">
+          <motion.div {...fadeIn} className="text-center mb-12">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent mb-4">
+              <Sparkles className="h-3 w-3" /> Nossa Filosofia
+            </span>
+            <h2 className="font-display text-2xl font-bold text-foreground md:text-4xl">
+              Trabalho Digno e Respeito
+            </h2>
+            <p className="mt-3 max-w-2xl mx-auto text-muted-foreground">
+              Acreditamos que todo profissional merece reconhecimento, respeito e remuneração justa. Esses são os pilares que guiam tudo o que fazemos.
+            </p>
+          </motion.div>
+
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+            {philosophyPillars.map((pillar, i) => (
+              <motion.div
+                key={pillar.title}
+                initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.45, delay: i * 0.1 }}
+                whileHover={{ y: -6 }}
+                className="group relative rounded-2xl border border-border bg-card p-6 shadow-card hover:shadow-xl transition-all duration-300 overflow-hidden"
+              >
+                {/* Gradient bg */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${pillar.accent} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+
+                <div className="relative">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-colors duration-300">
+                    {pillar.icon}
+                  </div>
+                  <h3 className="font-display text-base font-bold text-foreground mb-2">{pillar.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{pillar.description}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Quote / Manifesto block */}
+      <section className="bg-muted/50 py-12">
+        <div className="container max-w-4xl">
+          <motion.blockquote
+            {...fadeIn}
+            className="relative text-center px-6"
+          >
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-accent/20 text-6xl font-serif">"</div>
+            <p className="text-xl md:text-2xl font-medium text-foreground leading-relaxed italic">
+              Não somos um leilão de mão de obra. Somos uma vitrine de excelência, onde o profissional é o protagonista e o preço justo é a regra.
+            </p>
+            <footer className="mt-4 text-sm text-muted-foreground">
+              — Equipe <span className="text-accent font-semibold">Preciso de Um</span>
+            </footer>
+          </motion.blockquote>
+        </div>
+      </section>
+
+      {/* 5 Characteristics / Values */}
+      <ParallaxSection speed={0.12} orb orbColor="primary" className="py-16 md:py-20">
         <div className="container">
           <motion.div {...fadeIn} className="mb-10 text-center">
             <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
-              5 características básicas da prestação de serviço
+              O que você ganha sendo parte da nossa rede
             </h2>
-            <p className="mt-2 text-muted-foreground">
-              Se os serviços são "coisas" intangíveis, contratadas e consumidas de forma simultânea, exclusivas e inseparáveis — uma prestação de serviço é tudo isso colocado em ação.
+            <p className="mt-2 max-w-2xl mx-auto text-muted-foreground">
+              Construímos ferramentas para que você se concentre no que faz de melhor: entregar um trabalho excelente.
             </p>
           </motion.div>
           <div className="grid gap-4 md:grid-cols-5">
@@ -135,9 +249,10 @@ const AboutPage = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
-                className="rounded-xl border border-border bg-card p-5 shadow-card text-center"
+                whileHover={{ y: -4, scale: 1.02 }}
+                className="group rounded-xl border border-border bg-card p-5 shadow-card text-center hover:shadow-xl hover:border-accent/30 transition-all duration-300"
               >
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-colors duration-300">
                   {item.icon}
                 </div>
                 <h3 className="font-display text-sm font-bold text-foreground">{item.title}</h3>
@@ -148,30 +263,36 @@ const AboutPage = () => {
         </div>
       </ParallaxSection>
 
-      {/* Service Types */}
-      <section className="py-16">
-        <div className="container">
-          <motion.div {...fadeIn} className="mb-10 text-center">
+      {/* How it works visual */}
+      <section className="py-16 bg-muted/30">
+        <div className="container max-w-4xl">
+          <motion.div {...fadeIn} className="text-center mb-10">
             <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
-              Quais são os tipos de prestação de serviço?
+              Como funciona para o profissional
             </h2>
-            <p className="mt-2 max-w-2xl mx-auto text-muted-foreground">
-              Alguns dos tipos mais conhecidos no Brasil são: especializados, públicos, financeiros, pessoais e tecnológicos. Conheça todos:
-            </p>
           </motion.div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {serviceTypes.map((type, i) => (
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              { step: '01', icon: <Home className="h-6 w-6" />, title: 'Crie seu perfil', desc: 'Cadastro gratuito com foto, descrição e serviços. Leva menos de 5 minutos.' },
+              { step: '02', icon: <Camera className="h-6 w-6" />, title: 'Monte seu portfólio', desc: 'Adicione fotos dos seus trabalhos realizados. Mostre do que você é capaz.' },
+              { step: '03', icon: <Zap className="h-6 w-6" />, title: 'Receba clientes', desc: 'Clientes te encontram e entram em contato direto via WhatsApp. Sem intermediários.' },
+            ].map((item, i) => (
               <motion.div
-                key={type.name}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                key={item.step}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.35, delay: i * 0.05 }}
-                className="rounded-xl border border-border bg-card p-4 shadow-card"
+                transition={{ delay: i * 0.15, duration: 0.45 }}
+                className="relative rounded-2xl border border-border bg-card p-6 text-center"
               >
-                <span className="text-2xl">{type.emoji}</span>
-                <h3 className="mt-2 font-display text-sm font-bold text-foreground">{type.name}</h3>
-                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{type.desc}</p>
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-xs font-bold px-3 py-1 rounded-full">
+                  {item.step}
+                </span>
+                <div className="mx-auto mt-2 mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                  {item.icon}
+                </div>
+                <h3 className="font-display text-sm font-bold text-foreground">{item.title}</h3>
+                <p className="mt-2 text-xs text-muted-foreground">{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -179,63 +300,76 @@ const AboutPage = () => {
       </section>
 
       {/* 50 Examples */}
-      <section className="bg-muted/50 py-16">
+      <section className="py-16">
         <div className="container">
           <motion.div {...fadeIn} className="mb-8 text-center">
             <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
-              50 exemplos de prestadores de serviço
+              Profissões que valorizamos
             </h2>
-            <p className="mt-2 text-muted-foreground">
-              A quantidade de profissionais disponíveis para atender no Brasil é surpreendente. Explore alguns:
+            <p className="mt-2 max-w-2xl mx-auto text-muted-foreground">
+              De eletricistas a designers, de encanadores a consultores — todo profissional merece destaque.
             </p>
           </motion.div>
           <div className="flex flex-wrap justify-center gap-2">
-            {exampleProviders.map((name) => (
-              <span
+            {exampleProviders.map((name, i) => (
+              <motion.span
                 key={name}
-                className="rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground shadow-sm"
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.015, duration: 0.3 }}
+                className="rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground shadow-sm hover:border-accent/30 hover:bg-accent/5 transition-colors cursor-default"
               >
                 {name}
-              </span>
+              </motion.span>
             ))}
           </div>
+          <motion.p
+            {...fadeIn}
+            className="mt-8 text-center text-muted-foreground max-w-3xl mx-auto leading-relaxed"
+          >
+            Sempre que alguém procurar por <strong className="text-foreground">"preciso de um profissional"</strong>, nosso objetivo é que eles encontrem <strong className="text-accent">você</strong> através do nosso ecossistema em{' '}
+            <a href="https://www.precisodeum.com.br" className="text-accent font-semibold hover:underline" target="_blank" rel="noopener noreferrer">
+              www.precisodeum.com.br
+            </a>.
+          </motion.p>
         </div>
       </section>
 
-      {/* Closing */}
-      <section className="py-16">
-        <div className="container max-w-3xl space-y-5">
-          <motion.div {...fadeIn}>
-            <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
-              Sempre tem alguém precisando — e alguém pronto para ajudar
+      {/* Final CTA */}
+      <section className="relative bg-hero py-20 overflow-hidden">
+        <motion.div
+          className="absolute top-0 right-0 w-72 h-72 bg-accent/15 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.3, 1] }}
+          transition={{ duration: 5, repeat: Infinity }}
+        />
+        <div className="container relative z-10 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="space-y-6"
+          >
+            <Star className="h-10 w-10 text-accent mx-auto" />
+            <h2 className="font-display text-2xl font-bold text-primary-foreground md:text-4xl">
+              Seu talento merece ser visto.
+              <br />
+              <span className="bg-gradient-to-r from-accent to-amber-300 bg-clip-text text-transparent">
+                Sua profissão merece respeito.
+              </span>
             </h2>
-            <p className="mt-4 text-muted-foreground leading-relaxed">
-              O segredo é pesquisar bem, pedir indicações e dialogar com o prestador de forma transparente, deixando claras suas necessidades e possibilidades.
+            <p className="mx-auto max-w-lg text-primary-foreground/70">
+              Junte-se a milhares de profissionais que estão transformando suas carreiras com a <strong className="text-primary-foreground">Preciso de Um</strong>.
             </p>
-            <p className="mt-3 text-muted-foreground leading-relaxed">
-              Da mesma maneira, cabe ao profissional expressar tudo aquilo que é capaz de fazer, elaborando uma proposta comercial completa e adequada, dando sugestões coerentes e sempre alinhando expectativas.
-            </p>
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center pt-2">
+              <Button variant="hero" size="xl" className="rounded-full shadow-lg shadow-accent/20" asChild>
+                <Link to="/cadastro">Quero me valorizar no mercado <ArrowRight className="h-5 w-5" /></Link>
+              </Button>
+              <Button variant="outline" size="xl" className="rounded-full border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10" asChild>
+                <Link to="/buscar">Buscar Profissional</Link>
+              </Button>
+            </div>
           </motion.div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="bg-hero py-16">
-        <div className="container text-center">
-          <h2 className="font-display text-2xl font-bold text-primary-foreground md:text-3xl">
-            Encontre o profissional ideal agora
-          </h2>
-          <p className="mx-auto mt-3 max-w-lg text-primary-foreground/70">
-            Na <strong>Preciso de um</strong>, você encontra prestadores de serviço verificados e avaliados por outros clientes.
-          </p>
-          <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Button variant="hero" size="xl" className="rounded-full" asChild>
-              <Link to="/buscar">Buscar Profissional <ArrowRight className="h-5 w-5" /></Link>
-            </Button>
-            <Button variant="outline" size="xl" className="rounded-full border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10" asChild>
-              <Link to="/cadastro">Sou Profissional</Link>
-            </Button>
-          </div>
         </div>
       </section>
 
