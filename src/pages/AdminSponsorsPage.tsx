@@ -17,11 +17,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Progress } from '@/components/ui/progress';
 import {
   Plus, Pencil, Trash2, ExternalLink, CalendarIcon, Eye, MousePointerClick, Search,
   Megaphone, Users, FileText, StickyNote, AlertTriangle, TrendingUp, Settings2,
   Link2, Globe, MapPin, Building2, Phone, Mail, Star, Crown, Zap,
-  PanelTop, Columns, Monitor, BarChart3, ArrowRight, Image as ImageIcon, Filter
+  PanelTop, Columns, Monitor, BarChart3, ArrowRight, Image as ImageIcon, Filter,
+  Download, Bell, Power, Activity, Send, Heart, HeartCrack, Gauge
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -36,7 +38,6 @@ import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
-
 const PAGE_SIZE = 20;
 
 /* ─── Visual position map — from central config ─── */
