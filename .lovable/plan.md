@@ -1,53 +1,53 @@
 
 
-# Corrigir Aprovação Automática de Prestadores
+# Ações em Massa e Aprovação Automática Sincronizada no Painel Admin
 
 ## Problema
-Dois problemas encontrados:
-
-1. **Trigger inexistente**: Não existe nenhum trigger na tabela `providers`. O trigger `auto_approve_provider_trigger` nunca foi criado no banco de dados real.
-2. **Tabela errada**: A função `auto_approve_provider()` consulta a tabela `governance_rules`, mas a configuração está salva na tabela `site_settings` (onde `auto_approve_providers = 'true'`).
+O painel já tem seleção individual + bulk actions, mas falta um botão rápido "Aprovar Todos Pendentes" sem precisar selecionar um a um. O toggle de aprovação automática está nas configurações gerais mas não é visível/acessível diretamente na página de prestadores.
 
 ## Solução
-Criar uma migração SQL que:
 
-1. **Corrige a função** `auto_approve_provider()` para consultar `site_settings` em vez de `governance_rules`
-2. **Recria o trigger** `auto_approve_provider_trigger` na tabela `providers` (BEFORE INSERT)
-3. Mantém as validações de cidade/estado já existentes
+### 1. Botão "Aprovar Todos Pendentes" no header da página
+Adicionar botão no topo (ao lado de "Exportar CSV") que aprova todos os prestadores pendentes com cidade/estado preenchidos de uma vez, com confirmação via AlertDialog.
 
-## Migração SQL
+### 2. Toggle de Aprovação Automática inline
+Exibir o toggle `auto_approve_providers` diretamente na página de prestadores (acima dos cards), sincronizado com `site_settings`. O admin pode ligar/desligar sem ir à página de configurações.
 
-```sql
-CREATE OR REPLACE FUNCTION public.auto_approve_provider()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE
-  should_auto boolean;
-BEGIN
-  SELECT (value = 'true') INTO should_auto
-  FROM public.site_settings
-  WHERE key = 'auto_approve_providers'
-  LIMIT 1;
+### 3. Botão "Rejeitar Todos Pendentes"
+Adicionar também opção de rejeitar todos pendentes em massa.
 
-  IF should_auto IS TRUE
-     AND NEW.status = 'pending'
-     AND COALESCE(NEW.city, '') <> ''
-     AND NEW.city <> 'Não informada'
-     AND COALESCE(NEW.state, '') <> ''
-  THEN
-    NEW.status := 'approved';
-  END IF;
+## Alterações
 
-  RETURN NEW;
-END;
-$$;
+| Arquivo | O que muda |
+|---------|-----------|
+| `src/pages/AdminProvidersPage.tsx` | Adicionar botões "Aprovar Todos" e "Rejeitar Todos" no header; toggle inline de auto-approve sincronizado com `site_settings`; funções `approveAllPending` e `rejectAllPending` com confirmação |
 
-CREATE OR REPLACE TRIGGER auto_approve_provider_trigger
-  BEFORE INSERT ON public.providers
-  FOR EACH ROW EXECUTE FUNCTION public.auto_approve_provider();
+## Lógica
+
+```typescript
+// Aprovar todos pendentes com cidade/estado
+const approveAllPending = async () => {
+  const pendingIds = allProviders
+    .filter(p => p.status === 'pending' && p.city && p.state)
+    .map(p => p.id);
+  
+  await supabase.from('providers')
+    .update({ status: 'approved' })
+    .in('id', pendingIds);
+  
+  await logAuditAction({ action: 'bulk_active', resource_type: 'provider', details: { count: pendingIds.length } });
+  fetchProviders();
+};
+
+// Toggle auto-approve sincronizado
+const [autoApprove, setAutoApprove] = useState(false);
+// Buscar valor atual de site_settings ao carregar
+// Ao mudar toggle → update site_settings + toast
 ```
 
 ## Resultado
-- Toggle no painel admin (`site_settings.auto_approve_providers`) passa a funcionar
-- Novos prestadores com cidade/estado preenchidos são aprovados automaticamente
-- Nenhuma alteração de código frontend necessária
+- "Aprovar Todos" aprova instantaneamente todos os pendentes qualificados (com cidade/estado)
+- Toggle de aprovação automática visível e funcional direto na página de prestadores
+- Todas as ações registradas no audit_log
+- Interface 100% sincronizada com o banco
 
