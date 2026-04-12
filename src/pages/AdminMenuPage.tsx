@@ -4,6 +4,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Menu, Plus, Trash2, GripVertical, Search, ExternalLink } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -175,7 +176,7 @@ const AdminMenuPage = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          {item.icon && <span className="text-sm">{item.icon}</span>}
+                          {item.icon && <CategoryIcon icon={item.icon} size={16} className="text-muted-foreground" />}
                           <span className="font-medium text-sm">{item.label}</span>
                           {item.parent_id && <Badge variant="outline" className="text-[10px]">sub</Badge>}
                           {item.open_in_new_tab && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
