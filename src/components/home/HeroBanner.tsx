@@ -209,8 +209,8 @@ const HeroBanner = () => {
       <FloatingDots />
 
       <div className="container relative z-10 flex flex-col items-center text-center hero-entrance">
-        <div>
-          <h1 className="font-display text-2xl font-extrabold tracking-tight text-primary-foreground sm:text-3xl md:text-5xl lg:text-6xl drop-shadow-sm">
+        <div className="w-full max-w-full overflow-hidden px-4">
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-primary-foreground sm:text-3xl md:text-5xl lg:text-6xl drop-shadow-sm max-w-full overflow-hidden">
             <HeroPrefixRotator prefixes={prefixes} />
             <br />
             <RotatingServiceText />

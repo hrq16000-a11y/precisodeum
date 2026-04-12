@@ -67,11 +67,11 @@ const RotatingServiceText = () => {
   return (
     <>
       <span
-        className="relative inline-block min-w-[180px] sm:min-w-[260px] text-left align-bottom"
-        style={{ height: '1.2em' }}
+        className="relative inline-block w-full max-w-full min-w-0 text-left align-bottom"
+        style={{ minHeight: '1.2em' }}
       >
         <span
-          className="text-secondary inline-block whitespace-nowrap transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+          className="text-secondary inline-block sm:whitespace-nowrap transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] break-words"
           style={{
             opacity: phase === 'in' ? 1 : 0,
             transform: phase === 'in' ? 'translateY(0)' : 'translateY(-20px)',
