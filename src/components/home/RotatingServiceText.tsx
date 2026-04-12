@@ -4,16 +4,16 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Fallback list used only while DB data loads
 const FALLBACK_SERVICES = [
-  'técnico em informática', 'eletricista', 'encanador', 'pedreiro', 'pintor',
-  'marido de aluguel', 'instalador de ar-condicionado', 'diarista', 'jardineiro',
+  'eletricista', 'encanador', 'pedreiro', 'pintor',
+  'marido de aluguel', 'instalador de ar-condicionado', 'jardineiro',
   'marceneiro', 'serralheiro', 'gesseiro', 'azulejista', 'desentupidor',
   'chaveiro', 'vidraceiro', 'carpinteiro', 'mecânico', 'personal trainer',
   'fotógrafo', 'designer gráfico', 'professor particular', 'cuidador de idosos',
-  'babá', 'pet sitter', 'veterinário', 'nutricionista', 'contador',
+  'veterinário', 'nutricionista', 'contador',
   'advogado', 'arquiteto', 'engenheiro civil', 'técnico em celular',
   'montador de móveis', 'tapeceiro', 'dedetizador', 'piscineiro',
-  'eletricista automotivo', 'soldador', 'cozinheiro particular', 'costureira',
-  'manicure', 'cabeleireiro', 'maquiador', 'motorista particular', 'frete e mudança',
+  'eletricista automotivo', 'soldador', 'técnico em informática',
+  'profissional de beleza', 'motorista particular', 'profissional de limpeza',
 ];
 
 function shuffle<T>(arr: T[]): T[] {
