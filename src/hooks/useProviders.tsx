@@ -245,6 +245,13 @@ async function fetchProvidersLightweight(query: any) {
       serviceFallbackMap[p.id]
     );
 
+    // Aggregate all service texts for deep search matching
+    const provServices = (serviceRows as any[]).filter(s => s.provider_id === p.id);
+    const svcTexts = provServices.map(s =>
+      [s.service_name || '', s.description || '', s.service_area || ''].join(' ')
+    ).join(' ');
+    (mapped as any)._searchableServices = svcTexts;
+
     // Mark incomplete profiles for filtering — use fallback hierarchy so
     // a missing public_profiles response never hides providers that have
     // business_name or slug filled in.
@@ -430,6 +437,7 @@ export function filterAndRankProviders(
         const searchable = [
           p.name, p.category, p.description,
           p.businessName || '', p.city, p.neighborhood, p.state,
+          (p as any)._searchableServices || '',
         ].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/-/g, ' ');
 
         let matched = 0;
@@ -526,7 +534,7 @@ export function filterAndRankProvidersGrouped(
     const terms = sanitizeSearchTokens(serviceQuery);
     if (terms.length > 0) {
       results = results.filter((p) => {
-        const searchable = [p.name, p.category, p.description, p.businessName || '', p.city, p.neighborhood, p.state]
+        const searchable = [p.name, p.category, p.description, p.businessName || '', p.city, p.neighborhood, p.state, (p as any)._searchableServices || '']
           .join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/-/g, ' ');
         let matched = 0;
         for (const term of terms) { if (searchable.includes(term)) matched++; }
