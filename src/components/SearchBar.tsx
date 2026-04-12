@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Sparkles, TrendingUp, MapPin, Wrench, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import CategoryIcon from '@/components/CategoryIcon';
 import { useSearchSuggestions } from '@/hooks/useProviders';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useTypingPlaceholder } from '@/hooks/useTypingPlaceholder';
@@ -244,7 +245,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
             onMouseEnter={() => setHighlightIdx(i)}
           >
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent/10 to-primary/10 text-sm shadow-sm ring-1 ring-accent/10 transition-transform duration-200 group-hover:scale-110">
-              {s.icon || '🔧'}
+              <CategoryIcon icon={s.icon || ''} size={18} />
             </span>
             <div className="min-w-0 flex-1">
               <span className="block truncate font-semibold text-foreground">{s.label}</span>

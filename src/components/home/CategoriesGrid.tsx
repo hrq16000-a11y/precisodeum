@@ -90,7 +90,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                 >
                   <Link
                     to={`/categoria/${cat.slug}`}
-                    className="group relative flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-accent/40 overflow-hidden text-center"
+                    className="group relative flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-accent/40 overflow-hidden text-center min-h-[120px]"
                   >
                     {/* Hover gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500 rounded-2xl" />
@@ -101,10 +101,16 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                     <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 group-hover:bg-sky-100 transition-all duration-300">
                       <CategoryIcon icon={cat.icon} size={28} />
                     </span>
-                    <div className="relative">
-                      <span className="block text-sm font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2">
+                    <div className="relative w-full">
+                      <span className="block text-xs font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words">
                         {cat.name}
                       </span>
+                      {cat.count > 0 && (
+                        <span className="mt-1 flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
+                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent/60" />
+                          {cat.count} profissional{cat.count !== 1 ? 'is' : ''}
+                        </span>
+                      )}
                     </div>
                   </Link>
                 </div>

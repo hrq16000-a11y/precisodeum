@@ -80,14 +80,14 @@ const CategoriesListPage = () => {
                 >
                   <Link
                     to={`/categoria/${cat.slug}`}
-                    className="group relative flex items-center gap-2.5 rounded-xl border border-border bg-card p-3 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30 overflow-hidden"
+                    className="group relative flex items-center gap-2.5 rounded-xl border border-border bg-card p-3 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30 overflow-hidden min-h-[56px]"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/[0.03] to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
                     <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                       <CategoryIcon icon={cat.icon} size={22} className="text-primary" />
                     </span>
                     <div className="relative min-w-0 flex-1">
-                      <span className="text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                      <span className="text-xs sm:text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2 break-words">
                         {cat.name}
                       </span>
                       {cat.count > 0 && (
