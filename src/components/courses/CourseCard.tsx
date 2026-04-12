@@ -39,7 +39,7 @@ const CourseCard = ({ course, index, featured = false }: CourseCardProps) => {
       viewport={{ once: true, margin: '-30px' }}
       transition={{ delay: index * 0.06, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
-      <a href={course.url} target="_blank" rel="noopener noreferrer" className="block group">
+      <Link to={`/cursos/${course.id}`} className="block group">
         <Card className={`
           h-full transition-all duration-400 ease-out overflow-hidden
           hover:shadow-xl hover:-translate-y-1.5 hover:shadow-accent/5
@@ -170,7 +170,7 @@ const CourseCard = ({ course, index, featured = false }: CourseCardProps) => {
             </div>
           </CardContent>
         </Card>
-      </a>
+      </Link>
     </motion.div>
   );
 };
