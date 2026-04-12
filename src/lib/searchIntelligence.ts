@@ -14,6 +14,7 @@ import { normalize } from './normalize';
 import { trackEvent } from './tracking';
 import GovernanceEngine from './governanceEngine';
 import { ControlPlane, ControlRegistry } from '@/core/governance';
+import { matchNaturalLanguage } from './naturalLanguageMap';
 
 // ═══════════════════════════════════════════════════════════════════════
 // SECTION 1: Types
@@ -149,8 +150,17 @@ function analyze(
   const cpServiceWeight = ControlRegistry.getValue<number>('sil', 'serviceWeight');
   if (cpServiceWeight !== undefined) _config.serviceWeight = cpServiceWeight;
 
+  // 0b. AI Concierge: try NLP match before geo resolution
+  let effectiveQuery = query;
+  const nlpMatch = matchNaturalLanguage(query);
+  if (nlpMatch) {
+    // Replace the natural language query with the category slug for better matching
+    effectiveQuery = nlpMatch.categorySlug.replace(/-/g, ' ');
+    silTrack('sil_nlp_match', { original: query, matched: nlpMatch.phrase, slug: nlpMatch.categorySlug });
+  }
+
   // 1. Delegate geo resolution entirely to GeoEngine
-  const geoIntent = GeoEngine.resolve(query, city, state);
+  const geoIntent = GeoEngine.resolve(effectiveQuery, city, state);
 
   // 2. Detect intent
   let intent = detectIntent(geoIntent);
