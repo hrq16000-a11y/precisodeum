@@ -23,6 +23,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import ActionQueue from '@/components/dashboard/ActionQueue';
+import UpsellBanner from '@/components/dashboard/UpsellBanner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const DashboardPage = () => {
