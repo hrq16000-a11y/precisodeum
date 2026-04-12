@@ -14,6 +14,9 @@ import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
+import { parseJobText } from '@/lib/jobTextParser';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Sparkles } from 'lucide-react';
 
 const PAGE_SIZE = 20;
 
