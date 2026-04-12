@@ -436,7 +436,31 @@ const AdminSponsorsPage = () => {
     },
   });
 
-  const unlinkMutation = useMutation({
+  // Quick toggle active
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from('sponsors').update({ active }).eq('id', id);
+      if (error) throw error;
+      await logAuditAction({ action: active ? 'activate' : 'deactivate', resource_type: 'sponsor', resource_id: id });
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-sponsors'] }); toast({ title: 'Status atualizado' }); },
+  });
+
+  // Send notification to sponsor contacts
+  const sendNotification = useMutation({
+    mutationFn: async ({ sponsorId, title: nTitle, message }: { sponsorId: string; title: string; message: string }) => {
+      const { error } = await supabase.from('sponsor_notifications' as any).insert({
+        sponsor_id: sponsorId, title: nTitle, message, read: false,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast({ title: 'Notificação enviada ao patrocinador!' }); },
+    onError: () => toast({ title: 'Erro ao enviar notificação', variant: 'destructive' }),
+  });
+
+  const [notifDialog, setNotifDialog] = useState(false);
+  const [notifForm, setNotifForm] = useState({ sponsor_id: '', title: '', message: '' });
+
     mutationFn: async (id: string) => { await supabase.from('sponsor_contacts' as any).delete().eq('id', id); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-sponsor-contacts'] }); toast({ title: 'Vínculo removido' }); },
   });
