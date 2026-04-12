@@ -139,6 +139,8 @@ export function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
     return;
   }
 
-  // Last resort: show nothing gracefully
-  img.style.display = 'none';
+  // Last resort: show a neutral placeholder instead of hiding
+  img.src = '/placeholder.svg';
+  img.style.objectFit = 'contain';
+  img.style.background = 'hsl(var(--muted))';
 }

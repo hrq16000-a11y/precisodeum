@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl } from '@/lib/imageOptimizer';
+import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl, isVideoUrl } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2 } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
@@ -413,14 +413,14 @@ const ProviderProfile = () => {
           // Flatten all photos for lightbox compatibility
           const allPhotos = preparedAlbums.flatMap(a => a.photos);
           preparedPortfolioRawUrls = allPhotos.map(p => p.image_url);
-          preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
+          preparedPortfolioImages = preparedPortfolioRawUrls.map(u => isVideoUrl(u) ? u : portfolioThumb(u));
         } else {
           // Fallback: legacy flat storage for old profiles
           const { data: files } = await supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 });
           if (files) {
             const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
             preparedPortfolioRawUrls = filtered.map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl);
-            preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
+            preparedPortfolioImages = preparedPortfolioRawUrls.map(u => isVideoUrl(u) ? u : portfolioThumb(u));
           }
         }
 
@@ -738,7 +738,7 @@ const ProviderProfile = () => {
           </div>
           <div className="space-y-5">
             {portfolioAlbums.filter(a => a.photos.length > 0).map(album => {
-              const albumPhotos = album.photos.map(p => portfolioThumb(p.image_url));
+              const albumPhotos = album.photos.map(p => isVideoUrl(p.image_url) ? p.image_url : portfolioThumb(p.image_url));
               const showCount = isMobile ? 3 : 4;
               const visible = albumPhotos.slice(0, showCount);
               const remaining = albumPhotos.length - showCount;
@@ -759,7 +759,18 @@ const ProviderProfile = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <img src={url} alt={`${album.name} ${i + 1}`} className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" onError={handleImageError} />
+                        {isVideoUrl(url) ? (
+                          <>
+                            <video src={url} muted playsInline preload="metadata" className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110" />
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="h-10 w-10 rounded-full bg-black/60 flex items-center justify-center">
+                                <Play className="h-5 w-5 text-white fill-white" />
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <img src={url} alt={`${album.name} ${i + 1}`} className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" onError={handleImageError} />
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         <motion.div className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-foreground opacity-0 group-hover:opacity-100 transition-opacity shadow-lg" whileHover={{ scale: 1.1 }}>
                           <Eye className="h-3.5 w-3.5" />
@@ -810,7 +821,18 @@ const ProviderProfile = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" onError={handleImageError} />
+              {isVideoUrl(url) ? (
+                <>
+                  <video src={url} muted playsInline preload="metadata" className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="h-10 w-10 rounded-full bg-black/60 flex items-center justify-center">
+                      <Play className="h-5 w-5 text-white fill-white" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" onError={handleImageError} />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <motion.div
                 className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-foreground opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
