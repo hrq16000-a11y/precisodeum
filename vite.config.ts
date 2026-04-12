@@ -63,6 +63,14 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: mode === 'production',
+        passes: 2,
+      },
+      mangle: true,
+    },
     rollupOptions: {
       output: {
         manualChunks: {
