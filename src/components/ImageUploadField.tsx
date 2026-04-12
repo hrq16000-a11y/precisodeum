@@ -79,7 +79,7 @@ const ImageUploadField = ({
 
       // Sync to media library if entityType provided
       if (entityType && data.path) {
-        const identity = await resolveIdentity();
+        const identity = await resolveIdentity(session.user.id);
         if (identity.userRef) {
           upsertMedia({
             storagePath: data.path,
