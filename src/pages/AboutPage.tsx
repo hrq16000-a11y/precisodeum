@@ -365,7 +365,7 @@ const AboutPage = () => {
               <Button variant="hero" size="xl" className="rounded-full shadow-lg shadow-accent/20" asChild>
                 <Link to="/cadastro">Quero me valorizar no mercado <ArrowRight className="h-5 w-5" /></Link>
               </Button>
-              <Button variant="outline" size="xl" className="rounded-full border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10" asChild>
+              <Button variant="outline" size="xl" className="rounded-full border-accent/50 text-accent font-semibold hover:bg-accent/10 hover:border-accent" asChild>
                 <Link to="/buscar">Buscar Profissional</Link>
               </Button>
             </div>
