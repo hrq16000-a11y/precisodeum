@@ -14,11 +14,13 @@ import PageTransition from '@/components/PageTransition';
 import { Button } from '@/components/ui/button';
 
 /* ── animation variants ── */
+const easeOut = [0.22, 1, 0.36, 1] as const;
+
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: '-60px' },
-  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.6 },
 };
 
 const staggerContainer = {
@@ -29,7 +31,7 @@ const staggerContainer = {
 
 const staggerChild = {
   initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+  whileInView: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
 /* ── data ── */
