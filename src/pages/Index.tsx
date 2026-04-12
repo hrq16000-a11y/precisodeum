@@ -266,7 +266,7 @@ const Index = () => {
         // Apply content-visibility to sections below the fold (index >= 3)
         // Use section-specific intrinsic heights to minimise CLS
         const sectionHeights: Record<string, string> = {
-          categories: '0 800px',
+          categories: '0 1000px',
           featured: '0 600px',
           popular: '0 500px',
           howitworks: '0 450px',
