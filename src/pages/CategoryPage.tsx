@@ -239,7 +239,7 @@ const CategoryPage = () => {
       <Suspense fallback={null}><SponsorTopBanner /></Suspense>
       <Suspense fallback={null}><AdSlot slotSlug="category-top" category={slug} /></Suspense>
 
-      <div className="container py-8">
+      <div className="container px-4 py-8">
         <GeoPromptBanner />
 
         {isFallback && expansionLevel && (
