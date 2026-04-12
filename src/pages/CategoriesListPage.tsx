@@ -28,8 +28,11 @@ const CategoriesListPage = () => {
     ? categories.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
     : categories;
 
-  const visible = filtered.slice(0, visibleCount);
-  const hasMore = visibleCount < filtered.length;
+  const withProviders = filtered.filter((c) => c.count > 0);
+  const withoutProviders = filtered.filter((c) => c.count === 0);
+
+  const visible = withProviders.slice(0, visibleCount);
+  const hasMore = visibleCount < withProviders.length;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -104,6 +107,38 @@ const CategoriesListPage = () => {
                 >
                   Ver Mais Categorias
                 </button>
+              </div>
+            )}
+
+            {withoutProviders.length > 0 && (
+              <div className="mt-10">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Categorias em breve
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
+                  {withoutProviders.map((cat) => (
+                    <div
+                      key={cat.id}
+                      className="flex items-center gap-2.5 rounded-xl border border-border bg-card/50 p-3 opacity-50 cursor-default min-h-[56px]"
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                        <CategoryIcon icon={cat.icon} size={22} className="text-muted-foreground" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs sm:text-sm font-semibold leading-tight text-muted-foreground line-clamp-2 break-words">
+                          {cat.name}
+                        </span>
+                        <p className="text-[10px] leading-tight text-muted-foreground/70 mt-0.5">
+                          Ainda não temos prestadores. Participe!
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </>

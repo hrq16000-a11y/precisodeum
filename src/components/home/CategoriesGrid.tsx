@@ -45,7 +45,6 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
   const visible = useMemo(() => {
     if (!categories.length) return [];
     const withProviders = categories.filter(c => c.count > 0);
-    const withoutProviders = categories.filter(c => c.count === 0);
     const shuffle = <T,>(arr: T[]): T[] => {
       const a = [...arr];
       for (let i = a.length - 1; i > 0; i--) {
@@ -54,7 +53,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
       }
       return a;
     };
-    return [...shuffle(withProviders), ...shuffle(withoutProviders)].slice(0, HOME_COUNT_DESKTOP);
+    return shuffle(withProviders).slice(0, HOME_COUNT_DESKTOP);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categories.length]);
 
