@@ -13,7 +13,8 @@ import CategoryIcon from '@/components/CategoryIcon';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useMemo, useEffect, useRef } from 'react';
-import { whatsappLink } from '@/lib/whatsapp';
+import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
+import { useGeoCity } from '@/hooks/useGeoCity';
 import { formatLocationString } from '@/lib/normalize';
 
 const ServiceDetailPage = () => {

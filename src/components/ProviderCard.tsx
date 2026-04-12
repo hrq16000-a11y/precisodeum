@@ -9,7 +9,7 @@ import StarRating from '@/components/StarRating';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { DbProvider } from '@/hooks/useProviders';
 import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
-import { whatsappLink } from '@/lib/whatsapp';
+import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { handleImageError } from '@/lib/imageResolver';
 import { useCardImpression } from '@/hooks/useCardImpression';
@@ -229,7 +229,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
           {provider.whatsapp && (
             <Button variant="accent" size="sm" className="flex-1 h-8 sm:h-9 text-xs sm:text-sm transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" asChild>
               <a
-                href={whatsappLink(provider.whatsapp, `Olá ${displayName}! Vi seu perfil de ${provider.category || 'serviços'} no Preciso de um.${geoCity ? ` Estou em ${geoCity}${geoState ? `/${geoState}` : ''} e` : ' E'} gostaria de um orçamento.`)}
+                href={whatsappLink(provider.whatsapp, buildSmartMessage(displayName, provider.category, geoCity, geoState))}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackWhatsAppClick(provider.id, provider.slug, trackingSource)}
