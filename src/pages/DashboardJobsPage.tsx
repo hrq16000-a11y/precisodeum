@@ -434,7 +434,7 @@ const DashboardJobsPage = () => {
                    )}
                  </div>
                  <p className="mt-0.5 text-xs text-muted-foreground">
-                   {(job.categories as any)?.icon} {(job.categories as any)?.name || 'Sem categoria'} · {job.city}{job.state ? `, ${job.state}` : ''}
+                   <CategoryIcon icon={(job.categories as any)?.icon} size={12} className="inline-block text-muted-foreground" /> {(job.categories as any)?.name || 'Sem categoria'} · {job.city}{job.state ? `, ${job.state}` : ''}
                    {(job as any).view_count > 0 && <> · 👁 {(job as any).view_count} views</>}
                  </p>
               </div>
