@@ -25,6 +25,7 @@ import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import ActionQueue from '@/components/dashboard/ActionQueue';
 import UpsellBanner from '@/components/dashboard/UpsellBanner';
 import CoursesBanner from '@/components/dashboard/CoursesBanner';
+import OurStoryBanner from '@/components/OurStoryBanner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const DashboardPage = () => {
@@ -607,6 +608,9 @@ const DashboardPage = () => {
           )}
         </AnimatePresence>
       </GlassCard>
+
+      {/* Nossa história — referência à luta */}
+      <OurStoryBanner variant="compact" />
 
       {/* Service Wizard Modal — onboarding only */}
       {provider && user && (
