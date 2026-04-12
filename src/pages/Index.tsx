@@ -44,6 +44,7 @@ const CmsBannersCarousel = lazy(() => import('@/components/home/CmsBannersCarous
 
 const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
+const ActiveProvidersCounter = lazy(() => import('@/components/home/ActiveProvidersCounter'));
 
 // Error boundary to prevent lazy load failures from crashing the page
 class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -252,8 +253,8 @@ const Index = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
       <HeroBanner />
+      <Suspense fallback={null}><ActiveProvidersCounter /></Suspense>
 
       {sectionOrder.map((slug, i) => {
         const section = renderSection(slug);
