@@ -668,6 +668,20 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
     [baseQuery.data, query, city, categorySlug, minRating, state, userLat, userLon, radiusKm]
   );
 
+  // Fire-and-forget demand log for heatmap
+  useMemo(() => {
+    if (!query && !categorySlug) return;
+    if (userLat == null || userLon == null) return;
+    supabase.from('search_demand_logs').insert({
+      latitude: userLat,
+      longitude: userLon,
+      query: query || '',
+      category_slug: categorySlug || '',
+      city: city || '',
+    }).then(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, categorySlug, userLat != null]);
+
   return {
     ...baseQuery,
     data: grouped,

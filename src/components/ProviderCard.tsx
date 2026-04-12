@@ -3,12 +3,14 @@ import { MapPin, Crown, Clock, Circle, ArrowRight, Trophy } from 'lucide-react';
 import { usePrefetchProvider, usePrefetchHandlers } from '@/hooks/usePrefetch';
 import { Button } from '@/components/ui/button';
 import ProfileBadge from '@/components/ProfileBadge';
+import CategoryIcon from '@/components/CategoryIcon';
 import { getRankTier } from '@/components/ReviewSummary';
 import StarRating from '@/components/StarRating';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { DbProvider } from '@/hooks/useProviders';
 import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { whatsappLink } from '@/lib/whatsapp';
+import { useGeoCity } from '@/hooks/useGeoCity';
 import { handleImageError } from '@/lib/imageResolver';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
@@ -44,6 +46,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
 
   const { user } = useAuth();
+  const { city: geoCity, state: geoState } = useGeoCity();
   const isOnline = useIsProviderOnline(provider.userId);
   const prefetch = usePrefetchProvider();
   const handlers = usePrefetchHandlers(prefetch, provider.slug);
@@ -145,8 +148,8 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
         <div className="flex gap-3 sm:gap-4">
            <Avatar className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 transition-transform duration-300 group-hover:scale-105 ring-2 ring-transparent group-hover:ring-accent/20">
             <AvatarImage src={displayPhoto || undefined} alt={displayName} loading="lazy" decoding="async" onError={handleImageError} />
-            <AvatarFallback className="bg-primary/10 text-2xl">
-              {provider.categoryIcon || '🔧'}
+            <AvatarFallback className="bg-primary/10">
+              <CategoryIcon icon={provider.categoryIcon || ''} size={24} className="text-muted-foreground" />
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
@@ -226,7 +229,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
           {provider.whatsapp && (
             <Button variant="accent" size="sm" className="flex-1 h-8 sm:h-9 text-xs sm:text-sm transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" asChild>
               <a
-                href={whatsappLink(provider.whatsapp, `Olá! Vi seu perfil "${displayName}" no Preciso de um e gostaria de mais informações.`)}
+                href={whatsappLink(provider.whatsapp, `Olá ${displayName}! Vi seu perfil de ${provider.category || 'serviços'} no Preciso de um.${geoCity ? ` Estou em ${geoCity}${geoState ? `/${geoState}` : ''} e` : ' E'} gostaria de um orçamento.`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackWhatsAppClick(provider.id, provider.slug, trackingSource)}

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -22,10 +22,12 @@ import { useSearchProvidersGrouped, useCategories, useSearchSuggestions, useGeoC
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List } from 'lucide-react';
 import RouteSearchModal, { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchModal';
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+const ProvidersMap = lazy(() => import('@/components/ProvidersMap'));
 
 const ITEMS_PER_PAGE = 12;
 
@@ -61,6 +63,7 @@ const SearchPage = () => {
   const [page, setPage] = useState(1);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
 
   const effectiveCity = selectedCity || cityParam || geoCity || '';
@@ -508,12 +511,22 @@ const SearchPage = () => {
                 {query && <> para "<span className="font-semibold text-foreground">{query}</span>"</>}
                 {effectiveCity && <> em <span className="font-semibold text-foreground">{effectiveCity}</span></>}
               </p>
-              {!isFallback && filteredLocal.length > 0 && effectiveCity && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-medium text-primary">
-                  <MapPin className="h-3 w-3" />
-                  {filteredLocal.length} na sua região
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {!isFallback && filteredLocal.length > 0 && effectiveCity && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-medium text-primary">
+                    <MapPin className="h-3 w-3" />
+                    {filteredLocal.length} na sua região
+                  </span>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={() => setViewMode(v => v === 'list' ? 'map' : 'list')}
+                >
+                  {viewMode === 'list' ? <><MapIcon className="h-3.5 w-3.5" /> Mapa</> : <><List className="h-3.5 w-3.5" /> Lista</>}
+                </Button>
+              </div>
             </div>
 
             {isFallback && effectiveCity && (
@@ -583,6 +596,18 @@ const SearchPage = () => {
                 <Navigation className="h-3.5 w-3.5" />
                 Mostrando profissionais no trajeto Casa → Trabalho
               </div>
+            )}
+
+            {/* Map View */}
+            {viewMode === 'map' && !isLoading && (
+              <Suspense fallback={<Skeleton className="h-[60vh] rounded-xl" />}>
+                <ProvidersMap
+                  providers={fullyFiltered}
+                  userLat={userLat}
+                  userLon={userLon}
+                  className="mb-4"
+                />
+              </Suspense>
             )}
 
             {isLoading ? (

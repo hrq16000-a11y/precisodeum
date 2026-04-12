@@ -10,6 +10,16 @@ const SERVICES = [
   'instalador de ar-condicionado',
 ];
 
+const NLP_PHRASES = [
+  'meu cano estourou',
+  'tomada não funciona',
+  'preciso pintar a casa',
+  'goteira no telhado',
+  'porta emperrada',
+  'ar condicionado não gela',
+  'montar um móvel',
+];
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -36,9 +46,14 @@ export function useTypingPlaceholder(city: string | null, enabled = true) {
     let pauseTimer: ReturnType<typeof setTimeout> | null = null;
     let frameId: ReturnType<typeof setTimeout> | null = null;
 
+    // Alternate between category and NLP phrases
+    const allPhrases = [
+      ...shuffledRef.current.map(svc => `Preciso de um ${svc} em ${cityText}`),
+      ...shuffle(NLP_PHRASES),
+    ];
+
     const getFullText = () => {
-      const svc = shuffledRef.current[indexRef.current % shuffledRef.current.length];
-      return `Preciso de um ${svc} em ${cityText}`;
+      return allPhrases[indexRef.current % allPhrases.length];
     };
 
     const tick = () => {
