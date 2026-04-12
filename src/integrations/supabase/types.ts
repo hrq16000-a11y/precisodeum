@@ -1163,6 +1163,7 @@ export type Database = {
         Row: {
           city_id: string
           created_at: string
+          geom: unknown
           id: string
           name: string
           slug: string
@@ -1170,6 +1171,7 @@ export type Database = {
         Insert: {
           city_id: string
           created_at?: string
+          geom?: unknown
           id?: string
           name: string
           slug: string
@@ -1177,6 +1179,7 @@ export type Database = {
         Update: {
           city_id?: string
           created_at?: string
+          geom?: unknown
           id?: string
           name?: string
           slug?: string
@@ -3344,6 +3347,10 @@ export type Database = {
           total_records: number
         }[]
       }
+      get_neighborhood_by_point: {
+        Args: { _lat: number; _lng: number }
+        Returns: string
+      }
       get_rss_import_headers: { Args: never; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
@@ -3375,6 +3382,42 @@ export type Database = {
         Returns: undefined
       }
       is_sponsor: { Args: { _user_id: string }; Returns: boolean }
+      nearby_providers: {
+        Args: {
+          _category_slug?: string
+          _lat: number
+          _limit?: number
+          _lng: number
+          _radius_m?: number
+        }
+        Returns: {
+          business_name: string
+          category_icon: string
+          category_name: string
+          category_slug: string
+          city: string
+          description: string
+          distance_m: number
+          featured: boolean
+          id: string
+          latitude: number
+          longitude: number
+          neighborhood: string
+          phone: string
+          photo_url: string
+          plan: string
+          portfolio_album_count: number
+          portfolio_photo_count: number
+          rating_avg: number
+          review_count: number
+          services_count: number
+          slug: string
+          state: string
+          user_id: string
+          whatsapp: string
+          years_experience: number
+        }[]
+      }
       track_sponsor_metric: {
         Args: {
           _event_type: string
