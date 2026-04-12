@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Sparkles, TrendingUp, MapPin, Wrench, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import CategoryIcon from '@/components/CategoryIcon';
 import { useSearchSuggestions } from '@/hooks/useProviders';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useTypingPlaceholder } from '@/hooks/useTypingPlaceholder';
