@@ -91,6 +91,13 @@
     overflow-x: hidden;
   }
 
+  /* Bottom nav safe padding for mobile */
+  @media (max-width: 767px) {
+    body {
+      padding-bottom: 4.5rem;
+    }
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }

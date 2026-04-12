@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import InfoRow from '@/components/ui/InfoRow';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
@@ -12,6 +13,7 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { whatsappLink } from '@/lib/whatsapp';
+import { formatDate, formatDeadline, formatCurrency } from '@/lib/formatters';
 import { Eye, Share2, Facebook, Linkedin } from 'lucide-react';
 
 const renderList = (text: string) => {
@@ -147,12 +149,12 @@ const JobDetailPage = () => {
               {job.subtitle && <p className="mt-1 text-base text-muted-foreground">{job.subtitle}</p>}
             </div>
 
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-col gap-[0.625rem] sm:flex-row sm:flex-wrap sm:gap-[1rem] text-sm text-muted-foreground">
               {job.city && (
-                <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{job.city}{job.state ? `, ${job.state}` : ''}{job.neighborhood ? ` - ${job.neighborhood}` : ''}</span>
+                <InfoRow icon={MapPin}>{job.city}{job.state ? `, ${job.state}` : ''}{job.neighborhood ? ` - ${job.neighborhood}` : ''}</InfoRow>
               )}
-              {job.deadline && <span className="flex items-center gap-1"><Clock className="h-4 w-4" />Prazo: {job.deadline}</span>}
-              <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />Publicada em {new Date(job.created_at).toLocaleDateString('pt-BR')}</span>
+              {job.deadline && <InfoRow icon={Clock}>Prazo: {formatDeadline(job.deadline)}</InfoRow>}
+              <InfoRow icon={Briefcase}>Publicada em {formatDate(job.created_at)}</InfoRow>
             </div>
 
             {/* Description */}
@@ -199,7 +201,7 @@ const JobDetailPage = () => {
                 <h2 className="flex items-center gap-2 font-display text-lg font-bold text-foreground">
                   <DollarSign className="h-5 w-5 text-accent" /> Salário e Benefícios
                 </h2>
-                {job.salary && <p className="mt-3 text-sm font-medium text-foreground">💰 {job.salary}</p>}
+                {job.salary && <p className="mt-3 text-sm font-medium text-foreground">💰 {formatCurrency(job.salary)}</p>}
                 {job.benefits && (
                   <ul className="mt-2 space-y-1.5 list-disc list-inside">{renderList(job.benefits)}</ul>
                 )}
@@ -243,7 +245,7 @@ const JobDetailPage = () => {
               {/* Social sharing */}
               <div className="pt-2 border-t border-border">
                 <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1"><Share2 className="h-3.5 w-3.5" /> Compartilhar</p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={shareWhatsApp}>
                     <MessageCircle className="mr-1 h-3.5 w-3.5" /> WhatsApp
                   </Button>
