@@ -370,18 +370,17 @@ const SearchPage = () => {
                 </div>
               </div>
 
-                {/* Route search */}
-                <div className="pt-2 border-t border-border">
-                  <Button
-                    variant={routeCorridor ? 'accent' : 'outline'}
-                    size="sm"
-                    className="w-full text-xs gap-1.5"
-                    onClick={() => routeCorridor ? setRouteCorridor(null) : setRouteModalOpen(true)}
-                  >
-                    <Navigation className="h-3.5 w-3.5" />
-                    {routeCorridor ? 'Limpar rota Casa→Trabalho' : 'Buscar no caminho Casa→Trabalho'}
-                  </Button>
-                </div>
+              {/* Route search */}
+              <div className="pt-3 mt-3 border-t border-border">
+                <Button
+                  variant={routeCorridor ? 'accent' : 'outline'}
+                  size="sm"
+                  className="w-full text-xs gap-1.5"
+                  onClick={() => routeCorridor ? setRouteCorridor(null) : setRouteModalOpen(true)}
+                >
+                  <Navigation className="h-3.5 w-3.5" />
+                  {routeCorridor ? 'Limpar rota Casa→Trabalho' : 'Buscar no caminho Casa→Trabalho'}
+                </Button>
               </div>
             </div>
           </aside>
