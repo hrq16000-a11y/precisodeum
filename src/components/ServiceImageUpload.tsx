@@ -46,6 +46,8 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const { data: { session } } = await supabase.auth.getSession();
 
+      let nextOrder = images.length > 0 ? Math.max(...images.map(i => i.display_order)) + 1 : 0;
+
       for (const raw of Array.from(files)) {
         if (raw.size > 5 * 1024 * 1024) {
           toast.error(`${raw.name} excede 5MB`);
@@ -90,13 +92,12 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
           toast.success(`Imagem otimizada: ${origLabel} → ${optLabel} (-${data.savings_percent}%)`);
         }
 
-        const maxOrder = images.length > 0 ? Math.max(...images.map(i => i.display_order)) + 1 : 0;
-
         await supabase.from('service_images').insert({
           service_id: serviceId,
           image_url: publicUrl,
-          display_order: maxOrder,
+          display_order: nextOrder,
         });
+        nextOrder++;
 
         // Idempotent media upsert
         if (userRef) {
