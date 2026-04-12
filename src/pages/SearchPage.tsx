@@ -60,6 +60,7 @@ const SearchPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showAllLocations, setShowAllLocations] = useState(false);
+  const [showOutOfState, setShowOutOfState] = useState(false);
   const [page, setPage] = useState(1);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
@@ -85,11 +86,12 @@ const SearchPage = () => {
   } = useSearchProvidersGrouped(query, effectiveCity, selectedCategory, minRating, geoState || '', userLat, userLon, radiusKm);
 
   const localProviders = grouped?.local || [];
-  const otherProviders = grouped?.other || [];
+  const nearbyProviders = grouped?.nearby || [];
+  const outOfStateProviders = grouped?.outOfState || [];
   const isFallback = grouped?.isFallback || false;
 
   // Combine for client-side filters
-  const allProviders = useMemo(() => [...localProviders, ...otherProviders], [localProviders, otherProviders]);
+  const allProviders = useMemo(() => [...localProviders, ...nearbyProviders, ...outOfStateProviders], [localProviders, nearbyProviders, outOfStateProviders]);
 
   // Apply additional client-side filters
   const applyClientFilters = useCallback((list: DbProvider[]) => {
@@ -145,11 +147,12 @@ const SearchPage = () => {
   }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor]);
 
   const filteredLocal = useMemo(() => applyClientFilters(localProviders), [applyClientFilters, localProviders]);
-  const filteredOther = useMemo(() => applyClientFilters(otherProviders), [applyClientFilters, otherProviders]);
+  const filteredNearby = useMemo(() => applyClientFilters(nearbyProviders), [applyClientFilters, nearbyProviders]);
+  const filteredOutOfState = useMemo(() => applyClientFilters(outOfStateProviders), [applyClientFilters, outOfStateProviders]);
 
-  const fullyFiltered = [...filteredLocal, ...filteredOther];
-  const nearestDistanceKm = filteredLocal.length > 0 ? filteredLocal[0].distanceKm : undefined;
-  const totalDisplay = filteredLocal.length + (showAllLocations ? filteredOther.length : 0);
+  const fullyFiltered = [...filteredLocal, ...filteredNearby, ...filteredOutOfState];
+  const nearestDistanceKm = filteredLocal.length > 0 ? filteredLocal[0].distanceKm : (filteredNearby.length > 0 ? filteredNearby[0].distanceKm : undefined);
+  const totalDisplay = filteredLocal.length + filteredNearby.length + (showOutOfState ? filteredOutOfState.length : 0);
 
   const activeFilterCount = [selectedCategory, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter !== 'all' ? 'x' : '', minRating > 0 ? 'x' : ''].filter(Boolean).length;
 
