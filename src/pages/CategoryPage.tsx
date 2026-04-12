@@ -281,6 +281,7 @@ const CategoryPage = () => {
             stateName={geoState || undefined}
             resultCount={allProviders.length}
             nearestDistanceKm={nearestDistanceKm}
+            nearestCity={nearestCity}
           />
         )}
 
@@ -291,6 +292,7 @@ const CategoryPage = () => {
             stateName={geoState || undefined}
             resultCount={localProviders.length}
             nearestDistanceKm={nearestDistanceKm}
+            nearestCity={nearestCity}
           />
         )}
 
