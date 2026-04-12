@@ -6,6 +6,7 @@ import { Upload, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleImageError } from '@/lib/imageResolver';
 import { compressImage } from '@/lib/compressImage';
+import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
 
 interface ImageUploadFieldProps {
   value: string;
@@ -14,6 +15,10 @@ interface ImageUploadFieldProps {
   folder?: string;
   label?: string;
   placeholder?: string;
+  /** Entity type for media library tracking (e.g. 'sponsor', 'banner', 'category') */
+  entityType?: string;
+  /** Entity reference ID for media library tracking */
+  entityRef?: string;
 }
 
 const ImageUploadField = ({
@@ -23,6 +28,8 @@ const ImageUploadField = ({
   folder = '',
   label = 'Imagem',
   placeholder = 'https://...',
+  entityType,
+  entityRef,
 }: ImageUploadFieldProps) => {
   const [uploading, setUploading] = useState(false);
   const [mode, setMode] = useState<'url' | 'upload'>('url');
@@ -69,6 +76,24 @@ const ImageUploadField = ({
       if (data.error) throw new Error(data.error);
 
       onChange(data.url);
+
+      // Sync to media library if entityType provided
+      if (entityType && data.path) {
+        const identity = await resolveIdentity();
+        if (identity.userRef) {
+          upsertMedia({
+            storagePath: data.path,
+            publicUrl: data.url,
+            originalName: raw.name,
+            mimeType: file.type || 'image/webp',
+            entityType: entityType,
+            entityRef: entityRef || 'admin',
+            userRef: identity.userRef,
+            sizeOriginal: raw.size,
+          });
+        }
+      }
+
       if (data.deduplicated) toast.info('Imagem já existente reutilizada!');
       else toast.success('Imagem enviada!');
     } catch (err) {
