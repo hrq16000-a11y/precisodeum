@@ -82,7 +82,14 @@ const CategoryPage = () => {
       }
     });
 
-    const distSort = (a: { _dist?: number }, b: { _dist?: number }) => {
+    const distSort = (a: { _dist?: number; city?: string }, b: { _dist?: number; city?: string }) => {
+      // Tier 1: same city as user always ranks first
+      if (cityNorm) {
+        const aMatch = normalizeCityName(a.city || '') === cityNorm;
+        const bMatch = normalizeCityName(b.city || '') === cityNorm;
+        if (aMatch !== bMatch) return aMatch ? -1 : 1;
+      }
+      // Tier 2: sort by distance
       const distA = a._dist ?? Infinity;
       const distB = b._dist ?? Infinity;
       if (distA !== Infinity && distB !== Infinity) {
