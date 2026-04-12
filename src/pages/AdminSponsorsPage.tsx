@@ -461,6 +461,7 @@ const AdminSponsorsPage = () => {
   const [notifDialog, setNotifDialog] = useState(false);
   const [notifForm, setNotifForm] = useState({ sponsor_id: '', title: '', message: '' });
 
+  const unlinkMutation = useMutation({
     mutationFn: async (id: string) => { await supabase.from('sponsor_contacts' as any).delete().eq('id', id); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-sponsor-contacts'] }); toast({ title: 'Vínculo removido' }); },
   });
