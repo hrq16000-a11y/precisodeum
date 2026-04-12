@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, X, Sparkles, TrendingUp, MapPin, Wrench, Grid3X3 } from 'lucide-react';
+import { Search, X, Sparkles, TrendingUp, MapPin, Wrench, Grid3X3, Flame, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useSearchSuggestions } from '@/hooks/useProviders';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useTypingPlaceholder } from '@/hooks/useTypingPlaceholder';
+import { matchNaturalLanguage } from '@/lib/naturalLanguageMap';
 
 interface SearchBarProps {
   variant?: 'hero' | 'compact';
@@ -13,7 +14,7 @@ interface SearchBarProps {
 
 interface Suggestion {
   label: string;
-  type: 'category' | 'city' | 'service' | 'popular';
+  type: 'category' | 'city' | 'service' | 'popular' | 'nlp';
   icon?: string;
   slug?: string;
   extra?: string;
@@ -30,7 +31,6 @@ const TRENDING_QUERIES = [
   'Marceneiro',
 ];
 
-// Fisher-Yates shuffle
 const shuffleArray = <T,>(arr: T[]): T[] => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -45,6 +45,7 @@ const badgeColors: Record<string, string> = {
   category: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
   service: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
   city: 'bg-purple-500/15 text-purple-600 dark:text-purple-400',
+  nlp: 'bg-orange-500/15 text-orange-600 dark:text-orange-400',
 };
 
 const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
@@ -62,7 +63,6 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   const { data: suggestions } = useSearchSuggestions();
   const typingPlaceholder = useTypingPlaceholder(geoCity, !isFocused && !query.trim());
 
-  // Request browser geolocation on first focus
   const requestGeoOnce = useCallback(() => {
     try {
       if (sessionStorage.getItem(GEO_ASKED_KEY)) return;
@@ -87,36 +87,38 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
     } catch { /* silent */ }
   }, [setCity]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handler);
     document.addEventListener('touchstart', handler, { passive: true });
-
     return () => {
       document.removeEventListener('mousedown', handler);
       document.removeEventListener('touchstart', handler);
     };
   }, []);
 
-  // Build suggestions based on query
+  // NLP match
+  const nlpMatch = useMemo(() => {
+    const q = query.trim();
+    if (q.length < 3) return null;
+    return matchNaturalLanguage(q);
+  }, [query]);
+
   const filteredSuggestions = useMemo((): Suggestion[] => {
     if (!suggestions) return [];
     const q = query.trim().toLowerCase();
 
-    // If no query, show trending
     if (!q) {
       const trending: Suggestion[] = TRENDING_QUERIES.map(label => {
         const cat = suggestions.categories.find(c => c.name.toLowerCase() === label.toLowerCase());
         return {
           label,
           type: 'popular' as const,
-          icon: cat?.icon || '🔥',
+          icon: cat?.icon || '',
           slug: cat?.slug,
         };
       });
@@ -125,27 +127,36 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
 
     const results: Suggestion[] = [];
 
-    // Match categories
+    // NLP match card at top
+    if (nlpMatch) {
+      const cat = suggestions.categories.find(c => c.slug === nlpMatch.categorySlug);
+      results.push({
+        label: cat?.name || nlpMatch.categorySlug,
+        type: 'nlp',
+        icon: cat?.icon || '',
+        slug: cat?.slug || nlpMatch.categorySlug,
+        extra: `Entendemos: "${nlpMatch.phrase}"`,
+      });
+    }
+
     suggestions.categories
       .filter(c => c.name.toLowerCase().includes(q))
       .slice(0, 3)
       .forEach(c => results.push({ label: c.name, type: 'category', icon: c.icon, slug: c.slug }));
 
-    // Match popular services
     suggestions.services
       .filter(s => s.name.toLowerCase().includes(q))
       .slice(0, 3)
       .forEach(s => results.push({ label: s.name, type: 'service', extra: s.category_name, slug: s.slug }));
 
-    // Match cities (secondary)
     suggestions.cities
       .filter(c => c.name.toLowerCase().includes(q) || c.state.toLowerCase().includes(q))
       .slice(0, 2)
       .forEach(c => results.push({ label: c.name, type: 'city', extra: c.state, slug: c.slug }));
 
-    return results.slice(0, 7);
+    return results.slice(0, 8);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, suggestions, openCount]);
+  }, [query, suggestions, openCount, nlpMatch]);
 
   const [searchError, setSearchError] = useState('');
 
@@ -166,6 +177,10 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
 
   const handleSelectSuggestion = (s: Suggestion) => {
     setIsOpen(false);
+    if (s.type === 'nlp' && s.slug) {
+      navigate(`/categoria/${s.slug}`);
+      return;
+    }
     setQuery(s.label);
     const params = new URLSearchParams();
     params.set('q', s.label);
@@ -203,7 +218,8 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
       case 'category': return <Grid3X3 className="h-3.5 w-3.5" />;
       case 'service': return <Wrench className="h-3.5 w-3.5" />;
       case 'city': return <MapPin className="h-3.5 w-3.5" />;
-      case 'popular': return <TrendingUp className="h-3.5 w-3.5" />;
+      case 'popular': return <Flame className="h-3.5 w-3.5" />;
+      case 'nlp': return <Zap className="h-3.5 w-3.5" />;
       default: return null;
     }
   };
@@ -213,6 +229,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
     service: 'Serviço',
     city: 'Cidade',
     popular: 'Popular',
+    nlp: 'IA',
   };
 
   const hasQuery = query.trim().length > 0;
@@ -224,7 +241,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
     >
       {!hasQuery && (
         <div className="flex items-center gap-2 border-b border-border/40 px-4 py-2.5">
-          <Sparkles className="h-3.5 w-3.5 text-accent animate-pulse" />
+          <Flame className="h-3.5 w-3.5 text-orange-500" />
           <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Buscas em alta</span>
         </div>
       )}
@@ -235,7 +252,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
             type="button"
             className={`suggestion-item flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-all duration-200 hover:bg-accent/5 hover:scale-[1.01] active:scale-[0.99] ${
               i === highlightIdx ? 'bg-accent/8' : ''
-            }`}
+            } ${s.type === 'nlp' ? 'bg-gradient-to-r from-orange-500/5 to-accent/5 border-b border-orange-500/10' : ''}`}
             style={{
               animation: 'suggestion-slide-in 0.35s ease-out forwards',
               animationDelay: `${i * 60}ms`,
@@ -244,12 +261,31 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
             onClick={() => handleSelectSuggestion(s)}
             onMouseEnter={() => setHighlightIdx(i)}
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent/10 to-primary/10 text-sm shadow-sm ring-1 ring-accent/10 transition-transform duration-200 group-hover:scale-110">
-              <CategoryIcon icon={s.icon || ''} size={18} />
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm ring-1 transition-transform duration-200 group-hover:scale-110 ${
+              s.type === 'nlp'
+                ? 'bg-gradient-to-br from-orange-500/20 to-accent/20 ring-orange-500/20'
+                : 'bg-gradient-to-br from-accent/10 to-primary/10 ring-accent/10'
+            }`}>
+              {s.type === 'nlp' ? (
+                <Zap className="h-4 w-4 text-orange-500" />
+              ) : (
+                <CategoryIcon icon={s.icon || ''} size={18} />
+              )}
             </span>
             <div className="min-w-0 flex-1">
-              <span className="block truncate font-semibold text-foreground">{s.label}</span>
-              {s.extra && <span className="block truncate text-xs text-muted-foreground/80">{s.extra}</span>}
+              {s.type === 'nlp' ? (
+                <>
+                  <span className="block font-bold text-foreground">
+                    Você precisa de um <span className="text-accent">{s.label}</span>
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground/80">{s.extra}</span>
+                </>
+              ) : (
+                <>
+                  <span className="block truncate font-semibold text-foreground">{s.label}</span>
+                  {s.extra && <span className="block truncate text-xs text-muted-foreground/80">{s.extra}</span>}
+                </>
+              )}
             </div>
             <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${badgeColors[s.type] || 'bg-muted text-muted-foreground'}`}>
               {typeIcon(s.type)}
@@ -315,41 +351,41 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   }
 
   return (
-      <div ref={wrapperRef} className="relative z-40 w-full max-w-xl">
-        <form onSubmit={handleSearch}>
-          <div
-            className={`flex items-center gap-2 rounded-full bg-card p-2 pl-5 transition-all duration-300 ${
-              isFocused
-                ? 'shadow-lg ring-2 ring-accent/20'
-                : 'shadow-card-hover'
-            }`}
-          >
-            <Search className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isFocused ? 'text-accent' : 'text-muted-foreground'}`} />
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder={typingPlaceholder || "O que você precisa? Ex: eletricista, pintor..."}
-              value={query}
-              onChange={(e) => { setQuery(e.target.value); setSearchError(''); setIsOpen(true); }}
-              onFocus={handleFocus}
-              onBlur={() => setIsFocused(false)}
-              onKeyDown={handleKeyDown}
-              className="min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/60 outline-none"
-              autoComplete="off"
-            />
-            {query && (
-              <button type="button" onClick={() => { setQuery(''); inputRef.current?.focus(); }} className="mr-1 text-muted-foreground hover:text-foreground">
-                <X className="h-4 w-4" />
-              </button>
-            )}
-            <Button type="submit" variant="hero" size="lg" className="rounded-full px-6">
-              Buscar
-            </Button>
-          </div>
-        </form>
-        {searchError && <p className="mt-2 text-center text-xs text-destructive">{searchError}</p>}
-        {suggestionsDropdown}
-      </div>
+    <div ref={wrapperRef} className="relative z-40 w-full max-w-xl">
+      <form onSubmit={handleSearch}>
+        <div
+          className={`flex items-center gap-2 rounded-full bg-card p-2 pl-5 transition-all duration-300 ${
+            isFocused
+              ? 'shadow-lg ring-2 ring-accent/20'
+              : 'shadow-card-hover'
+          }`}
+        >
+          <Search className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isFocused ? 'text-accent' : 'text-muted-foreground'}`} />
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder={typingPlaceholder || "O que você precisa? Ex: eletricista, pintor..."}
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setSearchError(''); setIsOpen(true); }}
+            onFocus={handleFocus}
+            onBlur={() => setIsFocused(false)}
+            onKeyDown={handleKeyDown}
+            className="min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/60 outline-none"
+            autoComplete="off"
+          />
+          {query && (
+            <button type="button" onClick={() => { setQuery(''); inputRef.current?.focus(); }} className="mr-1 text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+          <Button type="submit" variant="hero" size="lg" className="rounded-full px-6">
+            Buscar
+          </Button>
+        </div>
+      </form>
+      {searchError && <p className="mt-2 text-center text-xs text-destructive">{searchError}</p>}
+      {suggestionsDropdown}
+    </div>
   );
 };
 

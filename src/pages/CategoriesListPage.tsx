@@ -97,10 +97,16 @@ const CategoriesListPage = () => {
                 >
                   <Link
                     to={`/categoria/${cat.slug}`}
-                    className="group relative flex items-center gap-[0.625rem] rounded-xl border border-border bg-card p-[0.75rem] shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30 overflow-hidden min-h-[3.5rem]"
+                    className="group relative flex items-center gap-[0.625rem] rounded-3xl border border-border/50 bg-card p-[0.75rem] shadow-[0_2px_12px_-2px_rgb(0_0_0/0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgb(0_0_0/0.12)] hover:-translate-y-0.5 hover:border-primary/30 overflow-hidden min-h-[3.5rem]"
                   >
+                    {/* Badge de quantidade */}
+                    {cat.count > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-card">
+                        {cat.count > 99 ? '99+' : cat.count}
+                      </span>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/[0.03] to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
-                    <span className="relative flex min-h-[2.5rem] min-w-[2.5rem] h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                    <span className="relative flex min-h-[2.5rem] min-w-[2.5rem] h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                       <CategoryIcon icon={cat.icon} size={22} className="text-primary" />
                     </span>
                     <div className="relative min-w-0 flex-1">
