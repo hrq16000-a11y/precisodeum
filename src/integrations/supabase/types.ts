@@ -3233,6 +3233,8 @@ export type Database = {
           benefits: string | null
           category_id: string | null
           city: string | null
+          contact_name: string | null
+          contact_phone: string | null
           cover_image_url: string | null
           created_at: string | null
           deadline: string | null
@@ -3252,6 +3254,8 @@ export type Database = {
           title: string | null
           updated_at: string | null
           user_id: string | null
+          view_count: number | null
+          whatsapp: string | null
           work_model: string | null
         }
         Insert: {
@@ -3260,6 +3264,8 @@ export type Database = {
           benefits?: string | null
           category_id?: string | null
           city?: string | null
+          contact_name?: never
+          contact_phone?: never
           cover_image_url?: string | null
           created_at?: string | null
           deadline?: string | null
@@ -3279,6 +3285,8 @@ export type Database = {
           title?: string | null
           updated_at?: string | null
           user_id?: string | null
+          view_count?: number | null
+          whatsapp?: never
           work_model?: string | null
         }
         Update: {
@@ -3287,6 +3295,8 @@ export type Database = {
           benefits?: string | null
           category_id?: string | null
           city?: string | null
+          contact_name?: never
+          contact_phone?: never
           cover_image_url?: string | null
           created_at?: string | null
           deadline?: string | null
@@ -3306,6 +3316,8 @@ export type Database = {
           title?: string | null
           updated_at?: string | null
           user_id?: string | null
+          view_count?: number | null
+          whatsapp?: never
           work_model?: string | null
         }
         Relationships: [
