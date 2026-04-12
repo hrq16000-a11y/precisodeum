@@ -5,12 +5,13 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Star, Filter, GraduationCap, Sparkles } from 'lucide-react';
+import { Search, Filter, GraduationCap, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CoursesHero from '@/components/courses/CoursesHero';
 import CourseCard from '@/components/courses/CourseCard';
 import CoursesSkeleton from '@/components/courses/CoursesSkeleton';
 import CoursesCta from '@/components/courses/CoursesCta';
+import AdSlot from '@/components/ads/AdSlot';
 
 const CATEGORIES = [
   { value: 'all', label: 'Todas' },
@@ -80,6 +81,9 @@ const CoursesPage = () => {
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         <CoursesHero />
 
+        {/* Slot: Topo da listagem */}
+        <AdSlot slotSlug="courses-top" layout="banner" className="mb-6" />
+
         {/* Filters */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -140,11 +144,7 @@ const CoursesPage = () => {
 
         {/* Featured */}
         {featuredCourses.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-12"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-12">
             <div className="flex items-center gap-2 mb-5">
               <div className="flex items-center gap-2 bg-warning/10 rounded-full px-4 py-1.5">
                 <Sparkles className="h-4 w-4 text-warning" />
@@ -159,6 +159,9 @@ const CoursesPage = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Slot: Entre destaques e regulares */}
+        <AdSlot slotSlug="courses-between" layout="banner" className="mb-8" />
 
         {/* Regular */}
         {regularCourses.length > 0 && (
@@ -196,6 +199,9 @@ const CoursesPage = () => {
             </button>
           </motion.div>
         )}
+
+        {/* Slot: Rodapé dos cursos */}
+        <AdSlot slotSlug="courses-footer" layout="banner" className="mt-8 mb-4" />
 
         <CoursesCta />
       </main>
