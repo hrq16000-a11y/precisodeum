@@ -91,8 +91,9 @@ const SearchPage = () => {
     if (featuredFilter === 'featured') results = results.filter(p => p.featured);
     else if (featuredFilter === 'normal') results = results.filter(p => !p.featured);
 
+    // Sort within group — never mix local/other ordering
     if (sortBy !== 'relevance') {
-      results.sort((a, b) => {
+      const sortFn = (a: DbProvider, b: DbProvider) => {
         switch (sortBy) {
           case 'rating': return b.rating - a.rating;
           case 'reviews': return b.reviewCount - a.reviewCount;
@@ -101,7 +102,8 @@ const SearchPage = () => {
           case 'experience': return b.yearsExperience - a.yearsExperience;
           default: return 0;
         }
-      });
+      };
+      results.sort(sortFn);
     }
     return results;
   }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy]);
@@ -110,6 +112,7 @@ const SearchPage = () => {
   const filteredOther = useMemo(() => applyClientFilters(otherProviders), [applyClientFilters, otherProviders]);
 
   const fullyFiltered = [...filteredLocal, ...filteredOther];
+  const nearestDistanceKm = filteredLocal.length > 0 ? filteredLocal[0].distanceKm : undefined;
   const totalDisplay = filteredLocal.length + (showAllLocations ? filteredOther.length : 0);
 
   const activeFilterCount = [selectedCategory, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter !== 'all' ? 'x' : '', minRating > 0 ? 'x' : ''].filter(Boolean).length;
@@ -383,6 +386,17 @@ const SearchPage = () => {
                 expansionLevel="all"
                 stateName={geoState || undefined}
                 resultCount={fullyFiltered.length}
+                nearestDistanceKm={nearestDistanceKm}
+              />
+            )}
+
+            {!isFallback && nearestDistanceKm != null && nearestDistanceKm > 50 && (
+              <GeoFallbackBanner
+                originalCity={effectiveCity}
+                expansionLevel="all"
+                stateName={geoState || undefined}
+                resultCount={filteredLocal.length}
+                nearestDistanceKm={nearestDistanceKm}
               />
             )}
 
