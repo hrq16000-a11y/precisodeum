@@ -2102,6 +2102,39 @@ export type Database = {
         }
         Relationships: []
       }
+      search_demand_logs: {
+        Row: {
+          category_slug: string | null
+          city: string | null
+          created_at: string
+          geog: unknown
+          id: string
+          latitude: number | null
+          longitude: number | null
+          query: string | null
+        }
+        Insert: {
+          category_slug?: string | null
+          city?: string | null
+          created_at?: string
+          geog?: unknown
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          query?: string | null
+        }
+        Update: {
+          category_slug?: string | null
+          city?: string | null
+          created_at?: string
+          geog?: unknown
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          query?: string | null
+        }
+        Relationships: []
+      }
       service_categories: {
         Row: {
           category_id: string
