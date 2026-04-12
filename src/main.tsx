@@ -125,3 +125,15 @@ if ('requestIdleCallback' in window) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+// ── Deferred Service Worker registration (non-render-blocking) ──
+const registerSW = () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+  }
+};
+if ('requestIdleCallback' in window) {
+  (window as any).requestIdleCallback(registerSW);
+} else {
+  setTimeout(registerSW, 2000);
+}
