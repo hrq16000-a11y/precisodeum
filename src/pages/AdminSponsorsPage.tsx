@@ -751,13 +751,16 @@ const AdminSponsorsPage = () => {
 
                     {/* Actions footer */}
                     <div className="border-t border-border px-3 py-1.5 flex items-center gap-1">
+                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={(e) => { e.stopPropagation(); toggleActive.mutate({ id: s.id, active: !s.active }); }}>
+                        <Power className="h-3 w-3" /> {s.active ? 'Off' : 'On'}
+                      </Button>
                       <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => openEdit(s)}>
                         <Pencil className="h-3 w-3" /> Editar
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => {
-                        setLinkForm(p => ({ ...p, sponsor_id: s.id })); setLinkDialog(true);
+                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => {
+                        setNotifForm({ sponsor_id: s.id, title: '', message: '' }); setNotifDialog(true);
                       }}>
-                        <Link2 className="h-3 w-3" /> Vincular
+                        <Bell className="h-3 w-3" />
                       </Button>
                       <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" onClick={() => handleSoftDelete(s.id)}>
                         <Trash2 className="h-3 w-3" />
