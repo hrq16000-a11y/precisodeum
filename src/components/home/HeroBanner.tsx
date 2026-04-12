@@ -16,7 +16,7 @@ const FALLBACK_BG_IMAGES = [
   '/hero-bg-13.jpg', '/hero-bg-14.jpg', '/hero-bg-15.jpg', '/hero-bg-16.jpg',
   '/hero-bg-17.jpg', '/hero-bg-18.jpg', '/hero-bg-19.jpg', '/hero-bg-20.jpg',
 ];
-const FALLBACK_PREFIXES = ['Encontre um', 'Preciso de um'];
+const FALLBACK_PREFIXES = ['Encontre o melhor', 'Preciso de'];
 
 const HeroPrefixRotator = ({ prefixes }: { prefixes: string[] }) => {
   const [index, setIndex] = useState(0);
