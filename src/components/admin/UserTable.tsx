@@ -175,7 +175,8 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                     )}
                     {provider.categories && (
                       <span className="truncate">
-                        {(provider.categories as any)?.icon} {(provider.categories as any)?.name}
+                        <CategoryIcon icon={(provider.categories as any)?.icon} size={14} className="text-muted-foreground" />
+                        {(provider.categories as any)?.name}
                       </span>
                     )}
                   </div>

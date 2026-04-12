@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -115,7 +116,11 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
               <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
               <SelectContent>
                 {categories.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <CategoryIcon icon={c.icon} size={14} /> {c.name}
+                    </span>
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
