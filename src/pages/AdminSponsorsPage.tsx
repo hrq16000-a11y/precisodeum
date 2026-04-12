@@ -566,7 +566,7 @@ const AdminSponsorsPage = () => {
         )}
 
         {/* ── KPIs ── */}
-        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
           {[
             { icon: Megaphone, label: 'Patrocinadores', value: sponsors.length, sub: `${activeCount} ativos` },
             { icon: Users, label: 'Vínculos', value: contacts.length, sub: 'Usuários associados' },
@@ -574,6 +574,8 @@ const AdminSponsorsPage = () => {
             { icon: FileText, label: 'Contratos', value: contracts.length, sub: `R$ ${revenue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}` },
             { icon: Eye, label: 'Impressões', value: totalImpressions.toLocaleString('pt-BR'), sub: 'Total acumulado' },
             { icon: MousePointerClick, label: 'Cliques', value: totalClicks.toLocaleString('pt-BR'), sub: `${totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(1) : '0'}% CTR` },
+            { icon: Gauge, label: 'Saúde Média', value: `${avgHealthScore}%`, sub: avgHealthScore >= 80 ? 'Saudável' : avgHealthScore >= 50 ? 'Atenção' : 'Crítico' },
+            { icon: AlertTriangle, label: 'Alertas', value: alerts.length, sub: alerts.length > 0 ? 'Pendentes' : 'Nenhum' },
           ].map((kpi, i) => (
             <Card key={i}>
               <CardContent className="pt-3 pb-2 flex items-center gap-2.5">
