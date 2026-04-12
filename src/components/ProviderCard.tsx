@@ -140,7 +140,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       viewport={{ once: true, margin: '-30px' }}
       transition={{ duration: 0.45, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
       whileHover={{ y: -4 }}
-      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-shadow duration-300 hover:shadow-card-hover ${hasImages ? 'border-accent/50 ring-1 ring-accent/20' : 'border-border'}`}
+      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-shadow duration-300 hover:shadow-card-hover ${engTier.borderClass}`}
       {...handlers}
     >
       {/* Hover gradient glow */}
@@ -167,15 +167,13 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 <h3 className="line-clamp-2 break-words font-display text-sm sm:text-base font-bold text-foreground group-hover:text-accent transition-colors">
                   {displayName}
                 </h3>
-                {provider.plan === 'premium' && (
-                  hasOwnPhoto ||
-                  provider.servicesCount >= (destaqueMinServices || 1) ||
-                  (provider.portfolioAlbumCount || 0) > 0 ||
-                  !!(provider as any).description
-                ) && (
+                {engTier.showCrown && (
                   <motion.div animate={{ rotate: [0, 12, -12, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}>
                     <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />
                   </motion.div>
+                )}
+                {engTier.tier === 'engaged' && (
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-label="Engajado" />
                 )}
               </div>
             </Link>
