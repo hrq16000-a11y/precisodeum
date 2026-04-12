@@ -80,12 +80,77 @@ const emptyForm = {
   sponsor_type: 'global', short_description: '', full_description: '',
   phone: '', whatsapp: '', external_link: '', linked_city: '', linked_category: '',
   plan_tier: 'basic', badge_type: 'Patrocinado', status: 'active',
+  guaranteed_impressions: 0,
 };
 
 const PERM_LABELS: Record<string, string> = {
   banners: 'Meus Banners', campanhas: 'Campanhas', metricas: 'Métricas',
   contratos: 'Contratos', notificacoes: 'Notificações', dados: 'Meus Dados',
 };
+
+/** Compute a 0-100 health score for a sponsor */
+function computeHealthScore(s: Sponsor, m30?: { imp: number; clk: number }): { score: number; label: string; color: string; issues: string[] } {
+  let score = 100;
+  const issues: string[] = [];
+
+  // No banner image = -30
+  if (!s.image_url) { score -= 30; issues.push('Sem banner'); }
+
+  // Inactive = -20
+  if (!s.active) { score -= 20; issues.push('Inativo'); }
+
+  // Expired = -25
+  if (s.end_date && new Date(s.end_date) < new Date()) { score -= 25; issues.push('Expirado'); }
+
+  // Expiring soon (≤7d) = -10
+  if (s.end_date && !issues.includes('Expirado')) {
+    const d = differenceInDays(new Date(s.end_date), new Date());
+    if (d <= 7) { score -= 10; issues.push(`Expira em ${d}d`); }
+  }
+
+  // Low CTR (< 0.5%) when impressions > 100
+  if (s.impressions > 100) {
+    const ctr = (s.clicks / s.impressions) * 100;
+    if (ctr < 0.5) { score -= 15; issues.push(`CTR baixo (${ctr.toFixed(2)}%)`); }
+  }
+
+  // No recent metrics (30d impressions == 0 while active)
+  if (s.active && m30 && m30.imp === 0) { score -= 10; issues.push('Sem impressões recentes'); }
+
+  // No link
+  if (!s.link_url) { score -= 5; issues.push('Sem link de destino'); }
+
+  score = Math.max(0, Math.min(100, score));
+
+  if (score >= 80) return { score, label: 'Saudável', color: 'text-green-600', issues };
+  if (score >= 50) return { score, label: 'Atenção', color: 'text-amber-600', issues };
+  return { score, label: 'Crítico', color: 'text-destructive', issues };
+}
+
+/** Export sponsors CSV with metrics */
+function exportSponsorsCsv(sponsors: Sponsor[], metricsMap: Map<string, { imp: number; clk: number }>) {
+  const bom = '\uFEFF';
+  const header = ['Título', 'Empresa', 'Plano', 'Tipo', 'Posição', 'Ativo', 'Impressões', 'Cliques', 'CTR%', '30d Impressões', '30d Cliques', 'Início', 'Fim', 'Score'];
+  const rows = sponsors.map(s => {
+    const m30 = metricsMap.get(s.id);
+    const h = computeHealthScore(s, m30);
+    const ctr = s.impressions > 0 ? ((s.clicks / s.impressions) * 100).toFixed(2) : '0';
+    return [
+      s.title, s.company_name || '', s.tier || s.plan_tier, s.sponsor_type, s.position,
+      s.active ? 'Sim' : 'Não', String(s.impressions), String(s.clicks), ctr,
+      String(m30?.imp || 0), String(m30?.clk || 0),
+      s.start_date ? format(new Date(s.start_date), 'dd/MM/yyyy') : '',
+      s.end_date ? format(new Date(s.end_date), 'dd/MM/yyyy') : '',
+      String(h.score),
+    ];
+  });
+  const csv = bom + [header, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `patrocinadores_${format(new Date(), 'yyyyMMdd')}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
 
 const AdminSponsorsPage = () => {
   const { user, loading: authLoading } = useAuth();
