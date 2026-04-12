@@ -118,7 +118,7 @@ const ComoFuncionaPage = () => {
               <span className="text-primary">Preciso de um</span>?
             </h1>
             <p className="mt-4 text-muted-foreground max-w-2xl mx-auto text-base md:text-lg">
-              Conectamos você ao profissional ideal da sua região — de forma simples, segura e <strong className="text-foreground">100% gratuita</strong> para quem busca.
+              Conectamos você ao profissional ideal da sua região — de forma simples, segura e <strong className="text-foreground">100% gratuita</strong> para todos.
             </p>
           </FadeInSection>
         </div>
@@ -171,15 +171,15 @@ const ComoFuncionaPage = () => {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
               <Heart className="h-8 w-8 text-emerald-600" />
             </div>
-            <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">É Gratuito!</h2>
+            <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">100% Gratuito!</h2>
             <p className="mt-4 text-muted-foreground leading-relaxed">
               <strong className="text-foreground">Para clientes</strong>: buscar, comparar e entrar em contato com profissionais é <strong className="text-emerald-600">100% gratuito</strong>, sem nenhuma taxa ou assinatura.
             </p>
             <p className="mt-3 text-muted-foreground leading-relaxed">
-              <strong className="text-foreground">Para profissionais</strong>: o cadastro e o plano básico são gratuitos. Você só investe se quiser maior destaque com planos premium — mas começar não custa nada.
+              <strong className="text-foreground">Para profissionais</strong>: o cadastro e toda a plataforma são <strong className="text-emerald-600">100% gratuitos</strong>. Quanto mais você usa — completa o perfil, recebe avaliações e interage — mais destaque você ganha automaticamente. Não existe plano pago.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              {['Sem taxas de intermediação', 'Sem mensalidade obrigatória', 'Contato direto'].map((t) => (
+              {['Sem taxas de intermediação', 'Sem mensalidade', 'Sem planos pagos', 'Contato direto'].map((t) => (
                 <span key={t} className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
                   <Ban className="h-3 w-3" /> {t}
                 </span>
@@ -198,7 +198,7 @@ const ComoFuncionaPage = () => {
           </FadeInSection>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <DiffCard icon={BadgeCheck} title="Perfis Verificados" desc="Profissionais com dados confirmados para mais segurança na contratação." delay={0} />
+            <DiffCard icon={BadgeCheck} title="Perfis Completos" desc="Profissionais com perfil completo e engajamento ativo para mais confiança na contratação." delay={0} />
             <DiffCard icon={Star} title="Avaliações Reais" desc="Veja notas e comentários de clientes que já contrataram o serviço." delay={0.08} />
             <DiffCard icon={MapPin} title="Geolocalização" desc="Encontre profissionais próximos a você com busca por GPS e cidade." delay={0.16} />
             <DiffCard icon={Handshake} title="Sem Intermediários" desc="Negocie preço, prazo e detalhes diretamente com o profissional." delay={0.24} />
@@ -218,7 +218,7 @@ const ComoFuncionaPage = () => {
           <div className="space-y-3">
             <FaqItem q="Preciso pagar para buscar profissionais?" a="Não! A busca e o contato com profissionais é 100% gratuita para clientes. Você não paga nada para usar a plataforma." />
             <FaqItem q="Como me cadastro como profissional?" a="Clique em 'Cadastrar' no topo da página, escolha o perfil 'Profissional' e preencha seus dados. Em poucos minutos seu perfil estará no ar." />
-            <FaqItem q="Preciso pagar alguma mensalidade?" a="Não. O plano básico é gratuito. Existem planos premium opcionais para quem deseja mais destaque e recursos, mas não são obrigatórios." />
+            <FaqItem q="Preciso pagar alguma mensalidade?" a="Não! A plataforma é 100% gratuita para profissionais. Seu destaque aumenta naturalmente conforme você completa o perfil, recebe avaliações e interage na plataforma." />
             <FaqItem q="Como funciona o contato com o profissional?" a="Você pode entrar em contato pelo WhatsApp ou chat da plataforma. A negociação é feita diretamente entre você e o profissional." />
             <FaqItem q="A plataforma cobra comissão sobre os serviços?" a="Não cobramos nenhuma comissão ou taxa sobre os serviços contratados. O valor é combinado diretamente entre cliente e profissional." />
           </div>
