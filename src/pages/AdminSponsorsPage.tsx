@@ -1146,8 +1146,26 @@ const AdminSponsorsPage = () => {
                     </div>
                   )}
 
+                  {/* Guaranteed impressions */}
+                  {(() => {
+                    const guaranteed = (s as any).guaranteed_impressions || 0;
+                    const delivered = (s as any).delivered_impressions || 0;
+                    if (guaranteed <= 0) return null;
+                    const pct = Math.min((delivered / guaranteed) * 100, 100);
+                    return (
+                      <div className="rounded-lg border border-border p-3 space-y-1.5">
+                        <h3 className="text-xs font-semibold flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Impressões Garantidas</h3>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{delivered.toLocaleString('pt-BR')} / {guaranteed.toLocaleString('pt-BR')}</span>
+                          <span className="font-medium">{pct.toFixed(1)}%</span>
+                        </div>
+                        <Progress value={pct} className="h-1.5" />
+                      </div>
+                    );
+                  })()}
+
                   {/* Quick actions */}
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-2 pt-2 flex-wrap">
                     <Button size="sm" variant="outline" className="flex-1" onClick={() => { openEdit(s); setDetailSponsor(null); }}>
                       <Pencil className="h-3 w-3 mr-1" /> Editar
                     </Button>
@@ -1156,6 +1174,12 @@ const AdminSponsorsPage = () => {
                     </Button>
                     <Button size="sm" variant="outline" className="flex-1" onClick={() => { setCampaignForm({ sponsor_id: s.id, name: '', description: '', status: 'draft', start_date: '', end_date: '', budget: '' }); setCampaignDialog(true); }}>
                       <TrendingUp className="h-3 w-3 mr-1" /> Campanha
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => { setNotifForm({ sponsor_id: s.id, title: '', message: '' }); setNotifDialog(true); }}>
+                      <Send className="h-3 w-3 mr-1" /> Notificar
+                    </Button>
+                    <Button size="sm" variant={s.active ? 'outline' : 'default'} className="flex-1" onClick={() => { toggleActive.mutate({ id: s.id, active: !s.active }); setDetailSponsor(null); }}>
+                      <Power className="h-3 w-3 mr-1" /> {s.active ? 'Desativar' : 'Ativar'}
                     </Button>
                   </div>
                 </div>
