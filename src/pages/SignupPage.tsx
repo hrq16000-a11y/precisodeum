@@ -564,17 +564,17 @@ const SignupPage = () => {
                               <div key={macro.id}>
                                 {subs.length > 0 ? (
                                   <>
-                                    <div className="sticky top-0 bg-muted/60 backdrop-blur-sm px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                                      {macro.icon} {macro.name}
+                                    <div className="sticky top-0 bg-muted/60 backdrop-blur-sm px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                                      <CategoryIcon icon={macro.icon} size={14} /> {macro.name}
                                     </div>
                                     {subs.map((sub: any) => (
                                       <button
                                         key={sub.id}
                                         type="button"
                                         onClick={() => handleCategorySelect(sub)}
-                                        className={`w-full pl-6 pr-3 py-2 text-left text-sm hover:bg-muted transition-colors ${form.categoryId === sub.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}
+                                        className={`w-full pl-6 pr-3 py-2 text-left text-sm hover:bg-muted transition-colors flex items-center gap-1.5 ${form.categoryId === sub.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}
                                       >
-                                        {sub.icon} {sub.name}
+                                        <CategoryIcon icon={sub.icon} size={14} /> {sub.name}
                                       </button>
                                     ))}
                                   </>
@@ -582,9 +582,9 @@ const SignupPage = () => {
                                   <button
                                     type="button"
                                     onClick={() => handleCategorySelect(macro)}
-                                    className={`w-full px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${form.categoryId === macro.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}
+                                    className={`w-full px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors flex items-center gap-1.5 ${form.categoryId === macro.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}
                                   >
-                                    {macro.icon} {macro.name}
+                                    <CategoryIcon icon={macro.icon} size={14} /> {macro.name}
                                   </button>
                                 )}
                               </div>
