@@ -298,26 +298,102 @@ const AdminUsersCrmPage = () => {
     setNotifyMessage('');
   };
 
-  // Export CSV
-  const exportCsv = () => {
-    const data = (selectedIds.size > 0 ? filtered.filter(p => selectedIds.has(p.id)) : filtered);
-    const headers = ['Nome', 'Email', 'Telefone', 'WhatsApp', 'Tipo', 'Status', 'Tags', 'Ref', 'Cadastro'];
-    const rows = data.map(p => [
-      p.full_name, p.email, p.phone, p.whatsapp,
-      p.profile_type, p.status,
-      (tagsByUser[p.id] || []).map((t: any) => t.tag_name).join('; '),
-      p.user_ref,
-      format(parseISO(p.created_at), 'dd/MM/yyyy HH:mm')
-    ]);
-    const csv = [headers, ...rows].map(r => r.map((c: string) => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  // CSV helper
+  const downloadCsv = (filename: string, headers: string[], rows: (string | number | null | undefined)[][]) => {
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `crm-usuarios-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success(`${data.length} registros exportados`);
+    return rows.length;
+  };
+
+  // Export Users CSV
+  const exportUsersCsv = () => {
+    const data = (selectedIds.size > 0 ? filtered.filter(p => selectedIds.has(p.id)) : filtered);
+    const headers = ['Nome', 'Email', 'Telefone', 'WhatsApp', 'Tipo', 'Status', 'Tags', 'Cidade', 'Plano', 'Serviços', 'Leads', 'Ref', 'Cadastro'];
+    const rows = data.map(p => {
+      const prov = providerByUser[p.id];
+      return [
+        p.full_name, p.email, p.phone, p.whatsapp,
+        getTypeLabel(p.profile_type), p.status,
+        (tagsByUser[p.id] || []).map((t: any) => t.tag_name).join('; '),
+        prov?.city || '', prov?.plan || 'free',
+        prov ? (servicesByProvider[prov.id] || 0) : 0,
+        prov ? (leadsByProvider[prov.id] || 0) : 0,
+        p.user_ref,
+        format(parseISO(p.created_at), 'dd/MM/yyyy HH:mm')
+      ];
+    });
+    const count = downloadCsv(`crm-usuarios-${format(new Date(), 'yyyy-MM-dd')}.csv`, headers, rows);
+    toast.success(`${count} usuários exportados`);
+  };
+
+  // Export Leads CSV
+  const exportLeadsCsv = () => {
+    const headers = ['Prestador', 'Cidade', 'Cliente', 'Telefone', 'Serviço', 'Status', 'Data'];
+    const provMap: Record<string, any> = {};
+    providers.forEach(p => { provMap[p.id] = p; });
+    const profileMap: Record<string, any> = {};
+    profiles.forEach(p => { profileMap[p.id] = p; });
+
+    const rows = leads.map(l => {
+      const prov = provMap[l.provider_id];
+      const provProfile = prov ? profileMap[prov.user_id] : null;
+      return [
+        provProfile?.full_name || '—',
+        prov?.city || '',
+        l.client_name, l.phone, l.service_needed || '',
+        l.status,
+        format(parseISO(l.created_at), 'dd/MM/yyyy HH:mm')
+      ];
+    });
+    const count = downloadCsv(`crm-leads-${format(new Date(), 'yyyy-MM-dd')}.csv`, headers, rows);
+    toast.success(`${count} leads exportados`);
+  };
+
+  // Export Metrics CSV (growth, retention, funnel)
+  const exportMetricsCsv = () => {
+    const lines: string[][] = [];
+
+    // Funnel
+    lines.push(['=== FUNIL DE CONVERSÃO ===', '', '']);
+    lines.push(['Etapa', 'Total', 'Porcentagem']);
+    funnelData.forEach(s => lines.push([s.label, String(s.count), s.pct + '%']));
+    lines.push(['', '', '']);
+
+    // Growth
+    lines.push(['=== CRESCIMENTO (30 DIAS) ===', '', '']);
+    lines.push(['Data', 'Novos Usuários', 'Novos Profissionais']);
+    growthData.forEach(d => lines.push([d.date, String(d.users), String(d.providers)]));
+    lines.push(['', '', '']);
+
+    // Retention
+    lines.push(['=== RETENÇÃO (12 MESES) ===', '', '', '', '']);
+    lines.push(['Mês', 'Total', 'Ativos', 'Inativos', 'Novos', 'Taxa Retenção']);
+    retentionData.forEach(r => lines.push([r.month, String(r.total), String(r.ativos), String(r.inativos), String(r.novos), r.retentionRate + '%']));
+    lines.push(['', '', '']);
+
+    // Distribution
+    lines.push(['=== DISTRIBUIÇÃO POR TIPO ===', '']);
+    lines.push(['Tipo', 'Total']);
+    typeDistribution.forEach(d => lines.push([d.name, String(d.value)]));
+
+    const maxCols = Math.max(...lines.map(l => l.length));
+    const padded = lines.map(l => [...l, ...Array(maxCols - l.length).fill('')]);
+
+    const csv = padded.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `crm-metricas-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Métricas exportadas (funil, crescimento, retenção)');
   };
 
   const getTypeLabel = (t: string) => {
@@ -354,9 +430,24 @@ const AdminUsersCrmPage = () => {
             <p className="text-sm text-muted-foreground mt-1">Funil, segmentação, métricas, tags e retenção</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportCsv}>
-              <Download className="h-4 w-4 mr-1" /> Exportar CSV
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-1" /> Exportar <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-1" align="end">
+                <button onClick={exportUsersCsv} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
+                  <Users className="h-4 w-4" /> Usuários (CSV)
+                </button>
+                <button onClick={exportLeadsCsv} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
+                  <Briefcase className="h-4 w-4" /> Leads (CSV)
+                </button>
+                <button onClick={exportMetricsCsv} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
+                  <BarChart3 className="h-4 w-4" /> Métricas (CSV)
+                </button>
+              </PopoverContent>
+            </Popover>
             <Button size="sm" onClick={() => setShowNotifyDialog(true)}>
               <Send className="h-4 w-4 mr-1" /> Enviar Notificação
             </Button>
@@ -728,7 +819,7 @@ const AdminUsersCrmPage = () => {
                         <Tag className="h-3 w-3 mr-1" /> Aplicar Tag ({selectedIds.size})
                       </Button>
                     )}
-                    <Button variant="outline" size="sm" onClick={exportCsv}>
+                    <Button variant="outline" size="sm" onClick={exportUsersCsv}>
                       <Download className="h-3 w-3 mr-1" /> CSV
                     </Button>
                     <Button size="sm" onClick={() => setShowNotifyDialog(true)}>
