@@ -161,7 +161,7 @@ const AdminProvidersPage = () => {
     })));
   };
 
-  useEffect(() => { if (isAdmin) { fetchProviders(); fetchRules(); } }, [isAdmin]);
+  useEffect(() => { if (isAdmin) { fetchProviders(); fetchRules(); fetchAutoApprove(); } }, [isAdmin]);
 
   const bulk = useAdminBulkActions({
     table: 'providers',
