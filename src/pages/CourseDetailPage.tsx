@@ -137,15 +137,9 @@ const CourseDetailPage = () => {
           <span className="text-foreground font-medium truncate max-w-[200px]">{course.title}</span>
         </nav>
 
-        {/* Top sponsor banner */}
+        {/* Top sponsor banner — single rotating */}
         {topSponsors.length > 0 && (
-          <div className="mb-6" ref={topRef}>
-            {topSponsors.map(s => (
-              <a key={s.id} href={s.link_url || s.external_link} target="_blank" rel="noopener noreferrer sponsored" className="block">
-                <img src={s.image_url || s.logo_url} alt={s.title} className="w-full h-auto rounded-xl object-cover max-h-24" loading="lazy" />
-              </a>
-            ))}
-          </div>
+          <TopBannerCarousel sponsors={topSponsors} />
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
