@@ -5,12 +5,12 @@
 export type ServiceCategory = 'instalacoes' | 'construcao' | 'tecnico' | 'beleza' | 'especializado' | 'casa';
 
 export const CATEGORY_IMAGES: Record<ServiceCategory, string> = {
-  instalacoes: '/hero-cat-instalacoes.jpg',
-  construcao: '/hero-cat-construcao.jpg',
-  tecnico: '/hero-cat-tecnico.jpg',
-  beleza: '/hero-cat-beleza.jpg',
-  especializado: '/hero-cat-especializado.jpg',
-  casa: '/hero-cat-casa.jpg',
+  instalacoes: '/hero-cat-instalacoes.webp',
+  construcao: '/hero-cat-construcao.webp',
+  tecnico: '/hero-cat-tecnico.webp',
+  beleza: '/hero-cat-beleza.webp',
+  especializado: '/hero-cat-especializado.webp',
+  casa: '/hero-cat-casa.webp',
 };
 
 const SERVICE_TO_CATEGORY: Record<string, ServiceCategory> = {
