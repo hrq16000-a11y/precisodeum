@@ -11,6 +11,8 @@ import { useAccountLimits } from '@/hooks/useAccountLimits';
 import UpsellBanner from '@/components/dashboard/UpsellBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { trackAction } from '@/lib/errorReporter';
+import { showSaveError } from '@/components/SaveErrorToast';
 import ServiceImageUpload from '@/components/ServiceImageUpload';
 import { handleImageError } from '@/lib/imageResolver';
 import { format } from 'date-fns';
@@ -183,56 +185,74 @@ const DashboardServicesPage = () => {
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
     setFormErrors({});
 
-    const providerId = await ensureProvider();
-    if (!providerId) return;
+    trackAction('service_save_start', editId ? 'Editando serviço' : 'Criando serviço');
 
-    const payload = {
-      service_name: form.service_name,
-      description: form.description,
-      whatsapp: form.whatsapp || provider?.whatsapp || '',
-      service_area: form.service_area,
-      address: provider ? [provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') : form.address,
-      working_hours: form.working_hours,
-      website: form.website,
-      price: form.price || null,
-      instagram_url: form.instagram_url,
-      facebook_url: form.facebook_url,
-      youtube_url: form.youtube_url,
-    } as any;
+    try {
+      const providerId = await ensureProvider();
+      if (!providerId) return;
 
-    let serviceId = editId;
+      const payload = {
+        service_name: form.service_name,
+        description: form.description,
+        whatsapp: form.whatsapp || provider?.whatsapp || '',
+        service_area: form.service_area,
+        address: provider ? [provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') : form.address,
+        working_hours: form.working_hours,
+        website: form.website,
+        price: form.price || null,
+        instagram_url: form.instagram_url,
+        facebook_url: form.facebook_url,
+        youtube_url: form.youtube_url,
+      } as any;
 
-    if (editId) {
-      const { error } = await supabase.from('services').update(payload).eq('id', editId);
-      if (error) { toast.error('Erro ao atualizar: ' + error.message); return; }
-    } else {
-      const { data, error } = await supabase
-        .from('services')
-        .insert({ ...payload, provider_id: providerId })
-        .select('id')
-        .single();
-      if (error) { toast.error('Erro ao adicionar: ' + error.message); return; }
-      serviceId = data.id;
-    }
+      let serviceId = editId;
 
-    if (serviceId) {
-      await supabase.from('service_categories').delete().eq('service_id', serviceId);
-      if (selectedCategoryIds.length > 0) {
-        await supabase.from('service_categories').insert(
-          selectedCategoryIds.map(catId => ({ service_id: serviceId!, category_id: catId }))
-        );
+      if (editId) {
+        const { error } = await supabase.from('services').update(payload).eq('id', editId);
+        if (error) {
+          await showSaveError({ actionContext: 'Atualizar serviço', componentName: 'DashboardServicesPage', errorMessage: error.message, retryFn: handleSave });
+          return;
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('services')
+          .insert({ ...payload, provider_id: providerId })
+          .select('id')
+          .single();
+        if (error) {
+          await showSaveError({ actionContext: 'Criar novo serviço', componentName: 'DashboardServicesPage', errorMessage: error.message, retryFn: handleSave });
+          return;
+        }
+        serviceId = data.id;
       }
-      // Upload photo if selected
-      if (!editId && newServicePhoto) {
-        await uploadPhoto(serviceId);
-      }
-    }
 
-    toast.success(editId ? 'Serviço atualizado!' : 'Serviço publicado!');
-    resetForm();
-    setShowDialog(false);
-    await fetchServices();
-    refetchLimits();
+      if (serviceId) {
+        await supabase.from('service_categories').delete().eq('service_id', serviceId);
+        if (selectedCategoryIds.length > 0) {
+          await supabase.from('service_categories').insert(
+            selectedCategoryIds.map(catId => ({ service_id: serviceId!, category_id: catId }))
+          );
+        }
+        if (!editId && newServicePhoto) {
+          await uploadPhoto(serviceId);
+        }
+      }
+
+      trackAction('service_save_success', editId ? 'Serviço atualizado' : 'Serviço criado');
+      toast.success(editId ? 'Serviço atualizado!' : 'Serviço publicado!');
+      resetForm();
+      setShowDialog(false);
+      await fetchServices();
+      refetchLimits();
+    } catch (err: any) {
+      await showSaveError({
+        actionContext: 'Salvar serviço (erro inesperado)',
+        componentName: 'DashboardServicesPage',
+        errorMessage: err.message || 'Erro desconhecido',
+        errorStack: err.stack,
+        retryFn: handleSave,
+      });
+    }
   };
 
   const resetForm = () => {
