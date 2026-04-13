@@ -6,6 +6,8 @@ import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { toast } from 'sonner';
+import { trackAction } from '@/lib/errorReporter';
+import { showSaveError } from '@/components/SaveErrorToast';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { useQuery } from '@tanstack/react-query';
 import { useSeoHead } from '@/hooks/useSeoHead';
@@ -242,6 +244,7 @@ const SignupPage = () => {
       }
     }
 
+    trackAction('signup_start', `Tipo: ${accountType}`);
     setLoading(true);
 
     // Geocode fallback if lat/lon missing but city exists
@@ -267,7 +270,11 @@ const SignupPage = () => {
       if (error.message.includes('already registered')) {
         toast.error('Este e-mail já está cadastrado. Tente fazer login.');
       } else {
-        toast.error(error.message);
+        await showSaveError({
+          actionContext: 'Cadastro de conta',
+          componentName: 'SignupPage',
+          errorMessage: error.message,
+        });
       }
       setLoading(false);
       return;

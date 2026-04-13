@@ -8,6 +8,8 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { trackAction } from '@/lib/errorReporter';
+import { showSaveError } from '@/components/SaveErrorToast';
 import AvatarUpload from '@/components/AvatarUpload';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
@@ -219,10 +221,14 @@ const DashboardProfilePage = () => {
     }
 
     try {
+      trackAction('profile_save_start', 'Salvando dados do perfil');
       const { error: profileError } = await supabase.from('profiles').update({
         full_name: form.full_name, phone: form.phone, email: user.email || '',
       }).eq('id', user.id);
-      if (profileError) { toast.error('Erro ao salvar perfil: ' + profileError.message); setSaving(false); return; }
+      if (profileError) {
+        await showSaveError({ actionContext: 'Salvar perfil pessoal', componentName: 'DashboardProfilePage', errorMessage: profileError.message, retryFn: handleSave });
+        setSaving(false); return;
+      }
 
       const providerPayload = {
         business_name: form.business_name || null, description: form.description,
@@ -234,22 +240,38 @@ const DashboardProfilePage = () => {
 
       if (provider) {
         const { error } = await supabase.from('providers').update(providerPayload as any).eq('id', provider.id);
-        if (error) { toast.error('Erro ao salvar dados profissionais: ' + error.message); setSaving(false); return; }
+        if (error) {
+          await showSaveError({ actionContext: 'Salvar dados profissionais', componentName: 'DashboardProfilePage', errorMessage: error.message, retryFn: handleSave });
+          setSaving(false); return;
+        }
       } else {
         const { data: existing } = await supabase.from('providers').select('id').eq('user_id', user.id).limit(1);
         if (existing && existing.length > 0) {
           const { error } = await supabase.from('providers').update({ ...providerPayload, phone: finalPhone } as any).eq('id', existing[0].id);
-          if (error) { toast.error('Erro ao atualizar: ' + error.message); setSaving(false); return; }
+          if (error) {
+            await showSaveError({ actionContext: 'Atualizar provedor existente', componentName: 'DashboardProfilePage', errorMessage: error.message, retryFn: handleSave });
+            setSaving(false); return;
+          }
         } else {
           const slug = generateProviderSlug(form.full_name, form.city);
           const { error } = await supabase.from('providers').insert({ ...providerPayload, user_id: user.id, phone: finalPhone, slug, status: 'pending' } as any);
-          if (error) { toast.error('Erro ao criar perfil: ' + error.message); setSaving(false); return; }
+          if (error) {
+            await showSaveError({ actionContext: 'Criar perfil profissional', componentName: 'DashboardProfilePage', errorMessage: error.message, retryFn: handleSave });
+            setSaving(false); return;
+          }
         }
       }
       await refetchProfile();
+      trackAction('profile_save_success', 'Perfil salvo com sucesso');
       toast.success('Perfil salvo com sucesso!');
     } catch (err: any) {
-      toast.error('Erro inesperado: ' + (err.message || 'Tente novamente.'));
+      await showSaveError({
+        actionContext: 'Salvar perfil (erro inesperado)',
+        componentName: 'DashboardProfilePage',
+        errorMessage: err.message || 'Erro desconhecido',
+        errorStack: err.stack,
+        retryFn: handleSave,
+      });
     } finally { setSaving(false); }
   };
 
