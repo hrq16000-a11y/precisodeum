@@ -244,6 +244,7 @@ const SignupPage = () => {
       }
     }
 
+    trackAction('signup_start', `Tipo: ${accountType}`);
     setLoading(true);
 
     // Geocode fallback if lat/lon missing but city exists
@@ -269,7 +270,11 @@ const SignupPage = () => {
       if (error.message.includes('already registered')) {
         toast.error('Este e-mail já está cadastrado. Tente fazer login.');
       } else {
-        toast.error(error.message);
+        await showSaveError({
+          actionContext: 'Cadastro de conta',
+          componentName: 'SignupPage',
+          errorMessage: error.message,
+        });
       }
       setLoading(false);
       return;
