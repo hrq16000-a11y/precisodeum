@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Trash2, Loader2, FolderOpen, ArrowLeft, ImagePlus, Pencil } from 'lucide-react';
+import { trackAction } from '@/lib/errorReporter';
+import { showSaveError } from '@/components/SaveErrorToast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils';
 
@@ -111,31 +113,50 @@ const DashboardPortfolioPage = () => {
     if (!albumName.trim()) { toast.error('Nome do álbum é obrigatório'); return; }
     if (!provider || !user) return;
     setAlbumSaving(true);
+    trackAction('album_save_start', editingAlbum ? 'Editando álbum' : 'Criando álbum');
 
-    if (editingAlbum) {
-      const { error } = await supabase
-        .from('portfolio_albums')
-        .update({ name: albumName.trim(), description: albumDesc.trim() })
-        .eq('id', editingAlbum.id);
-      if (error) toast.error('Erro ao atualizar álbum');
-      else toast.success('Álbum atualizado!');
-    } else {
-      const { error } = await supabase
-        .from('portfolio_albums')
-        .insert({
-          provider_id: provider.id,
-          user_id: user.id,
-          name: albumName.trim(),
-          description: albumDesc.trim(),
-          display_order: albums.length,
-        });
-      if (error) toast.error('Erro ao criar álbum: ' + error.message);
-      else toast.success('Álbum criado!');
+    try {
+      if (editingAlbum) {
+        const { error } = await supabase
+          .from('portfolio_albums')
+          .update({ name: albumName.trim(), description: albumDesc.trim() })
+          .eq('id', editingAlbum.id);
+        if (error) {
+          await showSaveError({ actionContext: 'Atualizar álbum', componentName: 'DashboardPortfolioPage', errorMessage: error.message, retryFn: handleSaveAlbum });
+          setAlbumSaving(false); return;
+        }
+        toast.success('Álbum atualizado!');
+      } else {
+        const { error } = await supabase
+          .from('portfolio_albums')
+          .insert({
+            provider_id: provider.id,
+            user_id: user.id,
+            name: albumName.trim(),
+            description: albumDesc.trim(),
+            display_order: albums.length,
+          });
+        if (error) {
+          await showSaveError({ actionContext: 'Criar álbum', componentName: 'DashboardPortfolioPage', errorMessage: error.message, retryFn: handleSaveAlbum });
+          setAlbumSaving(false); return;
+        }
+        toast.success('Álbum criado!');
+      }
+
+      trackAction('album_save_success', 'Álbum salvo');
+      setAlbumDialogOpen(false);
+      setAlbumSaving(false);
+      await loadAlbums();
+    } catch (err: any) {
+      await showSaveError({
+        actionContext: 'Salvar álbum (erro inesperado)',
+        componentName: 'DashboardPortfolioPage',
+        errorMessage: err.message || 'Erro desconhecido',
+        errorStack: err.stack,
+        retryFn: handleSaveAlbum,
+      });
+      setAlbumSaving(false);
     }
-
-    setAlbumDialogOpen(false);
-    setAlbumSaving(false);
-    await loadAlbums();
   };
 
   const handleDeleteAlbum = async (album: Album) => {
