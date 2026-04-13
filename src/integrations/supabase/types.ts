@@ -540,6 +540,66 @@ export type Database = {
         }
         Relationships: []
       }
+      error_reports: {
+        Row: {
+          action_context: string
+          action_history: Json | null
+          admin_notes: string | null
+          component_name: string | null
+          created_at: string
+          error_message: string
+          error_stack: string | null
+          id: string
+          page_path: string
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          screenshot_url: string | null
+          severity: string
+          user_agent: string | null
+          user_id: string | null
+          viewport: string | null
+        }
+        Insert: {
+          action_context?: string
+          action_history?: Json | null
+          admin_notes?: string | null
+          component_name?: string | null
+          created_at?: string
+          error_message?: string
+          error_stack?: string | null
+          id?: string
+          page_path?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          screenshot_url?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+          viewport?: string | null
+        }
+        Update: {
+          action_context?: string
+          action_history?: Json | null
+          admin_notes?: string | null
+          component_name?: string | null
+          created_at?: string
+          error_message?: string
+          error_stack?: string | null
+          id?: string
+          page_path?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          screenshot_url?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+          viewport?: string | null
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           active: boolean
