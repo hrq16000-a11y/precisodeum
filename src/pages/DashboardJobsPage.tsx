@@ -247,13 +247,15 @@ const DashboardJobsPage = () => {
       ? await supabase.from('jobs').update(payload).eq('id', editingId)
       : await supabase.from('jobs').insert(payload);
 
-    if (error) toast.error('Erro ao salvar vaga');
-    else {
-      const msg = editingId ? 'Vaga atualizada!' : profileType === 'rh' ? 'Vaga publicada!' : 'Vaga enviada para aprovação!';
-      toast.success(msg);
+    setSaving(false);
+
+    if (error) {
+      toast.error('Erro ao salvar vaga: ' + error.message);
+      return;
     }
 
-    setSaving(false);
+    const msg = editingId ? 'Vaga atualizada!' : profileType === 'rh' ? 'Vaga publicada!' : 'Vaga enviada para aprovação!';
+    toast.success(msg);
     setDialogOpen(false);
     setEditingId(null);
     setForm(emptyForm);
