@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => ({
       manifest: {
         name: "Preciso de Um",
         short_name: "PrecisodeUm",
-        description: "Encontre profissionais confiáveis perto de você",
+        description: "Encontre um profissional para qualquer tipo de serviço no Brasil",
         start_url: "/",
         display: "standalone",
         background_color: "#ffffff",

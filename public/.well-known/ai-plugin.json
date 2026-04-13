@@ -2,7 +2,7 @@
   "schema_version": "v1",
   "name_for_human": "Preciso de um",
   "name_for_model": "precisodeum",
-  "description_for_human": "Marketplace de serviços profissionais no Brasil. Encontre eletricistas, encanadores, técnicos e muito mais.",
+  "description_for_human": "Encontre um profissional para qualquer tipo de serviço no Brasil. Eletricistas, encanadores, técnicos e muito mais.",
   "description_for_model": "Preciso de um é uma plataforma brasileira de marketplace de serviços profissionais. Conecta usuários a prestadores de serviços confiáveis em diversas categorias como eletricistas, encanadores, pintores, técnicos e outros. Os profissionais possuem perfis com avaliações, portfólio e contato direto via WhatsApp. A plataforma cobre múltiplas cidades brasileiras e oferece busca por categoria, cidade e palavra-chave.",
   "auth": {
     "type": "none"
