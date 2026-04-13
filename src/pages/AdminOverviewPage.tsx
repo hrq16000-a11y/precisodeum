@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import AdminErrorAlerts from '@/components/admin/AdminErrorAlerts';
 import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -140,6 +141,7 @@ const AdminOverviewPage = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        <AdminErrorAlerts />
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" /> Visão Executiva
