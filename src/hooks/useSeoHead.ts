@@ -65,7 +65,7 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex }: 
     link.setAttribute('href', canonicalUrl);
 
     return () => {
-      document.title = 'Preciso de um | Encontre profissionais confiáveis perto de você';
+      document.title = 'Preciso de um | Encontre um profissional para qualquer tipo de serviço no Brasil';
     };
   }, [title, description, canonical, ogImage, noindex, gscId, gaId]);
 }

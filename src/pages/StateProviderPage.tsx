@@ -28,7 +28,7 @@ const StateProviderPage = () => {
 
   useSeoHead({
     title: `Profissionais em ${stateName} | Preciso de um`,
-    description: `Encontre profissionais qualificados em ${stateName}. Veja cidades com prestadores ativos.`,
+    description: `Encontre um profissional para qualquer tipo de serviço em ${stateName}. Veja cidades com prestadores ativos.`,
     canonical: `${SITE_BASE_URL}/cidades/${estado}`,
   });
 

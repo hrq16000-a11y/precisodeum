@@ -50,7 +50,7 @@ const CitiesListPage = () => {
 
   useSeoHead({
     title: 'Profissionais em Todo o Brasil | Preciso de um',
-    description: 'Encontre profissionais qualificados na sua cidade. Cobertura em todos os estados brasileiros.',
+    description: 'Encontre um profissional para qualquer tipo de serviço na sua cidade. Cobertura em todos os estados brasileiros.',
     canonical: `${SITE_BASE_URL}/cidades`,
   });
 

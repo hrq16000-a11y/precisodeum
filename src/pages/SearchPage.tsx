@@ -193,8 +193,8 @@ const SearchPage = () => {
   const seoDesc = query
     ? `Encontre profissionais para "${query}"${seoCity ? ` em ${seoCity}` : ''}. Compare avaliações e solicite orçamentos.`
     : seoCity
-      ? `Encontre profissionais confiáveis em ${seoCity}. Compare avaliações e solicite orçamentos.`
-      : 'Busque e encontre profissionais confiáveis perto de você na maior plataforma de serviços do Brasil.';
+      ? `Encontre um profissional para qualquer tipo de serviço em ${seoCity}. Compare avaliações e solicite orçamentos.`
+      : 'Encontre um profissional para qualquer tipo de serviço no Brasil. Compare avaliações e solicite orçamentos.';
   useSeoHead({ title: seoTitle, description: seoDesc, canonical: `${SITE_BASE_URL}/buscar` });
 
   const paginatedLocal = filteredLocal.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);

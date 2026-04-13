@@ -238,7 +238,7 @@ const CityPage = () => {
           </div>
           <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
             <p>
-              Encontre profissionais qualificados em {city!.name}, {city!.state}.
+              Encontre um profissional para qualquer tipo de serviço em {city!.name}, {city!.state}.
               Nossa plataforma conecta você com os melhores prestadores de serviço da região,
               todos avaliados por clientes reais.
             </p>
