@@ -270,8 +270,12 @@ const DashboardPortfolioPage = () => {
         if (!selectedAlbum.cover_image_url && photos.length === 0) {
           await supabase.from('portfolio_albums').update({ cover_image_url: publicUrl }).eq('id', selectedAlbum.id);
         }
-      } catch (err) {
-        toast.error(`Erro ao enviar: ${file.name}`);
+      } catch (err: any) {
+        await showSaveError({
+          actionContext: `Upload de foto: ${file.name}`,
+          componentName: 'DashboardPortfolioPage',
+          errorMessage: err.message || `Erro ao enviar: ${file.name}`,
+        });
       }
     }
 
