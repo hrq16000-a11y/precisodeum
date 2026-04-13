@@ -50,24 +50,20 @@ const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
   const [phase, setPhase] = useState<'in' | 'out'>('in');
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Notify parent of initial service
+  // Notify parent whenever the displayed service changes
   useEffect(() => {
     if (shuffled.length > 0) {
-      onServiceChange?.(shuffled[0]);
+      onServiceChange?.(shuffled[index]);
     }
-  }, [shuffled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [index, shuffled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rotate = useCallback(() => {
     setPhase('out');
     timerRef.current = setTimeout(() => {
-      setIndex((prev) => {
-        const next = (prev + 1) % shuffled.length;
-        onServiceChange?.(shuffled[next]);
-        return next;
-      });
+      setIndex((prev) => (prev + 1) % shuffled.length);
       setPhase('in');
     }, 400);
-  }, [shuffled, onServiceChange]);
+  }, [shuffled]);
 
   useEffect(() => {
     const id = setInterval(rotate, 4000);
