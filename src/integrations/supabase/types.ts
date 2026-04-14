@@ -2354,10 +2354,13 @@ export type Database = {
           facebook_url: string | null
           id: string
           instagram_url: string | null
+          is_emergency: boolean
           price: string | null
           provider_id: string
+          seo_tags: string[]
           service_area: string
           service_name: string
+          service_radius: string
           user_ref: string | null
           view_count: number
           website: string | null
@@ -2374,10 +2377,13 @@ export type Database = {
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          is_emergency?: boolean
           price?: string | null
           provider_id: string
+          seo_tags?: string[]
           service_area?: string
           service_name: string
+          service_radius?: string
           user_ref?: string | null
           view_count?: number
           website?: string | null
@@ -2394,10 +2400,13 @@ export type Database = {
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          is_emergency?: boolean
           price?: string | null
           provider_id?: string
+          seo_tags?: string[]
           service_area?: string
           service_name?: string
+          service_radius?: string
           user_ref?: string | null
           view_count?: number
           website?: string | null

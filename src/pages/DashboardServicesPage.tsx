@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Edit2, X, Search, AlertTriangle, ImagePlus, MapPin, Eye, Pause, Play } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Trash2, Edit2, X, Search, ImagePlus, MapPin, Eye, Pause, Play, Zap, Tag, MapPinned } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import SmartCategoryPicker from '@/components/SmartCategoryPicker';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,27 +18,46 @@ import { showSaveError } from '@/components/SaveErrorToast';
 import ServiceImageUpload from '@/components/ServiceImageUpload';
 import { handleImageError } from '@/lib/imageResolver';
 import { format } from 'date-fns';
+import { useGeoCity } from '@/hooks/useGeoCity';
+import { CITIES_INDEX, type CityEntry } from '@/lib/citiesIndex';
+import { normalize } from '@/lib/normalize';
 
+// Build flat city list once for autocomplete
+const ALL_CITIES: { label: string; value: string; state: string }[] = [];
+Object.values(CITIES_INDEX).forEach((entries: CityEntry[]) => {
+  entries.forEach(e => {
+    ALL_CITIES.push({ label: `${e.name} - ${e.state}`, value: e.name, state: e.state });
+  });
+});
 
 const DashboardServicesPage = () => {
   const { user, provider, profile, loading, refetchProfile } = useAuth();
   const { canCreateService, remainingServices, limits, loading: limitsLoading, refetch: refetchLimits } = useAccountLimits();
   const navigate = useNavigate();
+  const geo = useGeoCity();
   const [services, setServices] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [showDialog, setShowDialog] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
-  
-  const [categorySearch, setCategorySearch] = useState('');
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({});
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [newServicePhoto, setNewServicePhoto] = useState<File | null>(null);
   const [newServicePhotoPreview, setNewServicePhotoPreview] = useState<string | null>(null);
-  const categoryContainerRef = useRef<HTMLDivElement>(null);
+
+  // New professional fields
+  const [isEmergency, setIsEmergency] = useState(false);
+  const [serviceRadius, setServiceRadius] = useState('city');
+  const [seoTags, setSeoTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+
+  // City autocomplete
+  const [citySearch, setCitySearch] = useState('');
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [geoDetected, setGeoDetected] = useState(false);
+  const cityRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState({
     service_name: '',
@@ -52,14 +73,13 @@ const DashboardServicesPage = () => {
     youtube_url: '',
   });
 
+  // Close city dropdown on outside click
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (categoryContainerRef.current && !categoryContainerRef.current.contains(e.target as Node)) {
-        setShowCategoryDropdown(false);
-      }
+    const handler = (e: MouseEvent) => {
+      if (cityRef.current && !cityRef.current.contains(e.target as Node)) setShowCityDropdown(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   useEffect(() => {
@@ -83,25 +103,20 @@ const DashboardServicesPage = () => {
 
     if (data) {
       const serviceIds = data.map(s => s.id);
-      
-      // Fetch categories and images in parallel
       const [scRes, imgRes] = await Promise.all([
         supabase.from('service_categories').select('service_id, category_id, categories(name, icon)').in('service_id', serviceIds),
         supabase.from('service_images').select('service_id, image_url').in('service_id', serviceIds).order('display_order'),
       ]);
-
       const catMap: Record<string, any[]> = {};
       (scRes.data || []).forEach((sc: any) => {
         if (!catMap[sc.service_id]) catMap[sc.service_id] = [];
         catMap[sc.service_id].push(sc.categories);
       });
-
       const imgMap: Record<string, string> = {};
       (imgRes.data || []).forEach((img: any) => {
         if (!imgMap[img.service_id]) imgMap[img.service_id] = img.image_url;
       });
       setServiceImages(imgMap);
-
       setServices(data.map(s => ({ ...s, serviceCategories: catMap[s.id] || [] })));
     }
   };
@@ -109,6 +124,16 @@ const DashboardServicesPage = () => {
   useEffect(() => {
     if (provider) fetchServices();
   }, [provider]);
+
+  // Filtered cities for autocomplete
+  const filteredCities = useMemo(() => {
+    if (!citySearch || citySearch.length < 2) return [];
+    const norm = normalize(citySearch);
+    return ALL_CITIES.filter(c => {
+      const cNorm = normalize(c.value);
+      return cNorm.includes(norm) || c.label.toLowerCase().includes(citySearch.toLowerCase());
+    }).slice(0, 15);
+  }, [citySearch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -172,6 +197,17 @@ const DashboardServicesPage = () => {
     }
   };
 
+  // Add tag
+  const addTag = () => {
+    const tag = tagInput.trim().replace(/^#/, '').toLowerCase();
+    if (!tag || seoTags.includes(tag)) { setTagInput(''); return; }
+    if (seoTags.length >= 10) { toast.error('Máximo de 10 tags'); return; }
+    setSeoTags(prev => [...prev, tag]);
+    setTagInput('');
+  };
+
+  const removeTag = (tag: string) => setSeoTags(prev => prev.filter(t => t !== tag));
+
   const handleSave = async () => {
     if (isRH) { toast.error('Agências RH não podem cadastrar serviços.'); return; }
     if (!editId && !canCreateService) {
@@ -182,6 +218,7 @@ const DashboardServicesPage = () => {
     }
     const errors: Record<string, string> = {};
     if (!form.service_name.trim()) errors.service_name = 'Título é obrigatório';
+    if (!form.service_area.trim()) errors.service_area = 'Cidade é obrigatória';
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
     setFormErrors({});
 
@@ -203,6 +240,9 @@ const DashboardServicesPage = () => {
         instagram_url: form.instagram_url,
         facebook_url: form.facebook_url,
         youtube_url: form.youtube_url,
+        is_emergency: isEmergency,
+        service_radius: serviceRadius,
+        seo_tags: seoTags,
       } as any;
 
       let serviceId = editId;
@@ -256,12 +296,13 @@ const DashboardServicesPage = () => {
   };
 
   const resetForm = () => {
+    const detectedCity = geo.city || provider?.city || '';
     setForm({
       service_name: '',
       description: '',
       price: '',
       whatsapp: provider?.whatsapp ? provider.whatsapp.replace(/^55/, '') : '',
-      service_area: provider?.city || '',
+      service_area: detectedCity,
       address: provider ? [provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') : '',
       working_hours: provider?.working_hours || '',
       website: provider?.website || '',
@@ -269,11 +310,17 @@ const DashboardServicesPage = () => {
       facebook_url: '',
       youtube_url: '',
     });
+    setCitySearch(detectedCity);
+    setGeoDetected(!!geo.city && !provider?.city);
     setSelectedCategoryIds([]);
     setEditId(null);
     setNewServicePhoto(null);
     setNewServicePhotoPreview(null);
     setFormErrors({});
+    setIsEmergency(false);
+    setServiceRadius('city');
+    setSeoTags([]);
+    setTagInput('');
   };
 
   const handleEdit = async (s: any) => {
@@ -290,6 +337,11 @@ const DashboardServicesPage = () => {
       facebook_url: s.facebook_url || '',
       youtube_url: s.youtube_url || '',
     });
+    setCitySearch(s.service_area || '');
+    setGeoDetected(false);
+    setIsEmergency(s.is_emergency || false);
+    setServiceRadius(s.service_radius || 'city');
+    setSeoTags(s.seo_tags || []);
     setEditId(s.id);
     const { data } = await supabase.from('service_categories').select('category_id').eq('service_id', s.id);
     setSelectedCategoryIds((data || []).map((d: any) => d.category_id));
@@ -312,7 +364,20 @@ const DashboardServicesPage = () => {
     fetchServices();
   };
 
-  // Filter services
+  const selectCity = (city: { label: string; value: string; state: string }) => {
+    setForm(prev => ({ ...prev, service_area: city.value }));
+    setCitySearch(city.label);
+    setShowCityDropdown(false);
+    setGeoDetected(false);
+    if (formErrors.service_area) setFormErrors(prev => ({ ...prev, service_area: '' }));
+  };
+
+  const clearCity = () => {
+    setForm(prev => ({ ...prev, service_area: '' }));
+    setCitySearch('');
+    setGeoDetected(false);
+  };
+
   const filtered = services.filter(s => {
     if (searchQuery && !s.service_name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
@@ -322,14 +387,10 @@ const DashboardServicesPage = () => {
 
   return (
     <DashboardLayout>
-      {/* Upsell / Limits banner */}
       {!limitsLoading && limits && limits.can_create_services && remainingServices !== null && remainingServices === 0 && (
-        <div className="mb-4">
-          <UpsellBanner />
-        </div>
+        <div className="mb-4"><UpsellBanner /></div>
       )}
 
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Meus Serviços</h1>
@@ -348,7 +409,6 @@ const DashboardServicesPage = () => {
         </Button>
       </div>
 
-      {/* Search */}
       <div className="mt-4 relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
@@ -358,7 +418,6 @@ const DashboardServicesPage = () => {
           className="w-full rounded-lg border border-input bg-background pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
       </div>
-
 
       {/* Service cards */}
       <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -372,21 +431,14 @@ const DashboardServicesPage = () => {
           const imgUrl = serviceImages[s.id];
           return (
             <div key={s.id} className="rounded-xl border border-border bg-card shadow-sm overflow-hidden group">
-              {/* Image area */}
               <div className="relative aspect-[4/3] bg-muted">
                 {imgUrl ? (
-                  <img
-                    src={imgUrl}
-                    alt={s.service_name}
-                    className="w-full h-full object-cover"
-                    onError={handleImageError}
-                  />
+                  <img src={imgUrl} alt={s.service_name} className="w-full h-full object-cover" onError={handleImageError} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     <ImagePlus className="h-10 w-10 opacity-30" />
                   </div>
                 )}
-                {/* Category chips */}
                 {s.serviceCategories?.length > 0 && (
                   <div className="absolute top-2 left-2 flex flex-wrap gap-1">
                     {s.serviceCategories.slice(0, 2).map((cat: any, i: number) => (
@@ -396,12 +448,14 @@ const DashboardServicesPage = () => {
                     ))}
                   </div>
                 )}
+                {s.is_emergency && (
+                  <span className="absolute top-2 right-2 inline-flex items-center gap-0.5 rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-white shadow">
+                    <Zap className="h-3 w-3" /> 24h
+                  </span>
+                )}
               </div>
-
-              {/* Info */}
               <div className="p-3 space-y-1.5">
                 <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">{s.service_name}</h3>
-                
                 <div className="flex items-center gap-1">
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
                     s.deleted_at ? 'bg-muted text-muted-foreground' : 'bg-green-100 text-green-700'
@@ -409,28 +463,17 @@ const DashboardServicesPage = () => {
                     {s.deleted_at ? 'Pausado' : 'Ativo'}
                   </span>
                 </div>
-
-                {s.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-1">{s.description}</p>
-                )}
-
+                {s.description && <p className="text-xs text-muted-foreground line-clamp-1">{s.description}</p>}
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                  {s.address && (
-                    <span className="flex items-center gap-0.5">
-                      <MapPin className="h-3 w-3" /> {s.address.split(',')[0]}
-                    </span>
+                  {s.service_area && (
+                    <span className="flex items-center gap-0.5"><MapPin className="h-3 w-3" /> {s.service_area}</span>
                   )}
-                  <span className="flex items-center gap-0.5">
-                    <Eye className="h-3 w-3" /> {s.view_count ?? 0} views
-                  </span>
+                  <span className="flex items-center gap-0.5"><Eye className="h-3 w-3" /> {s.view_count ?? 0} views</span>
                 </div>
-
                 <p className="text-[10px] text-muted-foreground">
                   {format(new Date(s.created_at), 'dd/MM/yyyy')}
                   {s.price && <span className="ml-2 font-medium text-foreground">R$ {s.price}</span>}
                 </p>
-
-                {/* Actions */}
                 <div className="flex items-center gap-2 pt-1.5 border-t border-border">
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-8" onClick={() => handleEdit(s)}>
                     <Edit2 className="mr-1 h-3 w-3" /> Editar
@@ -448,166 +491,258 @@ const DashboardServicesPage = () => {
         })}
       </div>
 
-      {/* New/Edit Dialog */}
+      {/* ─── New/Edit Dialog ─── */}
       <Dialog open={showDialog} onOpenChange={(open) => { if (!open) { resetForm(); } setShowDialog(open); }}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-md p-0 flex flex-col max-h-[90vh] overflow-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-accent/60 [&::-webkit-scrollbar-thumb]:rounded-full">
+          <DialogHeader className="px-5 pt-5 pb-2 shrink-0">
             <DialogTitle className="flex items-center gap-2 text-lg">
-              📦 {editId ? 'Editar Serviço' : 'Novo Serviço'}
+              🔧 {editId ? 'Editar Serviço' : 'Novo Serviço'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 pt-2">
-            {/* Title */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Título *</label>
-              <input
-                name="service_name"
-                value={form.service_name}
-                onChange={handleChange}
-                placeholder="Ex: iPhone 15 Pro Max 256GB"
-                className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none ${formErrors.service_name ? 'border-destructive' : 'border-input'}`}
-              />
-              {formErrors.service_name && <p className="text-xs text-destructive mt-1">{formErrors.service_name}</p>}
-            </div>
+          <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-accent/60 [&::-webkit-scrollbar-thumb]:rounded-full">
 
-            {/* Description */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
-              <textarea
-                name="description"
-                rows={3}
-                value={form.description}
-                onChange={handleChange}
-                placeholder="Detalhes do produto ou serviço..."
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-              />
-            </div>
-
-            {/* Price + Category */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Preço (R$)</label>
-                <input
-                  name="price"
-                  value={form.price}
-                  onChange={handleChange}
-                  placeholder="0,00"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Categoria</label>
-                <SmartCategoryPicker
-                  categories={categories}
-                  selectedIds={selectedCategoryIds}
-                  onToggle={toggleCategory}
-                />
-              </div>
-            </div>
-
-            {/* City + WhatsApp */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Cidade *</label>
-                <input
-                  name="service_area"
-                  value={form.service_area}
-                  onChange={handleChange}
-                  placeholder="Selecione"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
-                <input
-                  name="whatsapp"
-                  value={form.whatsapp}
-                  onChange={handleChange}
-                  placeholder="(61) 99999-9999"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Photo upload area */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Foto do Serviço</label>
-              {editId && user ? (
-                <div className="rounded-lg border border-border p-3">
-                  <ServiceImageUpload serviceId={editId} userId={user.id} />
+            {/* ── Section 1: Informações Básicas ── */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                📝 Informações Básicas
+              </h3>
+              <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Título do Serviço *</label>
+                  <input
+                    name="service_name"
+                    value={form.service_name}
+                    onChange={handleChange}
+                    placeholder="Ex: Instalação de Ar Condicionado"
+                    className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none ${formErrors.service_name ? 'border-destructive' : 'border-input'}`}
+                  />
+                  {formErrors.service_name && <p className="text-xs text-destructive mt-1">{formErrors.service_name}</p>}
                 </div>
-              ) : (
-                <label className="cursor-pointer block">
-                  <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
-                  <div className="rounded-lg border-2 border-dashed border-border bg-muted/30 p-6 flex flex-col items-center justify-center gap-2 hover:border-accent/40 transition-colors">
-                    {newServicePhotoPreview ? (
-                      <div className="relative w-full">
-                        <img src={newServicePhotoPreview} alt="Preview" className="w-full h-32 object-cover rounded-md" />
-                        <button
-                          type="button"
-                          onClick={(e) => { e.preventDefault(); setNewServicePhoto(null); setNewServicePhotoPreview(null); }}
-                          className="absolute top-1 right-1 rounded-full bg-card p-1 shadow"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <ImagePlus className="h-8 w-8 text-muted-foreground/50" />
-                        <span className="text-sm text-muted-foreground">Clique para enviar foto</span>
-                        <span className="text-[10px] text-muted-foreground/70">JPG, PNG • Max 5MB</span>
-                      </>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
+                  <textarea
+                    name="description"
+                    rows={3}
+                    value={form.description}
+                    onChange={handleChange}
+                    placeholder="Descreva seu serviço, diferenciais e o que está incluso no valor..."
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-foreground">Preço (R$)</label>
+                    <input
+                      name="price"
+                      value={form.price}
+                      onChange={handleChange}
+                      placeholder="A partir de..."
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-foreground">Categoria</label>
+                    <SmartCategoryPicker
+                      categories={categories}
+                      selectedIds={selectedCategoryIds}
+                      onToggle={toggleCategory}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Section 2: Localização & Atendimento ── */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <MapPinned className="h-3.5 w-3.5" /> Localização & Atendimento
+              </h3>
+              <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+                {/* City autocomplete */}
+                <div ref={cityRef} className="relative">
+                  <label className="mb-1 block text-sm font-medium text-foreground">Cidade *</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      value={citySearch}
+                      onChange={(e) => {
+                        setCitySearch(e.target.value);
+                        setShowCityDropdown(true);
+                        if (e.target.value.length < 2) setForm(prev => ({ ...prev, service_area: '' }));
+                      }}
+                      onFocus={() => { if (citySearch.length >= 2) setShowCityDropdown(true); }}
+                      placeholder="Digite o nome da cidade..."
+                      className={`w-full rounded-lg border bg-background pl-9 pr-8 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none ${formErrors.service_area ? 'border-destructive' : 'border-input'}`}
+                    />
+                    {form.service_area && (
+                      <button type="button" onClick={clearCity} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        <X className="h-4 w-4" />
+                      </button>
                     )}
                   </div>
-                </label>
-              )}
+                  {geoDetected && form.service_area && (
+                    <p className="text-[11px] text-accent mt-0.5 flex items-center gap-1">📍 Localização detectada</p>
+                  )}
+                  {formErrors.service_area && <p className="text-xs text-destructive mt-1">{formErrors.service_area}</p>}
+                  {showCityDropdown && filteredCities.length > 0 && (
+                    <div className="absolute z-50 top-full mt-1 w-full rounded-lg border border-border bg-popover shadow-lg max-h-48 overflow-y-auto">
+                      {filteredCities.map((c, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => selectCity(c)}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-accent/10 text-foreground transition-colors"
+                        >
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Service Radius */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Raio de Atendimento</label>
+                  <Select value={serviceRadius} onValueChange={setServiceRadius}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="local">📍 Atendimento no local</SelectItem>
+                      <SelectItem value="city">🏙️ Toda a cidade</SelectItem>
+                      <SelectItem value="metro">🗺️ Região Metropolitana</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Emergency Toggle */}
+                <div className={`flex items-center justify-between rounded-lg p-3 transition-colors ${isEmergency ? 'bg-orange-50 border border-orange-200 dark:bg-orange-950/30 dark:border-orange-800' : 'bg-muted/50'}`}>
+                  <div className="flex items-center gap-2">
+                    <Zap className={`h-4 w-4 ${isEmergency ? 'text-orange-500' : 'text-muted-foreground'}`} />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Atendimento 24h / Emergências</p>
+                      <p className="text-[11px] text-muted-foreground">Apareça nos filtros de urgência</p>
+                    </div>
+                  </div>
+                  <Switch checked={isEmergency} onCheckedChange={setIsEmergency} />
+                </div>
+              </div>
             </div>
 
-            {/* Social / YouTube links */}
-            <div className="space-y-2">
-              <label className="mb-1 block text-sm font-medium text-foreground">Redes Sociais & YouTube</label>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-sm">📸</span>
-                <input
-                  name="instagram_url"
-                  value={form.instagram_url}
-                  onChange={handleChange}
-                  placeholder="https://instagram.com/seu_perfil"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-sm">📘</span>
-                <input
-                  name="facebook_url"
-                  value={form.facebook_url}
-                  onChange={handleChange}
-                  placeholder="https://facebook.com/sua_pagina"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-sm">🎬</span>
-                <input
-                  name="youtube_url"
-                  value={form.youtube_url}
-                  onChange={handleChange}
-                  placeholder="https://youtube.com/watch?v=... ou youtu.be/..."
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
-                />
+            {/* ── Section 3: Contato & Mídia ── */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                📱 Contato & Mídia
+              </h3>
+              <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
+                  <input
+                    name="whatsapp"
+                    value={form.whatsapp}
+                    onChange={handleChange}
+                    placeholder="(61) 99999-9999"
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                  />
+                </div>
+
+                {/* Photo */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Foto do Serviço</label>
+                  {editId && user ? (
+                    <div className="rounded-lg border border-border p-3">
+                      <ServiceImageUpload serviceId={editId} userId={user.id} />
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer block">
+                      <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
+                      <div className="rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 flex flex-col items-center justify-center gap-2 hover:border-accent/40 transition-colors">
+                        {newServicePhotoPreview ? (
+                          <div className="relative w-full">
+                            <img src={newServicePhotoPreview} alt="Preview" className="w-full h-28 object-cover rounded-md" />
+                            <button
+                              type="button"
+                              onClick={(e) => { e.preventDefault(); setNewServicePhoto(null); setNewServicePhotoPreview(null); }}
+                              className="absolute top-1 right-1 rounded-full bg-card p-1 shadow"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <ImagePlus className="h-7 w-7 text-muted-foreground/50" />
+                            <span className="text-sm text-muted-foreground">Clique para enviar foto</span>
+                            <span className="text-[10px] text-muted-foreground/70">JPG, PNG • Max 5MB</span>
+                          </>
+                        )}
+                      </div>
+                    </label>
+                  )}
+                </div>
+
+                {/* Social links */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground">Redes Sociais</label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-sm">📸</span>
+                    <input name="instagram_url" value={form.instagram_url} onChange={handleChange} placeholder="https://instagram.com/seu_perfil" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-sm">📘</span>
+                    <input name="facebook_url" value={form.facebook_url} onChange={handleChange} placeholder="https://facebook.com/sua_pagina" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-sm">🎬</span>
+                    <input name="youtube_url" value={form.youtube_url} onChange={handleChange} placeholder="https://youtube.com/watch?v=..." className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none" />
+                  </div>
+                </div>
+
+                {/* SEO Tags */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground flex items-center gap-1">
+                    <Tag className="h-3.5 w-3.5" /> Palavras-chave / Tags
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+                      placeholder="Ex: reformas, elétrica, urgência"
+                      className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={addTag} className="shrink-0">+</Button>
+                  </div>
+                  {seoTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {seoTags.map(tag => (
+                        <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-accent/10 text-accent px-2.5 py-0.5 text-xs font-medium">
+                          #{tag}
+                          <button type="button" onClick={() => removeTag(tag)} className="hover:text-destructive">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <Button variant="outline" className="flex-1" onClick={() => { resetForm(); setShowDialog(false); }}>
-                Cancelar
-              </Button>
-              <Button variant="accent" className="flex-1" onClick={handleSave}>
-                📢 {editId ? 'Salvar' : 'Publicar'}
-              </Button>
-            </div>
+            {/* Visual affordance spacer — lets last item peek above sticky bar */}
+            <div className="h-2" />
+          </div>
+
+          {/* ── Sticky Action Bar ── */}
+          <div className="shrink-0 border-t border-border bg-card px-5 py-3 flex gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+            <Button variant="outline" className="flex-1 h-11" onClick={() => { resetForm(); setShowDialog(false); }}>
+              Cancelar
+            </Button>
+            <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={handleSave}>
+              📢 {editId ? 'Salvar' : 'Publicar'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

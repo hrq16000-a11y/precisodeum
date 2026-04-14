@@ -157,7 +157,7 @@ async function fetchProvidersLightweight(query: any) {
       .in('id', userIds) as unknown as Promise<{ data: { id: string; full_name: string; avatar_url: string | null }[] | null }>,
     supabase
       .from('services')
-      .select('id, provider_id, service_name, description, whatsapp, service_area, service_images(image_url, display_order)')
+      .select('id, provider_id, service_name, description, whatsapp, service_area, is_emergency, seo_tags, service_images(image_url, display_order)')
       .in('provider_id', providerIds),
     supabase
       .from('provider_boosts' as any)
@@ -248,9 +248,12 @@ async function fetchProvidersLightweight(query: any) {
     // Aggregate all service texts for deep search matching
     const provServices = (serviceRows as any[]).filter(s => s.provider_id === p.id);
     const svcTexts = provServices.map(s =>
-      [s.service_name || '', s.description || '', s.service_area || ''].join(' ')
+      [s.service_name || '', s.description || '', s.service_area || '', ...(s.seo_tags || [])].join(' ')
     ).join(' ');
     (mapped as any)._searchableServices = svcTexts;
+
+    // Emergency flag: true if any service has is_emergency
+    (mapped as any)._hasEmergencyService = provServices.some(s => s.is_emergency === true);
 
     // Mark incomplete profiles for filtering — use fallback hierarchy so
     // a missing public_profiles response never hides providers that have
