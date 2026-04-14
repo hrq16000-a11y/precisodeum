@@ -98,9 +98,18 @@ const AdminPage = () => {
         .eq('approval_status', 'pending').order('created_at', { ascending: false }).limit(10);
       setPendingJobsList(pJobs || []);
 
-      const { data: pProviders } = await supabase.from('providers').select('id, business_name, city, created_at, user_id, profiles!inner(full_name)')
+      const { data: pProviders } = await supabase.from('providers').select('id, business_name, city, created_at, user_id')
         .eq('status', 'pending').order('created_at', { ascending: false }).limit(10);
-      setPendingProvidersList(pProviders || []);
+      
+      // Enrich with profile names
+      const enrichedProviders = pProviders || [];
+      if (enrichedProviders.length > 0) {
+        const userIds = enrichedProviders.map((p: any) => p.user_id);
+        const { data: profileNames } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
+        const nameMap = new Map((profileNames || []).map((p: any) => [p.id, p.full_name]));
+        enrichedProviders.forEach((p: any) => { p._profileName = nameMap.get(p.user_id) || ''; });
+      }
+      setPendingProvidersList(enrichedProviders);
 
       // Featured diagnostics
       const [featuredRes, servicesAllRes] = await Promise.all([
