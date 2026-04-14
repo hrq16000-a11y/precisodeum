@@ -100,7 +100,16 @@ const AdminPage = () => {
 
       const { data: pProviders } = await supabase.from('providers').select('id, business_name, city, created_at, user_id')
         .eq('status', 'pending').order('created_at', { ascending: false }).limit(10);
-      setPendingProvidersList(pProviders || []);
+      
+      // Enrich with profile names
+      const enrichedProviders = pProviders || [];
+      if (enrichedProviders.length > 0) {
+        const userIds = enrichedProviders.map((p: any) => p.user_id);
+        const { data: profileNames } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
+        const nameMap = new Map((profileNames || []).map((p: any) => [p.id, p.full_name]));
+        enrichedProviders.forEach((p: any) => { p._profileName = nameMap.get(p.user_id) || ''; });
+      }
+      setPendingProvidersList(enrichedProviders);
 
       // Featured diagnostics
       const [featuredRes, servicesAllRes] = await Promise.all([
@@ -330,7 +339,7 @@ const AdminPage = () => {
                         className="flex items-center justify-between rounded-xl border border-blue-200/60 bg-background/80 backdrop-blur-sm p-3 dark:border-blue-800"
                       >
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-sm font-medium text-foreground truncate">{p.business_name || 'Sem nome'}</h3>
+                          <h3 className="text-sm font-medium text-foreground truncate">{(p as any)._profileName || p.business_name || 'Sem nome'}</h3>
                           <p className="text-xs text-muted-foreground">{p.city} · {new Date(p.created_at).toLocaleDateString('pt-BR')}</p>
                         </div>
                         <div className="flex flex-col gap-1 ml-2 shrink-0 sm:flex-row">
