@@ -3,22 +3,51 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Users, Key, Trash2, Download, CheckSquare, UserCog, Shield, UserPlus } from 'lucide-react';
+import {
+  Users, Key, Trash2, Download, CheckSquare, UserCog, Shield, UserPlus,
+  BarChart3, Target, Briefcase, TrendingUp, Send, Tag, X, Plus,
+  Activity, Filter, Search, ChevronDown, FileText, AlertTriangle
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import PaginationControls from '@/components/PaginationControls';
-import UserStatsCards from '@/components/admin/UserStatsCards';
 import UserFilters from '@/components/admin/UserFilters';
 import UserTable from '@/components/admin/UserTable';
 import UserEditDialog from '@/components/admin/UserEditDialog';
 import UserDetailSheet from '@/components/admin/UserDetailSheet';
-import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import { logAuditAction } from '@/hooks/useAuditLog';
+import { exportCrmPdf } from '@/lib/exportCrmPdf';
+import {
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
+import { format, subDays, subMonths, startOfDay, parseISO, eachMonthOfInterval } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const PAGE_SIZE = 20;
+
+const FUNNEL_STAGES = [
+  { key: 'registered', label: 'Cadastrado', color: 'bg-blue-500' },
+  { key: 'profile_complete', label: 'Perfil Completo', color: 'bg-cyan-500' },
+  { key: 'active_provider', label: 'Profissional Ativo', color: 'bg-emerald-500' },
+  { key: 'premium', label: 'Premium', color: 'bg-amber-500' },
+];
+
+const PIE_COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
+
+const TAG_COLORS = [
+  '#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6',
+  '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#06b6d4',
+];
 
 const AdminUsersPage = () => {
   const { isAdmin, loading } = useAdmin();
@@ -27,6 +56,10 @@ const AdminUsersPage = () => {
   const [levels, setLevels] = useState<any[]>([]);
   const [accountTypes, setAccountTypes] = useState<any[]>([]);
   const [providersMap, setProvidersMap] = useState<Record<string, any>>({});
+  const [providersRaw, setProvidersRaw] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [userTags, setUserTags] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -52,7 +85,16 @@ const AdminUsersPage = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkTypeTarget, setBulkTypeTarget] = useState('');
-  const [bulkStatusTarget, setBulkStatusTarget] = useState('');
+
+  // Metrics tab state
+  const [showNotifyDialog, setShowNotifyDialog] = useState(false);
+  const [notifyTitle, setNotifyTitle] = useState('');
+  const [notifyMessage, setNotifyMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [showTagDialog, setShowTagDialog] = useState(false);
+  const [tagTargetIds, setTagTargetIds] = useState<string[]>([]);
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
 
   const toggleSelection = (id: string) => {
     setSelectedIds(prev => {
@@ -85,15 +127,23 @@ const AdminUsersPage = () => {
   };
 
   const fetchProfiles = () => {
-    supabase.from('profiles').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => setProfiles(data || []));
-    supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon)')
-      .is('deleted_at', null)
-      .then(({ data }) => {
-        const map: Record<string, any> = {};
-        (data || []).forEach((p: any) => { map[p.user_id] = p; });
-        setProvidersMap(map);
-      });
+    Promise.all([
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+      supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at').is('deleted_at', null),
+      supabase.from('services').select('id,provider_id,created_at').is('deleted_at', null),
+      supabase.from('leads').select('id,provider_id,created_at'),
+      supabase.from('user_tags').select('*'),
+    ]).then(([pRes, prRes, sRes, lRes, tRes]) => {
+      setProfiles(pRes.data || []);
+      const provs = prRes.data || [];
+      setProvidersRaw(provs);
+      const map: Record<string, any> = {};
+      provs.forEach((p: any) => { map[p.user_id] = p; });
+      setProvidersMap(map);
+      setServices(sRes.data || []);
+      setLeads(lRes.data || []);
+      setUserTags(tRes.data || []);
+    });
   };
 
   const fetchAdmins = () => {
@@ -118,6 +168,110 @@ const AdminUsersPage = () => {
     fetchAccountTypes();
   }, [isAdmin]);
 
+  // ── Real KPIs ──
+  const realKpis = useMemo(() => {
+    const total = profiles.length;
+    const now = new Date();
+    const thirtyDaysAgo = subDays(now, 30).toISOString();
+    const sevenDaysAgo = subDays(now, 7).toISOString();
+    const new30d = profiles.filter(p => p.created_at >= thirtyDaysAgo).length;
+    const new7d = profiles.filter(p => p.created_at >= sevenDaysAgo).length;
+    const activeProviders = providersRaw.filter(p => p.status === 'approved').length;
+    const suspended = profiles.filter(p => p.status === 'suspended').length;
+    const banned = profiles.filter(p => p.status === 'banned').length;
+    return { total, new30d, new7d, activeProviders, suspended, banned };
+  }, [profiles, providersRaw]);
+
+  // ── Metrics data ──
+  const servicesByProvider = useMemo(() => {
+    const map: Record<string, number> = {};
+    services.forEach(s => { map[s.provider_id] = (map[s.provider_id] || 0) + 1; });
+    return map;
+  }, [services]);
+
+  const leadsByProvider = useMemo(() => {
+    const map: Record<string, number> = {};
+    leads.forEach(l => { map[l.provider_id] = (map[l.provider_id] || 0) + 1; });
+    return map;
+  }, [leads]);
+
+  const tagsByUser = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    userTags.forEach(t => {
+      if (!map[t.user_id]) map[t.user_id] = [];
+      map[t.user_id].push(t);
+    });
+    return map;
+  }, [userTags]);
+
+  const allTagNames = useMemo(() => {
+    const set = new Set<string>();
+    userTags.forEach(t => set.add(t.tag_name));
+    return Array.from(set).sort();
+  }, [userTags]);
+
+  const funnelData = useMemo(() => {
+    const total = profiles.length;
+    const withProfile = profiles.filter(p => p.full_name && p.full_name.trim().length > 2).length;
+    const activeProviders = providersRaw.filter(p => p.status === 'approved').length;
+    const premium = providersRaw.filter(p => p.plan === 'premium').length;
+    return [
+      { ...FUNNEL_STAGES[0], count: total, pct: 100 },
+      { ...FUNNEL_STAGES[1], count: withProfile, pct: total ? Math.round((withProfile / total) * 100) : 0 },
+      { ...FUNNEL_STAGES[2], count: activeProviders, pct: total ? Math.round((activeProviders / total) * 100) : 0 },
+      { ...FUNNEL_STAGES[3], count: premium, pct: total ? Math.round((premium / total) * 100) : 0 },
+    ];
+  }, [profiles, providersRaw]);
+
+  const growthData = useMemo(() => {
+    const days: { date: string; users: number; providers: number }[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const day = startOfDay(subDays(new Date(), i));
+      const dayStr = format(day, 'yyyy-MM-dd');
+      const label = format(day, 'dd/MM');
+      const usersCount = profiles.filter(p => format(parseISO(p.created_at), 'yyyy-MM-dd') === dayStr).length;
+      const provsCount = providersRaw.filter(p => format(parseISO(p.created_at), 'yyyy-MM-dd') === dayStr).length;
+      days.push({ date: label, users: usersCount, providers: provsCount });
+    }
+    return days;
+  }, [profiles, providersRaw]);
+
+  const typeDistribution = useMemo(() => {
+    const counts: Record<string, number> = { client: 0, provider: 0, rh: 0 };
+    profiles.forEach(p => {
+      const t = p.profile_type || 'client';
+      counts[t] = (counts[t] || 0) + 1;
+    });
+    return [
+      { name: 'Clientes', value: counts.client },
+      { name: 'Profissionais', value: counts.provider },
+      { name: 'Agências/RH', value: counts.rh },
+    ].filter(d => d.value > 0);
+  }, [profiles]);
+
+  const retentionData = useMemo(() => {
+    const now = new Date();
+    const months = eachMonthOfInterval({ start: subMonths(now, 11), end: now });
+    return months.map(month => {
+      const monthStr = format(month, 'yyyy-MM');
+      const label = format(month, 'MMM/yy', { locale: ptBR });
+      const endOfMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0, 23, 59, 59);
+      const totalByMonth = profiles.filter(p => parseISO(p.created_at) <= endOfMonth).length;
+      const activeByMonth = profiles.filter(p => parseISO(p.created_at) <= endOfMonth && p.status !== 'inactive' && p.status !== 'suspended' && p.status !== 'banned').length;
+      const inactiveByMonth = totalByMonth - activeByMonth;
+      const newInMonth = profiles.filter(p => format(parseISO(p.created_at), 'yyyy-MM') === monthStr).length;
+      return {
+        month: label,
+        total: totalByMonth,
+        ativos: activeByMonth,
+        inativos: inactiveByMonth,
+        novos: newInMonth,
+        retentionRate: totalByMonth > 0 ? Math.round((activeByMonth / totalByMonth) * 100) : 0,
+      };
+    });
+  }, [profiles]);
+
+  // ── Filtered list ──
   const filtered = useMemo(() => {
     let list = profiles;
     if (filterType !== 'all') list = list.filter(p => (p.profile_type || p.role) === filterType);
@@ -145,7 +299,7 @@ const AdminUsersPage = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Bulk actions
+  // ── Bulk actions ──
   const bulkSetStatus = async (status: string) => {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
@@ -170,7 +324,7 @@ const AdminUsersPage = () => {
     if (error) toast.error('Erro: ' + error.message);
     else {
       await logAuditAction({ action: 'bulk_update', resource_type: 'user', details: { ids, count: ids.length, changes: { profile_type: profileType } } });
-      toast.success(`${ids.length} usuário(s) alterado(s) para ${profileType === 'provider' ? 'Profissional' : profileType === 'rh' ? 'Agência/RH' : 'Cliente'}`);
+      toast.success(`${ids.length} usuário(s) alterado(s)`);
       setSelectedIds(new Set());
       fetchProfiles();
     }
@@ -237,9 +391,8 @@ const AdminUsersPage = () => {
     const prevStatus = p.status || 'active';
     const newStatus = prevStatus === 'active' ? 'inactive' : 'active';
     const { error } = await supabase.from('profiles').update({ status: newStatus }).eq('id', p.id);
-    if (error) {
-      toast.error('Erro: ' + error.message);
-    } else {
+    if (error) toast.error('Erro: ' + error.message);
+    else {
       await logAuditAction({
         action: newStatus === 'inactive' ? 'block' : 'unblock', resource_type: 'user', resource_id: p.id,
         details: { target_user_id: p.id, changes: { status: { from: prevStatus, to: newStatus } } },
@@ -251,15 +404,10 @@ const AdminUsersPage = () => {
 
   const handleDelete = async () => {
     if (!deleteUser) return;
-    const prevStatus = deleteUser.status || 'active';
     const { error } = await supabase.from('profiles').update({ status: 'inactive' }).eq('id', deleteUser.id);
-    if (error) {
-      toast.error('Erro: ' + error.message);
-    } else {
-      await logAuditAction({
-        action: 'soft_delete', resource_type: 'user', resource_id: deleteUser.id,
-        details: { target_user_id: deleteUser.id, changes: { status: { from: prevStatus, to: 'inactive' } }, reason: 'Soft delete via admin' },
-      });
+    if (error) toast.error('Erro: ' + error.message);
+    else {
+      await logAuditAction({ action: 'soft_delete', resource_type: 'user', resource_id: deleteUser.id, details: { target_user_id: deleteUser.id } });
       toast.success('Usuário desativado!');
       setDeleteUser(null);
       fetchProfiles();
@@ -272,10 +420,7 @@ const AdminUsersPage = () => {
       if (error.code === '23505') toast.info('Usuário já é admin');
       else toast.error('Erro: ' + error.message);
     } else {
-      await logAuditAction({
-        action: 'update', resource_type: 'user', resource_id: userId,
-        details: { target_user_id: userId, changes: { role: { from: 'user', to: 'admin' } } },
-      });
+      await logAuditAction({ action: 'update', resource_type: 'user', resource_id: userId, details: { changes: { role: { from: 'user', to: 'admin' } } } });
       toast.success('Usuário promovido a admin!');
       fetchAdmins();
     }
@@ -283,18 +428,13 @@ const AdminUsersPage = () => {
 
   const removeAdmin = async (userId: string) => {
     const { error } = await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', 'admin');
-    if (error) {
-      toast.error('Erro: ' + error.message);
-    } else {
-      await logAuditAction({
-        action: 'update', resource_type: 'user', resource_id: userId,
-        details: { target_user_id: userId, changes: { role: { from: 'admin', to: 'user' } } },
-      });
+    if (error) toast.error('Erro: ' + error.message);
+    else {
+      await logAuditAction({ action: 'update', resource_type: 'user', resource_id: userId, details: { changes: { role: { from: 'admin', to: 'user' } } } });
       toast.success('Permissão de admin removida!');
       fetchAdmins();
     }
   };
-
 
   const handleExport = () => {
     const csvHeader = 'Nome,Email,Telefone,WhatsApp,Tipo,Status,Criado em\n';
@@ -324,10 +464,7 @@ const AdminUsersPage = () => {
       });
       if (res.error) throw res.error;
       if (res.data?.error) throw new Error(res.data.error);
-      await logAuditAction({
-        action: 'create', resource_type: 'user', resource_id: res.data?.user_id,
-        details: { email: createEmail, profile_type: createType },
-      });
+      await logAuditAction({ action: 'create', resource_type: 'user', resource_id: res.data?.user_id, details: { email: createEmail, profile_type: createType } });
       toast.success('Usuário criado com sucesso!');
       setShowCreateDialog(false);
       setCreateEmail(''); setCreatePassword(''); setCreateName(''); setCreateType('client');
@@ -338,17 +475,82 @@ const AdminUsersPage = () => {
     setCreating(false);
   };
 
-  if (loading) return <AdminLayout><p className="text-muted-foreground p-4">Carregando...</p></AdminLayout>;
-
-  const stats = {
-    total: profiles.length,
-    active: profiles.filter(p => (p.status || 'active') === 'active').length,
-    inactive: profiles.filter(p => p.status === 'inactive').length,
-    clients: profiles.filter(p => (p.profile_type || p.role) === 'client').length,
-    providers: profiles.filter(p => (p.profile_type || p.role) === 'provider').length,
-    rh: profiles.filter(p => (p.profile_type || p.role) === 'rh').length,
-    admins: adminIds.size,
+  // ── Metrics exports ──
+  const downloadCsv = (filename: string, headers: string[], rows: (string | number | null | undefined)[][]) => {
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    return rows.length;
   };
+
+  const exportMetricsCsv = () => {
+    const lines: string[][] = [];
+    lines.push(['=== FUNIL DE CONVERSÃO ===', '', '']);
+    lines.push(['Etapa', 'Total', 'Porcentagem']);
+    funnelData.forEach(s => lines.push([s.label, String(s.count), s.pct + '%']));
+    lines.push(['', '', '']);
+    lines.push(['=== CRESCIMENTO (30 DIAS) ===', '', '']);
+    lines.push(['Data', 'Novos Usuários', 'Novos Profissionais']);
+    growthData.forEach(d => lines.push([d.date, String(d.users), String(d.providers)]));
+    lines.push(['', '', '']);
+    lines.push(['=== RETENÇÃO (12 MESES) ===', '', '', '', '']);
+    lines.push(['Mês', 'Total', 'Ativos', 'Inativos', 'Novos', 'Taxa Retenção']);
+    retentionData.forEach(r => lines.push([r.month, String(r.total), String(r.ativos), String(r.inativos), String(r.novos), r.retentionRate + '%']));
+    const maxCols = Math.max(...lines.map(l => l.length));
+    const padded = lines.map(l => [...l, ...Array(maxCols - l.length).fill('')]);
+    const csv = padded.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `crm-metricas-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Métricas exportadas');
+  };
+
+  // ── Tags ──
+  const handleAddTag = async () => {
+    if (!newTagName.trim()) { toast.error('Digite o nome da tag'); return; }
+    const ids = tagTargetIds.length > 0 ? tagTargetIds : Array.from(selectedIds);
+    if (ids.length === 0) { toast.error('Selecione pelo menos um usuário'); return; }
+    const rows = ids.map(uid => ({ user_id: uid, tag_name: newTagName.trim(), color: newTagColor }));
+    const { error } = await supabase.from('user_tags').upsert(rows, { onConflict: 'user_id,tag_name' });
+    if (error) { toast.error('Erro: ' + error.message); return; }
+    toast.success(`Tag "${newTagName}" aplicada a ${ids.length} usuário(s)`);
+    setShowTagDialog(false);
+    setNewTagName('');
+    setTagTargetIds([]);
+    fetchProfiles();
+  };
+
+  // ── Notifications ──
+  const handleSendNotification = async () => {
+    if (!notifyTitle.trim() || !notifyMessage.trim()) { toast.error('Preencha título e mensagem'); return; }
+    setSending(true);
+    const ids = selectedIds.size > 0 ? Array.from(selectedIds) : filtered.map(p => p.id);
+    const rows = ids.map(uid => ({ user_id: uid, title: notifyTitle, message: notifyMessage, type: 'crm' }));
+    const batchSize = 100;
+    let sent = 0;
+    for (let i = 0; i < rows.length; i += batchSize) {
+      const batch = rows.slice(i, i + batchSize);
+      const { error } = await supabase.from('notifications').insert(batch);
+      if (error) { toast.error('Erro ao enviar: ' + error.message); break; }
+      sent += batch.length;
+    }
+    toast.success(`${sent} notificação(ões) enviada(s)`);
+    setSending(false);
+    setShowNotifyDialog(false);
+    setNotifyTitle('');
+    setNotifyMessage('');
+  };
+
+  if (loading) return <AdminLayout><p className="text-muted-foreground p-4">Carregando...</p></AdminLayout>;
 
   const allPageSelected = paginated.length > 0 && paginated.every(p => selectedIds.has(p.id));
 
@@ -357,204 +559,477 @@ const AdminUsersPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <Users className="h-6 w-6" /> Gestão de Usuários
+            <Users className="h-6 w-6" /> Central de Usuários
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gerencie todos os usuários da plataforma</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Gestão unificada — usuários, métricas e segmentação</p>
         </div>
         <Button size="sm" onClick={() => setShowCreateDialog(true)}>
           <UserPlus className="h-4 w-4 mr-1" /> Criar Usuário
         </Button>
       </div>
 
-      <div className="mt-5"><UserStatsCards stats={stats} /></div>
-
-      <div className="mt-4">
-        <UserFilters
-          search={search}
-          onSearchChange={v => { setSearch(v); setPage(1); }}
-          filterType={filterType}
-          onFilterTypeChange={v => { setFilterType(v); setPage(1); }}
-          filterStatus={filterStatus}
-          onFilterStatusChange={v => { setFilterStatus(v); setPage(1); }}
-          filterProviderStatus={filterProviderStatus}
-          onFilterProviderStatusChange={v => { setFilterProviderStatus(v); setPage(1); }}
-          totalResults={filtered.length}
-          onExport={handleExport}
-        />
+      {/* Real KPI Cards */}
+      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Card className="border-l-4 border-l-primary">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="rounded-lg bg-primary/10 p-2"><Users className="h-5 w-5 text-primary" /></div>
+            </div>
+            <p className="mt-3 font-display text-2xl font-bold text-foreground">{realKpis.total}</p>
+            <p className="text-xs text-muted-foreground">Total de Usuários</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-emerald-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="rounded-lg bg-emerald-500/10 p-2"><UserPlus className="h-5 w-5 text-emerald-600" /></div>
+              <span className="text-xs font-medium text-emerald-600">+{realKpis.new7d} esta semana</span>
+            </div>
+            <p className="mt-3 font-display text-2xl font-bold text-foreground">{realKpis.new30d}</p>
+            <p className="text-xs text-muted-foreground">Novos (30 dias)</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-blue-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="rounded-lg bg-blue-500/10 p-2"><Briefcase className="h-5 w-5 text-blue-600" /></div>
+            </div>
+            <p className="mt-3 font-display text-2xl font-bold text-foreground">{realKpis.activeProviders}</p>
+            <p className="text-xs text-muted-foreground">Profissionais Ativos</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-destructive">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="rounded-lg bg-destructive/10 p-2"><AlertTriangle className="h-5 w-5 text-destructive" /></div>
+              {realKpis.banned > 0 && <span className="text-xs font-medium text-destructive">{realKpis.banned} banido(s)</span>}
+            </div>
+            <p className="mt-3 font-display text-2xl font-bold text-foreground">{realKpis.suspended + realKpis.banned}</p>
+            <p className="text-xs text-muted-foreground">Suspensos / Banidos</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Select all bar */}
-      <div className="mt-3 flex items-center gap-3">
-        <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={selectAllOnPage}>
-          <CheckSquare className="h-3.5 w-3.5" />
-          {allPageSelected ? 'Desmarcar Página' : 'Selecionar Página'}
-        </Button>
-        {filtered.length > PAGE_SIZE && (
-          <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={selectAllFiltered}>
-            <CheckSquare className="h-3.5 w-3.5" />
-            Selecionar Todos ({filtered.length})
-          </Button>
-        )}
-        {selectedIds.size > 0 && (
-          <span className="text-xs text-muted-foreground">{selectedIds.size} selecionado(s)</span>
-        )}
-      </div>
+      {/* Main Tabs: Usuários | Métricas */}
+      <Tabs defaultValue="users" className="mt-6">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="users"><Users className="h-4 w-4 mr-1.5" /> Usuários</TabsTrigger>
+          <TabsTrigger value="metrics"><BarChart3 className="h-4 w-4 mr-1.5" /> Métricas</TabsTrigger>
+        </TabsList>
 
-      {/* Bulk actions */}
-      {selectedIds.size > 0 && (
-        <div className="mt-3 sticky top-0 z-20 flex flex-wrap items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 shadow-sm">
-          <span className="text-sm font-medium text-foreground mr-2">
-            {selectedIds.size} selecionado(s)
-          </span>
+        {/* ═══ Users Tab ═══ */}
+        <TabsContent value="users" className="space-y-4 mt-4">
+          <UserFilters
+            search={search}
+            onSearchChange={v => { setSearch(v); setPage(1); }}
+            filterType={filterType}
+            onFilterTypeChange={v => { setFilterType(v); setPage(1); }}
+            filterStatus={filterStatus}
+            onFilterStatusChange={v => { setFilterStatus(v); setPage(1); }}
+            filterProviderStatus={filterProviderStatus}
+            onFilterProviderStatusChange={v => { setFilterProviderStatus(v); setPage(1); }}
+            totalResults={filtered.length}
+            onExport={handleExport}
+          />
 
-          {/* Status */}
-          <Button size="sm" variant="outline" onClick={() => bulkSetStatus('active')} disabled={bulkLoading} className="text-green-600 border-green-200 h-7 text-xs">
-            ✅ Ativar
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => bulkSetStatus('inactive')} disabled={bulkLoading} className="text-destructive border-destructive/30 h-7 text-xs">
-            🔴 Desativar
-          </Button>
-
-          {/* Change type */}
-          <div className="flex items-center gap-1">
-            <Select value={bulkTypeTarget} onValueChange={setBulkTypeTarget}>
-              <SelectTrigger className="h-7 w-[130px] text-xs">
-                <SelectValue placeholder="Mudar tipo..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="client">👤 Cliente</SelectItem>
-                <SelectItem value="provider">🔧 Profissional</SelectItem>
-                <SelectItem value="rh">🏢 Agência/RH</SelectItem>
-              </SelectContent>
-            </Select>
-            {bulkTypeTarget && (
-              <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => bulkChangeType(bulkTypeTarget)} disabled={bulkLoading}>
-                <UserCog className="h-3 w-3 mr-1" /> Aplicar
+          <div className="flex items-center gap-3">
+            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={selectAllOnPage}>
+              <CheckSquare className="h-3.5 w-3.5" />
+              {allPageSelected ? 'Desmarcar Página' : 'Selecionar Página'}
+            </Button>
+            {filtered.length > PAGE_SIZE && (
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={selectAllFiltered}>
+                <CheckSquare className="h-3.5 w-3.5" />
+                Selecionar Todos ({filtered.length})
               </Button>
+            )}
+            {selectedIds.size > 0 && (
+              <span className="text-xs text-muted-foreground">{selectedIds.size} selecionado(s)</span>
             )}
           </div>
 
-          {/* Promote to admin */}
-          <Button size="sm" variant="outline" onClick={bulkMakeAdmin} disabled={bulkLoading} className="h-7 text-xs text-amber-600 border-amber-200">
-            <Shield className="h-3 w-3 mr-1" /> Promover Admin
-          </Button>
+          {/* Bulk actions */}
+          {selectedIds.size > 0 && (
+            <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 shadow-sm">
+              <span className="text-sm font-medium text-foreground mr-2">{selectedIds.size} selecionado(s)</span>
+              <Button size="sm" variant="outline" onClick={() => bulkSetStatus('active')} disabled={bulkLoading} className="text-green-600 border-green-200 h-7 text-xs">✅ Ativar</Button>
+              <Button size="sm" variant="outline" onClick={() => bulkSetStatus('inactive')} disabled={bulkLoading} className="text-destructive border-destructive/30 h-7 text-xs">🔴 Desativar</Button>
+              <div className="flex items-center gap-1">
+                <Select value={bulkTypeTarget} onValueChange={setBulkTypeTarget}>
+                  <SelectTrigger className="h-7 w-[130px] text-xs"><SelectValue placeholder="Mudar tipo..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="client">👤 Cliente</SelectItem>
+                    <SelectItem value="provider">🔧 Profissional</SelectItem>
+                    <SelectItem value="rh">🏢 Agência/RH</SelectItem>
+                  </SelectContent>
+                </Select>
+                {bulkTypeTarget && (
+                  <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => bulkChangeType(bulkTypeTarget)} disabled={bulkLoading}>
+                    <UserCog className="h-3 w-3 mr-1" /> Aplicar
+                  </Button>
+                )}
+              </div>
+              <Button size="sm" variant="outline" onClick={bulkMakeAdmin} disabled={bulkLoading} className="h-7 text-xs text-amber-600 border-amber-200">
+                <Shield className="h-3 w-3 mr-1" /> Promover Admin
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => { setTagTargetIds(Array.from(selectedIds)); setShowTagDialog(true); }} disabled={bulkLoading} className="h-7 text-xs">
+                <Tag className="h-3 w-3 mr-1" /> Tag ({selectedIds.size})
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleExport} disabled={bulkLoading} className="h-7 text-xs">
+                <Download className="h-3 w-3 mr-1" /> Exportar
+              </Button>
+              <Button size="sm" variant="destructive" onClick={bulkSoftDelete} disabled={bulkLoading} className="h-7 text-xs">
+                <Trash2 className="h-3 w-3 mr-1" /> Desativar
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="h-7 text-xs ml-auto">✕ Limpar</Button>
+            </div>
+          )}
 
-          {/* Export */}
-          <Button size="sm" variant="outline" onClick={handleExport} disabled={bulkLoading} className="h-7 text-xs">
-            <Download className="h-3 w-3 mr-1" /> Exportar
-          </Button>
+          <UserTable
+            users={paginated}
+            adminIds={adminIds}
+            levels={levels}
+            accountTypes={accountTypes}
+            providersMap={providersMap}
+            onEdit={setEditUser}
+            onResetPassword={setPwUser}
+            onBlock={handleBlock}
+            onMakeAdmin={makeAdmin}
+            onRemoveAdmin={removeAdmin}
+            onDelete={setDeleteUser}
+            onViewDetails={setDetailUser}
+            selectedIds={selectedIds}
+            onToggleSelection={toggleSelection}
+          />
 
-          {/* Delete */}
-          <Button size="sm" variant="destructive" onClick={bulkSoftDelete} disabled={bulkLoading} className="h-7 text-xs">
-            <Trash2 className="h-3 w-3 mr-1" /> Desativar
-          </Button>
+          {totalPages > 1 && (
+            <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
+          )}
+        </TabsContent>
 
-          {/* Clear */}
-          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="h-7 text-xs ml-auto">
-            ✕ Limpar
-          </Button>
-        </div>
-      )}
+        {/* ═══ Metrics Tab ═══ */}
+        <TabsContent value="metrics" className="space-y-6 mt-4">
+          {/* Actions bar */}
+          <div className="flex flex-wrap gap-2 justify-end">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-1" /> Exportar <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-1" align="end">
+                <button onClick={handleExport} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
+                  <Users className="h-4 w-4" /> Usuários (CSV)
+                </button>
+                <button onClick={exportMetricsCsv} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
+                  <BarChart3 className="h-4 w-4" /> Métricas (CSV)
+                </button>
+                <div className="border-t border-border my-1" />
+                <button onClick={() => {
+                  const stats = { total: realKpis.total, new7d: realKpis.new7d, new30d: realKpis.new30d, activeProviders: realKpis.activeProviders };
+                  exportCrmPdf({ stats, funnelData, growthData, retentionData, typeDistribution, totalLeads: leads.length });
+                  toast.success('PDF gerado — use Ctrl+P para salvar');
+                }} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
+                  <FileText className="h-4 w-4" /> Relatório (PDF)
+                </button>
+              </PopoverContent>
+            </Popover>
+            <Button size="sm" onClick={() => setShowNotifyDialog(true)}>
+              <Send className="h-4 w-4 mr-1" /> Enviar Notificação
+            </Button>
+          </div>
 
-      <div className="mt-3">
-        <UserTable
-          users={paginated}
-          adminIds={adminIds}
-          levels={levels}
-          accountTypes={accountTypes}
-          providersMap={providersMap}
-          onEdit={setEditUser}
-          onResetPassword={setPwUser}
-          onBlock={handleBlock}
-          onMakeAdmin={makeAdmin}
-          onRemoveAdmin={removeAdmin}
-          onDelete={setDeleteUser}
-          onViewDetails={setDetailUser}
-          selectedIds={selectedIds}
-          onToggleSelection={toggleSelection}
-        />
-      </div>
+          {/* Metrics sub-tabs */}
+          <Tabs defaultValue="dashboard" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="dashboard"><BarChart3 className="h-4 w-4 mr-1" /> Dashboard</TabsTrigger>
+              <TabsTrigger value="funnel"><Target className="h-4 w-4 mr-1" /> Funil</TabsTrigger>
+              <TabsTrigger value="retention"><Activity className="h-4 w-4 mr-1" /> Retenção</TabsTrigger>
+            </TabsList>
 
-      {totalPages > 1 && (
-        <div className="mt-4">
-          <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
-        </div>
-      )}
+            {/* Dashboard */}
+            <TabsContent value="dashboard" className="space-y-4">
+              <div className="grid gap-4 lg:grid-cols-3">
+                <Card className="lg:col-span-2">
+                  <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Crescimento (30 dias)</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <AreaChart data={growthData}>
+                        <defs>
+                          <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="colorProvs" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                        <XAxis dataKey="date" tick={{ fontSize: 11 }} className="text-muted-foreground" />
+                        <YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" />
+                        <Tooltip />
+                        <Area type="monotone" dataKey="users" name="Usuários" stroke="hsl(var(--primary))" fill="url(#colorUsers)" strokeWidth={2} />
+                        <Area type="monotone" dataKey="providers" name="Profissionais" stroke="hsl(var(--chart-2))" fill="url(#colorProvs)" strokeWidth={2} />
+                        <Legend />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Distribuição por Tipo</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <PieChart>
+                        <Pie data={typeDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                          {typeDistribution.map((_, idx) => (
+                            <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
 
+              {/* Top cities */}
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Top Cidades (Profissionais)</CardTitle></CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={(() => {
+                      const cityCount: Record<string, number> = {};
+                      providersRaw.forEach(p => { if (p.city) cityCount[p.city] = (cityCount[p.city] || 0) + 1; });
+                      return Object.entries(cityCount).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([city, count]) => ({ city, count }));
+                    })()}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="city" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      <Bar dataKey="count" name="Profissionais" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Funnel */}
+            <TabsContent value="funnel" className="space-y-4">
+              <Card>
+                <CardHeader><CardTitle className="text-base">Funil de Conversão</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {funnelData.map((stage) => (
+                    <div key={stage.key} className="flex items-center gap-3">
+                      <div className="w-32 text-sm font-medium text-foreground shrink-0">{stage.label}</div>
+                      <div className="flex-1 relative">
+                        <div className="h-10 rounded-lg bg-muted overflow-hidden">
+                          <div className={`h-full ${stage.color} rounded-lg transition-all duration-700 flex items-center px-3`} style={{ width: `${Math.max(stage.pct, 5)}%` }}>
+                            <span className="text-xs font-bold text-white whitespace-nowrap">{stage.count} ({stage.pct}%)</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+                {[
+                  { label: 'Cadastro → Perfil', from: funnelData[0].count, to: funnelData[1].count },
+                  { label: 'Perfil → Profissional', from: funnelData[1].count, to: funnelData[2].count },
+                  { label: 'Profissional → Premium', from: funnelData[2].count, to: funnelData[3].count },
+                ].map(conv => (
+                  <Card key={conv.label}>
+                    <CardContent className="p-4 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">{conv.label}</p>
+                      <p className="font-display text-3xl font-bold text-primary">{conv.from > 0 ? Math.round((conv.to / conv.from) * 100) : 0}%</p>
+                      <p className="text-xs text-muted-foreground">{conv.to} de {conv.from}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* Retention */}
+            <TabsContent value="retention" className="space-y-4">
+              <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Taxa de Retenção Atual</p>
+                    <p className="font-display text-3xl font-bold text-emerald-600">{retentionData.length > 0 ? retentionData[retentionData.length - 1].retentionRate : 0}%</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Ativos</p>
+                    <p className="font-display text-3xl font-bold text-primary">{profiles.filter(p => p.status !== 'inactive' && p.status !== 'suspended' && p.status !== 'banned').length}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Inativos</p>
+                    <p className="font-display text-3xl font-bold text-destructive">{profiles.filter(p => p.status === 'inactive').length}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Churn</p>
+                    <p className="font-display text-3xl font-bold text-amber-600">{profiles.length > 0 ? Math.round((profiles.filter(p => p.status === 'inactive').length / profiles.length) * 100) : 0}%</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Ativos vs Inativos (12 meses)</CardTitle></CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={retentionData}>
+                      <defs>
+                        <linearGradient id="colorAtivos" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorInativos" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      <Area type="monotone" dataKey="ativos" name="Ativos" stroke="#10b981" fill="url(#colorAtivos)" strokeWidth={2} />
+                      <Area type="monotone" dataKey="inativos" name="Inativos" stroke="#ef4444" fill="url(#colorInativos)" strokeWidth={2} />
+                      <Legend />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Taxa de Retenção (%)</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <LineChart data={retentionData}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                        <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
+                        <Tooltip formatter={(v: number) => `${v}%`} />
+                        <Line type="monotone" dataKey="retentionRate" name="Retenção" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Novos Cadastros por Mês</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={retentionData}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip />
+                        <Bar dataKey="novos" name="Novos" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </TabsContent>
+      </Tabs>
+
+      {/* Dialogs */}
       {editUser && <UserEditDialog user={editUser} onClose={() => setEditUser(null)} onSaved={fetchProfiles} />}
       <UserDetailSheet user={detailUser} isAdmin={adminIds.has(detailUser?.id)} onClose={() => setDetailUser(null)} onRefresh={fetchProfiles} />
 
-      {/* Password Reset Dialog */}
+      {/* Password Reset */}
       <Dialog open={!!pwUser} onOpenChange={open => !open && setPwUser(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader><DialogTitle>Redefinir Senha</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Redefinir senha de <strong>{pwUser?.full_name || pwUser?.email}</strong>
-          </p>
-          <div>
-            <Label>Nova senha (mín. 6 caracteres)</Label>
-            <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Nova senha" />
-          </div>
+          <p className="text-sm text-muted-foreground">Redefinir senha de <strong>{pwUser?.full_name || pwUser?.email}</strong></p>
+          <div><Label>Nova senha (mín. 6 caracteres)</Label><Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Nova senha" /></div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setPwUser(null); setNewPassword(''); }}>Cancelar</Button>
-            <Button onClick={handleResetPassword} disabled={resettingPw || newPassword.length < 6}>
-              <Key className="h-4 w-4 mr-1" /> {resettingPw ? 'Redefinindo...' : 'Redefinir'}
-            </Button>
+            <Button onClick={handleResetPassword} disabled={resettingPw || newPassword.length < 6}><Key className="h-4 w-4 mr-1" /> {resettingPw ? 'Redefinindo...' : 'Redefinir'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete/Deactivate Confirm */}
+      {/* Delete Confirm */}
       <Dialog open={!!deleteUser} onOpenChange={open => !open && setDeleteUser(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader><DialogTitle>Desativar Usuário</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Deseja realmente desativar <strong>{deleteUser?.full_name || deleteUser?.email}</strong>?
-            <br /><span className="text-xs">Os dados do usuário serão preservados (soft delete).</span>
-          </p>
+          <p className="text-sm text-muted-foreground">Deseja realmente desativar <strong>{deleteUser?.full_name || deleteUser?.email}</strong>?</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteUser(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4 mr-1" /> Desativar
-            </Button>
+            <Button variant="destructive" onClick={handleDelete}><Trash2 className="h-4 w-4 mr-1" /> Desativar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Create User Dialog */}
+      {/* Create User */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" /> Criar Novo Usuário</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Nome completo</Label>
-              <Input value={createName} onChange={e => setCreateName(e.target.value)} placeholder="Nome do usuário" />
-            </div>
-            <div>
-              <Label>Email</Label>
-              <Input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="email@exemplo.com" />
-            </div>
-            <div>
-              <Label>Senha (mín. 6 caracteres)</Label>
-              <Input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Senha inicial" />
-            </div>
-            <div>
-              <Label>Tipo de conta</Label>
-              <Select value={createType} onValueChange={setCreateType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="client">Cliente</SelectItem>
-                  <SelectItem value="provider">Profissional</SelectItem>
-                  <SelectItem value="rh">Agência/RH</SelectItem>
-                </SelectContent>
-              </Select>
+            <div><Label>Nome completo</Label><Input value={createName} onChange={e => setCreateName(e.target.value)} placeholder="Nome do usuário" /></div>
+            <div><Label>Email</Label><Input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="email@exemplo.com" /></div>
+            <div><Label>Senha (mín. 6 caracteres)</Label><Input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Senha inicial" /></div>
+            <div><Label>Tipo de conta</Label>
+              <Select value={createType} onValueChange={setCreateType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>
+                <SelectItem value="client">Cliente</SelectItem><SelectItem value="provider">Profissional</SelectItem><SelectItem value="rh">Agência/RH</SelectItem>
+              </SelectContent></Select>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancelar</Button>
-            <Button onClick={handleCreateUser} disabled={creating}>
-              {creating ? 'Criando...' : 'Criar Usuário'}
-            </Button>
+            <Button onClick={handleCreateUser} disabled={creating}>{creating ? 'Criando...' : 'Criar Usuário'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tag Dialog */}
+      <Dialog open={showTagDialog} onOpenChange={setShowTagDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Tag className="h-5 w-5" /> Aplicar Tag</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Aplicar a {tagTargetIds.length || selectedIds.size} usuário(s).</p>
+            <div>
+              <Label>Nome da Tag</Label>
+              <Input value={newTagName} onChange={e => setNewTagName(e.target.value)} placeholder="Ex: VIP, Leads Quentes..." list="existing-tags" />
+              <datalist id="existing-tags">{allTagNames.map(t => <option key={t} value={t} />)}</datalist>
+            </div>
+            <div>
+              <Label>Cor</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {TAG_COLORS.map(color => (
+                  <button key={color} className={`h-7 w-7 rounded-full border-2 transition-transform ${newTagColor === color ? 'border-foreground scale-110' : 'border-transparent'}`} style={{ backgroundColor: color }} onClick={() => setNewTagColor(color)} />
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTagDialog(false)}>Cancelar</Button>
+            <Button onClick={handleAddTag}>Aplicar Tag</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Notification Dialog */}
+      <Dialog open={showNotifyDialog} onOpenChange={setShowNotifyDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Enviar Notificação em Massa</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Será enviada para {selectedIds.size > 0 ? `${selectedIds.size} selecionado(s)` : `${filtered.length} usuário(s)`}.</p>
+            <div><Label>Título</Label><Input value={notifyTitle} onChange={e => setNotifyTitle(e.target.value)} placeholder="Título da notificação" /></div>
+            <div><Label>Mensagem</Label><Textarea value={notifyMessage} onChange={e => setNotifyMessage(e.target.value)} placeholder="Escreva a mensagem..." rows={4} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNotifyDialog(false)}>Cancelar</Button>
+            <Button onClick={handleSendNotification} disabled={sending}>{sending ? 'Enviando...' : 'Enviar'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
