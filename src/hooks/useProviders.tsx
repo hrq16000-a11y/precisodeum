@@ -248,9 +248,12 @@ async function fetchProvidersLightweight(query: any) {
     // Aggregate all service texts for deep search matching
     const provServices = (serviceRows as any[]).filter(s => s.provider_id === p.id);
     const svcTexts = provServices.map(s =>
-      [s.service_name || '', s.description || '', s.service_area || ''].join(' ')
+      [s.service_name || '', s.description || '', s.service_area || '', ...(s.seo_tags || [])].join(' ')
     ).join(' ');
     (mapped as any)._searchableServices = svcTexts;
+
+    // Emergency flag: true if any service has is_emergency
+    (mapped as any)._hasEmergencyService = provServices.some(s => s.is_emergency === true);
 
     // Mark incomplete profiles for filtering — use fallback hierarchy so
     // a missing public_profiles response never hides providers that have
