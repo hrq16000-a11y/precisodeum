@@ -330,7 +330,7 @@ const AdminPage = () => {
                         className="flex items-center justify-between rounded-xl border border-blue-200/60 bg-background/80 backdrop-blur-sm p-3 dark:border-blue-800"
                       >
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-sm font-medium text-foreground truncate">{p.business_name || 'Sem nome'}</h3>
+                          <h3 className="text-sm font-medium text-foreground truncate">{(p as any).profiles?.full_name || p.business_name || 'Sem nome'}</h3>
                           <p className="text-xs text-muted-foreground">{p.city} · {new Date(p.created_at).toLocaleDateString('pt-BR')}</p>
                         </div>
                         <div className="flex flex-col gap-1 ml-2 shrink-0 sm:flex-row">
