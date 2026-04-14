@@ -207,8 +207,8 @@ const HeroBanner = () => {
             {ctaPrimaryLinkText || 'Cadastrar agora →'}
           </Link>
           <span className="hidden text-primary-foreground/40 sm:inline">|</span>
-          <p className="text-xs sm:text-sm text-primary-foreground/80">
-            <Link to={ctaSecondaryLink || '/dashboard/vagas'} className="font-semibold text-secondary hover:underline underline-offset-2">
+          <p className="text-sm sm:text-base drop-shadow-lg">
+            <Link to={ctaSecondaryLink || '/dashboard/vagas'} className="font-bold text-white hover:underline underline-offset-4" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}>
               {ctaSecondaryText || 'Cadastre uma vaga / oportunidade →'}
             </Link>
           </p>
