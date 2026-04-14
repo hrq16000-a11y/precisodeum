@@ -12,6 +12,8 @@ const PROFILE_TYPE_OPTIONS = [
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Ativo' },
   { value: 'inactive', label: 'Inativo' },
+  { value: 'suspended', label: '⏸️ Suspenso' },
+  { value: 'banned', label: '🚫 Banido' },
 ];
 
 const PROVIDER_STATUS_OPTIONS = [
