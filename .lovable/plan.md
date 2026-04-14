@@ -1,51 +1,85 @@
 
 
-# Add Social Media Links & YouTube Videos to Services/Portfolio
+## Plano: Reformulação Completa do Formulário "Novo Serviço"
 
-## What we're building
+Transformar o formulário de cadastro de serviço de uma experiência "e-commerce" para um fluxo profissional mobile-first, com novos campos no banco de dados, sincronização admin e UX otimizada.
 
-Adding Instagram, Facebook, and YouTube link fields to the service registration form, and supporting YouTube video embeds in the portfolio/profile display.
+---
 
-## Database Migration
+### Etapa 1 — Migração de Banco de Dados
 
-Add 3 new columns to the `services` table:
-```sql
-ALTER TABLE public.services ADD COLUMN instagram_url text DEFAULT '';
-ALTER TABLE public.services ADD COLUMN facebook_url text DEFAULT '';
-ALTER TABLE public.services ADD COLUMN youtube_url text DEFAULT '';
-```
+Adicionar 3 novas colunas na tabela `services`:
 
-## Changes
+| Coluna | Tipo | Default |
+|--------|------|---------|
+| `is_emergency` | boolean | false |
+| `service_radius` | text | 'city' |
+| `seo_tags` | text[] | '{}' |
 
-### 1. Service form — DashboardServicesPage.tsx
-- Add `instagram_url`, `facebook_url`, `youtube_url` to the form state
-- Add input fields with Instagram/Facebook/YouTube icons in the dialog (after the photo upload section)
-- Include these fields in the save/edit payload and in `handleEdit` pre-fill
+Valores de `service_radius`: `'local'`, `'city'`, `'metro'`.
 
-### 2. Service Wizard — ServiceWizard.tsx (onboarding)
-- Add social link fields in Step 2 (Details) — optional inputs for Instagram, Facebook, YouTube URLs
+---
 
-### 3. Admin ServiceEditDialog.tsx
-- Add the 3 social URL fields to the edit form and save payload
+### Etapa 2 — Reformulação do Formulário (DashboardServicesPage.tsx)
 
-### 4. YouTube URL detection — imageOptimizer.ts
-- Add `isYouTubeUrl(url)` helper that detects `youtube.com/watch`, `youtu.be/`, `youtube.com/shorts/` patterns
-- Add `getYouTubeEmbedUrl(url)` to convert any YouTube URL to an embeddable `youtube.com/embed/` URL
-- Add `getYouTubeThumbnail(url)` to extract the video thumbnail
+**Placeholders contextuais:**
+- Titulo: "Ex: Instalação de Ar Condicionado"
+- Descrição: "Descreva seu serviço, diferenciais e o que está incluso..."
 
-### 5. Provider Profile — ProviderProfile.tsx
-- In the services section, display social media icon links (Instagram, Facebook, YouTube) when populated
-- For YouTube URLs: render an embedded iframe or clickable thumbnail with play overlay
-- In portfolio rendering, detect YouTube URLs and render embedded iframe instead of `<video>` tag
+**Cidade com autocomplete + geolocalização:**
+- Substituir input de texto por Combobox pesquisável (usando a base IBGE existente em `citiesIndex.ts`)
+- Auto-detecção via `useGeoCity` no mount; exibir label "📍 Localização detectada" com opção de limpar
 
-### 6. ImageLightbox.tsx
-- Add YouTube embed support: when current item is a YouTube URL, render an iframe instead of `<img>` or `<video>`
+**Novos campos profissionais:**
+- Raio de atendimento: Select com 3 opções (No local / Toda a cidade / Região Metropolitana)
+- Toggle "Atendimento 24h / Emergências" com destaque visual laranja
+- Campo de Tags/Palavras-chave com input tipo chip (ex: #reformas, #elétrica)
 
-## Technical Details
+**Agrupamento visual em seções:**
+- "Informações Básicas" (título, descrição, preço, categoria)
+- "Localização & Atendimento" (cidade, raio, emergência)
+- "Contato & Mídia" (WhatsApp, foto, redes sociais, tags)
+- Separadores visuais com títulos de seção
 
-- Social URL fields are optional (nullable, default empty string)
-- YouTube detection covers: `youtube.com/watch?v=`, `youtu.be/`, `youtube.com/shorts/`
-- Embed format: `https://www.youtube.com/embed/{videoId}` with `autoplay=1` in lightbox
-- All fields use `encodeURIComponent` where needed and validate URL format client-side
-- No breaking changes to existing data or UI
+**Fix de botões no mobile:**
+- Botões "Cancelar" e "Publicar" em barra sticky no fundo do dialog, acima da nav inferior
+- Padding-bottom seguro (pb-20) + sombra superior
+- Scrollbar estilizada com track laranja fino
+
+---
+
+### Etapa 3 — Payload e Persistência
+
+- Incluir `is_emergency`, `service_radius` e `seo_tags` no payload de save/update
+- Garantir que o form de edição carregue os valores existentes
+
+---
+
+### Etapa 4 — Admin Sincronizado (ServiceEditDialog.tsx)
+
+- Adicionar os 3 novos campos (emergency toggle, radius select, tags) ao diálogo de edição admin
+- Garantir que o admin pode moderar/editar esses campos
+- Incluir os novos campos no payload de update do admin
+
+---
+
+### Etapa 5 — Busca por Filtros (useProviders)
+
+- Adicionar suporte a filtro `is_emergency = true` na busca pública
+- `service_radius` e `seo_tags` serão pesquisáveis no Deep Search existente
+
+---
+
+### Detalhes Técnicos
+
+**Arquivos modificados:**
+- `supabase/migrations/` — Nova migração SQL (3 colunas)
+- `src/pages/DashboardServicesPage.tsx` — Reformulação completa do dialog
+- `src/components/admin/ServiceEditDialog.tsx` — Novos campos admin
+- `src/hooks/useProviders.tsx` — Filtro de emergência no matching
+
+**Dependências existentes reutilizadas:**
+- `useGeoCity` para auto-detecção de localização
+- `citiesIndex.ts` / base IBGE para autocomplete de cidades
+- `SmartCategoryPicker` mantido como está
 
