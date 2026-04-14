@@ -98,7 +98,7 @@ const AdminPage = () => {
         .eq('approval_status', 'pending').order('created_at', { ascending: false }).limit(10);
       setPendingJobsList(pJobs || []);
 
-      const { data: pProviders } = await supabase.from('providers').select('id, business_name, city, created_at, user_id')
+      const { data: pProviders } = await supabase.from('providers').select('id, business_name, city, created_at, user_id, profiles!inner(full_name)')
         .eq('status', 'pending').order('created_at', { ascending: false }).limit(10);
       setPendingProvidersList(pProviders || []);
 
