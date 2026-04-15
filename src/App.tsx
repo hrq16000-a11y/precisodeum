@@ -335,6 +335,7 @@ const App = () => {
               <PwaInstallBanner />
               <TypeSelectionGate />
             </Suspense>
+            </AdDebugProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
