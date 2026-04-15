@@ -133,11 +133,12 @@ const AdminUsersPage = () => {
   const fetchProfiles = () => {
     Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at').is('deleted_at', null),
+      supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at, cnpj').is('deleted_at', null),
       supabase.from('services').select('id,provider_id,created_at').is('deleted_at', null),
       supabase.from('leads').select('id,provider_id,created_at'),
       supabase.from('user_tags').select('*'),
-    ]).then(([pRes, prRes, sRes, lRes, tRes]) => {
+      supabase.from('sponsor_contacts' as any).select('user_id'),
+    ]).then(([pRes, prRes, sRes, lRes, tRes, scRes]) => {
       setProfiles(pRes.data || []);
       const provs = prRes.data || [];
       setProvidersRaw(provs);
@@ -147,6 +148,7 @@ const AdminUsersPage = () => {
       setServices(sRes.data || []);
       setLeads(lRes.data || []);
       setUserTags(tRes.data || []);
+      setSponsorUserIds(new Set((scRes.data || []).map((r: any) => r.user_id)));
     });
   };
 
