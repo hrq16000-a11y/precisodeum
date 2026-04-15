@@ -453,7 +453,7 @@ const SignupPage = () => {
 
           {/* STEP 2: Form fields */}
           {step === STEP_DATA && (
-            <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-card">
+            <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl p-6 sm:p-8 shadow-xl">
               <button
                 onClick={() => setStep(STEP_TYPE)}
                 className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -515,10 +515,15 @@ const SignupPage = () => {
                 {/* Provider-specific fields */}
                 {showProviderFields && (
                   <>
-                    <div className="rounded-lg border border-accent/20 bg-accent/5 p-3">
+                    <div className="rounded-xl border border-accent/20 bg-accent/5 backdrop-blur-sm p-3">
                       <p className="text-xs font-medium text-accent">
                         ✨ Complete os dados abaixo para criar sua página profissional
                       </p>
+                      {estimatedReach > 0 && (
+                        <p className="mt-1.5 text-[11px] text-accent/80 font-semibold">
+                          📊 Alcance estimado: até <span className="text-accent font-black">{estimatedReach.toLocaleString('pt-BR')}</span> pessoas/mês na sua região
+                        </p>
+                      )}
                     </div>
 
                     <div>
