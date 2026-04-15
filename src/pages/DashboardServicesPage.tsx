@@ -92,21 +92,8 @@ const MagicDescriptionButton = ({ serviceName, categoryName, onGenerated }: { se
     </div>
   );
 };
-import CategoryIcon from '@/components/CategoryIcon';
-import SmartCategoryPicker from '@/components/SmartCategoryPicker';
-import { useAuth } from '@/hooks/useAuth';
-import { useAccountLimits } from '@/hooks/useAccountLimits';
-import UpsellBanner from '@/components/dashboard/UpsellBanner';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { trackAction } from '@/lib/errorReporter';
-import { showSaveError } from '@/components/SaveErrorToast';
-import ServiceImageUpload from '@/components/ServiceImageUpload';
-import { handleImageError } from '@/lib/imageResolver';
-import { format } from 'date-fns';
-import { useGeoCity } from '@/hooks/useGeoCity';
-import { CITIES_INDEX, type CityEntry } from '@/lib/citiesIndex';
-import { normalize } from '@/lib/normalize';
+
+
 
 // Build flat city list once for autocomplete
 const ALL_CITIES: { label: string; value: string; state: string }[] = [];
