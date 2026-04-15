@@ -77,6 +77,72 @@ const SponsorDashboardPage = () => {
     },
   });
 
+  // Full 30-day metrics for PDF export
+  const { data: fullMetrics = [] } = useQuery({
+    queryKey: ['sponsor-full-metrics', sponsor?.id],
+    enabled: !!sponsor?.id,
+    queryFn: async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const { data } = await supabase
+        .from('sponsor_metrics')
+        .select('event_type, event_date, slot_slug, page_path, count')
+        .eq('sponsor_id', sponsor!.id)
+        .gte('event_date', since.toISOString().split('T')[0])
+        .order('event_date', { ascending: true });
+      return (data || []) as Array<{ event_type: string; event_date: string; slot_slug: string; page_path: string | null; count: number }>;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const handleExportPdf = useCallback(() => {
+    const dayMap: Record<string, { impressions: number; clicks: number }> = {};
+    for (let i = 29; i >= 0; i--) {
+      const d = format(new Date(Date.now() - i * 86400000), 'yyyy-MM-dd');
+      dayMap[d] = { impressions: 0, clicks: 0 };
+    }
+    const slotMap: Record<string, { impressions: number; clicks: number }> = {};
+    const pageMap: Record<string, { impressions: number; clicks: number }> = {};
+
+    fullMetrics.forEach(m => {
+      if (!dayMap[m.event_date]) dayMap[m.event_date] = { impressions: 0, clicks: 0 };
+      if (m.event_type === 'impression') dayMap[m.event_date].impressions += m.count;
+      else if (m.event_type === 'click') dayMap[m.event_date].clicks += m.count;
+
+      const sk = m.slot_slug || 'outros';
+      if (!slotMap[sk]) slotMap[sk] = { impressions: 0, clicks: 0 };
+      if (m.event_type === 'impression') slotMap[sk].impressions += m.count;
+      else if (m.event_type === 'click') slotMap[sk].clicks += m.count;
+
+      const pk = (m.page_path || '/') === '/' ? 'Home' : (m.page_path || '').replace(/^\//, '').replace(/-/g, ' ').slice(0, 30);
+      if (!pageMap[pk]) pageMap[pk] = { impressions: 0, clicks: 0 };
+      if (m.event_type === 'impression') pageMap[pk].impressions += m.count;
+      else if (m.event_type === 'click') pageMap[pk].clicks += m.count;
+    });
+
+    const dailyData = Object.entries(dayMap).sort(([a], [b]) => a.localeCompare(b)).map(([date, v]) => ({
+      date: format(parseISO(date), 'dd/MM', { locale: ptBR }),
+      ...v,
+    }));
+    const slotRanking = Object.entries(slotMap).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.impressions - a.impressions).slice(0, 8);
+    const pageRanking = Object.entries(pageMap).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.impressions - a.impressions).slice(0, 8);
+    const periodImpressions = dailyData.reduce((s, d) => s + d.impressions, 0);
+    const periodClicks = dailyData.reduce((s, d) => s + d.clicks, 0);
+
+    exportSponsorPdf({
+      sponsorName: (sponsor as any)?.company_name || (sponsor as any)?.contact_name || sponsor?.title || 'Patrocinador',
+      plan: (sponsor as any)?.plan || sponsor?.tier || 'standard',
+      totalImpressions: sponsor?.impressions || 0,
+      totalClicks: sponsor?.clicks || 0,
+      ctr: (sponsor?.impressions || 0) > 0 ? (((sponsor?.clicks || 0) / (sponsor?.impressions || 1)) * 100).toFixed(2) : '0.00',
+      periodImpressions,
+      periodClicks,
+      slotRanking,
+      pageRanking,
+      dailyData,
+    });
+  }, [fullMetrics, sponsor]);
+
   const weeklyImpressions = useMemo(() => recentMetrics.filter(m => m.event_type === 'impression').reduce((s, m) => s + m.count, 0), [recentMetrics]);
   const weeklyClicks = useMemo(() => recentMetrics.filter(m => m.event_type === 'click').reduce((s, m) => s + m.count, 0), [recentMetrics]);
 
