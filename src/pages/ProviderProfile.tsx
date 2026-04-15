@@ -517,9 +517,9 @@ const ProviderProfile = () => {
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
   useSeoHead({
-    title: provider ? `${name} - ${category} em ${provider.city}` : 'Profissional',
+    title: provider ? `${name} - ${category} em ${provider.city} | Preciso de um` : 'Profissional',
     description: provider
-      ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliações, nota ${Number(provider.rating_avg).toFixed(1)}.`
+      ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliações, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nível ${provider.levelInfo.name}.` : ''} Peça seu orçamento grátis!`
       : 'Encontre profissionais na plataforma.',
     canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
     ogImage: provider && hasOwnAvatar ? ((provider.profiles as any)?.avatar_url || provider.photo_url || undefined) : undefined,
@@ -1054,6 +1054,25 @@ const ProviderProfile = () => {
                     </span>
                   )}
                 </div>
+
+                {/* ── PROMINENT LEVEL BADGE ── */}
+                {provider.levelInfo && (
+                  <motion.div
+                    className="mt-2 inline-flex items-center gap-2 rounded-xl px-4 py-2 shadow-sm"
+                    style={{
+                      backgroundColor: `${provider.levelInfo.color}15`,
+                      border: `2px solid ${provider.levelInfo.color}30`,
+                    }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5, type: 'spring', stiffness: 250 }}
+                  >
+                    <span className="text-lg">🏆</span>
+                    <span className="text-sm font-bold" style={{ color: provider.levelInfo.color }}>
+                      {provider.levelInfo.name}
+                    </span>
+                  </motion.div>
+                )}
                 {provider.business_name && <p className="text-sm text-muted-foreground mt-1">{provider.business_name}</p>}
                 <p className="mt-1 text-sm font-semibold flex items-center justify-center sm:justify-start gap-1" style={accentBg ? { color: accentBg } : undefined}>
                   <CategoryIcon icon={categoryIcon} size={16} className="text-accent" />
@@ -1116,6 +1135,38 @@ const ProviderProfile = () => {
                 )}
               </motion.div>
             </div>
+
+            {/* ── Trust Statistics Section ── */}
+            <motion.div
+              className="mt-5 rounded-xl bg-gradient-to-r from-emerald-500/5 via-accent/5 to-blue-500/5 border border-border/50 p-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+            >
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5" /> Estatísticas de Confiança
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">
+                    {provider.years_experience > 0 ? `${provider.years_experience}+` : '—'}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Anos de experiência</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">{services.length}</p>
+                  <p className="text-[10px] text-muted-foreground">Serviços oferecidos</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">{provider.review_count || 0}</p>
+                  <p className="text-[10px] text-muted-foreground">Avaliações positivas</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">{portfolioImages.length}</p>
+                  <p className="text-[10px] text-muted-foreground">Fotos de trabalhos</p>
+                </div>
+              </div>
+            </motion.div>
 
             {/* ── Stats Mini Cards ── */}
             <div className="mt-5 grid grid-cols-3 gap-2">

@@ -21,6 +21,8 @@ import DashboardTipOfDay from '@/components/dashboard/DashboardTipOfDay';
 import ProfileStrength from '@/components/dashboard/ProfileStrength';
 import LevelBenefits from '@/components/dashboard/LevelBenefits';
 import ShareProfileCard from '@/components/dashboard/ShareProfileCard';
+import RankingStatus from '@/components/dashboard/RankingStatus';
+import CommunityFeed from '@/components/dashboard/CommunityFeed';
 import { usePermissions } from '@/hooks/usePermissions';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
@@ -343,6 +345,11 @@ const DashboardPage = () => {
         <ProfileStrength />
       </div>
 
+      {/* Ranking Status */}
+      <div className="mt-4">
+        <RankingStatus />
+      </div>
+
       {/* Avatar Reminder */}
       <div className="mt-4">
         <AvatarReminder avatarUrl={profile?.avatar_url} />
@@ -354,6 +361,11 @@ const DashboardPage = () => {
           <ShareProfileCard />
         </div>
       )}
+
+      {/* Community Feed — Social Proof */}
+      <div className="mt-4">
+        <CommunityFeed />
+      </div>
 
       {/* Courses promotion */}
       <div className="mt-4">

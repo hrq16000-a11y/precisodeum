@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { getSuggestedTags } from '@/data/tagSuggestions';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -124,6 +125,15 @@ const DashboardServicesPage = () => {
   useEffect(() => {
     if (provider) fetchServices();
   }, [provider]);
+
+  // Suggested tags based on selected categories
+  const suggestedTags = useMemo(() => {
+    const selectedSlugs = selectedCategoryIds.map(id => {
+      const cat = categories.find((c: any) => c.id === id);
+      return cat?.slug || '';
+    }).filter(Boolean);
+    return getSuggestedTags(selectedSlugs);
+  }, [selectedCategoryIds, categories]);
 
   // Filtered cities for autocomplete
   const filteredCities = useMemo(() => {
@@ -708,6 +718,16 @@ const DashboardServicesPage = () => {
                   </div>
                 </div>
 
+                {/* Points Preview */}
+                {!editId && (
+                  <div className="rounded-lg bg-accent/5 border border-accent/10 p-3 flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-accent shrink-0" />
+                    <p className="text-xs text-foreground font-medium">
+                      Este serviço te dará <span className="font-bold text-accent">+15 pontos</span> de engajamento!
+                    </p>
+                  </div>
+                )}
+
                 {/* SEO Tags */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground flex items-center gap-1">
@@ -723,6 +743,24 @@ const DashboardServicesPage = () => {
                     />
                     <Button type="button" variant="outline" size="sm" onClick={addTag} className="shrink-0">+</Button>
                   </div>
+                  {/* Tag suggestions based on categories */}
+                  {suggestedTags.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-[10px] text-muted-foreground mb-1">Sugestões:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {suggestedTags.filter(t => !seoTags.includes(t)).slice(0, 8).map(tag => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => { if (seoTags.length < 10) setSeoTags(prev => [...prev, tag]); }}
+                            className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-accent/10 hover:text-accent transition-colors"
+                          >
+                            +{tag}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {seoTags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {seoTags.map(tag => (
