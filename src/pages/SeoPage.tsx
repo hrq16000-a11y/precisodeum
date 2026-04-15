@@ -12,7 +12,6 @@ import { ChevronRight, Crown, Star } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useNearbyProviders } from '@/hooks/useNearbyProviders';
-import { useQuery } from '@tanstack/react-query';
 import GamificationLevelBadge from '@/components/dashboard/GamificationLevelBadge';
 
 const ITEMS_PER_PAGE = 12;
