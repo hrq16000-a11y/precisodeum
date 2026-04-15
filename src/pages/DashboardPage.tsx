@@ -449,6 +449,11 @@ const DashboardPage = () => {
               reviewCount={reviewCount}
             />
           </div>
+
+          {/* Level Benefits */}
+          <div className="lg:col-span-2">
+            <LevelBenefits />
+          </div>
         </div>
       )}
 
