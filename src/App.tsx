@@ -33,9 +33,8 @@ const isTransientNetworkError = (error: unknown) => {
   );
 };
 
-// Index — lazy with immediate prefetch for instant feel
-const Index = reactLazy(() => importWithRetry(() => import("./pages/Index")));
-import("./pages/Index"); // start fetching right away
+// Index — eagerly loaded to avoid CinematicLoader blocking LCP
+import Index from "./pages/Index";
 
 // Lazy loaded pages
 const SearchPage = lazy(() => import("./pages/SearchPage"));
