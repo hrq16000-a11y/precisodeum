@@ -359,10 +359,11 @@ const DashboardPage = () => {
         <AvatarReminder avatarUrl={profile?.avatar_url} />
       </div>
 
-      {/* Share Profile Card */}
+      {/* Share Profile Card & QR Code */}
       {provider?.slug && (
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2">
           <ShareProfileCard />
+          <QrCodeCard />
         </div>
       )}
 
