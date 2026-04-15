@@ -1465,6 +1465,10 @@ const AdminSponsorsPage = () => {
             </div>
             {form.sponsor_type === 'city' && <div><Label>Cidade</Label><Input value={form.linked_city} onChange={e => setForm({ ...form, linked_city: e.target.value })} /></div>}
             {form.sponsor_type === 'category' && <div><Label>Categoria (slug)</Label><Input value={form.linked_category} onChange={e => setForm({ ...form, linked_category: e.target.value })} /></div>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><Label>CNPJ</Label><Input value={form.cnpj} onChange={e => setForm({ ...form, cnpj: e.target.value })} placeholder="00.000.000/0000-00" /></div>
+              <div><Label>E-mail Comercial</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="comercial@empresa.com" /></div>
+            </div>
             <div><Label>Descrição Curta</Label><Input value={form.short_description} onChange={e => setForm({ ...form, short_description: e.target.value.slice(0, 120) })} maxLength={120} /></div>
             <div><Label>Descrição Completa</Label><Textarea value={form.full_description} onChange={e => setForm({ ...form, full_description: e.target.value })} rows={3} /></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
