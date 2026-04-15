@@ -1,87 +1,148 @@
-# Plano: Índices de Performance + Importação em Massa de Categorias
+# Plan: Refatorar Central de Usuários e Perfil Público
 
-## Situação Atual
+## Resumo
 
-- **171 categorias** existentes (7 macros, 164 subcategorias)
-- Hierarquia `parent_id` já funcional
-- Slug único com constraint `categories_slug_key`
-- Trigger `sanitize_provider_slug` já sanitiza slugs no banco
-- **Faltam**: índices em `parent_id` e `(slug, deleted_at)`
+Refatorar a label de tipo no perfil público (Prestador/Empresa, nunca Administrador), adicionar abas de navegação por tipo no admin, filtros de ordenação, eliminar emojis remanescentes no admin, e adicionar realtime sync para estatísticas.
 
 ---
 
-## Fase 1 — Migration: Índices de Performance
+## 1. Perfil Público — Labels inteligentes (`ProviderProfile.tsx`)
 
-Criar migration SQL com 3 índices:
+**Onde:** Linhas ~1052-1056 (badge `accTypeInfo`)
 
-```sql
--- Índice para consultas hierárquicas (drill-down de subcategorias)
-CREATE INDEX IF NOT EXISTS idx_categories_parent_id
-ON categories(parent_id) WHERE parent_id IS NOT NULL;
+- Substituir a exibição direta de `provider.accTypeInfo.name` por lógica condicional:
+  - Se `provider.cnpj` preenchido: mostrar **"Empresa"** com ícone `Building2`
+  - Se provider sem CNPJ: mostrar **"Prestador"** com ícone `Wrench`
+  - **Nunca** exibir "Administrador" — ocultar o badge se `accTypeInfo.name` contiver "Admin"
+- Remover a dependência do `accTypeInfo.name` para a label pública
 
--- Índice para SEO (lookup de slug ignorando deletados)
-CREATE INDEX IF NOT EXISTS idx_categories_slug_active
-ON categories(slug) WHERE deleted_at IS NULL;
+## 2. Remover o badge `GamificationLevelBadge` da exibição pública se for Admin
 
--- Índice para ordenação alfabética em listagens
-CREATE INDEX IF NOT EXISTS idx_categories_order_name
-ON categories(name ASC);
+**Onde:** Linhas ~1060-1068
+
+- Adicionar check: não renderizar badges de nível para admins (verificar via `provider.levelInfo`)
+
+## 3. Admin — Abas de navegação por tipo (`AdminUsersPage.tsx`)
+
+**Onde:** Substituir o tab simples "Usuários | Métricas" (linhas ~614-618) por:
+
+```
+Clientes | Prestadores | Empresas | Agências | Patrocinadores | Staff | Métricas
 ```
 
-**Ferramenta**: Database migration tool
+- **Clientes**: `profile_type === 'client'` e sem CNPJ
+- **Prestadores**: `profile_type === 'provider'` e sem CNPJ
+- **Empresas**: Qualquer profile com `cnpj` preenchido
+- **Agências**: `profile_type === 'rh'`
+- **Patrocinadores**: IDs presentes em `sponsor_contacts`
+- **Staff**: IDs presentes em `user_roles` com role `admin`
+- Cada aba filtra automaticamente a lista
+
+## 4. Filtros de ordenação
+
+**Onde:** `UserFilters.tsx` — adicionar novo `<Select>` de ordenação
+
+- **Mais recentes** (default): `created_at DESC`
+- **Mais antigos**: `created_at ASC`
+- **Melhor Ranking**: `engagement_points DESC`
+- Propagar `sortBy` para `AdminUsersPage` e aplicar no `useMemo` do `filtered`
+
+## 5. Eliminar emojis no admin
+
+**Arquivos afetados:**
+
+- `AdminUsersPage.tsx` linhas 655-684: substituir `✅`, `🔴`, `👤`, `🔧`, `🏢`, `✕` por ícones Lucide (`CheckCircle`, `XCircle`, `User`, `Wrench`, `Building2`, `X`)
+- `UserFilters.tsx` linhas 15-16: substituir `⏸️ Suspenso` e `🚫 Banido` por texto puro ou ícones Lucide
+
+## 6. Realtime sync para estatísticas do perfil público
+
+**Onde:** `ProviderProfile.tsx` — após o fetch inicial
+
+- Adicionar `supabase.channel()` listening em:
+  - `providers` (filtrado por `id = provider.id`) para `services_count`, `portfolio_photo_count`, `years_experience`
+  - `reviews` (filtrado por `provider_id = provider.id`) para atualizar `reviews` e `review_count`
+- Atualizar state local via `setProvider(prev => ({...prev, ...changes}))` sem reload
+- Cleanup do channel no return do useEffect
+
+## 7. Buscar dados de patrocinadores para aba Staff/Patrocinadores
+
+**Onde:** `AdminUsersPage.tsx` no `fetchProfiles`
+
+- Adicionar query `supabase.from('sponsor_contacts').select('user_id')` para popular `sponsorUserIds: Set<string>`
+- Usar no filtro da aba "Patrocinadores"
 
 ---
 
-## Fase 2 — Insert: Categorias em Massa (3 grupos)
-
-Após os índices, inserir subcategorias novas via **insert tool** nas 3 macros solicitadas. As macros já existem no banco:
+## Arquivos modificados
 
 
-| Macro existente             | Slug no banco                                                                         |
-| --------------------------- | ------------------------------------------------------------------------------------- |
-| Construção e Reforma        | `construcao-e-reforma`                                                                |
-| (criar) Assistência Técnica | `assistencia-tecnica` — já existe como subcategoria, será promovida ou usada como pai |
-| (criar) Serviços Domésticos | `servicos-domesticos` — precisa ser criada como macro                                 |
+| Arquivo                                | Mudança                                                     |
+| -------------------------------------- | ----------------------------------------------------------- |
+| `src/pages/ProviderProfile.tsx`        | Labels Prestador/Empresa, ocultar Admin, realtime channel   |
+| `src/pages/AdminUsersPage.tsx`         | 7 abas por tipo, ordenação, eliminar emojis, fetch sponsors |
+| `src/components/admin/UserFilters.tsx` | Adicionar sort select, remover emojis                       |
 
 
-**Nota**: "Assistência Técnica" já existe como subcategoria (`slug: assistencia-tecnica`, `parent_id` = Tecnologia). Precisaremos criar uma nova macro ou reutilizar a existente. O script usará `ON CONFLICT (slug) DO NOTHING` para segurança.
+## Segurança
 
-### Subcategorias a inserir (~40 novos registros):
-
-**Reformas** (sob `construcao-e-reforma`): Impermeabilizador, Telhadista, Instalador de Papel de Parede, Instalador de Pisos, Demolição, Paisagista, Instalador de Cerca Elétrica, Instalador de Porta, Instalador de Portão, Limpeza de Caixa d'Água, Dedetizador, Instalador de Energia Solar
-
-**Assistência Técnica** (nova macro): Conserto de Geladeira, Conserto de Máquina de Lavar, Conserto de Micro-ondas, Conserto de Fogão, Conserto de Videogame, Conserto de Impressora, Instalação de CFTV, Conserto de Portão Eletrônico
-
-**Serviços Domésticos** (nova macro): Diarista, Passadeira, Cozinheira, Babá, Limpeza Pós-Obra, Personal Organizer, Adestrador de Cães, Passeador de Cães, Cuidador de Idosos
-
-Todos os slugs serão gerados manualmente no padrão `kebab-case` sem acentos, e a trigger `sanitize_provider_slug` do banco garantirá a sanitização final.
-
----
-
-## Resumo de Ações
-
-
-| Passo | Ferramenta | O quê                                                                 |
-| ----- | ---------- | --------------------------------------------------------------------- |
-| 1     | Migration  | 3 índices (`parent_id`, `slug+deleted_at`, `name`)                    |
-| 2     | Insert     | Criar 2 novas macros (Assistência Técnica macro, Serviços Domésticos) |
-| 3     | Insert     | ~40 subcategorias distribuídas nas 3 macros                           |
-
-
-**Nenhuma alteração de código** é necessária — o `SmartCategoryPicker`, `CategoriesListPage` e rotas SEO já consomem a tabela `categories` dinamicamente.
-
-...
+Nenhuma mudança de schema ou RLS necessária. Apenas lógica de UI e queries de leitura.
 
 &nbsp;
 
-"O plano está perfeito. Pode prosseguir com as duas fases (Migration e Insert).
+&nbsp;
 
-Adicione os seguintes detalhes na execução:
+"Execute a implementação completa dos módulos de gestão para a plataforma precisodeum.com.br, focando em uma vitrine de contato direto e sincronização via Supabase Realtime. Siga as especificações técnicas abaixo:
 
-Promoção de Categoria: Para 'Assistência Técnica', como ela já existe sob 'Tecnologia', por favor, transforme-a em uma macro-categoria (parent_id = NULL) para que ela tenha o peso necessário na plataforma, conforme o padrão de mercado.
+1. Reestruturação de Perfil e Lógica de Identificação:
 
-Ícones e SEO: Ao inserir as ~40 subcategorias, já preencha a coluna de icon_name (use nomes compatíveis com a biblioteca Lucide) e a coluna de description (ou metadata) com uma breve descrição focada em SEO para cada serviço.
+Automated Labels: Implemente lógica para que perfis com user_type = 'professional' sejam exibidos como 'Prestador'. Se o campo cnpj estiver preenchido, altere automaticamente para 'Empresa'.
 
-Validação de Slugs: Certifique-se de que todos os novos registros sigam rigorosamente o padrão kebab-case (ex: limpeza-de-caixa-dagua).
+Admin Stealth: Garanta que usuários com is_admin: true não apareçam em nenhuma listagem pública, mapa ou ranking.
 
-Assim que concluir, me confirme se os índices foram aplicados com sucesso e liste as novas categorias criadas."
+Estatísticas Sincronizadas: Configure os componentes de perfil para ouvir mudanças via supabase.channel(). As contagens de 'Serviços Prestados', 'Fotos no Portfólio' e 'Avaliações' devem atualizar na UI assim que os dados mudarem no banco, sem recarregar a página.
+
+2. Painel Administrativo Segmentado (Admin Dashboard):
+
+Crie uma área de gestão com abas (Shadcn UI Tabs):
+
+Clientes: Listagem de usuários finais.
+
+Prestadores: Listagem de profissionais (ordenável por 'Últimos Cadastrados', 'Maior Ranking' e 'Cidade').
+
+Empresas: Somente perfis com CNPJ.
+
+Patrocinadores: Somente usuários com is_sponsor: true. Inclua campos de 'Data de Expiração' e 'Status do Pagamento' (apenas informativo).
+
+Staff: Gestão de administradores.
+
+Ações de Gestão: Adicione botões para 'Ajuste Manual de Ranking' e 'Atribuir Bônus de Qualidade' (campo points no banco).
+
+Log de Atividades: Crie uma tabela de logs que registre last_login e profile_updates para auditoria do admin.
+
+3. Módulo de SEO e Comercial Gerenciável:
+
+Editor de Metadados: Crie uma interface onde eu possa selecionar uma 'Categoria' e 'Cidade' e editar manualmente o Meta Title e Meta Description daquela página específica.
+
+Gestão de Vitrines: Interface para selecionar quais IDs de profissionais aparecerão no componente de 'Destaques' da Home e por quanto tempo.
+
+Dashboard de Crescimento: Implemente gráficos (Recharts) mostrando novos cadastros por dia e volume de leads (pedidos de orçamento) gerados.
+
+4. Fluxo de Contato e Isenção de Responsabilidade:
+
+Disclaimer de Contato: No botão 'Ver Telefone' ou 'WhatsApp', implemente um modal obrigatório: 'O precisodeum.com.br é apenas uma vitrine. Não intermediamos pagamentos nem garantimos serviços. A negociação é 100% direta entre as partes.'
+
+Gestão de Avisos: Crie um campo no admin para editar o texto deste disclaimer e do banner de rodapé globalmente.
+
+5. Recursos Técnicos Adicionais:
+
+Gestão de Leads: Interface para listar pedidos de orçamento feitos, mostrando quem respondeu e permitindo ao admin marcar o status (Aberto/Concluído) para fins estatísticos.
+
+Moderação: Filtro de denúncias para avaliações e fotos de portfólio.
+
+Mapa de Calor: Integre os dados de geolocalização (PostGIS) em um mapa administrativo para visualizar a densidade de prestadores por bairro/cidade."
+
+Instrução Adicional para você (Henrique):
+
+Ao colar esse prompt, a Lovable pode perguntar sobre as tabelas. Responda:
+
+"Pode criar as colunas e tabelas necessárias no Supabase via SQL, garantindo que o RLS (Row Level Security) permita que apenas o Admin edite os campos de Ranking, Status de Patrocinador e Metadados de SEO."
