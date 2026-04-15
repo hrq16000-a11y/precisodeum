@@ -98,6 +98,7 @@ const AdminSponsorLeadsPage = lazy(() => import("./pages/AdminSponsorLeadsPage")
 const AdminSubscriptionsPage = lazy(() => import("./pages/AdminSubscriptionsPage"));
 const AdminGamificationPage = lazy(() => import("./pages/AdminGamificationPage"));
 const AdminStaffPage = lazy(() => import("./pages/AdminStaffPage"));
+const AdminOverviewPage = lazy(() => import("./pages/AdminOverviewPage"));
 const AdminNotificationsPage = lazy(() => import("./pages/AdminNotificationsPage"));
 const AdminChatPage = lazy(() => import("./pages/AdminChatPage"));
 const AdminGovernancePage = lazy(() => import("./pages/AdminGovernancePage"));
