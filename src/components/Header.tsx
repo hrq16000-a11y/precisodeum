@@ -21,7 +21,10 @@ const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
 
 /* ── Geo badge (full & compact) ───────────────────────────── */
 const GeoBadge = ({ city, temp, compact = false, className = '' }: { city: string | null; temp: number | null; compact?: boolean; className?: string }) => {
-  if (!city) return null;
+  // Always render a placeholder to prevent layout shift
+  if (!city) {
+    return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] h-[22px] ${className}`} />;
+  }
 
   if (compact) {
     return (
@@ -324,7 +327,7 @@ const Header = () => {
         </div>
 
         {/* Mobile right actions */}
-        <div className="flex items-center gap-1.5 md:hidden h-[28px]">
+        <div className="flex items-center gap-1.5 md:hidden h-[28px] min-w-[28px]">
           {isCompact ? (
             <>
               {/* Compact search on mobile */}
