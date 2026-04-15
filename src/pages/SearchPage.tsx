@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from 'react';
+import { useState, useMemo, useCallback, useEffect, lazy, Suspense, Fragment } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -29,6 +29,7 @@ import { calculateDistanceKm } from '@/lib/geoDistance';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const ProvidersMap = lazy(() => import('@/components/ProvidersMap'));
+const SponsorAdSlot = lazy(() => import('@/components/ads/SponsorAdSlot'));
 
 const ITEMS_PER_PAGE = 12;
 
@@ -673,15 +674,27 @@ const SearchPage = () => {
                       animate="show"
                       variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
                     >
-                      {paginatedLocal.map((p) => (
-                        <motion.div
-                          key={p.id}
-                          variants={{ hidden: { opacity: 0, y: 16, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1 } }}
-                          transition={{ duration: 0.35 }}
-                          layout
-                        >
-                          <ProviderCard provider={p} isFallback={isFallback} />
-                        </motion.div>
+                      {paginatedLocal.map((p, idx) => (
+                        <Fragment key={p.id}>
+                          <motion.div
+                            variants={{ hidden: { opacity: 0, y: 16, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1 } }}
+                            transition={{ duration: 0.35 }}
+                            layout
+                          >
+                            <ProviderCard provider={p} isFallback={isFallback} />
+                          </motion.div>
+                          {/* Inject sponsor ad every 5 results */}
+                          {(idx + 1) % 5 === 0 && (
+                            <motion.div
+                              variants={{ hidden: { opacity: 0 }, show: { opacity: 1 } }}
+                              className="col-span-full"
+                            >
+                              <Suspense fallback={null}>
+                                <SponsorAdSlot locationKey="search-inline" layout="card" maxAds={1} />
+                              </Suspense>
+                            </motion.div>
+                          )}
+                        </Fragment>
                       ))}
                     </motion.div>
                   </>
