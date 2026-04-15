@@ -1,7 +1,7 @@
 {
   "name": "Preciso de um Profissional",
   "short_name": "PrecisodeUm",
-  "description": "Encontre um profissional para qualquer tipo de serviço no Brasil. Eletricistas, encanadores, pintores e mais na sua cidade.",
+  "description": "Encontre profissionais qualificados para serviços residenciais e comerciais.",
   "start_url": "/",
   "id": "/?source=pwa",
   "display": "standalone",
@@ -12,7 +12,7 @@
   "lang": "pt-BR",
   "dir": "ltr",
   "scope": "/",
-  "categories": ["business", "productivity"],
+  "categories": ["business", "services"],
   "prefer_related_applications": false,
   "launch_handler": {
     "client_mode": "navigate-existing"
@@ -51,7 +51,7 @@
   "screenshots": [
     {
       "src": "/screenshots/mobile-home.png",
-      "sizes": "540x960",
+      "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Tela inicial - Encontre profissionais"
