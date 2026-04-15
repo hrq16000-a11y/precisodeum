@@ -3,7 +3,9 @@ import { importWithRetry } from '@/lib/lazyWithRetry';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer, ChevronRight } from 'lucide-react';
+import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer, ChevronRight, Radar } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { useAdDebug } from '@/contexts/AdDebugContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
@@ -429,7 +431,72 @@ const Header = () => {
       <Suspense fallback={null}>
         <AdSlot slotSlug="global-top" />
       </Suspense>
+
+      {/* Admin X-Ray Toolbar */}
+      {profile?.role === 'admin' && <AdminAdToolbar />}
     </header>
+  );
+};
+
+/* ─── Admin Ad Debug Toolbar ─── */
+const AdminAdToolbar = () => {
+  const { xrayEnabled, toggleXray, simulatedCity, simulatedState, setSimulatedLocation } = useAdDebug();
+  const [cityInput, setCityInput] = useState(simulatedCity || '');
+  const [stateInput, setStateInput] = useState(simulatedState || '');
+
+  const handleApply = () => {
+    setSimulatedLocation(cityInput.trim() || null, stateInput.trim() || null);
+  };
+
+  const handleClear = () => {
+    setCityInput('');
+    setStateInput('');
+    setSimulatedLocation(null, null);
+  };
+
+  return (
+    <div className="border-t border-primary/20 bg-primary/5 px-4 py-1.5">
+      <div className="container mx-auto flex flex-wrap items-center gap-3 text-xs">
+        <div className="flex items-center gap-2">
+          <Radar className="h-3.5 w-3.5 text-primary" />
+          <span className="font-semibold text-primary">Raio-X Ads</span>
+          <Switch checked={xrayEnabled} onCheckedChange={toggleXray} className="scale-75" />
+        </div>
+
+        <div className="h-4 w-px bg-border hidden sm:block" />
+
+        <div className="flex items-center gap-1.5">
+          <MapPin className="h-3 w-3 text-muted-foreground" />
+          <Input
+            value={cityInput}
+            onChange={(e) => setCityInput(e.target.value)}
+            placeholder="Simular cidade..."
+            className="h-6 w-32 text-[11px] px-2 bg-background"
+          />
+          <Input
+            value={stateInput}
+            onChange={(e) => setStateInput(e.target.value)}
+            placeholder="UF"
+            className="h-6 w-12 text-[11px] px-1.5 bg-background"
+            maxLength={2}
+          />
+          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={handleApply}>
+            Aplicar
+          </Button>
+          {(simulatedCity || simulatedState) && (
+            <Button variant="ghost" size="sm" className="h-6 text-[10px] px-1.5 text-destructive" onClick={handleClear}>
+              Limpar
+            </Button>
+          )}
+        </div>
+
+        {simulatedCity && (
+          <span className="text-[10px] text-muted-foreground">
+            🎯 Simulando: <strong>{simulatedCity}</strong>{simulatedState ? ` / ${simulatedState}` : ''}
+          </span>
+        )}
+      </div>
+    </div>
   );
 };
 

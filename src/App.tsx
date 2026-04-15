@@ -5,6 +5,7 @@ const Sonner = reactLazy(() => importWithRetry(() => import("@/components/ui/son
 const Toaster = reactLazy(() => importWithRetry(() => import("@/components/ui/toaster").then(m => ({ default: m.Toaster }))));
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
+import { AdDebugProvider } from "@/contexts/AdDebugContext";
 import { importWithRetry, prefetchImportWithRetry } from "@/lib/lazyWithRetry";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -206,7 +207,8 @@ const App = () => {
         <BrowserRouter>
           <Suspense fallback={null}><CurtainReveal /></Suspense>
           <ScrollToTop />
-          <AuthProvider>
+            <AuthProvider>
+            <AdDebugProvider>
             <Suspense fallback={null}><OAuthRedirectHandler /></Suspense>
             <Suspense fallback={<PageFallback />}>
               <Routes>
@@ -333,6 +335,7 @@ const App = () => {
               <PwaInstallBanner />
               <TypeSelectionGate />
             </Suspense>
+            </AdDebugProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
