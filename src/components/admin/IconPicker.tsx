@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
-import { icons } from 'lucide-react';
-import { Search } from 'lucide-react';
+import { icons, Search, CircleDot } from 'lucide-react';
 
 const ALL_ICON_NAMES = Object.keys(icons).sort();
 
