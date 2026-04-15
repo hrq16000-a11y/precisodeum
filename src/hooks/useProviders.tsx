@@ -207,6 +207,7 @@ async function fetchProvidersLightweight(query: any) {
     };
   });
 
+  const serviceRows = servicesRes.data || [];
   const serviceFallbackMap: Record<string, ServiceFallback> = {};
   const serviceImageMap: Record<string, string> = {};
   serviceRows.forEach((s: any) => {
