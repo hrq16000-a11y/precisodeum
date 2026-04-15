@@ -8,10 +8,12 @@ import PaginationControls from '@/components/PaginationControls';
 import SearchBar from '@/components/SearchBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Crown, Star } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useNearbyProviders } from '@/hooks/useNearbyProviders';
+import { useQuery } from '@tanstack/react-query';
+import GamificationLevelBadge from '@/components/dashboard/GamificationLevelBadge';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -223,6 +225,46 @@ const SeoPage = () => {
       </section>
 
       <div className="container py-8">
+        {/* Top 3 Masters Section */}
+        {providers.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Crown className="h-5 w-5 text-amber-500" />
+              <h2 className="font-display text-lg font-bold text-foreground">Top Profissionais da Região</h2>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {providers.slice(0, 3).map((p, i) => (
+                <Link key={p.id} to={`/profissional/${p.slug}`}
+                  className="group rounded-2xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl font-black text-sm ${
+                      i === 0 ? 'bg-amber-500/15 text-amber-600' : i === 1 ? 'bg-gray-300/20 text-gray-600' : 'bg-orange-500/15 text-orange-600'
+                    }`}>
+                      #{i + 1}
+                    </div>
+                    {p.photo ? (
+                      <img src={p.photo} alt={p.name} className="h-10 w-10 rounded-full object-cover border border-border" />
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-sm font-bold">
+                        {p.name?.charAt(0)}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-foreground truncate group-hover:text-accent transition-colors">{p.name}</p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                        <span className="text-xs text-muted-foreground">{p.rating?.toFixed(1) || '0.0'} ({p.reviewCount})</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{p.description}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         <p className="mb-6 text-sm text-muted-foreground">{providers.length} profissional(is) encontrado(s)</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {paginatedProviders.map((p) => <ProviderCard key={p.id} provider={p} />)}
