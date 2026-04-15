@@ -73,7 +73,7 @@ const ProvidersMap = ({ providers, userLat, userLon, className = '' }: Providers
                 {p.category && <p className="text-xs text-muted-foreground">{p.category}</p>}
                 {p.distanceKm != null && (
                   <p className="text-xs font-medium text-primary">
-                    📍 {p.distanceKm < 1 ? '< 1' : p.distanceKm.toFixed(1)} km de você
+                    {p.distanceKm < 1 ? '< 1' : p.distanceKm.toFixed(1)} km de você
                   </p>
                 )}
                 {p.rating > 0 && (

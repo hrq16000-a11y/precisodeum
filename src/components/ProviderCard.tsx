@@ -104,13 +104,13 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
         transition={{ duration: 2, repeat: Infinity }}
         className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 px-2 py-0.5 text-[11px] font-bold text-accent border border-accent/30"
       >
-        ⚡ Super Perto!
+        Super Perto!
       </motion.span>
     );
   } else if (provider.distanceKm != null && provider.distanceKm < 5) {
     badges.push(
       <span key="rapido" className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
-        ⚡ Atendimento Rápido
+        Atendimento Rápido
       </span>
     );
   }
@@ -196,7 +196,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 <span className="truncate">{locationText}</span>
                 {provider.distanceKm != null && (
                   <span className="ml-1 shrink-0 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                    📍 {provider.distanceKm < 1 ? '< 1' : provider.distanceKm.toFixed(1)} km
+                    {provider.distanceKm < 1 ? '< 1' : provider.distanceKm.toFixed(1)} km
                     <span className="opacity-70">· ~{provider.distanceKm < 2 ? '< 5' : Math.ceil(provider.distanceKm * 60 / 25)} min</span>
                   </span>
                 )}

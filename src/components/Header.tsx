@@ -494,7 +494,7 @@ const AdminAdToolbar = () => {
 
         {simulatedCity && (
           <span className="text-[10px] text-muted-foreground">
-            🎯 Simulando: <strong>{simulatedCity}</strong>{simulatedState ? ` / ${simulatedState}` : ''}
+            Simulando: <strong>{simulatedCity}</strong>{simulatedState ? ` / ${simulatedState}` : ''}
           </span>
         )}
       </div>
