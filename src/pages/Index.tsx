@@ -179,8 +179,7 @@ const Index = () => {
   });
 
   const topCities = secondaryData?.topCities || [];
-  const allCategories = secondaryData?.allCategories || [];
-  const recentServices = secondaryData?.recentServices || [];
+  const sponsors = secondaryData?.sponsors || [];
   const sponsors = secondaryData?.sponsors || [];
   const counts = secondaryData?.counts;
 
