@@ -9,6 +9,7 @@ import { importWithRetry, prefetchImportWithRetry } from "@/lib/lazyWithRetry";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ModuleBoundary from "./components/ModuleBoundary";
+const SponsorProtectedRoute = lazy(() => import("./components/SponsorProtectedRoute"));
 import ErrorGuard from "./components/ErrorGuard";
 const MobileBottomNav = reactLazy(() => importWithRetry(() => import("./components/MobileBottomNav")));
 const BackToTopButton = reactLazy(() => importWithRetry(() => import("./components/BackToTopButton")));
@@ -77,7 +78,7 @@ const AdminTrashPage = lazy(() => import("./pages/AdminTrashPage"));
 const AdminBackupPage = lazy(() => import("./pages/AdminBackupPage"));
 const AdminHeroBannersPage = lazy(() => import("./pages/AdminHeroBannersPage"));
 const AdminPwaPage = lazy(() => import("./pages/AdminPwaPage"));
-// AdminTierRulesPage deprecated — gamification replaces tier rules
+
 const AdminMediaPage = lazy(() => import("./pages/AdminMediaPage"));
 const AdminServicesPage = lazy(() => import("./pages/AdminServicesPage"));
 const AdminLeadsPage = lazy(() => import("./pages/AdminLeadsPage"));
@@ -92,7 +93,7 @@ const AdminHomeSectionsPage = lazy(() => import("./pages/AdminHomeSectionsPage")
 const AdminUsersCrmPage = lazy(() => import("./pages/AdminUsersCrmPage"));
 const AdminBoostsPage = lazy(() => import("./pages/AdminBoostsPage"));
 const AdminBottomNavPage = lazy(() => import("./pages/AdminBottomNavPage"));
-// AdminLevelsPage, AdminAccountTypesPage, AdminSubscriptionsPage deprecated — replaced by gamification
+
 const AdminSponsorLeadsPage = lazy(() => import("./pages/AdminSponsorLeadsPage"));
 const AdminGamificationPage = lazy(() => import("./pages/AdminGamificationPage"));
 const AdminStaffPage = lazy(() => import("./pages/AdminStaffPage"));
@@ -308,14 +309,14 @@ const App = () => {
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/sitemap" element={<SitemapRedirect />} />
                 <Route path="/sitemap.xml" element={<SitemapRedirect />} />
-                {/* Sponsor Panel — CRM Module (isolated) */}
-                <Route path="/sponsor-panel" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorDashboardPage /></ModuleBoundary>} />
-                <Route path="/sponsor-panel/banners" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorBannersPage /></ModuleBoundary>} />
-                <Route path="/sponsor-panel/campanhas" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorCampaignsPage /></ModuleBoundary>} />
-                <Route path="/sponsor-panel/metricas" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorMetricsPage /></ModuleBoundary>} />
-                <Route path="/sponsor-panel/contratos" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorContractsPage /></ModuleBoundary>} />
-                <Route path="/sponsor-panel/notificacoes" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorNotificationsPage /></ModuleBoundary>} />
-                <Route path="/sponsor-panel/dados" element={<ModuleBoundary moduleName="CRM Patrocinador"><SponsorDataPage /></ModuleBoundary>} />
+                {/* Sponsor Panel — CRM Module (protected B2B access) */}
+                <Route path="/sponsor-panel" element={<SponsorProtectedRoute><SponsorDashboardPage /></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/banners" element={<SponsorProtectedRoute><SponsorBannersPage /></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/campanhas" element={<SponsorProtectedRoute><SponsorCampaignsPage /></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/metricas" element={<SponsorProtectedRoute><SponsorMetricsPage /></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/contratos" element={<SponsorProtectedRoute><SponsorContractsPage /></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/notificacoes" element={<SponsorProtectedRoute><SponsorNotificationsPage /></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/dados" element={<SponsorProtectedRoute><SponsorDataPage /></SponsorProtectedRoute>} />
                 <Route path="/p/:slug" element={<InstitutionalPage />} />
                 <Route path="/:slug" element={<SeoPage />} />
                 <Route path="*" element={<NotFound />} />
