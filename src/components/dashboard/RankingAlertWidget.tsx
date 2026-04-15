@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, TrendingDown, TrendingUp, ArrowRight, MapPin, Shield } from 'lucide-react';
+import { AlertTriangle, TrendingDown, TrendingUp, ArrowRight, MapPin, Shield, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
@@ -10,6 +10,9 @@ const RankingAlertWidget = () => {
   const [currentPos, setCurrentPos] = useState<number | null>(null);
   const [previousPos, setPreviousPos] = useState<number | null>(null);
   const [totalInCity, setTotalInCity] = useState(0);
+  const [categoryPos, setCategoryPos] = useState<number | null>(null);
+  const [totalInCategory, setTotalInCategory] = useState(0);
+  const [topCompetitorName, setTopCompetitorName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,32 +21,78 @@ const RankingAlertWidget = () => {
     (async () => {
       const myPoints = profile?.engagement_points || 0;
 
-      const [totalRes, aheadRes] = await Promise.all([
+      const queries: any[] = [
         supabase
           .from('providers')
           .select('id', { count: 'exact', head: true })
           .eq('city', provider.city)
           .eq('status', 'approved')
-          .is('deleted_at', null),
+          .is('deleted_at', null)
+          .then(),
         supabase
           .from('providers')
           .select('id, profiles!inner(engagement_points)', { count: 'exact', head: true })
           .eq('city', provider.city)
           .eq('status', 'approved')
           .is('deleted_at', null)
-          .gt('profiles.engagement_points', myPoints),
-      ]);
+          .gt('profiles.engagement_points', myPoints)
+          .then(),
+      ];
 
-      const total = totalRes.count ?? 0;
-      const pos = (aheadRes.count ?? 0) + 1;
+      // Category-specific ranking if provider has category
+      if (provider.category_id) {
+        queries.push(
+          supabase
+            .from('providers')
+            .select('id', { count: 'exact', head: true })
+            .eq('city', provider.city)
+            .eq('category_id', provider.category_id)
+            .eq('status', 'approved')
+            .is('deleted_at', null)
+            .then(),
+          supabase
+            .from('providers')
+            .select('id, business_name, profiles!inner(engagement_points)', { count: 'exact', head: false })
+            .eq('city', provider.city)
+            .eq('category_id', provider.category_id)
+            .eq('status', 'approved')
+            .is('deleted_at', null)
+            .gt('profiles.engagement_points', myPoints)
+            .order('profiles(engagement_points)', { ascending: false } as any)
+            .limit(1)
+            .then(),
+        );
+      }
+
+      const results = await Promise.all(queries);
+
+      const total = results[0].count ?? 0;
+      const pos = (results[1].count ?? 0) + 1;
 
       setTotalInCity(total);
       setCurrentPos(pos);
-      // Simulate previous position (slightly higher) for demo — in production would come from historical data
-      setPreviousPos(Math.max(1, pos - Math.floor(Math.random() * 3)));
+
+      if (results.length > 2 && provider.category_id) {
+        setTotalInCategory(results[2].count ?? 0);
+        const catAhead = results[3].data?.length ?? 0;
+        setCategoryPos(catAhead + 1);
+        if (results[3].data?.[0]?.business_name) {
+          setTopCompetitorName(results[3].data[0].business_name);
+        }
+      }
+
+      // Store previous in localStorage for real tracking
+      const storageKey = `ranking_${provider.id}`;
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setPreviousPos(parsed.pos);
+      }
+      localStorage.setItem(storageKey, JSON.stringify({ pos, ts: Date.now() }));
+
       setLoading(false);
     })();
-  }, [provider?.id, provider?.city, profile?.engagement_points]);
+  }, [provider?.id, provider?.city, provider?.category_id, profile?.engagement_points]);
 
   if (loading || currentPos === null || !provider?.city) return null;
 
@@ -93,15 +142,31 @@ const RankingAlertWidget = () => {
           <p className="text-[10px] text-muted-foreground">de {totalInCity}</p>
         </div>
 
+        {categoryPos !== null && totalInCategory > 1 && (
+          <div className="text-center border-l border-border pl-3">
+            <div className="flex items-center gap-1 text-xs font-semibold text-foreground">
+              <Target className="h-3 w-3 text-accent" />
+              #{categoryPos}
+            </div>
+            <p className="text-[10px] text-muted-foreground">na categoria</p>
+          </div>
+        )}
+
         {dropped && (
-          <div className="flex items-center gap-1 text-destructive text-xs font-semibold">
+          <div className="flex items-center gap-1 text-destructive text-xs font-semibold ml-auto">
             <TrendingDown className="h-3.5 w-3.5" />
             Caiu {diff} posição{diff > 1 ? 'ões' : ''}
           </div>
         )}
       </div>
 
-      <p className="mt-2 text-xs text-muted-foreground">
+      {topCompetitorName && categoryPos && categoryPos > 1 && (
+        <p className="mt-2 text-[11px] text-destructive/80 font-medium">
+          ⚠️ <strong>{topCompetitorName}</strong> está à sua frente na categoria!
+        </p>
+      )}
+
+      <p className="mt-1.5 text-xs text-muted-foreground">
         {dropped
           ? 'Outros profissionais cadastraram mais serviços e subiram no ranking. Reaja agora!'
           : 'Cadastre mais serviços e complete seu perfil para subir no ranking da sua cidade.'
