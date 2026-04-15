@@ -160,17 +160,14 @@ const Index = () => {
   const { data: secondaryData } = useQuery({
     queryKey: ['home-secondary-data'],
     queryFn: async () => {
-      const [citiesRes, allCatsRes, sponsorsRes, servicesRes, jobsRes] = await Promise.all([
+      const [citiesRes, sponsorsRes, servicesRes, jobsRes] = await Promise.all([
         supabase.from('cities').select('name, slug, state').eq('has_providers', true).order('provider_count', { ascending: false }).limit(6).then(r => r.data || []),
-        supabase.from('categories').select('name, slug').order('name').then(r => r.data || []),
         supabase.from('sponsors').select('id, title, company_name, image_url, logo_url, link_url, tier, position, active, display_order, short_description, max_width, max_height').eq('active', true).order('display_order').then(r => r.data || []),
         supabase.from('services').select('id', { count: 'exact', head: true }),
         supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'active'),
       ]);
       return {
         topCities: citiesRes,
-        allCategories: allCatsRes,
-        recentServices: [] as any[],
         sponsors: sponsorsRes,
         counts: {
           services: servicesRes.count || 0,
