@@ -45,7 +45,7 @@ const NotificationRow = ({
     }`}
   >
     <div className="flex items-start gap-3">
-      <span className="mt-0.5 text-lg">{typeIcons[notification.type] || '🔔'}</span>
+      <span className="mt-0.5">{(() => { const Icon = typeIconMap[notification.type] || Bell; return <Icon className="h-5 w-5 text-muted-foreground" />; })()}</span>
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-semibold leading-tight ${notification.read ? 'text-foreground' : 'text-foreground'}`}>
           {notification.title}
@@ -54,7 +54,7 @@ const NotificationRow = ({
         <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground/80">
           <span>{formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: ptBR })}</span>
           <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
-            {typeIcons[notification.type] || '🔔'} {typeLabels[notification.type] || notification.type}
+            {(() => { const Icon = typeIconMap[notification.type] || Bell; return <Icon className="inline h-3 w-3 mr-0.5" />; })()} {typeLabels[notification.type] || notification.type}
           </span>
           {!notification.read && <span className="text-accent">Nao lida</span>}
         </div>
@@ -160,7 +160,7 @@ const DashboardNotificationsPage = () => {
                 : 'border-border text-muted-foreground hover:bg-muted'
             }`}
           >
-            {typeIcons[type] || '🔔'} {typeLabels[type] || type}
+            {(() => { const Icon = typeIconMap[type] || Bell; return <Icon className="inline h-3 w-3 mr-0.5" />; })()} {typeLabels[type] || type}
           </button>
         ))}
       </div>
