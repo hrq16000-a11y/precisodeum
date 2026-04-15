@@ -61,10 +61,13 @@ const AdminUsersPage = () => {
   const [services, setServices] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
   const [userTags, setUserTags] = useState<any[]>([]);
+  const [sponsorUserIds, setSponsorUserIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterProviderStatus, setFilterProviderStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('recent');
+  const [activeTab, setActiveTab] = useState('all');
   const [page, setPage] = useState(1);
 
   const [editUser, setEditUser] = useState<any | null>(null);
