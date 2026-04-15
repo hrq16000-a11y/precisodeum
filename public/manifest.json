@@ -24,6 +24,38 @@
     { "src": "/icons/icon-384.png", "sizes": "384x384", "type": "image/png" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable any" }
   ],
+  "shortcuts": [
+    {
+      "name": "Buscar Profissional",
+      "short_name": "Buscar",
+      "description": "Encontre um profissional na sua cidade",
+      "url": "/buscar",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Anunciar Serviço",
+      "short_name": "Anunciar",
+      "description": "Cadastre seus serviços gratuitamente",
+      "url": "/cadastro",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Minha Conta",
+      "short_name": "Conta",
+      "description": "Acesse seu painel de controle",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
+    }
+  ],
+  "share_target": {
+    "action": "/buscar",
+    "method": "GET",
+    "params": {
+      "title": "q",
+      "text": "q",
+      "url": "q"
+    }
+  },
   "screenshots": [
     {
       "src": "/screenshots/mobile-home.png",
