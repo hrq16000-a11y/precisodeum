@@ -9,7 +9,7 @@ import { importWithRetry, prefetchImportWithRetry } from "@/lib/lazyWithRetry";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ModuleBoundary from "./components/ModuleBoundary";
-const SponsorProtectedRoute = lazy(() => import("./components/SponsorProtectedRoute"));
+const SponsorProtectedRoute = reactLazy(() => importWithRetry(() => import("./components/SponsorProtectedRoute")));
 import ErrorGuard from "./components/ErrorGuard";
 const MobileBottomNav = reactLazy(() => importWithRetry(() => import("./components/MobileBottomNav")));
 const BackToTopButton = reactLazy(() => importWithRetry(() => import("./components/BackToTopButton")));
