@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { getSuggestedTags } from '@/data/tagSuggestions';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -124,6 +125,15 @@ const DashboardServicesPage = () => {
   useEffect(() => {
     if (provider) fetchServices();
   }, [provider]);
+
+  // Suggested tags based on selected categories
+  const suggestedTags = useMemo(() => {
+    const selectedSlugs = selectedCategoryIds.map(id => {
+      const cat = categories.find((c: any) => c.id === id);
+      return cat?.slug || '';
+    }).filter(Boolean);
+    return getSuggestedTags(selectedSlugs);
+  }, [selectedCategoryIds, categories]);
 
   // Filtered cities for autocomplete
   const filteredCities = useMemo(() => {
