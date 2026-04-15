@@ -197,7 +197,16 @@ async function fetchProvidersLightweight(query: any) {
     impressionMap[i.provider_id] = (impressionMap[i.provider_id] || 0) + (i.impressions || 0);
   });
 
-  const serviceRows = servicesRes.data || [];
+  // Engagement/meritocracy aggregation
+  const engagementMap: Record<string, { points: number; priority: number }> = {};
+  ((engagementRes as any)?.data || []).forEach((e: any) => {
+    const lvl = e.gamification_levels;
+    engagementMap[e.id] = {
+      points: e.engagement_points || 0,
+      priority: (Array.isArray(lvl) ? lvl[0]?.priority : lvl?.priority) || 0,
+    };
+  });
+
   const serviceFallbackMap: Record<string, ServiceFallback> = {};
   const serviceImageMap: Record<string, string> = {};
   serviceRows.forEach((s: any) => {
