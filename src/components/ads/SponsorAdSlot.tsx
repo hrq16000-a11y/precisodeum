@@ -28,7 +28,7 @@ function useSponsorAds(locationKey: string, city: string | null, state: string |
   return useQuery({
     queryKey: ['sponsor-ad-slot', locationKey, city, state],
     queryFn: async (): Promise<SponsorAd[]> => {
-      const { data, error } = await supabase.rpc('get_smart_ads', {
+      const { data, error } = await (supabase.rpc as any)('get_smart_ads', {
         _location_key: locationKey,
         _visitor_city: city || '',
         _visitor_state: state || '',
