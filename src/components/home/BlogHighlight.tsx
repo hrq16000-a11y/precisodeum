@@ -34,7 +34,7 @@ const BlogHighlight = () => {
         .limit(12);
       return data || [];
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 15,
     refetchInterval: 1000 * 60 * 60,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,

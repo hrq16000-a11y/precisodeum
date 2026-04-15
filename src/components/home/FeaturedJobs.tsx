@@ -47,7 +47,7 @@ const FeaturedJobs = () => {
         .limit(10);
       return shuffle(data || []).slice(0, 3);
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 15,
   });
 
   if (jobs.length === 0) return null;
