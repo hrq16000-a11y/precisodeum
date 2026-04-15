@@ -154,7 +154,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
       <div className="container">
         <div className="mb-6 text-center">
           <span className="inline-block rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent mb-2">
-            🔍 Categorias
+            <Search className="inline h-3.5 w-3.5 mr-1 -mt-0.5" /> Categorias
           </span>
           <h2 className="font-display text-xl font-bold text-foreground md:text-2xl">
             Encontre Profissionais por Categoria
@@ -202,7 +202,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
-                  ✨ Todos
+                  <Sparkles className="inline h-3.5 w-3.5 mr-1 -mt-0.5" /> Todos
                 </button>
                 {activeChips.map(macro => (
                   <button
@@ -214,7 +214,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
                     }`}
                   >
-                    {getMacroEmoji(macro.slug, macro.name)} {macro.name}
+                    <CategoryIcon icon={macro.icon} size={14} className="inline mr-1 -mt-0.5 text-current" /> {macro.name}
                   </button>
                 ))}
               </div>

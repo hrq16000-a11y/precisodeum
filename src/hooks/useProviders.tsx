@@ -90,7 +90,7 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
     businessName: p.business_name || undefined,
     category: catName || serviceFallback?.serviceName || '',
     categorySlug: (p.categories as any)?.slug || '',
-    categoryIcon: (p.categories as any)?.icon || '🔧',
+    categoryIcon: (p.categories as any)?.icon || 'Wrench',
     city: provCity,
     state: provState,
     neighborhood: provNeighborhood,

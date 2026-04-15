@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, ExternalLink, Trash2 } from 'lucide-react';
+import { Bell, Check, CheckCheck, ExternalLink, Trash2, Mail, Star, Briefcase, CheckCircle, MessageCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications, type Notification } from '@/hooks/useNotifications';
 
-const typeIcons: Record<string, string> = {
-  lead: '📩',
-  review: '⭐',
-  system: '🔔',
-  job: '💼',
-  approval: '✅',
-  message: '💬',
+const typeIconMap: Record<string, React.ComponentType<any>> = {
+  lead: Mail,
+  review: Star,
+  system: Bell,
+  job: Briefcase,
+  approval: CheckCircle,
+  message: MessageCircle,
 };
 
 const typeLabels: Record<string, string> = {

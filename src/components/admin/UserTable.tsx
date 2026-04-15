@@ -25,15 +25,15 @@ const profileTypeBadge = (t: string) => {
 };
 
 const profileTypeIcon = (t: string) => {
-  if (t === 'rh') return '🏢';
-  if (t === 'provider') return '🔧';
-  return '👤';
+  if (t === 'rh') return 'RH';
+  if (t === 'provider') return 'PRO';
+  return 'USR';
 };
 
 const providerStatusBadge: Record<string, { label: string; cls: string }> = {
-  pending: { label: '⏳ Pendente', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
-  approved: { label: '✅ Aprovado', cls: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
-  rejected: { label: '❌ Rejeitado', cls: 'bg-destructive/10 text-destructive' },
+  pending: { label: 'Pendente', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
+  approved: { label: 'Aprovado', cls: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
+  rejected: { label: 'Rejeitado', cls: 'bg-destructive/10 text-destructive' },
 };
 
 interface UserTableProps {
