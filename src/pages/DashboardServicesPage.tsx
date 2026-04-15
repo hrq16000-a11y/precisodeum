@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { getSuggestedTags } from '@/data/tagSuggestions';
+import { getTemplatesForCategory, DIFFERENTIAL_TAGS, buildExternalPrompt } from '@/data/serviceTemplates';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Edit2, X, Search, ImagePlus, MapPin, Eye, Pause, Play, Zap, Tag, MapPinned, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Search, ImagePlus, MapPin, Eye, Pause, Play, Zap, Tag, MapPinned, Copy, ExternalLink, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import SmartCategoryPicker from '@/components/SmartCategoryPicker';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,72 +24,118 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { CITIES_INDEX, type CityEntry } from '@/lib/citiesIndex';
 import { normalize } from '@/lib/normalize';
 
-// Magic AI Description Button
-const MagicDescriptionButton = ({ serviceName, categoryName, onGenerated }: { serviceName: string; categoryName?: string; onGenerated: (desc: string) => void }) => {
-  const [loading, setLoading] = useState(false);
-  const [promptOpen, setPromptOpen] = useState(false);
-  const [prompt, setPrompt] = useState('');
+// Template-based description helpers (zero AI cost)
+const DescriptionTemplatePanel = ({
+  categorySlugs,
+  serviceName,
+  categoryName,
+  cityName,
+  onApply,
+}: {
+  categorySlugs: string[];
+  serviceName: string;
+  categoryName?: string;
+  cityName?: string;
+  onApply: (text: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
 
-  const handleGenerate = async () => {
-    const input = prompt.trim() || serviceName;
-    if (!input || input.length < 3) {
-      toast.error('Digite pelo menos uma frase sobre o serviço');
-      return;
-    }
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-service-content', {
-        body: { mode: 'magic', prompt: input, service_name: serviceName, category_name: categoryName },
-      });
-      if (error) throw error;
-      if (data?.description) {
-        onGenerated(data.description);
-        setPromptOpen(false);
-        setPrompt('');
-        toast.success('✨ Descrição gerada com IA!');
-      } else {
-        toast.error('Não foi possível gerar a descrição');
-      }
-    } catch (err: any) {
-      toast.error('Erro ao gerar: ' + (err.message || 'Tente novamente'));
-    } finally {
-      setLoading(false);
-    }
+  const templates = useMemo(() => {
+    return categorySlugs.flatMap(s => getTemplatesForCategory(s));
+  }, [categorySlugs]);
+
+  const handleCopyPrompt = () => {
+    const prompt = buildExternalPrompt(serviceName || 'meu serviço', categoryName, cityName);
+    navigator.clipboard.writeText(prompt).then(() => {
+      toast.success('Prompt copiado! Cole no ChatGPT ou Gemini.', { duration: 4000 });
+    }).catch(() => toast.error('Não foi possível copiar'));
   };
 
-  if (!promptOpen) {
-    return (
-      <button
-        type="button"
-        onClick={() => setPromptOpen(true)}
-        className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline"
-      >
-        <Sparkles className="h-3 w-3" /> Mágica com IA
-      </button>
-    );
-  }
-
   return (
-    <div className="flex items-center gap-1.5">
-      <input
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        placeholder="Ex: faço conserto de ar condicionado..."
-        className="h-7 flex-1 rounded border border-input bg-background px-2 text-[11px] text-foreground outline-none focus:ring-1 focus:ring-accent/30"
-        onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate(); }}
-      />
-      <button
-        type="button"
-        onClick={handleGenerate}
-        disabled={loading}
-        className="inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-[10px] font-bold text-accent-foreground disabled:opacity-50"
-      >
-        {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-        Gerar
-      </button>
-      <button type="button" onClick={() => setPromptOpen(false)} className="text-muted-foreground hover:text-foreground">
-        <X className="h-3 w-3" />
-      </button>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline"
+        >
+          <FileText className="h-3 w-3" />
+          Frases Prontas
+          {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
+        <span className="text-muted-foreground text-[10px]">•</span>
+        <button
+          type="button"
+          onClick={handleCopyPrompt}
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:underline"
+        >
+          <Copy className="h-3 w-3" /> Copiar Prompt
+        </button>
+        <a
+          href="https://chatgpt.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-accent"
+        >
+          <ExternalLink className="h-2.5 w-2.5" /> ChatGPT
+        </a>
+        <a
+          href="https://gemini.google.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-accent"
+        >
+          <ExternalLink className="h-2.5 w-2.5" /> Gemini
+        </a>
+      </div>
+
+      {open && (
+        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+          {/* Category templates */}
+          {templates.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">📝 Modelos para sua categoria</p>
+              <div className="grid gap-1.5">
+                {templates.map((t, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => { onApply(t.description); setOpen(false); toast.success(`Modelo "${t.label}" aplicado!`); }}
+                    className="text-left rounded-md border border-border bg-card px-3 py-2 hover:border-accent/40 hover:bg-accent/5 transition-colors group"
+                  >
+                    <span className="text-xs font-medium text-foreground group-hover:text-accent">{t.label}</span>
+                    <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">{t.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Differential tags */}
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">🏷️ Tags de Diferencial</p>
+            <div className="flex flex-wrap gap-1.5">
+              {DIFFERENTIAL_TAGS.map((dt) => (
+                <button
+                  key={dt.label}
+                  type="button"
+                  onClick={() => {
+                    onApply(dt.value);
+                    toast.success(`"${dt.label}" adicionado!`);
+                  }}
+                  className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-foreground hover:border-accent/40 hover:bg-accent/5 transition-colors"
+                >
+                  {dt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {templates.length === 0 && (
+            <p className="text-[11px] text-muted-foreground italic">Selecione uma categoria para ver modelos específicos, ou use o botão "Copiar Prompt" para gerar com IA externa gratuita.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -613,12 +660,17 @@ const DashboardServicesPage = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-sm font-medium text-foreground">Descrição</label>
-                    <MagicDescriptionButton
-                      serviceName={form.service_name}
-                      categoryName={categories.find((c: any) => selectedCategoryIds.includes(c.id))?.name}
-                      onGenerated={(desc) => setForm(prev => ({ ...prev, description: desc }))}
-                    />
                   </div>
+                  <DescriptionTemplatePanel
+                    categorySlugs={selectedCategoryIds.map(id => {
+                      const cat = categories.find((c: any) => c.id === id);
+                      return cat?.slug || '';
+                    }).filter(Boolean)}
+                    serviceName={form.service_name}
+                    categoryName={categories.find((c: any) => selectedCategoryIds.includes(c.id))?.name}
+                    cityName={form.service_area}
+                    onApply={(desc) => setForm(prev => ({ ...prev, description: prev.description ? `${prev.description}\n\n${desc}` : desc }))}
+                  />
                   <textarea
                     name="description"
                     rows={3}
