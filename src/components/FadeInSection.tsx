@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { forwardRef, type ReactNode } from 'react';
 
 interface FadeInSectionProps {
@@ -56,7 +56,7 @@ const FadeInSection = forwardRef<HTMLDivElement, FadeInSectionProps>(({
     : { animate: visible };
 
   return (
-    <motion.div
+    <m.div
       ref={ref}
       initial={initial}
       {...animateProps}
@@ -64,7 +64,7 @@ const FadeInSection = forwardRef<HTMLDivElement, FadeInSectionProps>(({
       className={className}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 });
 
