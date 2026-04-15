@@ -128,13 +128,16 @@ const HeroBanner = () => {
     }
   }, [displayedImage]);
 
-  // Preload only the next category image (not all) to save bandwidth
+  // Preload only the next category image — deferred to avoid forced reflow during paint
   useEffect(() => {
-    const allImages = Object.values(CATEGORY_IMAGES);
-    const currentIdx = allImages.indexOf(displayedImage);
-    const nextIdx = (currentIdx + 1) % allImages.length;
-    const img = new Image();
-    img.src = allImages[nextIdx];
+    const raf = requestAnimationFrame(() => {
+      const allImages = Object.values(CATEGORY_IMAGES);
+      const currentIdx = allImages.indexOf(displayedImage);
+      const nextIdx = (currentIdx + 1) % allImages.length;
+      const img = new Image();
+      img.src = allImages[nextIdx];
+    });
+    return () => cancelAnimationFrame(raf);
   }, [displayedImage]);
 
   return (
