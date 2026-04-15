@@ -1476,7 +1476,7 @@ const ProviderProfile = () => {
       {/* Sticky CTA bar for mobile */}
       {effectiveWhatsApp && (
         <motion.div
-          className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/95 backdrop-blur-lg p-3 flex gap-2 md:hidden"
+          className="fixed bottom-0 left-0 right-0 border-t border-border bg-gradient-to-t from-card via-card/98 to-card/90 backdrop-blur-lg p-3 flex gap-2 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
           style={{ zIndex: 999, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
           initial={{ y: 100 }}
           animate={{ y: 0 }}
