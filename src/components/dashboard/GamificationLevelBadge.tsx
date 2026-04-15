@@ -1,9 +1,12 @@
 import { motion } from 'framer-motion';
+import { Trophy, Award, Gem, Crown, Star } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface GamificationLevelBadgeProps {
   levelName: string;
   levelColor: string;
-  levelIcon: string;
+  /** @deprecated Use Lucide icon names only. Emoji strings are ignored. */
+  levelIcon?: string;
   size?: 'sm' | 'md' | 'lg';
   showShine?: boolean;
 }
@@ -26,15 +29,28 @@ function getMetallicGradient(name: string): string {
   return `linear-gradient(135deg, ${name}, ${name}88)`;
 }
 
+function getLevelIcon(name: string): LucideIcon {
+  const lower = name.toLowerCase();
+  if (lower.includes('bronze')) return Award;
+  if (lower.includes('prata') || lower.includes('silver')) return Star;
+  if (lower.includes('ouro') || lower.includes('gold')) return Trophy;
+  if (lower.includes('diamante') || lower.includes('diamond')) return Gem;
+  if (lower.includes('mestre') || lower.includes('master')) return Crown;
+  return Trophy;
+}
+
 const sizeClasses = {
   sm: 'h-6 px-2 text-[10px] gap-1',
   md: 'h-8 px-3 text-xs gap-1.5',
   lg: 'h-10 px-4 text-sm gap-2',
 };
 
-const GamificationLevelBadge = ({ levelName, levelColor, levelIcon, size = 'md', showShine = true }: GamificationLevelBadgeProps) => {
+const iconSizes = { sm: 12, md: 14, lg: 16 };
+
+const GamificationLevelBadge = ({ levelName, levelColor, size = 'md', showShine = true }: GamificationLevelBadgeProps) => {
   const gradient = getMetallicGradient(levelName);
   const isMestre = levelName.toLowerCase().includes('mestre') || levelName.toLowerCase().includes('master');
+  const IconComp = getLevelIcon(levelName);
 
   return (
     <motion.span
@@ -49,7 +65,6 @@ const GamificationLevelBadge = ({ levelName, levelColor, levelIcon, size = 'md',
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       whileHover={{ scale: 1.05, boxShadow: `0 4px 20px ${levelColor}60` }}
     >
-      {/* Shine animation */}
       {showShine && (
         <motion.div
           className="absolute inset-0 pointer-events-none"
@@ -60,7 +75,7 @@ const GamificationLevelBadge = ({ levelName, levelColor, levelIcon, size = 'md',
           transition={{ duration: 3, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' }}
         />
       )}
-      <span className="relative z-10">{levelIcon}</span>
+      <IconComp className="relative z-10 shrink-0" size={iconSizes[size]} strokeWidth={1.75} />
       <span className="relative z-10 tracking-wide">{levelName}</span>
     </motion.span>
   );

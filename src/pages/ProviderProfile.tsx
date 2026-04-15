@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
@@ -505,7 +505,7 @@ const ProviderProfile = () => {
   const avatarUrl = provider ? (hasOwnAvatar ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : diceBearAvatar) : '';
   const category = provider ? ((provider.categories as any)?.name || '') : '';
   const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
-  const categoryIcon = provider ? ((provider.categories as any)?.icon || '🔧') : '';
+  const categoryIcon = provider ? ((provider.categories as any)?.icon || '') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
 
   // DESTAQUE: OR logic — at least 1 criterion met
@@ -1063,7 +1063,6 @@ const ProviderProfile = () => {
                     <GamificationLevelBadge
                       levelName={provider.levelInfo.name}
                       levelColor={provider.levelInfo.color}
-                      levelIcon="🏆"
                       size="lg"
                       showShine={true}
                     />
@@ -1122,9 +1121,9 @@ const ProviderProfile = () => {
                         <Youtube className="h-4 w-4" />
                       </motion.a>
                     )}
-                    {pageSettings.tiktok_url && (
+                     {pageSettings.tiktok_url && (
                       <motion.a href={pageSettings.tiktok_url} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                        <span className="text-sm">🎵</span>
+                        <Music className="h-4 w-4" />
                       </motion.a>
                     )}
                   </div>
