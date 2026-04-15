@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
@@ -505,7 +505,7 @@ const ProviderProfile = () => {
   const avatarUrl = provider ? (hasOwnAvatar ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : diceBearAvatar) : '';
   const category = provider ? ((provider.categories as any)?.name || '') : '';
   const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
-  const categoryIcon = provider ? ((provider.categories as any)?.icon || '🔧') : '';
+  const categoryIcon = provider ? ((provider.categories as any)?.icon || '') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
 
   // DESTAQUE: OR logic — at least 1 criterion met
@@ -1041,13 +1041,12 @@ const ProviderProfile = () => {
                   <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
                   {isDestaque && (
                     <motion.span
-                      className={`inline-flex items-center gap-1 ${tc.badge} bg-gradient-to-r from-accent to-accent/80 px-2.5 py-0.5 text-xs font-semibold text-accent-foreground shadow-md`}
-                      style={accentBg ? { background: `linear-gradient(135deg, ${accentBg}, ${accentBg}cc)` } : undefined}
+                      className={`inline-flex items-center gap-1 ${tc.badge} border-2 border-accent/40 bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent`}
                       initial={{ scale: 0, rotate: -12 }}
                       animate={{ scale: 1, rotate: 0 }}
                       transition={{ delay: 0.4, type: 'spring', stiffness: 300, damping: 15 }}
                     >
-                      <Crown className="h-3 w-3" /> DESTAQUE
+                      <Crown className="h-3 w-3" strokeWidth={1.75} /> DESTAQUE
                     </motion.span>
                   )}
                   {provider.accTypeInfo && (
@@ -1063,7 +1062,6 @@ const ProviderProfile = () => {
                     <GamificationLevelBadge
                       levelName={provider.levelInfo.name}
                       levelColor={provider.levelInfo.color}
-                      levelIcon="🏆"
                       size="lg"
                       showShine={true}
                     />
@@ -1082,6 +1080,29 @@ const ProviderProfile = () => {
                       : 'Localização não informada'}
                   </span>
                 </div>
+
+                {/* Experience & Projects Highlight */}
+                {(provider.years_experience > 0 || provider.portfolio_photo_count > 0) && (
+                  <motion.div
+                    className="mt-2.5 flex flex-wrap items-center justify-center sm:justify-start gap-3"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    {provider.years_experience > 0 && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent/10 border border-accent/20 px-3 py-1.5 text-xs font-semibold text-accent">
+                        <CalendarClock className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        {provider.years_experience}+ anos de experiência
+                      </span>
+                    )}
+                    {provider.portfolio_photo_count > 0 && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent/10 border border-accent/20 px-3 py-1.5 text-xs font-semibold text-accent">
+                        <FolderOpen className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        {provider.portfolio_photo_count} projetos realizados
+                      </span>
+                    )}
+                  </motion.div>
+                )}
                 {reviewsEnabled && (
                   <div className="mt-3 flex justify-center sm:justify-start">
                     <ReviewSummary rating={Number(provider.rating_avg)} reviewCount={provider.review_count} />
@@ -1122,9 +1143,9 @@ const ProviderProfile = () => {
                         <Youtube className="h-4 w-4" />
                       </motion.a>
                     )}
-                    {pageSettings.tiktok_url && (
+                     {pageSettings.tiktok_url && (
                       <motion.a href={pageSettings.tiktok_url} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                        <span className="text-sm">🎵</span>
+                        <Music className="h-4 w-4" />
                       </motion.a>
                     )}
                   </div>
@@ -1139,27 +1160,27 @@ const ProviderProfile = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45 }}
             >
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5" /> Estatísticas de Confiança
+              <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                <Shield className="h-3 w-3" strokeWidth={1.75} /> Estatísticas de Confiança
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="text-center">
-                  <p className="text-lg font-bold text-foreground">
+                  <p className="text-xl font-extrabold text-foreground leading-none">
                     {provider.years_experience > 0 ? `${provider.years_experience}+` : '—'}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">Anos de experiência</p>
+                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Anos exp.</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-foreground">{services.length}</p>
-                  <p className="text-[10px] text-muted-foreground">Serviços oferecidos</p>
+                  <p className="text-xl font-extrabold text-foreground leading-none">{services.length}</p>
+                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Serviços</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-foreground">{provider.review_count || 0}</p>
-                  <p className="text-[10px] text-muted-foreground">Avaliações positivas</p>
+                  <p className="text-xl font-extrabold text-foreground leading-none">{provider.review_count || 0}</p>
+                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Avaliações</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-foreground">{portfolioImages.length}</p>
-                  <p className="text-[10px] text-muted-foreground">Fotos de trabalhos</p>
+                  <p className="text-xl font-extrabold text-foreground leading-none">{portfolioImages.length}</p>
+                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Fotos</p>
                 </div>
               </div>
             </motion.div>
@@ -1308,7 +1329,7 @@ const ProviderProfile = () => {
                   const rpInitials = rpName.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
                   const rpAvatar = avatarLarge(rp.profiles?.avatar_url || rp.photo_url);
                   const rpCategory = (rp.categories as any)?.name || '';
-                  const rpCatIcon = (rp.categories as any)?.icon || '🔧';
+                  const rpCatIcon = (rp.categories as any)?.icon || '';
                   return (
                     <motion.div key={rp.id} variants={scaleIn} whileHover={{ y: -6 }} transition={{ duration: 0.25 }}>
                       <Link
@@ -1455,7 +1476,7 @@ const ProviderProfile = () => {
       {/* Sticky CTA bar for mobile */}
       {effectiveWhatsApp && (
         <motion.div
-          className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/95 backdrop-blur-lg p-3 flex gap-2 md:hidden"
+          className="fixed bottom-0 left-0 right-0 border-t border-border bg-gradient-to-t from-card via-card/98 to-card/90 backdrop-blur-lg p-3 flex gap-2 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
           style={{ zIndex: 999, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
           initial={{ y: 100 }}
           animate={{ y: 0 }}
@@ -1588,9 +1609,9 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
         </div>
       )}
       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-        {service.price && <span className="font-semibold text-foreground">💰 {service.price}</span>}
-        {service.service_area && <span>📍 {formatLocationString(service.service_area)}</span>}
-        {service.working_hours && <span>🕐 {service.working_hours}</span>}
+        {service.price && <span className="inline-flex items-center gap-1 font-semibold text-foreground"><DollarSign className="h-3.5 w-3.5 text-accent" /> {service.price}</span>}
+        {service.service_area && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-accent" /> {formatLocationString(service.service_area)}</span>}
+        {service.working_hours && <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-accent" /> {service.working_hours}</span>}
       </div>
       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
         <Button variant="accent" className="w-full gap-2" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
@@ -1658,9 +1679,9 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
                     </div>
                   )}
                   {s.description && <p className="mt-1 line-clamp-2 text-xs text-foreground/70">{s.description}</p>}
-                  <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    {s.price && <span className="font-medium text-foreground">💰 {s.price}</span>}
-                    {s.service_area && <span>📍 {formatLocationString(s.service_area)}</span>}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                    {s.price && <span className="inline-flex items-center gap-0.5 font-medium text-foreground"><DollarSign className="h-3 w-3 text-accent" /> {s.price}</span>}
+                    {s.service_area && <span className="inline-flex items-center gap-0.5"><MapPin className="h-3 w-3 text-accent" /> {formatLocationString(s.service_area)}</span>}
                     {(s.instagram_url || s.facebook_url || s.youtube_url) && (
                       <span className="flex items-center gap-1">
                         {s.instagram_url && <Instagram className="h-3 w-3 text-accent" />}
