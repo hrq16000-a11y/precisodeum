@@ -539,7 +539,14 @@ const DashboardServicesPage = () => {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-foreground">Descrição</label>
+                    <MagicDescriptionButton
+                      serviceName={form.service_name}
+                      categoryName={categories.find((c: any) => selectedCategoryIds.includes(c.id))?.name}
+                      onGenerated={(desc) => setForm(prev => ({ ...prev, description: desc }))}
+                    />
+                  </div>
                   <textarea
                     name="description"
                     rows={3}
