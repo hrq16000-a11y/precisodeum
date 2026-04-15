@@ -21,6 +21,7 @@ import GamificationLevelBadge from '@/components/dashboard/GamificationLevelBadg
 import { lazy, Suspense } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
+const SponsorAdSlot = lazy(() => importWithRetry(() => import('@/components/ads/SponsorAdSlot')));
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -1502,6 +1503,15 @@ const ProviderProfile = () => {
           <span className="absolute inset-0 rounded-full animate-ping bg-[#25D366]/30 pointer-events-none" style={{ animationDuration: '3s' }} />
         </motion.a>
       )}
+
+      {/* Sponsor ad sidebar slot on profile pages */}
+      <div className="container py-4">
+        <div className="mx-auto max-w-3xl">
+          <Suspense fallback={null}>
+            <SponsorAdSlot locationKey="profile-sidebar" layout="card" maxAds={1} />
+          </Suspense>
+        </div>
+      </div>
 
       <Footer />
       <ImageLightbox
