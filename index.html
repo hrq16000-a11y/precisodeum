@@ -101,6 +101,13 @@
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        });
+      }
+    </script>
 
     <noscript>
       <div style="max-width:800px;margin:2rem auto;padding:1rem;font-family:system-ui,sans-serif">
