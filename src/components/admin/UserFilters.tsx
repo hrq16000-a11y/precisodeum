@@ -1,4 +1,4 @@
-import { Search, Download } from 'lucide-react';
+import { Search, Download, ArrowUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,14 +12,20 @@ const PROFILE_TYPE_OPTIONS = [
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Ativo' },
   { value: 'inactive', label: 'Inativo' },
-  { value: 'suspended', label: '⏸️ Suspenso' },
-  { value: 'banned', label: '🚫 Banido' },
+  { value: 'suspended', label: 'Suspenso' },
+  { value: 'banned', label: 'Banido' },
 ];
 
 const PROVIDER_STATUS_OPTIONS = [
   { value: 'pending', label: 'Pendente' },
   { value: 'approved', label: 'Aprovado' },
   { value: 'rejected', label: 'Rejeitado' },
+];
+
+const SORT_OPTIONS = [
+  { value: 'recent', label: 'Mais recentes' },
+  { value: 'oldest', label: 'Mais antigos' },
+  { value: 'ranking', label: 'Melhor Ranking' },
 ];
 
 interface UserFiltersProps {
@@ -31,6 +37,8 @@ interface UserFiltersProps {
   onFilterStatusChange: (v: string) => void;
   filterProviderStatus?: string;
   onFilterProviderStatusChange?: (v: string) => void;
+  sortBy?: string;
+  onSortChange?: (v: string) => void;
   totalResults: number;
   onExport: () => void;
 }
@@ -40,6 +48,7 @@ const UserFilters = ({
   filterType, onFilterTypeChange,
   filterStatus, onFilterStatusChange,
   filterProviderStatus, onFilterProviderStatusChange,
+  sortBy, onSortChange,
   totalResults, onExport,
 }: UserFiltersProps) => (
   <div className="space-y-3">
@@ -83,6 +92,19 @@ const UserFilters = ({
           <SelectContent>
             <SelectItem value="all">Toda aprovação</SelectItem>
             {PROVIDER_STATUS_OPTIONS.map(o => (
+              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+      {onSortChange && (
+        <Select value={sortBy || 'recent'} onValueChange={onSortChange}>
+          <SelectTrigger className="w-full sm:w-40">
+            <ArrowUpDown className="h-3.5 w-3.5 mr-1.5" />
+            <SelectValue placeholder="Ordenar" />
+          </SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map(o => (
               <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
             ))}
           </SelectContent>
