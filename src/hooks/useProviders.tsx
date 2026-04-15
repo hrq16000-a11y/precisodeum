@@ -149,8 +149,8 @@ async function fetchProvidersLightweight(query: any) {
   const providerIds = (data as any[]).map((p) => p.id);
   const userIds = [...new Set((data as any[]).map((p) => p.user_id))];
 
-  // 4 parallel fetches
-  const [profilesRes, servicesRes, boostsRes, impressionsRes, rankConfig] = await Promise.all([
+  // 5 parallel fetches (includes engagement for meritocracy scoring)
+  const [profilesRes, servicesRes, boostsRes, impressionsRes, rankConfig, engagementRes] = await Promise.all([
     supabase
       .from('public_profiles' as any)
       .select('id, full_name, avatar_url')
@@ -173,6 +173,11 @@ async function fetchProvidersLightweight(query: any) {
       .in('provider_id', providerIds)
       .gte('date', new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)) as any,
     getRankingConfig(),
+    // Fetch engagement points + level priority for meritocracy scoring
+    supabase
+      .from('profiles')
+      .select('id, engagement_points, level_id, gamification_levels!profiles_level_id_fkey(priority)')
+      .in('id', userIds) as any,
   ]);
 
   const profileMap: Record<string, { name: string; avatar?: string }> = {};
@@ -263,7 +268,7 @@ async function fetchProvidersLightweight(query: any) {
     const isIncomplete = !displayName || (requireCityForVisibility && !provCity);
     (mapped as any)._isIncomplete = isIncomplete;
 
-    // Hybrid score
+    // Hybrid score with MERITOCRACY weighting
     // Capped content score (anti-abuse)
     const photoScore = Math.min(photoCount, 20) * 2;
     const albumScore = Math.min(albumCount, 5) * 5;
@@ -279,7 +284,13 @@ async function fetchProvidersLightweight(query: any) {
     const fairnessPenalty = Math.log(1 + impressions7d) * rankConfig.fairnessPen;
     const randomFactor = Math.random() * rankConfig.randomMax;
 
-    const finalScore = contentScore + (boostScore * rankConfig.boostMul) - fairnessPenalty + randomFactor;
+    // MERITOCRACY: aggressive level priority weight (priority * 15)
+    const engData = engagementMap[p.user_id];
+    const levelPriority = engData?.priority || 0;
+    const engagementPts = engData?.points || 0;
+    const meritScore = (levelPriority * 15) + Math.min(engagementPts, 200) * 0.3;
+
+    const finalScore = contentScore + meritScore + (boostScore * rankConfig.boostMul) - fairnessPenalty + randomFactor;
 
     (mapped as any)._contentScore = contentScore;
     (mapped as any)._finalScore = finalScore;
