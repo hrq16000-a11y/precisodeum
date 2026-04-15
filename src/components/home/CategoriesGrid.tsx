@@ -161,7 +161,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
               </div>
             )}
 
-            {/* Filter Chips with Emojis */}
+            {/* Filter Chips */}
             {activeChips.length > 0 && (
               <div className="mb-4 flex gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap md:justify-center">
                 <button
