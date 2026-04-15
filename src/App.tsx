@@ -77,7 +77,7 @@ const AdminTrashPage = lazy(() => import("./pages/AdminTrashPage"));
 const AdminBackupPage = lazy(() => import("./pages/AdminBackupPage"));
 const AdminHeroBannersPage = lazy(() => import("./pages/AdminHeroBannersPage"));
 const AdminPwaPage = lazy(() => import("./pages/AdminPwaPage"));
-const AdminTierRulesPage = lazy(() => import("./pages/AdminTierRulesPage"));
+// AdminTierRulesPage deprecated — gamification replaces tier rules
 const AdminMediaPage = lazy(() => import("./pages/AdminMediaPage"));
 const AdminServicesPage = lazy(() => import("./pages/AdminServicesPage"));
 const AdminLeadsPage = lazy(() => import("./pages/AdminLeadsPage"));
@@ -92,10 +92,8 @@ const AdminHomeSectionsPage = lazy(() => import("./pages/AdminHomeSectionsPage")
 const AdminUsersCrmPage = lazy(() => import("./pages/AdminUsersCrmPage"));
 const AdminBoostsPage = lazy(() => import("./pages/AdminBoostsPage"));
 const AdminBottomNavPage = lazy(() => import("./pages/AdminBottomNavPage"));
-const AdminLevelsPage = lazy(() => import("./pages/AdminLevelsPage"));
-const AdminAccountTypesPage = lazy(() => import("./pages/AdminAccountTypesPage"));
+// AdminLevelsPage, AdminAccountTypesPage, AdminSubscriptionsPage deprecated — replaced by gamification
 const AdminSponsorLeadsPage = lazy(() => import("./pages/AdminSponsorLeadsPage"));
-const AdminSubscriptionsPage = lazy(() => import("./pages/AdminSubscriptionsPage"));
 const AdminGamificationPage = lazy(() => import("./pages/AdminGamificationPage"));
 const AdminStaffPage = lazy(() => import("./pages/AdminStaffPage"));
 const AdminOverviewPage = lazy(() => import("./pages/AdminOverviewPage"));
@@ -245,8 +243,6 @@ const App = () => {
                 <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
                 <Route path="/admin/usuarios" element={<AdminUsersPage />} />
                 <Route path="/admin/crm-usuarios" element={<AdminUsersCrmPage />} />
-                <Route path="/admin/niveis" element={<AdminLevelsPage />} />
-                <Route path="/admin/tipos-conta" element={<AdminAccountTypesPage />} />
                 <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
                 <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
                 <Route path="/admin/cidades" element={<AdminCitiesPage />} />
@@ -267,7 +263,7 @@ const App = () => {
                 <Route path="/admin/lixeira" element={<AdminTrashPage />} />
                 <Route path="/admin/hero-banners" element={<AdminHeroBannersPage />} />
                 <Route path="/admin/pwa" element={<AdminPwaPage />} />
-                <Route path="/admin/regras" element={<AdminTierRulesPage />} />
+                
                 <Route path="/admin/midia" element={<AdminMediaPage />} />
                 <Route path="/admin/servicos" element={<AdminServicesPage />} />
                 <Route path="/admin/leads" element={<AdminLeadsPage />} />
@@ -280,7 +276,7 @@ const App = () => {
                 <Route path="/admin/cta-blocos" element={<AdminCtaBlocksPage />} />
                 <Route path="/admin/secoes-home" element={<AdminHomeSectionsPage />} />
                 <Route path="/admin/leads-patrocinadores" element={<AdminSponsorLeadsPage />} />
-                <Route path="/admin/assinaturas" element={<AdminSubscriptionsPage />} />
+                
                 <Route path="/admin/overview" element={<AdminOverviewPage />} />
                 <Route path="/admin/notificacoes" element={<AdminNotificationsPage />} />
                 <Route path="/admin/chat" element={<AdminChatPage />} />
