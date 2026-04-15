@@ -341,6 +341,7 @@ const AdminSponsorsPage = () => {
         linked_category: form.linked_category, plan_tier: form.plan_tier,
         badge_type: form.badge_type, status: form.status,
         guaranteed_impressions: form.guaranteed_impressions || 0,
+        cnpj: form.cnpj || '', email: form.email || '',
       };
       if (editingId) {
         const { error } = await supabase.from('sponsors').update(payload).eq('id', editingId);
@@ -505,6 +506,7 @@ const AdminSponsorsPage = () => {
       linked_category: s.linked_category || '', plan_tier: s.plan_tier || 'basic',
       badge_type: s.badge_type || 'Patrocinado', status: s.status || 'active',
       guaranteed_impressions: (s as any).guaranteed_impressions || 0,
+      cnpj: s.cnpj || '', email: s.email || '',
     });
     setDialogOpen(true);
   };
