@@ -120,7 +120,7 @@ const DescriptionTemplatePanel = ({
                   key={dt.label}
                   type="button"
                   onClick={() => {
-                    onApply(prev => prev ? `${prev}\n\n${dt.value}` : dt.value);
+                    onApply(dt.value);
                     toast.success(`"${dt.label}" adicionado!`);
                   }}
                   className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-foreground hover:border-accent/40 hover:bg-accent/5 transition-colors"
@@ -660,12 +660,17 @@ const DashboardServicesPage = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-sm font-medium text-foreground">Descrição</label>
-                    <MagicDescriptionButton
-                      serviceName={form.service_name}
-                      categoryName={categories.find((c: any) => selectedCategoryIds.includes(c.id))?.name}
-                      onGenerated={(desc) => setForm(prev => ({ ...prev, description: desc }))}
-                    />
                   </div>
+                  <DescriptionTemplatePanel
+                    categorySlugs={selectedCategoryIds.map(id => {
+                      const cat = categories.find((c: any) => c.id === id);
+                      return cat?.slug || '';
+                    }).filter(Boolean)}
+                    serviceName={form.service_name}
+                    categoryName={categories.find((c: any) => selectedCategoryIds.includes(c.id))?.name}
+                    cityName={form.service_area}
+                    onApply={(desc) => setForm(prev => ({ ...prev, description: prev.description ? `${prev.description}\n\n${desc}` : desc }))}
+                  />
                   <textarea
                     name="description"
                     rows={3}
