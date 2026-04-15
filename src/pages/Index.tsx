@@ -180,7 +180,6 @@ const Index = () => {
 
   const topCities = secondaryData?.topCities || [];
   const sponsors = secondaryData?.sponsors || [];
-  const sponsors = secondaryData?.sponsors || [];
   const counts = secondaryData?.counts;
 
   // Section renderer — memoized to avoid re-creation each render
