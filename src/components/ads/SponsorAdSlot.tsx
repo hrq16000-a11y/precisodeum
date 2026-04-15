@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdDebug } from '@/contexts/AdDebugContext';
 import SponsorImage from '@/components/SponsorImage';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -28,6 +29,14 @@ const ASPECT_RATIOS: Record<string, string> = {
   inline: 'auto',
   sidebar: '6 / 5',
   card: '3 / 2',
+};
+
+/* ─── Ideal dimensions map ─── */
+const IDEAL_DIMS: Record<string, string> = {
+  banner: '728×90',
+  inline: '468×60',
+  sidebar: '300×250',
+  card: '600×400',
 };
 
 /* ─── Data hook ─── */
@@ -63,7 +72,38 @@ function trackAdMetric(sponsorId: string, slotSlug: string, eventType: 'impressi
   } as any).then(() => {});
 }
 
-/* ─── Ghost placeholder for admins ─── */
+/* ─── X-Ray placeholder (admin debug mode) ─── */
+const XRaySlot: React.FC<{ locationKey: string; layout: string; hasAds: boolean; adCount: number }> = ({ locationKey, layout, hasAds, adCount }) => {
+  const ar = ASPECT_RATIOS[layout] || ASPECT_RATIOS.banner;
+  const dims = IDEAL_DIMS[layout] || '728×90';
+  return (
+    <div
+      className="relative flex flex-col items-center justify-center rounded-xl border-2 border-primary/40 overflow-hidden"
+      style={{
+        aspectRatio: ar === 'auto' ? '16 / 3' : ar,
+        minHeight: layout === 'inline' ? 48 : 70,
+        background: 'linear-gradient(135deg, hsl(217 91% 60% / 0.08), hsl(199 89% 48% / 0.12))',
+        boxShadow: '0 0 20px hsl(217 91% 60% / 0.15), inset 0 0 30px hsl(217 91% 60% / 0.05)',
+      }}
+    >
+      {/* Pulsing glow border */}
+      <div className="absolute inset-0 rounded-xl border-2 border-primary/20 animate-pulse pointer-events-none" />
+
+      <div className="flex flex-col items-center gap-1 px-4 text-center z-10">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-[11px] font-bold text-primary tracking-wide uppercase">
+          📡 Raio-X
+        </span>
+        <span className="text-xs font-semibold text-foreground/80">{locationKey}</span>
+        <span className="text-[10px] text-muted-foreground">
+          {dims} · {layout}
+          {hasAds ? ` · ${adCount} anúncio(s) ativo(s)` : ' · Vazio'}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Ghost placeholder for admins (no X-Ray) ─── */
 const GhostSlot: React.FC<{ locationKey: string; layout: string }> = ({ locationKey, layout }) => {
   const ar = ASPECT_RATIOS[layout] || ASPECT_RATIOS.banner;
   return (
@@ -95,10 +135,16 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
   layout = 'banner',
   maxAds,
 }) => {
-  const { city, state } = useGeoCity();
-  const { data: ads = [], isLoading } = useSponsorAds(locationKey, city, state);
+  const { city: geoCity, state: geoState } = useGeoCity();
+  const { xrayEnabled, simulatedCity, simulatedState } = useAdDebug();
   const { profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
+
+  // Use simulated location if admin has set one, otherwise real geo
+  const effectiveCity = (isAdmin && simulatedCity) ? simulatedCity : geoCity;
+  const effectiveState = (isAdmin && simulatedState) ? simulatedState : geoState;
+
+  const { data: ads = [], isLoading } = useSponsorAds(locationKey, effectiveCity, effectiveState);
   const tracked = useRef(new Set<string>());
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -136,10 +182,19 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
     return () => clearInterval(interval);
   }, [displayAds.length, layout]);
 
+  // X-Ray mode: always show the debug overlay for admins
+  if (isAdmin && xrayEnabled) {
+    return (
+      <div className={className}>
+        <XRaySlot locationKey={locationKey} layout={layout} hasAds={displayAds.length > 0} adCount={displayAds.length} />
+      </div>
+    );
+  }
+
   // Loading state
   if (isLoading) return <AdSkeleton layout={layout} />;
 
-  // Ghost mode for admins when no ads
+  // Ghost mode for admins when no ads (non-X-Ray)
   if (displayAds.length === 0) {
     if (isAdmin) return <GhostSlot locationKey={locationKey} layout={layout} />;
     return null;
@@ -217,7 +272,7 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
       <div className="container mx-auto px-4">
         <div className="rounded-xl bg-muted/30 p-3 overflow-hidden">
           <span className="mb-2 block text-center text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Patrocinado{city ? ` • ${city}` : ''}
+            Patrocinado{effectiveCity ? ` • ${effectiveCity}` : ''}
           </span>
           <a href={current.link_url || '#'} target="_blank" rel="noopener noreferrer sponsored"
             onClick={() => handleClick(current)} className="block transition-opacity hover:opacity-80" title={current.title}>
