@@ -17,9 +17,9 @@ const STATUS_OPTIONS = [
 ];
 
 const PROVIDER_STATUS_OPTIONS = [
-  { value: 'pending', label: '⏳ Pendente' },
-  { value: 'approved', label: '✅ Aprovado' },
-  { value: 'rejected', label: '❌ Rejeitado' },
+  { value: 'pending', label: 'Pendente' },
+  { value: 'approved', label: 'Aprovado' },
+  { value: 'rejected', label: 'Rejeitado' },
 ];
 
 interface UserFiltersProps {

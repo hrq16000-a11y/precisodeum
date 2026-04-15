@@ -158,7 +158,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-sidebar-foreground truncate">{profile?.full_name || 'Usuário'}</p>
               <p className="text-[10px] text-sidebar-foreground/50 truncate">
-                {isClient ? '👤 Cliente' : isRH ? '🏢 RH' : '🔧 Profissional'}
+                {isClient ? 'Cliente' : isRH ? 'RH' : 'Profissional'}
               </p>
             </div>
           </div>

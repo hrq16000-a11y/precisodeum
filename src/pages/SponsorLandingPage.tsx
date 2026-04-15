@@ -532,7 +532,7 @@ export default function SponsorLandingPage() {
             >
               <CheckCircle2 className="w-12 h-12 text-white" />
             </motion.div>
-            <h1 className="text-4xl font-bold text-foreground mb-4">Parabéns! 🎉</h1>
+            <h1 className="text-4xl font-bold text-foreground mb-4">Parabéns!</h1>
             <p className="text-lg text-muted-foreground mb-4">
               Seu interesse foi registrado com sucesso.
             </p>
@@ -1134,8 +1134,8 @@ export default function SponsorLandingPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="basic">Básico — R$ 199/mês</SelectItem>
-                          <SelectItem value="pro">PRO — R$ 499/mês ⭐</SelectItem>
-                          <SelectItem value="premium">Premium — R$ 999/mês 👑</SelectItem>
+                          <SelectItem value="pro">PRO — R$ 499/mês</SelectItem>
+                          <SelectItem value="premium">Premium — R$ 999/mês</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

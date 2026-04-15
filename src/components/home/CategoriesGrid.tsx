@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, SearchX, Trophy } from 'lucide-react';
+import { ChevronRight, SearchX, Trophy, Search, Sparkles } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
@@ -20,36 +20,6 @@ interface Props {
 }
 
 const ALL_CHIP = '__all__';
-
-/** Emoji map for macro categories */
-const MACRO_EMOJI: Record<string, string> = {
-  'servicos-domesticos': '🏠',
-  'servicos-tecnicos': '🛠️',
-  'construcao-e-reforma': '🧱',
-  'saude-e-estetica': '🩺',
-  'transporte-e-logistica': '🚚',
-  'alimentacao-e-eventos': '🍽️',
-  'negocios-e-consultoria': '💼',
-  'aulas-e-cursos': '📚',
-  'consultoria-e-negocios': '💼',
-  'eventos-e-festas': '🎉',
-  'moda-e-beleza': '💇',
-  'saude-e-bem-estar': '❤️',
-  'automoveis-e-veiculos': '🚗',
-  'assistencia-tecnica': '🔧',
-};
-
-const getMacroEmoji = (slug: string, name: string): string => {
-  if (MACRO_EMOJI[slug]) return MACRO_EMOJI[slug];
-  const n = name.toLowerCase();
-  if (n.includes('urgên') || n.includes('urgenc')) return '🔥';
-  if (n.includes('reform')) return '🏠';
-  if (n.includes('consert')) return '🛠️';
-  if (n.includes('auto') || n.includes('veíc')) return '🚗';
-  if (n.includes('saúde') || n.includes('saude') || n.includes('estétic')) return '🩺';
-  if (n.includes('serviço') || n.includes('servico')) return '⚖️';
-  return '📋';
-};
 
 /** Full-width CTA button — text & bg from admin */
 const CategoriesViewAllButton = () => {
@@ -154,7 +124,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
       <div className="container">
         <div className="mb-6 text-center">
           <span className="inline-block rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent mb-2">
-            🔍 Categorias
+            <Search className="inline h-3.5 w-3.5 mr-1 -mt-0.5" /> Categorias
           </span>
           <h2 className="font-display text-xl font-bold text-foreground md:text-2xl">
             Encontre Profissionais por Categoria
@@ -202,7 +172,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
-                  ✨ Todos
+                  <Sparkles className="inline h-3.5 w-3.5 mr-1 -mt-0.5" /> Todos
                 </button>
                 {activeChips.map(macro => (
                   <button
@@ -214,7 +184,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
                     }`}
                   >
-                    {getMacroEmoji(macro.slug, macro.name)} {macro.name}
+                    <CategoryIcon icon={macro.icon} size={14} className="inline mr-1 -mt-0.5 text-current" /> {macro.name}
                   </button>
                 ))}
               </div>

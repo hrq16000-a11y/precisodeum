@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
-import { icons } from 'lucide-react';
-import { Search } from 'lucide-react';
+import { icons, Search, CircleDot } from 'lucide-react';
 
 const ALL_ICON_NAMES = Object.keys(icons).sort();
 
@@ -32,7 +31,7 @@ const IconPicker = ({ value, onChange }: Props) => {
         {SelectedIcon ? (
           <SelectedIcon size={18} strokeWidth={1.75} className="text-slate-600 shrink-0" />
         ) : (
-          <span className="text-lg shrink-0">{value || '🔧'}</span>
+          <CircleDot size={18} strokeWidth={1.75} className="text-muted-foreground shrink-0" />
         )}
         <span className="truncate">{value || 'Selecionar ícone'}</span>
       </button>

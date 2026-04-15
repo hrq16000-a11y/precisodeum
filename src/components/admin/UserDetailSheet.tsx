@@ -40,16 +40,16 @@ const PRESET_TAGS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'active', label: '🟢 Ativo', color: 'bg-emerald-500' },
-  { value: 'inactive', label: '🔴 Inativo', color: 'bg-red-500' },
-  { value: 'suspended', label: '⛔ Suspenso', color: 'bg-amber-500' },
-  { value: 'banned', label: '🚫 Banido', color: 'bg-destructive' },
+  { value: 'active', label: 'Ativo', color: 'bg-emerald-500' },
+  { value: 'inactive', label: 'Inativo', color: 'bg-red-500' },
+  { value: 'suspended', label: 'Suspenso', color: 'bg-amber-500' },
+  { value: 'banned', label: 'Banido', color: 'bg-destructive' },
 ];
 
 const PROFILE_TYPE_OPTIONS = [
-  { value: 'client', label: '👤 Cliente' },
-  { value: 'provider', label: '🔧 Profissional' },
-  { value: 'rh', label: '🏢 Agência / RH' },
+  { value: 'client', label: 'Cliente' },
+  { value: 'provider', label: 'Profissional' },
+  { value: 'rh', label: 'Agência / RH' },
 ];
 
 const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetProps) => {
@@ -287,7 +287,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     if (error) toast.error('Erro: ' + error.message);
     else {
       await logAuditAction({ action: 'suspend', resource_type: 'user', resource_id: user.id, details: { reason: suspendReason } });
-      await supabase.from('notifications').insert({ user_id: user.id, title: '⚠️ Conta Suspensa', message: `Motivo: ${suspendReason}`, type: 'system' });
+      await supabase.from('notifications').insert({ user_id: user.id, title: 'Conta Suspensa', message: `Motivo: ${suspendReason}`, type: 'system' });
       toast.success('Usuário suspenso');
       setSuspendReason('');
       onRefresh?.();
@@ -306,7 +306,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     if (error) toast.error('Erro: ' + error.message);
     else {
       await logAuditAction({ action: 'ban', resource_type: 'user', resource_id: user.id, details: { reason: suspendReason || 'Banido' } });
-      await supabase.from('notifications').insert({ user_id: user.id, title: '🚫 Conta Banida', message: 'Sua conta foi banida permanentemente.', type: 'system' });
+      await supabase.from('notifications').insert({ user_id: user.id, title: 'Conta Banida', message: 'Sua conta foi banida permanentemente.', type: 'system' });
       toast.success('Usuário banido');
       onRefresh?.();
     }
@@ -322,7 +322,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     if (error) toast.error('Erro: ' + error.message);
     else {
       await logAuditAction({ action: 'reactivate', resource_type: 'user', resource_id: user.id });
-      await supabase.from('notifications').insert({ user_id: user.id, title: '✅ Conta Reativada', message: 'Sua conta foi reativada.', type: 'system' });
+      await supabase.from('notifications').insert({ user_id: user.id, title: 'Conta Reativada', message: 'Sua conta foi reativada.', type: 'system' });
       toast.success('Reativado');
       onRefresh?.();
     }
@@ -545,11 +545,11 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
 
   const actionLabel = (action: string) => {
     const map: Record<string, string> = {
-      update: 'Editado', create: 'Criado', suspend: '⛔ Suspenso', ban: '🚫 Banido',
-      reactivate: '✅ Reativado', tag_added: '🏷️ Tag', tag_removed: '🏷️ Tag removida',
-      update_permissions: '🔐 Permissões', plan_synced: '📦 Plano sync',
-      soft_delete_service: '🗑️ Serviço excluído', restore_service: '♻️ Serviço restaurado',
-      media_deleted: '🗑️ Mídia excluída',
+      update: 'Editado', create: 'Criado', suspend: 'Suspenso', ban: 'Banido',
+      reactivate: 'Reativado', tag_added: 'Tag', tag_removed: 'Tag removida',
+      update_permissions: 'Permissões', plan_synced: 'Plano sync',
+      soft_delete_service: 'Serviço excluído', restore_service: 'Serviço restaurado',
+      media_deleted: 'Mídia excluída',
     };
     return map[action] || action;
   };
@@ -571,7 +571,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono text-muted-foreground hover:bg-accent transition-colors"
                 title="Copiar user_ref"
               >
-                🔗 {user.user_ref} <Copy className="h-2.5 w-2.5" />
+                {user.user_ref} <Copy className="h-2.5 w-2.5" />
               </button>
             )}
           </div>
@@ -597,7 +597,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 {/* Status dropdown */}
                 <Select value={user.status || 'active'} onValueChange={v => updateField('status', v)}>
                   <SelectTrigger className="h-6 w-auto min-w-0 px-2 py-0 text-[10px] font-medium border-0 bg-transparent gap-0.5 [&>svg]:h-3 [&>svg]:w-3">
-                    <span>{STATUS_OPTIONS.find(s => s.value === user.status)?.label || '🟢 Ativo'}</span>
+                    <span>{STATUS_OPTIONS.find(s => s.value === user.status)?.label || 'Ativo'}</span>
                   </SelectTrigger>
                   <SelectContent>
                     {STATUS_OPTIONS.map(s => (
@@ -609,10 +609,10 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 {/* Profile type dropdown */}
                 <Select value={user.profile_type || 'client'} onValueChange={v => updateField('profile_type', v)}>
                   <SelectTrigger className="h-6 w-auto min-w-0 px-2 py-0 text-[10px] font-medium border-0 bg-transparent gap-0.5 [&>svg]:h-3 [&>svg]:w-3">
-                    <span>{PROFILE_TYPE_OPTIONS.find(p => p.value === user.profile_type)?.label || '👤 Cliente'}</span>
+                    <span>{PROFILE_TYPE_OPTIONS.find(p => p.value === user.profile_type)?.label || 'Cliente'}</span>
                   </SelectTrigger>
                   <SelectContent>
-                    {(profileTypeSettings.length > 0 ? profileTypeSettings : PROFILE_TYPE_OPTIONS.map(p => ({ profile_key: p.value, label: p.label.replace(/^[^\s]+ /, ''), icon: p.label.split(' ')[0] }))).map((p: any) => (
+                    {(profileTypeSettings.length > 0 ? profileTypeSettings : PROFILE_TYPE_OPTIONS.map(p => ({ profile_key: p.value, label: p.label, icon: '' }))).map((p: any) => (
                       <SelectItem key={p.profile_key || p.value} value={p.profile_key || p.value} className="text-xs">
                         {p.icon} {p.label}
                       </SelectItem>
@@ -654,11 +654,11 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
 
                 {/* Provider plan badge (read-only indicator) */}
                 {provider?.plan && (
-                  <Badge variant="outline" className="text-[10px] h-6">⭐ {provider.plan}</Badge>
+                  <Badge variant="outline" className="text-[10px] h-6">{provider.plan}</Badge>
                 )}
 
-                {userIsAdmin && <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] h-6">👑 Admin</Badge>}
-                {userIsModerator && <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-[10px] h-6">🛡️ Mod</Badge>}
+                {userIsAdmin && <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] h-6">Admin</Badge>}
+                {userIsModerator && <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-[10px] h-6">Mod</Badge>}
               </div>
 
               {/* User Tags */}
@@ -681,7 +681,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               </div>
               {user.suspended_reason && <p className="mt-1 opacity-80">Motivo: {user.suspended_reason}</p>}
               {user.suspended_at && <p className="mt-0.5 opacity-60">Em: {format(new Date(user.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
-              <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" onClick={reactivateUser} disabled={suspendLoading}>✅ Reativar</Button>
+              <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" onClick={reactivateUser} disabled={suspendLoading}>Reativar</Button>
             </div>
           )}
 
@@ -725,7 +725,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               {/* Personal Data */}
               <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground text-sm">👤 Dados Pessoais</h3>
+                  <h3 className="font-semibold text-foreground text-sm">Dados Pessoais</h3>
                   <Button size="sm" variant={editing ? 'accent' : 'outline'} className="h-7 text-xs" onClick={() => setEditing(!editing)}>
                     {editing ? 'Cancelar' : 'Editar'}
                   </Button>
@@ -765,7 +765,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                       <Label className="text-xs">Departamento</Label>
                       <Input value={profileForm.department} onChange={e => setProfileForm({ ...profileForm, department: e.target.value })} className="h-8 text-sm" placeholder="Ex: TI, Vendas..." />
                     </div>
-                    <Button size="sm" onClick={saveProfile} className="w-full">💾 Salvar Dados Pessoais</Button>
+                    <Button size="sm" onClick={saveProfile} className="w-full">Salvar Dados Pessoais</Button>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -782,7 +782,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               {provider && (
                 <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-foreground text-sm">🏢 Dados do Negócio</h3>
+                    <h3 className="font-semibold text-foreground text-sm">Dados do Negócio</h3>
                     <Button size="sm" variant={editing ? 'accent' : 'outline'} className="h-7 text-xs" onClick={() => setEditing(!editing)}>
                       {editing ? 'Cancelar' : 'Editar'}
                     </Button>
@@ -857,7 +857,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                           <Input value={providerForm.service_radius} onChange={e => setProviderForm({ ...providerForm, service_radius: e.target.value })} className="h-8 text-sm" />
                         </div>
                       </div>
-                      <Button size="sm" onClick={saveProvider} className="w-full">💾 Salvar Dados do Negócio</Button>
+                      <Button size="sm" onClick={saveProvider} className="w-full">Salvar Dados do Negócio</Button>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -868,7 +868,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                       <InfoRow icon={<Globe className="h-4 w-4" />} label="Website" value={provider.website || '—'} />
                       <InfoRow icon={<Calendar className="h-4 w-4" />} label="Experiência" value={`${provider.years_experience || 0} anos`} />
                       {provider.categories && <InfoRow icon={<FileText className="h-4 w-4" />} label="Categoria" value={`${(provider.categories as any)?.icon || ''} ${(provider.categories as any)?.name || ''}`} />}
-                      <InfoRow icon={<Eye className="h-4 w-4" />} label="Avaliações" value={`${provider.rating_avg?.toFixed(1) || '0'} ⭐ (${provider.review_count || 0})`} />
+                      <InfoRow icon={<Eye className="h-4 w-4" />} label="Avaliações" value={`${provider.rating_avg?.toFixed(1) || '0'} (${provider.review_count || 0})`} />
                       {provider.slug && (
                         <a href={`/profissional/${provider.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline flex items-center gap-1 pt-1">
                           <ExternalLink className="h-3 w-3" /> /profissional/{provider.slug}
@@ -916,9 +916,9 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                             <p className="font-semibold text-foreground text-sm truncate">{s.service_name}</p>
                             {s.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{s.description}</p>}
                             <div className="flex flex-wrap gap-2 mt-1.5 text-[10px] text-muted-foreground">
-                              {s.price && <span>💰 {s.price}</span>}
-                              <span>👁️ {s.view_count || 0}</span>
-                              <span>📅 {s.created_at ? format(new Date(s.created_at), 'dd/MM/yy') : ''}</span>
+                              {s.price && <span>R$ {s.price}</span>}
+                              <span>{s.view_count || 0} views</span>
+                              <span>{s.created_at ? format(new Date(s.created_at), 'dd/MM/yy') : ''}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
@@ -975,7 +975,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
             {/* ====== PORTFOLIO / MEDIA TAB ====== */}
             <TabsContent value="portfolio" className="space-y-4 mt-0">
               <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
-                <h3 className="font-semibold text-foreground text-sm">📸 Portfólio ({portfolio.length} álbuns • {totalPortfolioPhotos} fotos)</h3>
+                <h3 className="font-semibold text-foreground text-sm">Portfólio ({portfolio.length} álbuns • {totalPortfolioPhotos} fotos)</h3>
                 {portfolio.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-3">Nenhum álbum</p>
                 ) : (
@@ -1001,7 +1001,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               </div>
 
               <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
-                <h3 className="font-semibold text-foreground text-sm">🗂️ Mídias ({media.length})</h3>
+                <h3 className="font-semibold text-foreground text-sm">Mídias ({media.length})</h3>
                 {media.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-3">Nenhuma mídia</p>
                 ) : (
@@ -1110,7 +1110,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     </div>
                     {user.suspended_reason && <p className="text-xs text-muted-foreground">Motivo: {user.suspended_reason}</p>}
                     {user.suspended_at && <p className="text-xs text-muted-foreground">Data: {format(new Date(user.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
-                    <Button size="sm" onClick={reactivateUser} disabled={suspendLoading} className="w-full">✅ Reativar</Button>
+                    <Button size="sm" onClick={reactivateUser} disabled={suspendLoading} className="w-full">Reativar</Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1127,7 +1127,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                         <Ban className="h-3.5 w-3.5 mr-1" /> Banir
                       </Button>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">⚠️ Suspensão é reversível. Banimento é permanente.</p>
+                    <p className="text-[10px] text-muted-foreground">Suspensão é reversível. Banimento é permanente.</p>
                   </div>
                 )}
               </div>
@@ -1140,7 +1140,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><Shield className="h-4 w-4" /> Roles</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                    <div><p className="text-sm font-medium">👑 Admin</p><p className="text-xs text-muted-foreground">Acesso total</p></div>
+                    <div><p className="text-sm font-medium">Admin</p><p className="text-xs text-muted-foreground">Acesso total</p></div>
                     <Button size="sm" variant={userIsAdmin ? 'destructive' : 'default'} className="h-8 text-xs shrink-0" onClick={toggleAdmin} disabled={permLoading}>
                       {userIsAdmin ? 'Revogar' : 'Conceder'}
                     </Button>
@@ -1153,7 +1153,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                   </div>
                   <div className="rounded-lg border border-border p-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div><p className="text-sm font-medium">📢 Patrocinador</p></div>
+                      <div><p className="text-sm font-medium">Patrocinador</p></div>
                       <Button size="sm" variant={userIsSponsor ? 'destructive' : 'default'} className="h-8 text-xs shrink-0" onClick={toggleSponsor} disabled={permLoading}>
                         {userIsSponsor ? 'Revogar' : 'Conceder'}
                       </Button>

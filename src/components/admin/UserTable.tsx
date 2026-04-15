@@ -25,15 +25,15 @@ const profileTypeBadge = (t: string) => {
 };
 
 const profileTypeIcon = (t: string) => {
-  if (t === 'rh') return '🏢';
-  if (t === 'provider') return '🔧';
-  return '👤';
+  if (t === 'rh') return 'RH';
+  if (t === 'provider') return 'PRO';
+  return 'USR';
 };
 
 const providerStatusBadge: Record<string, { label: string; cls: string }> = {
-  pending: { label: '⏳ Pendente', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
-  approved: { label: '✅ Aprovado', cls: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
-  rejected: { label: '❌ Rejeitado', cls: 'bg-destructive/10 text-destructive' },
+  pending: { label: 'Pendente', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
+  approved: { label: 'Aprovado', cls: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
+  rejected: { label: 'Rejeitado', cls: 'bg-destructive/10 text-destructive' },
 };
 
 interface UserTableProps {
@@ -290,7 +290,7 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 {isAdminUser && (
                   <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
-                    👑 Admin
+                    Admin
                   </Badge>
                 )}
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${profileTypeBadge(type)}`}>

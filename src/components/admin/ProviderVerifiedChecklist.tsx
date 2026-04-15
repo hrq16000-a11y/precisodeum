@@ -62,7 +62,7 @@ const ProviderVerifiedChecklist = ({ provider, rules, compact = false }: Props) 
           <TooltipContent side="bottom" className="max-w-xs">
             <div className="space-y-1">
               <p className="font-semibold text-xs mb-1.5">
-                {allMet ? '✅ Todos os critérios atendidos' : '⚠️ Critérios pendentes'}
+                {allMet ? 'Todos os critérios atendidos' : 'Critérios pendentes'}
               </p>
               {checks.map((c, i) => (
                 <div key={i} className="flex items-center gap-1.5 text-xs">

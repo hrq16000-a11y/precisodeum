@@ -8,13 +8,15 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const typeIcons: Record<string, string> = {
-  lead: '📩',
-  review: '⭐',
-  system: '🔔',
-  job: '💼',
-  approval: '✅',
-  message: '💬',
+import { Mail, Star, Bell as BellIcon2, Briefcase, CheckCircle, MessageCircle } from 'lucide-react';
+
+const typeIconMap: Record<string, React.ComponentType<any>> = {
+  lead: Mail,
+  review: Star,
+  system: BellIcon2,
+  job: Briefcase,
+  approval: CheckCircle,
+  message: MessageCircle,
 };
 
 const NotificationItem = ({
@@ -42,7 +44,7 @@ const NotificationItem = ({
         : 'border-accent/30 bg-accent/5'
     }`}
   >
-    <span className="mt-0.5 text-lg">{typeIcons[notification.type] || '🔔'}</span>
+    <span className="mt-0.5">{(() => { const Icon = typeIconMap[notification.type] || BellIcon2; return <Icon className="h-5 w-5 text-muted-foreground" />; })()}</span>
     <div className="flex-1 min-w-0">
       <p className={`text-sm font-medium leading-tight ${notification.read ? 'text-muted-foreground' : 'text-foreground'}`}>
         {notification.title}
@@ -53,7 +55,7 @@ const NotificationItem = ({
       )}
       {(notification as any).video_url && (
         <a href={(notification as any).video_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[10px] text-primary hover:underline">
-          🎬 Ver vídeo
+          Ver vídeo
         </a>
       )}
       <p className="mt-1 text-[10px] text-muted-foreground/70">

@@ -25,7 +25,7 @@ const GeoPromptBanner = ({ showRadius = true }: GeoPromptBannerProps) => {
         <div className="flex items-center gap-2">
           <Navigation className="h-4 w-4 text-primary shrink-0" />
           <span className="text-foreground">
-            📍 Buscando profissionais a até <strong>{radiusKm}km</strong> de{' '}
+            Buscando profissionais a até <strong>{radiusKm}km</strong> de{' '}
             <strong>{city}</strong>
           </span>
           {precise ? (
@@ -83,7 +83,7 @@ const GeoPromptBanner = ({ showRadius = true }: GeoPromptBannerProps) => {
       <div className="flex items-center gap-2 flex-1 text-sm">
         <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
         <span className="text-foreground">
-          ⚠️ Resultados sem filtro de localização — ative o GPS para ver profissionais perto de você.
+          Resultados sem filtro de localização — ative o GPS para ver profissionais perto de você.
         </span>
       </div>
       <Button

@@ -391,7 +391,7 @@ const AdminSponsorLeadsPage = () => {
                   <p className="font-semibold">{editItem.company_name}</p>
                   <p className="text-muted-foreground">CNPJ: {editItem.cnpj}</p>
                   <p className="text-muted-foreground">{editItem.email} · {editItem.phone}</p>
-                  <p className="text-muted-foreground">Plano: {PLAN_MAP[editItem.plan] || editItem.plan} · Contrato: {editItem.contract_accepted ? '✅ Aceito' : '❌ Não'}</p>
+                  <p className="text-muted-foreground">Plano: {PLAN_MAP[editItem.plan] || editItem.plan} · Contrato: {editItem.contract_accepted ? 'Aceito' : 'Não'}</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Status</Label>

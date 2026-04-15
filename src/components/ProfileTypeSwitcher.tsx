@@ -84,7 +84,7 @@ const ProfileTypeSwitcher = () => {
             >
               <Icon className="h-3.5 w-3.5" />
               {t.label}
-              {isActive && <span className="ml-1">✓</span>}
+              {isActive && <span className="ml-1">•</span>}
             </button>
           );
         })}

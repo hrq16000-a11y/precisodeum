@@ -12,15 +12,15 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 const MOTIVATIONAL_TIPS: Record<string, string> = {
-  empreendedorismo: '🚀 Valorize seu negócio',
-  vendas: '💰 Aumente seus ganhos',
-  marketing: '📢 Atraia mais clientes',
-  financeiro: '📊 Organize suas finanças',
-  técnico: '🔧 Aprimore suas habilidades',
-  segurança: '🛡️ Trabalhe com segurança',
-  tecnologia: '💻 Domine a tecnologia',
-  gestão: '👥 Lidere com confiança',
-  atendimento: '🤝 Encante seus clientes',
+  empreendedorismo: 'Valorize seu negócio',
+  vendas: 'Aumente seus ganhos',
+  marketing: 'Atraia mais clientes',
+  financeiro: 'Organize suas finanças',
+  técnico: 'Aprimore suas habilidades',
+  segurança: 'Trabalhe com segurança',
+  tecnologia: 'Domine a tecnologia',
+  gestão: 'Lidere com confiança',
+  atendimento: 'Encante seus clientes',
 };
 
 interface CourseCardProps {
@@ -30,7 +30,7 @@ interface CourseCardProps {
 }
 
 const CourseCard = ({ course, index, featured = false }: CourseCardProps) => {
-  const tip = MOTIVATIONAL_TIPS[course.category] || '✨ Invista em você';
+  const tip = MOTIVATIONAL_TIPS[course.category] || 'Invista em você';
 
   return (
     <motion.div

@@ -79,7 +79,7 @@ class ErrorGuard extends Component<Props, State> {
             )}
 
             <div className="rounded-lg border border-border bg-muted/30 p-3 text-left text-xs text-muted-foreground space-y-1">
-              <p className="font-medium text-foreground">💡 O que você pode fazer:</p>
+              <p className="font-medium text-foreground">O que você pode fazer:</p>
               <p>• Tire um print da tela e envie para o suporte</p>
               <p>• Tente novamente clicando no botão abaixo</p>
               <p>• Se o problema persistir, entre em contato conosco</p>

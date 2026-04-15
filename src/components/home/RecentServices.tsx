@@ -85,7 +85,7 @@ const RecentServices = ({ services }: Props) => {
               ? `${s.provider.city}${s.provider.state ? ` - ${s.provider.state}` : ''}`
               : s.service_area || 'Brasil';
             const catSlug = (s.categories as any)?.slug;
-            const catIcon = (s.categories as any)?.icon || '🔧';
+            const catIcon = (s.categories as any)?.icon || 'Wrench';
             const catName = (s.categories as any)?.name;
             const ago = timeAgo(s.created_at);
 
