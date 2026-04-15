@@ -11,8 +11,9 @@ import { Progress } from '@/components/ui/progress';
 import {
   BarChart3, Eye, MousePointerClick, Image, FileText, Megaphone,
   TrendingUp, ArrowRight, Bell, Crown, Calendar, CheckCircle2,
-  AlertTriangle, Upload, Zap
+  AlertTriangle, Upload, Zap, FileDown
 } from 'lucide-react';
+import { exportSponsorPdf } from '@/lib/exportSponsorPdf';
 import { SponsorImage } from '@/components/SponsorImage';
 import { motion } from 'framer-motion';
 import { format, differenceInDays, parseISO } from 'date-fns';
