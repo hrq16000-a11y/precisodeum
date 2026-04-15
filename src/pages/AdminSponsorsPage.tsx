@@ -596,6 +596,9 @@ const AdminSponsorsPage = () => {
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="sponsors">📋 Patrocinadores</TabsTrigger>
             <TabsTrigger value="visual">📍 Mapa de Posições</TabsTrigger>
+            <TabsTrigger value="regions">🗺️ Praças</TabsTrigger>
+            <TabsTrigger value="plans">💰 Planos</TabsTrigger>
+            <TabsTrigger value="subscriptions">📑 Assinaturas</TabsTrigger>
             <TabsTrigger value="links">🔗 Vínculos</TabsTrigger>
             <TabsTrigger value="campaigns">📢 Campanhas</TabsTrigger>
             <TabsTrigger value="contracts">📄 Contratos</TabsTrigger>
