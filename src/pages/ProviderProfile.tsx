@@ -1136,6 +1136,38 @@ const ProviderProfile = () => {
               </motion.div>
             </div>
 
+            {/* ── Trust Statistics Section ── */}
+            <motion.div
+              className="mt-5 rounded-xl bg-gradient-to-r from-emerald-500/5 via-accent/5 to-blue-500/5 border border-border/50 p-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+            >
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5" /> Estatísticas de Confiança
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">
+                    {provider.years_experience > 0 ? `${provider.years_experience}+` : '—'}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Anos de experiência</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">{services.length}</p>
+                  <p className="text-[10px] text-muted-foreground">Serviços oferecidos</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">{provider.review_count || 0}</p>
+                  <p className="text-[10px] text-muted-foreground">Avaliações positivas</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">{portfolioImages.length}</p>
+                  <p className="text-[10px] text-muted-foreground">Fotos de trabalhos</p>
+                </div>
+              </div>
+            </motion.div>
+
             {/* ── Stats Mini Cards ── */}
             <div className="mt-5 grid grid-cols-3 gap-2">
               {provider.years_experience > 0 && (
