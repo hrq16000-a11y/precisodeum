@@ -22,8 +22,6 @@
     <meta name="apple-mobile-web-app-title" content="Preciso de Um" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 
-    
-
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://qaftogrqeyymewoofexc.supabase.co" crossorigin />
@@ -32,7 +30,10 @@
     <link rel="dns-prefetch" href="https://api.bigdatacloud.net" />
     <link rel="dns-prefetch" href="https://storage.googleapis.com" />
 
+    <!-- LCP hero image — discoverable from initial HTML for fastest paint -->
     <link rel="preload" as="image" href="/hero-cat-instalacoes.webp" type="image/webp" fetchpriority="high" />
+
+    <!-- Fonts: non-blocking with font-display:swap already in Google URL -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500&display=swap" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500&display=swap" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500&display=swap" /></noscript>
@@ -82,18 +83,26 @@
     </script>
 
     <style>
-      /* Critical CSS: prevent FOUC and accelerate FCP */
+      /* Critical CSS: prevent FOUC, accelerate FCP, stabilize CLS */
       *,*::before,*::after{box-sizing:border-box;border-width:0;border-style:solid}
-      html{line-height:1.5;-webkit-text-size-adjust:100%;font-family:ui-sans-serif,system-ui,sans-serif}
+      html{line-height:1.5;-webkit-text-size-adjust:100%;font-family:'Inter',ui-sans-serif,system-ui,sans-serif}
       body{margin:0;line-height:inherit;background-color:hsl(210 20% 98%);color:hsl(215 40% 12%)}
       #root{min-height:100vh;display:flex;flex-direction:column}
-      /* Skeleton shell for instant FCP */
+
+      /* Header: fixed height to prevent CLS */
       .shell-header{height:56px;background:#fff;border-bottom:1px solid hsl(210 15% 92%);display:flex;align-items:center;padding:0 16px}
-      .shell-logo{width:140px;height:32px;background:hsl(210 15% 90%);border-radius:6px}
-      .shell-hero{height:320px;background:linear-gradient(135deg,hsl(210 15% 92%),hsl(210 15% 88%));display:flex;align-items:center;justify-content:center}
+      .shell-logo{width:166px;height:48px;background:hsl(210 15% 90%);border-radius:6px}
+
+      /* Hero: fixed height matching component */
+      .shell-hero{height:340px;background:linear-gradient(135deg,hsl(25 95% 53% / 0.8),hsl(25 95% 53% / 0.65));display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+
       .shell-pulse{animation:shellPulse 1.5s ease-in-out infinite}
       @keyframes shellPulse{0%,100%{opacity:.6}50%{opacity:1}}
       .shell-hide{display:none}
+
+      /* Font-display swap fallback for system font stack */
+      @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:700 800;font-display:swap;src:local('Plus Jakarta Sans')}
+      @font-face{font-family:'Inter';font-style:normal;font-weight:400 500;font-display:swap;src:local('Inter')}
     </style>
   </head>
 
@@ -106,8 +115,6 @@
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
-
-
 
     <noscript>
       <div style="max-width:800px;margin:2rem auto;padding:1rem;font-family:system-ui,sans-serif">
