@@ -47,9 +47,9 @@ const STATUS_OPTIONS = [
 ];
 
 const PROFILE_TYPE_OPTIONS = [
-  { value: 'client', label: '👤 Cliente' },
-  { value: 'provider', label: '🔧 Profissional' },
-  { value: 'rh', label: '🏢 Agência / RH' },
+  { value: 'client', label: 'Cliente' },
+  { value: 'provider', label: 'Profissional' },
+  { value: 'rh', label: 'Agência / RH' },
 ];
 
 const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetProps) => {
@@ -322,7 +322,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     if (error) toast.error('Erro: ' + error.message);
     else {
       await logAuditAction({ action: 'reactivate', resource_type: 'user', resource_id: user.id });
-      await supabase.from('notifications').insert({ user_id: user.id, title: '✅ Conta Reativada', message: 'Sua conta foi reativada.', type: 'system' });
+      await supabase.from('notifications').insert({ user_id: user.id, title: 'Conta Reativada', message: 'Sua conta foi reativada.', type: 'system' });
       toast.success('Reativado');
       onRefresh?.();
     }
@@ -545,11 +545,11 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
 
   const actionLabel = (action: string) => {
     const map: Record<string, string> = {
-      update: 'Editado', create: 'Criado', suspend: '⛔ Suspenso', ban: '🚫 Banido',
-      reactivate: '✅ Reativado', tag_added: '🏷️ Tag', tag_removed: '🏷️ Tag removida',
-      update_permissions: '🔐 Permissões', plan_synced: '📦 Plano sync',
-      soft_delete_service: '🗑️ Serviço excluído', restore_service: '♻️ Serviço restaurado',
-      media_deleted: '🗑️ Mídia excluída',
+      update: 'Editado', create: 'Criado', suspend: 'Suspenso', ban: 'Banido',
+      reactivate: 'Reativado', tag_added: 'Tag', tag_removed: 'Tag removida',
+      update_permissions: 'Permissões', plan_synced: 'Plano sync',
+      soft_delete_service: 'Serviço excluído', restore_service: 'Serviço restaurado',
+      media_deleted: 'Mídia excluída',
     };
     return map[action] || action;
   };
@@ -609,10 +609,10 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 {/* Profile type dropdown */}
                 <Select value={user.profile_type || 'client'} onValueChange={v => updateField('profile_type', v)}>
                   <SelectTrigger className="h-6 w-auto min-w-0 px-2 py-0 text-[10px] font-medium border-0 bg-transparent gap-0.5 [&>svg]:h-3 [&>svg]:w-3">
-                    <span>{PROFILE_TYPE_OPTIONS.find(p => p.value === user.profile_type)?.label || '👤 Cliente'}</span>
+                    <span>{PROFILE_TYPE_OPTIONS.find(p => p.value === user.profile_type)?.label || 'Cliente'}</span>
                   </SelectTrigger>
                   <SelectContent>
-                    {(profileTypeSettings.length > 0 ? profileTypeSettings : PROFILE_TYPE_OPTIONS.map(p => ({ profile_key: p.value, label: p.label.replace(/^[^\s]+ /, ''), icon: p.label.split(' ')[0] }))).map((p: any) => (
+                    {(profileTypeSettings.length > 0 ? profileTypeSettings : PROFILE_TYPE_OPTIONS.map(p => ({ profile_key: p.value, label: p.label, icon: '' }))).map((p: any) => (
                       <SelectItem key={p.profile_key || p.value} value={p.profile_key || p.value} className="text-xs">
                         {p.icon} {p.label}
                       </SelectItem>
@@ -654,11 +654,11 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
 
                 {/* Provider plan badge (read-only indicator) */}
                 {provider?.plan && (
-                  <Badge variant="outline" className="text-[10px] h-6">⭐ {provider.plan}</Badge>
+                  <Badge variant="outline" className="text-[10px] h-6">{provider.plan}</Badge>
                 )}
 
-                {userIsAdmin && <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] h-6">👑 Admin</Badge>}
-                {userIsModerator && <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-[10px] h-6">🛡️ Mod</Badge>}
+                {userIsAdmin && <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] h-6">Admin</Badge>}
+                {userIsModerator && <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-[10px] h-6">Mod</Badge>}
               </div>
 
               {/* User Tags */}
@@ -681,7 +681,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               </div>
               {user.suspended_reason && <p className="mt-1 opacity-80">Motivo: {user.suspended_reason}</p>}
               {user.suspended_at && <p className="mt-0.5 opacity-60">Em: {format(new Date(user.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
-              <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" onClick={reactivateUser} disabled={suspendLoading}>✅ Reativar</Button>
+              <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" onClick={reactivateUser} disabled={suspendLoading}>Reativar</Button>
             </div>
           )}
 
@@ -725,7 +725,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               {/* Personal Data */}
               <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground text-sm">👤 Dados Pessoais</h3>
+                  <h3 className="font-semibold text-foreground text-sm">Dados Pessoais</h3>
                   <Button size="sm" variant={editing ? 'accent' : 'outline'} className="h-7 text-xs" onClick={() => setEditing(!editing)}>
                     {editing ? 'Cancelar' : 'Editar'}
                   </Button>
@@ -782,7 +782,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               {provider && (
                 <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-foreground text-sm">🏢 Dados do Negócio</h3>
+                    <h3 className="font-semibold text-foreground text-sm">Dados do Negócio</h3>
                     <Button size="sm" variant={editing ? 'accent' : 'outline'} className="h-7 text-xs" onClick={() => setEditing(!editing)}>
                       {editing ? 'Cancelar' : 'Editar'}
                     </Button>
@@ -868,7 +868,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                       <InfoRow icon={<Globe className="h-4 w-4" />} label="Website" value={provider.website || '—'} />
                       <InfoRow icon={<Calendar className="h-4 w-4" />} label="Experiência" value={`${provider.years_experience || 0} anos`} />
                       {provider.categories && <InfoRow icon={<FileText className="h-4 w-4" />} label="Categoria" value={`${(provider.categories as any)?.icon || ''} ${(provider.categories as any)?.name || ''}`} />}
-                      <InfoRow icon={<Eye className="h-4 w-4" />} label="Avaliações" value={`${provider.rating_avg?.toFixed(1) || '0'} ⭐ (${provider.review_count || 0})`} />
+                      <InfoRow icon={<Eye className="h-4 w-4" />} label="Avaliações" value={`${provider.rating_avg?.toFixed(1) || '0'} (${provider.review_count || 0})`} />
                       {provider.slug && (
                         <a href={`/profissional/${provider.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline flex items-center gap-1 pt-1">
                           <ExternalLink className="h-3 w-3" /> /profissional/{provider.slug}
@@ -975,7 +975,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
             {/* ====== PORTFOLIO / MEDIA TAB ====== */}
             <TabsContent value="portfolio" className="space-y-4 mt-0">
               <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
-                <h3 className="font-semibold text-foreground text-sm">📸 Portfólio ({portfolio.length} álbuns • {totalPortfolioPhotos} fotos)</h3>
+                <h3 className="font-semibold text-foreground text-sm">Portfólio ({portfolio.length} álbuns • {totalPortfolioPhotos} fotos)</h3>
                 {portfolio.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-3">Nenhum álbum</p>
                 ) : (
@@ -1110,7 +1110,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     </div>
                     {user.suspended_reason && <p className="text-xs text-muted-foreground">Motivo: {user.suspended_reason}</p>}
                     {user.suspended_at && <p className="text-xs text-muted-foreground">Data: {format(new Date(user.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
-                    <Button size="sm" onClick={reactivateUser} disabled={suspendLoading} className="w-full">✅ Reativar</Button>
+                    <Button size="sm" onClick={reactivateUser} disabled={suspendLoading} className="w-full">Reativar</Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1140,7 +1140,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><Shield className="h-4 w-4" /> Roles</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                    <div><p className="text-sm font-medium">👑 Admin</p><p className="text-xs text-muted-foreground">Acesso total</p></div>
+                    <div><p className="text-sm font-medium">Admin</p><p className="text-xs text-muted-foreground">Acesso total</p></div>
                     <Button size="sm" variant={userIsAdmin ? 'destructive' : 'default'} className="h-8 text-xs shrink-0" onClick={toggleAdmin} disabled={permLoading}>
                       {userIsAdmin ? 'Revogar' : 'Conceder'}
                     </Button>
