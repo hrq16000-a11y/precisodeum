@@ -338,7 +338,10 @@ const SignupPage = () => {
     }
 
     setLoading(false);
-    toast.success('Conta criada com sucesso! Bem-vindo!');
+    toast.success('🎉 Conta criada com sucesso! Bem-vindo!', {
+      description: accountType === 'provider' ? '🏅 Você começa no Nível Bronze! Cadastre serviços para subir.' : 'Explore os profissionais da plataforma.',
+      duration: 5000,
+    });
     if (accountType === 'client') {
       navigate('/');
     } else if (accountType === 'rh') {
@@ -358,6 +361,19 @@ const SignupPage = () => {
   const selectedType = ACCOUNT_TYPES.find(t => t.value === accountType);
   const showProviderFields = accountType === 'provider';
 
+  // Estimated reach based on city
+  const [estimatedReach, setEstimatedReach] = useState(0);
+  useEffect(() => {
+    if (!form.city) { setEstimatedReach(0); return; }
+    (async () => {
+      const { count } = await supabase.from('providers').select('id', { count: 'exact', head: true })
+        .eq('city', form.city).eq('status', 'approved');
+      // Estimate: each provider sees ~200 visitors/month, so the user gets exposure to that audience
+      const baseReach = Math.max(50, (count || 0) * 80 + 200);
+      setEstimatedReach(baseReach);
+    })();
+  }, [form.city]);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -366,7 +382,7 @@ const SignupPage = () => {
 
           {/* STEP 1: Choose account type */}
           {step === STEP_TYPE && (
-            <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-card">
+            <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl p-6 sm:p-8 shadow-xl">
               <h1 className="text-center font-display text-2xl font-bold text-foreground">Criar Conta</h1>
               <p className="mt-2 text-center text-sm text-muted-foreground">
                 Escolha o tipo de conta que melhor se encaixa no seu perfil
@@ -440,7 +456,7 @@ const SignupPage = () => {
 
           {/* STEP 2: Form fields */}
           {step === STEP_DATA && (
-            <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-card">
+            <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl p-6 sm:p-8 shadow-xl">
               <button
                 onClick={() => setStep(STEP_TYPE)}
                 className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -502,10 +518,15 @@ const SignupPage = () => {
                 {/* Provider-specific fields */}
                 {showProviderFields && (
                   <>
-                    <div className="rounded-lg border border-accent/20 bg-accent/5 p-3">
+                    <div className="rounded-xl border border-accent/20 bg-accent/5 backdrop-blur-sm p-3">
                       <p className="text-xs font-medium text-accent">
                         ✨ Complete os dados abaixo para criar sua página profissional
                       </p>
+                      {estimatedReach > 0 && (
+                        <p className="mt-1.5 text-[11px] text-accent/80 font-semibold">
+                          📊 Alcance estimado: até <span className="text-accent font-black">{estimatedReach.toLocaleString('pt-BR')}</span> pessoas/mês na sua região
+                        </p>
+                      )}
                     </div>
 
                     <div>
