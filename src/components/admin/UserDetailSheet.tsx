@@ -4,7 +4,7 @@ import {
   Shield, Mail, Phone, Calendar, UserCheck, Briefcase, FileText, History,
   ImageIcon, Settings, Camera, Loader2, Trash2, Plus, ExternalLink,
   Eye, MapPin, Globe, MessageCircle, ArrowUp, ArrowDown, Upload, Key, Lock,
-  Tag, Ban, AlertTriangle, X, Clock
+  Tag, Ban, AlertTriangle, X, Clock, Copy
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
