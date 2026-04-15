@@ -38,6 +38,7 @@ const PopularSearches = lazy(() => import('@/components/home/PopularSearches'));
 const AdBanner = lazy(() => import('@/components/ads/AdBanner'));
 const AdShowcase = lazy(() => import('@/components/ads/AdShowcase'));
 const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+const SponsorAdSlot = lazy(() => import('@/components/ads/SponsorAdSlot'));
 const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
 const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
 const CmsBannersCarousel = lazy(() => import('@/components/home/CmsBannersCarousel'));
@@ -90,7 +91,7 @@ const SectionFallback = ({ slug }: { slug?: string }) => {
 };
 
 // Default section order
-const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,courses,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
+const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,home_featured_ad,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,courses,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
 
 const Index = () => {
   const { city: geoCity } = useGeoCity();
@@ -200,11 +201,14 @@ const Index = () => {
         return <PwaInstallSection key={slug} />;
       case 'dynamic':
         return <DynamicPageBlocks key={slug} pageSlug="home" city={geoCity || undefined} />;
+      case 'home_featured_ad':
+        return <SponsorAdSlot key={slug} locationKey="home-featured" layout="banner" />;
       case 'ad1':
         return (
           <div key={slug}>
             <AdBanner position="between-sections" className="container mx-auto px-4" />
             <AdSlot slotSlug="home-between" />
+            <SponsorAdSlot locationKey="home-between" layout="banner" />
           </div>
         );
       case 'featured':
