@@ -45,16 +45,11 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
     items: [
       { label: 'Prestadores', icon: 'Briefcase', path: '/admin/prestadores' },
       { label: 'Usuários', icon: 'Users', path: '/admin/usuarios' },
-      { label: 'Níveis', icon: 'Shield', path: '/admin/niveis' },
-      { label: 'Tipos de Conta', icon: 'CreditCard', path: '/admin/tipos-conta' },
-      
       { label: 'Serviços', icon: 'Package', path: '/admin/servicos' },
       { label: 'Leads', icon: 'FileText', path: '/admin/leads' },
-      { label: 'Planos & Regras', icon: 'Crown', path: '/admin/regras' },
-      { label: 'Assinaturas', icon: 'CreditCard', path: '/admin/assinaturas' },
-      { label: 'Boosts & Ranking', icon: 'Sparkles', path: '/admin/boosts' },
+      { label: 'Gamificação', icon: 'Crown', path: '/admin/gamificacao' },
+      { label: 'Staff & Acessos', icon: 'Shield', path: '/admin/staff' },
       { label: 'Comunidade', icon: 'Users2', path: '/admin/comunidade' },
-      { label: 'Cidades', icon: 'MapPin', path: '/admin/cidades' },
     ],
   },
   {
@@ -81,6 +76,8 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Patrocinadores', icon: 'Megaphone', path: '/admin/patrocinadores' },
       { label: 'CRM Comercial', icon: 'HandshakeIcon', path: '/admin/crm-patrocinadores' },
       { label: 'Leads Comerciais', icon: 'FileText', path: '/admin/leads-patrocinadores' },
+      { label: 'Cidades', icon: 'MapPin', path: '/admin/cidades' },
+      { label: 'Boosts', icon: 'Sparkles', path: '/admin/boosts' },
       { label: 'Slots Anúncios', icon: 'LayoutGrid', path: '/admin/slots-anuncios' },
       { label: 'Estatísticas', icon: 'BarChart3', path: '/admin/estatisticas' },
     ],
