@@ -610,6 +610,15 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
             <div className="flex-1 min-w-0">
               <h2 className="font-display text-lg sm:text-xl font-bold text-foreground truncate">{user.full_name || '—'}</h2>
               <p className="text-xs sm:text-sm text-muted-foreground truncate">{user.email || ''}</p>
+              {user.user_ref && (
+                <button
+                  onClick={() => { navigator.clipboard.writeText(user.user_ref); toast.success('user_ref copiado!'); }}
+                  className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono text-muted-foreground hover:bg-accent transition-colors cursor-pointer"
+                  title="Clique para copiar"
+                >
+                  🔗 {user.user_ref} <Copy className="h-2.5 w-2.5" />
+                </button>
+              )}
               <div className="flex flex-wrap items-center gap-1 mt-1.5">
                 {isAdmin && <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">👑 Admin</Badge>}
                 {userIsModerator && <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-[10px]">🛡️ Mod</Badge>}
