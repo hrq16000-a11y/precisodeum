@@ -1307,7 +1307,7 @@ const ProviderProfile = () => {
                   const rpInitials = rpName.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
                   const rpAvatar = avatarLarge(rp.profiles?.avatar_url || rp.photo_url);
                   const rpCategory = (rp.categories as any)?.name || '';
-                  const rpCatIcon = (rp.categories as any)?.icon || '🔧';
+                  const rpCatIcon = (rp.categories as any)?.icon || '';
                   return (
                     <motion.div key={rp.id} variants={scaleIn} whileHover={{ y: -6 }} transition={{ duration: 0.25 }}>
                       <Link
@@ -1587,9 +1587,9 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
         </div>
       )}
       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-        {service.price && <span className="font-semibold text-foreground">💰 {service.price}</span>}
-        {service.service_area && <span>📍 {formatLocationString(service.service_area)}</span>}
-        {service.working_hours && <span>🕐 {service.working_hours}</span>}
+        {service.price && <span className="inline-flex items-center gap-1 font-semibold text-foreground"><DollarSign className="h-3.5 w-3.5 text-accent" /> {service.price}</span>}
+        {service.service_area && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-accent" /> {formatLocationString(service.service_area)}</span>}
+        {service.working_hours && <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-accent" /> {service.working_hours}</span>}
       </div>
       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
         <Button variant="accent" className="w-full gap-2" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
@@ -1657,9 +1657,9 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
                     </div>
                   )}
                   {s.description && <p className="mt-1 line-clamp-2 text-xs text-foreground/70">{s.description}</p>}
-                  <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    {s.price && <span className="font-medium text-foreground">💰 {s.price}</span>}
-                    {s.service_area && <span>📍 {formatLocationString(s.service_area)}</span>}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                    {s.price && <span className="inline-flex items-center gap-0.5 font-medium text-foreground"><DollarSign className="h-3 w-3 text-accent" /> {s.price}</span>}
+                    {s.service_area && <span className="inline-flex items-center gap-0.5"><MapPin className="h-3 w-3 text-accent" /> {formatLocationString(s.service_area)}</span>}
                     {(s.instagram_url || s.facebook_url || s.youtube_url) && (
                       <span className="flex items-center gap-1">
                         {s.instagram_url && <Instagram className="h-3 w-3 text-accent" />}
