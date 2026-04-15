@@ -21,7 +21,7 @@ import { Progress } from '@/components/ui/progress';
 import {
   Plus, Pencil, Trash2, ExternalLink, CalendarIcon, Eye, MousePointerClick, Search,
   Megaphone, Users, FileText, StickyNote, AlertTriangle, TrendingUp, Settings2,
-  Link2, Globe, MapPin, Building2, Phone, Mail, Star, Crown, Zap,
+  Link2, Globe, MapPin, Building2, Phone, Mail, Star, Crown, Zap, CreditCard, Map,
   PanelTop, Columns, Monitor, BarChart3, ArrowRight, Image as ImageIcon, Filter,
   Download, Bell, Power, Activity, Send, Heart, HeartCrack, Gauge
 } from 'lucide-react';
@@ -70,7 +70,7 @@ interface Sponsor {
   full_description: string; phone: string; whatsapp: string; external_link: string;
   linked_city: string; linked_category: string; plan_tier: string; badge_type: string;
   status: string; tier: string; ad_format: string; max_width: number; max_height: number;
-  target_pages: string;
+  target_pages: string; cnpj: string; email: string;
 }
 
 const emptyForm = {
@@ -80,7 +80,7 @@ const emptyForm = {
   sponsor_type: 'global', short_description: '', full_description: '',
   phone: '', whatsapp: '', external_link: '', linked_city: '', linked_category: '',
   plan_tier: 'basic', badge_type: 'Patrocinado', status: 'active',
-  guaranteed_impressions: 0,
+  guaranteed_impressions: 0, cnpj: '', email: '',
 };
 
 const PERM_LABELS: Record<string, string> = {
