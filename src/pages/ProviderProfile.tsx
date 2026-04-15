@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
@@ -490,6 +490,32 @@ const ProviderProfile = () => {
     fetchProvider();
     return () => { active = false; };
   }, [slug, navigate]);
+
+  // ── Realtime sync for provider stats ──
+  useEffect(() => {
+    if (!provider?.id) return;
+    const channel = supabase
+      .channel(`profile-realtime-${provider.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'providers',
+        filter: `id=eq.${provider.id}`,
+      }, (payload) => {
+        setProvider((prev: any) => prev ? { ...prev, ...payload.new } : prev);
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'reviews',
+        filter: `provider_id=eq.${provider.id}`,
+      }, (payload) => {
+        setReviews((prev) => [payload.new as any, ...prev]);
+        setProvider((prev: any) => prev ? { ...prev, review_count: (prev.review_count || 0) + 1 } : prev);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [provider?.id]);
 
   // DESTAQUE criteria
   const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
@@ -1049,15 +1075,26 @@ const ProviderProfile = () => {
                       <Crown className="h-3 w-3" strokeWidth={1.75} /> DESTAQUE
                     </motion.span>
                   )}
-                  {provider.accTypeInfo && (
-                    <span className={`inline-flex items-center gap-1 ${tc.badge} border px-2 py-0.5 text-xs font-medium`} style={{ borderColor: `${provider.accTypeInfo.color}40`, color: provider.accTypeInfo.color }}>
-                      {provider.accTypeInfo.name}
-                    </span>
-                  )}
+                  {/* Smart label: Empresa (CNPJ) or Prestador, never Administrador */}
+                  {(() => {
+                    const accName = provider.accTypeInfo?.name || '';
+                    const isAdminLabel = accName.toLowerCase().includes('admin');
+                    if (isAdminLabel) return null;
+                    const hasCnpj = !!(provider as any).cnpj;
+                    const labelText = hasCnpj ? 'Empresa' : 'Prestador';
+                    const LabelIcon = hasCnpj ? Building2 : Wrench;
+                    const labelColor = hasCnpj ? '#6366f1' : (provider.accTypeInfo?.color || 'hsl(var(--accent))');
+                    return (
+                      <span className={`inline-flex items-center gap-1 ${tc.badge} border px-2 py-0.5 text-xs font-medium`} style={{ borderColor: `${labelColor}40`, color: labelColor }}>
+                        <LabelIcon className="h-3 w-3" strokeWidth={1.75} />
+                        {labelText}
+                      </span>
+                    );
+                  })()}
                 </div>
 
-                {/* ── PROMINENT LEVEL BADGE (Metallic Design) ── */}
-                {provider.levelInfo && (
+                {/* ── PROMINENT LEVEL BADGE (Metallic Design) — hidden for admins ── */}
+                {provider.levelInfo && !(provider.accTypeInfo?.name || '').toLowerCase().includes('admin') && (
                   <div className="mt-2">
                     <GamificationLevelBadge
                       levelName={provider.levelInfo.name}
