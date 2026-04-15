@@ -83,6 +83,13 @@ const SECTION_MIN_HEIGHTS: Record<string, string> = {
   urgency: 'min-h-[48px]',
   leader_sponsor: 'min-h-[200px]',
   sponsor_top: 'min-h-[80px]',
+  howitworks: 'min-h-[280px]',
+  testimonials: 'min-h-[240px]',
+  faq: 'min-h-[300px]',
+  jobs: 'min-h-[280px]',
+  blog: 'min-h-[200px]',
+  courses: 'min-h-[200px]',
+  searches: 'min-h-[120px]',
 };
 
 const SectionFallback = ({ slug }: { slug?: string }) => {
