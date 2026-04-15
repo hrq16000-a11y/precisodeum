@@ -1698,6 +1698,104 @@ const AdminSponsorsPage = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* ═══ REGION DIALOG ═══ */}
+      <Dialog open={regionDialog} onOpenChange={setRegionDialog}>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Nova Praça de Atuação</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); regionMutation.mutate(); }} className="space-y-4">
+            <div><Label>Patrocinador *</Label><SponsorSelect value={regionForm.sponsor_id} onChange={v => setRegionForm(p => ({ ...p, sponsor_id: v }))} /></div>
+            <div><Label>Cidade (opcional)</Label>
+              <Select value={regionForm.city_id} onValueChange={v => setRegionForm(p => ({ ...p, city_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecionar cidade" /></SelectTrigger>
+                <SelectContent>{cities.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name} - {c.state_uf}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Estado UF (ex: SP, RJ)</Label><Input value={regionForm.state_uf} onChange={e => setRegionForm(p => ({ ...p, state_uf: e.target.value.toUpperCase().slice(0, 2) }))} maxLength={2} placeholder="SP" /></div>
+            <div className="flex items-center gap-2"><Switch checked={regionForm.exclusive} onCheckedChange={v => setRegionForm(p => ({ ...p, exclusive: v }))} /><Label>Exclusividade Regional</Label></div>
+            <div><Label>Observações</Label><Input value={regionForm.notes} onChange={e => setRegionForm(p => ({ ...p, notes: e.target.value }))} /></div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setRegionDialog(false)}>Cancelar</Button>
+              <Button type="submit" disabled={regionMutation.isPending}>Adicionar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ PLAN DIALOG ═══ */}
+      <Dialog open={planDialog} onOpenChange={setPlanDialog}>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Novo Plano de Patrocínio</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); planMutation.mutate(); }} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Nome *</Label><Input required value={planForm.name} onChange={e => setPlanForm(p => ({ ...p, name: e.target.value }))} /></div>
+              <div><Label>Slug *</Label><Input required value={planForm.slug} onChange={e => setPlanForm(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') }))} /></div>
+            </div>
+            <div><Label>Descrição</Label><Textarea value={planForm.description} onChange={e => setPlanForm(p => ({ ...p, description: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Preço Mensal (R$)</Label><Input type="number" step="0.01" value={planForm.price_monthly} onChange={e => setPlanForm(p => ({ ...p, price_monthly: e.target.value }))} /></div>
+              <div><Label>Preço Anual (R$)</Label><Input type="number" step="0.01" value={planForm.price_yearly} onChange={e => setPlanForm(p => ({ ...p, price_yearly: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Max Impressões (-1 = ∞)</Label><Input type="number" value={planForm.max_impressions} onChange={e => setPlanForm(p => ({ ...p, max_impressions: e.target.value }))} /></div>
+              <div><Label>Max Slots</Label><Input type="number" value={planForm.max_slots} onChange={e => setPlanForm(p => ({ ...p, max_slots: e.target.value }))} /></div>
+            </div>
+            <div className="flex items-center gap-2"><Switch checked={planForm.active} onCheckedChange={v => setPlanForm(p => ({ ...p, active: v }))} /><Label>Ativo</Label></div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setPlanDialog(false)}>Cancelar</Button>
+              <Button type="submit" disabled={planMutation.isPending}>Criar Plano</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ SUBSCRIPTION DIALOG ═══ */}
+      <Dialog open={subDialog} onOpenChange={setSubDialog}>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Nova Assinatura</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); subMutation.mutate(); }} className="space-y-4">
+            <div><Label>Patrocinador *</Label><SponsorSelect value={subForm.sponsor_id} onChange={v => setSubForm(p => ({ ...p, sponsor_id: v }))} /></div>
+            <div><Label>Plano *</Label>
+              <Select value={subForm.plan_id} onValueChange={v => setSubForm(p => ({ ...p, plan_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecionar plano" /></SelectTrigger>
+                <SelectContent>{plans.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name} — R$ {Number(p.price_monthly).toFixed(2)}/mês</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Status</Label>
+                <Select value={subForm.status} onValueChange={v => setSubForm(p => ({ ...p, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Ativa</SelectItem><SelectItem value="trial">Trial</SelectItem>
+                    <SelectItem value="expired">Expirada</SelectItem><SelectItem value="cancelled">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Ciclo</Label>
+                <Select value={subForm.billing_cycle} onValueChange={v => setSubForm(p => ({ ...p, billing_cycle: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Mensal</SelectItem><SelectItem value="yearly">Anual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Início</Label><Input type="date" value={subForm.current_period_start} onChange={e => setSubForm(p => ({ ...p, current_period_start: e.target.value }))} /></div>
+              <div><Label>Fim</Label><Input type="date" value={subForm.current_period_end} onChange={e => setSubForm(p => ({ ...p, current_period_end: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Valor Pago (R$)</Label><Input type="number" step="0.01" value={subForm.amount_paid} onChange={e => setSubForm(p => ({ ...p, amount_paid: e.target.value }))} /></div>
+              <div><Label>Método Pagamento</Label><Input value={subForm.payment_method} onChange={e => setSubForm(p => ({ ...p, payment_method: e.target.value }))} placeholder="PIX, Boleto, etc." /></div>
+            </div>
+            <div><Label>Observações</Label><Textarea value={subForm.notes} onChange={e => setSubForm(p => ({ ...p, notes: e.target.value }))} /></div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setSubDialog(false)}>Cancelar</Button>
+              <Button type="submit" disabled={subMutation.isPending}>Criar Assinatura</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
