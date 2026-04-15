@@ -34,6 +34,17 @@ async function runImportWithRetry<T>(loader: Loader<T>): Promise<T> {
     }
   }
 
+  // Last resort: if all retries failed due to stale module URLs, reload once
+  if (isDynamicImportError(lastError)) {
+    const reloadKey = 'lazy_reload_ts';
+    const lastReload = sessionStorage.getItem(reloadKey);
+    const now = Date.now();
+    if (!lastReload || now - Number(lastReload) > 10_000) {
+      sessionStorage.setItem(reloadKey, String(now));
+      window.location.reload();
+    }
+  }
+
   throw lastError instanceof Error ? lastError : new Error('Falha ao carregar módulo dinâmico.');
 }
 
