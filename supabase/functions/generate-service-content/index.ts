@@ -9,10 +9,63 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { service_name, category_name } = await req.json();
+    const body = await req.json();
+    const { service_name, category_name, prompt, mode } = body;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    // MODE: "magic" — generate a professional description from a simple prompt
+    if (mode === 'magic' && prompt) {
+      const magicPrompt = prompt.trim();
+      if (magicPrompt.length < 3) {
+        return new Response(JSON.stringify({ error: "Prompt muito curto" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-lite",
+          messages: [
+            {
+              role: "system",
+              content: `Você é um copywriter profissional brasileiro especializado em marketing de serviços.
+Dado uma frase curta do profissional, gere uma descrição profissional e atraente do serviço em português brasileiro.
+A descrição deve ter entre 80-120 palavras, ser persuasiva, destacar diferenciais e incluir um call-to-action sutil.
+NÃO use markdown, apenas texto corrido com parágrafos.
+${service_name ? `Serviço: ${service_name}` : ''}
+${category_name ? `Categoria: ${category_name}` : ''}`
+            },
+            { role: "user", content: magicPrompt }
+          ],
+          max_tokens: 400,
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        const t = await response.text();
+        console.error("AI gateway error:", response.status, t);
+        return new Response(JSON.stringify({ error: "Falha ao gerar" }), {
+          status: response.status === 429 ? 429 : 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const data = await response.json();
+      const description = data.choices?.[0]?.message?.content?.trim() || '';
+
+      return new Response(JSON.stringify({ description }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // MODE: default — generate structured SEO content
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {

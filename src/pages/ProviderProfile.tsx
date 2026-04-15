@@ -17,6 +17,7 @@ import ConversionTags from '@/components/ConversionTags';
 import TrustGuarantee from '@/components/TrustGuarantee';
 import TestimonialsCarousel from '@/components/TestimonialsCarousel';
 import SponsorAd from '@/components/SponsorAd';
+import GamificationLevelBadge from '@/components/dashboard/GamificationLevelBadge';
 import { lazy, Suspense } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
@@ -1055,23 +1056,17 @@ const ProviderProfile = () => {
                   )}
                 </div>
 
-                {/* ── PROMINENT LEVEL BADGE ── */}
+                {/* ── PROMINENT LEVEL BADGE (Metallic Design) ── */}
                 {provider.levelInfo && (
-                  <motion.div
-                    className="mt-2 inline-flex items-center gap-2 rounded-xl px-4 py-2 shadow-sm"
-                    style={{
-                      backgroundColor: `${provider.levelInfo.color}15`,
-                      border: `2px solid ${provider.levelInfo.color}30`,
-                    }}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.5, type: 'spring', stiffness: 250 }}
-                  >
-                    <span className="text-lg">🏆</span>
-                    <span className="text-sm font-bold" style={{ color: provider.levelInfo.color }}>
-                      {provider.levelInfo.name}
-                    </span>
-                  </motion.div>
+                  <div className="mt-2">
+                    <GamificationLevelBadge
+                      levelName={provider.levelInfo.name}
+                      levelColor={provider.levelInfo.color}
+                      levelIcon="🏆"
+                      size="lg"
+                      showShine={true}
+                    />
+                  </div>
                 )}
                 {provider.business_name && <p className="text-sm text-muted-foreground mt-1">{provider.business_name}</p>}
                 <p className="mt-1 text-sm font-semibold flex items-center justify-center sm:justify-start gap-1" style={accentBg ? { color: accentBg } : undefined}>

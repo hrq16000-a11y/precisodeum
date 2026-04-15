@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Edit2, X, Search, ImagePlus, MapPin, Eye, Pause, Play, Zap, Tag, MapPinned } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Search, ImagePlus, MapPin, Eye, Pause, Play, Zap, Tag, MapPinned, Sparkles, Loader2 } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import SmartCategoryPicker from '@/components/SmartCategoryPicker';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,6 +22,78 @@ import { format } from 'date-fns';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { CITIES_INDEX, type CityEntry } from '@/lib/citiesIndex';
 import { normalize } from '@/lib/normalize';
+
+// Magic AI Description Button
+const MagicDescriptionButton = ({ serviceName, categoryName, onGenerated }: { serviceName: string; categoryName?: string; onGenerated: (desc: string) => void }) => {
+  const [loading, setLoading] = useState(false);
+  const [promptOpen, setPromptOpen] = useState(false);
+  const [prompt, setPrompt] = useState('');
+
+  const handleGenerate = async () => {
+    const input = prompt.trim() || serviceName;
+    if (!input || input.length < 3) {
+      toast.error('Digite pelo menos uma frase sobre o serviço');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-service-content', {
+        body: { mode: 'magic', prompt: input, service_name: serviceName, category_name: categoryName },
+      });
+      if (error) throw error;
+      if (data?.description) {
+        onGenerated(data.description);
+        setPromptOpen(false);
+        setPrompt('');
+        toast.success('✨ Descrição gerada com IA!');
+      } else {
+        toast.error('Não foi possível gerar a descrição');
+      }
+    } catch (err: any) {
+      toast.error('Erro ao gerar: ' + (err.message || 'Tente novamente'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!promptOpen) {
+    return (
+      <button
+        type="button"
+        onClick={() => setPromptOpen(true)}
+        className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline"
+      >
+        <Sparkles className="h-3 w-3" /> Mágica com IA
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <input
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder="Ex: faço conserto de ar condicionado..."
+        className="h-7 flex-1 rounded border border-input bg-background px-2 text-[11px] text-foreground outline-none focus:ring-1 focus:ring-accent/30"
+        onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate(); }}
+      />
+      <button
+        type="button"
+        onClick={handleGenerate}
+        disabled={loading}
+        className="inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-[10px] font-bold text-accent-foreground disabled:opacity-50"
+      >
+        {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+        Gerar
+      </button>
+      <button type="button" onClick={() => setPromptOpen(false)} className="text-muted-foreground hover:text-foreground">
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+};
+
+
 
 // Build flat city list once for autocomplete
 const ALL_CITIES: { label: string; value: string; state: string }[] = [];
@@ -539,7 +611,14 @@ const DashboardServicesPage = () => {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-foreground">Descrição</label>
+                    <MagicDescriptionButton
+                      serviceName={form.service_name}
+                      categoryName={categories.find((c: any) => selectedCategoryIds.includes(c.id))?.name}
+                      onGenerated={(desc) => setForm(prev => ({ ...prev, description: desc }))}
+                    />
+                  </div>
                   <textarea
                     name="description"
                     rows={3}
