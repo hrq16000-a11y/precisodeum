@@ -280,6 +280,15 @@ const AdminUsersPage = () => {
   // ── Filtered list ──
   const filtered = useMemo(() => {
     let list = profiles;
+
+    // Tab-based filtering
+    if (activeTab === 'clientes') list = list.filter(p => (p.profile_type || 'client') === 'client');
+    else if (activeTab === 'prestadores') list = list.filter(p => (p.profile_type || 'client') === 'provider' && !providersMap[p.id]?.cnpj);
+    else if (activeTab === 'empresas') list = list.filter(p => !!providersMap[p.id]?.cnpj);
+    else if (activeTab === 'agencias') list = list.filter(p => (p.profile_type || 'client') === 'rh');
+    else if (activeTab === 'patrocinadores') list = list.filter(p => sponsorUserIds.has(p.id));
+    else if (activeTab === 'staff') list = list.filter(p => adminIds.has(p.id));
+
     if (filterType !== 'all') list = list.filter(p => (p.profile_type || p.role) === filterType);
     if (filterStatus !== 'all') list = list.filter(p => (p.status || 'active') === filterStatus);
     if (filterProviderStatus !== 'all') {
@@ -299,8 +308,17 @@ const AdminUsersPage = () => {
         (p.user_ref || '').toLowerCase().includes(q)
       );
     }
+
+    // Sorting
+    if (sortBy === 'oldest') {
+      list = [...list].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    } else if (sortBy === 'ranking') {
+      list = [...list].sort((a, b) => (b.engagement_points || 0) - (a.engagement_points || 0));
+    }
+    // 'recent' is already the default order from DB
+
     return list;
-  }, [profiles, search, filterType, filterStatus, filterProviderStatus, providersMap]);
+  }, [profiles, search, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
