@@ -45,6 +45,7 @@ const getMacroEmoji = (slug: string, name: string): string => {
   if (n.includes('urgên') || n.includes('urgenc')) return '🔥';
   if (n.includes('reform')) return '🏠';
   if (n.includes('consert')) return '🛠️';
+  if (n.includes('auto') || n.includes('veíc')) return '🚗';
   if (n.includes('saúde') || n.includes('saude') || n.includes('estétic')) return '🩺';
   if (n.includes('serviço') || n.includes('servico')) return '⚖️';
   return '📋';
