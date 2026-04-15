@@ -1,5 +1,5 @@
-// ─── Preciso de um — Service Worker (PWABuilder-compatible) ───
-const CACHE_NAME = 'precisodeum-v2';
+// ─── Preciso de um — Service Worker v3 ───
+const CACHE_NAME = 'pwa-v3';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_URLS = [
@@ -74,7 +74,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: payload.body,
     icon: payload.icon || '/icons/icon-192.png',
-    badge: payload.badge || '/icons/icon-96.png',
+    badge: payload.badge || '/icons/icon-192.png',
     data: payload.data || { url: payload.url || '/' },
     actions: payload.actions || [
       { action: 'open', title: 'Abrir' },
