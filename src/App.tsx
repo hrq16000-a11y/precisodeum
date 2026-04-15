@@ -342,6 +342,7 @@ const App = () => {
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
+    </LazyMotion>
   );
 };
 
