@@ -279,7 +279,15 @@ const DashboardServicesPage = () => {
       }
 
       trackAction('service_save_success', editId ? 'Serviço atualizado' : 'Serviço criado');
-      toast.success(editId ? 'Serviço atualizado!' : 'Serviço publicado!');
+      toast.success(
+        editId ? 'Serviço atualizado com sucesso!' : '🎉 Serviço publicado!', 
+        { 
+          description: editId 
+            ? 'Suas alterações já estão visíveis.' 
+            : '🏆 +15 pontos de Engajamento conquistados! Seu ranking local subiu.',
+          duration: 5000,
+        }
+      );
       resetForm();
       setShowDialog(false);
       await fetchServices();
