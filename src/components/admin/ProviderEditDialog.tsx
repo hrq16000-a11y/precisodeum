@@ -10,7 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { fetchAllMunicipalities, geocodeCity, normalize, type CityResult } from '@/lib/geoUtils';
-import { Search, LocateFixed, Loader2, MapPin } from 'lucide-react';
+import { Search, Loader2, MapPin } from 'lucide-react';
+import PhoneMaskedInput from '@/components/PhoneMaskedInput';
+import { sanitizePhone } from '@/lib/whatsapp';
 
 interface Props {
   provider: any;
@@ -38,7 +40,7 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
   const [categories, setCategories] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
 
-  // City autocomplete state
+  // City autocomplete
   const [citySearch, setCitySearch] = useState(
     provider.city ? (provider.state ? `${provider.city}, ${provider.state}` : provider.city) : ''
   );
@@ -52,12 +54,9 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
       .then(({ data }) => setCategories(data || []));
   }, []);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (cityDropdownRef.current && !cityDropdownRef.current.contains(e.target as Node)) {
-        setShowCitySuggestions(false);
-      }
+      if (cityDropdownRef.current && !cityDropdownRef.current.contains(e.target as Node)) setShowCitySuggestions(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -66,23 +65,18 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
   const loadCities = useCallback(() => {
     if (allCities.length > 0) return;
     setCitiesLoading(true);
-    fetchAllMunicipalities().then((cities) => {
-      setAllCities(cities);
-      setCitiesLoading(false);
-    });
+    fetchAllMunicipalities().then((cities) => { setAllCities(cities); setCitiesLoading(false); });
   }, [allCities.length]);
 
   const filteredCities = useMemo(() => {
     if (!citySearch.trim()) return allCities.slice(0, 10);
     const q = normalize(citySearch);
     const terms = q.split(/\s+/).filter(Boolean);
-    return allCities
-      .filter((c) => {
-        const cityNorm = normalize(c.name);
-        const stateNorm = normalize(c.state);
-        return terms.every((t) => cityNorm.includes(t) || stateNorm.includes(t));
-      })
-      .slice(0, 10);
+    return allCities.filter(c => {
+      const cn = normalize(c.name);
+      const sn = normalize(c.state);
+      return terms.every(t => cn.includes(t) || sn.includes(t));
+    }).slice(0, 10);
   }, [citySearch, allCities]);
 
   const handleCitySelect = async (c: CityResult) => {
@@ -93,11 +87,19 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
     setForm(prev => ({ ...prev, latitude, longitude }));
   };
 
+  // Phone → WhatsApp auto-sync
+  const handlePhoneChange = useCallback((name: string, rawValue: string) => {
+    setForm(prev => {
+      const next = { ...prev, [name]: rawValue };
+      if (name === 'phone' && (!prev.whatsapp || prev.whatsapp === prev.phone)) {
+        next.whatsapp = rawValue;
+      }
+      return next;
+    });
+  }, []);
+
   const handleSave = async () => {
-    if (!form.city || !form.state) {
-      toast.error('Selecione uma cidade válida');
-      return;
-    }
+    if (!form.city || !form.state) { toast.error('Selecione uma cidade válida'); return; }
     setSaving(true);
     const { error } = await supabase.from('providers').update({
       business_name: form.business_name || null,
@@ -105,8 +107,8 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
       state: form.state,
       neighborhood: form.neighborhood,
       cnpj: form.cnpj || null,
-      phone: form.phone,
-      whatsapp: form.whatsapp,
+      phone: sanitizePhone(form.phone),
+      whatsapp: sanitizePhone(form.whatsapp),
       description: form.description,
       category_id: form.category_id || null,
       website: form.website || null,
@@ -116,9 +118,8 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
       longitude: form.longitude,
     }).eq('id', provider.id);
 
-    if (error) {
-      toast.error('Erro: ' + error.message);
-    } else {
+    if (error) toast.error('Erro: ' + error.message);
+    else {
       await logAuditAction({ action: 'update', resource_type: 'provider', resource_id: provider.id });
       toast.success('Prestador atualizado!');
       onSaved();
@@ -155,15 +156,8 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   value={citySearch}
-                  onChange={e => {
-                    setCitySearch(e.target.value);
-                    setShowCitySuggestions(true);
-                    loadCities();
-                  }}
-                  onFocus={() => {
-                    setShowCitySuggestions(true);
-                    loadCities();
-                  }}
+                  onChange={e => { setCitySearch(e.target.value); setShowCitySuggestions(true); loadCities(); }}
+                  onFocus={() => { setShowCitySuggestions(true); loadCities(); }}
                   placeholder="Buscar cidade..."
                   className="pl-8"
                 />
@@ -171,17 +165,12 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
               {showCitySuggestions && (
                 <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-md">
                   {citiesLoading ? (
-                    <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando...
-                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando...</div>
                   ) : filteredCities.length > 0 ? (
                     filteredCities.map((c, i) => (
-                      <button
-                        key={`${c.name}-${c.state}-${i}`}
-                        type="button"
+                      <button key={`${c.name}-${c.state}-${i}`} type="button"
                         className="w-full text-left px-3 py-2 text-sm hover:bg-accent/10 flex items-center gap-2"
-                        onClick={() => handleCitySelect(c)}
-                      >
+                        onClick={() => handleCitySelect(c)}>
                         <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
                         <span>{c.name}</span>
                         <span className="text-muted-foreground text-xs ml-auto">{c.state}</span>
@@ -206,13 +195,25 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Telefone</Label>
-              <Input value={form.phone} onChange={e => update('phone', e.target.value)} />
+              <PhoneMaskedInput
+                name="phone"
+                value={form.phone}
+                onChange={handlePhoneChange}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
+              />
             </div>
             <div>
               <Label>WhatsApp</Label>
-              <Input value={form.whatsapp} onChange={e => update('whatsapp', e.target.value)} />
+              <PhoneMaskedInput
+                name="whatsapp"
+                value={form.whatsapp}
+                onChange={handlePhoneChange}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Auto-preenchido do Telefone se vazio</p>
             </div>
           </div>
+
           <div>
             <Label>Categoria</Label>
             <Select value={form.category_id} onValueChange={v => update('category_id', v)}>
@@ -228,6 +229,7 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
               </SelectContent>
             </Select>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Website</Label>
@@ -238,10 +240,12 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
               <Input type="number" value={form.years_experience} onChange={e => update('years_experience', e.target.value)} min={0} />
             </div>
           </div>
+
           <div>
             <Label>Horário de Funcionamento</Label>
             <Input value={form.working_hours} onChange={e => update('working_hours', e.target.value)} placeholder="Seg-Sex 8h-18h" />
           </div>
+
           <div>
             <Label>Descrição</Label>
             <Textarea value={form.description} onChange={e => update('description', e.target.value)} rows={3} />
