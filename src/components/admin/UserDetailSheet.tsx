@@ -1037,8 +1037,9 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 <div className="space-y-3">
                   {services.map(s => {
                     const imgs = serviceImages[s.id] || [];
+                    const isDeleted = !!s.deleted_at;
                     return (
-                      <div key={s.id} className="rounded-xl border border-border overflow-hidden">
+                      <div key={s.id} className={`rounded-xl border overflow-hidden ${isDeleted ? 'border-destructive/30 opacity-70' : 'border-border'}`}>
                         <div className="p-3 flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <p className="font-semibold text-foreground text-sm truncate">{s.service_name}</p>
@@ -1049,7 +1050,45 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                               <span>📅 {s.created_at ? format(new Date(s.created_at), 'dd/MM/yy') : ''}</span>
                             </div>
                           </div>
-                          {s.deleted_at && <Badge variant="destructive" className="text-[10px] shrink-0">Excluído</Badge>}
+                          <div className="flex items-center gap-1 shrink-0">
+                            {isDeleted ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-[10px] gap-1"
+                                onClick={async () => {
+                                  const { error } = await supabase.from('services').update({ deleted_at: null }).eq('id', s.id);
+                                  if (error) { toast.error('Erro ao restaurar: ' + error.message); return; }
+                                  await logAuditAction({ action: 'restore_service', resource_type: 'service', resource_id: s.id, details: { service_name: s.service_name } });
+                                  toast.success('Serviço restaurado');
+                                  setServices(prev => prev.map(sv => sv.id === s.id ? { ...sv, deleted_at: null } : sv));
+                                }}
+                              >
+                                <ArrowUp className="h-3 w-3" /> Restaurar
+                              </Button>
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0"
+                                  title="Soft-delete"
+                                  onClick={async () => {
+                                    const { error } = await supabase.from('services').update({ deleted_at: new Date().toISOString() }).eq('id', s.id);
+                                    if (error) { toast.error('Erro: ' + error.message); return; }
+                                    await logAuditAction({ action: 'soft_delete_service', resource_type: 'service', resource_id: s.id, details: { service_name: s.service_name } });
+                                    toast.success('Serviço excluído (soft)');
+                                    setServices(prev => prev.map(sv => sv.id === s.id ? { ...sv, deleted_at: new Date().toISOString() } : sv));
+                                  }}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                </Button>
+                              </>
+                            )}
+                            {isDeleted && (
+                              <Badge variant="destructive" className="text-[10px] shrink-0">Excluído</Badge>
+                            )}
+                          </div>
                         </div>
                         {imgs.length > 0 && (
                           <div className="border-t border-border p-2">
@@ -1111,7 +1150,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {media.map(m => (
-                      <div key={m.id} className="relative rounded-lg border border-border overflow-hidden">
+                      <div key={m.id} className="relative group rounded-lg border border-border overflow-hidden">
                         {m.mime_type?.startsWith('image/') ? (
                           <img src={m.public_url} alt={m.original_name} className="w-full aspect-square object-cover" loading="lazy" />
                         ) : (
@@ -1119,6 +1158,19 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                             {m.mime_type?.split('/')[1] || 'file'}
                           </div>
                         )}
+                        <button
+                          onClick={async () => {
+                            const { error } = await supabase.from('media').update({ is_active: false }).eq('id', m.id);
+                            if (error) { toast.error('Erro: ' + error.message); return; }
+                            await logAuditAction({ action: 'media_deleted', resource_type: 'media', resource_id: m.id, details: { name: m.original_name, entity_type: m.entity_type } });
+                            setMedia(prev => prev.filter(x => x.id !== m.id));
+                            toast.success('Mídia desativada');
+                          }}
+                          className="absolute top-1 right-1 bg-destructive/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Desativar mídia"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                         <div className="absolute bottom-0 left-0 right-0 bg-background/80 px-1.5 py-1">
                           <p className="text-[9px] text-foreground truncate">{m.original_name}</p>
                           <Badge variant="outline" className="text-[8px]">{m.entity_type}</Badge>
