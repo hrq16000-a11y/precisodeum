@@ -22,6 +22,7 @@ import ProfileStrength from '@/components/dashboard/ProfileStrength';
 import LevelBenefits from '@/components/dashboard/LevelBenefits';
 import ShareProfileCard from '@/components/dashboard/ShareProfileCard';
 import RankingStatus from '@/components/dashboard/RankingStatus';
+import RankingAlertWidget from '@/components/dashboard/RankingAlertWidget';
 import CommunityFeed from '@/components/dashboard/CommunityFeed';
 import RealtimeEngagementToast from '@/components/dashboard/RealtimeEngagementToast';
 import QrCodeCard from '@/components/dashboard/QrCodeCard';
@@ -352,6 +353,11 @@ const DashboardPage = () => {
       {/* Ranking Status */}
       <div className="mt-4">
         <RankingStatus />
+      </div>
+
+      {/* Ranking Alert — Position Drop Detection */}
+      <div className="mt-4">
+        <RankingAlertWidget />
       </div>
 
       {/* Avatar Reminder */}
