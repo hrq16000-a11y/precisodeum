@@ -145,8 +145,8 @@ const SponsorMetricsPage = () => {
             size="sm"
             className="gap-2"
             onClick={() => exportSponsorPdf({
-              sponsorName: sponsor?.company_name || sponsor?.contact_name || 'Patrocinador',
-              plan: sponsor?.plan || 'standard',
+              sponsorName: (sponsor as any)?.company_name || (sponsor as any)?.contact_name || sponsor?.title || 'Patrocinador',
+              plan: (sponsor as any)?.plan || sponsor?.tier || 'standard',
               totalImpressions: impressions,
               totalClicks: clicks,
               ctr,

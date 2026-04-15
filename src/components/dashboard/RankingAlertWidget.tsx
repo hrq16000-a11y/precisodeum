@@ -21,20 +21,22 @@ const RankingAlertWidget = () => {
     (async () => {
       const myPoints = profile?.engagement_points || 0;
 
-      const queries: Promise<any>[] = [
+      const queries: any[] = [
         supabase
           .from('providers')
           .select('id', { count: 'exact', head: true })
           .eq('city', provider.city)
           .eq('status', 'approved')
-          .is('deleted_at', null),
+          .is('deleted_at', null)
+          .then(),
         supabase
           .from('providers')
           .select('id, profiles!inner(engagement_points)', { count: 'exact', head: true })
           .eq('city', provider.city)
           .eq('status', 'approved')
           .is('deleted_at', null)
-          .gt('profiles.engagement_points', myPoints),
+          .gt('profiles.engagement_points', myPoints)
+          .then(),
       ];
 
       // Category-specific ranking if provider has category
@@ -46,7 +48,8 @@ const RankingAlertWidget = () => {
             .eq('city', provider.city)
             .eq('category_id', provider.category_id)
             .eq('status', 'approved')
-            .is('deleted_at', null),
+            .is('deleted_at', null)
+            .then(),
           supabase
             .from('providers')
             .select('id, business_name, profiles!inner(engagement_points)', { count: 'exact', head: false })
@@ -55,8 +58,9 @@ const RankingAlertWidget = () => {
             .eq('status', 'approved')
             .is('deleted_at', null)
             .gt('profiles.engagement_points', myPoints)
-            .order('profiles(engagement_points)', { ascending: false })
-            .limit(1),
+            .order('profiles(engagement_points)', { ascending: false } as any)
+            .limit(1)
+            .then(),
         );
       }
 
