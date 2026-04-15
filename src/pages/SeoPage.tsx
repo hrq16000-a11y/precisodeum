@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/Header';
@@ -13,6 +13,8 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useNearbyProviders } from '@/hooks/useNearbyProviders';
 import GamificationLevelBadge from '@/components/dashboard/GamificationLevelBadge';
+
+const SponsorAdSlot = lazy(() => import('@/components/ads/SponsorAdSlot'));
 
 const ITEMS_PER_PAGE = 12;
 
