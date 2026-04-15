@@ -1,4 +1,5 @@
 import { lazy as reactLazy, Suspense, useEffect, type ComponentType } from "react";
+import { LazyMotion, domAnimation } from "framer-motion";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 const Sonner = reactLazy(() => importWithRetry(() => import("@/components/ui/sonner").then(m => ({ default: m.Toaster }))));
@@ -200,6 +201,7 @@ const App = () => {
   }, []);
 
   return (
+    <LazyMotion features={domAnimation} strict>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Suspense fallback={null}><Toaster /></Suspense>
