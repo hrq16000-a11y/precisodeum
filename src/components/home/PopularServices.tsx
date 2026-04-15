@@ -68,7 +68,7 @@ const PopularServices = () => {
         .order('display_order');
       return (data || []) as any[];
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 15,
   });
 
   const displayed = useMemo(() => shuffle(services).slice(0, 6), [services]);

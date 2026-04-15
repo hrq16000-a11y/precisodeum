@@ -65,7 +65,7 @@ const HighlightsCarousel = () => {
         .order('display_order');
       return (data || []) as unknown as Highlight[];
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 15,
   });
 
   // Filter by date range on the client
