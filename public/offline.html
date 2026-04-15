@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sem conexão — Preciso de um</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Inter',system-ui,sans-serif;background:#f8fafc;color:#1e293b;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center}
+    .container{max-width:400px}
+    .icon{font-size:72px;margin-bottom:16px}
+    h1{font-size:22px;font-weight:700;margin-bottom:8px;color:#0f172a}
+    p{font-size:15px;color:#64748b;line-height:1.6;margin-bottom:24px}
+    button{background:#F97316;color:#fff;border:none;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:transform .15s,box-shadow .15s}
+    button:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(249,115,22,.35)}
+    button:active{transform:translateY(0)}
+    .brand{margin-top:32px;font-size:13px;color:#94a3b8}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    <h1>Sem conexão com a internet</h1>
+    <p>Parece que você está offline. Verifique sua conexão e tente novamente para acessar os profissionais.</p>
+    <button onclick="window.location.reload()">Tentar novamente</button>
+    <p class="brand">Preciso de um — Marketplace de serviços</p>
+  </div>
+</body>
+</html>
