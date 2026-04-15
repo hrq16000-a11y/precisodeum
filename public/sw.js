@@ -1,11 +1,10 @@
 // ─── Preciso de um — Service Worker (PWABuilder-compatible) ───
-const CACHE_NAME = 'precisodeum-v1';
+const CACHE_NAME = 'precisodeum-v2';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_URLS = [
   '/',
   '/offline.html',
-  '/favicon.ico',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/manifest.json',
@@ -32,11 +31,8 @@ self.addEventListener('activate', (event) => {
 // ── Fetch: Network-first for navigations, Stale-While-Revalidate for assets ──
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-
-  // Skip non-GET and cross-origin
   if (request.method !== 'GET') return;
 
-  // Navigation requests → network-first with offline fallback
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -50,7 +46,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets → Stale-While-Revalidate
   if (
     request.destination === 'style' ||
     request.destination === 'script' ||
@@ -109,7 +104,14 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// ── Periodic background sync (stub) ──
+// ── Background Sync ──
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-pending-data') {
+    event.waitUntil(Promise.resolve());
+  }
+});
+
+// ── Periodic Background Sync ──
 self.addEventListener('periodicsync', (event) => {
   if (event.tag === 'update-content') {
     event.waitUntil(
