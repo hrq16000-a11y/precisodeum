@@ -585,10 +585,64 @@ const AdminAdSlotsPage = () => {
         <Tabs defaultValue="visual" className="space-y-4">
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="visual">📍 Mapa Visual</TabsTrigger>
+            <TabsTrigger value="visibility">👁️ Visibilidade</TabsTrigger>
             <TabsTrigger value="slots">⚙️ Slots & Atribuições</TabsTrigger>
             <TabsTrigger value="limits">🔒 Limites</TabsTrigger>
             <TabsTrigger value="metrics">📊 Métricas</TabsTrigger>
           </TabsList>
+
+          {/* ====== VISIBILITY MAP TAB ====== */}
+          <TabsContent value="visibility" className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Inventário completo de todos os espaços publicitários com tamanho ideal e status de ocupação.
+            </p>
+            <div className="rounded-xl border border-border bg-card overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Slot (locationKey)</TableHead>
+                    <TableHead>Página</TableHead>
+                    <TableHead>Tamanho Ideal</TableHead>
+                    <TableHead className="text-center">Atribuídos</TableHead>
+                    <TableHead className="text-center">Máx</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {slots.map((slot: any) => {
+                    const visual = SLOT_VISUAL_MAP[slot.slug];
+                    const assignCount = assignments.filter((a: any) => a.slot_id === slot.id && a.active).length;
+                    const isFull = assignCount >= slot.max_ads;
+                    const isEmpty = assignCount === 0;
+                    return (
+                      <TableRow key={slot.id} className={isEmpty ? 'bg-destructive/5' : isFull ? 'bg-green-500/5' : ''}>
+                        <TableCell>
+                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{slot.slug}</code>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{slot.description || visual?.preview || '—'}</p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={PAGE_TYPE_COLORS[slot.page_type] || 'bg-muted text-muted-foreground'} variant="secondary">
+                            {slot.page_type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm font-mono">{visual?.size || '—'}</TableCell>
+                        <TableCell className="text-center font-bold">{assignCount}</TableCell>
+                        <TableCell className="text-center">{slot.max_ads}</TableCell>
+                        <TableCell>
+                          {isEmpty && <Badge variant="destructive" className="text-[10px]">Vazio</Badge>}
+                          {!isEmpty && !isFull && <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600">Parcial</Badge>}
+                          {isFull && <Badge className="text-[10px] bg-green-600">Lotado</Badge>}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {slots.length === 0 && (
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum slot cadastrado.</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
 
           {/* ====== VISUAL MAP TAB ====== */}
           <TabsContent value="visual" className="space-y-6">
