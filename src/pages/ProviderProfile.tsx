@@ -517,9 +517,9 @@ const ProviderProfile = () => {
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
   useSeoHead({
-    title: provider ? `${name} - ${category} em ${provider.city}` : 'Profissional',
+    title: provider ? `${name} - ${category} em ${provider.city} | Preciso de um` : 'Profissional',
     description: provider
-      ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliações, nota ${Number(provider.rating_avg).toFixed(1)}.`
+      ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliações, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nível ${provider.levelInfo.name}.` : ''} Peça seu orçamento grátis!`
       : 'Encontre profissionais na plataforma.',
     canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
     ogImage: provider && hasOwnAvatar ? ((provider.profiles as any)?.avatar_url || provider.photo_url || undefined) : undefined,
