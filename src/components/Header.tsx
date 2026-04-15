@@ -215,12 +215,11 @@ const Header = () => {
           ? 'bg-card backdrop-blur-lg shadow-md'
           : 'bg-card shadow-none'
       }`}
-      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)', minHeight: 56 }}
     >
       <div
-        className={`container flex items-center justify-between px-2 sm:px-4 transition-all duration-300 ease-in-out ${
-          isCompact ? 'h-12 md:h-14' : 'h-14 md:h-16'
-        }`}
+        className={`container flex items-center justify-between px-2 sm:px-4 transition-all duration-300 ease-in-out`}
+        style={{ height: isCompact ? 48 : 56, minHeight: isCompact ? 48 : 56 }}
       >
         {/* Left: Logo + Geo */}
         <div className="flex items-center gap-2 -ml-1 sm:-ml-2">
