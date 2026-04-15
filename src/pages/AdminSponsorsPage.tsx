@@ -949,6 +949,145 @@ const AdminSponsorsPage = () => {
             </div>
           </TabsContent>
 
+          {/* ═══ REGIONS TAB ═══ */}
+          <TabsContent value="regions" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Praças de Atuação</h2>
+                <p className="text-xs text-muted-foreground">Vincule patrocinadores a cidades ou estados com exclusividade regional</p>
+              </div>
+              <Button size="sm" onClick={() => { setRegionForm({ sponsor_id: '', city_id: '', state_uf: '', exclusive: false, notes: '' }); setRegionDialog(true); }}>
+                <Plus className="h-4 w-4 mr-1" /> Nova Praça
+              </Button>
+            </div>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+              {regions.map((r: any) => (
+                <Card key={r.id}>
+                  <CardContent className="py-3">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+                          {r.cities?.name ? `${r.cities.name} - ${r.cities.state_uf}` : r.state_uf ? `Estado: ${r.state_uf}` : 'Nacional'}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{getSponsorTitle(r.sponsor_id)}</p>
+                        <div className="mt-1.5 flex items-center gap-1.5">
+                          {r.exclusive && <Badge variant="default" className="text-[10px]">🔒 Exclusivo</Badge>}
+                          {r.notes && <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{r.notes}</span>}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0" onClick={() => deleteRegionMutation.mutate(r.id)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {regions.length === 0 && (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  <MapPin className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Nenhuma praça cadastrada</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ═══ PLANS TAB ═══ */}
+          <TabsContent value="plans" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Planos de Patrocínio</h2>
+                <p className="text-xs text-muted-foreground">Defina os pacotes comerciais (Media Kit)</p>
+              </div>
+              <Button size="sm" onClick={() => { setPlanForm({ name: '', slug: '', description: '', price_monthly: '', price_yearly: '', max_impressions: '-1', max_slots: '1', active: true }); setPlanDialog(true); }}>
+                <Plus className="h-4 w-4 mr-1" /> Novo Plano
+              </Button>
+            </div>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+              {plans.map((p: any) => (
+                <Card key={p.id} className={cn(!p.active && 'opacity-60')}>
+                  <CardContent className="py-3">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm flex items-center gap-1.5">
+                          <CreditCard className="h-3.5 w-3.5 text-primary shrink-0" />
+                          {p.name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{p.description}</p>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                          <div><span className="text-muted-foreground">Mensal:</span> <span className="font-medium">R$ {Number(p.price_monthly).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+                          <div><span className="text-muted-foreground">Anual:</span> <span className="font-medium">R$ {Number(p.price_yearly).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+                          <div><span className="text-muted-foreground">Impressões:</span> <span className="font-medium">{p.max_impressions === -1 ? '∞' : p.max_impressions?.toLocaleString('pt-BR')}</span></div>
+                          <div><span className="text-muted-foreground">Slots:</span> <span className="font-medium">{p.max_slots}</span></div>
+                        </div>
+                        {p.features && Array.isArray(p.features) && p.features.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {(p.features as string[]).map((f: string, i: number) => (
+                              <Badge key={i} variant="outline" className="text-[9px]">{f}</Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0" onClick={() => deletePlanMutation.mutate(p.id)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {plans.length === 0 && (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  <CreditCard className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Nenhum plano cadastrado</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ═══ SUBSCRIPTIONS TAB ═══ */}
+          <TabsContent value="subscriptions" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Assinaturas Ativas</h2>
+                <p className="text-xs text-muted-foreground">Controle de pagamentos e vencimentos dos patrocinadores</p>
+              </div>
+              <Button size="sm" onClick={() => { setSubForm({ sponsor_id: '', plan_id: '', status: 'active', billing_cycle: 'monthly', current_period_start: '', current_period_end: '', amount_paid: '', payment_method: '', notes: '' }); setSubDialog(true); }}>
+                <Plus className="h-4 w-4 mr-1" /> Nova Assinatura
+              </Button>
+            </div>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+              {subscriptions.map((s: any) => (
+                <Card key={s.id}>
+                  <CardContent className="py-3">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm">{getSponsorTitle(s.sponsor_id)}</p>
+                        <p className="text-[10px] text-muted-foreground">{s.sponsor_plans?.name || '—'}</p>
+                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                          <Badge variant={s.status === 'active' ? 'default' : 'secondary'} className="text-[10px] capitalize">{s.status}</Badge>
+                          <Badge variant="outline" className="text-[10px] capitalize">{s.billing_cycle}</Badge>
+                        </div>
+                        <div className="mt-1 text-[10px] text-muted-foreground">
+                          {s.current_period_start ? format(new Date(s.current_period_start), 'dd/MM/yy') : '—'} → {s.current_period_end ? format(new Date(s.current_period_end), 'dd/MM/yy') : '—'}
+                        </div>
+                        {s.amount_paid > 0 && <p className="text-xs mt-1 font-medium">R$ {Number(s.amount_paid).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>}
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0" onClick={() => deleteSubMutation.mutate(s.id)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {subscriptions.length === 0 && (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Nenhuma assinatura</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
           {/* ═══ LINKS TAB ═══ */}
           <TabsContent value="links" className="space-y-4">
             <div className="flex items-center justify-between">
