@@ -1150,7 +1150,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {media.map(m => (
-                      <div key={m.id} className="relative rounded-lg border border-border overflow-hidden">
+                      <div key={m.id} className="relative group rounded-lg border border-border overflow-hidden">
                         {m.mime_type?.startsWith('image/') ? (
                           <img src={m.public_url} alt={m.original_name} className="w-full aspect-square object-cover" loading="lazy" />
                         ) : (
@@ -1158,6 +1158,19 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                             {m.mime_type?.split('/')[1] || 'file'}
                           </div>
                         )}
+                        <button
+                          onClick={async () => {
+                            const { error } = await supabase.from('media').update({ is_active: false }).eq('id', m.id);
+                            if (error) { toast.error('Erro: ' + error.message); return; }
+                            await logAuditAction({ action: 'media_deleted', resource_type: 'media', resource_id: m.id, details: { name: m.original_name, entity_type: m.entity_type } });
+                            setMedia(prev => prev.filter(x => x.id !== m.id));
+                            toast.success('Mídia desativada');
+                          }}
+                          className="absolute top-1 right-1 bg-destructive/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Desativar mídia"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                         <div className="absolute bottom-0 left-0 right-0 bg-background/80 px-1.5 py-1">
                           <p className="text-[9px] text-foreground truncate">{m.original_name}</p>
                           <Badge variant="outline" className="text-[8px]">{m.entity_type}</Badge>
