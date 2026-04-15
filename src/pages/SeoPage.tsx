@@ -225,6 +225,11 @@ const SeoPage = () => {
         </div>
       </section>
 
+      {/* Sponsor slot for local gold sponsors */}
+      <Suspense fallback={null}>
+        <SponsorAdSlot locationKey={`seo-${parsed?.categorySlug || 'general'}`} layout="banner" maxAds={1} />
+      </Suspense>
+
       <div className="container py-8">
         {/* Top 3 Masters Section */}
         {providers.length > 0 && (
