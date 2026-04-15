@@ -96,7 +96,8 @@ const AdminLevelsPage = lazy(() => import("./pages/AdminLevelsPage"));
 const AdminAccountTypesPage = lazy(() => import("./pages/AdminAccountTypesPage"));
 const AdminSponsorLeadsPage = lazy(() => import("./pages/AdminSponsorLeadsPage"));
 const AdminSubscriptionsPage = lazy(() => import("./pages/AdminSubscriptionsPage"));
-const AdminOverviewPage = lazy(() => import("./pages/AdminOverviewPage"));
+const AdminGamificationPage = lazy(() => import("./pages/AdminGamificationPage"));
+const AdminStaffPage = lazy(() => import("./pages/AdminStaffPage"));
 const AdminNotificationsPage = lazy(() => import("./pages/AdminNotificationsPage"));
 const AdminChatPage = lazy(() => import("./pages/AdminChatPage"));
 const AdminGovernancePage = lazy(() => import("./pages/AdminGovernancePage"));
@@ -285,6 +286,8 @@ const App = () => {
                 <Route path="/admin/boosts" element={<AdminBoostsPage />} />
                 <Route path="/admin/barra-inferior" element={<AdminBottomNavPage />} />
                 <Route path="/admin/governanca" element={<AdminGovernancePage />} />
+                <Route path="/admin/gamificacao" element={<AdminGamificationPage />} />
+                <Route path="/admin/staff" element={<AdminStaffPage />} />
                 <Route path="/admin/cursos" element={<AdminCoursesPage />} />
                 <Route path="/cursos" element={<CoursesPage />} />
                 <Route path="/cursos/:courseId" element={<CourseDetailPage />} />
