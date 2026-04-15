@@ -29,7 +29,7 @@ const fallbackEco = [
 ];
 
 const fallbackSuporte = [
-  { label: 'Central de Ajuda', url: '/ajuda', open_in_new_tab: false, icon: '❓' },
+  { label: 'Central de Ajuda', url: '/ajuda', open_in_new_tab: false, icon: 'HelpCircle' },
 ];
 
 const footerTaglines = [

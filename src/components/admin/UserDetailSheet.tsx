@@ -40,10 +40,10 @@ const PRESET_TAGS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'active', label: '🟢 Ativo', color: 'bg-emerald-500' },
-  { value: 'inactive', label: '🔴 Inativo', color: 'bg-red-500' },
-  { value: 'suspended', label: '⛔ Suspenso', color: 'bg-amber-500' },
-  { value: 'banned', label: '🚫 Banido', color: 'bg-destructive' },
+  { value: 'active', label: 'Ativo', color: 'bg-emerald-500' },
+  { value: 'inactive', label: 'Inativo', color: 'bg-red-500' },
+  { value: 'suspended', label: 'Suspenso', color: 'bg-amber-500' },
+  { value: 'banned', label: 'Banido', color: 'bg-destructive' },
 ];
 
 const PROFILE_TYPE_OPTIONS = [
@@ -287,7 +287,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     if (error) toast.error('Erro: ' + error.message);
     else {
       await logAuditAction({ action: 'suspend', resource_type: 'user', resource_id: user.id, details: { reason: suspendReason } });
-      await supabase.from('notifications').insert({ user_id: user.id, title: '⚠️ Conta Suspensa', message: `Motivo: ${suspendReason}`, type: 'system' });
+      await supabase.from('notifications').insert({ user_id: user.id, title: 'Conta Suspensa', message: `Motivo: ${suspendReason}`, type: 'system' });
       toast.success('Usuário suspenso');
       setSuspendReason('');
       onRefresh?.();
@@ -306,7 +306,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     if (error) toast.error('Erro: ' + error.message);
     else {
       await logAuditAction({ action: 'ban', resource_type: 'user', resource_id: user.id, details: { reason: suspendReason || 'Banido' } });
-      await supabase.from('notifications').insert({ user_id: user.id, title: '🚫 Conta Banida', message: 'Sua conta foi banida permanentemente.', type: 'system' });
+      await supabase.from('notifications').insert({ user_id: user.id, title: 'Conta Banida', message: 'Sua conta foi banida permanentemente.', type: 'system' });
       toast.success('Usuário banido');
       onRefresh?.();
     }
@@ -571,7 +571,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono text-muted-foreground hover:bg-accent transition-colors"
                 title="Copiar user_ref"
               >
-                🔗 {user.user_ref} <Copy className="h-2.5 w-2.5" />
+                {user.user_ref} <Copy className="h-2.5 w-2.5" />
               </button>
             )}
           </div>
@@ -597,7 +597,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 {/* Status dropdown */}
                 <Select value={user.status || 'active'} onValueChange={v => updateField('status', v)}>
                   <SelectTrigger className="h-6 w-auto min-w-0 px-2 py-0 text-[10px] font-medium border-0 bg-transparent gap-0.5 [&>svg]:h-3 [&>svg]:w-3">
-                    <span>{STATUS_OPTIONS.find(s => s.value === user.status)?.label || '🟢 Ativo'}</span>
+                    <span>{STATUS_OPTIONS.find(s => s.value === user.status)?.label || 'Ativo'}</span>
                   </SelectTrigger>
                   <SelectContent>
                     {STATUS_OPTIONS.map(s => (
@@ -765,7 +765,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                       <Label className="text-xs">Departamento</Label>
                       <Input value={profileForm.department} onChange={e => setProfileForm({ ...profileForm, department: e.target.value })} className="h-8 text-sm" placeholder="Ex: TI, Vendas..." />
                     </div>
-                    <Button size="sm" onClick={saveProfile} className="w-full">💾 Salvar Dados Pessoais</Button>
+                    <Button size="sm" onClick={saveProfile} className="w-full">Salvar Dados Pessoais</Button>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -857,7 +857,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                           <Input value={providerForm.service_radius} onChange={e => setProviderForm({ ...providerForm, service_radius: e.target.value })} className="h-8 text-sm" />
                         </div>
                       </div>
-                      <Button size="sm" onClick={saveProvider} className="w-full">💾 Salvar Dados do Negócio</Button>
+                      <Button size="sm" onClick={saveProvider} className="w-full">Salvar Dados do Negócio</Button>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -916,9 +916,9 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                             <p className="font-semibold text-foreground text-sm truncate">{s.service_name}</p>
                             {s.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{s.description}</p>}
                             <div className="flex flex-wrap gap-2 mt-1.5 text-[10px] text-muted-foreground">
-                              {s.price && <span>💰 {s.price}</span>}
-                              <span>👁️ {s.view_count || 0}</span>
-                              <span>📅 {s.created_at ? format(new Date(s.created_at), 'dd/MM/yy') : ''}</span>
+                              {s.price && <span>R$ {s.price}</span>}
+                              <span>{s.view_count || 0} views</span>
+                              <span>{s.created_at ? format(new Date(s.created_at), 'dd/MM/yy') : ''}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
@@ -1001,7 +1001,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               </div>
 
               <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
-                <h3 className="font-semibold text-foreground text-sm">🗂️ Mídias ({media.length})</h3>
+                <h3 className="font-semibold text-foreground text-sm">Mídias ({media.length})</h3>
                 {media.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-3">Nenhuma mídia</p>
                 ) : (
@@ -1127,7 +1127,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                         <Ban className="h-3.5 w-3.5 mr-1" /> Banir
                       </Button>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">⚠️ Suspensão é reversível. Banimento é permanente.</p>
+                    <p className="text-[10px] text-muted-foreground">Suspensão é reversível. Banimento é permanente.</p>
                   </div>
                 )}
               </div>
@@ -1153,7 +1153,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                   </div>
                   <div className="rounded-lg border border-border p-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div><p className="text-sm font-medium">📢 Patrocinador</p></div>
+                      <div><p className="text-sm font-medium">Patrocinador</p></div>
                       <Button size="sm" variant={userIsSponsor ? 'destructive' : 'default'} className="h-8 text-xs shrink-0" onClick={toggleSponsor} disabled={permLoading}>
                         {userIsSponsor ? 'Revogar' : 'Conceder'}
                       </Button>

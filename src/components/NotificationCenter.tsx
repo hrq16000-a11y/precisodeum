@@ -55,7 +55,7 @@ const NotificationItem = ({
       )}
       {(notification as any).video_url && (
         <a href={(notification as any).video_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[10px] text-primary hover:underline">
-          🎬 Ver vídeo
+          Ver vídeo
         </a>
       )}
       <p className="mt-1 text-[10px] text-muted-foreground/70">
