@@ -286,7 +286,7 @@ const Index = () => {
           searches: '0 300px',
           showcase: '0 400px',
         };
-        const cvStyle = i >= 2 ? { contentVisibility: 'auto' as const, containIntrinsicSize: sectionHeights[slug] || '0 400px' } : undefined;
+        const cvStyle = i >= 4 ? { contentVisibility: 'auto' as const, containIntrinsicSize: sectionHeights[slug] || '0 400px' } : undefined;
         return (
           <LazyErrorBoundary key={slug}>
             <Suspense fallback={<SectionFallback slug={slug} />}>

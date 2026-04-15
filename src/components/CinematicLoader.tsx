@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 
 /** Lightweight loading skeleton — no framer-motion to keep the initial bundle small */
 const CinematicLoader = forwardRef<HTMLDivElement>((_, ref) => (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background">
+  <div className="flex min-h-[60vh] items-center justify-center bg-background" ref={ref}>
     <div className="flex flex-col items-center gap-6">
       <img src="/favicon.ico" alt="" className="h-12 w-12 animate-pulse" />
       <div className="relative h-1 w-48 overflow-hidden rounded-full bg-muted">
