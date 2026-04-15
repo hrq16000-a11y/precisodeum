@@ -26,7 +26,7 @@ const UrgencyBanner = memo(() => {
         .gte('created_at', since.toISOString());
       return count || 0;
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 15,
   });
 
   useEffect(() => {
