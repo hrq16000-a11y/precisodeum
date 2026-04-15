@@ -358,6 +358,19 @@ const SignupPage = () => {
   const selectedType = ACCOUNT_TYPES.find(t => t.value === accountType);
   const showProviderFields = accountType === 'provider';
 
+  // Estimated reach based on city
+  const [estimatedReach, setEstimatedReach] = useState(0);
+  useEffect(() => {
+    if (!form.city) { setEstimatedReach(0); return; }
+    (async () => {
+      const { count } = await supabase.from('providers').select('id', { count: 'exact', head: true })
+        .eq('city', form.city).eq('status', 'approved');
+      // Estimate: each provider sees ~200 visitors/month, so the user gets exposure to that audience
+      const baseReach = Math.max(50, (count || 0) * 80 + 200);
+      setEstimatedReach(baseReach);
+    })();
+  }, [form.city]);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -366,7 +379,7 @@ const SignupPage = () => {
 
           {/* STEP 1: Choose account type */}
           {step === STEP_TYPE && (
-            <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-card">
+            <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl p-6 sm:p-8 shadow-xl">
               <h1 className="text-center font-display text-2xl font-bold text-foreground">Criar Conta</h1>
               <p className="mt-2 text-center text-sm text-muted-foreground">
                 Escolha o tipo de conta que melhor se encaixa no seu perfil
