@@ -1026,6 +1026,37 @@ const AdminAdSlotsPage = () => {
                 </SelectContent>
               </Select>
             </div>
+            {/* ── Preview Real ── */}
+            {assignForm.sponsor_id && (() => {
+              const sp = sponsors.find((s: any) => s.id === assignForm.sponsor_id);
+              const selectedSlot = slots.find((s: any) => s.id === assignForm.slot_id);
+              const slotVisual = selectedSlot ? SLOT_VISUAL_MAP[selectedSlot.slug] : null;
+              if (!sp?.image_url) return null;
+              return (
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Preview Real</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground mb-1 text-center">📱 Mobile</p>
+                      <div className="rounded-lg border border-border bg-muted/30 p-2 max-w-[180px] mx-auto">
+                        <img src={sp.image_url} alt={sp.title}
+                          className="w-full rounded object-cover"
+                          style={{ aspectRatio: slotVisual?.size.includes('8:1') ? '8/1' : slotVisual?.size.includes('300×250') ? '6/5' : '16/9' }} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground mb-1 text-center">🖥️ Desktop</p>
+                      <div className="rounded-lg border border-border bg-muted/30 p-2">
+                        <img src={sp.image_url} alt={sp.title}
+                          className="w-full rounded object-cover"
+                          style={{ aspectRatio: slotVisual?.size.includes('8:1') ? '8/1' : slotVisual?.size.includes('300×250') ? '6/5' : '16/9' }} />
+                      </div>
+                    </div>
+                  </div>
+                  {slotVisual && <p className="text-[10px] text-muted-foreground text-center">Tamanho ideal: {slotVisual.size}</p>}
+                </div>
+              );
+            })()}
             <div><Label>Prioridade</Label><Input type="number" value={assignForm.priority} onChange={e => setAssignForm(p => ({ ...p, priority: e.target.value }))} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Início</Label><Input type="date" value={assignForm.start_date} onChange={e => setAssignForm(p => ({ ...p, start_date: e.target.value }))} /></div>
