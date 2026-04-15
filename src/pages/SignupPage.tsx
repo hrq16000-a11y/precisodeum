@@ -338,7 +338,10 @@ const SignupPage = () => {
     }
 
     setLoading(false);
-    toast.success('Conta criada com sucesso! Bem-vindo!');
+    toast.success('🎉 Conta criada com sucesso! Bem-vindo!', {
+      description: accountType === 'provider' ? '🏅 Você começa no Nível Bronze! Cadastre serviços para subir.' : 'Explore os profissionais da plataforma.',
+      duration: 5000,
+    });
     if (accountType === 'client') {
       navigate('/');
     } else if (accountType === 'rh') {
