@@ -18,6 +18,9 @@ import WelcomeHero from '@/components/dashboard/WelcomeHero';
 import QuickStatsBar from '@/components/dashboard/QuickStatsBar';
 import StatCardGrid from '@/components/dashboard/StatCardGrid';
 import DashboardTipOfDay from '@/components/dashboard/DashboardTipOfDay';
+import ProfileStrength from '@/components/dashboard/ProfileStrength';
+import LevelBenefits from '@/components/dashboard/LevelBenefits';
+import ShareProfileCard from '@/components/dashboard/ShareProfileCard';
 import { usePermissions } from '@/hooks/usePermissions';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
@@ -335,15 +338,22 @@ const DashboardPage = () => {
         avatarUrl={profile?.avatar_url || undefined}
       />
 
+      {/* Profile Strength — Gamification Progress */}
+      <div className="mt-4">
+        <ProfileStrength />
+      </div>
+
       {/* Avatar Reminder */}
       <div className="mt-4">
         <AvatarReminder avatarUrl={profile?.avatar_url} />
       </div>
 
-      {/* Upsell Banner */}
-      <div className="mt-4">
-        <UpsellBanner />
-      </div>
+      {/* Share Profile Card */}
+      {provider?.slug && (
+        <div className="mt-4 flex justify-end">
+          <ShareProfileCard />
+        </div>
+      )}
 
       {/* Courses promotion */}
       <div className="mt-4">
