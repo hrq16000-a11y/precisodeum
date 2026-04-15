@@ -23,6 +23,8 @@ import LevelBenefits from '@/components/dashboard/LevelBenefits';
 import ShareProfileCard from '@/components/dashboard/ShareProfileCard';
 import RankingStatus from '@/components/dashboard/RankingStatus';
 import CommunityFeed from '@/components/dashboard/CommunityFeed';
+import RealtimeEngagementToast from '@/components/dashboard/RealtimeEngagementToast';
+import QrCodeCard from '@/components/dashboard/QrCodeCard';
 import { usePermissions } from '@/hooks/usePermissions';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
@@ -326,6 +328,8 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout>
+      {/* Real-time engagement notification listener */}
+      <RealtimeEngagementToast />
       {/* Enhanced Welcome Hero */}
       <WelcomeHero
         greeting={greeting}
