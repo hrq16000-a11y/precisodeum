@@ -540,6 +540,33 @@ export type Database = {
         }
         Relationships: []
       }
+      engagement_log: {
+        Row: {
+          action_key: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          points_awarded: number
+          user_id: string
+        }
+        Insert: {
+          action_key: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          points_awarded?: number
+          user_id: string
+        }
+        Update: {
+          action_key?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          points_awarded?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       error_reports: {
         Row: {
           action_context: string
@@ -3767,6 +3794,11 @@ export type Database = {
           total_records: number
         }[]
       }
+      award_engagement_points: {
+        Args: { _action_key: string; _metadata?: Json; _user_id: string }
+        Returns: number
+      }
+      calculate_user_level: { Args: { _user_id: string }; Returns: string }
       get_gamification_level: {
         Args: { _points: number }
         Returns: {
