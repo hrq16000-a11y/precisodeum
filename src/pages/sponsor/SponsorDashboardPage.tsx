@@ -198,9 +198,15 @@ const SponsorDashboardPage = () => {
                 Painel do patrocinador — {sponsor?.title}
               </p>
             </div>
-            <Badge variant="outline" className="capitalize gap-1">
-              <Crown className="w-3 h-3" /> {sponsor?.tier || 'free'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Button variant="default" size="sm" className="gap-2" onClick={handleExportPdf}>
+                <FileDown className="h-4 w-4" />
+                Gerar Relatório Mensal (PDF)
+              </Button>
+              <Badge variant="outline" className="capitalize gap-1">
+                <Crown className="w-3 h-3" /> {sponsor?.tier || 'free'}
+              </Badge>
+            </div>
           </div>
         </motion.div>
 
