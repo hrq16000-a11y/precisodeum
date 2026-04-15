@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import {
   Users, Key, Trash2, Download, CheckSquare, UserCog, Shield, UserPlus,
   BarChart3, Target, Briefcase, TrendingUp, Send, Tag, X, Plus,
-  Activity, Filter, Search, ChevronDown, FileText, AlertTriangle
+  Activity, Filter, Search, ChevronDown, FileText, AlertTriangle,
+  CheckCircle, XCircle, User, Wrench, Building2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
