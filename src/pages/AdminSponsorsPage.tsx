@@ -215,7 +215,37 @@ const AdminSponsorsPage = () => {
     },
   });
 
-  // ── State ──
+  const { data: regions = [] } = useQuery({
+    queryKey: ['admin-sponsor-regions'],
+    queryFn: async () => {
+      const { data } = await supabase.from('sponsor_regions').select('*, cities(name, state_uf)').order('created_at', { ascending: false });
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ['admin-sponsor-plans'],
+    queryFn: async () => {
+      const { data } = await supabase.from('sponsor_plans').select('*').order('display_order');
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: subscriptions = [] } = useQuery({
+    queryKey: ['admin-sponsor-subscriptions'],
+    queryFn: async () => {
+      const { data } = await supabase.from('sponsor_subscriptions').select('*, sponsor_plans(name)').order('created_at', { ascending: false });
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: cities = [] } = useQuery({
+    queryKey: ['admin-cities-list'],
+    queryFn: async () => {
+      const { data } = await supabase.from('cities').select('id, name, state_uf').order('name').limit(500);
+      return (data || []) as any[];
+    },
+  });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
