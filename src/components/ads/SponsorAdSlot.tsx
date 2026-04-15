@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { useAuth } from '@/hooks/useAuth';
 import SponsorImage from '@/components/SponsorImage';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SponsorAd {
   id: string;
@@ -20,10 +22,15 @@ interface SponsorAdSlotProps {
   maxAds?: number;
 }
 
-/**
- * Geo-targeted sponsor ad component.
- * Uses the get_smart_ads RPC for a single optimized query.
- */
+/* ─── Aspect ratios per layout ─── */
+const ASPECT_RATIOS: Record<string, string> = {
+  banner: '8 / 1',
+  inline: 'auto',
+  sidebar: '6 / 5',
+  card: '3 / 2',
+};
+
+/* ─── Data hook ─── */
 function useSponsorAds(locationKey: string, city: string | null, state: string | null) {
   return useQuery({
     queryKey: ['sponsor-ad-slot', locationKey, city, state],
@@ -33,9 +40,7 @@ function useSponsorAds(locationKey: string, city: string | null, state: string |
         _visitor_city: city || '',
         _visitor_state: state || '',
       } as any);
-
       if (error || !data) return [];
-
       return (data as any[]).map(row => ({
         id: row.id,
         title: row.title,
@@ -58,6 +63,32 @@ function trackAdMetric(sponsorId: string, slotSlug: string, eventType: 'impressi
   } as any).then(() => {});
 }
 
+/* ─── Ghost placeholder for admins ─── */
+const GhostSlot: React.FC<{ locationKey: string; layout: string }> = ({ locationKey, layout }) => {
+  const ar = ASPECT_RATIOS[layout] || ASPECT_RATIOS.banner;
+  return (
+    <div
+      className="flex items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/10 text-muted-foreground/50"
+      style={{ aspectRatio: ar === 'auto' ? undefined : ar, minHeight: layout === 'inline' ? 48 : 60 }}
+    >
+      <span className="text-xs font-mono select-none px-4 text-center">
+        Espaço Disponível: <strong className="text-muted-foreground/70">{locationKey}</strong>
+      </span>
+    </div>
+  );
+};
+
+/* ─── Skeleton loader ─── */
+const AdSkeleton: React.FC<{ layout: string }> = ({ layout }) => {
+  const ar = ASPECT_RATIOS[layout] || ASPECT_RATIOS.banner;
+  return (
+    <div className="rounded-xl overflow-hidden">
+      <Skeleton className="w-full" style={{ aspectRatio: ar === 'auto' ? '16 / 3' : ar }} />
+    </div>
+  );
+};
+
+/* ═══ Main component ═══ */
 const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
   locationKey,
   className = '',
@@ -65,13 +96,16 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
   maxAds,
 }) => {
   const { city, state } = useGeoCity();
-  const { data: ads = [] } = useSponsorAds(locationKey, city, state);
+  const { data: ads = [], isLoading } = useSponsorAds(locationKey, city, state);
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
   const tracked = useRef(new Set<string>());
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const displayAds = maxAds ? ads.slice(0, maxAds) : ads;
+  const ar = ASPECT_RATIOS[layout] || ASPECT_RATIOS.banner;
 
-  // Track impressions via IntersectionObserver
+  // Intersection-based impression tracking
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (displayAds.length === 0 || !containerRef.current) return;
@@ -89,7 +123,7 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
           }
         });
       },
-      { threshold: 0.5 }
+      { threshold: 0.5 },
     );
     observer.observe(containerRef.current);
     return () => observer.disconnect();
@@ -98,17 +132,20 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
   // Rotate banner ads
   useEffect(() => {
     if (layout !== 'banner' || displayAds.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentIndex(i => (i + 1) % displayAds.length);
-    }, 8000);
+    const interval = setInterval(() => setCurrentIndex(i => (i + 1) % displayAds.length), 8000);
     return () => clearInterval(interval);
   }, [displayAds.length, layout]);
 
-  if (displayAds.length === 0) return null;
+  // Loading state
+  if (isLoading) return <AdSkeleton layout={layout} />;
 
-  const handleClick = (ad: SponsorAd) => {
-    trackAdMetric(ad.id, locationKey, 'click');
-  };
+  // Ghost mode for admins when no ads
+  if (displayAds.length === 0) {
+    if (isAdmin) return <GhostSlot locationKey={locationKey} layout={layout} />;
+    return null;
+  }
+
+  const handleClick = (ad: SponsorAd) => trackAdMetric(ad.id, locationKey, 'click');
 
   // Inline layout
   if (layout === 'inline') {
@@ -137,7 +174,11 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
             onClick={() => handleClick(ad)}
             className="block rounded-xl bg-card p-3 shadow-sm transition-all hover:shadow-md border border-border">
             <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
-            {ad.image_url && <SponsorImage src={ad.image_url} alt={ad.title} containerClassName="mt-2 rounded-lg" />}
+            {ad.image_url && (
+              <div className="mt-2 rounded-lg overflow-hidden" style={{ aspectRatio: ar }}>
+                <SponsorImage src={ad.image_url} alt={ad.title} containerClassName="h-full w-full" />
+              </div>
+            )}
             <p className="mt-2 text-xs font-medium text-foreground">{ad.title}</p>
           </a>
         ))}
@@ -152,9 +193,13 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
         {displayAds.slice(0, 1).map(ad => (
           <a key={ad.id} href={ad.link_url || '#'} target="_blank" rel="noopener noreferrer sponsored"
             onClick={() => handleClick(ad)}
-            className="block rounded-xl border border-border bg-card p-4 transition-all hover:shadow-md">
+            className="block rounded-xl border border-border bg-card p-4 transition-all hover:shadow-md shadow-sm">
             <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
-            {ad.image_url && <SponsorImage src={ad.image_url} alt={ad.title} containerClassName="mt-2 rounded-lg" />}
+            {ad.image_url && (
+              <div className="mt-2 rounded-lg overflow-hidden" style={{ aspectRatio: ar }}>
+                <img src={ad.image_url} alt={ad.title} className="h-full w-full object-cover" loading="lazy" />
+              </div>
+            )}
             <p className="mt-2 text-sm font-medium text-foreground">{ad.title}</p>
             {ad.company_name && <p className="text-xs text-muted-foreground">{ad.company_name}</p>}
           </a>
@@ -178,10 +223,10 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
             onClick={() => handleClick(current)} className="block transition-opacity hover:opacity-80" title={current.title}>
             {current.image_url ? (
               <img src={current.image_url} alt={current.title}
-                className="w-full object-cover object-center"
-                style={{ aspectRatio: '8/1', borderRadius: 10 }} width={1600} height={200} loading="lazy" />
+                className="w-full rounded-[10px] object-cover object-center"
+                style={{ aspectRatio: ar }} width={1600} height={200} loading="lazy" />
             ) : (
-              <div className="flex items-center justify-center bg-card" style={{ aspectRatio: '8/1', borderRadius: 10 }}>
+              <div className="flex items-center justify-center rounded-[10px] bg-card" style={{ aspectRatio: ar }}>
                 <span className="text-sm font-medium text-muted-foreground">{current.title}</span>
               </div>
             )}
