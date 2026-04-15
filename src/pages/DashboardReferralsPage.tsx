@@ -24,16 +24,16 @@ const DashboardReferralsPage = () => {
     queryFn: async () => {
       if (!user?.id) return null;
       // Check existing
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase as any)
         .from('referrals')
         .select('referral_code')
         .eq('referrer_id', user.id)
         .limit(1);
-      if (existing && existing.length > 0) return existing[0].referral_code;
+      if (existing && existing.length > 0) return (existing[0] as any).referral_code;
 
       // Create new code
       const code = user.id.slice(0, 8).toUpperCase();
-      await supabase.from('referrals').insert({
+      await (supabase as any).from('referrals').insert({
         referrer_id: user.id,
         referral_code: code,
         status: 'pending',
@@ -48,12 +48,12 @@ const DashboardReferralsPage = () => {
     queryKey: ['referral-stats', user?.id],
     queryFn: async () => {
       if (!user?.id) return { total: 0, completed: 0, points: 0 };
-      const { data, count } = await supabase
+      const { data, count } = await (supabase as any)
         .from('referrals')
         .select('*', { count: 'exact' })
         .eq('referrer_id', user.id);
-      const completed = (data || []).filter(r => r.status === 'completed').length;
-      const points = (data || []).reduce((sum, r) => sum + (r.points_awarded || 0), 0);
+      const completed = (data || []).filter((r: any) => r.status === 'completed').length;
+      const points = (data || []).reduce((sum: number, r: any) => sum + (r.points_awarded || 0), 0);
       return { total: count || 0, completed, points };
     },
     enabled: !!user?.id,
