@@ -1041,13 +1041,12 @@ const ProviderProfile = () => {
                   <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
                   {isDestaque && (
                     <motion.span
-                      className={`inline-flex items-center gap-1 ${tc.badge} bg-gradient-to-r from-accent to-accent/80 px-2.5 py-0.5 text-xs font-semibold text-accent-foreground shadow-md`}
-                      style={accentBg ? { background: `linear-gradient(135deg, ${accentBg}, ${accentBg}cc)` } : undefined}
+                      className={`inline-flex items-center gap-1 ${tc.badge} border-2 border-accent/40 bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent`}
                       initial={{ scale: 0, rotate: -12 }}
                       animate={{ scale: 1, rotate: 0 }}
                       transition={{ delay: 0.4, type: 'spring', stiffness: 300, damping: 15 }}
                     >
-                      <Crown className="h-3 w-3" /> DESTAQUE
+                      <Crown className="h-3 w-3" strokeWidth={1.75} /> DESTAQUE
                     </motion.span>
                   )}
                   {provider.accTypeInfo && (
@@ -1081,6 +1080,29 @@ const ProviderProfile = () => {
                       : 'Localização não informada'}
                   </span>
                 </div>
+
+                {/* Experience & Projects Highlight */}
+                {(provider.years_experience > 0 || provider.portfolio_photo_count > 0) && (
+                  <motion.div
+                    className="mt-2.5 flex flex-wrap items-center justify-center sm:justify-start gap-3"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    {provider.years_experience > 0 && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent/10 border border-accent/20 px-3 py-1.5 text-xs font-semibold text-accent">
+                        <CalendarClock className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        {provider.years_experience}+ anos de experiência
+                      </span>
+                    )}
+                    {provider.portfolio_photo_count > 0 && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent/10 border border-accent/20 px-3 py-1.5 text-xs font-semibold text-accent">
+                        <FolderOpen className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        {provider.portfolio_photo_count} projetos realizados
+                      </span>
+                    )}
+                  </motion.div>
+                )}
                 {reviewsEnabled && (
                   <div className="mt-3 flex justify-center sm:justify-start">
                     <ReviewSummary rating={Number(provider.rating_avg)} reviewCount={provider.review_count} />
@@ -1138,27 +1160,27 @@ const ProviderProfile = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45 }}
             >
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5" /> Estatísticas de Confiança
+              <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                <Shield className="h-3 w-3" strokeWidth={1.75} /> Estatísticas de Confiança
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="text-center">
-                  <p className="text-lg font-bold text-foreground">
+                  <p className="text-xl font-extrabold text-foreground leading-none">
                     {provider.years_experience > 0 ? `${provider.years_experience}+` : '—'}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">Anos de experiência</p>
+                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Anos exp.</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-foreground">{services.length}</p>
-                  <p className="text-[10px] text-muted-foreground">Serviços oferecidos</p>
+                  <p className="text-xl font-extrabold text-foreground leading-none">{services.length}</p>
+                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Serviços</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-foreground">{provider.review_count || 0}</p>
-                  <p className="text-[10px] text-muted-foreground">Avaliações positivas</p>
+                  <p className="text-xl font-extrabold text-foreground leading-none">{provider.review_count || 0}</p>
+                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Avaliações</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-foreground">{portfolioImages.length}</p>
-                  <p className="text-[10px] text-muted-foreground">Fotos de trabalhos</p>
+                  <p className="text-xl font-extrabold text-foreground leading-none">{portfolioImages.length}</p>
+                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Fotos</p>
                 </div>
               </div>
             </motion.div>
