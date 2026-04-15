@@ -21,7 +21,7 @@ import { Progress } from '@/components/ui/progress';
 import {
   Plus, Pencil, Trash2, ExternalLink, CalendarIcon, Eye, MousePointerClick, Search,
   Megaphone, Users, FileText, StickyNote, AlertTriangle, TrendingUp, Settings2,
-  Link2, Globe, MapPin, Building2, Phone, Mail, Star, Crown, Zap,
+  Link2, Globe, MapPin, Building2, Phone, Mail, Star, Crown, Zap, CreditCard,
   PanelTop, Columns, Monitor, BarChart3, ArrowRight, Image as ImageIcon, Filter,
   Download, Bell, Power, Activity, Send, Heart, HeartCrack, Gauge
 } from 'lucide-react';
@@ -70,7 +70,7 @@ interface Sponsor {
   full_description: string; phone: string; whatsapp: string; external_link: string;
   linked_city: string; linked_category: string; plan_tier: string; badge_type: string;
   status: string; tier: string; ad_format: string; max_width: number; max_height: number;
-  target_pages: string;
+  target_pages: string; cnpj: string; email: string;
 }
 
 const emptyForm = {
@@ -80,7 +80,7 @@ const emptyForm = {
   sponsor_type: 'global', short_description: '', full_description: '',
   phone: '', whatsapp: '', external_link: '', linked_city: '', linked_category: '',
   plan_tier: 'basic', badge_type: 'Patrocinado', status: 'active',
-  guaranteed_impressions: 0,
+  guaranteed_impressions: 0, cnpj: '', email: '',
 };
 
 const PERM_LABELS: Record<string, string> = {
@@ -215,7 +215,37 @@ const AdminSponsorsPage = () => {
     },
   });
 
-  // ── State ──
+  const { data: regions = [] } = useQuery({
+    queryKey: ['admin-sponsor-regions'],
+    queryFn: async () => {
+      const { data } = await supabase.from('sponsor_regions').select('*, cities(name, state_uf)').order('created_at', { ascending: false });
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ['admin-sponsor-plans'],
+    queryFn: async () => {
+      const { data } = await supabase.from('sponsor_plans').select('*').order('display_order');
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: subscriptions = [] } = useQuery({
+    queryKey: ['admin-sponsor-subscriptions'],
+    queryFn: async () => {
+      const { data } = await supabase.from('sponsor_subscriptions').select('*, sponsor_plans(name)').order('created_at', { ascending: false });
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: cities = [] } = useQuery({
+    queryKey: ['admin-cities-list'],
+    queryFn: async () => {
+      const { data } = await supabase.from('cities').select('id, name, state_uf').order('name').limit(500);
+      return (data || []) as any[];
+    },
+  });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -239,7 +269,76 @@ const AdminSponsorsPage = () => {
   const [permDialog, setPermDialog] = useState(false);
   const [permContact, setPermContact] = useState<any>(null);
 
-  // ── Bulk ──
+  // Region/Plan/Subscription dialogs
+  const [regionDialog, setRegionDialog] = useState(false);
+  const [regionForm, setRegionForm] = useState({ sponsor_id: '', city_id: '', state_uf: '', exclusive: false, notes: '' });
+  const [planDialog, setPlanDialog] = useState(false);
+  const [planForm, setPlanForm] = useState({ name: '', slug: '', description: '', price_monthly: '', price_yearly: '', max_impressions: '-1', max_slots: '1', active: true });
+  const [subDialog, setSubDialog] = useState(false);
+  const [subForm, setSubForm] = useState({ sponsor_id: '', plan_id: '', status: 'active', billing_cycle: 'monthly', current_period_start: '', current_period_end: '', amount_paid: '', payment_method: '', notes: '' });
+
+  const regionMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('sponsor_regions').insert({
+        sponsor_id: regionForm.sponsor_id,
+        city_id: regionForm.city_id || null,
+        state_uf: regionForm.state_uf || null,
+        exclusive: regionForm.exclusive,
+        notes: regionForm.notes,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-sponsor-regions'] }); toast({ title: 'Praça adicionada!' }); setRegionDialog(false); },
+    onError: () => toast({ title: 'Erro ao adicionar praça', variant: 'destructive' }),
+  });
+
+  const deleteRegionMutation = useMutation({
+    mutationFn: async (id: string) => { await supabase.from('sponsor_regions').delete().eq('id', id); },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-sponsor-regions'] }),
+  });
+
+  const planMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('sponsor_plans').insert({
+        name: planForm.name, slug: planForm.slug, description: planForm.description,
+        price_monthly: Number(planForm.price_monthly) || 0,
+        price_yearly: Number(planForm.price_yearly) || 0,
+        max_impressions: Number(planForm.max_impressions) || -1,
+        max_slots: Number(planForm.max_slots) || 1,
+        active: planForm.active,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-sponsor-plans'] }); toast({ title: 'Plano criado!' }); setPlanDialog(false); },
+    onError: () => toast({ title: 'Erro ao criar plano', variant: 'destructive' }),
+  });
+
+  const deletePlanMutation = useMutation({
+    mutationFn: async (id: string) => { await supabase.from('sponsor_plans').delete().eq('id', id); },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-sponsor-plans'] }),
+  });
+
+  const subMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('sponsor_subscriptions').insert({
+        sponsor_id: subForm.sponsor_id, plan_id: subForm.plan_id, status: subForm.status,
+        billing_cycle: subForm.billing_cycle,
+        current_period_start: subForm.current_period_start || null,
+        current_period_end: subForm.current_period_end || null,
+        amount_paid: Number(subForm.amount_paid) || 0,
+        payment_method: subForm.payment_method, notes: subForm.notes,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-sponsor-subscriptions'] }); toast({ title: 'Assinatura criada!' }); setSubDialog(false); },
+    onError: () => toast({ title: 'Erro ao criar assinatura', variant: 'destructive' }),
+  });
+
+  const deleteSubMutation = useMutation({
+    mutationFn: async (id: string) => { await supabase.from('sponsor_subscriptions').delete().eq('id', id); },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-sponsor-subscriptions'] }),
+  });
+
   const bulk = useAdminBulkActions({
     table: 'sponsors', resourceType: 'sponsor',
     onComplete: () => { qc.invalidateQueries({ queryKey: ['admin-sponsors'] }); },
@@ -341,6 +440,7 @@ const AdminSponsorsPage = () => {
         linked_category: form.linked_category, plan_tier: form.plan_tier,
         badge_type: form.badge_type, status: form.status,
         guaranteed_impressions: form.guaranteed_impressions || 0,
+        cnpj: form.cnpj || '', email: form.email || '',
       };
       if (editingId) {
         const { error } = await supabase.from('sponsors').update(payload).eq('id', editingId);
@@ -505,6 +605,7 @@ const AdminSponsorsPage = () => {
       linked_category: s.linked_category || '', plan_tier: s.plan_tier || 'basic',
       badge_type: s.badge_type || 'Patrocinado', status: s.status || 'active',
       guaranteed_impressions: (s as any).guaranteed_impressions || 0,
+      cnpj: s.cnpj || '', email: s.email || '',
     });
     setDialogOpen(true);
   };
@@ -594,6 +695,9 @@ const AdminSponsorsPage = () => {
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="sponsors">📋 Patrocinadores</TabsTrigger>
             <TabsTrigger value="visual">📍 Mapa de Posições</TabsTrigger>
+            <TabsTrigger value="regions">🗺️ Praças</TabsTrigger>
+            <TabsTrigger value="plans">💰 Planos</TabsTrigger>
+            <TabsTrigger value="subscriptions">📑 Assinaturas</TabsTrigger>
             <TabsTrigger value="links">🔗 Vínculos</TabsTrigger>
             <TabsTrigger value="campaigns">📢 Campanhas</TabsTrigger>
             <TabsTrigger value="contracts">📄 Contratos</TabsTrigger>
@@ -842,6 +946,145 @@ const AdminSponsorsPage = () => {
               })}
 
               <div className="h-3 rounded bg-muted/40 w-1/2 mx-auto mt-2" />
+            </div>
+          </TabsContent>
+
+          {/* ═══ REGIONS TAB ═══ */}
+          <TabsContent value="regions" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Praças de Atuação</h2>
+                <p className="text-xs text-muted-foreground">Vincule patrocinadores a cidades ou estados com exclusividade regional</p>
+              </div>
+              <Button size="sm" onClick={() => { setRegionForm({ sponsor_id: '', city_id: '', state_uf: '', exclusive: false, notes: '' }); setRegionDialog(true); }}>
+                <Plus className="h-4 w-4 mr-1" /> Nova Praça
+              </Button>
+            </div>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+              {regions.map((r: any) => (
+                <Card key={r.id}>
+                  <CardContent className="py-3">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+                          {r.cities?.name ? `${r.cities.name} - ${r.cities.state_uf}` : r.state_uf ? `Estado: ${r.state_uf}` : 'Nacional'}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{getSponsorTitle(r.sponsor_id)}</p>
+                        <div className="mt-1.5 flex items-center gap-1.5">
+                          {r.exclusive && <Badge variant="default" className="text-[10px]">🔒 Exclusivo</Badge>}
+                          {r.notes && <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{r.notes}</span>}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0" onClick={() => deleteRegionMutation.mutate(r.id)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {regions.length === 0 && (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  <MapPin className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Nenhuma praça cadastrada</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ═══ PLANS TAB ═══ */}
+          <TabsContent value="plans" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Planos de Patrocínio</h2>
+                <p className="text-xs text-muted-foreground">Defina os pacotes comerciais (Media Kit)</p>
+              </div>
+              <Button size="sm" onClick={() => { setPlanForm({ name: '', slug: '', description: '', price_monthly: '', price_yearly: '', max_impressions: '-1', max_slots: '1', active: true }); setPlanDialog(true); }}>
+                <Plus className="h-4 w-4 mr-1" /> Novo Plano
+              </Button>
+            </div>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+              {plans.map((p: any) => (
+                <Card key={p.id} className={cn(!p.active && 'opacity-60')}>
+                  <CardContent className="py-3">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm flex items-center gap-1.5">
+                          <CreditCard className="h-3.5 w-3.5 text-primary shrink-0" />
+                          {p.name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{p.description}</p>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                          <div><span className="text-muted-foreground">Mensal:</span> <span className="font-medium">R$ {Number(p.price_monthly).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+                          <div><span className="text-muted-foreground">Anual:</span> <span className="font-medium">R$ {Number(p.price_yearly).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+                          <div><span className="text-muted-foreground">Impressões:</span> <span className="font-medium">{p.max_impressions === -1 ? '∞' : p.max_impressions?.toLocaleString('pt-BR')}</span></div>
+                          <div><span className="text-muted-foreground">Slots:</span> <span className="font-medium">{p.max_slots}</span></div>
+                        </div>
+                        {p.features && Array.isArray(p.features) && p.features.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {(p.features as string[]).map((f: string, i: number) => (
+                              <Badge key={i} variant="outline" className="text-[9px]">{f}</Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0" onClick={() => deletePlanMutation.mutate(p.id)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {plans.length === 0 && (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  <CreditCard className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Nenhum plano cadastrado</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ═══ SUBSCRIPTIONS TAB ═══ */}
+          <TabsContent value="subscriptions" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Assinaturas Ativas</h2>
+                <p className="text-xs text-muted-foreground">Controle de pagamentos e vencimentos dos patrocinadores</p>
+              </div>
+              <Button size="sm" onClick={() => { setSubForm({ sponsor_id: '', plan_id: '', status: 'active', billing_cycle: 'monthly', current_period_start: '', current_period_end: '', amount_paid: '', payment_method: '', notes: '' }); setSubDialog(true); }}>
+                <Plus className="h-4 w-4 mr-1" /> Nova Assinatura
+              </Button>
+            </div>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+              {subscriptions.map((s: any) => (
+                <Card key={s.id}>
+                  <CardContent className="py-3">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm">{getSponsorTitle(s.sponsor_id)}</p>
+                        <p className="text-[10px] text-muted-foreground">{s.sponsor_plans?.name || '—'}</p>
+                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                          <Badge variant={s.status === 'active' ? 'default' : 'secondary'} className="text-[10px] capitalize">{s.status}</Badge>
+                          <Badge variant="outline" className="text-[10px] capitalize">{s.billing_cycle}</Badge>
+                        </div>
+                        <div className="mt-1 text-[10px] text-muted-foreground">
+                          {s.current_period_start ? format(new Date(s.current_period_start), 'dd/MM/yy') : '—'} → {s.current_period_end ? format(new Date(s.current_period_end), 'dd/MM/yy') : '—'}
+                        </div>
+                        {s.amount_paid > 0 && <p className="text-xs mt-1 font-medium">R$ {Number(s.amount_paid).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>}
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0" onClick={() => deleteSubMutation.mutate(s.id)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {subscriptions.length === 0 && (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Nenhuma assinatura</p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -1222,6 +1465,10 @@ const AdminSponsorsPage = () => {
             </div>
             {form.sponsor_type === 'city' && <div><Label>Cidade</Label><Input value={form.linked_city} onChange={e => setForm({ ...form, linked_city: e.target.value })} /></div>}
             {form.sponsor_type === 'category' && <div><Label>Categoria (slug)</Label><Input value={form.linked_category} onChange={e => setForm({ ...form, linked_category: e.target.value })} /></div>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><Label>CNPJ</Label><Input value={form.cnpj} onChange={e => setForm({ ...form, cnpj: e.target.value })} placeholder="00.000.000/0000-00" /></div>
+              <div><Label>E-mail Comercial</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="comercial@empresa.com" /></div>
+            </div>
             <div><Label>Descrição Curta</Label><Input value={form.short_description} onChange={e => setForm({ ...form, short_description: e.target.value.slice(0, 120) })} maxLength={120} /></div>
             <div><Label>Descrição Completa</Label><Textarea value={form.full_description} onChange={e => setForm({ ...form, full_description: e.target.value })} rows={3} /></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1447,6 +1694,104 @@ const AdminSponsorsPage = () => {
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setNotifDialog(false)}>Cancelar</Button>
               <Button type="submit" disabled={sendNotification.isPending}><Send className="h-4 w-4 mr-1" /> Enviar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ REGION DIALOG ═══ */}
+      <Dialog open={regionDialog} onOpenChange={setRegionDialog}>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Nova Praça de Atuação</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); regionMutation.mutate(); }} className="space-y-4">
+            <div><Label>Patrocinador *</Label><SponsorSelect value={regionForm.sponsor_id} onChange={v => setRegionForm(p => ({ ...p, sponsor_id: v }))} /></div>
+            <div><Label>Cidade (opcional)</Label>
+              <Select value={regionForm.city_id} onValueChange={v => setRegionForm(p => ({ ...p, city_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecionar cidade" /></SelectTrigger>
+                <SelectContent>{cities.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name} - {c.state_uf}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Estado UF (ex: SP, RJ)</Label><Input value={regionForm.state_uf} onChange={e => setRegionForm(p => ({ ...p, state_uf: e.target.value.toUpperCase().slice(0, 2) }))} maxLength={2} placeholder="SP" /></div>
+            <div className="flex items-center gap-2"><Switch checked={regionForm.exclusive} onCheckedChange={v => setRegionForm(p => ({ ...p, exclusive: v }))} /><Label>Exclusividade Regional</Label></div>
+            <div><Label>Observações</Label><Input value={regionForm.notes} onChange={e => setRegionForm(p => ({ ...p, notes: e.target.value }))} /></div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setRegionDialog(false)}>Cancelar</Button>
+              <Button type="submit" disabled={regionMutation.isPending}>Adicionar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ PLAN DIALOG ═══ */}
+      <Dialog open={planDialog} onOpenChange={setPlanDialog}>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Novo Plano de Patrocínio</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); planMutation.mutate(); }} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Nome *</Label><Input required value={planForm.name} onChange={e => setPlanForm(p => ({ ...p, name: e.target.value }))} /></div>
+              <div><Label>Slug *</Label><Input required value={planForm.slug} onChange={e => setPlanForm(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') }))} /></div>
+            </div>
+            <div><Label>Descrição</Label><Textarea value={planForm.description} onChange={e => setPlanForm(p => ({ ...p, description: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Preço Mensal (R$)</Label><Input type="number" step="0.01" value={planForm.price_monthly} onChange={e => setPlanForm(p => ({ ...p, price_monthly: e.target.value }))} /></div>
+              <div><Label>Preço Anual (R$)</Label><Input type="number" step="0.01" value={planForm.price_yearly} onChange={e => setPlanForm(p => ({ ...p, price_yearly: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Max Impressões (-1 = ∞)</Label><Input type="number" value={planForm.max_impressions} onChange={e => setPlanForm(p => ({ ...p, max_impressions: e.target.value }))} /></div>
+              <div><Label>Max Slots</Label><Input type="number" value={planForm.max_slots} onChange={e => setPlanForm(p => ({ ...p, max_slots: e.target.value }))} /></div>
+            </div>
+            <div className="flex items-center gap-2"><Switch checked={planForm.active} onCheckedChange={v => setPlanForm(p => ({ ...p, active: v }))} /><Label>Ativo</Label></div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setPlanDialog(false)}>Cancelar</Button>
+              <Button type="submit" disabled={planMutation.isPending}>Criar Plano</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ SUBSCRIPTION DIALOG ═══ */}
+      <Dialog open={subDialog} onOpenChange={setSubDialog}>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Nova Assinatura</DialogTitle></DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); subMutation.mutate(); }} className="space-y-4">
+            <div><Label>Patrocinador *</Label><SponsorSelect value={subForm.sponsor_id} onChange={v => setSubForm(p => ({ ...p, sponsor_id: v }))} /></div>
+            <div><Label>Plano *</Label>
+              <Select value={subForm.plan_id} onValueChange={v => setSubForm(p => ({ ...p, plan_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecionar plano" /></SelectTrigger>
+                <SelectContent>{plans.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name} — R$ {Number(p.price_monthly).toFixed(2)}/mês</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Status</Label>
+                <Select value={subForm.status} onValueChange={v => setSubForm(p => ({ ...p, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Ativa</SelectItem><SelectItem value="trial">Trial</SelectItem>
+                    <SelectItem value="expired">Expirada</SelectItem><SelectItem value="cancelled">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Ciclo</Label>
+                <Select value={subForm.billing_cycle} onValueChange={v => setSubForm(p => ({ ...p, billing_cycle: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Mensal</SelectItem><SelectItem value="yearly">Anual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Início</Label><Input type="date" value={subForm.current_period_start} onChange={e => setSubForm(p => ({ ...p, current_period_start: e.target.value }))} /></div>
+              <div><Label>Fim</Label><Input type="date" value={subForm.current_period_end} onChange={e => setSubForm(p => ({ ...p, current_period_end: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Valor Pago (R$)</Label><Input type="number" step="0.01" value={subForm.amount_paid} onChange={e => setSubForm(p => ({ ...p, amount_paid: e.target.value }))} /></div>
+              <div><Label>Método Pagamento</Label><Input value={subForm.payment_method} onChange={e => setSubForm(p => ({ ...p, payment_method: e.target.value }))} placeholder="PIX, Boleto, etc." /></div>
+            </div>
+            <div><Label>Observações</Label><Textarea value={subForm.notes} onChange={e => setSubForm(p => ({ ...p, notes: e.target.value }))} /></div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setSubDialog(false)}>Cancelar</Button>
+              <Button type="submit" disabled={subMutation.isPending}>Criar Assinatura</Button>
             </div>
           </form>
         </DialogContent>

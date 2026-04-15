@@ -2929,6 +2929,109 @@ export type Database = {
           },
         ]
       }
+      sponsor_plans: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          features: Json | null
+          id: string
+          max_impressions: number | null
+          max_slots: number | null
+          name: string
+          price_monthly: number | null
+          price_yearly: number | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          features?: Json | null
+          id?: string
+          max_impressions?: number | null
+          max_slots?: number | null
+          name: string
+          price_monthly?: number | null
+          price_yearly?: number | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          features?: Json | null
+          id?: string
+          max_impressions?: number | null
+          max_slots?: number | null
+          name?: string
+          price_monthly?: number | null
+          price_yearly?: number | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sponsor_regions: {
+        Row: {
+          city_id: string | null
+          created_at: string
+          exclusive: boolean | null
+          id: string
+          notes: string | null
+          sponsor_id: string
+          state_uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          city_id?: string | null
+          created_at?: string
+          exclusive?: boolean | null
+          id?: string
+          notes?: string | null
+          sponsor_id: string
+          state_uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city_id?: string | null
+          created_at?: string
+          exclusive?: boolean | null
+          id?: string
+          notes?: string | null
+          sponsor_id?: string
+          state_uf?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_regions_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_regions_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "city_provider_stats"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "sponsor_regions_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsor_slot_limits: {
         Row: {
           context_type: string
@@ -2956,6 +3059,66 @@ export type Database = {
         }
         Relationships: []
       }
+      sponsor_subscriptions: {
+        Row: {
+          amount_paid: number | null
+          billing_cycle: string
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          notes: string | null
+          payment_method: string | null
+          plan_id: string
+          sponsor_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          billing_cycle?: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          plan_id: string
+          sponsor_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number | null
+          billing_cycle?: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          plan_id?: string
+          sponsor_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_subscriptions_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsors: {
         Row: {
           active: boolean
@@ -2964,11 +3127,13 @@ export type Database = {
           campaign_end: string | null
           campaign_start: string | null
           clicks: number
+          cnpj: string | null
           company_name: string
           created_at: string
           deleted_at: string | null
           delivered_impressions: number
           display_order: number
+          email: string | null
           end_date: string | null
           external_link: string | null
           full_description: string
@@ -3003,11 +3168,13 @@ export type Database = {
           campaign_end?: string | null
           campaign_start?: string | null
           clicks?: number
+          cnpj?: string | null
           company_name?: string
           created_at?: string
           deleted_at?: string | null
           delivered_impressions?: number
           display_order?: number
+          email?: string | null
           end_date?: string | null
           external_link?: string | null
           full_description?: string
@@ -3042,11 +3209,13 @@ export type Database = {
           campaign_end?: string | null
           campaign_start?: string | null
           clicks?: number
+          cnpj?: string | null
           company_name?: string
           created_at?: string
           deleted_at?: string | null
           delivered_impressions?: number
           display_order?: number
+          email?: string | null
           end_date?: string | null
           external_link?: string | null
           full_description?: string
