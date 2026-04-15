@@ -30,6 +30,13 @@ const MACRO_EMOJI: Record<string, string> = {
   'transporte-e-logistica': '🚚',
   'alimentacao-e-eventos': '🍽️',
   'negocios-e-consultoria': '💼',
+  'aulas-e-cursos': '📚',
+  'consultoria-e-negocios': '💼',
+  'eventos-e-festas': '🎉',
+  'moda-e-beleza': '💇',
+  'saude-e-bem-estar': '❤️',
+  'automoveis-e-veiculos': '🚗',
+  'assistencia-tecnica': '🔧',
 };
 
 const getMacroEmoji = (slug: string, name: string): string => {
@@ -38,6 +45,7 @@ const getMacroEmoji = (slug: string, name: string): string => {
   if (n.includes('urgên') || n.includes('urgenc')) return '🔥';
   if (n.includes('reform')) return '🏠';
   if (n.includes('consert')) return '🛠️';
+  if (n.includes('auto') || n.includes('veíc')) return '🚗';
   if (n.includes('saúde') || n.includes('saude') || n.includes('estétic')) return '🩺';
   if (n.includes('serviço') || n.includes('servico')) return '⚖️';
   return '📋';
@@ -79,10 +87,17 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
     return categories.filter(c => c.parent_id && c.count > 0);
   }, [categories]);
 
-  // Top 4 categories by count
+  // Top 4 categories: prioritize key macros, then by count
   const topCategories = useMemo(() => {
-    return [...subcategories].sort((a, b) => b.count - a.count).slice(0, 4);
-  }, [subcategories]);
+    const prioritySlugs = ['construcao-e-reforma', 'assistencia-tecnica', 'automoveis-e-veiculos'];
+    const priorityCats = prioritySlugs
+      .map(s => categories.find(c => c.slug === s))
+      .filter((c): c is CategoryItem => !!c);
+    const remaining = [...subcategories]
+      .filter(c => !prioritySlugs.includes(c.slug))
+      .sort((a, b) => b.count - a.count);
+    return [...priorityCats, ...remaining].slice(0, 4);
+  }, [categories, subcategories]);
 
   // Visible items based on chip filter
   const visible = useMemo(() => {
