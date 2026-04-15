@@ -108,7 +108,7 @@ const AdminStaffPage = () => {
 
     const { error } = await supabase.from('user_roles').insert({
       user_id: profile.id,
-      role: newRole,
+      role: newRole as any,
     });
 
     if (error) {
@@ -136,7 +136,7 @@ const AdminStaffPage = () => {
   };
 
   const handleChangeRole = async (member: StaffMember, newRole: string) => {
-    const { error } = await supabase.from('user_roles').update({ role: newRole }).eq('id', member.id);
+    const { error } = await supabase.from('user_roles').update({ role: newRole as any }).eq('id', member.id);
     if (error) {
       toast.error('Erro: ' + error.message);
     } else {
