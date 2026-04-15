@@ -634,15 +634,43 @@ const AdminUsersPage = () => {
         </Card>
       </div>
 
-      {/* Main Tabs: Usuários | Métricas */}
-      <Tabs defaultValue="users" className="mt-6">
+      {/* Main Tabs: Segmented by type + Métricas */}
+      <Tabs value={activeTab === 'all' ? 'users' : activeTab === 'metrics' ? 'metrics' : 'users'} onValueChange={v => { if (v === 'metrics') setActiveTab('metrics'); else if (activeTab === 'metrics') setActiveTab('all'); }} className="mt-6">
         <TabsList className="grid w-full grid-cols-2 max-w-md">
           <TabsTrigger value="users"><Users className="h-4 w-4 mr-1.5" /> Usuários</TabsTrigger>
-          <TabsTrigger value="metrics"><BarChart3 className="h-4 w-4 mr-1.5" /> Métricas</TabsTrigger>
+          <TabsTrigger value="metrics" onClick={() => setActiveTab('metrics')}><BarChart3 className="h-4 w-4 mr-1.5" /> Métricas</TabsTrigger>
         </TabsList>
 
         {/* ═══ Users Tab ═══ */}
         <TabsContent value="users" className="space-y-4 mt-4">
+          {/* Sub-tabs by user type */}
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { key: 'all', label: 'Todos', icon: Users },
+              { key: 'clientes', label: 'Clientes', icon: User },
+              { key: 'prestadores', label: 'Prestadores', icon: Wrench },
+              { key: 'empresas', label: 'Empresas', icon: Building2 },
+              { key: 'agencias', label: 'Agências', icon: Briefcase },
+              { key: 'patrocinadores', label: 'Patrocinadores', icon: TrendingUp },
+              { key: 'staff', label: 'Staff', icon: Shield },
+            ].map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.key;
+              return (
+                <Button
+                  key={tab.key}
+                  size="sm"
+                  variant={isActive ? 'default' : 'outline'}
+                  className="h-8 text-xs gap-1.5"
+                  onClick={() => { setActiveTab(tab.key); setPage(1); }}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {tab.label}
+                </Button>
+              );
+            })}
+          </div>
+
           <UserFilters
             search={search}
             onSearchChange={v => { setSearch(v); setPage(1); }}
@@ -652,6 +680,8 @@ const AdminUsersPage = () => {
             onFilterStatusChange={v => { setFilterStatus(v); setPage(1); }}
             filterProviderStatus={filterProviderStatus}
             onFilterProviderStatusChange={v => { setFilterProviderStatus(v); setPage(1); }}
+            sortBy={sortBy}
+            onSortChange={v => { setSortBy(v); setPage(1); }}
             totalResults={filtered.length}
             onExport={handleExport}
           />
@@ -676,15 +706,19 @@ const AdminUsersPage = () => {
           {selectedIds.size > 0 && (
             <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 shadow-sm">
               <span className="text-sm font-medium text-foreground mr-2">{selectedIds.size} selecionado(s)</span>
-              <Button size="sm" variant="outline" onClick={() => bulkSetStatus('active')} disabled={bulkLoading} className="text-green-600 border-green-200 h-7 text-xs">✅ Ativar</Button>
-              <Button size="sm" variant="outline" onClick={() => bulkSetStatus('inactive')} disabled={bulkLoading} className="text-destructive border-destructive/30 h-7 text-xs">🔴 Desativar</Button>
+              <Button size="sm" variant="outline" onClick={() => bulkSetStatus('active')} disabled={bulkLoading} className="text-green-600 border-green-200 h-7 text-xs gap-1">
+                <CheckCircle className="h-3 w-3" /> Ativar
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => bulkSetStatus('inactive')} disabled={bulkLoading} className="text-destructive border-destructive/30 h-7 text-xs gap-1">
+                <XCircle className="h-3 w-3" /> Desativar
+              </Button>
               <div className="flex items-center gap-1">
                 <Select value={bulkTypeTarget} onValueChange={setBulkTypeTarget}>
                   <SelectTrigger className="h-7 w-[130px] text-xs"><SelectValue placeholder="Mudar tipo..." /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="client">👤 Cliente</SelectItem>
-                    <SelectItem value="provider">🔧 Profissional</SelectItem>
-                    <SelectItem value="rh">🏢 Agência/RH</SelectItem>
+                    <SelectItem value="client"><span className="flex items-center gap-1.5"><User className="h-3 w-3" /> Cliente</span></SelectItem>
+                    <SelectItem value="provider"><span className="flex items-center gap-1.5"><Wrench className="h-3 w-3" /> Profissional</span></SelectItem>
+                    <SelectItem value="rh"><span className="flex items-center gap-1.5"><Building2 className="h-3 w-3" /> Agência/RH</span></SelectItem>
                   </SelectContent>
                 </Select>
                 {bulkTypeTarget && (
@@ -705,7 +739,9 @@ const AdminUsersPage = () => {
               <Button size="sm" variant="destructive" onClick={bulkSoftDelete} disabled={bulkLoading} className="h-7 text-xs">
                 <Trash2 className="h-3 w-3 mr-1" /> Desativar
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="h-7 text-xs ml-auto">✕ Limpar</Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="h-7 text-xs ml-auto gap-1">
+                <X className="h-3 w-3" /> Limpar
+              </Button>
             </div>
           )}
 
