@@ -28,11 +28,12 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// ── Fetch: Network-first for navigations, Stale-While-Revalidate for assets ──
+// ── Fetch: Network-first for navigations, Cache-first for static assets ──
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
+  // Navigation requests: network-first with offline fallback
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -46,6 +47,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Static assets: cache-first with background revalidation (long-lived cache)
   if (
     request.destination === 'style' ||
     request.destination === 'script' ||
@@ -54,11 +56,14 @@ self.addEventListener('fetch', (event) => {
   ) {
     event.respondWith(
       caches.match(request).then((cached) => {
+        // Background revalidation
         const fetched = fetch(request).then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
           return response;
-        });
+        }).catch(() => cached);
         return cached || fetched;
       })
     );

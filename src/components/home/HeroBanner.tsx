@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
@@ -8,7 +8,6 @@ import { importWithRetry } from '@/lib/lazyWithRetry';
 import { getCategoryForService, CATEGORY_IMAGES, type ServiceCategory } from '@/lib/serviceCategoryMap';
 
 const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBar')));
-const GeoLocationChip = lazy(() => importWithRetry(() => import('@/components/GeoLocationChip')));
 
 const FALLBACK_PREFIXES = ['Encontre o melhor', 'Preciso de'];
 
@@ -53,54 +52,11 @@ const HeroPrefixRotator = ({ prefixes }: { prefixes: string[] }) => {
   );
 };
 
-/* Floating decorative dots — hidden on mobile to reduce paint cost */
-const FloatingDots = () => {
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    // Skip on mobile for performance
-    if (window.innerWidth < 768) return;
-    const start = () => setShow(true);
-    if ('requestIdleCallback' in window) {
-      const id = (window as any).requestIdleCallback(start);
-      return () => (window as any).cancelIdleCallback(id);
-    }
-    const id = setTimeout(start, 500);
-    return () => clearTimeout(id);
-  }, []);
-  if (!show) return null;
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      {[...Array(4)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute rounded-full animate-floating-dot"
-          style={{
-            width: 4 + i * 3,
-            height: 4 + i * 3,
-            left: `${10 + i * 20}%`,
-            top: `${15 + (i % 3) * 25}%`,
-            background: i % 2 === 0
-              ? 'hsl(var(--secondary) / 0.25)'
-              : 'hsl(var(--primary-foreground) / 0.15)',
-            animationDuration: `${5 + i * 0.8}s`,
-            animationDelay: `${i * 0.5}s`,
-            ['--dot-distance' as any]: `${-24 - i * 4}px`,
-          }}
-        />
-      ))}
-    </div>
-  );
-};
-
-// Preload only adjacent images, not all at once
-
 const HeroBanner = () => {
-  const [currentCategory, setCurrentCategory] = useState<ServiceCategory>('instalacoes');
   const [displayedImage, setDisplayedImage] = useState(CATEGORY_IMAGES.instalacoes);
   const [nextImage, setNextImage] = useState<string | null>(null);
   const { city: geoCity } = useGeoCity();
 
-  // Dynamic settings from admin
   const prefixesRaw = useSettingValue('hero_prefixes');
   const ctaPrimaryLinkText = useSettingValue('hero_cta_primary_link_text');
   const ctaPrimaryLink = useSettingValue('hero_cta_primary_link');
@@ -113,14 +69,11 @@ const HeroBanner = () => {
     return parsed.length > 0 ? parsed : FALLBACK_PREFIXES;
   }, [prefixesRaw]);
 
-  // When rotating text changes service, update background
   const handleServiceChange = useCallback((service: string) => {
     const cat = getCategoryForService(service);
     const newImg = CATEGORY_IMAGES[cat];
     if (newImg !== displayedImage) {
       setNextImage(newImg);
-      setCurrentCategory(cat);
-      // After crossfade, swap
       setTimeout(() => {
         setDisplayedImage(newImg);
         setNextImage(null);
@@ -128,21 +81,24 @@ const HeroBanner = () => {
     }
   }, [displayedImage]);
 
-  // Preload only the next category image — deferred to avoid forced reflow during paint
+  // Deferred preload of next image — no forced reflow
   useEffect(() => {
-    const raf = requestAnimationFrame(() => {
+    const id = setTimeout(() => {
       const allImages = Object.values(CATEGORY_IMAGES);
       const currentIdx = allImages.indexOf(displayedImage);
       const nextIdx = (currentIdx + 1) % allImages.length;
       const img = new Image();
       img.src = allImages[nextIdx];
-    });
-    return () => cancelAnimationFrame(raf);
+    }, 2000);
+    return () => clearTimeout(id);
   }, [displayedImage]);
 
   return (
-    <section className="relative h-[340px] overflow-visible py-6 sm:h-[360px] sm:py-8 md:min-h-[480px] md:overflow-hidden md:py-20">
-      {/* Current background image */}
+    <section
+      className="relative overflow-visible py-6 sm:py-8 md:overflow-hidden md:py-20"
+      style={{ height: 340, minHeight: 340 }}
+    >
+      {/* Current background — dimensions explicit to prevent CLS */}
       <img
         src={displayedImage}
         alt="Profissionais de serviços"
@@ -151,24 +107,23 @@ const HeroBanner = () => {
         fetchPriority="high"
         loading="eager"
         decoding="sync"
-        className="absolute inset-0 h-full w-full object-cover object-center hero-img-cinematic transition-opacity duration-[800ms]"
+        className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[800ms]"
+        style={{ width: '100%', height: '100%' }}
       />
 
-      {/* Next image crossfading in */}
       {nextImage && (
         <img
           src={nextImage}
-          alt="Profissionais de serviços"
+          alt=""
           width={1920}
           height={768}
           loading="eager"
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover object-center animate-fade-in"
-          style={{ animationDuration: '800ms' }}
+          style={{ animationDuration: '800ms', width: '100%', height: '100%' }}
         />
       )}
 
-      {/* Gradient overlay */}
       <div
         className="absolute inset-0"
         style={{
@@ -176,10 +131,7 @@ const HeroBanner = () => {
         }}
       />
 
-      {/* Bottom fade */}
       <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background/20 to-transparent" />
-
-      <FloatingDots />
 
       <div className="container relative z-10 flex flex-col items-center text-center hero-entrance">
         <div className="w-full max-w-full overflow-hidden px-4">
