@@ -32,7 +32,7 @@ const IconPicker = ({ value, onChange }: Props) => {
         {SelectedIcon ? (
           <SelectedIcon size={18} strokeWidth={1.75} className="text-slate-600 shrink-0" />
         ) : (
-          <span className="text-lg shrink-0">{value || '🔧'}</span>
+          <CircleDot size={18} strokeWidth={1.75} className="text-muted-foreground shrink-0" />
         )}
         <span className="truncate">{value || 'Selecionar ícone'}</span>
       </button>

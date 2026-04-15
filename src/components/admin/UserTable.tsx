@@ -290,7 +290,7 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 {isAdminUser && (
                   <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
-                    👑 Admin
+                    Admin
                   </Badge>
                 )}
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${profileTypeBadge(type)}`}>

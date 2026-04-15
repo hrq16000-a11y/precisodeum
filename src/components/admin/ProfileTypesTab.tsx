@@ -47,7 +47,7 @@ const emptyForm = (): Omit<ProfileType, 'id'> => ({
   label: '',
   description: '',
   role: 'client',
-  icon: '👤',
+  icon: 'User',
   color: '#3b82f6',
   tier_key: '',
   default_level_id: null,

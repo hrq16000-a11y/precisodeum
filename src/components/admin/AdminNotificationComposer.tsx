@@ -19,11 +19,11 @@ const TARGET_OPTIONS = [
 ];
 
 const TYPE_OPTIONS = [
-  { value: 'system', label: '🔔 Sistema' },
-  { value: 'message', label: '💬 Mensagem' },
-  { value: 'job', label: '💼 Vaga' },
-  { value: 'lead', label: '📩 Lead' },
-  { value: 'approval', label: '✅ Aprovação' },
+  { value: 'system', label: 'Sistema' },
+  { value: 'message', label: 'Mensagem' },
+  { value: 'job', label: 'Vaga' },
+  { value: 'lead', label: 'Lead' },
+  { value: 'approval', label: 'Aprovação' },
 ];
 
 const AdminNotificationComposer = () => {
