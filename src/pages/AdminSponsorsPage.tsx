@@ -269,7 +269,76 @@ const AdminSponsorsPage = () => {
   const [permDialog, setPermDialog] = useState(false);
   const [permContact, setPermContact] = useState<any>(null);
 
-  // ── Bulk ──
+  // Region/Plan/Subscription dialogs
+  const [regionDialog, setRegionDialog] = useState(false);
+  const [regionForm, setRegionForm] = useState({ sponsor_id: '', city_id: '', state_uf: '', exclusive: false, notes: '' });
+  const [planDialog, setPlanDialog] = useState(false);
+  const [planForm, setPlanForm] = useState({ name: '', slug: '', description: '', price_monthly: '', price_yearly: '', max_impressions: '-1', max_slots: '1', active: true });
+  const [subDialog, setSubDialog] = useState(false);
+  const [subForm, setSubForm] = useState({ sponsor_id: '', plan_id: '', status: 'active', billing_cycle: 'monthly', current_period_start: '', current_period_end: '', amount_paid: '', payment_method: '', notes: '' });
+
+  const regionMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('sponsor_regions').insert({
+        sponsor_id: regionForm.sponsor_id,
+        city_id: regionForm.city_id || null,
+        state_uf: regionForm.state_uf || null,
+        exclusive: regionForm.exclusive,
+        notes: regionForm.notes,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-sponsor-regions'] }); toast({ title: 'Praça adicionada!' }); setRegionDialog(false); },
+    onError: () => toast({ title: 'Erro ao adicionar praça', variant: 'destructive' }),
+  });
+
+  const deleteRegionMutation = useMutation({
+    mutationFn: async (id: string) => { await supabase.from('sponsor_regions').delete().eq('id', id); },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-sponsor-regions'] }),
+  });
+
+  const planMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('sponsor_plans').insert({
+        name: planForm.name, slug: planForm.slug, description: planForm.description,
+        price_monthly: Number(planForm.price_monthly) || 0,
+        price_yearly: Number(planForm.price_yearly) || 0,
+        max_impressions: Number(planForm.max_impressions) || -1,
+        max_slots: Number(planForm.max_slots) || 1,
+        active: planForm.active,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-sponsor-plans'] }); toast({ title: 'Plano criado!' }); setPlanDialog(false); },
+    onError: () => toast({ title: 'Erro ao criar plano', variant: 'destructive' }),
+  });
+
+  const deletePlanMutation = useMutation({
+    mutationFn: async (id: string) => { await supabase.from('sponsor_plans').delete().eq('id', id); },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-sponsor-plans'] }),
+  });
+
+  const subMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('sponsor_subscriptions').insert({
+        sponsor_id: subForm.sponsor_id, plan_id: subForm.plan_id, status: subForm.status,
+        billing_cycle: subForm.billing_cycle,
+        current_period_start: subForm.current_period_start || null,
+        current_period_end: subForm.current_period_end || null,
+        amount_paid: Number(subForm.amount_paid) || 0,
+        payment_method: subForm.payment_method, notes: subForm.notes,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-sponsor-subscriptions'] }); toast({ title: 'Assinatura criada!' }); setSubDialog(false); },
+    onError: () => toast({ title: 'Erro ao criar assinatura', variant: 'destructive' }),
+  });
+
+  const deleteSubMutation = useMutation({
+    mutationFn: async (id: string) => { await supabase.from('sponsor_subscriptions').delete().eq('id', id); },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-sponsor-subscriptions'] }),
+  });
+
   const bulk = useAdminBulkActions({
     table: 'sponsors', resourceType: 'sponsor',
     onComplete: () => { qc.invalidateQueries({ queryKey: ['admin-sponsors'] }); },
