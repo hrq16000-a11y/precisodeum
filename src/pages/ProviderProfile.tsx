@@ -1054,6 +1054,25 @@ const ProviderProfile = () => {
                     </span>
                   )}
                 </div>
+
+                {/* ── PROMINENT LEVEL BADGE ── */}
+                {provider.levelInfo && (
+                  <motion.div
+                    className="mt-2 inline-flex items-center gap-2 rounded-xl px-4 py-2 shadow-sm"
+                    style={{
+                      backgroundColor: `${provider.levelInfo.color}15`,
+                      border: `2px solid ${provider.levelInfo.color}30`,
+                    }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5, type: 'spring', stiffness: 250 }}
+                  >
+                    <span className="text-lg">🏆</span>
+                    <span className="text-sm font-bold" style={{ color: provider.levelInfo.color }}>
+                      {provider.levelInfo.name}
+                    </span>
+                  </motion.div>
+                )}
                 {provider.business_name && <p className="text-sm text-muted-foreground mt-1">{provider.business_name}</p>}
                 <p className="mt-1 text-sm font-semibold flex items-center justify-center sm:justify-start gap-1" style={accentBg ? { color: accentBg } : undefined}>
                   <CategoryIcon icon={categoryIcon} size={16} className="text-accent" />
