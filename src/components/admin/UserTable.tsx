@@ -172,6 +172,9 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                     <Mail className="h-3 w-3 shrink-0" />
                     {p.email || '—'}
                   </p>
+                  {p.user_ref && (
+                    <p className="text-[10px] font-mono text-muted-foreground/70 truncate">🔗 {p.user_ref}</p>
+                  )}
                 </div>
               </div>
 

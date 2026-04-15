@@ -1058,6 +1058,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          user_ref: string | null
           view_count: number
           whatsapp: string
           work_model: string
@@ -1089,6 +1090,7 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          user_ref?: string | null
           view_count?: number
           whatsapp?: string
           work_model?: string
@@ -1120,6 +1122,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          user_ref?: string | null
           view_count?: number
           whatsapp?: string
           work_model?: string
@@ -1184,6 +1187,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "providers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
           },
         ]
       }
@@ -1346,6 +1356,7 @@ export type Database = {
           title: string
           type: string
           user_id: string
+          user_ref: string | null
           video_url: string | null
         }
         Insert: {
@@ -1360,6 +1371,7 @@ export type Database = {
           title?: string
           type?: string
           user_id: string
+          user_ref?: string | null
           video_url?: string | null
         }
         Update: {
@@ -1374,6 +1386,7 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
+          user_ref?: string | null
           video_url?: string | null
         }
         Relationships: []
@@ -1532,6 +1545,7 @@ export type Database = {
           provider_id: string
           updated_at: string
           user_id: string
+          user_ref: string | null
         }
         Insert: {
           cover_image_url?: string | null
@@ -1543,6 +1557,7 @@ export type Database = {
           provider_id: string
           updated_at?: string
           user_id: string
+          user_ref?: string | null
         }
         Update: {
           cover_image_url?: string | null
@@ -1554,6 +1569,7 @@ export type Database = {
           provider_id?: string
           updated_at?: string
           user_id?: string
+          user_ref?: string | null
         }
         Relationships: [
           {
@@ -1562,6 +1578,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "providers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_albums_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
           },
         ]
       }
@@ -1575,6 +1598,7 @@ export type Database = {
           original_name: string
           storage_path: string
           user_id: string
+          user_ref: string | null
         }
         Insert: {
           album_id: string
@@ -1585,6 +1609,7 @@ export type Database = {
           original_name?: string
           storage_path?: string
           user_id: string
+          user_ref?: string | null
         }
         Update: {
           album_id?: string
@@ -1595,6 +1620,7 @@ export type Database = {
           original_name?: string
           storage_path?: string
           user_id?: string
+          user_ref?: string | null
         }
         Relationships: [
           {
@@ -1800,6 +1826,13 @@ export type Database = {
             referencedRelation: "providers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "provider_impressions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
+          },
         ]
       }
       provider_page_settings: {
@@ -1870,6 +1903,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "providers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_page_settings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
           },
         ]
       }
@@ -2152,6 +2192,7 @@ export type Database = {
           rating: number
           service_rating: number
           user_id: string
+          user_ref: string | null
         }
         Insert: {
           admin_note?: string
@@ -2165,6 +2206,7 @@ export type Database = {
           rating?: number
           service_rating?: number
           user_id: string
+          user_ref?: string | null
         }
         Update: {
           admin_note?: string
@@ -2178,6 +2220,7 @@ export type Database = {
           rating?: number
           service_rating?: number
           user_id?: string
+          user_ref?: string | null
         }
         Relationships: [
           {
@@ -2186,6 +2229,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "providers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
           },
         ]
       }
@@ -2428,6 +2478,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "providers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
           },
         ]
       }
@@ -2975,6 +3032,13 @@ export type Database = {
             referencedRelation: "providers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
+          },
         ]
       }
       system_contract_map: {
@@ -3290,6 +3354,7 @@ export type Database = {
           notes: string | null
           tag_name: string
           user_id: string
+          user_ref: string | null
         }
         Insert: {
           color?: string
@@ -3298,6 +3363,7 @@ export type Database = {
           notes?: string | null
           tag_name: string
           user_id: string
+          user_ref?: string | null
         }
         Update: {
           color?: string
@@ -3306,6 +3372,7 @@ export type Database = {
           notes?: string | null
           tag_name?: string
           user_id?: string
+          user_ref?: string | null
         }
         Relationships: []
       }
@@ -3536,16 +3603,64 @@ export type Database = {
       }
       user_master_view: {
         Row: {
+          account_type_id: string | null
+          avatar_url: string | null
+          business_name: string | null
+          city: string | null
+          created_at: string | null
           email: string | null
-          plan: string | null
+          engagement_points: number | null
+          featured: boolean | null
+          full_name: string | null
+          id: string | null
+          level_id: string | null
+          phone: string | null
+          portfolio_album_count: number | null
+          portfolio_photo_count: number | null
           profile_type: string | null
+          provider_id: string | null
+          provider_plan: string | null
+          provider_slug: string | null
+          provider_status: string | null
+          rating_avg: number | null
+          review_count: number | null
           role: string | null
+          services_count: number | null
+          state: string | null
+          status: string | null
           system_role: Database["public"]["Enums"]["app_role"] | null
+          total_jobs: number | null
           total_leads: number | null
+          total_reviews: number | null
           total_services: number | null
+          unread_notifications: number | null
+          updated_at: string | null
           user_ref: string | null
+          whatsapp: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_account_type_id_fkey"
+            columns: ["account_type_id"]
+            isOneToOne: false
+            referencedRelation: "account_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "public_user_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "user_levels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
