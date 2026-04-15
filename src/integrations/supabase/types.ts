@@ -630,6 +630,51 @@ export type Database = {
         }
         Relationships: []
       }
+      gamification_levels: {
+        Row: {
+          active: boolean
+          badge_class: string
+          benefits: Json
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          max_points: number | null
+          min_points: number
+          name: string
+          priority: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          badge_class?: string
+          benefits?: Json
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          max_points?: number | null
+          min_points?: number
+          name: string
+          priority?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          badge_class?: string
+          benefits?: Json
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          max_points?: number | null
+          min_points?: number
+          name?: string
+          priority?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       governance_approvals: {
         Row: {
           approved_by: string | null
@@ -2296,6 +2341,48 @@ export type Database = {
         }
         Relationships: []
       }
+      score_rules: {
+        Row: {
+          action_key: string
+          active: boolean
+          category: string
+          cooldown_hours: number | null
+          created_at: string
+          description: string
+          id: string
+          label: string
+          max_per_day: number | null
+          points: number
+          updated_at: string
+        }
+        Insert: {
+          action_key: string
+          active?: boolean
+          category?: string
+          cooldown_hours?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          label: string
+          max_per_day?: number | null
+          points?: number
+          updated_at?: string
+        }
+        Update: {
+          action_key?: string
+          active?: boolean
+          category?: string
+          cooldown_hours?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          label?: string
+          max_per_day?: number | null
+          points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       search_demand_logs: {
         Row: {
           category_slug: string | null
@@ -3678,6 +3765,15 @@ export type Database = {
           invalid_refs: number
           table_name: string
           total_records: number
+        }[]
+      }
+      get_gamification_level: {
+        Args: { _points: number }
+        Returns: {
+          level_badge_class: string
+          level_color: string
+          level_icon: string
+          level_name: string
         }[]
       }
       get_neighborhood_by_point: {
