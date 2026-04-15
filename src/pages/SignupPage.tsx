@@ -518,15 +518,38 @@ const SignupPage = () => {
                 {/* Provider-specific fields */}
                 {showProviderFields && (
                   <>
-                    <div className="rounded-xl border border-accent/20 bg-accent/5 backdrop-blur-sm p-3">
-                      <p className="text-xs font-medium text-accent">
-                        ✨ Complete os dados abaixo para criar sua página profissional
-                      </p>
-                      {estimatedReach > 0 && (
-                        <p className="mt-1.5 text-[11px] text-accent/80 font-semibold">
-                          📊 Alcance estimado: até <span className="text-accent font-black">{estimatedReach.toLocaleString('pt-BR')}</span> pessoas/mês na sua região
+                    <div className="rounded-xl border border-accent/20 bg-accent/5 backdrop-blur-sm p-4 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-accent/5 animate-pulse" style={{ animationDuration: '3s' }} />
+                      <div className="relative">
+                        <p className="text-xs font-bold text-accent flex items-center gap-1.5">
+                          ✨ Potencial de Clientes
                         </p>
-                      )}
+                        {estimatedReach > 0 ? (
+                          <div className="mt-2">
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-black text-accent tracking-tight">
+                                {estimatedReach.toLocaleString('pt-BR')}
+                              </span>
+                              <span className="text-[10px] text-accent/70 font-medium">pessoas/mês</span>
+                            </div>
+                            <div className="mt-1.5 h-1.5 w-full rounded-full bg-accent/10 overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-accent to-accent/60 transition-all duration-1000"
+                                style={{ width: `${Math.min((estimatedReach / 2000) * 100, 100)}%` }}
+                              />
+                            </div>
+                            <p className="mt-1 text-[10px] text-accent/60">
+                              {form.description ? '📝 ' : ''}
+                              {form.categoryId ? '✅ Categoria · ' : ''}
+                              {form.city ? `📍 ${form.city}` : 'Selecione sua cidade para ver o alcance'}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="mt-1 text-[11px] text-accent/60">
+                            Selecione sua cidade para estimar seu alcance
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <div>

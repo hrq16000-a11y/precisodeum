@@ -4,8 +4,10 @@ import { useSponsorAuth } from '@/hooks/useSponsorAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, MousePointerClick, BarChart3, TrendingUp, MapPin, Tag } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Eye, MousePointerClick, BarChart3, TrendingUp, MapPin, Tag, FileDown } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { exportSponsorPdf } from '@/lib/exportSponsorPdf';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
@@ -129,14 +131,36 @@ const SponsorMetricsPage = () => {
   return (
     <SponsorLayout>
       <div className="space-y-6">
-        <motion.h1
-          className="text-2xl font-bold text-foreground"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          Métricas
-        </motion.h1>
+        <div className="flex items-center justify-between">
+          <motion.h1
+            className="text-2xl font-bold text-foreground"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            Métricas
+          </motion.h1>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => exportSponsorPdf({
+              sponsorName: sponsor?.company_name || sponsor?.contact_name || 'Patrocinador',
+              plan: sponsor?.plan || 'standard',
+              totalImpressions: impressions,
+              totalClicks: clicks,
+              ctr,
+              periodImpressions: totalPeriodImpressions,
+              periodClicks: totalPeriodClicks,
+              slotRanking,
+              pageRanking,
+              dailyData: dailyData.map(d => ({ date: d.date, impressions: d.impressions, clicks: d.clicks })),
+            })}
+          >
+            <FileDown className="h-4 w-4" />
+            Exportar PDF
+          </Button>
+        </div>
 
         {/* KPI Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
