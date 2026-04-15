@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import SponsorLayout from '@/components/sponsor/SponsorLayout';
 import { useSponsorAuth } from '@/hooks/useSponsorAuth';
