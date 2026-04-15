@@ -21,7 +21,7 @@ import { Progress } from '@/components/ui/progress';
 import {
   Plus, Pencil, Trash2, ExternalLink, CalendarIcon, Eye, MousePointerClick, Search,
   Megaphone, Users, FileText, StickyNote, AlertTriangle, TrendingUp, Settings2,
-  Link2, Globe, MapPin, Building2, Phone, Mail, Star, Crown, Zap, CreditCard, Map,
+  Link2, Globe, MapPin, Building2, Phone, Mail, Star, Crown, Zap, CreditCard,
   PanelTop, Columns, Monitor, BarChart3, ArrowRight, Image as ImageIcon, Filter,
   Download, Bell, Power, Activity, Send, Heart, HeartCrack, Gauge
 } from 'lucide-react';
