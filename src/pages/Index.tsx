@@ -249,10 +249,14 @@ const Index = () => {
       {sectionOrder.map((slug) => {
         const section = renderSection(slug);
         if (!section) return null;
+        // Reserve min-height for sections above categories to prevent CLS
+        const minH = SECTION_MIN_HEIGHTS[slug];
         return (
           <LazyErrorBoundary key={slug}>
-            <Suspense fallback={<SectionFallback />}>
-              {section}
+            <Suspense fallback={minH ? <div style={{ minHeight: minH }} /> : <SectionFallback />}>
+              <div style={minH ? { minHeight: minH } : undefined}>
+                {section}
+              </div>
             </Suspense>
           </LazyErrorBoundary>
         );
