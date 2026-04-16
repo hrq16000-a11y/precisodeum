@@ -502,7 +502,7 @@ const DashboardPage = () => {
           Acesso Rápido
         </motion.h2>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <GlassCard variant="default" delay={0.5} className="cursor-pointer" onClick={() => navigate('/dashboard/servicos')}>
+          <GlassCard variant="default" delay={0.5} className="cursor-pointer" onClick={() => navigate('/dashboard/servicos')} data-tour="services">
             <div className="flex items-start gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent transition-all duration-300 group-hover:bg-accent group-hover:text-accent-foreground">
                 <Settings className="h-5 w-5" />
