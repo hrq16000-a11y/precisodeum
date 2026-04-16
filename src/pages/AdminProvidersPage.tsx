@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check, X, Eye, Search, MapPin, Edit2, MoreHorizontal, ExternalLink, Download, ChevronDown, ChevronUp, CheckCheck, XCircle, ToggleRight } from 'lucide-react';
+import { Check, X, Eye, Search, MapPin, Edit2, MoreHorizontal, ExternalLink, Download, ChevronDown, ChevronUp, CheckCheck, XCircle, ToggleRight, Star, AlertCircle, Camera, Clock } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAdmin } from '@/hooks/useAdmin';
