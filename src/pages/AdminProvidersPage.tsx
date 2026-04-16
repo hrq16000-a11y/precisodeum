@@ -586,9 +586,6 @@ const AdminProvidersPage = () => {
                           {p.business_name && (
                             <div><span className="font-medium text-foreground">Empresa:</span> {p.business_name}</div>
                           )}
-                          {p.plan && (
-                            <div><span className="font-medium text-foreground">Plano:</span> {p.plan}</div>
-                          )}
                           {p.years_experience > 0 && (
                             <div><span className="font-medium text-foreground">Experiencia:</span> {p.years_experience} ano(s)</div>
                           )}
