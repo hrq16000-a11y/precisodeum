@@ -37,6 +37,7 @@ import OurStoryBanner from '@/components/OurStoryBanner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import ProfileCheckupModal from '@/components/dashboard/ProfileCheckupModal';
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
+import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
@@ -96,6 +97,7 @@ const DashboardPage = () => {
   }, []);
 
   const profileType = profile?.profile_type || 'client';
+  const tour = useOnboardingTour(profileType);
   const isClient = profileType === 'client';
   const isProvider = profileType === 'provider';
   const isRH = profileType === 'rh';
@@ -336,8 +338,8 @@ const DashboardPage = () => {
     <DashboardLayout>
       {/* Profile check-up modal for incomplete providers */}
       {showCheckup && <ProfileCheckupModal />}
-      {/* Real-time engagement notification listener */}
       <RealtimeEngagementToast />
+      <OnboardingTour active={tour.active} step={tour.step} steps={tour.steps} onNext={tour.next} onPrev={tour.prev} onDismiss={tour.dismiss} />
       {/* Enhanced Welcome Hero */}
       <WelcomeHero
         greeting={greeting}
@@ -353,7 +355,7 @@ const DashboardPage = () => {
       />
 
       {/* Profile Strength — Gamification Progress */}
-      <div className="mt-4">
+      <div className="mt-4" data-tour="profile-strength">
         <ProfileStrength />
       </div>
 
@@ -374,7 +376,7 @@ const DashboardPage = () => {
 
       {/* Share Profile Card & QR Code */}
       {provider?.slug && (
-        <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2" data-tour="share">
           <ShareProfileCard />
           <QrCodeCard />
           <StorageQuotaWidget />
@@ -456,7 +458,7 @@ const DashboardPage = () => {
             </div>
           </GlassCard>
 
-          <GlassCard variant="default" hoverEffect={false} delay={0.4}>
+          <GlassCard variant="default" hoverEffect={false} delay={0.4} data-tour="leads">
             <LeadsChart providerId={provider.id} />
           </GlassCard>
 
@@ -500,7 +502,7 @@ const DashboardPage = () => {
           Acesso Rápido
         </motion.h2>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <GlassCard variant="default" delay={0.5} className="cursor-pointer" onClick={() => navigate('/dashboard/servicos')}>
+          <GlassCard variant="default" delay={0.5} className="cursor-pointer" onClick={() => navigate('/dashboard/servicos')} data-tour="services">
             <div className="flex items-start gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent transition-all duration-300 group-hover:bg-accent group-hover:text-accent-foreground">
                 <Settings className="h-5 w-5" />

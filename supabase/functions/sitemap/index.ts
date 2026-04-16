@@ -17,85 +17,105 @@ Deno.serve(async (req) => {
   const siteUrl = 'https://precisodeum.com.br';
   const today = new Date().toISOString().split('T')[0];
 
-  const [
-    { data: categories },
-    { data: cities },
-    { data: providers },
-    { data: services },
-    { data: blogPosts },
-    { data: jobs },
-    { data: institutionalPages },
-    { data: popularServices },
-  ] = await Promise.all([
-    supabase.from('categories').select('slug, created_at').is('deleted_at', null),
-    supabase.from('cities').select('slug, created_at'),
-    supabase.from('providers').select('slug, updated_at').eq('status', 'approved').not('slug', 'is', null),
-    supabase.from('services').select('id, created_at, provider_id').is('deleted_at', null),
-    supabase.from('blog_posts').select('slug, updated_at').eq('published', true).is('deleted_at', null),
-    supabase.from('jobs').select('slug, updated_at').eq('status', 'active').eq('approval_status', 'approved').is('deleted_at', null),
-    supabase.from('institutional_pages').select('slug, updated_at').eq('published', true),
-    supabase.from('popular_services').select('slug, updated_at').eq('active', true),
-  ]);
+  const url = new URL(req.url);
+  const type = url.searchParams.get('type');
 
+  // Sitemap Index — returns links to sub-sitemaps
+  if (!type) {
+    const sitemaps = [
+      'static', 'categories', 'providers', 'cities',
+      'blog', 'jobs', 'pages', 'popular', 'seo',
+    ];
+    const entries = sitemaps.map(s =>
+      `  <sitemap>\n    <loc>${escapeXml(siteUrl)}/api/sitemap?type=${s}</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>`
+    ).join('\n');
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${entries}
+</sitemapindex>`;
+
+    return respond(xml);
+  }
+
+  // Sub-sitemaps by type
   let urls = '';
 
-  // 1. Homepage
-  urls += url(siteUrl, '/', today, 'daily', '1.0');
-
-  // 2. Static pages
-  urls += url(siteUrl, '/buscar', today, 'daily', '0.8');
-  urls += url(siteUrl, '/categorias', today, 'weekly', '0.8');
-  urls += url(siteUrl, '/cidades', today, 'weekly', '0.8');
-  urls += url(siteUrl, '/servicos', today, 'weekly', '0.7');
-  urls += url(siteUrl, '/vagas', today, 'daily', '0.7');
-  urls += url(siteUrl, '/blog', today, 'daily', '0.7');
-  urls += url(siteUrl, '/faq', today, 'monthly', '0.5');
-  urls += url(siteUrl, '/sobre', today, 'monthly', '0.3');
-  urls += url(siteUrl, '/privacidade', today, 'yearly', '0.2');
-  urls += url(siteUrl, '/termos', today, 'yearly', '0.2');
-  urls += url(siteUrl, '/cookies', today, 'yearly', '0.2');
-
-  // 3. Categories
-  for (const cat of categories || []) {
-    urls += url(siteUrl, `/categoria/${cat.slug}`, lastmod(cat.created_at), 'daily', '0.9');
+  if (type === 'static') {
+    urls += entry(siteUrl, '/', today, 'daily', '1.0');
+    urls += entry(siteUrl, '/buscar', today, 'daily', '0.8');
+    urls += entry(siteUrl, '/categorias', today, 'weekly', '0.8');
+    urls += entry(siteUrl, '/cidades', today, 'weekly', '0.8');
+    urls += entry(siteUrl, '/servicos', today, 'weekly', '0.7');
+    urls += entry(siteUrl, '/vagas', today, 'daily', '0.7');
+    urls += entry(siteUrl, '/blog', today, 'daily', '0.7');
+    urls += entry(siteUrl, '/cursos', today, 'weekly', '0.6');
+    urls += entry(siteUrl, '/faq', today, 'monthly', '0.5');
+    urls += entry(siteUrl, '/sobre', today, 'monthly', '0.3');
+    urls += entry(siteUrl, '/como-funciona', today, 'monthly', '0.4');
+    urls += entry(siteUrl, '/privacidade', today, 'yearly', '0.2');
+    urls += entry(siteUrl, '/termos', today, 'yearly', '0.2');
+    urls += entry(siteUrl, '/cookies', today, 'yearly', '0.2');
   }
 
-  // 4. Providers
-  for (const p of providers || []) {
-    urls += url(siteUrl, `/profissional/${p.slug}`, lastmod(p.updated_at), 'weekly', '0.7');
-  }
-
-  // 5. Cities
-  for (const city of cities || []) {
-    urls += url(siteUrl, `/cidade/${city.slug}`, lastmod(city.created_at), 'weekly', '0.8');
-  }
-
-  // 6. Blog posts
-  for (const post of blogPosts || []) {
-    urls += url(siteUrl, `/blog/${post.slug}`, lastmod(post.updated_at), 'weekly', '0.6');
-  }
-
-  // 7. Jobs
-  for (const job of jobs || []) {
-    if (job.slug) {
-      urls += url(siteUrl, `/vagas/${job.slug}`, lastmod(job.updated_at), 'daily', '0.6');
+  if (type === 'categories') {
+    const { data } = await supabase.from('categories').select('slug, created_at').is('deleted_at', null);
+    for (const cat of data || []) {
+      urls += entry(siteUrl, `/categoria/${cat.slug}`, fmtDate(cat.created_at), 'daily', '0.9');
     }
   }
 
-  // 8. Institutional pages
-  for (const page of institutionalPages || []) {
-    urls += url(siteUrl, `/p/${page.slug}`, lastmod(page.updated_at), 'monthly', '0.4');
+  if (type === 'providers') {
+    const { data } = await supabase.from('providers').select('slug, updated_at').eq('status', 'approved').not('slug', 'is', null);
+    for (const p of data || []) {
+      urls += entry(siteUrl, `/profissional/${p.slug}`, fmtDate(p.updated_at), 'weekly', '0.7');
+    }
   }
 
-  // 9. Popular services
-  for (const svc of popularServices || []) {
-    urls += url(siteUrl, `/servico-popular/${svc.slug}`, lastmod(svc.updated_at), 'weekly', '0.6');
+  if (type === 'cities') {
+    const { data } = await supabase.from('cities').select('slug, created_at');
+    for (const city of data || []) {
+      urls += entry(siteUrl, `/cidade/${city.slug}`, fmtDate(city.created_at), 'weekly', '0.8');
+    }
   }
 
-  // 10. SEO programmatic pages: category + city
-  for (const cat of categories || []) {
-    for (const city of cities || []) {
-      urls += url(siteUrl, `/${cat.slug}-${city.slug}`, today, 'weekly', '0.6');
+  if (type === 'blog') {
+    const { data } = await supabase.from('blog_posts').select('slug, updated_at').eq('published', true).is('deleted_at', null);
+    for (const post of data || []) {
+      urls += entry(siteUrl, `/blog/${post.slug}`, fmtDate(post.updated_at), 'weekly', '0.6');
+    }
+  }
+
+  if (type === 'jobs') {
+    const { data } = await supabase.from('jobs').select('slug, updated_at').eq('status', 'active').eq('approval_status', 'approved').is('deleted_at', null);
+    for (const job of data || []) {
+      if (job.slug) urls += entry(siteUrl, `/vagas/${job.slug}`, fmtDate(job.updated_at), 'daily', '0.6');
+    }
+  }
+
+  if (type === 'pages') {
+    const { data } = await supabase.from('institutional_pages').select('slug, updated_at').eq('published', true);
+    for (const page of data || []) {
+      urls += entry(siteUrl, `/p/${page.slug}`, fmtDate(page.updated_at), 'monthly', '0.4');
+    }
+  }
+
+  if (type === 'popular') {
+    const { data } = await supabase.from('popular_services').select('slug, updated_at').eq('active', true);
+    for (const svc of data || []) {
+      urls += entry(siteUrl, `/servico-popular/${svc.slug}`, fmtDate(svc.updated_at), 'weekly', '0.6');
+    }
+  }
+
+  if (type === 'seo') {
+    const [{ data: cats }, { data: cities }] = await Promise.all([
+      supabase.from('categories').select('slug').is('deleted_at', null),
+      supabase.from('cities').select('slug'),
+    ]);
+    for (const cat of cats || []) {
+      for (const city of cities || []) {
+        urls += entry(siteUrl, `/${cat.slug}-${city.slug}`, today, 'weekly', '0.6');
+      }
     }
   }
 
@@ -103,28 +123,29 @@ Deno.serve(async (req) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}</urlset>`;
 
+  return respond(xml);
+});
+
+function respond(xml: string) {
   return new Response(xml, {
     headers: {
-      ...corsHeaders,
+      'Access-Control-Allow-Origin': '*',
       'Content-Type': 'application/xml',
       'Cache-Control': 'public, max-age=3600, s-maxage=3600',
     },
   });
-});
+}
 
-function lastmod(date: string): string {
-  try {
-    return new Date(date).toISOString().split('T')[0];
-  } catch {
-    return new Date().toISOString().split('T')[0];
-  }
+function fmtDate(date: string): string {
+  try { return new Date(date).toISOString().split('T')[0]; }
+  catch { return new Date().toISOString().split('T')[0]; }
 }
 
 function escapeXml(s: string): string {
   return s.replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c]!));
 }
 
-function url(base: string, path: string, lastmod: string, changefreq: string, priority: string): string {
+function entry(base: string, path: string, lastmod: string, changefreq: string, priority: string): string {
   return `  <url>
     <loc>${escapeXml(base)}${escapeXml(path)}</loc>
     <lastmod>${escapeXml(lastmod)}</lastmod>
