@@ -662,10 +662,6 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                   </SelectContent>
                 </Select>
 
-                {/* Provider plan badge (read-only indicator) */}
-                {provider?.plan && (
-                  <Badge variant="outline" className="text-[10px] h-6">{provider.plan}</Badge>
-                )}
 
                 {userIsAdmin && <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] h-6">Admin</Badge>}
                 {userIsModerator && <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-[10px] h-6">Mod</Badge>}
