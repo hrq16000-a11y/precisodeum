@@ -2343,6 +2343,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          action_key: string
+          created_at: string
+          id: string
+          identifier: string
+        }
+        Insert: {
+          action_key: string
+          created_at?: string
+          id?: string
+          identifier: string
+        }
+        Update: {
+          action_key?: string
+          created_at?: string
+          id?: string
+          identifier?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           admin_note: string
@@ -4108,6 +4129,15 @@ export type Database = {
         Returns: number
       }
       calculate_user_level: { Args: { _user_id: string }; Returns: string }
+      check_rate_limit: {
+        Args: {
+          _action: string
+          _identifier: string
+          _max_attempts: number
+          _window_minutes: number
+        }
+        Returns: boolean
+      }
       find_orphan_media: {
         Args: { _min_age_hours?: number }
         Returns: {
