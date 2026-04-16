@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,8 +59,6 @@ const AdminUsersPage = () => {
   const [accountTypes, setAccountTypes] = useState<any[]>([]);
   const [providersMap, setProvidersMap] = useState<Record<string, any>>({});
   const [providersRaw, setProvidersRaw] = useState<any[]>([]);
-  const [services, setServices] = useState<any[]>([]);
-  const [leads, setLeads] = useState<any[]>([]);
   const [userTags, setUserTags] = useState<any[]>([]);
   const [sponsorUserIds, setSponsorUserIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
@@ -130,27 +129,23 @@ const AdminUsersPage = () => {
     setSelectedIds(new Set(filtered.map(p => p.id)));
   };
 
-  const fetchProfiles = () => {
+  const fetchProfiles = useCallback(() => {
     Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at, cnpj').is('deleted_at', null),
-      supabase.from('services').select('id,provider_id,created_at').is('deleted_at', null),
-      supabase.from('leads').select('id,provider_id,created_at'),
+      supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at, cnpj, photo_url, whatsapp, phone, description, services_count, latitude, longitude').is('deleted_at', null),
       supabase.from('user_tags').select('*'),
       supabase.from('sponsor_contacts' as any).select('user_id'),
-    ]).then(([pRes, prRes, sRes, lRes, tRes, scRes]) => {
+    ]).then(([pRes, prRes, tRes, scRes]) => {
       setProfiles(pRes.data || []);
       const provs = prRes.data || [];
       setProvidersRaw(provs);
       const map: Record<string, any> = {};
       provs.forEach((p: any) => { map[p.user_id] = p; });
       setProvidersMap(map);
-      setServices(sRes.data || []);
-      setLeads(lRes.data || []);
       setUserTags(tRes.data || []);
       setSponsorUserIds(new Set((scRes.data || []).map((r: any) => r.user_id)));
     });
-  };
+  }, []);
 
   const fetchAdmins = () => {
     supabase.from('user_roles').select('user_id').eq('role', 'admin')
@@ -189,17 +184,18 @@ const AdminUsersPage = () => {
   }, [profiles, providersRaw]);
 
   // ── Metrics data ──
+  // Service/lead counts are now available from providers.services_count
   const servicesByProvider = useMemo(() => {
     const map: Record<string, number> = {};
-    services.forEach(s => { map[s.provider_id] = (map[s.provider_id] || 0) + 1; });
+    providersRaw.forEach(p => { if (p.services_count) map[p.id] = p.services_count; });
     return map;
-  }, [services]);
+  }, [providersRaw]);
 
   const leadsByProvider = useMemo(() => {
     const map: Record<string, number> = {};
-    leads.forEach(l => { map[l.provider_id] = (map[l.provider_id] || 0) + 1; });
+    // Leads count is not pre-aggregated; will be fetched on-demand in detail view
     return map;
-  }, [leads]);
+  }, []);
 
   const tagsByUser = useMemo(() => {
     const map: Record<string, any[]> = {};
@@ -277,7 +273,8 @@ const AdminUsersPage = () => {
     });
   }, [profiles]);
 
-  // ── Filtered list ──
+  const debouncedSearch = useDebounce(search, 300);
+
   const filtered = useMemo(() => {
     let list = profiles;
 
@@ -309,8 +306,8 @@ const AdminUsersPage = () => {
         return prov && prov.status === filterProviderStatus;
       });
     }
-    if (search.trim()) {
-      const q = search.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
       list = list.filter(p =>
         (p.full_name || '').toLowerCase().includes(q) ||
         (p.email || '').toLowerCase().includes(q) ||
@@ -330,7 +327,7 @@ const AdminUsersPage = () => {
     // 'recent' is already the default order from DB
 
     return list;
-  }, [profiles, search, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy]);
+  }, [profiles, debouncedSearch, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -807,7 +804,7 @@ const AdminUsersPage = () => {
                 <div className="border-t border-border my-1" />
                 <button onClick={() => {
                   const stats = { total: realKpis.total, new7d: realKpis.new7d, new30d: realKpis.new30d, activeProviders: realKpis.activeProviders };
-                  exportCrmPdf({ stats, funnelData, growthData, retentionData, typeDistribution, totalLeads: leads.length });
+                  exportCrmPdf({ stats, funnelData, growthData, retentionData, typeDistribution, totalLeads: 0 });
                   toast.success('PDF gerado — use Ctrl+P para salvar');
                 }} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
                   <FileText className="h-4 w-4" /> Relatório (PDF)

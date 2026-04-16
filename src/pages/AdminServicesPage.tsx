@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,16 +50,18 @@ const AdminServicesPage = () => {
     onComplete: fetchServices,
   });
 
+  const debouncedSearch = useDebounce(search, 300);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return services;
-    const q = search.toLowerCase();
+    if (!debouncedSearch.trim()) return services;
+    const q = debouncedSearch.toLowerCase();
     return services.filter(s =>
       (s.service_name || '').toLowerCase().includes(q) ||
       (s.description || '').toLowerCase().includes(q) ||
       (s.providers?.business_name || '').toLowerCase().includes(q) ||
       (s.whatsapp || '').includes(q)
     );
-  }, [services, search]);
+  }, [services, debouncedSearch]);
 
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 

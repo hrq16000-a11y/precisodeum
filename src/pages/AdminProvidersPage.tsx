@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -216,13 +217,15 @@ const AdminProvidersPage = () => {
     return Array.from(s).sort();
   }, [allProviders]);
 
+  const debouncedSearch = useDebounce(search, 300);
+
   const filtered = useMemo(() => {
     let list = providers;
     if (filter !== 'all') list = list.filter(p => p.status === filter);
     if (filterCategory !== 'all') list = list.filter(p => (p.categories as any)?.name === filterCategory);
     if (filterState !== 'all') list = list.filter(p => p.state === filterState);
-    if (search.trim()) {
-      const q = search.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
       list = list.filter(p =>
         (p.profiles?.full_name || '').toLowerCase().includes(q) ||
         (p.profiles?.email || '').toLowerCase().includes(q) ||
@@ -232,7 +235,7 @@ const AdminProvidersPage = () => {
       );
     }
     return list;
-  }, [providers, search, filter, filterCategory, filterState]);
+  }, [providers, debouncedSearch, filter, filterCategory, filterState]);
 
   const isVerified = (p: any) => {
     const checks = [

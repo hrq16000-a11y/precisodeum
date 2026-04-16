@@ -507,6 +507,13 @@ export type Database = {
             foreignKeyName: "contact_clicks_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_clicks_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "providers"
             referencedColumns: ["id"]
           },
@@ -1299,6 +1306,13 @@ export type Database = {
             foreignKeyName: "leads_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "providers"
             referencedColumns: ["id"]
           },
@@ -1690,6 +1704,13 @@ export type Database = {
             foreignKeyName: "portfolio_albums_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_albums_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "providers"
             referencedColumns: ["id"]
           },
@@ -1937,6 +1958,13 @@ export type Database = {
             foreignKeyName: "provider_impressions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_impressions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "providers"
             referencedColumns: ["id"]
           },
@@ -2011,6 +2039,13 @@ export type Database = {
           youtube_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "provider_page_settings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "provider_page_settings_provider_id_fkey"
             columns: ["provider_id"]
@@ -2350,6 +2385,13 @@ export type Database = {
             foreignKeyName: "reviews_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "providers"
             referencedColumns: ["id"]
           },
@@ -2635,6 +2677,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_health_view"
             referencedColumns: ["id"]
           },
           {
@@ -3363,6 +3412,13 @@ export type Database = {
             foreignKeyName: "subscriptions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "providers"
             referencedColumns: ["id"]
           },
@@ -3789,6 +3845,33 @@ export type Database = {
           email?: string | null
           id?: string | null
           user_ref?: string | null
+        }
+        Relationships: []
+      }
+      provider_health_view: {
+        Row: {
+          avatar_url: string | null
+          business_name: string | null
+          city: string | null
+          completion_score: number | null
+          created_at: string | null
+          email: string | null
+          engagement_points: number | null
+          featured: boolean | null
+          full_name: string | null
+          health_label: string | null
+          id: string | null
+          missing_fields: string[] | null
+          photo_url: string | null
+          plan: string | null
+          portfolio_album_count: number | null
+          portfolio_photo_count: number | null
+          rating_avg: number | null
+          review_count: number | null
+          services_count: number | null
+          state: string | null
+          status: string | null
+          user_id: string | null
         }
         Relationships: []
       }
