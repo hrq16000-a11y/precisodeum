@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useJsonLd } from '@/hooks/useJsonLd';
+import { useMemo } from 'react';
+import { SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 export interface BreadcrumbItem {
   label: string;
@@ -16,6 +19,20 @@ interface BreadcrumbsProps {
 const Breadcrumbs = ({ items, className = '', variant = 'default' }: BreadcrumbsProps) => {
   const allItems: BreadcrumbItem[] = [{ label: 'Home', url: '/' }, ...items];
   const isHero = variant === 'hero';
+
+  // BreadcrumbList JSON-LD for rich snippets
+  const breadcrumbLd = useMemo(() => ({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: allItems.map((item, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: item.label,
+      ...(item.url ? { item: `${SITE_BASE_URL}${item.url}` } : {}),
+    })),
+  }), [allItems]);
+
+  useJsonLd(breadcrumbLd);
 
   const wrapperClasses = isHero
     ? `inline-flex items-center gap-1.5 text-sm bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/15 ${className}`
