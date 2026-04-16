@@ -8,7 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { Mail, Star, Bell as BellIcon2, Briefcase, CheckCircle, MessageCircle } from 'lucide-react';
+import { Mail, Star, Bell as BellIcon2, Briefcase, CheckCircle, MessageCircle, AlertTriangle } from 'lucide-react';
 
 const typeIconMap: Record<string, React.ComponentType<any>> = {
   lead: Mail,
@@ -17,6 +17,28 @@ const typeIconMap: Record<string, React.ComponentType<any>> = {
   job: Briefcase,
   approval: CheckCircle,
   message: MessageCircle,
+  alert: AlertTriangle,
+};
+
+/** Blue = info, Green = success/approval, Amber = action-needed */
+const typeColorMap: Record<string, string> = {
+  lead: 'text-blue-500',
+  review: 'text-emerald-500',
+  system: 'text-blue-500',
+  job: 'text-blue-500',
+  approval: 'text-emerald-500',
+  message: 'text-blue-500',
+  alert: 'text-amber-500',
+};
+
+const typeBgMap: Record<string, string> = {
+  lead: 'bg-blue-50 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-800/30',
+  review: 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/30',
+  system: 'bg-blue-50 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-800/30',
+  job: 'bg-blue-50 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-800/30',
+  approval: 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/30',
+  message: 'bg-blue-50 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-800/30',
+  alert: 'bg-amber-50 dark:bg-amber-950/20 border-amber-200/50 dark:border-amber-800/30',
 };
 
 const NotificationItem = ({
