@@ -219,13 +219,14 @@ const App = () => {
         prefetchImportWithRetry("route-category-page", () => import("./pages/CategoryPage")),
       ]);
     };
+    const hasIdleCb = typeof (window as any).requestIdleCallback === 'function';
     let cleanupFn: (() => void) | undefined;
-    if ('requestIdleCallback' in window) {
-      const idleId = requestIdleCallback(startPrefetch, { timeout: 15000 });
-      cleanupFn = () => cancelIdleCallback(idleId);
+    if (hasIdleCb) {
+      const idleId = (window as any).requestIdleCallback(startPrefetch, { timeout: 15000 });
+      cleanupFn = () => (window as any).cancelIdleCallback(idleId);
     } else {
-      const timerId = window.setTimeout(startPrefetch, 8000);
-      cleanupFn = () => window.clearTimeout(timerId);
+      const timerId = globalThis.setTimeout(startPrefetch, 8000);
+      cleanupFn = () => globalThis.clearTimeout(timerId);
     }
 
     return () => cleanupFn?.();
