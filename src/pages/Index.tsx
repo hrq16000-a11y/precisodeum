@@ -73,24 +73,7 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
   }
 }
 
-// Minimal height placeholder to prevent CLS from lazy sections
-const SECTION_MIN_HEIGHTS: Record<string, string> = {
-  categories: 'min-h-[280px]',
-  stats: 'min-h-[177px]',
-  highlights: 'min-h-[200px]',
-  featured: 'min-h-[340px]',
-  popular: 'min-h-[280px]',
-  urgency: 'min-h-[48px]',
-  leader_sponsor: 'min-h-[200px]',
-  sponsor_top: 'min-h-[80px]',
-  howitworks: 'min-h-[280px]',
-  testimonials: 'min-h-[240px]',
-  faq: 'min-h-[300px]',
-  jobs: 'min-h-[280px]',
-  blog: 'min-h-[200px]',
-  courses: 'min-h-[200px]',
-  searches: 'min-h-[120px]',
-};
+// Instant fallback — no blocking skeletons
 
 const SectionFallback = () => null;
 
