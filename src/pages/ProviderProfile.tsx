@@ -1105,8 +1105,8 @@ const ProviderProfile = () => {
                   })()}
                 </div>
 
-                {/* ── PROMINENT LEVEL BADGE (Metallic Design) — hidden for admins ── */}
-                {provider.levelInfo && !(provider.accTypeInfo?.name || '').toLowerCase().includes('admin') && (
+                {/* ── PROMINENT LEVEL BADGE (Metallic Design) — hidden for admins and generic "Usuário" level ── */}
+                {provider.levelInfo && !(provider.accTypeInfo?.name || '').toLowerCase().includes('admin') && !['usuário', 'usuario', 'user'].includes((provider.levelInfo.name || '').toLowerCase()) && (
                   <div className="mt-2">
                     <GamificationLevelBadge
                       levelName={provider.levelInfo.name}
