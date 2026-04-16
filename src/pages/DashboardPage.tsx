@@ -35,6 +35,7 @@ import UpsellBanner from '@/components/dashboard/UpsellBanner';
 import CoursesBanner from '@/components/dashboard/CoursesBanner';
 import OurStoryBanner from '@/components/OurStoryBanner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import ProfileCheckupModal from '@/components/dashboard/ProfileCheckupModal';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();

@@ -9,6 +9,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { usePermissions, ADMIN_ROUTE_PERMISSIONS, type UserPermissions } from '@/hooks/usePermissions';
 import TopLoadingBar from '@/components/ui/TopLoadingBar';
+import AdminFlashSummary from '@/components/admin/AdminFlashSummary';
+import AdminRealtimeToasts from '@/components/admin/AdminRealtimeToasts';
 
 const menuGroups = [
   {
