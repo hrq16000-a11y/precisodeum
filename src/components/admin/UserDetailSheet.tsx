@@ -1238,7 +1238,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     </Button>
                   </div>
                   <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                    <div><p className="text-sm font-medium">🛡️ Moderador</p><p className="text-xs text-muted-foreground">Moderação</p></div>
+                    <div><p className="text-sm font-medium flex items-center gap-1"><Shield className="h-3.5 w-3.5" /> Moderador</p><p className="text-xs text-muted-foreground">Moderação</p></div>
                     <Button size="sm" variant={userIsModerator ? 'destructive' : 'default'} className="h-8 text-xs shrink-0" onClick={toggleModerator} disabled={permLoading}>
                       {userIsModerator ? 'Revogar' : 'Conceder'}
                     </Button>
@@ -1272,7 +1272,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 <EmptyState icon={<Settings />} text="Sem perfil profissional" />
               ) : (
                 <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
-                  <h3 className="font-semibold text-foreground text-sm">⚙️ Página</h3>
+                  <h3 className="font-semibold text-foreground text-sm flex items-center gap-1"><Settings className="h-4 w-4" /> Página</h3>
                   <div className="space-y-3">
                     <div><Label className="text-xs">Headline</Label><Input value={settingsForm.headline || ''} onChange={e => setSettingsForm({ ...settingsForm, headline: e.target.value })} className="h-8 text-sm" /></div>
                     <div><Label className="text-xs">Tagline</Label><Input value={settingsForm.tagline || ''} onChange={e => setSettingsForm({ ...settingsForm, tagline: e.target.value })} className="h-8 text-sm" /></div>
@@ -1294,7 +1294,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                         <Input value={settingsForm.accent_color || ''} onChange={e => setSettingsForm({ ...settingsForm, accent_color: e.target.value })} className="h-8 text-sm" placeholder="217 91% 50%" />
                       </div>
                     </div>
-                    <Button size="sm" onClick={savePageSettings} className="w-full">💾 Salvar</Button>
+                    <Button size="sm" onClick={savePageSettings} className="w-full">Salvar</Button>
                   </div>
                 </div>
               )}
@@ -1416,7 +1416,7 @@ const UserPermissionsPanel = ({ user, onRefresh }: { user: any; onRefresh?: () =
         ))}
       </div>
       <Button size="sm" onClick={save} disabled={saving} className="w-full">
-        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} 💾 Salvar Permissões
+        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} Salvar Permissões
       </Button>
     </div>
   );
