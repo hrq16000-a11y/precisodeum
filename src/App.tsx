@@ -202,7 +202,7 @@ const App = () => {
   }, []);
 
   return (
-    <LazyMotion features={domAnimation} strict>
+    <LazyMotion features={loadMotionFeatures} strict>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Suspense fallback={null}><Toaster /></Suspense>
