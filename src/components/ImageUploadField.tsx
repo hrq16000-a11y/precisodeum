@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Upload, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleImageError } from '@/lib/imageResolver';
-import { compressImage } from '@/lib/compressImage';
+import { compressImage, generateBlurDataUrl } from '@/lib/compressImage';
 import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
 
 interface ImageUploadFieldProps {
@@ -81,6 +81,7 @@ const ImageUploadField = ({
       if (entityType && data.path) {
         const identity = await resolveIdentity(session.user.id);
         if (identity.userRef) {
+          const blurDataUrl = await generateBlurDataUrl(raw);
           upsertMedia({
             storagePath: data.path,
             publicUrl: data.url,
@@ -90,6 +91,7 @@ const ImageUploadField = ({
             entityRef: entityRef || 'admin',
             userRef: identity.userRef,
             sizeOriginal: raw.size,
+            blurDataUrl: blurDataUrl || undefined,
           });
         }
       }

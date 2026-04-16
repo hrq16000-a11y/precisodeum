@@ -5,7 +5,7 @@ import { ImagePlus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleImageError } from '@/lib/imageResolver';
 import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils';
-import { compressImage } from '@/lib/compressImage';
+import { compressImage, generateBlurDataUrl } from '@/lib/compressImage';
 
 interface ServiceImage {
   id: string;
@@ -101,6 +101,7 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
 
         // Idempotent media upsert
         if (userRef) {
+          const blurDataUrl = await generateBlurDataUrl(raw);
           await upsertMedia({
             storagePath: `service-images/${storagePath}`,
             publicUrl,
@@ -110,6 +111,7 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
             entityRef: serviceId,
             userRef,
             sizeOriginal: file.size,
+            blurDataUrl: blurDataUrl || undefined,
           });
         }
       }

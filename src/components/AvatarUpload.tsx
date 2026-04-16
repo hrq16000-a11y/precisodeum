@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
-import { compressImage } from '@/lib/compressImage';
+import { compressImage, generateBlurDataUrl } from '@/lib/compressImage';
 
 interface AvatarUploadProps {
   userId: string;
@@ -65,6 +65,7 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(({ userId, cu
       const { userRef, providerId } = await resolveIdentity(userId);
 
       if (userRef) {
+        const blurDataUrl = await generateBlurDataUrl(raw);
         await upsertMedia({
           storagePath: `avatars/${userId}/${file.name}`,
           publicUrl,
@@ -74,6 +75,7 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(({ userId, cu
           entityRef: providerId || userId,
           userRef,
           sizeOriginal: file.size,
+          blurDataUrl: blurDataUrl || undefined,
         });
       }
 
