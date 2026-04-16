@@ -458,7 +458,7 @@ const DashboardPage = () => {
             </div>
           </GlassCard>
 
-          <GlassCard variant="default" hoverEffect={false} delay={0.4}>
+          <GlassCard variant="default" hoverEffect={false} delay={0.4} data-tour="leads">
             <LeadsChart providerId={provider.id} />
           </GlassCard>
 
