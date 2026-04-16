@@ -79,7 +79,7 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     return () => {
       document.title = 'Preciso de um | Encontre um profissional para qualquer tipo de serviço no Brasil';
     };
-  }, [title, description, canonical, ogImage, noindex, gscId, gaId]);
+  }, [title, description, canonical, ogImage, noindex, gscId, gaId, ogType, articlePublishedTime, articleModifiedTime, articleAuthor]);
 }
 
 export const SITE_BASE_URL = SITE_URL;

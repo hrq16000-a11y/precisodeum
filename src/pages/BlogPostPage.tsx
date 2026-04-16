@@ -73,8 +73,13 @@ const BlogPostPage = () => {
 
   useSeoHead({
     title: post?.title ? `${post.title} | Preciso de um` : 'Blog | Preciso de um',
-    description: post?.excerpt || 'Confira as últimas notícias e dicas do Preciso de um.',
+    description: post?.excerpt || 'Confira as ultimas noticias e dicas do Preciso de um.',
     canonical: `${SITE_BASE_URL}/blog/${slug}`,
+    ogImage: post?.cover_image_url || undefined,
+    ogType: 'article',
+    articlePublishedTime: post?.created_at,
+    articleModifiedTime: post?.updated_at,
+    articleAuthor: post?.author_name,
   });
 
   if (!blogEnabled) return <Navigate to="/" replace />;
