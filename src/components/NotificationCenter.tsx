@@ -63,10 +63,10 @@ const NotificationItem = ({
     className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
       notification.read
         ? 'border-border/40 bg-background'
-        : 'border-accent/30 bg-accent/5'
+        : (typeBgMap[notification.type] || 'border-accent/30 bg-accent/5')
     }`}
   >
-    <span className="mt-0.5">{(() => { const Icon = typeIconMap[notification.type] || BellIcon2; return <Icon className="h-5 w-5 text-muted-foreground" />; })()}</span>
+    <span className="mt-0.5">{(() => { const Icon = typeIconMap[notification.type] || BellIcon2; const color = typeColorMap[notification.type] || 'text-muted-foreground'; return <Icon className={`h-5 w-5 ${notification.read ? 'text-muted-foreground' : color}`} />; })()}</span>
     <div className="flex-1 min-w-0">
       <p className={`text-sm font-medium leading-tight ${notification.read ? 'text-muted-foreground' : 'text-foreground'}`}>
         {notification.title}
