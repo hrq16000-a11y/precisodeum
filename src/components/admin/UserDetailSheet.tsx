@@ -165,7 +165,15 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
           years_experience: prov.years_experience || 0,
           service_radius: prov.service_radius || '',
           cnpj: prov.cnpj || '',
+          meta_title: (prov as any).meta_title || '',
+          meta_description: (prov as any).meta_description || '',
+          slug: prov.slug || '',
         });
+
+        // Fetch contact clicks
+        supabase.from('contact_clicks' as any).select('id, contact_type, page_path, created_at')
+          .eq('provider_id', prov.id).order('created_at', { ascending: false }).limit(100)
+          .then(({ data }) => setContactClicks((data as any[]) || []));
 
         supabase.from('services').select('id, service_name, description, price, view_count, created_at, deleted_at, whatsapp, service_area, working_hours')
           .eq('provider_id', prov.id).order('created_at', { ascending: false }).limit(50)
