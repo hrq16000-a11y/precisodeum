@@ -10,6 +10,7 @@ interface UpsertMediaParams {
   entityRef: string;
   userRef: string;
   sizeOriginal?: number;
+  blurDataUrl?: string;
 }
 
 /**
@@ -32,16 +33,15 @@ export const upsertMedia = async (params: UpsertMediaParams): Promise<void> => {
       .maybeSingle();
 
     if (existing) {
-      // Update existing record (idempotent)
       await supabase.from('media').update({
         public_url: params.publicUrl,
         is_active: true,
         original_name: params.originalName,
         mime_type: params.mimeType,
         size_original: params.sizeOriginal || 0,
-      }).eq('id', existing.id);
+        ...(params.blurDataUrl ? { blur_data_url: params.blurDataUrl } : {}),
+      } as any).eq('id', existing.id);
     } else {
-      // Insert new record
       await supabase.from('media').insert({
         storage_path: params.storagePath,
         public_url: params.publicUrl,
@@ -52,7 +52,8 @@ export const upsertMedia = async (params: UpsertMediaParams): Promise<void> => {
         user_ref: params.userRef,
         size_original: params.sizeOriginal || 0,
         is_active: true,
-      });
+        ...(params.blurDataUrl ? { blur_data_url: params.blurDataUrl } : {}),
+      } as any);
     }
 
     // Non-blocking audit
