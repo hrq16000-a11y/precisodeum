@@ -7,6 +7,7 @@ import { Globe, Save, Search, Upload, X, Image as ImageIcon } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { compressImage } from '@/lib/compressImage';
 
 const AdminMetaTagsPage = () => {
   const { isAdmin, loading } = useAdmin();
@@ -121,12 +122,13 @@ const MetaSettingRow = ({ settingKey, label, description, value: initialValue, o
 
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop() || 'jpg';
+      const compressed = await compressImage(file, { maxDimension: 1200, targetKB: 300 });
+      const ext = compressed.name.split('.').pop() || 'webp';
       const path = `settings/og-image-${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from('service-images')
-        .upload(path, file, { upsert: true });
+        .upload(path, compressed, { upsert: true });
 
       if (uploadError) throw uploadError;
 

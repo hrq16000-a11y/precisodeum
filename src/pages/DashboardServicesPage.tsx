@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { compressImage } from '@/lib/compressImage';
 import { getSuggestedTags } from '@/data/tagSuggestions';
 import { getTemplatesForCategory, DIFFERENTIAL_TAGS, buildExternalPrompt } from '@/data/serviceTemplates';
 import { useNavigate } from 'react-router-dom';
@@ -309,9 +310,10 @@ const DashboardServicesPage = () => {
     if (!newServicePhoto || !user) return;
     setUploadingPhoto(true);
     try {
-      const ext = newServicePhoto.name.split('.').pop();
+      const compressed = await compressImage(newServicePhoto);
+      const ext = compressed.name.split('.').pop();
       const path = `${user.id}/${serviceId}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('service-images').upload(path, newServicePhoto);
+      const { error } = await supabase.storage.from('service-images').upload(path, compressed);
       if (error) { toast.error('Erro ao enviar foto: ' + error.message); return; }
       const { data: urlData } = supabase.storage.from('service-images').getPublicUrl(path);
       const { error: dbErr } = await supabase.from('service_images').insert({

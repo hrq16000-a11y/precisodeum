@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Send, Image, Video, Users, Loader2, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { compressImage } from '@/lib/compressImage';
 
 const TARGET_OPTIONS = [
   { value: 'all', label: 'Todos os usuários' },
@@ -64,11 +65,12 @@ const AdminNotificationComposer = () => {
       // Upload image if file selected
       let finalImageUrl = imageUrl;
       if (imageFile) {
-        const ext = imageFile.name.split('.').pop();
+        const compressed = await compressImage(imageFile);
+        const ext = compressed.name.split('.').pop();
         const path = `notifications/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from('service-images')
-          .upload(path, imageFile, { contentType: imageFile.type });
+          .upload(path, compressed, { contentType: compressed.type });
         if (upErr) throw upErr;
         const { data: urlData } = supabase.storage.from('service-images').getPublicUrl(path);
         finalImageUrl = urlData.publicUrl;
