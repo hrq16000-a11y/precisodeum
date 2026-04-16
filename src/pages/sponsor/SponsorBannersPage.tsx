@@ -41,10 +41,11 @@ const SponsorBannersPage = () => {
 
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop();
+      const compressed = await compressImage(file, { maxDimension: 1920, targetKB: 350 });
+      const ext = compressed.name.split('.').pop();
       const path = `${sponsor.id}/banner_${Date.now()}.${ext}`;
 
-      const { error: upErr } = await supabase.storage.from('sponsors').upload(path, file, { upsert: true });
+      const { error: upErr } = await supabase.storage.from('sponsors').upload(path, compressed, { upsert: true });
       if (upErr) throw upErr;
 
       const { data: urlData } = supabase.storage.from('sponsors').getPublicUrl(path);

@@ -117,9 +117,10 @@ export default function ChatMessageView({ conversationId, onBack }: Props) {
       let imageUrl: string | null = null;
 
       if (imageFile) {
-        const ext = imageFile.name.split('.').pop();
+        const compressed = await compressImage(imageFile, { maxDimension: 1280, targetKB: 300 });
+        const ext = compressed.name.split('.').pop();
         const path = `chat/${user!.id}/${Date.now()}.${ext}`;
-        const { error } = await supabase.storage.from('service-images').upload(path, imageFile, { contentType: imageFile.type });
+        const { error } = await supabase.storage.from('service-images').upload(path, compressed, { contentType: compressed.type });
         if (error) throw error;
         const { data } = supabase.storage.from('service-images').getPublicUrl(path);
         imageUrl = data.publicUrl;

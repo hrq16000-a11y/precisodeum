@@ -365,9 +365,10 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     if (file.size > 5 * 1024 * 1024) { toast.error('Máximo 5MB'); return; }
     setAvatarUploading(true);
     try {
-      const ext = file.name.split('.').pop();
+      const compressed = await compressImage(file, { maxDimension: 512, targetKB: 200 });
+      const ext = compressed.name.split('.').pop();
       const path = `${user.id}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+      const { error } = await supabase.storage.from('avatars').upload(path, compressed, { upsert: true });
       if (error) throw error;
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
       await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
