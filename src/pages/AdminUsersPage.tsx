@@ -288,6 +288,18 @@ const AdminUsersPage = () => {
     else if (activeTab === 'agencias') list = list.filter(p => (p.profile_type || 'client') === 'rh');
     else if (activeTab === 'patrocinadores') list = list.filter(p => sponsorUserIds.has(p.id));
     else if (activeTab === 'staff') list = list.filter(p => adminIds.has(p.id));
+    else if (activeTab === 'criticos') list = list.filter(p => {
+      const prov = providersMap[p.id];
+      if (!prov) return false;
+      const checks = [
+        !!prov.photo_url, !!(prov.whatsapp || prov.phone), !!prov.city,
+        !!(prov.description && prov.description.length >= 20),
+        !!(prov.services_count > 0),
+        !!(prov.latitude && prov.longitude),
+      ];
+      const pct = Math.round((checks.filter(Boolean).length / checks.length) * 100);
+      return pct < 30;
+    });
 
     if (filterType !== 'all') list = list.filter(p => (p.profile_type || p.role) === filterType);
     if (filterStatus !== 'all') list = list.filter(p => (p.status || 'active') === filterStatus);
