@@ -97,6 +97,7 @@ const DashboardPage = () => {
   }, []);
 
   const profileType = profile?.profile_type || 'client';
+  const tour = useOnboardingTour(profileType);
   const isClient = profileType === 'client';
   const isProvider = profileType === 'provider';
   const isRH = profileType === 'rh';
