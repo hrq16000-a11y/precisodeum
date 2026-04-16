@@ -804,7 +804,7 @@ const AdminUsersPage = () => {
                 <div className="border-t border-border my-1" />
                 <button onClick={() => {
                   const stats = { total: realKpis.total, new7d: realKpis.new7d, new30d: realKpis.new30d, activeProviders: realKpis.activeProviders };
-                  exportCrmPdf({ stats, funnelData, growthData, retentionData, typeDistribution, totalLeads: leads.length });
+                  exportCrmPdf({ stats, funnelData, growthData, retentionData, typeDistribution, totalLeads: 0 });
                   toast.success('PDF gerado — use Ctrl+P para salvar');
                 }} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent/10 text-foreground">
                   <FileText className="h-4 w-4" /> Relatório (PDF)
