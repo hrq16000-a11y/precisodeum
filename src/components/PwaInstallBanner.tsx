@@ -49,7 +49,7 @@ const PwaInstallBanner = () => {
     if (!settings.show_floating_banner) return;
 
     // Device check
-    const isMobile = window.innerWidth < 768;
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
     if (isMobile && !settings.show_on_mobile) return;
     if (!isMobile && !settings.show_on_desktop) return;
 
