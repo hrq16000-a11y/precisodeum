@@ -80,6 +80,16 @@ const SectionFallback = () => null;
 // Default section order
 const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,home_featured_ad,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,courses,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
 
+// Reserve min-height for above-fold sections to prevent CLS when they load asynchronously
+const SECTION_MIN_HEIGHTS: Record<string, number> = {
+  cms_banners: 200,
+  urgency: 56,
+  highlights: 120,
+  leader_sponsor: 90,
+  sponsor_top: 90,
+  home_featured_ad: 90,
+};
+
 const Index = () => {
   const { city: geoCity } = useGeoCity();
 
@@ -249,10 +259,14 @@ const Index = () => {
       {sectionOrder.map((slug) => {
         const section = renderSection(slug);
         if (!section) return null;
+        // Reserve min-height for sections above categories to prevent CLS
+        const minH = SECTION_MIN_HEIGHTS[slug];
         return (
           <LazyErrorBoundary key={slug}>
-            <Suspense fallback={<SectionFallback />}>
-              {section}
+            <Suspense fallback={minH ? <div style={{ minHeight: minH }} /> : <SectionFallback />}>
+              <div style={minH ? { minHeight: minH } : undefined}>
+                {section}
+              </div>
             </Suspense>
           </LazyErrorBoundary>
         );
