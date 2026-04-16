@@ -25,6 +25,7 @@ const PwaInstallBanner = () => {
   const [source, setSource] = useState<string>('banner');
   const autoShownRef = useRef(false);
   const {
+    canInstall,
     isStandalone,
     install,
     isDismissed,
@@ -38,6 +39,7 @@ const PwaInstallBanner = () => {
   // Auto-show respecting ALL settings + scroll 50% OR delay trigger
   useEffect(() => {
     if (isStandalone || autoShownRef.current || authLoading) return;
+    if (!canInstall) return;
     if (!settings) return;
 
     // Global kill switch
@@ -96,13 +98,14 @@ const PwaInstallBanner = () => {
       window.removeEventListener('scroll', onScroll);
     };
   }, [
-    isStandalone, settings, authLoading, user,
+    canInstall, isStandalone, settings, authLoading, user,
     isDismissed, getVisitCount, getImpressionCount, incrementImpressions,
   ]);
 
   // Listen for manual open from CTAs (homepage section, footer button, etc.)
   useEffect(() => {
     const onManualOpen = (evt: Event) => {
+      if (!canInstall || isStandalone) return;
       const detail = (evt as CustomEvent).detail;
       setSource(detail?.source || 'banner');
       setShow(true);
@@ -125,7 +128,7 @@ const PwaInstallBanner = () => {
     trackPwaEvent('dismissed', source);
   };
 
-  if (!show || isStandalone) return null;
+  if (!show || isStandalone || !canInstall) return null;
 
   const titleText = settings?.title || 'Instale o App';
   const subtitleText = settings?.subtitle || 'Acesse mais rápido direto da tela inicial';
