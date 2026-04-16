@@ -365,6 +365,7 @@ const AdminProvidersPage = () => {
             <ToggleRight className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs font-medium text-foreground">Aprovação automática</span>
             <Switch checked={autoApprove} onCheckedChange={toggleAutoApprove} disabled={autoApproveLoading} />
+            <Link to="/admin/aprovacao" className="text-[10px] text-primary hover:underline ml-1">Configurar</Link>
           </div>
         </div>
         {stats.pending > 0 && (
