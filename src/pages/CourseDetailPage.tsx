@@ -71,7 +71,7 @@ const CourseDetailPage = () => {
     articleAuthor: course?.provider,
   });
 
-  // JSON-LD Course schema
+  // JSON-LD Course + FAQ schema
   useJsonLd(course ? {
     '@context': 'https://schema.org',
     '@type': 'Course',
