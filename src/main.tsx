@@ -62,54 +62,7 @@ const bootstrap = async () => {
 
     if (!shouldUseServiceWorker) return;
 
-    // @ts-ignore — injected by Vite define config at build time
-    const BUILD_VERSION: string = __BUILD_TIMESTAMP__;
-    const STORED_VERSION_KEY = "app-build-version";
-
-    const storedVersion = localStorage.getItem(STORED_VERSION_KEY);
-    if (storedVersion !== String(BUILD_VERSION)) {
-      if ("caches" in window) {
-        caches.keys().then((names) => names.forEach((name) => caches.delete(name)));
-      }
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          registrations.forEach((registration) => {
-            registration.unregister();
-          });
-        });
-      }
-      localStorage.setItem(STORED_VERSION_KEY, String(BUILD_VERSION));
-    }
-
-    const PURGE_KEY = "cache-last-purge";
-    const PURGE_INTERVAL = 86_400_000;
-    const PRESERVE_KEYS = new Set([
-      STORED_VERSION_KEY, PURGE_KEY, "app-build-version",
-      "sb-qaftogrqeyymewoofexc-auth-token", "cookie-consent",
-      "pwa-dismiss-ts", "pwa-visit-count", "theme",
-    ]);
-
-    const lastPurge = Number(localStorage.getItem(PURGE_KEY) || "0");
-    const now = Date.now();
-
-    if (now - lastPurge > PURGE_INTERVAL) {
-      if ("caches" in window) {
-        caches.keys().then((names) => names.forEach((name) => caches.delete(name)));
-      }
-      const keysToRemove: string[] = [];
-      for (let index = 0; index < localStorage.length; index++) {
-        const key = localStorage.key(index);
-        if (key && !PRESERVE_KEYS.has(key) && !key.startsWith("sb-")) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach((key) => localStorage.removeItem(key));
-      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ type: "PURGE_CACHES" });
-      }
-      (window as Window & { __DAILY_PURGE_TRIGGERED__?: boolean }).__DAILY_PURGE_TRIGGERED__ = true;
-      localStorage.setItem(PURGE_KEY, String(now));
-    }
+    // Register SW — Vite PWA handles versioning via precache manifest
   });
 
   deferWork(() => {
