@@ -102,7 +102,7 @@ const AdminApprovalSettingsPage = () => {
       action: 'update',
       resource_type: 'site_settings',
       resource_id: 'approval_rules',
-      details: rules,
+      details: { ...rules } as Record<string, unknown>,
     });
     toast.success('Configurações de aprovação salvas');
     setSaving(false);
