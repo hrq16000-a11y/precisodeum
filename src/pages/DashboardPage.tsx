@@ -36,6 +36,7 @@ import CoursesBanner from '@/components/dashboard/CoursesBanner';
 import OurStoryBanner from '@/components/OurStoryBanner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import ProfileCheckupModal from '@/components/dashboard/ProfileCheckupModal';
+import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
@@ -376,6 +377,7 @@ const DashboardPage = () => {
         <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2">
           <ShareProfileCard />
           <QrCodeCard />
+          <StorageQuotaWidget />
         </div>
       )}
 
