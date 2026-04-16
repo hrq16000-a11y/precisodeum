@@ -1148,54 +1148,56 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 const thirtyDaysAgo = new Date();
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                 const last30 = contactClicks.filter((c: any) => new Date(c.created_at) >= thirtyDaysAgo);
-                const whatsappCount = contactClicks.filter((c: any) => c.contact_type === 'whatsapp').length;
-                const phoneCount = contactClicks.filter((c: any) => c.contact_type === 'phone').length;
+                const wa30 = last30.filter((c: any) => c.contact_type === 'whatsapp').length;
+                const ph30 = last30.filter((c: any) => c.contact_type === 'phone').length;
                 return (
-                  <div className="rounded-xl border border-border p-3 sm:p-4 space-y-4">
-                    <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Dados de Audiencia</h3>
-                    
-                    {/* 30-day highlight */}
-                    <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground">Leads nos ultimos 30 dias</p>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="rounded-xl border border-border p-4 bg-card text-center shadow-sm">
                         <p className="text-2xl font-bold text-primary">{last30.length}</p>
+                        <p className="text-xs text-muted-foreground">Leads (30 dias)</p>
                       </div>
-                      <Activity className="h-8 w-8 text-primary/30" />
+                      <div className="rounded-xl border border-border p-4 bg-card text-center shadow-sm">
+                        <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{wa30}</p>
+                        <p className="text-xs text-muted-foreground">Cliques WhatsApp</p>
+                      </div>
+                      <div className="rounded-xl border border-border p-4 bg-card text-center shadow-sm">
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{ph30}</p>
+                        <p className="text-xs text-muted-foreground">Cliques Telefone</p>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="rounded-lg bg-card border border-border/60 p-2.5 text-center shadow-sm">
-                        <p className="text-lg font-bold text-foreground">{contactClicks.length}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
-                      </div>
-                      <div className="rounded-lg bg-card border border-border/60 p-2.5 text-center shadow-sm">
-                        <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{whatsappCount}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">WhatsApp</p>
-                      </div>
-                      <div className="rounded-lg bg-card border border-border/60 p-2.5 text-center shadow-sm">
-                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{phoneCount}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Telefone</p>
-                      </div>
+                    <div className="rounded-xl border border-border overflow-hidden">
+                      <table className="w-full">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Data/Hora</th>
+                            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Tipo</th>
+                            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Origem</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {contactClicks.length > 0 ? (
+                            contactClicks.slice(0, 20).map((click: any) => (
+                              <tr key={click.id} className="border-t border-border/40">
+                                <td className="text-[10px] px-3 py-2 text-foreground">{new Date(click.created_at).toLocaleString('pt-BR')}</td>
+                                <td className="text-[10px] px-3 py-2">
+                                  <span className={`inline-flex items-center gap-1 font-medium ${click.contact_type === 'whatsapp' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                                    {click.contact_type === 'whatsapp' ? <MessageCircle className="h-3 w-3" /> : <Phone className="h-3 w-3" />}
+                                    {click.contact_type === 'whatsapp' ? 'WhatsApp' : 'Telefone'}
+                                  </span>
+                                </td>
+                                <td className="text-[10px] px-3 py-2 text-muted-foreground truncate max-w-[150px]">{click.page_path || '—'}</td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={3} className="text-center text-xs py-8 text-muted-foreground">Nenhum clique registrado ainda.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
                     </div>
-                    {contactClicks.length > 0 ? (
-                      <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Ultimos cliques</p>
-                        {contactClicks.slice(0, 30).map((c: any) => (
-                          <div key={c.id} className="flex items-center justify-between rounded-lg border border-border/40 px-3 py-2 text-xs">
-                            <div className="flex items-center gap-2">
-                              {c.contact_type === 'whatsapp' ? <MessageCircle className="h-3.5 w-3.5 text-emerald-500" /> : <Phone className="h-3.5 w-3.5 text-blue-500" />}
-                              <span className="font-medium capitalize">{c.contact_type}</span>
-                            </div>
-                            <div className="flex items-center gap-3 text-muted-foreground">
-                              {c.page_path && <span className="text-[10px] truncate max-w-[120px]">{c.page_path}</span>}
-                              <span>{c.created_at ? format(new Date(c.created_at), 'dd/MM/yy HH:mm') : ''}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground text-center py-4">Nenhum clique registrado ainda</p>
-                    )}
                   </div>
                 );
               })() : (
