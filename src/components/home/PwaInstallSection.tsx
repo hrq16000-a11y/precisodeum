@@ -15,7 +15,7 @@ import { useSiteSettings } from '@/hooks/useSiteSettings';
 import playStoreIcon from '@/assets/play-store-icon.png';
 
 const PwaInstallSection = () => {
-  const { isStandalone } = usePwaInstallPrompt();
+  const { isStandalone, canInstall } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
   const { data: siteData } = useSiteSettings();
 
@@ -33,7 +33,7 @@ const PwaInstallSection = () => {
       window.open(ctaLink, '_blank', 'noopener');
       return;
     }
-    if (isStandalone) return;
+    if (isStandalone || !canInstall) return;
     window.dispatchEvent(
       new CustomEvent(PWA_OPEN_INSTALL_MODAL_EVENT, { detail: { source: 'homepage' } }),
     );
