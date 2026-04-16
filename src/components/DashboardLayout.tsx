@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, Briefcase, Star, MessageSquare, CreditCard, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera, LifeBuoy, AlertTriangle, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, User, Briefcase, Star, MessageSquare, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera, LifeBuoy, AlertTriangle, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -99,7 +99,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes', show: hasProfilePermission('notifications'), badge: unreadCount },
     { label: 'Chat', icon: MessageSquare, path: '/dashboard/chat', show: !isClient, badge: 0 },
     { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads', show: !isClient && !isRH && hasProfilePermission('leads'), badge: pendingLeads },
-    { label: 'Plano', icon: CreditCard, path: '/dashboard/plano', show: !isClient && !isRH && hasProfilePermission('plan'), badge: 0 },
+    
     { label: 'Ajuda & Suporte', icon: LifeBuoy, path: '/ajuda', show: true, badge: 0 },
   ].filter(item => item.show);
 
