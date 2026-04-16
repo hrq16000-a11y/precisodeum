@@ -8,12 +8,16 @@ const corsHeaders = {
 
 const ALLOWED_BUCKETS = ["service-images", "avatars", "portfolio", "sponsors"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
-const TARGET_MAX_WIDTH = 1200;
-const TARGET_MAX_HEIGHT = 1200;
-const TARGET_QUALITY = 80;
-const TARGET_MAX_BYTES = 200 * 1024; // 200KB target
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif"];
+const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "avif"];
+
+/** Per-bucket optimization profiles */
+const BUCKET_PROFILES: Record<string, { maxWidth: number; targetKB: number; quality: number }> = {
+  avatars:          { maxWidth: 512,  targetKB: 150, quality: 75 },
+  "service-images": { maxWidth: 1200, targetKB: 250, quality: 78 },
+  portfolio:        { maxWidth: 1200, targetKB: 200, quality: 78 },
+  sponsors:         { maxWidth: 800,  targetKB: 200, quality: 75 },
+};
 
 type PathRequest = {
   bucket?: string;
@@ -33,45 +37,79 @@ const isInvalidStoragePath = (value: string) =>
   value.includes("..") || value.includes("//") || value.startsWith("/");
 
 /**
- * Uses Supabase Image Transformation (render/image) to get an optimized version.
- * Falls back to re-encoding if transforms are not available.
+ * Multi-pass optimization via Supabase Image Transforms.
+ * Tries progressively more aggressive settings until target is met.
  */
-async function optimizeViaTransform(
+async function optimizeMultiPass(
   supabaseUrl: string,
   serviceRoleKey: string,
   bucket: string,
   path: string,
-  maxWidth: number,
-  quality: number
+  targetBytes: number,
+  profile: { maxWidth: number; quality: number }
 ): Promise<{ data: Uint8Array; contentType: string } | null> {
-  // Supabase Image Transforms: GET /storage/v1/render/image/public/{bucket}/{path}?width=X&quality=Y
-  const transformUrl = `${supabaseUrl}/storage/v1/render/image/public/${bucket}/${path}?width=${maxWidth}&quality=${quality}&resize=contain`;
-  
-  try {
-    const res = await fetch(transformUrl, {
-      headers: {
-        Authorization: `Bearer ${serviceRoleKey}`,
-      },
-    });
+  const passes = [
+    { width: profile.maxWidth, quality: profile.quality },
+    { width: profile.maxWidth, quality: Math.max(50, profile.quality - 15) },
+    { width: Math.round(profile.maxWidth * 0.75), quality: 55 },
+    { width: Math.round(profile.maxWidth * 0.6), quality: 45 },
+    { width: Math.round(profile.maxWidth * 0.5), quality: 40 },
+  ];
 
-    if (!res.ok) {
-      console.log(`Transform API returned ${res.status}, falling back`);
-      return null;
+  let best: { data: Uint8Array; contentType: string } | null = null;
+
+  for (const pass of passes) {
+    const transformUrl = `${supabaseUrl}/storage/v1/render/image/public/${bucket}/${path}?width=${pass.width}&quality=${pass.quality}&resize=contain`;
+
+    try {
+      const res = await fetch(transformUrl, {
+        headers: { Authorization: `Bearer ${serviceRoleKey}` },
+      });
+
+      if (!res.ok) {
+        console.log(`Transform API returned ${res.status} for pass w=${pass.width} q=${pass.quality}`);
+        continue;
+      }
+
+      const ct = res.headers.get("content-type") || "image/webp";
+      const buf = new Uint8Array(await res.arrayBuffer());
+
+      if (buf.length < 100) continue;
+
+      // Always keep the smallest result
+      if (!best || buf.length < best.data.length) {
+        best = { data: buf, contentType: ct };
+      }
+
+      // If under target, stop early
+      if (buf.length <= targetBytes) {
+        return best;
+      }
+    } catch (err) {
+      console.error(`Transform pass failed (w=${pass.width}, q=${pass.quality}):`, err);
     }
-
-    const ct = res.headers.get("content-type") || "image/webp";
-    const buf = new Uint8Array(await res.arrayBuffer());
-
-    if (buf.length < 100) {
-      console.log("Transform returned too small result, skipping");
-      return null;
-    }
-
-    return { data: buf, contentType: ct };
-  } catch (err) {
-    console.error("Transform fetch failed:", err);
-    return null;
   }
+
+  return best;
+}
+
+/**
+ * Update all database references when a file is re-optimized in-place.
+ * This ensures link integrity even when content-type changes.
+ */
+async function syncMediaRecord(
+  supabase: any,
+  bucket: string,
+  path: string,
+  optimizedSize: number,
+  contentType: string
+) {
+  try {
+    await supabase.from("media").update({
+      size_optimized: optimizedSize,
+      mime_type: contentType,
+    }).eq("storage_path", `${bucket}/${path}`);
+  } catch { /* best-effort */ }
 }
 
 Deno.serve(async (req) => {
@@ -111,8 +149,8 @@ Deno.serve(async (req) => {
       const {
         bucket = "service-images",
         path = "",
-        maxWidth = TARGET_MAX_WIDTH,
-        quality = TARGET_QUALITY,
+        maxWidth,
+        quality,
       } = (await req.json()) as PathRequest;
 
       if (!ALLOWED_BUCKETS.includes(bucket)) {
@@ -121,13 +159,18 @@ Deno.serve(async (req) => {
       if (!path || isInvalidStoragePath(path)) {
         return jsonResponse({ error: "Invalid file path" }, 400);
       }
-
-      // Skip GIFs (animated)
       if (path.toLowerCase().endsWith(".gif")) {
         return jsonResponse({ error: "GIF files cannot be optimized (may be animated)" }, 400);
       }
 
-      // Download original to get its size
+      const profile = BUCKET_PROFILES[bucket] || BUCKET_PROFILES["service-images"];
+      const targetBytes = profile.targetKB * 1024;
+      const effectiveProfile = {
+        maxWidth: maxWidth || profile.maxWidth,
+        quality: quality || profile.quality,
+      };
+
+      // Download original
       const { data: originalFile, error: downloadError } = await supabase.storage
         .from(bucket)
         .download(path);
@@ -139,8 +182,7 @@ Deno.serve(async (req) => {
       const originalBytes = await originalFile.arrayBuffer();
       const originalSize = originalBytes.byteLength;
 
-      // If already under target, skip
-      if (originalSize <= TARGET_MAX_BYTES) {
+      if (originalSize <= targetBytes) {
         const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
         return jsonResponse({
           url: urlData.publicUrl,
@@ -148,36 +190,16 @@ Deno.serve(async (req) => {
           optimized: false,
           reason: "already_small",
           original_size: originalSize,
-          message: `Arquivo já está dentro do limite (${Math.round(originalSize / 1024)}KB)`,
+          message: `Arquivo já otimizado (${Math.round(originalSize / 1024)}KB)`,
         });
       }
 
-      // Try Supabase Image Transforms first
-      let optimizedData = await optimizeViaTransform(
-        supabaseUrl, serviceRoleKey, bucket, path, maxWidth, quality
+      // Multi-pass optimization
+      const optimized = await optimizeMultiPass(
+        supabaseUrl, serviceRoleKey, bucket, path, targetBytes, effectiveProfile
       );
 
-      // If transform didn't help enough, try with lower quality
-      if (optimizedData && optimizedData.data.length > TARGET_MAX_BYTES && quality > 50) {
-        const retry = await optimizeViaTransform(
-          supabaseUrl, serviceRoleKey, bucket, path, maxWidth, Math.max(50, quality - 20)
-        );
-        if (retry && retry.data.length < optimizedData.data.length) {
-          optimizedData = retry;
-        }
-      }
-
-      // If transform didn't help enough, try with smaller width
-      if (optimizedData && optimizedData.data.length > TARGET_MAX_BYTES) {
-        const retry = await optimizeViaTransform(
-          supabaseUrl, serviceRoleKey, bucket, path, 800, 60
-        );
-        if (retry && retry.data.length < optimizedData.data.length) {
-          optimizedData = retry;
-        }
-      }
-
-      if (!optimizedData || optimizedData.data.length >= originalSize) {
+      if (!optimized || optimized.data.length >= originalSize) {
         const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
         return jsonResponse({
           url: urlData.publicUrl,
@@ -185,40 +207,34 @@ Deno.serve(async (req) => {
           optimized: false,
           reason: "no_improvement",
           original_size: originalSize,
-          message: "Otimização não reduziu o tamanho do arquivo",
         });
       }
 
-      // Re-upload the optimized version in-place
-      const { error: uploadError } = await supabase.storage.from(bucket).update(path, optimizedData.data, {
-        contentType: optimizedData.contentType,
+      // Re-upload in-place (SAME PATH = SAME URL = LINK PRESERVED)
+      const { error: uploadError } = await supabase.storage.from(bucket).update(path, optimized.data, {
+        contentType: optimized.contentType,
         upsert: true,
       });
 
       if (uploadError) {
-        console.error("Re-upload optimized failed", { bucket, path, uploadError });
+        console.error("Re-upload failed", { bucket, path, uploadError });
         return jsonResponse({ error: "Upload failed: " + uploadError.message }, 500);
       }
 
-      // Update media table if exists
-      try {
-        await supabase.from("media").update({
-          size_optimized: optimizedData.data.length,
-          mime_type: optimizedData.contentType,
-        }).eq("storage_path", `${bucket}/${path}`);
-      } catch { /* media table update is best-effort */ }
+      await syncMediaRecord(supabase, bucket, path, optimized.data.length, optimized.contentType);
 
       const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
-      const savings = Math.round((1 - optimizedData.data.length / originalSize) * 100);
+      const savings = Math.round((1 - optimized.data.length / originalSize) * 100);
 
       return jsonResponse({
         url: urlData.publicUrl,
         path,
         optimized: true,
         original_size: originalSize,
-        optimized_size: optimizedData.data.length,
+        optimized_size: optimized.data.length,
         savings_percent: savings,
-        message: `Otimizado: ${Math.round(originalSize / 1024)}KB → ${Math.round(optimizedData.data.length / 1024)}KB (-${savings}%)`,
+        content_type: optimized.contentType,
+        message: `Otimizado: ${Math.round(originalSize / 1024)}KB → ${Math.round(optimized.data.length / 1024)}KB (-${savings}%)`,
       });
     }
 
@@ -246,16 +262,16 @@ Deno.serve(async (req) => {
     const originalName = file.name || "image";
     const ext = originalName.split(".").pop()?.toLowerCase() || "jpg";
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
-      return jsonResponse({ error: "Invalid file type. Allowed: jpg, png, gif, webp." }, 400);
+      return jsonResponse({ error: "Invalid file type. Allowed: jpg, png, gif, webp, avif." }, 400);
     }
     if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
-      return jsonResponse({ error: "Invalid MIME type. Allowed: jpeg, png, gif, webp." }, 400);
+      return jsonResponse({ error: "Invalid MIME type." }, 400);
     }
 
     const arrayBuffer = await file.arrayBuffer();
     const uint8 = new Uint8Array(arrayBuffer);
 
-    // Hash for deduplication
+    // Hash for deduplication (content-based, format-agnostic)
     const hashBuffer = await crypto.subtle.digest("SHA-256", uint8);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
@@ -265,12 +281,12 @@ Deno.serve(async (req) => {
     const uploadPath = `${folder ? `${folder}/` : ""}${hash}.${finalExt}`;
     const uploadContentType = isGif ? "image/gif" : file.type || "image/jpeg";
 
-    // Check for existing duplicate
+    // Check for existing duplicate (any format with same hash)
     const { data: existing } = await supabase.storage.from(bucket).list(folder || undefined, {
       search: `${hash}.`,
     });
 
-    const existingFile = existing?.find((entry) => entry.name.startsWith(hash));
+    const existingFile = existing?.find((entry: any) => entry.name.startsWith(hash));
     if (existingFile) {
       const existingPath = folder ? `${folder}/${existingFile.name}` : existingFile.name;
       const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(existingPath);
@@ -281,6 +297,7 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Upload original first
     const { error: uploadError } = await supabase.storage.from(bucket).upload(uploadPath, uint8, {
       contentType: uploadContentType,
       upsert: true,
@@ -295,43 +312,26 @@ Deno.serve(async (req) => {
     let optimizedSize = originalSize;
     let savingsPercent = 0;
     let finalContentType = uploadContentType;
+    const profile = BUCKET_PROFILES[bucket] || BUCKET_PROFILES["service-images"];
+    const targetBytes = profile.targetKB * 1024;
 
-    // Post-upload optimization (skip GIFs)
-    if (!isGif && originalSize > TARGET_MAX_BYTES) {
-      let optimizedData = await optimizeViaTransform(
-        supabaseUrl, serviceRoleKey, bucket, uploadPath,
-        TARGET_MAX_WIDTH, TARGET_QUALITY
+    // Post-upload multi-pass optimization (skip GIFs)
+    if (!isGif && originalSize > targetBytes) {
+      const optimized = await optimizeMultiPass(
+        supabaseUrl, serviceRoleKey, bucket, uploadPath, targetBytes,
+        { maxWidth: profile.maxWidth, quality: profile.quality }
       );
 
-      if (optimizedData && optimizedData.data.length > TARGET_MAX_BYTES && TARGET_QUALITY > 50) {
-        const retry = await optimizeViaTransform(
-          supabaseUrl, serviceRoleKey, bucket, uploadPath,
-          TARGET_MAX_WIDTH, Math.max(50, TARGET_QUALITY - 20)
-        );
-        if (retry && retry.data.length < (optimizedData?.data.length ?? Infinity)) {
-          optimizedData = retry;
-        }
-      }
-
-      if (optimizedData && optimizedData.data.length > TARGET_MAX_BYTES) {
-        const retry = await optimizeViaTransform(
-          supabaseUrl, serviceRoleKey, bucket, uploadPath, 800, 60
-        );
-        if (retry && retry.data.length < (optimizedData?.data.length ?? Infinity)) {
-          optimizedData = retry;
-        }
-      }
-
-      if (optimizedData && optimizedData.data.length < originalSize) {
-        const { error: updateErr } = await supabase.storage.from(bucket).update(uploadPath, optimizedData.data, {
-          contentType: optimizedData.contentType,
+      if (optimized && optimized.data.length < originalSize) {
+        const { error: updateErr } = await supabase.storage.from(bucket).update(uploadPath, optimized.data, {
+          contentType: optimized.contentType,
           upsert: true,
         });
         if (!updateErr) {
-          optimizedSize = optimizedData.data.length;
-          finalContentType = optimizedData.contentType;
+          optimizedSize = optimized.data.length;
+          finalContentType = optimized.contentType;
           savingsPercent = Math.round((1 - optimizedSize / originalSize) * 100);
-          console.log(`Optimized ${uploadPath}: ${Math.round(originalSize/1024)}KB → ${Math.round(optimizedSize/1024)}KB (-${savingsPercent}%)`);
+          console.log(`✅ Optimized ${uploadPath}: ${Math.round(originalSize / 1024)}KB → ${Math.round(optimizedSize / 1024)}KB (-${savingsPercent}%)`);
         }
       }
     }
@@ -346,6 +346,7 @@ Deno.serve(async (req) => {
       original_size: originalSize,
       optimized_size: optimizedSize,
       savings_percent: savingsPercent,
+      content_type: finalContentType,
     });
   } catch (err) {
     console.error("optimize-image error:", err);

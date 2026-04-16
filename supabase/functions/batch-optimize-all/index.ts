@@ -6,13 +6,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
+const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif"];
 const SCAN_LIMIT = 200;
 
+/** Per-bucket optimization profiles */
 const BUCKET_CONFIG: Record<string, { maxSize: number; maxWidth: number; quality: number }> = {
-  avatars: { maxSize: 200 * 1024, maxWidth: 512, quality: 80 },
-  "service-images": { maxSize: 300 * 1024, maxWidth: 1200, quality: 80 },
-  portfolio: { maxSize: 200 * 1024, maxWidth: 1200, quality: 80 },
+  avatars:          { maxSize: 150 * 1024, maxWidth: 512, quality: 75 },
+  "service-images": { maxSize: 250 * 1024, maxWidth: 1200, quality: 78 },
+  portfolio:        { maxSize: 200 * 1024, maxWidth: 1200, quality: 78 },
+  sponsors:         { maxSize: 200 * 1024, maxWidth: 800, quality: 75 },
 };
 
 const jsonResponse = (body: Record<string, unknown>, status = 200) =>
@@ -21,27 +23,46 @@ const jsonResponse = (body: Record<string, unknown>, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-async function optimizeViaTransform(
+/** Multi-pass optimization: tries progressively more aggressive settings */
+async function optimizeMultiPass(
   supabaseUrl: string,
   serviceRoleKey: string,
   bucket: string,
   path: string,
-  maxWidth: number,
-  quality: number
+  maxSize: number,
+  config: { maxWidth: number; quality: number }
 ): Promise<{ data: Uint8Array; contentType: string } | null> {
-  const url = `${supabaseUrl}/storage/v1/render/image/public/${bucket}/${path}?width=${maxWidth}&quality=${quality}&resize=contain`;
-  try {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${serviceRoleKey}` },
-    });
-    if (!res.ok) return null;
-    const ct = res.headers.get("content-type") || "image/webp";
-    const buf = new Uint8Array(await res.arrayBuffer());
-    if (buf.length < 100) return null;
-    return { data: buf, contentType: ct };
-  } catch {
-    return null;
+  const passes = [
+    { width: config.maxWidth, quality: config.quality },
+    { width: config.maxWidth, quality: Math.max(50, config.quality - 15) },
+    { width: Math.round(config.maxWidth * 0.75), quality: 55 },
+    { width: Math.round(config.maxWidth * 0.6), quality: 45 },
+    { width: Math.round(config.maxWidth * 0.5), quality: 40 },
+  ];
+
+  let best: { data: Uint8Array; contentType: string } | null = null;
+
+  for (const pass of passes) {
+    const url = `${supabaseUrl}/storage/v1/render/image/public/${bucket}/${path}?width=${pass.width}&quality=${pass.quality}&resize=contain`;
+    try {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${serviceRoleKey}` },
+      });
+      if (!res.ok) continue;
+      const ct = res.headers.get("content-type") || "image/webp";
+      const buf = new Uint8Array(await res.arrayBuffer());
+      if (buf.length < 100) continue;
+
+      if (!best || buf.length < best.data.length) {
+        best = { data: buf, contentType: ct };
+      }
+      if (buf.length <= maxSize) return best;
+    } catch {
+      continue;
+    }
   }
+
+  return best;
 }
 
 async function listRecursive(
@@ -81,7 +102,6 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Auth: accept service role key in Authorization, CRON_SECRET header, or admin JWT
     const cronSecret = Deno.env.get("CRON_SECRET");
     const authHeader = req.headers.get("Authorization");
     const cronHeader = req.headers.get("x-cron-secret");
@@ -90,9 +110,9 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     if (bearerToken === serviceRoleKey) {
-      // Authorized via service role key
+      // OK
     } else if (cronHeader && cronSecret && cronHeader === cronSecret) {
-      // Authorized via cron secret
+      // OK
     } else if (authHeader) {
       const callerClient = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: authHeader } },
@@ -108,7 +128,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
-    // Optional bucket filter
     let filterBucket: string | null = null;
     try {
       const url = new URL(req.url);
@@ -143,34 +162,17 @@ Deno.serve(async (req) => {
 
       for (const file of eligible) {
         try {
-          let result = await optimizeViaTransform(
+          const result = await optimizeMultiPass(
             supabaseUrl, serviceRoleKey, bucket, file.path,
-            config.maxWidth, config.quality
+            config.maxSize, config
           );
-
-          // Retry with lower quality
-          if (result && result.data.length > config.maxSize) {
-            const retry = await optimizeViaTransform(
-              supabaseUrl, serviceRoleKey, bucket, file.path,
-              config.maxWidth, 60
-            );
-            if (retry && retry.data.length < result.data.length) result = retry;
-          }
-
-          // Retry with smaller width
-          if (result && result.data.length > config.maxSize) {
-            const retry = await optimizeViaTransform(
-              supabaseUrl, serviceRoleKey, bucket, file.path,
-              Math.round(config.maxWidth * 0.6), 50
-            );
-            if (retry && retry.data.length < result.data.length) result = retry;
-          }
 
           if (!result || result.data.length >= file.size) {
             skipped++;
             continue;
           }
 
+          // Update in-place (PRESERVES URL/LINK)
           const { error: uploadError } = await supabase.storage
             .from(bucket)
             .update(file.path, result.data, {
@@ -189,7 +191,7 @@ Deno.serve(async (req) => {
           grandTotalSaved += saved;
           grandTotalOptimized++;
 
-          // Update media table (best-effort)
+          // Sync media table
           try {
             await supabase
               .from("media")
@@ -197,9 +199,7 @@ Deno.serve(async (req) => {
               .eq("storage_path", `${bucket}/${file.path}`);
           } catch { /* best-effort */ }
 
-          console.log(
-            `✅ ${bucket}/${file.path}: ${Math.round(file.size / 1024)}KB → ${Math.round(result.data.length / 1024)}KB`
-          );
+          console.log(`✅ ${bucket}/${file.path}: ${Math.round(file.size / 1024)}KB → ${Math.round(result.data.length / 1024)}KB`);
         } catch (err) {
           errors.push(`${file.path}: ${String(err)}`);
         }
@@ -215,15 +215,12 @@ Deno.serve(async (req) => {
       };
     }
 
-    const result = {
+    return jsonResponse({
       buckets: summary,
       grand_total_optimized: grandTotalOptimized,
       grand_total_savings_kb: Math.round(grandTotalSaved / 1024),
       message: `Otimização concluída: ${grandTotalOptimized} arquivo(s), ${Math.round(grandTotalSaved / 1024)}KB economizado(s)`,
-    };
-
-    console.log("Batch optimize result:", JSON.stringify(result));
-    return jsonResponse(result);
+    });
   } catch (err) {
     console.error("batch-optimize-all error:", err);
     return jsonResponse({ error: "Internal error" }, 500);
