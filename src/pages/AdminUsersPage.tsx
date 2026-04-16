@@ -131,27 +131,23 @@ const AdminUsersPage = () => {
     setSelectedIds(new Set(filtered.map(p => p.id)));
   };
 
-  const fetchProfiles = () => {
+  const fetchProfiles = useCallback(() => {
     Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at, cnpj').is('deleted_at', null),
-      supabase.from('services').select('id,provider_id,created_at').is('deleted_at', null),
-      supabase.from('leads').select('id,provider_id,created_at'),
+      supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at, cnpj, photo_url, whatsapp, phone, description, services_count, latitude, longitude').is('deleted_at', null),
       supabase.from('user_tags').select('*'),
       supabase.from('sponsor_contacts' as any).select('user_id'),
-    ]).then(([pRes, prRes, sRes, lRes, tRes, scRes]) => {
+    ]).then(([pRes, prRes, tRes, scRes]) => {
       setProfiles(pRes.data || []);
       const provs = prRes.data || [];
       setProvidersRaw(provs);
       const map: Record<string, any> = {};
       provs.forEach((p: any) => { map[p.user_id] = p; });
       setProvidersMap(map);
-      setServices(sRes.data || []);
-      setLeads(lRes.data || []);
       setUserTags(tRes.data || []);
       setSponsorUserIds(new Set((scRes.data || []).map((r: any) => r.user_id)));
     });
-  };
+  }, []);
 
   const fetchAdmins = () => {
     supabase.from('user_roles').select('user_id').eq('role', 'admin')
