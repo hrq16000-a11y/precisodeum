@@ -35,6 +35,7 @@ import UpsellBanner from '@/components/dashboard/UpsellBanner';
 import CoursesBanner from '@/components/dashboard/CoursesBanner';
 import OurStoryBanner from '@/components/OurStoryBanner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import ProfileCheckupModal from '@/components/dashboard/ProfileCheckupModal';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
@@ -121,6 +122,9 @@ const DashboardPage = () => {
   }, [provider?.id, profileDone, servicesDone, portfolioDone]);
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
+
+  // Profile check-up modal (providers only)
+  const showCheckup = isProvider || isRH;
 
   // ---- CLIENT DASHBOARD ----
   if (isClient) {
@@ -329,6 +333,8 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout>
+      {/* Profile check-up modal for incomplete providers */}
+      {showCheckup && <ProfileCheckupModal />}
       {/* Real-time engagement notification listener */}
       <RealtimeEngagementToast />
       {/* Enhanced Welcome Hero */}
