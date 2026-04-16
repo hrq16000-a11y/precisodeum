@@ -498,30 +498,63 @@ const AdminProvidersPage = () => {
                   </div>
                 </div>
 
-                {/* Status + Verified badges */}
+                {/* Status + Completion Score */}
                 <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                   <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusLabels[p.status]?.cls || 'bg-muted text-muted-foreground'}`}>
                     {statusLabels[p.status]?.label || p.status}
                   </span>
+                  {(() => {
+                    const { pct } = getCompletionScore(p);
+                    const color = pct >= 80 ? 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300'
+                      : pct >= 50 ? 'text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300'
+                      : 'text-destructive bg-destructive/10';
+                    return (
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${color}`}>
+                        {pct < 50 && <AlertCircle className="h-3 w-3" />}
+                        {pct}% completo
+                      </span>
+                    );
+                  })()}
                   <ProviderVerifiedChecklist provider={p} rules={rules} compact />
                 </div>
 
-                {/* Details */}
-                <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  {(p.categories as any)?.name && (
-                    <p className="flex items-center gap-1"><CategoryIcon icon={(p.categories as any)?.icon} size={12} className="text-muted-foreground" /> {(p.categories as any)?.name}</p>
-                  )}
-                  {(p.city || p.state) && (
-                    <p className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3 shrink-0" />
-                      {[p.neighborhood, p.city, p.state].filter(Boolean).join(', ')}
-                    </p>
-                  )}
-                  {p.cnpj && <p className="font-mono text-[10px]">CNPJ: {p.cnpj}</p>}
-                  <div className="flex gap-3 text-[10px]">
-                    <span>{p.services_count} serviço(s)</span>
-                    <span>{p.portfolio_album_count} álbum(ns)</span>
-                    <span>⭐ {p.rating_avg?.toFixed(1)} ({p.review_count})</span>
+                {/* Missing fields for pending */}
+                {p.status === 'pending' && (() => {
+                  const { missing } = getCompletionScore(p);
+                  if (missing.length === 0) return null;
+                  return (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {missing.slice(0, 3).map(m => (
+                        <span key={m} className="inline-flex items-center gap-0.5 rounded bg-destructive/10 px-1.5 py-0.5 text-[9px] text-destructive font-medium">
+                          <AlertCircle className="h-2.5 w-2.5" /> {m}
+                        </span>
+                      ))}
+                      {missing.length > 3 && (
+                        <span className="text-[9px] text-muted-foreground">+{missing.length - 3} mais</span>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Details — separated into Business / Personal */}
+                <div className="mt-2 space-y-1.5">
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Dados do Negocio</p>
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    {(p.categories as any)?.name && (
+                      <p className="flex items-center gap-1"><CategoryIcon icon={(p.categories as any)?.icon} size={12} className="text-muted-foreground" /> {(p.categories as any)?.name}</p>
+                    )}
+                    {(p.city || p.state) && (
+                      <p className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        {[p.neighborhood, p.city, p.state].filter(Boolean).join(', ')}
+                      </p>
+                    )}
+                    {p.cnpj && <p className="font-mono text-[10px]">CNPJ: {p.cnpj}</p>}
+                    <div className="flex gap-3 text-[10px]">
+                      <span>{p.services_count} serviço(s)</span>
+                      <span>{p.portfolio_album_count} álbum(ns)</span>
+                      <span className="flex items-center gap-0.5"><Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" /> {p.rating_avg?.toFixed(1)} ({p.review_count})</span>
+                    </div>
                   </div>
                 </div>
 
