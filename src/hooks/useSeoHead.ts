@@ -16,7 +16,7 @@ interface SeoHeadProps {
   articleAuthor?: string;
 }
 
-export function useSeoHead({ title, description, canonical, ogImage, noindex }: SeoHeadProps) {
+export function useSeoHead({ title, description, canonical, ogImage, noindex, ogType, articlePublishedTime, articleModifiedTime, articleAuthor }: SeoHeadProps) {
   const gscId = useSettingValue('google_search_console_id');
   const gaId = useSettingValue('google_analytics_id');
 
