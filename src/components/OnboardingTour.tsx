@@ -1,0 +1,116 @@
+import { useState, useEffect, useCallback } from 'react';
+import { X, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface TourStep {
+  target: string; // CSS selector
+  title: string;
+  description: string;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+}
+
+const PROVIDER_STEPS: TourStep[] = [
+  { target: '[data-tour="profile-strength"]', title: 'Forca do Perfil', description: 'Acompanhe aqui o quanto seu perfil esta completo. Perfis completos aparecem mais nas buscas.' },
+  { target: '[data-tour="services"]', title: 'Seus Servicos', description: 'Cadastre os servicos que voce oferece para ser encontrado por clientes.' },
+  { target: '[data-tour="leads"]', title: 'Seus Leads', description: 'Aqui voce visualiza todas as solicitacoes de orcamento que recebeu.' },
+  { target: '[data-tour="share"]', title: 'Compartilhe seu Perfil', description: 'Compartilhe seu perfil nas redes sociais para atrair mais clientes.' },
+];
+
+const TOUR_KEY = 'onboarding_tour_completed';
+
+export function useOnboardingTour(profileType: string) {
+  const [active, setActive] = useState(false);
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const completed = localStorage.getItem(TOUR_KEY);
+    if (!completed && profileType === 'provider') {
+      const timer = setTimeout(() => setActive(true), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [profileType]);
+
+  const dismiss = useCallback(() => {
+    setActive(false);
+    localStorage.setItem(TOUR_KEY, 'true');
+  }, []);
+
+  const next = useCallback(() => {
+    if (step < PROVIDER_STEPS.length - 1) setStep(s => s + 1);
+    else dismiss();
+  }, [step, dismiss]);
+
+  const prev = useCallback(() => {
+    if (step > 0) setStep(s => s - 1);
+  }, [step]);
+
+  return { active, step, steps: PROVIDER_STEPS, next, prev, dismiss };
+}
+
+interface OnboardingTourProps {
+  active: boolean;
+  step: number;
+  steps: TourStep[];
+  onNext: () => void;
+  onPrev: () => void;
+  onDismiss: () => void;
+}
+
+export default function OnboardingTour({ active, step, steps, onNext, onPrev, onDismiss }: OnboardingTourProps) {
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const currentStep = steps[step];
+
+  useEffect(() => {
+    if (!active || !currentStep) return;
+    const el = document.querySelector(currentStep.target);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      setPos({ top: rect.bottom + window.scrollY + 12, left: Math.max(16, rect.left), width: Math.min(320, window.innerWidth - 32) });
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      setPos({ top: window.innerHeight / 2, left: 16, width: Math.min(320, window.innerWidth - 32) });
+    }
+  }, [active, step, currentStep]);
+
+  if (!active || !pos) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div className="fixed inset-0 bg-black/40 z-[9998]" onClick={onDismiss} />
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="fixed z-[9999] bg-card border border-border rounded-xl shadow-xl p-4"
+          style={{ top: pos.top, left: pos.left, width: pos.width }}
+        >
+          <button onClick={onDismiss} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-xs text-muted-foreground">{step + 1}/{steps.length}</span>
+          </div>
+
+          <h4 className="font-semibold text-sm mb-1">{currentStep.title}</h4>
+          <p className="text-xs text-muted-foreground mb-3">{currentStep.description}</p>
+
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={onPrev} disabled={step === 0} className="h-7 text-xs">
+              <ArrowLeft className="h-3 w-3 mr-1" /> Voltar
+            </Button>
+            <Button size="sm" onClick={onNext} className="h-7 text-xs">
+              {step === steps.length - 1 ? 'Concluir' : 'Proximo'} <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </>
+  );
+}
