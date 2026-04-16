@@ -790,104 +790,110 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 )}
               </div>
 
-              {/* Provider / Business Data (inline, no tab switch needed) */}
+              {/* Provider Data — Organized Blocks */}
               {provider && (
-                <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-foreground text-sm">Dados do Negócio</h3>
-                    <Button size="sm" variant={editing ? 'accent' : 'outline'} className="h-7 text-xs" onClick={() => setEditing(!editing)}>
-                      {editing ? 'Cancelar' : 'Editar'}
-                    </Button>
+                <div className="space-y-3">
+                  {/* Block 1: Identidade do Negócio */}
+                  <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /> Identidade do Negócio</h3>
+                      <Button size="sm" variant={editing ? 'accent' : 'outline'} className="h-7 text-xs" onClick={() => setEditing(!editing)}>
+                        {editing ? 'Cancelar' : 'Editar'}
+                      </Button>
+                    </div>
+                    {editing ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div><Label className="text-xs">Nome Fantasia</Label><Input value={providerForm.business_name} onChange={e => setProviderForm({ ...providerForm, business_name: e.target.value })} className="h-8 text-sm" /></div>
+                          <div><Label className="text-xs">CNPJ</Label><Input value={providerForm.cnpj} onChange={e => setProviderForm({ ...providerForm, cnpj: e.target.value })} className="h-8 text-sm" /></div>
+                        </div>
+                        <div><Label className="text-xs">Descrição</Label><Textarea value={providerForm.description} onChange={e => setProviderForm({ ...providerForm, description: e.target.value })} className="text-sm min-h-[60px]" /></div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <InfoRow icon={<Briefcase className="h-4 w-4" />} label="Empresa" value={provider.business_name || '—'} />
+                        <InfoRow icon={<FileText className="h-4 w-4" />} label="CNPJ" value={provider.cnpj || '—'} />
+                        {provider.categories && <InfoRow icon={<FileText className="h-4 w-4" />} label="Categoria" value={(provider.categories as any)?.name || '—'} />}
+                        {provider.slug && (
+                          <a href={`/profissional/${provider.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline flex items-center gap-1 pt-1">
+                            <ExternalLink className="h-3 w-3" /> /profissional/{provider.slug}
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  {editing ? (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs">Nome Fantasia</Label>
-                          <Input value={providerForm.business_name} onChange={e => setProviderForm({ ...providerForm, business_name: e.target.value })} className="h-8 text-sm" />
-                        </div>
-                        <div>
-                          <Label className="text-xs">CNPJ</Label>
-                          <Input value={providerForm.cnpj} onChange={e => setProviderForm({ ...providerForm, cnpj: e.target.value })} className="h-8 text-sm" />
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-xs">Descrição</Label>
-                        <Textarea value={providerForm.description} onChange={e => setProviderForm({ ...providerForm, description: e.target.value })} className="text-sm min-h-[60px]" />
-                      </div>
+
+                  {/* Block 2: Dados Geográficos */}
+                  <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
+                    <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><Navigation className="h-4 w-4 text-primary" /> Dados Geográficos (PostGIS)</h3>
+                    {editing ? (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        <div>
-                          <Label className="text-xs">Cidade</Label>
-                          <Input value={providerForm.city} onChange={e => setProviderForm({ ...providerForm, city: e.target.value })} className="h-8 text-sm" />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Estado</Label>
-                          <Input value={providerForm.state} onChange={e => setProviderForm({ ...providerForm, state: e.target.value })} className="h-8 text-sm" maxLength={2} />
-                        </div>
-                        <div className="col-span-2 sm:col-span-1">
-                          <Label className="text-xs">Bairro</Label>
-                          <Input value={providerForm.neighborhood} onChange={e => setProviderForm({ ...providerForm, neighborhood: e.target.value })} className="h-8 text-sm" />
-                        </div>
+                        <div><Label className="text-xs">Cidade</Label><Input value={providerForm.city} onChange={e => setProviderForm({ ...providerForm, city: e.target.value })} className="h-8 text-sm" /></div>
+                        <div><Label className="text-xs">Estado</Label><Input value={providerForm.state} onChange={e => setProviderForm({ ...providerForm, state: e.target.value })} className="h-8 text-sm" maxLength={2} /></div>
+                        <div className="col-span-2 sm:col-span-1"><Label className="text-xs">Bairro</Label><Input value={providerForm.neighborhood} onChange={e => setProviderForm({ ...providerForm, neighborhood: e.target.value })} className="h-8 text-sm" /></div>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs">Telefone Comercial</Label>
-                          <PhoneMaskedInput
-                            name="phone"
-                            value={providerForm.phone || ''}
-                            onChange={handleProviderPhoneChange}
-                            className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">WhatsApp Comercial</Label>
-                          <PhoneMaskedInput
-                            name="whatsapp"
-                            value={providerForm.whatsapp || ''}
-                            onChange={handleProviderPhoneChange}
-                            className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          />
-                        </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <InfoRow icon={<MapPin className="h-4 w-4" />} label="Local" value={[provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') || '—'} />
+                        <InfoRow icon={<Globe className="h-4 w-4" />} label="Lat/Lng" value={provider.latitude && provider.longitude ? `${provider.latitude}, ${provider.longitude}` : 'Sem coordenadas'} />
+                        <InfoRow icon={<MapPin className="h-4 w-4" />} label="Raio" value={provider.service_radius || '—'} />
+                        {(provider as any).content_flags?.geo_error && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-destructive font-medium bg-destructive/5 rounded-lg px-2 py-1">
+                            <AlertTriangle className="h-3 w-3" /> Endereço com erro de validação
+                          </div>
+                        )}
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs">Website</Label>
-                          <Input value={providerForm.website} onChange={e => setProviderForm({ ...providerForm, website: e.target.value })} className="h-8 text-sm" placeholder="https://..." />
+                    )}
+                  </div>
+
+                  {/* Block 3: Informações Operacionais */}
+                  <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
+                    <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><Wrench className="h-4 w-4 text-primary" /> Informações Operacionais</h3>
+                    {editing ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div><Label className="text-xs">Telefone Comercial</Label><PhoneMaskedInput name="phone" value={providerForm.phone || ''} onChange={handleProviderPhoneChange} className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
+                          <div><Label className="text-xs">WhatsApp Comercial</Label><PhoneMaskedInput name="whatsapp" value={providerForm.whatsapp || ''} onChange={handleProviderPhoneChange} className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
                         </div>
-                        <div>
-                          <Label className="text-xs">Horário</Label>
-                          <Input value={providerForm.working_hours} onChange={e => setProviderForm({ ...providerForm, working_hours: e.target.value })} className="h-8 text-sm" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div><Label className="text-xs">Website</Label><Input value={providerForm.website} onChange={e => setProviderForm({ ...providerForm, website: e.target.value })} className="h-8 text-sm" placeholder="https://..." /></div>
+                          <div><Label className="text-xs">Horário</Label><Input value={providerForm.working_hours} onChange={e => setProviderForm({ ...providerForm, working_hours: e.target.value })} className="h-8 text-sm" /></div>
                         </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div><Label className="text-xs">Experiência (anos)</Label><Input type="number" value={providerForm.years_experience} onChange={e => setProviderForm({ ...providerForm, years_experience: parseInt(e.target.value) || 0 })} className="h-8 text-sm" /></div>
+                          <div><Label className="text-xs">Raio de Atendimento</Label><Input value={providerForm.service_radius} onChange={e => setProviderForm({ ...providerForm, service_radius: e.target.value })} className="h-8 text-sm" /></div>
+                        </div>
+                        <Button size="sm" onClick={saveProvider} className="w-full">Salvar Dados Profissionais</Button>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs">Experiência (anos)</Label>
-                          <Input type="number" value={providerForm.years_experience} onChange={e => setProviderForm({ ...providerForm, years_experience: parseInt(e.target.value) || 0 })} className="h-8 text-sm" />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Raio de Atendimento</Label>
-                          <Input value={providerForm.service_radius} onChange={e => setProviderForm({ ...providerForm, service_radius: e.target.value })} className="h-8 text-sm" />
-                        </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <InfoRow icon={<Phone className="h-4 w-4" />} label="Fone" value={provider.phone ? formatPhoneDisplay(provider.phone) : '—'} />
+                        <InfoRow icon={<MessageCircle className="h-4 w-4" />} label="WhatsApp" value={provider.whatsapp ? formatPhoneDisplay(provider.whatsapp) : '—'} />
+                        <InfoRow icon={<Globe className="h-4 w-4" />} label="Website" value={provider.website || '—'} />
+                        <InfoRow icon={<Clock className="h-4 w-4" />} label="Horário" value={provider.working_hours || '—'} />
+                        <InfoRow icon={<Calendar className="h-4 w-4" />} label="Experiência" value={`${provider.years_experience || 0} anos`} />
                       </div>
-                      <Button size="sm" onClick={saveProvider} className="w-full">Salvar Dados do Negócio</Button>
+                    )}
+                  </div>
+
+                  {/* Block 4: Métricas de Performance */}
+                  <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
+                    <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Métricas de Performance</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {[
+                        { label: 'Avaliação', value: `${provider.rating_avg?.toFixed(1) || '0.0'}`, sub: `${provider.review_count || 0} reviews` },
+                        { label: 'Serviços', value: String(provider.services_count || 0), sub: 'cadastrados' },
+                        { label: 'Fotos', value: String(provider.portfolio_photo_count || 0), sub: `${provider.portfolio_album_count || 0} álbuns` },
+                        { label: 'Contatos', value: String(contactClicks.length), sub: 'cliques recentes' },
+                      ].map(m => (
+                        <div key={m.label} className="rounded-lg bg-muted/40 border border-border/50 p-2.5 text-center">
+                          <p className="text-lg font-bold text-foreground">{m.value}</p>
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{m.label}</p>
+                          <p className="text-[9px] text-muted-foreground">{m.sub}</p>
+                        </div>
+                      ))}
                     </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <InfoRow icon={<Briefcase className="h-4 w-4" />} label="Empresa" value={provider.business_name || '—'} />
-                      <InfoRow icon={<MapPin className="h-4 w-4" />} label="Local" value={[provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') || '—'} />
-                      <InfoRow icon={<Phone className="h-4 w-4" />} label="Fone" value={provider.phone ? formatPhoneDisplay(provider.phone) : '—'} />
-                      <InfoRow icon={<MessageCircle className="h-4 w-4" />} label="WhatsApp" value={provider.whatsapp ? formatPhoneDisplay(provider.whatsapp) : '—'} />
-                      <InfoRow icon={<Globe className="h-4 w-4" />} label="Website" value={provider.website || '—'} />
-                      <InfoRow icon={<Calendar className="h-4 w-4" />} label="Experiência" value={`${provider.years_experience || 0} anos`} />
-                      {provider.categories && <InfoRow icon={<FileText className="h-4 w-4" />} label="Categoria" value={`${(provider.categories as any)?.icon || ''} ${(provider.categories as any)?.name || ''}`} />}
-                      <InfoRow icon={<Eye className="h-4 w-4" />} label="Avaliações" value={`${provider.rating_avg?.toFixed(1) || '0'} (${provider.review_count || 0})`} />
-                      {provider.slug && (
-                        <a href={`/profissional/${provider.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline flex items-center gap-1 pt-1">
-                          <ExternalLink className="h-3 w-3" /> /profissional/{provider.slug}
-                        </a>
-                      )}
-                    </div>
-                  )}
+                  </div>
                 </div>
               )}
 
