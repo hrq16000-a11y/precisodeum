@@ -264,7 +264,13 @@ function startFetchIfNeeded() {
         console.debug('[GeoCity] API fallback:', error);
       }
     }
-  })(); });
+  })(); };
+
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(startGeoFetch, { timeout: 8000 });
+  } else {
+    setTimeout(startGeoFetch, 5000);
+  }
 }
 
 function subscribe(callback: () => void) {
