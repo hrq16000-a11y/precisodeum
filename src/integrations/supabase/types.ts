@@ -477,6 +477,48 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_clicks: {
+        Row: {
+          contact_type: string
+          created_at: string
+          id: string
+          page_path: string | null
+          provider_id: string
+          visitor_id: string | null
+        }
+        Insert: {
+          contact_type?: string
+          created_at?: string
+          id?: string
+          page_path?: string | null
+          provider_id: string
+          visitor_id?: string | null
+        }
+        Update: {
+          contact_type?: string
+          created_at?: string
+          id?: string
+          page_path?: string | null
+          provider_id?: string
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_clicks_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_clicks_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           active: boolean
@@ -1992,6 +2034,7 @@ export type Database = {
           category_id: string | null
           city: string
           cnpj: string | null
+          content_flags: Json | null
           created_at: string
           deleted_at: string | null
           description: string
@@ -2001,6 +2044,8 @@ export type Database = {
           id: string
           latitude: number | null
           longitude: number | null
+          meta_description: string | null
+          meta_title: string | null
           neighborhood: string
           onboarding_progress: Json | null
           phone: string
@@ -2030,6 +2075,7 @@ export type Database = {
           category_id?: string | null
           city?: string
           cnpj?: string | null
+          content_flags?: Json | null
           created_at?: string
           deleted_at?: string | null
           description?: string
@@ -2039,6 +2085,8 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
           neighborhood?: string
           onboarding_progress?: Json | null
           phone?: string
@@ -2068,6 +2116,7 @@ export type Database = {
           category_id?: string | null
           city?: string
           cnpj?: string | null
+          content_flags?: Json | null
           created_at?: string
           deleted_at?: string | null
           description?: string
@@ -2077,6 +2126,8 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
           neighborhood?: string
           onboarding_progress?: Json | null
           phone?: string
