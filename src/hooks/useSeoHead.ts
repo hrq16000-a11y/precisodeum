@@ -41,9 +41,17 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     // Open Graph
     setMeta('og:title', fullTitle, 'property');
     setMeta('og:description', description, 'property');
-    setMeta('og:type', 'website', 'property');
+    setMeta('og:type', ogType || 'website', 'property');
     setMeta('og:image', ogImage || DEFAULT_OG_IMAGE, 'property');
     setMeta('og:site_name', 'Preciso de um', 'property');
+    setMeta('og:locale', 'pt_BR', 'property');
+
+    // Article-specific OG tags
+    if (ogType === 'article') {
+      if (articlePublishedTime) setMeta('article:published_time', articlePublishedTime, 'property');
+      if (articleModifiedTime) setMeta('article:modified_time', articleModifiedTime, 'property');
+      if (articleAuthor) setMeta('article:author', articleAuthor, 'property');
+    }
 
     // Twitter
     setMeta('twitter:card', 'summary_large_image');
