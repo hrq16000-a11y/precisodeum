@@ -352,15 +352,7 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
-            <Suspense fallback={null}>
-              <ScrollProgressBar />
-              <MobileBottomNav />
-              <FloatingHelpButton />
-              <BackToTopButton />
-              <CookieConsent />
-              <PwaInstallBanner />
-              <TypeSelectionGate />
-            </Suspense>
+            <DeferredShell />
             </AdDebugProvider>
           </AuthProvider>
         </BrowserRouter>
