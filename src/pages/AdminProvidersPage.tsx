@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check, X, Eye, Search, MapPin, Edit2, MoreHorizontal, ExternalLink, Download, ChevronDown, ChevronUp, CheckCheck, XCircle, ToggleRight } from 'lucide-react';
+import { Check, X, Eye, Search, MapPin, Edit2, MoreHorizontal, ExternalLink, Download, ChevronDown, ChevronUp, CheckCheck, XCircle, ToggleRight, Star, AlertCircle, Camera, Clock } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -36,6 +36,24 @@ const PAGE_SIZE = 20;
 const defaultRules = {
   min_services: 2, min_albums: 1, min_reviews: 1, min_rating: 4.0,
   require_photo: true, require_cnpj: true, require_city: true,
+};
+
+/** Calculate profile completion score (0-100) and list missing fields */
+const getCompletionScore = (p: any): { pct: number; missing: string[] } => {
+  const checks: { ok: boolean; label: string }[] = [
+    { ok: !!p.profiles?.full_name?.trim(), label: 'Nome' },
+    { ok: !!p.photo_url, label: 'Foto de perfil' },
+    { ok: !!p.city && p.city !== 'Não informada', label: 'Cidade' },
+    { ok: !!p.state, label: 'Estado' },
+    { ok: !!p.phone || !!p.whatsapp, label: 'Telefone' },
+    { ok: p.services_count > 0, label: 'Serviço cadastrado' },
+    { ok: !!p.description?.trim(), label: 'Descrição' },
+    { ok: !!p.working_hours, label: 'Horário de funcionamento' },
+  ];
+  const passed = checks.filter(c => c.ok).length;
+  const pct = Math.round((passed / checks.length) * 100);
+  const missing = checks.filter(c => !c.ok).map(c => c.label);
+  return { pct, missing };
 };
 
 const AdminProvidersPage = () => {
@@ -84,17 +102,22 @@ const AdminProvidersPage = () => {
   const approveAllPending = useCallback(async () => {
     setBulkActionLoading(true);
     const pendingIds = allProviders
-      .filter(p => p.status === 'pending' && p.city && p.city !== 'Não informada' && p.state)
+      .filter(p => {
+        if (p.status !== 'pending') return false;
+        const { pct } = getCompletionScore(p);
+        // Only approve profiles with at least 50% completion
+        return pct >= 50 && p.city && p.city !== 'Não informada' && p.state;
+      })
       .map(p => p.id);
     if (pendingIds.length === 0) {
-      toast.info('Nenhum prestador pendente qualificado');
+      toast.info('Nenhum prestador pendente qualificado (perfis incompletos foram ignorados)');
       setBulkActionLoading(false);
       return;
     }
     const { error } = await supabase.from('providers').update({ status: 'approved' }).in('id', pendingIds);
     if (error) { toast.error(error.message); }
     else {
-      toast.success(`${pendingIds.length} prestador(es) aprovado(s)!`);
+      toast.success(`${pendingIds.length} prestador(es) aprovado(s)! Perfis incompletos foram mantidos como pendentes.`);
       await logAuditAction({ action: 'bulk_active', resource_type: 'provider', details: { ids: pendingIds, count: pendingIds.length } });
       fetchProviders();
     }
@@ -342,6 +365,7 @@ const AdminProvidersPage = () => {
             <ToggleRight className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs font-medium text-foreground">Aprovação automática</span>
             <Switch checked={autoApprove} onCheckedChange={toggleAutoApprove} disabled={autoApproveLoading} />
+            <Link to="/admin/aprovacao" className="text-[10px] text-primary hover:underline ml-1">Configurar</Link>
           </div>
         </div>
         {stats.pending > 0 && (
@@ -480,30 +504,63 @@ const AdminProvidersPage = () => {
                   </div>
                 </div>
 
-                {/* Status + Verified badges */}
+                {/* Status + Completion Score */}
                 <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                   <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusLabels[p.status]?.cls || 'bg-muted text-muted-foreground'}`}>
                     {statusLabels[p.status]?.label || p.status}
                   </span>
+                  {(() => {
+                    const { pct } = getCompletionScore(p);
+                    const color = pct >= 80 ? 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300'
+                      : pct >= 50 ? 'text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300'
+                      : 'text-destructive bg-destructive/10';
+                    return (
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${color}`}>
+                        {pct < 50 && <AlertCircle className="h-3 w-3" />}
+                        {pct}% completo
+                      </span>
+                    );
+                  })()}
                   <ProviderVerifiedChecklist provider={p} rules={rules} compact />
                 </div>
 
-                {/* Details */}
-                <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  {(p.categories as any)?.name && (
-                    <p className="flex items-center gap-1"><CategoryIcon icon={(p.categories as any)?.icon} size={12} className="text-muted-foreground" /> {(p.categories as any)?.name}</p>
-                  )}
-                  {(p.city || p.state) && (
-                    <p className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3 shrink-0" />
-                      {[p.neighborhood, p.city, p.state].filter(Boolean).join(', ')}
-                    </p>
-                  )}
-                  {p.cnpj && <p className="font-mono text-[10px]">CNPJ: {p.cnpj}</p>}
-                  <div className="flex gap-3 text-[10px]">
-                    <span>{p.services_count} serviço(s)</span>
-                    <span>{p.portfolio_album_count} álbum(ns)</span>
-                    <span>⭐ {p.rating_avg?.toFixed(1)} ({p.review_count})</span>
+                {/* Missing fields for pending */}
+                {p.status === 'pending' && (() => {
+                  const { missing } = getCompletionScore(p);
+                  if (missing.length === 0) return null;
+                  return (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {missing.slice(0, 3).map(m => (
+                        <span key={m} className="inline-flex items-center gap-0.5 rounded bg-destructive/10 px-1.5 py-0.5 text-[9px] text-destructive font-medium">
+                          <AlertCircle className="h-2.5 w-2.5" /> {m}
+                        </span>
+                      ))}
+                      {missing.length > 3 && (
+                        <span className="text-[9px] text-muted-foreground">+{missing.length - 3} mais</span>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Details — separated into Business / Personal */}
+                <div className="mt-2 space-y-1.5">
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Dados do Negocio</p>
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    {(p.categories as any)?.name && (
+                      <p className="flex items-center gap-1"><CategoryIcon icon={(p.categories as any)?.icon} size={12} className="text-muted-foreground" /> {(p.categories as any)?.name}</p>
+                    )}
+                    {(p.city || p.state) && (
+                      <p className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        {[p.neighborhood, p.city, p.state].filter(Boolean).join(', ')}
+                      </p>
+                    )}
+                    {p.cnpj && <p className="font-mono text-[10px]">CNPJ: {p.cnpj}</p>}
+                    <div className="flex gap-3 text-[10px]">
+                      <span>{p.services_count} serviço(s)</span>
+                      <span>{p.portfolio_album_count} álbum(ns)</span>
+                      <span className="flex items-center gap-0.5"><Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" /> {p.rating_avg?.toFixed(1)} ({p.review_count})</span>
+                    </div>
                   </div>
                 </div>
 
@@ -516,28 +573,45 @@ const AdminProvidersPage = () => {
                     </button>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="mt-1 pt-2 border-t border-border space-y-2">
+                    <div className="mt-1 pt-2 border-t border-border space-y-3">
                       <ProviderVerifiedChecklist provider={p} rules={rules} />
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
-                        {p.business_name && (
-                          <div><span className="font-medium text-foreground">Empresa:</span> {p.business_name}</div>
-                        )}
-                        {p.phone && (
-                          <div><span className="font-medium text-foreground">Telefone:</span> {p.phone}</div>
-                        )}
-                        {p.whatsapp && (
-                          <div><span className="font-medium text-foreground">WhatsApp:</span> {p.whatsapp}</div>
-                        )}
-                        {p.plan && (
-                          <div><span className="font-medium text-foreground">Plano:</span> {p.plan}</div>
-                        )}
-                        {p.years_experience > 0 && (
-                          <div><span className="font-medium text-foreground">Experiência:</span> {p.years_experience} ano(s)</div>
-                        )}
-                        {p.service_radius && (
-                          <div><span className="font-medium text-foreground">Raio:</span> {p.service_radius}</div>
-                        )}
+                      
+                      {/* Business Data */}
+                      <div>
+                        <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Dados Comerciais</p>
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                          {p.business_name && (
+                            <div><span className="font-medium text-foreground">Empresa:</span> {p.business_name}</div>
+                          )}
+                          {p.plan && (
+                            <div><span className="font-medium text-foreground">Plano:</span> {p.plan}</div>
+                          )}
+                          {p.years_experience > 0 && (
+                            <div><span className="font-medium text-foreground">Experiencia:</span> {p.years_experience} ano(s)</div>
+                          )}
+                          {p.service_radius && (
+                            <div><span className="font-medium text-foreground">Raio:</span> {p.service_radius}</div>
+                          )}
+                          {p.working_hours && (
+                            <div className="col-span-2"><span className="font-medium text-foreground">Horario:</span> {p.working_hours}</div>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Personal/Contact Data */}
+                      {(p.phone || p.whatsapp || p.profiles?.email) && (
+                        <div>
+                          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Contato</p>
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                            {p.phone && (
+                              <div><span className="font-medium text-foreground">Telefone:</span> {p.phone}</div>
+                            )}
+                            {p.whatsapp && (
+                              <div><span className="font-medium text-foreground">WhatsApp:</span> {p.whatsapp}</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
