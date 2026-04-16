@@ -260,7 +260,9 @@ const Index = () => {
         return (
           <LazyErrorBoundary key={slug}>
             <Suspense fallback={<SectionFallback />}>
-              {section}
+              <div className="cv-auto">
+                {section}
+              </div>
             </Suspense>
           </LazyErrorBoundary>
         );
