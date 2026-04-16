@@ -183,7 +183,7 @@ const Index = () => {
       case 'highlights':
         return <HighlightsCarousel key={slug} />;
       case 'categories':
-        return <CategoriesGrid key={slug} categories={categories} isLoading={catsLoading} />;
+        return null; // rendered eagerly outside the loop to prevent CLS
       case 'pwa':
         return <PwaInstallSection key={slug} />;
       case 'dynamic':
@@ -251,17 +251,16 @@ const Index = () => {
       <HeroBanner />
       <Suspense fallback={<div className="h-8" />}><ActiveProvidersCounter /></Suspense>
 
+      {/* Categories rendered eagerly (not lazy) to eliminate CLS caused by lazy sections above */}
+      <CategoriesGrid categories={categories} isLoading={catsLoading} />
+
       {sectionOrder.map((slug) => {
         const section = renderSection(slug);
         if (!section) return null;
-        // Reserve min-height for sections above categories to prevent CLS
-        const minH = SECTION_MIN_HEIGHTS[slug];
         return (
           <LazyErrorBoundary key={slug}>
-            <Suspense fallback={minH ? <div style={{ minHeight: minH }} /> : <SectionFallback />}>
-              <div style={minH ? { minHeight: minH } : undefined}>
-                {section}
-              </div>
+            <Suspense fallback={<SectionFallback />}>
+              {section}
             </Suspense>
           </LazyErrorBoundary>
         );
