@@ -102,17 +102,22 @@ const AdminProvidersPage = () => {
   const approveAllPending = useCallback(async () => {
     setBulkActionLoading(true);
     const pendingIds = allProviders
-      .filter(p => p.status === 'pending' && p.city && p.city !== 'Não informada' && p.state)
+      .filter(p => {
+        if (p.status !== 'pending') return false;
+        const { pct } = getCompletionScore(p);
+        // Only approve profiles with at least 50% completion
+        return pct >= 50 && p.city && p.city !== 'Não informada' && p.state;
+      })
       .map(p => p.id);
     if (pendingIds.length === 0) {
-      toast.info('Nenhum prestador pendente qualificado');
+      toast.info('Nenhum prestador pendente qualificado (perfis incompletos foram ignorados)');
       setBulkActionLoading(false);
       return;
     }
     const { error } = await supabase.from('providers').update({ status: 'approved' }).in('id', pendingIds);
     if (error) { toast.error(error.message); }
     else {
-      toast.success(`${pendingIds.length} prestador(es) aprovado(s)!`);
+      toast.success(`${pendingIds.length} prestador(es) aprovado(s)! Perfis incompletos foram mantidos como pendentes.`);
       await logAuditAction({ action: 'bulk_active', resource_type: 'provider', details: { ids: pendingIds, count: pendingIds.length } });
       fetchProviders();
     }
