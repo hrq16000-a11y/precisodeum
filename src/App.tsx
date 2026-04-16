@@ -150,11 +150,10 @@ const SponsorContractsPage = lazy(() => import("./pages/sponsor/SponsorContracts
 const SponsorNotificationsPage = lazy(() => import("./pages/sponsor/SponsorNotificationsPage"));
 const SponsorDataPage = lazy(() => import("./pages/sponsor/SponsorDataPage"));
 
-// Cinematic loading fallback
-import CinematicLoader from './components/CinematicLoader';
+// Minimal page transition — no heavy loader, pages render instantly
 const CurtainReveal = reactLazy(() => importWithRetry(() => import("./components/CurtainReveal")));
 
-const PageFallback = () => <CinematicLoader />;
+const PageFallback = () => null;
 
 const queryClient = new QueryClient({
   defaultOptions: {

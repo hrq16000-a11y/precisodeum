@@ -8,17 +8,18 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
-// Critical path — eagerly loaded
+// Critical path — eagerly loaded for instant render
 import Header from '@/components/Header';
 import HeroBanner from '@/components/home/HeroBanner';
+import CategoriesGrid from '@/components/home/CategoriesGrid';
+import Footer from '@/components/Footer';
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
   reactLazy(() => importWithRetry(importer));
 
-// Lazy load all non-critical sections
+// Lazy load non-critical sections (below the fold)
 const UrgencyBanner = lazy(() => import('@/components/home/UrgencyBanner'));
-const CategoriesGrid = lazy(() => import('@/components/home/CategoriesGrid'));
 const HighlightsCarousel = lazy(() => import('@/components/home/HighlightsCarousel'));
 const FeaturedProviders = lazy(() => import('@/components/home/FeaturedProviders'));
 const StatsCounter = lazy(() => import('@/components/home/StatsCounter'));
@@ -44,7 +45,6 @@ const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterC
 const CmsBannersCarousel = lazy(() => import('@/components/home/CmsBannersCarousel'));
 const CoursesPromo = lazy(() => import('@/components/home/CoursesPromo'));
 
-const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
 const ActiveProvidersCounter = lazy(() => import('@/components/home/ActiveProvidersCounter'));
 
