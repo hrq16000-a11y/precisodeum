@@ -212,10 +212,10 @@ function startFetchIfNeeded() {
 
   fetchStarted = true;
 
-  // Defer geo fetch well past LCP to avoid extending the critical request chain.
-  // Using a 2s delay ensures the hero, categories, and above-the-fold content
-  // are fully painted before any geo API calls start.
-  setTimeout(() => { (async () => {
+  // Defer geo fetch well past LCP to break the critical request chain.
+  // Use requestIdleCallback (with 8s timeout fallback) so the fetch only fires
+  // once the browser is truly idle, keeping it out of Lighthouse's dependency tree.
+  const startGeoFetch = () => { (async () => {
     try {
       const edgeGeo = await fetchGeoFromEdge();
       if (edgeGeo.city || edgeGeo.state || edgeGeo.temp !== null) {
@@ -264,7 +264,13 @@ function startFetchIfNeeded() {
         console.debug('[GeoCity] API fallback:', error);
       }
     }
-  })(); });
+  })(); };
+
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(startGeoFetch, { timeout: 8000 });
+  } else {
+    setTimeout(startGeoFetch, 5000);
+  }
 }
 
 function subscribe(callback: () => void) {
