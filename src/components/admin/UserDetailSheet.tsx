@@ -4,7 +4,8 @@ import {
   Shield, Mail, Phone, Calendar, UserCheck, Briefcase, FileText, History,
   ImageIcon, Settings, Camera, Loader2, Trash2, Plus, ExternalLink,
   Eye, MapPin, Globe, MessageCircle, ArrowUp, Upload, Key, Lock,
-  Tag, Ban, AlertTriangle, X, Clock, Copy, ChevronDown
+  Tag, Ban, AlertTriangle, X, Clock, Copy, ChevronDown, Search, BarChart3,
+  Navigation, Building2, Wrench, Activity
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -57,6 +58,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const [serviceImages, setServiceImages] = useState<Record<string, any[]>>({});
   const [leads, setLeads] = useState<any[]>([]);
   const [media, setMedia] = useState<any[]>([]);
+  const [contactClicks, setContactClicks] = useState<any[]>([]);
   const [portfolio, setPortfolio] = useState<{ id: string; name: string; photos: { id: string; image_url: string; name: string }[] }[]>([]);
   const [pageSettings, setPageSettings] = useState<any>(null);
   const [provider, setProvider] = useState<any>(null);
