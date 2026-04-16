@@ -12,7 +12,7 @@ import {
   usePwaSettings,
 } from '@/hooks/usePwaInstall';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import playStoreIcon from '@/assets/play-store-icon.png';
+import playStoreIcon from '@/assets/play-store-icon.webp';
 
 const PwaInstallSection = () => {
   const { isStandalone, canInstall } = usePwaInstallPrompt();

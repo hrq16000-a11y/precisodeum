@@ -17,7 +17,7 @@ const NotificationBell = (props: any) => (
 );
 import { useMenuItems } from '@/hooks/useMenuItems';
 
-const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
+const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.webp';
 
 /* ── Geo badge (full & compact) ───────────────────────────── */
 const GeoBadge = ({ city, temp, compact = false, className = '' }: { city: string | null; temp: number | null; compact?: boolean; className?: string }) => {
