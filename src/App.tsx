@@ -228,7 +228,7 @@ const App = () => {
       cleanup = () => window.clearTimeout(id);
     }
 
-    return () => window.clearTimeout(timeoutId);
+    return cleanup;
   }, []);
 
   return (
