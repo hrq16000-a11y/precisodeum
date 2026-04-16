@@ -10,6 +10,10 @@ interface SeoHeadProps {
   canonical?: string;
   ogImage?: string;
   noindex?: boolean;
+  ogType?: 'website' | 'article' | 'profile';
+  articlePublishedTime?: string;
+  articleModifiedTime?: string;
+  articleAuthor?: string;
 }
 
 export function useSeoHead({ title, description, canonical, ogImage, noindex }: SeoHeadProps) {
