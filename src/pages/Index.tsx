@@ -268,7 +268,7 @@ const Index = () => {
         if (!section) return null;
         return (
           <LazyErrorBoundary key={slug}>
-            <Suspense fallback={<SectionFallback slug={slug} />}>
+            <Suspense fallback={<SectionFallback />}>
               {section}
             </Suspense>
           </LazyErrorBoundary>
