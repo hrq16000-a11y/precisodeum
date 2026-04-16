@@ -5,7 +5,7 @@ import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 
-const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
+const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.webp';
 const SponsorAd = lazy(() => importWithRetry(() => import('@/components/SponsorAd')));
 const PwaFooterInstall = lazy(() => importWithRetry(() => import('@/components/PwaFooterInstall')));
 
