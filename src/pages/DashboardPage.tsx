@@ -37,6 +37,7 @@ import OurStoryBanner from '@/components/OurStoryBanner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import ProfileCheckupModal from '@/components/dashboard/ProfileCheckupModal';
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
+import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
