@@ -92,10 +92,7 @@ const SECTION_MIN_HEIGHTS: Record<string, string> = {
   searches: 'min-h-[120px]',
 };
 
-const SectionFallback = ({ slug }: { slug?: string }) => {
-  const h = slug ? SECTION_MIN_HEIGHTS[slug] : undefined;
-  return h ? <div className={h} /> : null;
-};
+const SectionFallback = () => null;
 
 // Default section order
 const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,home_featured_ad,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,courses,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
@@ -277,11 +274,7 @@ const Index = () => {
           </LazyErrorBoundary>
         );
       })}
-      <LazyErrorBoundary>
-        <Suspense fallback={<SectionFallback />}>
-          <Footer />
-        </Suspense>
-      </LazyErrorBoundary>
+      <Footer />
     </div>
   );
 };
