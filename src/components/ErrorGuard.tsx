@@ -109,8 +109,15 @@ class ErrorGuard extends Component<Props, State> {
               </div>
             </div>
 
+            <a
+              href="/ajuda"
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-accent/10 px-4 py-2 text-xs font-medium text-accent hover:bg-accent/20 transition-colors"
+            >
+              <MessageCircle className="h-3.5 w-3.5" /> Falar com o Suporte
+            </a>
+
             <p className="text-[11px] text-muted-foreground pt-2">
-              Se o erro persistir, por favor entre em contato com nosso suporte informando o código acima. Estamos à disposição para ajudar!
+              Se o erro persistir, entre em contato com nosso suporte informando o código acima.
             </p>
           </div>
         </div>
