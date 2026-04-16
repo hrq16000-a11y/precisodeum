@@ -672,6 +672,7 @@ const AdminUsersPage = () => {
               { key: 'agencias', label: 'Agências', icon: Briefcase },
               { key: 'patrocinadores', label: 'Patrocinadores', icon: TrendingUp },
               { key: 'staff', label: 'Staff', icon: Shield },
+              { key: 'criticos', label: 'Críticos', icon: AlertTriangle },
             ].map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.key;
