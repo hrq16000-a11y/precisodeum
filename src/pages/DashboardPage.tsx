@@ -338,8 +338,8 @@ const DashboardPage = () => {
     <DashboardLayout>
       {/* Profile check-up modal for incomplete providers */}
       {showCheckup && <ProfileCheckupModal />}
-      {/* Real-time engagement notification listener */}
       <RealtimeEngagementToast />
+      <OnboardingTour active={tour.active} step={tour.step} steps={tour.steps} onNext={tour.next} onPrev={tour.prev} onDismiss={tour.dismiss} />
       {/* Enhanced Welcome Hero */}
       <WelcomeHero
         greeting={greeting}
