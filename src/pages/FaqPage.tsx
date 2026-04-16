@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FadeInSection from '@/components/FadeInSection';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 import {
   Accordion,
   AccordionContent,
@@ -12,6 +13,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { HelpCircle } from 'lucide-react';
+import { useMemo } from 'react';
 
 const FaqPage = () => {
   useSeoHead({
@@ -31,6 +33,25 @@ const FaqPage = () => {
       return data || [];
     },
   });
+
+  // FAQ Schema JSON-LD for rich snippets
+  const faqJsonLd = useMemo(() => {
+    if (!faqs.length) return null;
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map((faq: any) => ({
+        '@type': 'Question',
+        name: faq.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: faq.answer,
+        },
+      })),
+    };
+  }, [faqs]);
+
+  useJsonLd(faqJsonLd);
 
   return (
     <div className="flex min-h-screen flex-col">
