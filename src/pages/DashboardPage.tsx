@@ -355,7 +355,7 @@ const DashboardPage = () => {
       />
 
       {/* Profile Strength — Gamification Progress */}
-      <div className="mt-4">
+      <div className="mt-4" data-tour="profile-strength">
         <ProfileStrength />
       </div>
 
@@ -376,7 +376,7 @@ const DashboardPage = () => {
 
       {/* Share Profile Card & QR Code */}
       {provider?.slug && (
-        <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2" data-tour="share">
           <ShareProfileCard />
           <QrCodeCard />
           <StorageQuotaWidget />
