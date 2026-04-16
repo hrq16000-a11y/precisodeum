@@ -333,6 +333,8 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout>
+      {/* Profile check-up modal for incomplete providers */}
+      {showCheckup && <ProfileCheckupModal />}
       {/* Real-time engagement notification listener */}
       <RealtimeEngagementToast />
       {/* Enhanced Welcome Hero */}

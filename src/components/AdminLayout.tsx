@@ -436,6 +436,8 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           {children}
         </motion.div>
       </main>
+      <AdminFlashSummary />
+      <AdminRealtimeToasts />
     </div>
   );
 };
