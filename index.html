@@ -84,13 +84,7 @@
       body{margin:0;line-height:inherit;background-color:hsl(210 20% 98%);color:hsl(215 40% 12%)}
       #root{min-height:100vh;display:flex;flex-direction:column}
 
-      /* Header: fixed height to prevent CLS */
-      .shell-header{height:56px;background:#fff;border-bottom:1px solid hsl(210 15% 92%);display:flex;align-items:center;padding:0 16px}
-      .shell-logo{width:166px;height:48px;background:hsl(210 15% 90%);border-radius:6px}
-
-      /* Hero: fixed height matching component */
-      .shell-hero{height:340px;background:linear-gradient(135deg,hsl(25 95% 53% / 0.8),hsl(25 95% 53% / 0.65));display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-
+      /* Shell loader */
       @keyframes shellPulse{0%,100%{opacity:.6}50%{opacity:1}}
       @keyframes shellBar{0%{left:-40%}100%{left:100%}}
 
