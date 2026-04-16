@@ -592,46 +592,53 @@ const AdminUsersPage = () => {
         </Button>
       </div>
 
-      {/* Real KPI Cards */}
-      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Card className="border-l-4 border-l-primary">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="rounded-lg bg-primary/10 p-2"><Users className="h-5 w-5 text-primary" /></div>
+      {/* KPI Cards — Modern Dashboard */}
+      <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {[
+          {
+            label: 'Total de Usuários', value: realKpis.total, icon: Users,
+            iconBg: 'bg-blue-50 dark:bg-blue-500/10', iconColor: 'text-blue-600',
+            trend: null as string | null, trendUp: true,
+          },
+          {
+            label: 'Novos (30 dias)', value: realKpis.new30d, icon: UserPlus,
+            iconBg: 'bg-emerald-50 dark:bg-emerald-500/10', iconColor: 'text-emerald-600',
+            trend: realKpis.new7d > 0 ? `+${realKpis.new7d} esta semana` : null, trendUp: true,
+          },
+          {
+            label: 'Profissionais Ativos', value: realKpis.activeProviders, icon: Briefcase,
+            iconBg: 'bg-violet-50 dark:bg-violet-500/10', iconColor: 'text-violet-600',
+            trend: null, trendUp: true,
+          },
+          {
+            label: 'Suspensos / Banidos', value: realKpis.suspended + realKpis.banned, icon: AlertTriangle,
+            iconBg: 'bg-red-50 dark:bg-red-500/10', iconColor: 'text-red-500',
+            trend: realKpis.banned > 0 ? `${realKpis.banned} banido(s)` : null, trendUp: false,
+          },
+        ].map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <div key={kpi.label} className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${kpi.iconBg}`}>
+                  <Icon className={`h-4 w-4 ${kpi.iconColor}`} />
+                </div>
+                {kpi.trend && (
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                    kpi.trendUp
+                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+                      : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'
+                  }`}>
+                    {kpi.trendUp ? <TrendingUp className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                    {kpi.trend}
+                  </span>
+                )}
+              </div>
+              <p className="text-2xl font-bold text-foreground tracking-tight">{kpi.value}</p>
+              <p className="text-[11px] font-medium text-muted-foreground mt-0.5 uppercase tracking-wide">{kpi.label}</p>
             </div>
-            <p className="mt-3 font-display text-2xl font-bold text-foreground">{realKpis.total}</p>
-            <p className="text-xs text-muted-foreground">Total de Usuários</p>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-emerald-500">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="rounded-lg bg-emerald-500/10 p-2"><UserPlus className="h-5 w-5 text-emerald-600" /></div>
-              <span className="text-xs font-medium text-emerald-600">+{realKpis.new7d} esta semana</span>
-            </div>
-            <p className="mt-3 font-display text-2xl font-bold text-foreground">{realKpis.new30d}</p>
-            <p className="text-xs text-muted-foreground">Novos (30 dias)</p>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-blue-500">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="rounded-lg bg-blue-500/10 p-2"><Briefcase className="h-5 w-5 text-blue-600" /></div>
-            </div>
-            <p className="mt-3 font-display text-2xl font-bold text-foreground">{realKpis.activeProviders}</p>
-            <p className="text-xs text-muted-foreground">Profissionais Ativos</p>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-destructive">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="rounded-lg bg-destructive/10 p-2"><AlertTriangle className="h-5 w-5 text-destructive" /></div>
-              {realKpis.banned > 0 && <span className="text-xs font-medium text-destructive">{realKpis.banned} banido(s)</span>}
-            </div>
-            <p className="mt-3 font-display text-2xl font-bold text-foreground">{realKpis.suspended + realKpis.banned}</p>
-            <p className="text-xs text-muted-foreground">Suspensos / Banidos</p>
-          </CardContent>
-        </Card>
+          );
+        })}
       </div>
 
       {/* Main Tabs: Segmented by type + Métricas */}

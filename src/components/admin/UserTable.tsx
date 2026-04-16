@@ -96,8 +96,8 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
         return (
           <div
             key={p.id}
-            className={`group relative rounded-xl border bg-card shadow-card transition-all hover:shadow-card-hover ${
-              isInactive ? 'opacity-60 border-destructive/30' : 'border-border'
+            className={`group relative rounded-2xl border bg-card shadow-sm transition-all hover:shadow-md ${
+              isInactive ? 'opacity-60 border-red-200 dark:border-red-500/20' : 'border-border/60'
             } ${selectedIds?.has(p.id) ? 'ring-2 ring-accent' : ''}`}
           >
             {/* Selection & Menu */}
@@ -152,7 +152,7 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
             </div>
 
             {/* Card Content */}
-            <div className="p-4 pt-5 cursor-pointer" onClick={() => onViewDetails(p)}>
+            <div className="p-5 cursor-pointer" onClick={() => onViewDetails(p)}>
               {/* Avatar + Name */}
               <div className="flex items-center gap-3">
                 <Avatar className="h-12 w-12 shrink-0">
@@ -173,7 +173,7 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                     {p.email || '—'}
                   </p>
                   {p.user_ref && (
-                    <p className="text-[10px] font-mono text-muted-foreground/70 truncate">🔗 {p.user_ref}</p>
+                    <p className="text-[10px] font-mono text-muted-foreground/70 truncate">{p.user_ref}</p>
                   )}
                 </div>
               </div>
@@ -296,9 +296,14 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${profileTypeBadge(type)}`}>
                   {profileTypeIcon(type)} {profileTypeLabel(type)}
                 </span>
-                <Badge variant={isInactive ? 'destructive' : 'default'} className="text-[10px]">
-                  {isInactive ? '🔴 Inativo' : '🟢 Ativo'}
-                </Badge>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                  isInactive
+                    ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'
+                    : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+                }`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${isInactive ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                  {isInactive ? 'Inativo' : 'Ativo'}
+                </span>
                 {provider && providerStatusBadge[provider.status] && (
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${providerStatusBadge[provider.status].cls}`}>
                     {providerStatusBadge[provider.status].label}
@@ -321,7 +326,7 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
             </div>
 
             {/* Quick Actions Footer */}
-            <div className="border-t border-border px-3 py-2 flex items-center gap-1 flex-wrap">
+            <div className="border-t border-border/40 px-4 py-2.5 flex items-center gap-1.5 flex-wrap bg-muted/20">
               <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => onEdit(p)}>
                 <Edit2 className="h-3 w-3" /> Editar
               </Button>
