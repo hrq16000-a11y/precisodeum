@@ -38,6 +38,24 @@ const defaultRules = {
   require_photo: true, require_cnpj: true, require_city: true,
 };
 
+/** Calculate profile completion score (0-100) and list missing fields */
+const getCompletionScore = (p: any): { pct: number; missing: string[] } => {
+  const checks: { ok: boolean; label: string }[] = [
+    { ok: !!p.profiles?.full_name?.trim(), label: 'Nome' },
+    { ok: !!p.photo_url, label: 'Foto de perfil' },
+    { ok: !!p.city && p.city !== 'Não informada', label: 'Cidade' },
+    { ok: !!p.state, label: 'Estado' },
+    { ok: !!p.phone || !!p.whatsapp, label: 'Telefone' },
+    { ok: p.services_count > 0, label: 'Serviço cadastrado' },
+    { ok: !!p.description?.trim(), label: 'Descrição' },
+    { ok: !!p.working_hours, label: 'Horário de funcionamento' },
+  ];
+  const passed = checks.filter(c => c.ok).length;
+  const pct = Math.round((passed / checks.length) * 100);
+  const missing = checks.filter(c => !c.ok).map(c => c.label);
+  return { pct, missing };
+};
+
 const AdminProvidersPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [providers, setProviders] = useState<any[]>([]);
