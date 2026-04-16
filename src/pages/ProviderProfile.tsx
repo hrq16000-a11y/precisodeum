@@ -560,10 +560,11 @@ const ProviderProfile = () => {
   useSeoHead({
     title: provider ? `${name} - ${category} em ${provider.city} | Preciso de um` : 'Profissional',
     description: provider
-      ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliações, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nível ${provider.levelInfo.name}.` : ''} Peça seu orçamento grátis!`
+      ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Peca seu orcamento gratis!`
       : 'Encontre profissionais na plataforma.',
     canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
     ogImage: provider && hasOwnAvatar ? ((provider.profiles as any)?.avatar_url || provider.photo_url || undefined) : undefined,
+    ogType: 'profile',
   });
 
   const breadcrumbLd = useMemo(() => provider ? ({
