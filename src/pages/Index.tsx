@@ -8,17 +8,18 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
-// Critical path — eagerly loaded
+// Critical path — eagerly loaded for instant render
 import Header from '@/components/Header';
 import HeroBanner from '@/components/home/HeroBanner';
+import CategoriesGrid from '@/components/home/CategoriesGrid';
+import Footer from '@/components/Footer';
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
   reactLazy(() => importWithRetry(importer));
 
-// Lazy load all non-critical sections
+// Lazy load non-critical sections (below the fold)
 const UrgencyBanner = lazy(() => import('@/components/home/UrgencyBanner'));
-const CategoriesGrid = lazy(() => import('@/components/home/CategoriesGrid'));
 const HighlightsCarousel = lazy(() => import('@/components/home/HighlightsCarousel'));
 const FeaturedProviders = lazy(() => import('@/components/home/FeaturedProviders'));
 const StatsCounter = lazy(() => import('@/components/home/StatsCounter'));
@@ -44,7 +45,6 @@ const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterC
 const CmsBannersCarousel = lazy(() => import('@/components/home/CmsBannersCarousel'));
 const CoursesPromo = lazy(() => import('@/components/home/CoursesPromo'));
 
-const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
 const ActiveProvidersCounter = lazy(() => import('@/components/home/ActiveProvidersCounter'));
 
@@ -73,29 +73,9 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
   }
 }
 
-// Minimal height placeholder to prevent CLS from lazy sections
-const SECTION_MIN_HEIGHTS: Record<string, string> = {
-  categories: 'min-h-[280px]',
-  stats: 'min-h-[177px]',
-  highlights: 'min-h-[200px]',
-  featured: 'min-h-[340px]',
-  popular: 'min-h-[280px]',
-  urgency: 'min-h-[48px]',
-  leader_sponsor: 'min-h-[200px]',
-  sponsor_top: 'min-h-[80px]',
-  howitworks: 'min-h-[280px]',
-  testimonials: 'min-h-[240px]',
-  faq: 'min-h-[300px]',
-  jobs: 'min-h-[280px]',
-  blog: 'min-h-[200px]',
-  courses: 'min-h-[200px]',
-  searches: 'min-h-[120px]',
-};
+// Instant fallback — no blocking skeletons
 
-const SectionFallback = ({ slug }: { slug?: string }) => {
-  const h = slug ? SECTION_MIN_HEIGHTS[slug] : undefined;
-  return h ? <div className={h} /> : null;
-};
+const SectionFallback = () => null;
 
 // Default section order
 const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,home_featured_ad,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,courses,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
@@ -271,17 +251,13 @@ const Index = () => {
         if (!section) return null;
         return (
           <LazyErrorBoundary key={slug}>
-            <Suspense fallback={<SectionFallback slug={slug} />}>
+            <Suspense fallback={<SectionFallback />}>
               {section}
             </Suspense>
           </LazyErrorBoundary>
         );
       })}
-      <LazyErrorBoundary>
-        <Suspense fallback={<SectionFallback />}>
-          <Footer />
-        </Suspense>
-      </LazyErrorBoundary>
+      <Footer />
     </div>
   );
 };
