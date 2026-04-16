@@ -281,3 +281,24 @@ img[loading="lazy"].img-revealed:not([data-no-reveal]) {
     transform: scale(1);
   }
 }
+
+/* Performance: content-visibility for off-screen sections */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
+/* Reduce motion for accessibility & performance */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Touch action optimization for INP */
+button, a, [role="button"] {
+  touch-action: manipulation;
+}
