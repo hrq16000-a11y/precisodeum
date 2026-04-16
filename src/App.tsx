@@ -213,13 +213,20 @@ const App = () => {
       console.log('[Cache] React Query invalidated (daily purge).');
     }
 
-    const timeoutId = window.setTimeout(() => {
+    const startPrefetch = () => {
       void Promise.allSettled([
         prefetchImportWithRetry("route-search-page", () => import("./pages/SearchPage")),
-        prefetchImportWithRetry("route-provider-profile", () => import("./pages/ProviderProfile")),
         prefetchImportWithRetry("route-category-page", () => import("./pages/CategoryPage")),
       ]);
-    }, 5000);
+    };
+    let cleanup: () => void;
+    if ('requestIdleCallback' in window) {
+      const id = (window as any).requestIdleCallback(startPrefetch, { timeout: 15000 });
+      cleanup = () => (window as any).cancelIdleCallback(id);
+    } else {
+      const id = window.setTimeout(startPrefetch, 8000);
+      cleanup = () => window.clearTimeout(id);
+    }
 
     return () => window.clearTimeout(timeoutId);
   }, []);
