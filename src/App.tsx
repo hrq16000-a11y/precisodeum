@@ -199,7 +199,6 @@ const App = () => {
   }, []);
 
   return (
-    <LazyMotion features={loadMotionFeatures} strict>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Suspense fallback={null}><Toaster /></Suspense>
@@ -341,7 +340,6 @@ const App = () => {
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
-    </LazyMotion>
   );
 };
 
