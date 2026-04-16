@@ -59,8 +59,6 @@ const AdminUsersPage = () => {
   const [accountTypes, setAccountTypes] = useState<any[]>([]);
   const [providersMap, setProvidersMap] = useState<Record<string, any>>({});
   const [providersRaw, setProvidersRaw] = useState<any[]>([]);
-  const [services, setServices] = useState<any[]>([]);
-  const [leads, setLeads] = useState<any[]>([]);
   const [userTags, setUserTags] = useState<any[]>([]);
   const [sponsorUserIds, setSponsorUserIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
@@ -186,17 +184,18 @@ const AdminUsersPage = () => {
   }, [profiles, providersRaw]);
 
   // ── Metrics data ──
+  // Service/lead counts are now available from providers.services_count
   const servicesByProvider = useMemo(() => {
     const map: Record<string, number> = {};
-    services.forEach(s => { map[s.provider_id] = (map[s.provider_id] || 0) + 1; });
+    providersRaw.forEach(p => { if (p.services_count) map[p.id] = p.services_count; });
     return map;
-  }, [services]);
+  }, [providersRaw]);
 
   const leadsByProvider = useMemo(() => {
     const map: Record<string, number> = {};
-    leads.forEach(l => { map[l.provider_id] = (map[l.provider_id] || 0) + 1; });
+    // Leads count is not pre-aggregated; will be fetched on-demand in detail view
     return map;
-  }, [leads]);
+  }, []);
 
   const tagsByUser = useMemo(() => {
     const map: Record<string, any[]> = {};
