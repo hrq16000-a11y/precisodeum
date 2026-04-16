@@ -567,28 +567,45 @@ const AdminProvidersPage = () => {
                     </button>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="mt-1 pt-2 border-t border-border space-y-2">
+                    <div className="mt-1 pt-2 border-t border-border space-y-3">
                       <ProviderVerifiedChecklist provider={p} rules={rules} />
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
-                        {p.business_name && (
-                          <div><span className="font-medium text-foreground">Empresa:</span> {p.business_name}</div>
-                        )}
-                        {p.phone && (
-                          <div><span className="font-medium text-foreground">Telefone:</span> {p.phone}</div>
-                        )}
-                        {p.whatsapp && (
-                          <div><span className="font-medium text-foreground">WhatsApp:</span> {p.whatsapp}</div>
-                        )}
-                        {p.plan && (
-                          <div><span className="font-medium text-foreground">Plano:</span> {p.plan}</div>
-                        )}
-                        {p.years_experience > 0 && (
-                          <div><span className="font-medium text-foreground">Experiência:</span> {p.years_experience} ano(s)</div>
-                        )}
-                        {p.service_radius && (
-                          <div><span className="font-medium text-foreground">Raio:</span> {p.service_radius}</div>
-                        )}
+                      
+                      {/* Business Data */}
+                      <div>
+                        <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Dados Comerciais</p>
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                          {p.business_name && (
+                            <div><span className="font-medium text-foreground">Empresa:</span> {p.business_name}</div>
+                          )}
+                          {p.plan && (
+                            <div><span className="font-medium text-foreground">Plano:</span> {p.plan}</div>
+                          )}
+                          {p.years_experience > 0 && (
+                            <div><span className="font-medium text-foreground">Experiencia:</span> {p.years_experience} ano(s)</div>
+                          )}
+                          {p.service_radius && (
+                            <div><span className="font-medium text-foreground">Raio:</span> {p.service_radius}</div>
+                          )}
+                          {p.working_hours && (
+                            <div className="col-span-2"><span className="font-medium text-foreground">Horario:</span> {p.working_hours}</div>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Personal/Contact Data */}
+                      {(p.phone || p.whatsapp || p.profiles?.email) && (
+                        <div>
+                          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Contato</p>
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                            {p.phone && (
+                              <div><span className="font-medium text-foreground">Telefone:</span> {p.phone}</div>
+                            )}
+                            {p.whatsapp && (
+                              <div><span className="font-medium text-foreground">WhatsApp:</span> {p.whatsapp}</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
