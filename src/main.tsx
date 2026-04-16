@@ -57,6 +57,7 @@ const bootstrap = async () => {
   removeShell();
 
   deferWork(() => {
+    import("@/styles/deferred-animations.css");
     import("@/lib/sponsorRanking").then((m) => m.cleanupFrequencyData());
 
     if (!shouldUseServiceWorker) return;
