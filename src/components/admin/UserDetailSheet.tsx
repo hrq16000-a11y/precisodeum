@@ -723,6 +723,8 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               <TabsTrigger value="services" className="text-[11px] gap-1 px-2 py-1.5 flex-1 min-w-[60px]"><FileText className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Serviços</span></TabsTrigger>
               <TabsTrigger value="portfolio" className="text-[11px] gap-1 px-2 py-1.5 flex-1 min-w-[60px]"><ImageIcon className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Fotos</span></TabsTrigger>
               <TabsTrigger value="leads" className="text-[11px] gap-1 px-2 py-1.5 flex-1 min-w-[60px]"><MessageCircle className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Leads</span></TabsTrigger>
+              {provider && <TabsTrigger value="seo" className="text-[11px] gap-1 px-2 py-1.5 flex-1 min-w-[60px]"><Search className="h-3.5 w-3.5" /> <span className="hidden xs:inline">SEO</span></TabsTrigger>}
+              {provider && <TabsTrigger value="audience" className="text-[11px] gap-1 px-2 py-1.5 flex-1 min-w-[60px]"><BarChart3 className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Audiência</span></TabsTrigger>}
               <TabsTrigger value="tags" className="text-[11px] gap-1 px-2 py-1.5 flex-1 min-w-[60px]"><Tag className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Tags</span></TabsTrigger>
               <TabsTrigger value="moderation" className="text-[11px] gap-1 px-2 py-1.5 flex-1 min-w-[60px]"><Ban className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Mod.</span></TabsTrigger>
               <TabsTrigger value="perms" className="text-[11px] gap-1 px-2 py-1.5 flex-1 min-w-[60px]"><Lock className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Perm.</span></TabsTrigger>
