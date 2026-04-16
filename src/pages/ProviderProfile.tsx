@@ -1781,4 +1781,10 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
   );
 };
 
-export default ProviderProfile;
+const ProviderProfileWithGuard = () => (
+  <ErrorGuard componentName="ProviderProfile" fallbackRoute="/ajuda">
+    <ProviderProfile />
+  </ErrorGuard>
+);
+
+export default ProviderProfileWithGuard;
