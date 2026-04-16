@@ -12,42 +12,7 @@ clientsClaim();
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
-// ── Force full cache purge on every new SW version ──
-const CACHE_VERSION = 'v2-' + Date.now();
-const CACHE_TS_KEY = 'sw-cache-born';
-
-async function purgeAllCaches() {
-  try {
-    const names = await caches.keys();
-    await Promise.all(names.map(n => caches.delete(n)));
-  } catch (_) { /* silent */ }
-}
-
-// Run on activation — purge everything for fresh start
-self.addEventListener('activate', (event) => {
-  event.waitUntil(purgeAllCaches());
-});
-
 // ── Listen for PURGE_CACHES from main thread ──
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'PURGE_CACHES') {
-    event.waitUntil(purgeAllCaches());
-  }
-});
-
-// ── Periodic self-purge every 24 h (checked on fetch) ──
-const PURGE_INTERVAL_MS = 86_400_000;
-let lastSwPurge = 0;
-
-const maybeSelfPurge = () => {
-  const now = Date.now();
-  if (now - lastSwPurge > PURGE_INTERVAL_MS) {
-    lastSwPurge = now;
-    purgeAllCaches().catch(() => {});
-  }
-};
-
-self.addEventListener('fetch', () => { maybeSelfPurge(); });
 
 // ── API: always network-first, short cache (5 min) ──
 registerRoute(
