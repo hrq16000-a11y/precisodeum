@@ -755,21 +755,13 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <Label className="text-xs">Telefone</Label>
-                        <PhoneMaskedInput
-                          name="phone"
-                          value={profileForm.phone || ''}
-                          onChange={handlePhoneChange}
-                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        />
+                        <PhoneMaskedInput name="phone" value={profileForm.phone || ''} onChange={handlePhoneChange}
+                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
                       </div>
                       <div>
                         <Label className="text-xs">WhatsApp</Label>
-                        <PhoneMaskedInput
-                          name="whatsapp"
-                          value={profileForm.whatsapp || ''}
-                          onChange={handlePhoneChange}
-                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        />
+                        <PhoneMaskedInput name="whatsapp" value={profileForm.whatsapp || ''} onChange={handlePhoneChange}
+                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
                         <p className="text-[9px] text-muted-foreground mt-0.5">Auto-preenchido do Telefone</p>
                       </div>
                     </div>
@@ -793,10 +785,13 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               {/* Provider Data — Organized Blocks */}
               {provider && (
                 <div className="space-y-3">
-                  {/* Block 1: Identidade do Negócio */}
-                  <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
+                  {/* Block 1: Identidade do Negócio (Blue) */}
+                  <div className="rounded-xl border border-blue-200 dark:border-blue-900/40 bg-blue-50/30 dark:bg-blue-950/10 p-3 sm:p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /> Identidade do Negócio</h3>
+                      <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30"><Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400" /></span>
+                        Identidade do Negocio
+                      </h3>
                       <Button size="sm" variant={editing ? 'accent' : 'outline'} className="h-7 text-xs" onClick={() => setEditing(!editing)}>
                         {editing ? 'Cancelar' : 'Editar'}
                       </Button>
@@ -807,12 +802,13 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                           <div><Label className="text-xs">Nome Fantasia</Label><Input value={providerForm.business_name} onChange={e => setProviderForm({ ...providerForm, business_name: e.target.value })} className="h-8 text-sm" /></div>
                           <div><Label className="text-xs">CNPJ</Label><Input value={providerForm.cnpj} onChange={e => setProviderForm({ ...providerForm, cnpj: e.target.value })} className="h-8 text-sm" /></div>
                         </div>
-                        <div><Label className="text-xs">Descrição</Label><Textarea value={providerForm.description} onChange={e => setProviderForm({ ...providerForm, description: e.target.value })} className="text-sm min-h-[60px]" /></div>
+                        <div><Label className="text-xs">Descricao</Label><Textarea value={providerForm.description} onChange={e => setProviderForm({ ...providerForm, description: e.target.value })} className="text-sm min-h-[60px]" /></div>
                       </div>
                     ) : (
                       <div className="space-y-2">
                         <InfoRow icon={<Briefcase className="h-4 w-4" />} label="Empresa" value={provider.business_name || '—'} />
                         <InfoRow icon={<FileText className="h-4 w-4" />} label="CNPJ" value={provider.cnpj || '—'} />
+                        {provider.description && <InfoRow icon={<FileText className="h-4 w-4" />} label="Descricao" value={provider.description.slice(0, 120) + (provider.description.length > 120 ? '...' : '')} />}
                         {provider.categories && <InfoRow icon={<FileText className="h-4 w-4" />} label="Categoria" value={(provider.categories as any)?.name || '—'} />}
                         {provider.slug && (
                           <a href={`/profissional/${provider.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline flex items-center gap-1 pt-1">
@@ -823,9 +819,12 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     )}
                   </div>
 
-                  {/* Block 2: Dados Geográficos */}
-                  <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
-                    <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><Navigation className="h-4 w-4 text-primary" /> Dados Geográficos (PostGIS)</h3>
+                  {/* Block 2: Dados Geograficos (Green) */}
+                  <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10 p-3 sm:p-4 space-y-3">
+                    <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30"><Navigation className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /></span>
+                      Dados Geograficos (PostGIS)
+                    </h3>
                     {editing ? (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         <div><Label className="text-xs">Cidade</Label><Input value={providerForm.city} onChange={e => setProviderForm({ ...providerForm, city: e.target.value })} className="h-8 text-sm" /></div>
@@ -835,20 +834,28 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     ) : (
                       <div className="space-y-2">
                         <InfoRow icon={<MapPin className="h-4 w-4" />} label="Local" value={[provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') || '—'} />
-                        <InfoRow icon={<Globe className="h-4 w-4" />} label="Lat/Lng" value={provider.latitude && provider.longitude ? `${provider.latitude}, ${provider.longitude}` : 'Sem coordenadas'} />
+                        <InfoRow icon={<Globe className="h-4 w-4" />} label="Lat/Lng" value={provider.latitude && provider.longitude ? `${provider.latitude}, ${provider.longitude}` : '—'} />
                         <InfoRow icon={<MapPin className="h-4 w-4" />} label="Raio" value={provider.service_radius || '—'} />
+                        {(!provider.latitude || !provider.longitude) && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-amber-700 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-900/10 rounded-lg px-2 py-1.5">
+                            <AlertTriangle className="h-3.5 w-3.5" /> Erro de Localizacao: coordenadas ausentes
+                          </div>
+                        )}
                         {(provider as any).content_flags?.geo_error && (
                           <div className="flex items-center gap-1.5 text-[10px] text-destructive font-medium bg-destructive/5 rounded-lg px-2 py-1">
-                            <AlertTriangle className="h-3 w-3" /> Endereço com erro de validação
+                            <AlertTriangle className="h-3 w-3" /> Endereco com erro de validacao
                           </div>
                         )}
                       </div>
                     )}
                   </div>
 
-                  {/* Block 3: Informações Operacionais */}
-                  <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
-                    <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><Wrench className="h-4 w-4 text-primary" /> Informações Operacionais</h3>
+                  {/* Block 3: Informacoes Operacionais (Orange) */}
+                  <div className="rounded-xl border border-orange-200 dark:border-orange-900/40 bg-orange-50/30 dark:bg-orange-950/10 p-3 sm:p-4 space-y-3">
+                    <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30"><Wrench className="h-4 w-4 text-orange-600 dark:text-orange-400" /></span>
+                      Informacoes Operacionais
+                    </h3>
                     {editing ? (
                       <div className="space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -857,10 +864,10 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div><Label className="text-xs">Website</Label><Input value={providerForm.website} onChange={e => setProviderForm({ ...providerForm, website: e.target.value })} className="h-8 text-sm" placeholder="https://..." /></div>
-                          <div><Label className="text-xs">Horário</Label><Input value={providerForm.working_hours} onChange={e => setProviderForm({ ...providerForm, working_hours: e.target.value })} className="h-8 text-sm" /></div>
+                          <div><Label className="text-xs">Horario</Label><Input value={providerForm.working_hours} onChange={e => setProviderForm({ ...providerForm, working_hours: e.target.value })} className="h-8 text-sm" /></div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div><Label className="text-xs">Experiência (anos)</Label><Input type="number" value={providerForm.years_experience} onChange={e => setProviderForm({ ...providerForm, years_experience: parseInt(e.target.value) || 0 })} className="h-8 text-sm" /></div>
+                          <div><Label className="text-xs">Experiencia (anos)</Label><Input type="number" value={providerForm.years_experience} onChange={e => setProviderForm({ ...providerForm, years_experience: parseInt(e.target.value) || 0 })} className="h-8 text-sm" /></div>
                           <div><Label className="text-xs">Raio de Atendimento</Label><Input value={providerForm.service_radius} onChange={e => setProviderForm({ ...providerForm, service_radius: e.target.value })} className="h-8 text-sm" /></div>
                         </div>
                         <Button size="sm" onClick={saveProvider} className="w-full">Salvar Dados Profissionais</Button>
@@ -870,30 +877,76 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                         <InfoRow icon={<Phone className="h-4 w-4" />} label="Fone" value={provider.phone ? formatPhoneDisplay(provider.phone) : '—'} />
                         <InfoRow icon={<MessageCircle className="h-4 w-4" />} label="WhatsApp" value={provider.whatsapp ? formatPhoneDisplay(provider.whatsapp) : '—'} />
                         <InfoRow icon={<Globe className="h-4 w-4" />} label="Website" value={provider.website || '—'} />
-                        <InfoRow icon={<Clock className="h-4 w-4" />} label="Horário" value={provider.working_hours || '—'} />
-                        <InfoRow icon={<Calendar className="h-4 w-4" />} label="Experiência" value={`${provider.years_experience || 0} anos`} />
+                        <InfoRow icon={<Clock className="h-4 w-4" />} label="Horario" value={provider.working_hours || '—'} />
+                        <InfoRow icon={<Calendar className="h-4 w-4" />} label="Experiencia" value={`${provider.years_experience || 0} anos`} />
                       </div>
                     )}
                   </div>
 
-                  {/* Block 4: Métricas de Performance */}
-                  <div className="rounded-xl border border-border p-3 sm:p-4 space-y-3">
-                    <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Métricas de Performance</h3>
+                  {/* Block 4: Metricas de Performance (Purple) */}
+                  <div className="rounded-xl border border-purple-200 dark:border-purple-900/40 bg-purple-50/30 dark:bg-purple-950/10 p-3 sm:p-4 space-y-3">
+                    <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/30"><Activity className="h-4 w-4 text-purple-600 dark:text-purple-400" /></span>
+                      Metricas de Performance
+                    </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {[
-                        { label: 'Avaliação', value: `${provider.rating_avg?.toFixed(1) || '0.0'}`, sub: `${provider.review_count || 0} reviews` },
-                        { label: 'Serviços', value: String(provider.services_count || 0), sub: 'cadastrados' },
-                        { label: 'Fotos', value: String(provider.portfolio_photo_count || 0), sub: `${provider.portfolio_album_count || 0} álbuns` },
-                        { label: 'Contatos', value: String(contactClicks.length), sub: 'cliques recentes' },
+                        { label: 'Avaliacoes', value: String(provider.review_count || 0), sub: `Media ${provider.rating_avg?.toFixed(1) || '0.0'}`, color: 'text-amber-600 dark:text-amber-400' },
+                        { label: 'Servicos', value: String(provider.services_count || 0), sub: 'cadastrados', color: 'text-blue-600 dark:text-blue-400' },
+                        { label: 'Fotos', value: String(provider.portfolio_photo_count || 0), sub: `${provider.portfolio_album_count || 0} albuns`, color: 'text-emerald-600 dark:text-emerald-400' },
+                        { label: 'Contatos', value: String(contactClicks.length), sub: 'cliques totais', color: 'text-purple-600 dark:text-purple-400' },
                       ].map(m => (
-                        <div key={m.label} className="rounded-lg bg-muted/40 border border-border/50 p-2.5 text-center">
-                          <p className="text-lg font-bold text-foreground">{m.value}</p>
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{m.label}</p>
+                        <div key={m.label} className="rounded-lg bg-card border border-border/60 p-2.5 text-center shadow-sm">
+                          <p className={`text-xl font-bold ${m.color}`}>{m.value}</p>
+                          <p className="text-[10px] font-semibold text-foreground uppercase tracking-wide">{m.label}</p>
                           <p className="text-[9px] text-muted-foreground">{m.sub}</p>
                         </div>
                       ))}
                     </div>
                   </div>
+
+                  {/* Profile Health Footer */}
+                  {(() => {
+                    const checks = [
+                      { ok: !!provider.photo_url, label: 'Foto de perfil' },
+                      { ok: !!provider.whatsapp, label: 'WhatsApp' },
+                      { ok: !!provider.city && provider.city !== 'Nao informada', label: 'Cidade' },
+                      { ok: !!provider.description?.trim(), label: 'Descricao' },
+                      { ok: (provider.services_count || 0) > 0, label: 'Servico' },
+                      { ok: !!provider.latitude && !!provider.longitude, label: 'Coordenadas' },
+                    ];
+                    const filled = checks.filter(c => c.ok).length;
+                    const pct = Math.round((filled / checks.length) * 100);
+                    const missing = checks.filter(c => !c.ok).map(c => c.label);
+                    const healthColor = pct >= 80 ? 'text-emerald-600 dark:text-emerald-400' : pct >= 50 ? 'text-amber-600 dark:text-amber-400' : 'text-destructive';
+                    const healthBg = pct >= 80 ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40' : pct >= 50 ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40' : 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40';
+                    return (
+                      <div className={`rounded-xl border p-3 sm:p-4 space-y-2 ${healthBg}`}>
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                            <Shield className="h-4 w-4" /> Saude do Perfil
+                          </h3>
+                          <span className={`text-sm font-bold ${healthColor}`}>{pct}%</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-destructive'}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        {missing.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-1">
+                            {missing.map(m => (
+                              <span key={m} className="inline-flex items-center gap-1 text-[10px] font-medium text-destructive bg-destructive/10 rounded-full px-2 py-0.5">
+                                <AlertTriangle className="h-2.5 w-2.5" /> Falta {m}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-1 border-t border-border/40 mt-2">
+                          <span>Criado: {provider.created_at ? format(new Date(provider.created_at), 'dd/MM/yyyy') : '—'}</span>
+                          <span>Atualizado: {provider.updated_at ? format(new Date(provider.updated_at), 'dd/MM/yyyy') : '—'}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -1091,41 +1144,61 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
 
             {/* ====== AUDIENCE TAB (Contact Clicks) ====== */}
             <TabsContent value="audience" className="space-y-4 mt-0">
-              {provider ? (
-                <div className="rounded-xl border border-border p-3 sm:p-4 space-y-4">
-                  <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Dados de Audiência</h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-lg bg-muted/40 border border-border/50 p-2.5 text-center">
-                      <p className="text-lg font-bold text-foreground">{contactClicks.length}</p>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total Cliques</p>
+              {provider ? (() => {
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                const last30 = contactClicks.filter((c: any) => new Date(c.created_at) >= thirtyDaysAgo);
+                const whatsappCount = contactClicks.filter((c: any) => c.contact_type === 'whatsapp').length;
+                const phoneCount = contactClicks.filter((c: any) => c.contact_type === 'phone').length;
+                return (
+                  <div className="rounded-xl border border-border p-3 sm:p-4 space-y-4">
+                    <h3 className="font-semibold text-foreground text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Dados de Audiencia</h3>
+                    
+                    {/* 30-day highlight */}
+                    <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">Leads nos ultimos 30 dias</p>
+                        <p className="text-2xl font-bold text-primary">{last30.length}</p>
+                      </div>
+                      <Activity className="h-8 w-8 text-primary/30" />
                     </div>
-                    <div className="rounded-lg bg-muted/40 border border-border/50 p-2.5 text-center">
-                      <p className="text-lg font-bold text-foreground">{contactClicks.filter((c: any) => c.contact_type === 'whatsapp').length}</p>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">WhatsApp</p>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="rounded-lg bg-card border border-border/60 p-2.5 text-center shadow-sm">
+                        <p className="text-lg font-bold text-foreground">{contactClicks.length}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
+                      </div>
+                      <div className="rounded-lg bg-card border border-border/60 p-2.5 text-center shadow-sm">
+                        <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{whatsappCount}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">WhatsApp</p>
+                      </div>
+                      <div className="rounded-lg bg-card border border-border/60 p-2.5 text-center shadow-sm">
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{phoneCount}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Telefone</p>
+                      </div>
                     </div>
-                    <div className="rounded-lg bg-muted/40 border border-border/50 p-2.5 text-center">
-                      <p className="text-lg font-bold text-foreground">{contactClicks.filter((c: any) => c.contact_type === 'phone').length}</p>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Telefone</p>
-                    </div>
-                  </div>
-                  {contactClicks.length > 0 ? (
-                    <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Últimos cliques</p>
-                      {contactClicks.slice(0, 30).map((c: any) => (
-                        <div key={c.id} className="flex items-center justify-between rounded-lg border border-border/40 px-3 py-2 text-xs">
-                          <div className="flex items-center gap-2">
-                            {c.contact_type === 'whatsapp' ? <MessageCircle className="h-3.5 w-3.5 text-emerald-500" /> : <Phone className="h-3.5 w-3.5 text-blue-500" />}
-                            <span className="font-medium capitalize">{c.contact_type}</span>
+                    {contactClicks.length > 0 ? (
+                      <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Ultimos cliques</p>
+                        {contactClicks.slice(0, 30).map((c: any) => (
+                          <div key={c.id} className="flex items-center justify-between rounded-lg border border-border/40 px-3 py-2 text-xs">
+                            <div className="flex items-center gap-2">
+                              {c.contact_type === 'whatsapp' ? <MessageCircle className="h-3.5 w-3.5 text-emerald-500" /> : <Phone className="h-3.5 w-3.5 text-blue-500" />}
+                              <span className="font-medium capitalize">{c.contact_type}</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-muted-foreground">
+                              {c.page_path && <span className="text-[10px] truncate max-w-[120px]">{c.page_path}</span>}
+                              <span>{c.created_at ? format(new Date(c.created_at), 'dd/MM/yy HH:mm') : ''}</span>
+                            </div>
                           </div>
-                          <span className="text-muted-foreground">{c.created_at ? format(new Date(c.created_at), 'dd/MM/yy HH:mm') : ''}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground text-center py-4">Nenhum clique registrado ainda</p>
-                  )}
-                </div>
-              ) : (
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-4">Nenhum clique registrado ainda</p>
+                    )}
+                  </div>
+                );
+              })() : (
                 <EmptyState icon={<BarChart3 />} text="Sem perfil profissional" />
               )}
             </TabsContent>
