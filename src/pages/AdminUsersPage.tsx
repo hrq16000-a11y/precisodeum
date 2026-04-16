@@ -278,7 +278,8 @@ const AdminUsersPage = () => {
     });
   }, [profiles]);
 
-  // ── Filtered list ──
+  const debouncedSearch = useDebounce(search, 300);
+
   const filtered = useMemo(() => {
     let list = profiles;
 
@@ -310,8 +311,8 @@ const AdminUsersPage = () => {
         return prov && prov.status === filterProviderStatus;
       });
     }
-    if (search.trim()) {
-      const q = search.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
       list = list.filter(p =>
         (p.full_name || '').toLowerCase().includes(q) ||
         (p.email || '').toLowerCase().includes(q) ||
@@ -331,7 +332,7 @@ const AdminUsersPage = () => {
     // 'recent' is already the default order from DB
 
     return list;
-  }, [profiles, search, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy]);
+  }, [profiles, debouncedSearch, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
