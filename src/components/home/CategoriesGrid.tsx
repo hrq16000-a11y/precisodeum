@@ -120,7 +120,7 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
   );
 
   return (
-    <section className="py-8 md:py-12">
+    <section className="py-8 md:py-12 min-h-[600px] md:min-h-[500px]">
       <div className="container">
         <div className="mb-6 text-center">
           <span className="inline-block rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent mb-2">
