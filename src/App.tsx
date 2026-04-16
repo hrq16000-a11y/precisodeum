@@ -1,7 +1,8 @@
 import { lazy as reactLazy, Suspense, useEffect, type ComponentType } from "react";
 import { LazyMotion } from "framer-motion";
 
-const loadMotionFeatures = () => import("framer-motion").then((m) => m.domAnimation);
+const loadMotionFeatures = () =>
+  import("framer-motion").then((mod) => mod.domAnimation);
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 const Sonner = reactLazy(() => importWithRetry(() => import("@/components/ui/sonner").then(m => ({ default: m.Toaster }))));
