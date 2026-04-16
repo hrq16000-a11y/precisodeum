@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { compressImage } from '@/lib/compressImage';
 import { format } from 'date-fns';
 import {
   Shield, Mail, Phone, Calendar, UserCheck, Briefcase, FileText, History,

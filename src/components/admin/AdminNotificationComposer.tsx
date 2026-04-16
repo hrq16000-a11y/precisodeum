@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Send, Image, Video, Users, Loader2, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { compressImage } from '@/lib/compressImage';
 
 const TARGET_OPTIONS = [
   { value: 'all', label: 'Todos os usuários' },

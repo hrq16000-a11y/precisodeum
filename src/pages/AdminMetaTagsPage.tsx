@@ -7,6 +7,7 @@ import { Globe, Save, Search, Upload, X, Image as ImageIcon } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { compressImage } from '@/lib/compressImage';
 
 const AdminMetaTagsPage = () => {
   const { isAdmin, loading } = useAdmin();

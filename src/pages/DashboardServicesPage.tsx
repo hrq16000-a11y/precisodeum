@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { compressImage } from '@/lib/compressImage';
 import { getSuggestedTags } from '@/data/tagSuggestions';
 import { getTemplatesForCategory, DIFFERENTIAL_TAGS, buildExternalPrompt } from '@/data/serviceTemplates';
 import { useNavigate } from 'react-router-dom';

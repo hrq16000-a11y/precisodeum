@@ -11,6 +11,7 @@ import { SponsorImage } from '@/components/SponsorImage';
 import { toast } from 'sonner';
 import { Upload, Link2, Save, Eye, MousePointerClick, Image, ExternalLink, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { compressImage } from '@/lib/compressImage';
 
 const SponsorBannersPage = () => {
   const { sponsor, loading, refetch } = useSponsorAuth();
