@@ -99,7 +99,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes', show: hasProfilePermission('notifications'), badge: unreadCount },
     { label: 'Chat', icon: MessageSquare, path: '/dashboard/chat', show: !isClient, badge: 0 },
     { label: 'Leads', icon: MessageSquare, path: '/dashboard/leads', show: !isClient && !isRH && hasProfilePermission('leads'), badge: pendingLeads },
-    { label: 'Plano', icon: CreditCard, path: '/dashboard/plano', show: !isClient && !isRH && hasProfilePermission('plan'), badge: 0 },
+    
     { label: 'Ajuda & Suporte', icon: LifeBuoy, path: '/ajuda', show: true, badge: 0 },
   ].filter(item => item.show);
 
