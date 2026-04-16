@@ -3,7 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Blocks, Plus, Copy, Trash2, Eye, EyeOff, GripVertical, Search, Filter } from 'lucide-react';
+import { Blocks, Plus, Copy, Trash2, Eye, EyeOff, GripVertical, Search, Filter, Code, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -66,6 +66,8 @@ const AdminBlocksPage = () => {
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [contentText, setContentText] = useState('');
+  const [htmlText, setHtmlText] = useState('');
+  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
 
   const fetchBlocks = async () => {
     const { data } = await supabase
@@ -104,15 +106,21 @@ const AdminBlocksPage = () => {
   const openEdit = (block: any) => {
     setEditBlock({ ...block });
     setContentText(JSON.stringify(block.content || {}, null, 2));
+    setHtmlText(block.block_type === 'html' ? (block.content?.html || '') : '');
+    setShowHtmlPreview(false);
     setIsNew(false);
   };
 
   const handleSave = async () => {
     if (!editBlock) return;
     setSaving(true);
-    let parsedContent = {};
+    let parsedContent: any = {};
     try {
-      parsedContent = JSON.parse(contentText || '{}');
+      if (editBlock.block_type === 'html') {
+        parsedContent = { html: htmlText };
+      } else {
+        parsedContent = JSON.parse(contentText || '{}');
+      }
     } catch {
       toast.error('JSON inválido no campo conteúdo');
       setSaving(false);
@@ -303,10 +311,36 @@ const AdminBlocksPage = () => {
                 <Label>Subtítulo</Label>
                 <Input value={editBlock.subtitle} onChange={e => setEditBlock({ ...editBlock, subtitle: e.target.value })} />
               </div>
-              <div>
-                <Label>Conteúdo (JSON)</Label>
-                <Textarea rows={6} value={contentText} onChange={e => setContentText(e.target.value)} className="font-mono text-xs" />
-              </div>
+              {editBlock.block_type === 'html' ? (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="flex items-center gap-1"><Code className="h-3.5 w-3.5" /> HTML</Label>
+                    <Button size="sm" variant="ghost" onClick={() => setShowHtmlPreview(!showHtmlPreview)}>
+                      {showHtmlPreview ? <EyeOff className="h-3.5 w-3.5 mr-1" /> : <Eye className="h-3.5 w-3.5 mr-1" />}
+                      {showHtmlPreview ? 'Editor' : 'Preview'}
+                    </Button>
+                  </div>
+                  {showHtmlPreview ? (
+                    <div
+                      className="rounded-lg border border-border bg-background p-4 min-h-[200px] prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: htmlText }}
+                    />
+                  ) : (
+                    <Textarea
+                      rows={10}
+                      value={htmlText}
+                      onChange={e => setHtmlText(e.target.value)}
+                      className="font-mono text-xs"
+                      placeholder="<div>Seu conteúdo HTML aqui...</div>"
+                    />
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <Label>Conteúdo (JSON)</Label>
+                  <Textarea rows={6} value={contentText} onChange={e => setContentText(e.target.value)} className="font-mono text-xs" />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Ordem</Label>

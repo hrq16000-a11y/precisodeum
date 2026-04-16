@@ -113,6 +113,28 @@ export interface CompressOptions {
 }
 
 /**
+ * Generate a tiny base64 blur placeholder (LQIP) from an image file.
+ * Returns a data URL string (~20x20px, ~500 bytes).
+ */
+export async function generateBlurDataUrl(file: File): Promise<string | null> {
+  try {
+    if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') return null;
+    const img = await loadImage(file);
+    const BLUR_SIZE = 20;
+    const { width, height } = calcDimensions(img.naturalWidth, img.naturalHeight, BLUR_SIZE);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0, width, height);
+    URL.revokeObjectURL(img.src);
+    return canvas.toDataURL('image/webp', 0.3);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Compress an image file using the best available format.
  * Returns the smallest result that meets the target, preserving
  * the original file name (with updated extension).
