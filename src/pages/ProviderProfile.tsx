@@ -19,6 +19,7 @@ import TestimonialsCarousel from '@/components/TestimonialsCarousel';
 import SponsorAd from '@/components/SponsorAd';
 import GamificationLevelBadge from '@/components/dashboard/GamificationLevelBadge';
 import { lazy, Suspense } from 'react';
+import ErrorGuard from '@/components/ErrorGuard';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
 const SponsorAdSlot = lazy(() => importWithRetry(() => import('@/components/ads/SponsorAdSlot')));
@@ -1781,4 +1782,10 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
   );
 };
 
-export default ProviderProfile;
+const ProviderProfileWithGuard = () => (
+  <ErrorGuard componentName="ProviderProfile" fallbackRoute="/ajuda">
+    <ProviderProfile />
+  </ErrorGuard>
+);
+
+export default ProviderProfileWithGuard;
