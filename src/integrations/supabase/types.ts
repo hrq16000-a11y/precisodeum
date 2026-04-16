@@ -26,6 +26,7 @@ export type Database = {
           name: string
           price: number
           resources: Json
+          storage_limit_mb: number
           tier_key: string | null
           updated_at: string
         }
@@ -40,6 +41,7 @@ export type Database = {
           name: string
           price?: number
           resources?: Json
+          storage_limit_mb?: number
           tier_key?: string | null
           updated_at?: string
         }
@@ -54,6 +56,7 @@ export type Database = {
           name?: string
           price?: number
           resources?: Json
+          storage_limit_mb?: number
           tier_key?: string | null
           updated_at?: string
         }
@@ -1327,6 +1330,7 @@ export type Database = {
       }
       media: {
         Row: {
+          blur_data_url: string | null
           created_at: string
           entity_ref: string | null
           entity_type: string
@@ -1344,6 +1348,7 @@ export type Database = {
           width: number | null
         }
         Insert: {
+          blur_data_url?: string | null
           created_at?: string
           entity_ref?: string | null
           entity_type?: string
@@ -1361,6 +1366,7 @@ export type Database = {
           width?: number | null
         }
         Update: {
+          blur_data_url?: string | null
           created_at?: string
           entity_ref?: string | null
           entity_type?: string
@@ -4102,6 +4108,17 @@ export type Database = {
         Returns: number
       }
       calculate_user_level: { Args: { _user_id: string }; Returns: string }
+      find_orphan_media: {
+        Args: { _min_age_hours?: number }
+        Returns: {
+          created_at: string
+          id: string
+          public_url: string
+          size_bytes: number
+          storage_path: string
+          user_ref: string
+        }[]
+      }
       get_gamification_level: {
         Args: { _points: number }
         Returns: {
@@ -4117,6 +4134,7 @@ export type Database = {
       }
       get_rss_import_headers: { Args: never; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
+      get_user_storage_usage: { Args: { _user_ref: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
