@@ -212,12 +212,10 @@ function startFetchIfNeeded() {
 
   fetchStarted = true;
 
-  // Defer geo fetch to avoid extending the critical request chain
-  const deferStart = typeof requestIdleCallback === 'function'
-    ? requestIdleCallback
-    : (cb: () => void) => setTimeout(cb, 50);
-
-  deferStart(() => { (async () => {
+  // Defer geo fetch well past LCP to avoid extending the critical request chain.
+  // Using a 2s delay ensures the hero, categories, and above-the-fold content
+  // are fully painted before any geo API calls start.
+  setTimeout(() => { (async () => {
     try {
       const edgeGeo = await fetchGeoFromEdge();
       if (edgeGeo.city || edgeGeo.state || edgeGeo.temp !== null) {
