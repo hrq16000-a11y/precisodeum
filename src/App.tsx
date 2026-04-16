@@ -178,6 +178,32 @@ const TypeSelectionGate = () => {
   return <ProfileTypeChooser />;
 };
 
+/** Deferred UI shell — renders floating components only after initial paint to reduce TTI */
+const DeferredShell = () => {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const id = requestIdleCallback
+      ? requestIdleCallback(() => setReady(true), { timeout: 3000 })
+      : window.setTimeout(() => setReady(true), 1500);
+    return () => {
+      if (typeof cancelIdleCallback === 'function') cancelIdleCallback(id as number);
+      else clearTimeout(id as number);
+    };
+  }, []);
+  if (!ready) return null;
+  return (
+    <Suspense fallback={null}>
+      <ScrollProgressBar />
+      <MobileBottomNav />
+      <FloatingHelpButton />
+      <BackToTopButton />
+      <CookieConsent />
+      <PwaInstallBanner />
+      <TypeSelectionGate />
+    </Suspense>
+  );
+};
+
 const App = () => {
   useEffect(() => {
     // Invalidate all queries if daily purge just ran
