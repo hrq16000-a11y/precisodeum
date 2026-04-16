@@ -123,6 +123,9 @@ const DashboardPage = () => {
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
+  // Profile check-up modal (providers only)
+  const showCheckup = isProvider || isRH;
+
   // ---- CLIENT DASHBOARD ----
   if (isClient) {
     return (
