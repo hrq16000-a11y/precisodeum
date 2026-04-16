@@ -113,7 +113,7 @@ const AdminKpiBar = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
-            className="flex-1 min-w-[140px] rounded-xl border border-border/60 bg-card p-3 flex items-center gap-3"
+            className="flex-1 min-w-[140px] rounded-2xl border border-border/60 bg-card p-3.5 flex items-center gap-3 shadow-sm hover:shadow-md transition-shadow"
           >
             <div className={`shrink-0 rounded-lg ${kpi.bgColor} p-2`}>
               <kpi.icon className={`h-4 w-4 ${kpi.color}`} />

@@ -4,10 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, TrendingUp, DollarSign, Target, LayoutGrid, Megaphone, ArrowDownRight, BarChart3 } from 'lucide-react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Users, TrendingUp, TrendingDown, DollarSign, Target, LayoutGrid, Megaphone, BarChart3, Minus } from 'lucide-react';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { differenceInDays, subDays } from 'date-fns';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444'];
@@ -21,6 +20,17 @@ const AdminOverviewPage = () => {
     queryFn: async () => {
       const { data } = await supabase.from('profiles').select('profile_type, status, created_at');
       return (data || []) as any[];
+    },
+  });
+
+  const { data: profilesPrev = [] } = useQuery({
+    queryKey: ['overview-profiles-prev'],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data } = await supabase.from('profiles').select('id', { count: 'exact', head: true })
+        .gte('created_at', subDays(new Date(), 60).toISOString())
+        .lt('created_at', subDays(new Date(), 30).toISOString());
+      return data || [];
     },
   });
 
@@ -136,7 +146,74 @@ const AdminOverviewPage = () => {
     }));
   }, [sponsors]);
 
+  // Trend helpers
+  const newThisMonth = profiles.filter((p: any) => new Date(p.created_at) >= subDays(new Date(), 30)).length;
+  const churnNum = parseFloat(churnRate);
+
   if (adminLoading) return <AdminLayout><div className="h-8 w-1/3 animate-pulse rounded-lg bg-muted" /></AdminLayout>;
+
+  const kpiCards = [
+    {
+      label: 'MRR',
+      value: `R$ ${mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      icon: DollarSign,
+      iconBg: 'bg-emerald-50 dark:bg-emerald-500/10',
+      iconColor: 'text-emerald-600',
+      trend: null as string | null,
+      trendUp: true,
+      sub: null as string | null,
+    },
+    {
+      label: 'Usuários',
+      value: profiles.length.toString(),
+      icon: Users,
+      iconBg: 'bg-blue-50 dark:bg-blue-500/10',
+      iconColor: 'text-blue-600',
+      trend: newThisMonth > 0 ? `+${newThisMonth} este mês` : null,
+      trendUp: true,
+      sub: null,
+    },
+    {
+      label: 'Assinaturas',
+      value: subscriptions.length.toString(),
+      icon: TrendingUp,
+      iconBg: 'bg-violet-50 dark:bg-violet-500/10',
+      iconColor: 'text-violet-600',
+      trend: null,
+      trendUp: true,
+      sub: null,
+    },
+    {
+      label: 'Churn',
+      value: `${churnRate}%`,
+      icon: TrendingDown,
+      iconBg: 'bg-red-50 dark:bg-red-500/10',
+      iconColor: 'text-red-500',
+      trend: churnNum > 5 ? 'Alto' : churnNum > 0 ? 'Moderado' : 'Zero',
+      trendUp: churnNum === 0,
+      sub: null,
+    },
+    {
+      label: 'Leads (30d)',
+      value: leadConversion.total.toString(),
+      icon: Target,
+      iconBg: 'bg-amber-50 dark:bg-amber-500/10',
+      iconColor: 'text-amber-600',
+      trend: `${leadConversion.rate}% conv.`,
+      trendUp: parseFloat(leadConversion.rate) > 10,
+      sub: null,
+    },
+    {
+      label: 'Slots',
+      value: `${slotOccupancy.occupied}/${slotOccupancy.totalCapacity}`,
+      icon: LayoutGrid,
+      iconBg: 'bg-cyan-50 dark:bg-cyan-500/10',
+      iconColor: 'text-cyan-600',
+      trend: `${slotOccupancy.rate}% ocupado`,
+      trendUp: parseInt(slotOccupancy.rate) > 50,
+      sub: null,
+    },
+  ];
 
   return (
     <AdminLayout>
@@ -146,159 +223,109 @@ const AdminOverviewPage = () => {
           <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" /> Visão Executiva
           </h1>
-          <p className="text-sm text-muted-foreground">Painel unificado do sistema — dados em tempo real</p>
+          <p className="text-sm text-muted-foreground">Painel unificado do sistema</p>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="pt-3 pb-2">
-              <div className="flex items-center gap-1.5 mb-1">
-                <DollarSign className="h-3.5 w-3.5 text-primary" />
-                <span className="text-[10px] font-semibold text-primary uppercase">MRR</span>
+        {/* KPI Cards — Modern Dashboard Style */}
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+          {kpiCards.map((kpi) => {
+            const Icon = kpi.icon;
+            return (
+              <div
+                key={kpi.label}
+                className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${kpi.iconBg}`}>
+                    <Icon className={`h-4 w-4 ${kpi.iconColor}`} />
+                  </div>
+                  {kpi.trend && (
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      kpi.trendUp
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+                        : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'
+                    }`}>
+                      {kpi.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                      {kpi.trend}
+                    </span>
+                  )}
+                </div>
+                <p className="text-2xl font-bold text-foreground tracking-tight">{kpi.value}</p>
+                <p className="text-[11px] font-medium text-muted-foreground mt-0.5 uppercase tracking-wide">{kpi.label}</p>
               </div>
-              <p className="text-xl font-bold text-foreground">
-                R$ {mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-3 pb-2">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Users className="h-3.5 w-3.5 text-primary" />
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase">Usuários</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">{profiles.length}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-3 pb-2">
-              <div className="flex items-center gap-1.5 mb-1">
-                <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase">Assinaturas</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">{subscriptions.length}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-3 pb-2">
-              <div className="flex items-center gap-1.5 mb-1">
-                <ArrowDownRight className="h-3.5 w-3.5 text-destructive" />
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase">Churn</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">{churnRate}%</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-3 pb-2">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Target className="h-3.5 w-3.5 text-primary" />
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase">Leads 30d</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">{leadConversion.total}</p>
-              <p className="text-[10px] text-muted-foreground">{leadConversion.rate}% conv.</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-3 pb-2">
-              <div className="flex items-center gap-1.5 mb-1">
-                <LayoutGrid className="h-3.5 w-3.5 text-primary" />
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase">Slots</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">{slotOccupancy.occupied}/{slotOccupancy.totalCapacity}</p>
-              <p className="text-[10px] text-muted-foreground">{slotOccupancy.rate}% ocupado</p>
-            </CardContent>
-          </Card>
+            );
+          })}
         </div>
 
         {/* Charts Row */}
         <div className="grid gap-4 lg:grid-cols-2">
-          {/* Users by Type - Pie */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">Usuários por Tipo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={usersByType} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                      {usersByType.map((_, idx) => (
-                        <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Usuários por Tipo</h3>
+            <div className="h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={usersByType} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                    {usersByType.map((_, idx) => (
+                      <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid hsl(var(--border))', boxShadow: '0 4px 12px rgba(0,0,0,.08)' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
-          {/* Top Sponsors - Bar */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Megaphone className="h-4 w-4" /> Top Patrocinadores (CTR)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[220px]">
-                {topSponsors.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={topSponsors} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                      <XAxis type="number" className="text-[10px]" />
-                      <YAxis type="category" dataKey="name" width={100} className="text-[10px]" />
-                      <Tooltip />
-                      <Bar dataKey="clicks" fill="hsl(var(--primary))" name="Cliques" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full text-sm text-muted-foreground">Sem dados de patrocinadores</div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Megaphone className="h-4 w-4 text-muted-foreground" /> Top Patrocinadores (CTR)
+            </h3>
+            <div className="h-[220px]">
+              {topSponsors.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topSponsors} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
+                    <XAxis type="number" className="text-[10px]" />
+                    <YAxis type="category" dataKey="name" width={100} className="text-[10px]" />
+                    <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid hsl(var(--border))', boxShadow: '0 4px 12px rgba(0,0,0,.08)' }} />
+                    <Bar dataKey="clicks" fill="hsl(var(--primary))" name="Cliques" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">Sem dados de patrocinadores</div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Sponsor performance table */}
         {topSponsors.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">Performance de Patrocinadores</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-left text-xs text-muted-foreground">
-                      <th className="pb-2">Patrocinador</th>
-                      <th className="pb-2 text-right">Impressões</th>
-                      <th className="pb-2 text-right">Cliques</th>
-                      <th className="pb-2 text-right">CTR</th>
+          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Performance de Patrocinadores</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/50">
+                    <th className="pb-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Patrocinador</th>
+                    <th className="pb-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Impressões</th>
+                    <th className="pb-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Cliques</th>
+                    <th className="pb-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">CTR</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topSponsors.map((s, i) => (
+                    <tr key={i} className="border-b border-border/30 last:border-0 hover:bg-muted/30 transition-colors">
+                      <td className="py-3.5 font-medium text-foreground">{s.name}</td>
+                      <td className="py-3.5 text-right text-muted-foreground tabular-nums">{s.impressions.toLocaleString()}</td>
+                      <td className="py-3.5 text-right text-muted-foreground tabular-nums">{s.clicks.toLocaleString()}</td>
+                      <td className="py-3.5 text-right">
+                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-foreground">{s.ctr}%</span>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {topSponsors.map((s, i) => (
-                      <tr key={i} className="border-b border-border/50 last:border-0">
-                        <td className="py-2 font-medium">{s.name}</td>
-                        <td className="py-2 text-right text-muted-foreground">{s.impressions.toLocaleString()}</td>
-                        <td className="py-2 text-right text-muted-foreground">{s.clicks.toLocaleString()}</td>
-                        <td className="py-2 text-right">
-                          <Badge variant="outline" className="text-[10px]">{s.ctr}%</Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </div>
     </AdminLayout>
