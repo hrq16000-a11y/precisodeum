@@ -91,9 +91,8 @@
       /* Hero: fixed height matching component */
       .shell-hero{height:340px;background:linear-gradient(135deg,hsl(25 95% 53% / 0.8),hsl(25 95% 53% / 0.65));display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
 
-      .shell-pulse{animation:shellPulse 1.5s ease-in-out infinite}
       @keyframes shellPulse{0%,100%{opacity:.6}50%{opacity:1}}
-      .shell-hide{display:none}
+      @keyframes shellBar{0%{left:-40%}100%{left:100%}}
 
       /* Font-display swap fallback for system font stack */
       @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:700 800;font-display:swap;src:local('Plus Jakarta Sans')}
@@ -104,11 +103,10 @@
   <body>
     <div id="root">
       <!-- Static shell for instant FCP — hidden once React mounts -->
-      <div id="app-shell" class="shell-pulse" aria-hidden="true">
-        <div class="shell-header"><div class="shell-logo"></div></div>
-        <div class="shell-hero">
-          <img src="/hero-cat-instalacoes.webp" alt="" width="1920" height="768" fetchpriority="high" decoding="sync" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center" />
-          <div style="position:absolute;inset:0;background:linear-gradient(135deg,hsl(25 95% 53%/0.8),hsl(25 95% 53%/0.65))"></div>
+      <div id="app-shell" aria-hidden="true" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:hsl(210 20% 98%)">
+        <img src="/icons/icon-192.png" alt="" width="80" height="80" style="border-radius:16px;animation:shellPulse 1.5s ease-in-out infinite" />
+        <div style="margin-top:24px;width:180px;height:4px;border-radius:4px;background:hsl(210 15% 90%);overflow:hidden;position:relative">
+          <div style="position:absolute;inset:0;width:40%;border-radius:4px;background:hsl(25 95% 53%);animation:shellBar 1.2s ease-in-out infinite"></div>
         </div>
       </div>
     </div>
