@@ -1928,14 +1928,7 @@ export type Database = {
             foreignKeyName: "profiles_level_id_fkey"
             columns: ["level_id"]
             isOneToOne: false
-            referencedRelation: "public_user_levels"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_level_id_fkey"
-            columns: ["level_id"]
-            isOneToOne: false
-            referencedRelation: "user_levels"
+            referencedRelation: "gamification_levels"
             referencedColumns: ["id"]
           },
         ]
@@ -4094,14 +4087,7 @@ export type Database = {
             foreignKeyName: "profiles_level_id_fkey"
             columns: ["level_id"]
             isOneToOne: false
-            referencedRelation: "public_user_levels"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_level_id_fkey"
-            columns: ["level_id"]
-            isOneToOne: false
-            referencedRelation: "user_levels"
+            referencedRelation: "gamification_levels"
             referencedColumns: ["id"]
           },
         ]
