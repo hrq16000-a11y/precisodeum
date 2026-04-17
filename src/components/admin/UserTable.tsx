@@ -223,7 +223,7 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                 )}
                 {userAccType && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">Plano:</span>
+                    <span className="text-muted-foreground">Categoria:</span>
                     <span className="inline-flex items-center gap-1 font-semibold">
                       <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: userAccType.color }} />
                       {userAccType.name}

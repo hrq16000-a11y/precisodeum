@@ -26,7 +26,12 @@ export function useOnboardingTour(profileType: string) {
   useEffect(() => {
     const completed = localStorage.getItem(TOUR_KEY);
     if (!completed && profileType === 'provider') {
-      const timer = setTimeout(() => setActive(true), 2000);
+      const timer = setTimeout(() => {
+        // Only activate if at least one tour target exists in the DOM
+        const hasAnyTarget = PROVIDER_STEPS.some(s => document.querySelector(s.target));
+        if (hasAnyTarget) setActive(true);
+        else localStorage.setItem(TOUR_KEY, 'skipped'); // avoid re-triggering on every page
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [profileType]);
@@ -69,9 +74,19 @@ export default function OnboardingTour({ active, step, steps, onNext, onPrev, on
       setPos({ top: rect.bottom + window.scrollY + 12, left: Math.max(16, rect.left), width: Math.min(320, window.innerWidth - 32) });
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
-      setPos({ top: window.innerHeight / 2, left: 16, width: Math.min(320, window.innerWidth - 32) });
+      // Skip missing step automatically instead of freezing the dark overlay
+      if (step < steps.length - 1) onNext();
+      else onDismiss();
     }
-  }, [active, step, currentStep]);
+  }, [active, step, currentStep, steps.length, onNext, onDismiss]);
+
+  // Esc closes the tour
+  useEffect(() => {
+    if (!active) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onDismiss(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [active, onDismiss]);
 
   if (!active || !pos) return null;
 
