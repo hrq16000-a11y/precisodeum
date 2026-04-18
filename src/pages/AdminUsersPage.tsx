@@ -26,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import PaginationControls from '@/components/PaginationControls';
 import UserFilters from '@/components/admin/UserFilters';
 import UserTable from '@/components/admin/UserTable';
+import UserGrid from '@/components/admin/UserGrid';
 import LevelDistributionBar from '@/components/admin/LevelDistributionBar';
 import UserEditDialog from '@/components/admin/UserEditDialog';
 import UserDetailSheet from '@/components/admin/UserDetailSheet';
@@ -74,6 +75,11 @@ const AdminUsersPage = () => {
   const [suspiciousOnly, setSuspiciousOnly] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
+    if (typeof window === 'undefined') return 'list';
+    return (localStorage.getItem('admin_users_view') as 'list' | 'grid') || 'list';
+  });
+  const [headerSort, setHeaderSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [editUser, setEditUser] = useState<any | null>(null);
