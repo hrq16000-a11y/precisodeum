@@ -329,6 +329,9 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
 
               {/* Badges */}
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {p.is_suspicious && (
+                  <SuspiciousBadge reason={p.suspicious_reason} ip={p.suspicious_ip} />
+                )}
                 {isElite && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
                     <Star className="h-2.5 w-2.5 fill-white" /> ELITE
