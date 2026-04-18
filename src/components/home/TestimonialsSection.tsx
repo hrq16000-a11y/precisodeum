@@ -79,7 +79,7 @@ const TestimonialsSection = () => {
           </span>
           <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">O que dizem nossos usuários</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            {testimonials.length} depoimentos verificados
+            {testimonials.length} depoimentos reais
           </p>
         </FadeInSection>
 

@@ -96,7 +96,7 @@ const ServicesPage = () => {
               Serviços Profissionais
             </h1>
             <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
-              Encontre o serviço que você precisa. Compare preços, solicite orçamentos e contrate profissionais verificados.
+              Encontre o serviço que você precisa. Compare preços, solicite orçamentos e contrate profissionais avaliados pela comunidade.
             </p>
           </FadeInSection>
 
