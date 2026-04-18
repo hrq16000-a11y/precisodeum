@@ -67,6 +67,7 @@ const AdminUsersPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterProviderStatus, setFilterProviderStatus] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const [qualityFilter, setQualityFilter] = useState('all');
   const [activeTab, setActiveTab] = useState('all');
   const [page, setPage] = useState(1);
 
