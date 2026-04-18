@@ -76,13 +76,26 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Find providers without valid coords
+  // Find providers without valid coords AND with usable city/state
   const { data: providers, error } = await admin
     .from('providers')
     .select('id, city, state, neighborhood, latitude, longitude')
     .is('deleted_at', null)
     .or('latitude.is.null,longitude.is.null,latitude.eq.0,longitude.eq.0')
+    .not('city', 'is', null)
+    .neq('city', '')
+    .neq('city', 'Não informada')
+    .not('state', 'is', null)
+    .neq('state', '')
     .limit(BATCH_LIMIT);
+
+  // Count separately how many were skipped due to missing address
+  const { count: skippedCount } = await admin
+    .from('providers')
+    .select('id', { count: 'exact', head: true })
+    .is('deleted_at', null)
+    .or('latitude.is.null,longitude.is.null,latitude.eq.0,longitude.eq.0')
+    .or('city.is.null,city.eq.,city.eq.Não informada,state.is.null,state.eq.');
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
