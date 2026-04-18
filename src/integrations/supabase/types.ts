@@ -4227,6 +4227,22 @@ export type Database = {
           level_name: string
         }[]
       }
+      get_latest_user_access_logs: {
+        Args: never
+        Returns: {
+          browser: string
+          city: string
+          country: string
+          created_at: string
+          device_type: string
+          event_type: string
+          ip_address: string
+          isp: string
+          os: string
+          region: string
+          user_id: string
+        }[]
+      }
       get_neighborhood_by_point: {
         Args: { _lat: number; _lng: number }
         Returns: string
