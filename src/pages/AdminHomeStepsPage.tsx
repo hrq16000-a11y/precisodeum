@@ -94,7 +94,7 @@ const AdminHomeStepsPage = () => {
         {items.map((item: any) => (
           <div key={item.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-card">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <span className="text-2xl">{item.icon}</span>
+              <CategoryIcon icon={item.icon} size={24} className="text-foreground" />
               <div>
                 <div className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${item.active ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />

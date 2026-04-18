@@ -1506,7 +1506,7 @@ const StorageBackupSection = () => {
                       className="shrink-0"
                     />
                     <button onClick={() => toggleFolder(bucketKey)} className="flex items-center gap-2 flex-1">
-                      <span className="text-xl">{bucket.icon}</span>
+                      <CategoryIcon icon={bucket.icon} size={20} className="text-foreground" />
                       <span className="font-bold text-sm text-foreground">{bucket.label}</span>
                       <span className="text-xs text-muted-foreground">({fileCount} arquivos)</span>
                     </button>
@@ -1840,7 +1840,7 @@ const AdminBackupPage = () => {
             {group.modules.map(mod => (
               <div key={mod.table} className="rounded-xl border border-border bg-card p-4 shadow-card flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{mod.icon}</span>
+                  <CategoryIcon icon={mod.icon} size={24} className="text-foreground" />
                   <div>
                     <h3 className="text-sm font-bold text-foreground">{mod.label}</h3>
                     <p className="text-xs text-muted-foreground">{mod.table}</p>

@@ -484,7 +484,7 @@ const DashboardMyPagePage = () => {
                         isHidden ? 'opacity-40 bg-muted/30' : 'bg-card'
                       }`}
                     >
-                      <span className="text-lg">{section.icon}</span>
+                      <CategoryIcon icon={section.icon} size={18} className="text-foreground" />
                       <div className="flex flex-col gap-0.5">
                         <button onClick={() => moveSection(index, 'up')} disabled={index === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-20">
                           <ArrowUp className="h-3.5 w-3.5" />
