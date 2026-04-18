@@ -44,6 +44,18 @@ interface ScoreRule {
   category: string;
 }
 
+// Mascarar prefixos legados (free_*) e mostrar identidade limpa
+const cleanTierKey = (key: string): string => {
+  if (!key) return '—';
+  const map: Record<string, string> = {
+    free_client: 'cliente',
+    free_provider: 'profissional',
+    free_rh: 'agencia_rh',
+    premium: 'acesso_integral',
+  };
+  return map[key] || key;
+};
+
 interface TierRule {
   id: string;
   tier_key: string;
@@ -264,7 +276,7 @@ const AdminGamificationPage = () => {
         <TabsList className="grid w-full grid-cols-3 mb-5 max-w-2xl">
           <TabsTrigger value="levels" className="flex items-center gap-1.5"><Trophy className="h-3.5 w-3.5" /> Níveis</TabsTrigger>
           <TabsTrigger value="rules" className="flex items-center gap-1.5"><Zap className="h-3.5 w-3.5" /> Regras</TabsTrigger>
-          <TabsTrigger value="tiers" className="flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" /> Cotas (Tiers)</TabsTrigger>
+          <TabsTrigger value="tiers" className="flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" /> Permissões por Perfil</TabsTrigger>
         </TabsList>
 
         {/* ===== LEVELS ===== */}
@@ -367,7 +379,7 @@ const AdminGamificationPage = () => {
         {/* ===== TIERS (cotas) ===== */}
         <TabsContent value="tiers">
           <p className="text-xs text-muted-foreground mb-3">
-            Cotas e permissões aplicadas por tier_key. Use 0 para desabilitar e -1 para ilimitado quando aplicável.
+            Limites e permissões aplicados a cada tipo de perfil. Use 0 para desabilitar e -1 para ilimitado quando aplicável.
           </p>
           <div className="grid gap-2">
             {tiers.map(t => {
@@ -382,7 +394,7 @@ const AdminGamificationPage = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-foreground">{t.tier_label}</span>
-                            <Badge variant="outline" className="font-mono text-[10px]">{t.tier_key}</Badge>
+                            <Badge variant="outline" className="font-mono text-[10px]">{cleanTierKey(t.tier_key)}</Badge>
                           </div>
                           <div className="flex flex-wrap gap-1 mt-1.5 text-[11px]">
                             <span className="bg-muted/60 rounded px-1.5 py-0.5">Serviços: <b>{t.max_services}</b></span>
@@ -516,7 +528,7 @@ const TierEditForm = ({ tier, onSave, onCancel }: { tier: TierRule; onSave: (t: 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <div className="col-span-2"><label className="text-xs font-medium text-muted-foreground">Rótulo</label><Input value={form.tier_label} onChange={e => set('tier_label', e.target.value)} /></div>
-      <div className="col-span-2"><label className="text-xs font-medium text-muted-foreground">Chave (somente leitura)</label><Input value={form.tier_key} disabled className="font-mono text-xs" /></div>
+      <div className="col-span-2"><label className="text-xs font-medium text-muted-foreground">Identificador</label><Input value={cleanTierKey(form.tier_key)} disabled className="font-mono text-xs" /></div>
       <div><label className="text-xs font-medium text-muted-foreground">Máx Serviços</label><Input type="number" value={form.max_services} onChange={e => set('max_services', +e.target.value)} /></div>
       <div><label className="text-xs font-medium text-muted-foreground">Máx Leads</label><Input type="number" value={form.max_leads} onChange={e => set('max_leads', +e.target.value)} /></div>
       <div><label className="text-xs font-medium text-muted-foreground">Máx Anúncios</label><Input type="number" value={form.max_ads} onChange={e => set('max_ads', +e.target.value)} /></div>
