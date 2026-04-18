@@ -25,6 +25,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { motion } from 'framer-motion';
+import ProviderAuditBlock from '@/components/admin/ProviderAuditBlock';
 
 const statusLabels: Record<string, { label: string; cls: string }> = {
   pending: { label: 'Pendente', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
@@ -73,6 +74,23 @@ const AdminProvidersPage = () => {
   const [autoApprove, setAutoApprove] = useState(false);
   const [autoApproveLoading, setAutoApproveLoading] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [duplicateIpFilter, setDuplicateIpFilter] = useState(false);
+  const [duplicateIps, setDuplicateIps] = useState<Set<string>>(new Set());
+  const [duplicateUserIds, setDuplicateUserIds] = useState<Set<string>>(new Set());
+
+  // Fetch IPs shared by 2+ providers
+  const fetchDuplicateIps = useCallback(async () => {
+    const { data, error } = await supabase.rpc('admin_providers_same_ip' as any, { _min_count: 2 });
+    if (error || !data) return;
+    const ips = new Set<string>();
+    const userIds = new Set<string>();
+    (data as any[]).forEach(row => {
+      if (row.ip_address) ips.add(row.ip_address);
+      (row.providers || []).forEach((p: any) => p.provider_id && userIds.add(p.provider_id));
+    });
+    setDuplicateIps(ips);
+    setDuplicateUserIds(userIds);
+  }, []);
 
   // Fetch auto-approve setting
   const fetchAutoApprove = useCallback(async () => {
@@ -185,7 +203,7 @@ const AdminProvidersPage = () => {
     })));
   };
 
-  useEffect(() => { if (isAdmin) { fetchProviders(); fetchRules(); fetchAutoApprove(); } }, [isAdmin]);
+  useEffect(() => { if (isAdmin) { fetchProviders(); fetchRules(); fetchAutoApprove(); fetchDuplicateIps(); } }, [isAdmin, fetchDuplicateIps]);
 
   const bulk = useAdminBulkActions({
     table: 'providers',
@@ -224,6 +242,7 @@ const AdminProvidersPage = () => {
     if (filter !== 'all') list = list.filter(p => p.status === filter);
     if (filterCategory !== 'all') list = list.filter(p => (p.categories as any)?.name === filterCategory);
     if (filterState !== 'all') list = list.filter(p => p.state === filterState);
+    if (duplicateIpFilter) list = list.filter(p => duplicateUserIds.has(p.id));
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
       list = list.filter(p =>
@@ -235,7 +254,7 @@ const AdminProvidersPage = () => {
       );
     }
     return list;
-  }, [providers, debouncedSearch, filter, filterCategory, filterState]);
+  }, [providers, debouncedSearch, filter, filterCategory, filterState, duplicateIpFilter, duplicateUserIds]);
 
   const isVerified = (p: any) => {
     const checks = [
@@ -359,6 +378,21 @@ const AdminProvidersPage = () => {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar nome, email, CNPJ, cidade..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
         </div>
+        {duplicateIps.size > 0 && (
+          <button
+            type="button"
+            onClick={() => { setDuplicateIpFilter(v => !v); setPage(1); }}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors border ${
+              duplicateIpFilter
+                ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700'
+                : 'bg-muted text-muted-foreground border-transparent hover:bg-muted/80'
+            }`}
+            title="Mostrar apenas cadastros do mesmo IP (potenciais duplicatas)"
+          >
+            <AlertCircle className="h-3.5 w-3.5" />
+            IPs duplicados ({duplicateIps.size})
+          </button>
+        )}
       </div>
 
       {/* Auto-approve toggle + Bulk actions */}
@@ -611,6 +645,11 @@ const AdminProvidersPage = () => {
                             )}
                           </div>
                         </div>
+                      )}
+
+                      {/* Audit / Registration trace */}
+                      {isExpanded && (
+                        <ProviderAuditBlock providerId={p.id} duplicateIps={duplicateIps} />
                       )}
                     </div>
                   </CollapsibleContent>
