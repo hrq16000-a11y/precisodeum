@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Mail, Calendar,
   Briefcase, MapPin, ExternalLink, Zap, RotateCcw, Plus, Minus, Camera,
-  User, Building2, Wifi
+  User, Building2, Wifi, ArrowUp, ArrowDown, ArrowUpDown
 } from 'lucide-react';
 import SuspiciousBadge from '@/components/admin/SuspiciousBadge';
 import { Link } from 'react-router-dom';
