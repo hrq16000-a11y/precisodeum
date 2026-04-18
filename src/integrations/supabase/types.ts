@@ -4460,6 +4460,7 @@ export type Database = {
       }
       admin_suspicious_summary: { Args: { _limit?: number }; Returns: Json }
       admin_system_health: { Args: { _limit?: number }; Returns: Json }
+      admin_system_health_full: { Args: never; Returns: Json }
       audit_user_ref_full: {
         Args: never
         Returns: {
