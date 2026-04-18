@@ -50,6 +50,7 @@ const DashboardProfilePage = () => {
     years_experience: 0, category_id: '', category_name: '', category_custom: '',
     cnpj: '', ibge_code: '',
     latitude: null as number | null, longitude: null as number | null,
+    account_kind: '' as '' | 'autonomo' | 'empresa',
   });
 
   useEffect(() => {
@@ -118,6 +119,10 @@ const DashboardProfilePage = () => {
     }
     if (provider) {
       const catName = categories.find((c: any) => c.id === provider.category_id)?.name || '';
+      const inferredKind: '' | 'autonomo' | 'empresa' =
+        (provider as any).cnpj ? 'empresa' :
+        ((provider as any).account_kind === 'empresa' || (provider as any).account_kind === 'autonomo') ? (provider as any).account_kind :
+        provider.business_name ? 'empresa' : '';
       setForm(prev => ({
         ...prev,
         business_name: provider.business_name || '',
@@ -135,6 +140,7 @@ const DashboardProfilePage = () => {
         ibge_code: (provider as any).ibge_code || '',
         latitude: provider.latitude ?? null,
         longitude: provider.longitude ?? null,
+        account_kind: inferredKind,
       }));
       if (provider.city) {
         setCitySearch(provider.state ? `${provider.city}, ${provider.state}` : provider.city);
