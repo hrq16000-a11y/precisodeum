@@ -525,8 +525,8 @@ const AdminUsersPage = () => {
       setLevelOptions(lvls || []);
     }
     if (sponsorOptions.length === 0) {
-      const { data: sps } = await supabase.from('sponsors').select('id, name').eq('active', true).order('name');
-      setSponsorOptions(sps || []);
+      const { data: sps } = await supabase.from('sponsors').select('id, company_name, title').eq('active', true).order('company_name');
+      setSponsorOptions((sps || []).map((s: any) => ({ id: s.id, name: s.company_name || s.title || 'Sem nome' })));
     }
   };
 
