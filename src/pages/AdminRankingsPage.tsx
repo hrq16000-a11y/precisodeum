@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Crown, RefreshCw, Pencil, Save, X, Trophy, TrendingUp, Users } from 'lucide-react';
+import { IconRenderer } from '@/components/ui/IconRenderer';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -91,7 +92,7 @@ const AdminRankingsPage = () => {
 
   const startEditLevel = (l: LevelRow) => {
     setEditingLevel(l.id);
-    setTempLevel({ name: l.name, min_points: l.min_points, color: l.color });
+    setTempLevel({ name: l.name, min_points: l.min_points, color: l.color, icon: l.icon });
   };
 
   const saveLevel = async (id: string) => {
@@ -171,7 +172,9 @@ const AdminRankingsPage = () => {
           <CardHeader><CardTitle className="text-base">Distribuição de usuários por nível</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {levels.map((l, i) => (
+              {levels.map((l, i) => {
+                const isElite = l.min_points >= 700;
+                return (
                 <motion.div
                   key={l.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -181,7 +184,10 @@ const AdminRankingsPage = () => {
                   style={{ borderTopColor: l.color, borderTopWidth: 3 }}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wide" style={{ color: l.color }}>{l.name}</span>
+                    <div className="flex items-center gap-1.5">
+                      <IconRenderer name={l.icon} size={16} color={l.color} glow={isElite} />
+                      <span className="text-xs font-bold uppercase tracking-wide" style={{ color: l.color }}>{l.name}</span>
+                    </div>
                     <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => startEditLevel(l)}>
                       <Pencil className="h-3 w-3" />
                     </Button>
@@ -190,7 +196,17 @@ const AdminRankingsPage = () => {
                     <div className="space-y-2">
                       <Input value={tempLevel.name as string} onChange={(e) => setTempLevel(s => ({ ...s, name: e.target.value }))} className="h-8 text-xs" placeholder="Nome" />
                       <Input type="number" value={tempLevel.min_points as number} onChange={(e) => setTempLevel(s => ({ ...s, min_points: Number(e.target.value) }))} className="h-8 text-xs" placeholder="Min pts" />
-                      <Input value={tempLevel.color as string} onChange={(e) => setTempLevel(s => ({ ...s, color: e.target.value }))} className="h-8 text-xs" placeholder="#cor" />
+                      <Input value={tempLevel.icon as string ?? ''} onChange={(e) => setTempLevel(s => ({ ...s, icon: e.target.value }))} className="h-8 text-xs" placeholder="Ícone Lucide (ex: Crown)" />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={(tempLevel.color as string) || '#64748b'}
+                          onChange={(e) => setTempLevel(s => ({ ...s, color: e.target.value }))}
+                          className="h-8 w-10 cursor-pointer rounded border border-border bg-transparent p-0.5"
+                          aria-label="Cor do nível"
+                        />
+                        <Input value={tempLevel.color as string ?? ''} onChange={(e) => setTempLevel(s => ({ ...s, color: e.target.value }))} className="h-8 text-xs flex-1" placeholder="#hex" />
+                      </div>
                       <div className="flex gap-1">
                         <Button size="sm" className="h-7 flex-1" onClick={() => saveLevel(l.id)}><Save className="h-3 w-3" /></Button>
                         <Button size="sm" variant="outline" className="h-7" onClick={() => setEditingLevel(null)}><X className="h-3 w-3" /></Button>
@@ -203,7 +219,8 @@ const AdminRankingsPage = () => {
                     </>
                   )}
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

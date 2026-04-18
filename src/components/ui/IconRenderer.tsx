@@ -34,13 +34,17 @@ const kebabToPascal = (s: string) =>
 
 const isLikelyEmoji = (s: string) => /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/u.test(s);
 
-export interface IconRendererProps extends Omit<LucideProps, 'ref'> {
+export interface IconRendererProps extends Omit<LucideProps, 'ref' | 'color'> {
   /** Icon name string from the database (e.g. "Sparkles", "leaf", "circle-dot") */
   name?: string | null;
   /** Pixel size. Defaults to 18. */
   size?: number;
   /** Optional Tailwind classes (color, stroke, etc.) */
   className?: string;
+  /** Direct color (hex, hsl, css var) — overrides Tailwind text color when set. */
+  color?: string;
+  /** Apply elite drop-shadow glow using the icon's own color. */
+  glow?: boolean;
 }
 
 export const IconRenderer = ({
@@ -48,13 +52,27 @@ export const IconRenderer = ({
   size = 18,
   strokeWidth = 1.75,
   className,
+  color,
+  glow = false,
+  style,
   ...rest
 }: IconRendererProps) => {
+  const mergedStyle = {
+    ...(color ? { color } : {}),
+    ...(glow && color
+      ? { filter: `drop-shadow(0 0 6px ${color}aa) drop-shadow(0 0 2px ${color})` }
+      : glow
+      ? { filter: 'drop-shadow(0 0 6px currentColor)' }
+      : {}),
+    ...style,
+  };
+
   const fallback = (
     <CircleDot
       size={size}
       strokeWidth={strokeWidth}
       className={cn('shrink-0', className)}
+      style={mergedStyle}
       aria-hidden
       {...rest}
     />
@@ -76,10 +94,14 @@ export const IconRenderer = ({
       size={size}
       strokeWidth={strokeWidth}
       className={cn('shrink-0', className)}
+      style={mergedStyle}
       aria-hidden
       {...rest}
     />
   );
 };
+
+/** Alias requested by spec — same component, more descriptive name. */
+export const DynamicLucideIcon = IconRenderer;
 
 export default IconRenderer;
