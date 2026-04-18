@@ -249,17 +249,23 @@ const AdminProvidersPage = () => {
     if (suspiciousOnly) list = list.filter(p => p.profiles?.is_suspicious === true);
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
-      list = list.filter(p =>
-        (p.profiles?.full_name || '').toLowerCase().includes(q) ||
-        (p.profiles?.email || '').toLowerCase().includes(q) ||
-        (p.business_name || '').toLowerCase().includes(q) ||
-        (p.city || '').toLowerCase().includes(q) ||
-        (p.state || '').toLowerCase().includes(q) ||
-        (p.cnpj || '').toLowerCase().includes(q) ||
-        (p.phone || '').toLowerCase().includes(q) ||
-        (p.whatsapp || '').toLowerCase().includes(q) ||
-        ((p.categories as any)?.name || '').toLowerCase().includes(q)
-      );
+      const safe = (v: unknown) => (typeof v === 'string' ? v.toLowerCase() : v == null ? '' : String(v).toLowerCase());
+      try {
+        list = list.filter(p =>
+          safe(p.profiles?.full_name).includes(q) ||
+          safe(p.profiles?.email).includes(q) ||
+          safe(p.business_name).includes(q) ||
+          safe(p.city).includes(q) ||
+          safe(p.state).includes(q) ||
+          safe(p.cnpj).includes(q) ||
+          safe(p.phone).includes(q) ||
+          safe(p.whatsapp).includes(q) ||
+          safe((p.categories as any)?.name).includes(q) ||
+          safe(p.slug).includes(q)
+        );
+      } catch (err) {
+        console.error('[AdminProviders] search filter error:', err);
+      }
     }
     return list;
   }, [providers, debouncedSearch, filter, filterCategory, filterState, duplicateIpFilter, duplicateUserIds, suspiciousOnly]);
