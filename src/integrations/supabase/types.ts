@@ -4385,6 +4385,20 @@ export type Database = {
       }
       admin_ban_suspicious: { Args: { _user_ids: string[] }; Returns: number }
       admin_clear_suspicion: { Args: { _user_ids: string[] }; Returns: number }
+      admin_export_audit_logs: {
+        Args: { _days?: number }
+        Returns: {
+          action: string
+          created_at: string
+          id: string
+          new_values: Json
+          old_values: Json
+          staff_email: string
+          staff_id: string
+          target_email: string
+          target_user_id: string
+        }[]
+      }
       admin_get_level_distribution: {
         Args: never
         Returns: {
@@ -4435,6 +4449,14 @@ export type Database = {
           reason: string
           signup_count: number
         }[]
+      }
+      admin_set_staff_permission: {
+        Args: {
+          _enabled: boolean
+          _permission_key: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: undefined
       }
       admin_suspicious_summary: { Args: { _limit?: number }; Returns: Json }
       admin_system_health: { Args: { _limit?: number }; Returns: Json }
