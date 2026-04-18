@@ -398,8 +398,30 @@ const AdminUsersPage = () => {
     }
     // 'recent' is already the default order from DB
 
+    // Apply column-header sort (overrides sortBy if active)
+    if (headerSort) {
+      const { key, dir } = headerSort;
+      const mult = dir === 'asc' ? 1 : -1;
+      const cmp = (a: any, b: any) => {
+        const provA = providersMap[a.id];
+        const provB = providersMap[b.id];
+        let va: any = ''; let vb: any = '';
+        switch (key) {
+          case 'name': va = a.full_name || ''; vb = b.full_name || ''; break;
+          case 'business': va = provA?.business_name || ''; vb = provB?.business_name || ''; break;
+          case 'type': va = a.profile_type || ''; vb = b.profile_type || ''; break;
+          case 'points': va = a.engagement_points || 0; vb = b.engagement_points || 0; break;
+          case 'status': va = a.status || ''; vb = b.status || ''; break;
+          case 'created': va = a.created_at || ''; vb = b.created_at || ''; break;
+        }
+        if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * mult;
+        return String(va).localeCompare(String(vb), 'pt-BR') * mult;
+      };
+      list = [...list].sort(cmp);
+    }
+
     return list;
-  }, [profiles, debouncedSearch, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy, qualityFilter, suspiciousOnly]);
+  }, [profiles, debouncedSearch, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy, qualityFilter, suspiciousOnly, headerSort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
