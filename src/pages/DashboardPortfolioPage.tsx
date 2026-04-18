@@ -50,29 +50,38 @@ const DashboardPortfolioPage = () => {
   const [albumSaving, setAlbumSaving] = useState(false);
 
   const loadAlbums = async () => {
-    if (!provider) return;
-    const { data } = await supabase
-      .from('portfolio_albums')
-      .select('*')
-      .eq('provider_id', provider.id)
-      .order('display_order');
-
-    if (data) {
-      // Get photo counts
-      const albumIds = data.map(a => a.id);
-      const counts: Record<string, number> = {};
-      if (albumIds.length > 0) {
-        const { data: photosData } = await supabase
-          .from('portfolio_photos')
-          .select('album_id')
-          .in('album_id', albumIds);
-        (photosData || []).forEach(p => {
-          counts[p.album_id] = (counts[p.album_id] || 0) + 1;
-        });
-      }
-      setAlbums(data.map(a => ({ ...a, photo_count: counts[a.id] || 0 })));
+    if (!provider) {
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from('portfolio_albums')
+        .select('*')
+        .eq('provider_id', provider.id)
+        .order('display_order');
+
+      if (error) throw error;
+
+      if (data) {
+        const albumIds = data.map(a => a.id);
+        const counts: Record<string, number> = {};
+        if (albumIds.length > 0) {
+          const { data: photosData } = await supabase
+            .from('portfolio_photos')
+            .select('album_id')
+            .in('album_id', albumIds);
+          (photosData || []).forEach(p => {
+            counts[p.album_id] = (counts[p.album_id] || 0) + 1;
+          });
+        }
+        setAlbums(data.map(a => ({ ...a, photo_count: counts[a.id] || 0 })));
+      }
+    } catch (err: any) {
+      toast.error('Erro ao carregar álbuns: ' + (err.message || 'desconhecido'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -198,6 +207,8 @@ const DashboardPortfolioPage = () => {
     }
 
     setUploading(true);
+    let successCount = 0;
+    let failCount = 0;
     const { userRef } = await resolveIdentity(user.id);
 
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -270,7 +281,9 @@ const DashboardPortfolioPage = () => {
         if (!selectedAlbum.cover_image_url && photos.length === 0) {
           await supabase.from('portfolio_albums').update({ cover_image_url: publicUrl }).eq('id', selectedAlbum.id);
         }
+        successCount++;
       } catch (err: any) {
+        failCount++;
         await showSaveError({
           actionContext: `Upload de foto: ${file.name}`,
           componentName: 'DashboardPortfolioPage',
@@ -282,7 +295,13 @@ const DashboardPortfolioPage = () => {
     await loadPhotos(selectedAlbum.id);
     await loadAlbums();
     setUploading(false);
-    toast.success('Fotos enviadas!');
+    if (successCount > 0) {
+      toast.success(`${successCount} foto${successCount > 1 ? 's' : ''} enviada${successCount > 1 ? 's' : ''} com sucesso!`, {
+        description: failCount > 0 ? `${failCount} falharam — verifique os erros acima.` : '🏆 +5 pontos por foto adicionada!',
+      });
+    } else if (failCount > 0) {
+      toast.error('Nenhuma foto foi enviada. Verifique os erros acima.');
+    }
     e.target.value = '';
   };
 
