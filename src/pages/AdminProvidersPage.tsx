@@ -68,7 +68,7 @@ const AdminProvidersPage = () => {
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterState, setFilterState] = useState('all');
   const [page, setPage] = useState(1);
-  const [backfilling, setBackfilling] = useState(false);
+  
   const [editProvider, setEditProvider] = useState<any | null>(null);
   const [rules, setRules] = useState(defaultRules);
   const [allProviders, setAllProviders] = useState<any[]>([]);
@@ -324,28 +324,7 @@ const AdminProvidersPage = () => {
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="mr-1.5 h-4 w-4" /> Exportar CSV
           </Button>
-          <Button
-            variant="outline" size="sm" disabled={backfilling}
-            onClick={async () => {
-              if (!confirm('Geocodificar TODOS os prestadores sem coordenadas? Pode levar alguns minutos (1 req/s para respeitar a API).')) return;
-              setBackfilling(true);
-              const tId = toast.loading('Geocodificando em massa... aguarde.');
-              try {
-                const { data, error } = await supabase.functions.invoke('bulk-geocode-providers');
-                if (error) throw error;
-                toast.success(
-                  `Coordenadas atualizadas: ${data?.updated || 0}/${data?.total || 0} (Nominatim ${data?.nominatim_hits || 0}, IBGE ${data?.ibge_hits || 0}, falhas ${data?.failed || 0})`,
-                  { id: tId, duration: 8000 }
-                );
-                fetchProviders();
-              } catch (e: any) {
-                toast.error(e.message || 'Erro', { id: tId });
-              } finally { setBackfilling(false); }
-            }}
-          >
-            <MapPin className="mr-1.5 h-4 w-4" />
-            {backfilling ? 'Geocodificando...' : 'Geocodificar TODOS'}
-          </Button>
+          {/* botão de geocoding em massa removido — geocoding agora ocorre no cadastro/login */}
           <Button
             variant="outline" size="sm"
             onClick={async () => {
