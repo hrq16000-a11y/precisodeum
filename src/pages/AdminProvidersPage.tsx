@@ -68,7 +68,7 @@ const AdminProvidersPage = () => {
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterState, setFilterState] = useState('all');
   const [page, setPage] = useState(1);
-  const [backfilling, setBackfilling] = useState(false);
+  
   const [editProvider, setEditProvider] = useState<any | null>(null);
   const [rules, setRules] = useState(defaultRules);
   const [allProviders, setAllProviders] = useState<any[]>([]);
