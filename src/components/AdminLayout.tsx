@@ -12,6 +12,12 @@ import TopLoadingBar from '@/components/ui/TopLoadingBar';
 import AdminFlashSummary from '@/components/admin/AdminFlashSummary';
 import AdminRealtimeToasts from '@/components/admin/AdminRealtimeToasts';
 
+const normalizeAdminSearch = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
 const menuGroups = [
   {
     label: 'Geral',
@@ -39,7 +45,6 @@ const menuGroups = [
     items: [
       { label: 'Rankings & Pontos', icon: Crown, path: '/admin/rankings' },
       { label: 'Níveis & Pontuação', icon: Crown, path: '/admin/gamificacao' },
-      
     ],
   },
   {
@@ -79,6 +84,9 @@ const menuGroups = [
       { label: 'Meta Tags & SEO', icon: Globe, path: '/admin/metatags' },
       { label: 'Menus', icon: Menu, path: '/admin/menus' },
       { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
+      { label: 'Permissões', icon: Shield, path: '/admin/sistema/permissoes' },
+      { label: 'Regras', icon: ScrollText, path: '/admin/governanca' },
+      { label: 'Aprovação', icon: Shield, path: '/admin/aprovacao' },
       { label: 'Trilha de Auditoria', icon: ScrollText, path: '/admin/auditoria' },
       { label: 'Auditoria Ref', icon: Shield, path: '/admin/auditoria-ref' },
       { label: 'Mídia & Arquivos', icon: FileImage, path: '/admin/midia' },
@@ -159,7 +167,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   const filteredGroups = useMemo(() => {
-    const q = sidebarSearch.trim().toLowerCase();
+    const q = normalizeAdminSearch(sidebarSearch.trim());
     return menuGroups.map(group => ({
       ...group,
       items: group.items.filter(item => {
@@ -167,8 +175,11 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           const requiredPerm = ADMIN_ROUTE_PERMISSIONS[item.path];
           if (requiredPerm && !hasPermission(requiredPerm)) return false;
         }
-        if (q && !item.label.toLowerCase().includes(q)) return false;
-        return true;
+        if (!q) return true;
+        const label = normalizeAdminSearch(item.label);
+        const groupLabel = normalizeAdminSearch(group.label);
+        const path = normalizeAdminSearch(item.path);
+        return label.includes(q) || groupLabel.includes(q) || path.includes(q);
       }),
     })).filter(group => group.items.length > 0);
   }, [isAdmin, hasPermission, sidebarSearch]);
