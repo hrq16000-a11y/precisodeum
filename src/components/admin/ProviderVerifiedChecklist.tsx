@@ -56,7 +56,7 @@ const ProviderVerifiedChecklist = ({ provider, rules, compact = false }: Props) 
               }`}
             >
               {allMet ? <ShieldCheck className="h-3 w-3" /> : <Shield className="h-3 w-3" />}
-              {allMet ? 'Verificado' : `${metCount}/${checks.length}`}
+              {allMet ? 'Perfil Completo' : `${metCount}/${checks.length}`}
             </Badge>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-xs">
@@ -90,7 +90,7 @@ const ProviderVerifiedChecklist = ({ provider, rules, compact = false }: Props) 
           <Shield className="h-4 w-4 text-amber-500" />
         )}
         <span className="text-xs font-semibold">
-          {allMet ? 'Perfil Verificado' : `${metCount}/${checks.length} critérios`}
+          {allMet ? 'Perfil Completo' : `${metCount}/${checks.length} critérios`}
         </span>
       </div>
       {checks.map((c, i) => (
