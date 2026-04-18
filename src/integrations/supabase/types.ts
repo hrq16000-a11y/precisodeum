@@ -510,6 +510,13 @@ export type Database = {
             foreignKeyName: "contact_clicks_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "contact_clicks_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_health_view"
             referencedColumns: ["id"]
           },
@@ -1309,6 +1316,13 @@ export type Database = {
             foreignKeyName: "leads_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "leads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_health_view"
             referencedColumns: ["id"]
           },
@@ -1710,6 +1724,13 @@ export type Database = {
             foreignKeyName: "portfolio_albums_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "portfolio_albums_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_health_view"
             referencedColumns: ["id"]
           },
@@ -1960,6 +1981,13 @@ export type Database = {
             foreignKeyName: "provider_impressions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "provider_impressions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_health_view"
             referencedColumns: ["id"]
           },
@@ -2041,6 +2069,13 @@ export type Database = {
           youtube_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "provider_page_settings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
           {
             foreignKeyName: "provider_page_settings_provider_id_fkey"
             columns: ["provider_id"]
@@ -2408,6 +2443,13 @@ export type Database = {
             foreignKeyName: "reviews_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "reviews_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_health_view"
             referencedColumns: ["id"]
           },
@@ -2701,6 +2743,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
           },
           {
             foreignKeyName: "services_provider_id_fkey"
@@ -3435,6 +3484,13 @@ export type Database = {
             foreignKeyName: "subscriptions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_health_view"
             referencedColumns: ["id"]
           },
@@ -3951,6 +4007,31 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_audit_view: {
+        Row: {
+          business_name: string | null
+          first_access_at: string | null
+          last_access_at: string | null
+          last_browser: string | null
+          last_device: string | null
+          last_ip: string | null
+          last_os: string | null
+          provider_created_at: string | null
+          provider_id: string | null
+          registration_browser: string | null
+          registration_city: string | null
+          registration_country: string | null
+          registration_device: string | null
+          registration_ip: string | null
+          registration_isp: string | null
+          registration_os: string | null
+          registration_region: string | null
+          registration_user_agent: string | null
+          slug: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       provider_health_view: {
         Row: {
           avatar_url: string | null
@@ -4205,6 +4286,18 @@ export type Database = {
         }
         Returns: number
       }
+      admin_providers_same_ip: {
+        Args: { _min_count?: number }
+        Returns: {
+          ip_address: string
+          provider_count: number
+          providers: Json
+        }[]
+      }
+      admin_recalc_provider_levels_from_account: {
+        Args: never
+        Returns: number
+      }
       admin_recalculate_all_engagement: {
         Args: never
         Returns: {
@@ -4356,6 +4449,8 @@ export type Database = {
         }
         Returns: undefined
       }
+      user_lead_quota: { Args: { _user_id: string }; Returns: number }
+      user_lead_quota_usage: { Args: { _user_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
