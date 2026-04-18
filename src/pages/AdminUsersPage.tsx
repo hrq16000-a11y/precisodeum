@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import PaginationControls from '@/components/PaginationControls';
 import UserFilters from '@/components/admin/UserFilters';
 import UserTable from '@/components/admin/UserTable';
+import LevelDistributionBar from '@/components/admin/LevelDistributionBar';
 import UserEditDialog from '@/components/admin/UserEditDialog';
 import UserDetailSheet from '@/components/admin/UserDetailSheet';
 import { logAuditAction } from '@/hooks/useAuditLog';
@@ -668,6 +669,9 @@ const AdminUsersPage = () => {
           );
         })}
       </div>
+
+      {/* Distribuição por Nível — Gestão 360 */}
+      <LevelDistributionBar profiles={profiles} />
 
       {/* Main Tabs: Segmented by type + Métricas */}
       <Tabs value={activeTab === 'all' ? 'users' : activeTab === 'metrics' ? 'metrics' : 'users'} onValueChange={v => { if (v === 'metrics') setActiveTab('metrics'); else if (activeTab === 'metrics') setActiveTab('all'); }} className="mt-6">
