@@ -15,7 +15,7 @@ const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard, Briefcase, Users, Shield, CreditCard, Target, Package, FileText, Crown, Users2,
   ImageIcon, PanelTop, FolderOpen, ClipboardList, Newspaper, Wrench, HelpCircle, Sparkles, Footprints,
   MessageSquareQuote, MousePointerClick, LayoutList, Megaphone, HandshakeIcon, LayoutGrid, MapPin, BarChart3,
-  Globe, MenuIcon, ScrollText, FileImage, Smartphone, Blocks, Database, Trash2,
+  Globe, MenuIcon, ScrollText, FileImage, Smartphone, Blocks, Database, Trash2, ShieldCheck, KeyRound, GitBranch,
 };
 
 interface GroupItem {
