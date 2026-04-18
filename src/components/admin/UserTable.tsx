@@ -1,13 +1,19 @@
 import { useState } from 'react';
-import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink, Zap, RotateCcw, Plus, Minus, Globe, Wifi, Camera, User, Building2, AlertCircle } from 'lucide-react';
+import {
+  Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Mail, Calendar,
+  Briefcase, MapPin, ExternalLink, Zap, RotateCcw, Plus, Minus, Camera,
+  User, Building2, Wifi
+} from 'lucide-react';
 import SuspiciousBadge from '@/components/admin/SuspiciousBadge';
-import CategoryIcon from '@/components/CategoryIcon';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -25,15 +31,9 @@ const profileTypeBadge = (t: string) => {
   return 'bg-muted text-muted-foreground';
 };
 
-const profileTypeIcon = (t: string) => {
-  if (t === 'rh') return 'RH';
-  if (t === 'provider') return 'PRO';
-  return 'USR';
-};
-
 const providerStatusBadge: Record<string, { label: string; cls: string }> = {
   pending: { label: 'Pendente', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
-  approved: { label: 'Aprovado', cls: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
+  approved: { label: 'OK', cls: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
   rejected: { label: 'Rejeitado', cls: 'bg-destructive/10 text-destructive' },
 };
 
@@ -55,7 +55,11 @@ interface UserTableProps {
   onToggleSelection?: (id: string) => void;
 }
 
-const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersMap = {}, accessLogsMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
+const UserTable = ({
+  users, adminIds, levels = [], accountTypes = [], providersMap = {},
+  accessLogsMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin,
+  onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection,
+}: UserTableProps) => {
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
 
   const handleAdjustPoints = async (userId: string, delta: number, reset = false) => {
@@ -67,8 +71,7 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
         reset_to_zero: reset,
       });
       if (error) throw error;
-      toast.success(reset ? 'Pontos zerados!' : `Pontos ${delta > 0 ? 'adicionados' : 'removidos'}! Novo total: ${data}`);
-      // Force re-render by triggering parent refresh
+      toast.success(reset ? 'Pontos zerados!' : `Pontos ajustados! Total: ${data}`);
       window.dispatchEvent(new CustomEvent('engagement-points-updated'));
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'Falha ao ajustar pontos'));
@@ -85,337 +88,244 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
   }
 
   return (
-    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-      {users.map(p => {
-        const isInactive = p.status === 'inactive';
-        const isAdminUser = adminIds.has(p.id);
-        const type = p.profile_type || p.role || 'client';
-        const phone = p.phone || p.whatsapp || '';
-        const userLevel = levels.find((l: any) => l.id === p.level_id);
-        const userAccType = accountTypes.find((a: any) => a.id === p.account_type_id);
-        const provider = providersMap[p.id];
-        const accessLog = accessLogsMap[p.id];
-        const hasLocation = !!(provider?.city || provider?.state);
-        const isProvider = type === 'provider';
-        const isCompany = !!provider?.cnpj;
-        const hasNoPhotos = isProvider && !provider?.photo_url;
-        const levelName = (userLevel?.name || '').toLowerCase();
-        const isElite = isProvider && (levelName.includes('ouro') || levelName.includes('mestre') || levelName.includes('platina') || levelName.includes('diamante'));
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
+      {/* Table header */}
+      <div className="hidden md:grid grid-cols-[28px_minmax(220px,2fr)_minmax(180px,1.5fr)_140px_120px_120px_90px_44px] gap-2 items-center border-b border-border/60 bg-muted/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {onToggleSelection ? <span /> : <span />}
+        <span>Usuário</span>
+        <span>Empresa / Local</span>
+        <span>Tipo</span>
+        <span>Nível / Pts</span>
+        <span>Status</span>
+        <span>Cadastro</span>
+        <span className="text-right">Ações</span>
+      </div>
 
-        return (
-          <div
-            key={p.id}
-            className={`group relative rounded-2xl border bg-card shadow-sm transition-all hover:shadow-md ${
-              p.is_suspicious ? 'border-destructive/60 ring-1 ring-destructive/30' :
-              isInactive ? 'opacity-60 border-red-200 dark:border-red-500/20' :
-              isElite ? 'border-amber-400/70 ring-1 ring-amber-300/40 bg-gradient-to-br from-amber-50/50 to-card dark:from-amber-950/10' :
-              'border-border/60'
-            } ${selectedIds?.has(p.id) ? 'ring-2 ring-accent' : ''}`}
-          >
-            {/* Selection & Menu */}
-            <div className="absolute top-3 left-3 z-10">
-              {onToggleSelection && (
-                <Checkbox
-                  checked={selectedIds?.has(p.id) || false}
-                  onCheckedChange={() => onToggleSelection(p.id)}
-                  className="bg-background"
-                />
-              )}
-            </div>
-            <div className="absolute top-3 right-3 z-10">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem onClick={() => onViewDetails(p)}>
-                    <Eye className="h-3.5 w-3.5 mr-2" /> Ver Detalhes
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onEdit(p)}>
-                    <Edit2 className="h-3.5 w-3.5 mr-2" /> Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onResetPassword(p)}>
-                    <Key className="h-3.5 w-3.5 mr-2" /> Redefinir Senha
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onBlock(p)}>
-                    <Ban className={`h-3.5 w-3.5 mr-2 ${isInactive ? 'text-green-600' : 'text-destructive'}`} />
-                    {isInactive ? 'Desbloquear' : 'Bloquear'}
-                  </DropdownMenuItem>
-                  {isAdminUser ? (
-                    onRemoveAdmin && (
-                      <DropdownMenuItem onClick={() => onRemoveAdmin(p.id)}>
-                        <Shield className="h-3.5 w-3.5 mr-2 text-destructive" /> Remover Admin
-                      </DropdownMenuItem>
-                    )
-                  ) : (
-                    <DropdownMenuItem onClick={() => onMakeAdmin(p.id)}>
-                      <Shield className="h-3.5 w-3.5 mr-2 text-amber-600" /> Promover Admin
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onDelete(p)} className="text-destructive">
-                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Desativar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+      {/* Rows */}
+      <ul className="divide-y divide-border/40">
+        {users.map(p => {
+          const isInactive = p.status === 'inactive';
+          const isAdminUser = adminIds.has(p.id);
+          const type = p.profile_type || p.role || 'client';
+          const userLevel = levels.find((l: any) => l.id === p.level_id);
+          const userAccType = accountTypes.find((a: any) => a.id === p.account_type_id);
+          const provider = providersMap[p.id];
+          const accessLog = accessLogsMap[p.id];
+          const isProvider = type === 'provider';
+          const isCompany = !!provider?.cnpj;
+          const hasNoPhotos = isProvider && !provider?.photo_url;
+          const pts = p.engagement_points || 0;
+          const tier = getEngagementTier(pts);
+          const isSelected = selectedIds?.has(p.id);
 
-            {/* Card Content */}
-            <div className="p-5 cursor-pointer" onClick={() => onViewDetails(p)}>
-              {/* Avatar + Name */}
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12 shrink-0">
+          return (
+            <li
+              key={p.id}
+              className={`group relative grid grid-cols-1 md:grid-cols-[28px_minmax(220px,2fr)_minmax(180px,1.5fr)_140px_120px_120px_90px_44px] gap-2 items-center px-3 py-2 transition-colors hover:bg-muted/40 ${
+                p.is_suspicious ? 'bg-destructive/5' :
+                isInactive ? 'opacity-60' :
+                isSelected ? 'bg-accent/10' : ''
+              }`}
+            >
+              {/* Checkbox */}
+              <div className="flex items-center justify-center">
+                {onToggleSelection && (
+                  <Checkbox
+                    checked={isSelected || false}
+                    onCheckedChange={() => onToggleSelection(p.id)}
+                  />
+                )}
+              </div>
+
+              {/* User: Avatar + name + email */}
+              <button
+                type="button"
+                onClick={() => onViewDetails(p)}
+                className="flex items-center gap-2.5 min-w-0 text-left"
+              >
+                <Avatar className="h-8 w-8 shrink-0">
                   <AvatarImage src={p.avatar_url || undefined} alt={p.full_name} />
-                  <AvatarFallback className="bg-primary/10 text-lg font-bold">
+                  <AvatarFallback className="bg-primary/10 text-xs font-bold">
                     {(p.full_name || '?')[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="font-display font-bold text-foreground truncate text-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-semibold text-foreground truncate">
                       {p.full_name || '—'}
-                    </p>
-                    {isAdminUser && <Shield className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+                    </span>
+                    {isAdminUser && <Shield className="h-3 w-3 text-amber-500 shrink-0" />}
+                    {p.is_suspicious && <SuspiciousBadge reason={p.suspicious_reason} ip={p.suspicious_ip} />}
                   </div>
-                  <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                    <Mail className="h-3 w-3 shrink-0" />
-                    {p.email || '—'}
-                  </p>
-                  {p.user_ref && (
-                    <p className="text-[10px] font-mono text-muted-foreground/70 truncate">{p.user_ref}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Provider info */}
-              {provider && (
-                <div className="mt-2 rounded-lg bg-accent/10 border border-accent/20 px-2.5 py-1.5 space-y-1">
-                  {provider.business_name && (
-                    <p className="text-xs font-semibold text-foreground truncate flex items-center gap-1">
-                      <Briefcase className="h-3 w-3 text-accent shrink-0" />
-                      {provider.business_name}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                    {hasLocation ? (
-                      <span className="flex items-center gap-0.5 truncate">
-                        <MapPin className="h-2.5 w-2.5 shrink-0" />
-                        {[provider.city, provider.state].filter(Boolean).join(', ')}
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-0.5 truncate italic text-muted-foreground/70">
-                        <MapPin className="h-2.5 w-2.5 shrink-0" />
-                        Localização não definida
-                      </span>
-                    )}
-                    {provider.categories && (
-                      <span className="truncate">
-                        <CategoryIcon icon={(provider.categories as any)?.icon} size={14} className="text-muted-foreground" />
-                        {(provider.categories as any)?.name}
-                      </span>
-                    )}
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+                    <Mail className="h-2.5 w-2.5 shrink-0" />
+                    <span className="truncate">{p.email || '—'}</span>
                   </div>
-                </div>
-              )}
-
-              {/* Audit Log: último IP / ISP capturado */}
-              {accessLog && (
-                <div
-                  className="mt-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 py-1.5 space-y-0.5"
-                  title={`Último acesso: ${new Date(accessLog.created_at).toLocaleString('pt-BR')}`}
-                >
-                  <div className="flex items-center gap-1.5 text-[10px] text-foreground/80">
-                    <Wifi className="h-2.5 w-2.5 shrink-0 text-emerald-600" />
-                    <span className="font-mono truncate">{accessLog.ip_address || '—'}</span>
-                    {accessLog.isp && (
-                      <span className="truncate text-muted-foreground">• {accessLog.isp}</span>
-                    )}
-                  </div>
-                  {(accessLog.city || accessLog.country) && (
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                      <Globe className="h-2.5 w-2.5 shrink-0" />
-                      <span className="truncate">
-                        {[accessLog.city, accessLog.region, accessLog.country].filter(Boolean).join(', ')}
-                      </span>
+                  {accessLog?.ip_address && (
+                    <div className="flex items-center gap-1 text-[9px] text-muted-foreground/70 truncate font-mono">
+                      <Wifi className="h-2.5 w-2.5 text-emerald-600 shrink-0" />
+                      {accessLog.ip_address}
                     </div>
                   )}
                 </div>
-              )}
+              </button>
 
-              {/* Nível (destaque) + Tipo de Conta (discreto) */}
-              <div className="mt-2 space-y-1 text-xs">
-                {userLevel && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">Nível:</span>
-                    <span
-                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold"
-                      style={{
-                        backgroundColor: `${userLevel.color}1a`,
-                        color: userLevel.color,
-                        border: `1px solid ${userLevel.color}40`,
-                      }}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: userLevel.color }} />
-                      {userLevel.name}
-                    </span>
+              {/* Empresa / Local */}
+              <div className="min-w-0 text-xs">
+                {provider?.business_name ? (
+                  <div className="flex items-center gap-1 font-medium text-foreground truncate">
+                    {isCompany ? <Building2 className="h-3 w-3 text-indigo-600 shrink-0" /> : <User className="h-3 w-3 text-teal-600 shrink-0" />}
+                    <span className="truncate">{provider.business_name}</span>
                   </div>
+                ) : (
+                  <span className="text-muted-foreground/60 italic">Sem empresa</span>
                 )}
-                {userAccType && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">Tipo:</span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                      {userAccType.name}
-                    </span>
+                {(provider?.city || provider?.state) && (
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+                    <MapPin className="h-2.5 w-2.5 shrink-0" />
+                    {[provider?.city, provider?.state].filter(Boolean).join(', ')}
                   </div>
-                )}
-                {p.department && (
-                  <div className="flex items-center gap-1.5">
-                    <Briefcase className="h-3 w-3 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground">{p.department}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Engagement Points */}
-              {(() => {
-                const pts = p.engagement_points || 0;
-                const tier = getEngagementTier(pts);
-                return (
-                  <div className="mt-2 rounded-lg bg-muted/50 border border-border px-2.5 py-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Zap className="h-3 w-3 text-accent" />
-                        <span className="text-xs font-semibold">{pts} pts</span>
-                        <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${tier.badgeClass}`}>
-                          {tier.label}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-0.5">
-                        <Button
-                          size="sm" variant="ghost"
-                          className="h-6 w-6 p-0 text-xs"
-                          disabled={adjustingId === p.id}
-                          onClick={(e) => { e.stopPropagation(); handleAdjustPoints(p.id, 10); }}
-                          title="Adicionar 10 pontos"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm" variant="ghost"
-                          className="h-6 w-6 p-0 text-xs"
-                          disabled={adjustingId === p.id || pts === 0}
-                          onClick={(e) => { e.stopPropagation(); handleAdjustPoints(p.id, -10); }}
-                          title="Remover 10 pontos"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm" variant="ghost"
-                          className="h-6 w-6 p-0 text-xs text-destructive"
-                          disabled={adjustingId === p.id || pts === 0}
-                          onClick={(e) => { e.stopPropagation(); handleAdjustPoints(p.id, 0, true); }}
-                          title="Zerar pontos"
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Badges */}
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {p.is_suspicious && (
-                  <SuspiciousBadge reason={p.suspicious_reason} ip={p.suspicious_ip} />
-                )}
-                {isElite && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                    <Star className="h-2.5 w-2.5 fill-white" /> ELITE
-                  </span>
-                )}
-                {isAdminUser && (
-                  <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
-                    Admin
-                  </Badge>
-                )}
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${profileTypeBadge(type)}`}>
-                  {profileTypeIcon(type)} {profileTypeLabel(type)}
-                </span>
-                {isProvider && (
-                  isCompany ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 px-2 py-0.5 text-[10px] font-bold">
-                      <Building2 className="h-2.5 w-2.5" /> EMPRESA
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300 px-2 py-0.5 text-[10px] font-bold">
-                      <User className="h-2.5 w-2.5" /> AUTÔNOMO
-                    </span>
-                  )
                 )}
                 {hasNoPhotos && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 px-2 py-0.5 text-[10px] font-semibold" title="Prestador sem foto de portfólio">
-                    <Camera className="h-2.5 w-2.5" /> Sem Fotos
+                  <span className="inline-flex items-center gap-0.5 mt-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 px-1.5 py-0 text-[9px] font-medium">
+                    <Camera className="h-2 w-2" /> sem foto
                   </span>
                 )}
-                {isProvider && !isCompany && type === 'provider' && provider && !provider.cnpj === false && (
-                  <></>
+              </div>
+
+              {/* Tipo */}
+              <div className="flex flex-col gap-0.5">
+                <span className={`inline-flex w-fit items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${profileTypeBadge(type)}`}>
+                  {profileTypeLabel(type)}
+                </span>
+                {userAccType && (
+                  <span className="text-[9px] text-muted-foreground truncate">{userAccType.name}</span>
                 )}
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+              </div>
+
+              {/* Nível / Pontos */}
+              <div className="flex flex-col gap-0.5 min-w-0">
+                {userLevel ? (
+                  <span
+                    className="inline-flex w-fit items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold"
+                    style={{
+                      backgroundColor: `${userLevel.color}1a`,
+                      color: userLevel.color,
+                      border: `1px solid ${userLevel.color}40`,
+                    }}
+                  >
+                    <span className="h-1 w-1 rounded-full" style={{ backgroundColor: userLevel.color }} />
+                    {userLevel.name}
+                  </span>
+                ) : (
+                  <span className="text-[9px] text-muted-foreground/60">—</span>
+                )}
+                <div className="flex items-center gap-1">
+                  <Zap className="h-2.5 w-2.5 text-accent" />
+                  <span className="text-[10px] font-semibold">{pts}</span>
+                  <span className={`inline-flex items-center rounded-full px-1 py-0 text-[8px] font-bold ${tier.badgeClass}`}>
+                    {tier.label}
+                  </span>
+                </div>
+              </div>
+
+              {/* Status (perfil + provider) */}
+              <div className="flex flex-col gap-0.5">
+                <span className={`inline-flex w-fit items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
                   isInactive
                     ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'
                     : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
                 }`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${isInactive ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                  <span className={`h-1 w-1 rounded-full ${isInactive ? 'bg-red-500' : 'bg-emerald-500'}`} />
                   {isInactive ? 'Inativo' : 'Ativo'}
                 </span>
                 {provider && providerStatusBadge[provider.status] && (
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${providerStatusBadge[provider.status].cls}`}>
+                  <span className={`inline-flex w-fit items-center rounded-full px-1.5 py-0 text-[9px] font-medium ${providerStatusBadge[provider.status].cls}`}>
                     {providerStatusBadge[provider.status].label}
                   </span>
                 )}
               </div>
 
-              {/* Info Row */}
-              <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-                {phone && (
-                  <span className="flex items-center gap-1 truncate">
-                    <Phone className="h-3 w-3 shrink-0" /> {phone}
-                  </span>
-                )}
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3 shrink-0" />
-                  {p.created_at ? format(new Date(p.created_at), 'dd/MM/yyyy') : '—'}
-                </span>
+              {/* Cadastro */}
+              <div className="text-[10px] text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-2.5 w-2.5" />
+                  {p.created_at ? format(new Date(p.created_at), 'dd/MM/yy') : '—'}
+                </div>
               </div>
-            </div>
 
-            {/* Quick Actions Footer */}
-            <div className="border-t border-border/40 px-4 py-2.5 flex items-center gap-1.5 flex-wrap bg-muted/20">
-              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => onEdit(p)}>
-                <Edit2 className="h-3 w-3" /> Editar
-              </Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 flex-1" onClick={() => onBlock(p)}>
-                <Ban className={`h-3 w-3 ${isInactive ? 'text-emerald-600' : 'text-destructive'}`} />
-                {isInactive ? 'Ativar' : 'Bloquear'}
-              </Button>
-              {provider && (
-                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-accent" asChild>
-                  <Link to="/admin/prestadores">
-                    <ExternalLink className="h-3 w-3" /> Gerenciar
-                  </Link>
+              {/* Actions menu */}
+              <div className="flex items-center justify-end gap-0.5">
+                {/* Quick adjust points */}
+                <Button
+                  size="sm" variant="ghost"
+                  className="h-6 w-6 p-0 hidden xl:inline-flex"
+                  disabled={adjustingId === p.id}
+                  onClick={(e) => { e.stopPropagation(); handleAdjustPoints(p.id, 10); }}
+                  title="Adicionar 10 pontos"
+                >
+                  <Plus className="h-3 w-3" />
                 </Button>
-              )}
-              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" onClick={() => onDelete(p)}>
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-        );
-      })}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                      <MoreHorizontal className="h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => onViewDetails(p)}>
+                      <Eye className="h-3.5 w-3.5 mr-2" /> Ver detalhes
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onEdit(p)}>
+                      <Edit2 className="h-3.5 w-3.5 mr-2" /> Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onResetPassword(p)}>
+                      <Key className="h-3.5 w-3.5 mr-2" /> Redefinir senha
+                    </DropdownMenuItem>
+                    {provider && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin/prestadores">
+                          <ExternalLink className="h-3.5 w-3.5 mr-2" /> Gerenciar prestador
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleAdjustPoints(p.id, 10)}>
+                      <Plus className="h-3.5 w-3.5 mr-2" /> +10 pontos
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleAdjustPoints(p.id, -10)} disabled={pts === 0}>
+                      <Minus className="h-3.5 w-3.5 mr-2" /> -10 pontos
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleAdjustPoints(p.id, 0, true)} disabled={pts === 0} className="text-destructive">
+                      <RotateCcw className="h-3.5 w-3.5 mr-2" /> Zerar pontos
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => onBlock(p)}>
+                      <Ban className={`h-3.5 w-3.5 mr-2 ${isInactive ? 'text-emerald-600' : 'text-destructive'}`} />
+                      {isInactive ? 'Desbloquear' : 'Bloquear'}
+                    </DropdownMenuItem>
+                    {isAdminUser ? (
+                      onRemoveAdmin && (
+                        <DropdownMenuItem onClick={() => onRemoveAdmin(p.id)}>
+                          <Shield className="h-3.5 w-3.5 mr-2 text-destructive" /> Remover admin
+                        </DropdownMenuItem>
+                      )
+                    ) : (
+                      <DropdownMenuItem onClick={() => onMakeAdmin(p.id)}>
+                        <Shield className="h-3.5 w-3.5 mr-2 text-amber-600" /> Promover admin
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => onDelete(p)} className="text-destructive">
+                      <Trash2 className="h-3.5 w-3.5 mr-2" /> Desativar
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 };
