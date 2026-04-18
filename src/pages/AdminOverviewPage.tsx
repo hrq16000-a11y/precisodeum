@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import AdminErrorAlerts from '@/components/admin/AdminErrorAlerts';
+import SystemHealthPanel from '@/components/admin/SystemHealthPanel';
 import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
