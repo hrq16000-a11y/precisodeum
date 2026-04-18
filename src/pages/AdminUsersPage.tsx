@@ -883,7 +883,7 @@ const AdminUsersPage = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={selectAllOnPage}>
               <CheckSquare className="h-3.5 w-3.5" />
               {allPageSelected ? 'Desmarcar Página' : 'Selecionar Página'}
@@ -897,6 +897,30 @@ const AdminUsersPage = () => {
             {selectedIds.size > 0 && (
               <span className="text-xs text-muted-foreground">{selectedIds.size} selecionado(s)</span>
             )}
+
+            {/* View mode toggle */}
+            <div className="ml-auto inline-flex items-center rounded-lg border border-border bg-muted/30 p-0.5">
+              <button
+                type="button"
+                onClick={() => { setViewMode('list'); localStorage.setItem('admin_users_view', 'list'); }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  viewMode === 'list' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Visualização em lista"
+              >
+                <List className="h-3.5 w-3.5" /> Lista
+              </button>
+              <button
+                type="button"
+                onClick={() => { setViewMode('grid'); localStorage.setItem('admin_users_view', 'grid'); }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  viewMode === 'grid' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Visualização em miniaturas"
+              >
+                <LayoutGrid className="h-3.5 w-3.5" /> Miniaturas
+              </button>
+            </div>
           </div>
 
           {/* Bulk actions */}
