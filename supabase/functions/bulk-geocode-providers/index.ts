@@ -103,9 +103,12 @@ Deno.serve(async (req) => {
     });
   }
   if (!providers || providers.length === 0) {
-    return new Response(JSON.stringify({ updated: 0, total: 0, message: 'Todos os prestadores já possuem coordenadas' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(JSON.stringify({
+      updated: 0, total: 0, skipped: skippedCount || 0,
+      message: skippedCount
+        ? `Nenhum prestador com endereço válido. ${skippedCount} prestador(es) sem cidade/UF preenchidos foram ignorados — peça-os a completar o cadastro.`
+        : 'Todos os prestadores já possuem coordenadas',
+    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   let updated = 0;
@@ -114,13 +117,11 @@ Deno.serve(async (req) => {
   let ibge_hits = 0;
 
   for (const p of providers) {
-    if (!p.city || !p.state) { failed++; continue; }
-
     let coords = await geocodeNominatim(p.city, p.state, p.neighborhood);
     if (coords) nominatim_hits++;
 
     if (!coords) {
-      await sleep(NOMINATIM_DELAY_MS); // respect rate limit before second call
+      await sleep(NOMINATIM_DELAY_MS);
       coords = await geocodeIBGE(p.city, p.state);
       if (coords) ibge_hits++;
     }
@@ -135,10 +136,11 @@ Deno.serve(async (req) => {
       failed++;
     }
 
-    await sleep(NOMINATIM_DELAY_MS); // 1 req/s
+    await sleep(NOMINATIM_DELAY_MS);
   }
 
   return new Response(JSON.stringify({
     total: providers.length, updated, failed, nominatim_hits, ibge_hits,
+    skipped: skippedCount || 0,
   }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 });
