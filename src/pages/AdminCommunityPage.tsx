@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CategoryIcon from '@/components/CategoryIcon';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';

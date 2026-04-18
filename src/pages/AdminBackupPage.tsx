@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import CategoryIcon from '@/components/CategoryIcon';
 import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';

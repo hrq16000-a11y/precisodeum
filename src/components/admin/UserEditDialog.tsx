@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

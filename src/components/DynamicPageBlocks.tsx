@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DynamicPageBlocksProps {
