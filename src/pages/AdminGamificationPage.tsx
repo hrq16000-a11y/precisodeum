@@ -395,7 +395,7 @@ const AdminGamificationPage = () => {
                               <button
                                 onClick={() => toggleMatrixCell(t, r.key, !v)}
                                 className={`inline-flex items-center justify-center h-7 w-7 rounded-md transition-colors ${
-                                  v ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25'
+                                  v ? 'bg-primary/15 text-primary hover:bg-primary/25'
                                     : 'bg-destructive/10 text-destructive hover:bg-destructive/20'
                                 }`}
                                 title={v ? 'Liberado — clique para bloquear' : 'Bloqueado — clique para liberar'}
