@@ -12,6 +12,12 @@ import TopLoadingBar from '@/components/ui/TopLoadingBar';
 import AdminFlashSummary from '@/components/admin/AdminFlashSummary';
 import AdminRealtimeToasts from '@/components/admin/AdminRealtimeToasts';
 
+const normalizeAdminSearch = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
 const menuGroups = [
   {
     label: 'Geral',
