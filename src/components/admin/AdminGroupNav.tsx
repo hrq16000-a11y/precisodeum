@@ -86,9 +86,9 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
   {
     label: 'Operação',
     items: [
+      { label: 'Configurações Globais', icon: 'ScrollText', path: '/admin/governanca' },
       { label: 'Staff & Acessos', icon: 'ShieldCheck', path: '/admin/staff' },
       { label: 'Permissões', icon: 'KeyRound', path: '/admin/sistema/permissoes' },
-      { label: 'Regras (Governança)', icon: 'ScrollText', path: '/admin/governanca' },
       { label: 'Aprovação', icon: 'Shield', path: '/admin/aprovacao' },
       { label: 'Auditoria', icon: 'GitBranch', path: '/admin/auditoria' },
       { label: 'Auditoria Ref', icon: 'Shield', path: '/admin/auditoria-ref' },
