@@ -42,7 +42,7 @@ const FUNNEL_STAGES = [
   { key: 'registered', label: 'Cadastrado', color: 'bg-blue-500' },
   { key: 'profile_complete', label: 'Perfil Completo', color: 'bg-cyan-500' },
   { key: 'active_provider', label: 'Profissional Ativo', color: 'bg-emerald-500' },
-  { key: 'premium', label: 'Premium', color: 'bg-amber-500' },
+  { key: 'elite', label: 'Nível Ouro+', color: 'bg-amber-500' },
 ];
 
 const PIE_COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
@@ -223,12 +223,13 @@ const AdminUsersPage = () => {
     const total = profiles.length;
     const withProfile = profiles.filter(p => p.full_name && p.full_name.trim().length > 2).length;
     const activeProviders = providersRaw.filter(p => p.status === 'approved').length;
-    const premium = providersRaw.filter(p => p.plan === 'premium').length;
+    // Elite = engagement_points >= 700 (Nível Ouro+)
+    const elite = profiles.filter(p => (p.engagement_points || 0) >= 700).length;
     return [
       { ...FUNNEL_STAGES[0], count: total, pct: 100 },
       { ...FUNNEL_STAGES[1], count: withProfile, pct: total ? Math.round((withProfile / total) * 100) : 0 },
       { ...FUNNEL_STAGES[2], count: activeProviders, pct: total ? Math.round((activeProviders / total) * 100) : 0 },
-      { ...FUNNEL_STAGES[3], count: premium, pct: total ? Math.round((premium / total) * 100) : 0 },
+      { ...FUNNEL_STAGES[3], count: elite, pct: total ? Math.round((elite / total) * 100) : 0 },
     ];
   }, [profiles, providersRaw]);
 

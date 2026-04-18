@@ -539,8 +539,8 @@ const ProviderProfile = () => {
   const categoryIcon = provider ? ((provider.categories as any)?.icon || '') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
 
-  // DESTAQUE: OR logic — at least 1 criterion met
-  const isDestaque = !!provider && provider.plan === 'premium' && (
+  // DESTAQUE: based on profile completeness (no longer requires legacy 'premium' plan)
+  const isDestaque = !!provider && (
     hasOwnAvatar ||
     (provider.services_count || 0) >= (destaqueMinServices || 1) ||
     (provider.portfolio_album_count || 0) > 0 ||
