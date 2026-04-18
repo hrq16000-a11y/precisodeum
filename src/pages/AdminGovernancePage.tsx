@@ -146,46 +146,50 @@ const AdminGovernancePage = () => {
 
   return (
     <AdminLayout>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <Shield className="h-6 w-6" /> Configurações Globais
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            CMS visual de regras de governança · {rules.length} regras carregadas
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar regra…"
-              className="h-9 pl-7 w-56 text-xs"
-            />
+      <div className="space-y-5 p-1">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <Shield className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">Configurações Globais</h1>
+              <p className="text-sm text-muted-foreground">
+                CMS visual de regras · <span className="font-semibold text-foreground">{rules.length}</span> regras ativas
+              </p>
+            </div>
           </div>
-          <Button variant="accent" size="sm" onClick={() => setShowCreate(true)}>
-            <Plus className="mr-1 h-4 w-4" /> Nova Regra
-          </Button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar regra…"
+                className="h-9 pl-8 sm:w-64 text-sm"
+              />
+            </div>
+            <Button variant="default" size="sm" onClick={() => setShowCreate(true)} className="shrink-0">
+              <Plus className="mr-1 h-4 w-4" /> Nova
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <Tabs value={activeScope} onValueChange={(v) => setActiveScope(v as Scope)}>
-        <TabsList className="h-auto flex-wrap gap-1 bg-muted/50 p-1">
-          {SCOPE_ORDER.map(s => {
-            const meta = SCOPE_META[s];
-            const Icon = meta.icon;
-            const count = scopeCount(s);
-            return (
-              <TabsTrigger key={s} value={s} className="data-[state=active]:bg-background gap-1.5 text-xs">
-                <Icon className={`h-3.5 w-3.5 ${meta.color}`} />
-                {meta.label}
-                <Badge variant="outline" className="ml-1 h-4 min-w-[18px] px-1 text-[10px]">{count}</Badge>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+        <Tabs value={activeScope} onValueChange={(v) => setActiveScope(v as Scope)}>
+          <TabsList className="h-auto w-full flex-wrap justify-start gap-1.5 bg-muted/40 p-1.5">
+            {SCOPE_ORDER.map(s => {
+              const meta = SCOPE_META[s];
+              const Icon = meta.icon;
+              const count = scopeCount(s);
+              return (
+                <TabsTrigger key={s} value={s} className="data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 text-xs px-3 py-1.5">
+                  <Icon className={`h-3.5 w-3.5 ${meta.color}`} />
+                  <span className="font-medium">{meta.label}</span>
+                  <Badge variant="outline" className="ml-0.5 h-4 min-w-[20px] px-1 text-[10px] font-mono">{count}</Badge>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
 
         {SCOPE_ORDER.map(s => {
           const meta = SCOPE_META[s];
@@ -217,9 +221,10 @@ const AdminGovernancePage = () => {
             </TabsContent>
           );
         })}
-      </Tabs>
+        </Tabs>
 
-      <CreateRuleDialog open={showCreate} onOpenChange={setShowCreate} onCreated={fetchRules} />
+        <CreateRuleDialog open={showCreate} onOpenChange={setShowCreate} onCreated={fetchRules} />
+      </div>
     </AdminLayout>
   );
 };

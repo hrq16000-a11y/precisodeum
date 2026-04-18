@@ -306,10 +306,10 @@ const AdminUsersPage = () => {
     });
   }, [profiles]);
 
-  const debouncedSearch = useDebounce(search, 300);
+  const debouncedSearch = useDebounce(search ?? '', 300);
 
   const filtered = useMemo(() => {
-    let list = profiles;
+    let list = Array.isArray(profiles) ? profiles : [];
 
     // Tab-based filtering
     if (activeTab === 'clientes') list = list.filter(p => (p.profile_type || 'client') === 'client');
