@@ -88,8 +88,10 @@ const AdminUsersPage = () => {
   const [createAccountTypeId, setCreateAccountTypeId] = useState<string>('');
   const [createLevelId, setCreateLevelId] = useState<string>('');
   const [createStaffRole, setCreateStaffRole] = useState<string>('none');
+  const [createSponsorId, setCreateSponsorId] = useState<string>('');
   const [accountTypeOptions, setAccountTypeOptions] = useState<{ id: string; name: string }[]>([]);
   const [levelOptions, setLevelOptions] = useState<{ id: string; name: string; min_points: number }[]>([]);
+  const [sponsorOptions, setSponsorOptions] = useState<{ id: string; name: string }[]>([]);
   const [creating, setCreating] = useState(false);
 
   // Bulk selection
@@ -522,12 +524,17 @@ const AdminUsersPage = () => {
       const { data: lvls } = await supabase.from('gamification_levels').select('id, name, min_points').eq('active', true).order('min_points');
       setLevelOptions(lvls || []);
     }
+    if (sponsorOptions.length === 0) {
+      const { data: sps } = await supabase.from('sponsors').select('id, name').eq('active', true).order('name');
+      setSponsorOptions(sps || []);
+    }
   };
 
   const handleCreateUser = async () => {
     if (!createEmail.includes('@')) { toast.error('Email inválido'); return; }
     if (createPassword.length < 6) { toast.error('Senha mínima: 6 caracteres'); return; }
     if (createName.trim().length < 2) { toast.error('Nome mínimo: 2 caracteres'); return; }
+    if (createType === 'sponsor' && !createSponsorId) { toast.error('Selecione qual patrocinador este usuário irá gerenciar'); return; }
     setCreating(true);
     try {
       const res = await supabase.functions.invoke('admin-create-user', {
@@ -539,15 +546,16 @@ const AdminUsersPage = () => {
           account_type_id: createAccountTypeId || null,
           level_id: createLevelId || null,
           staff_role: createStaffRole !== 'none' ? createStaffRole : null,
+          sponsor_id: createType === 'sponsor' ? createSponsorId : null,
         },
       });
       if (res.error) throw res.error;
       if (res.data?.error) throw new Error(res.data.error);
-      await logAuditAction({ action: 'create', resource_type: 'user', resource_id: res.data?.user_id, details: { email: createEmail, profile_type: createType, staff_role: createStaffRole } });
+      await logAuditAction({ action: 'create', resource_type: 'user', resource_id: res.data?.user_id, details: { email: createEmail, profile_type: createType, staff_role: createStaffRole, sponsor_id: createSponsorId || null } });
       toast.success('Usuário criado com sucesso!');
       setShowCreateDialog(false);
       setCreateEmail(''); setCreatePassword(''); setCreateName(''); setCreateType('client');
-      setCreateAccountTypeId(''); setCreateLevelId(''); setCreateStaffRole('none');
+      setCreateAccountTypeId(''); setCreateLevelId(''); setCreateStaffRole('none'); setCreateSponsorId('');
       fetchProfiles();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'Falha ao criar usuário'));
@@ -1112,12 +1120,21 @@ const AdminUsersPage = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>Tipo de Perfil</Label>
-                <Select value={createType} onValueChange={setCreateType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>
-                  <SelectItem value="client">Cliente</SelectItem>
-                  <SelectItem value="provider">Profissional</SelectItem>
-                  <SelectItem value="rh">Agência / RH</SelectItem>
-                  <SelectItem value="company">Empresa</SelectItem>
-                </SelectContent></Select>
+                <Select value={createType} onValueChange={v => { setCreateType(v); if (v !== 'sponsor') setCreateSponsorId(''); }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="client">Cliente (busca serviços)</SelectItem>
+                    <SelectItem value="provider">Profissional (oferece serviços)</SelectItem>
+                    <SelectItem value="rh">Agência / RH (publica vagas)</SelectItem>
+                    <SelectItem value="sponsor">Patrocinador (gerencia campanhas)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {createType === 'client' && 'Acesso ao site para contratar profissionais.'}
+                  {createType === 'provider' && 'Acesso ao Dashboard para divulgar serviços e receber leads.'}
+                  {createType === 'rh' && 'Acesso para publicar vagas de emprego.'}
+                  {createType === 'sponsor' && 'Acesso ao painel /sponsor para gerenciar anúncios.'}
+                </p>
               </div>
               <div><Label>Tipo de Conta</Label>
                 <Select value={createAccountTypeId} onValueChange={setCreateAccountTypeId}>
@@ -1128,6 +1145,19 @@ const AdminUsersPage = () => {
                 </Select>
               </div>
             </div>
+            {createType === 'sponsor' && (
+              <div className="rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-2">
+                <Label className="flex items-center gap-1 text-amber-900 dark:text-amber-200"><Building2 className="h-3.5 w-3.5" /> Vincular ao Patrocinador *</Label>
+                <Select value={createSponsorId} onValueChange={setCreateSponsorId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o patrocinador..." /></SelectTrigger>
+                  <SelectContent>
+                    {sponsorOptions.length === 0 && <div className="px-3 py-2 text-xs text-muted-foreground">Nenhum patrocinador ativo. Cadastre em /admin/patrocinadores.</div>}
+                    {sponsorOptions.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-amber-800 dark:text-amber-300">Este usuário será vinculado como contato do patrocinador e terá acesso ao painel /sponsor.</p>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>Nível Inicial</Label>
                 <Select value={createLevelId} onValueChange={setCreateLevelId}>
