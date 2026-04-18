@@ -83,12 +83,22 @@ const AdminErrorAlerts = () => {
               key={err.id}
               layout
               exit={{ opacity: 0, height: 0 }}
-              className="rounded-lg border border-border bg-card p-3 text-xs space-y-1"
+              className="rounded-lg border border-border bg-card p-3 text-xs space-y-1.5"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className={`h-2 w-2 rounded-full shrink-0 ${severityColor[err.severity] || 'bg-gray-400'}`} />
-                  <span className="font-medium text-foreground truncate">{err.action_context}</span>
+                  <span className={`h-2.5 w-2.5 rounded-full shrink-0 ring-2 ring-background ${severityColor[err.severity] || 'bg-gray-500'}`} />
+                  <span className="font-semibold text-foreground truncate">{err.action_context}</span>
+                  <Badge
+                    variant="outline"
+                    className={`text-[9px] uppercase tracking-wide font-bold border ${
+                      err.severity === 'critical' ? 'border-red-500 text-red-700 bg-red-50 dark:text-red-300 dark:bg-red-950/40'
+                      : err.severity === 'error' ? 'border-orange-500 text-orange-700 bg-orange-50 dark:text-orange-300 dark:bg-orange-950/40'
+                      : 'border-yellow-500 text-yellow-800 bg-yellow-50 dark:text-yellow-300 dark:bg-yellow-950/40'
+                    }`}
+                  >
+                    {err.severity}
+                  </Badge>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button
@@ -96,21 +106,23 @@ const AdminErrorAlerts = () => {
                     className="p-1 rounded hover:bg-muted transition-colors"
                     title="Ver detalhes"
                   >
-                    <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Eye className="h-3.5 w-3.5 text-foreground/70" />
                   </button>
                   <button
                     onClick={() => markResolved(err.id)}
                     className="p-1 rounded hover:bg-emerald-500/10 transition-colors"
                     title="Marcar resolvido"
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                   </button>
                 </div>
               </div>
 
-              <p className="text-muted-foreground truncate">{err.error_message}</p>
-              <p className="text-muted-foreground/70">
-                {err.page_path} • {new Date(err.created_at).toLocaleString('pt-BR')}
+              <p className="text-foreground/80 truncate font-medium">{err.error_message}</p>
+              <p className="text-foreground/60 text-[10px] font-medium">
+                <span className="font-mono">{err.page_path}</span>
+                <span className="mx-1.5">•</span>
+                <span>{new Date(err.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
               </p>
 
               {expanded === err.id && (
