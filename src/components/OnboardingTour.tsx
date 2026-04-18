@@ -79,22 +79,74 @@ interface OnboardingTourProps {
 }
 
 export default function OnboardingTour({ active, step, steps, onNext, onPrev, onDismiss }: OnboardingTourProps) {
-  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; centered?: boolean } | null>(null);
   const currentStep = steps[step];
 
   useEffect(() => {
     if (!active || !currentStep) return;
-    const el = document.querySelector(currentStep.target);
-    if (el) {
+
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 20; // ~3s with 150ms interval
+
+    const computePos = (el: Element) => {
       const rect = el.getBoundingClientRect();
-      setPos({ top: rect.bottom + window.scrollY + 12, left: Math.max(16, rect.left), width: Math.min(320, window.innerWidth - 32) });
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-      // Skip missing step automatically instead of freezing the dark overlay
-      if (step < steps.length - 1) onNext();
-      else onDismiss();
-    }
-  }, [active, step, currentStep, steps.length, onNext, onDismiss]);
+      setPos({
+        top: rect.bottom + window.scrollY + 12,
+        left: Math.max(16, rect.left),
+        width: Math.min(320, window.innerWidth - 32),
+      });
+      try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) { /* ignore */ }
+    };
+
+    const tryFind = () => {
+      if (cancelled) return;
+      const el = document.querySelector(currentStep.target);
+      if (el) {
+        computePos(el);
+        return;
+      }
+      attempts += 1;
+      if (attempts >= maxAttempts) {
+        // Fallback: center the card so the tour never disappears silently.
+        const width = Math.min(360, window.innerWidth - 32);
+        setPos({
+          top: window.scrollY + Math.max(120, window.innerHeight / 2 - 120),
+          left: Math.max(16, (window.innerWidth - width) / 2),
+          width,
+          centered: true,
+        });
+        return;
+      }
+      setTimeout(tryFind, 150);
+    };
+
+    setPos(null);
+    tryFind();
+    return () => { cancelled = true; };
+  }, [active, step, currentStep]);
+
+  // Keep position synced with scroll/resize
+  useEffect(() => {
+    if (!active || !currentStep) return;
+    const sync = () => {
+      const el = document.querySelector(currentStep.target);
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setPos(prev => ({
+        top: rect.bottom + window.scrollY + 12,
+        left: Math.max(16, rect.left),
+        width: Math.min(320, window.innerWidth - 32),
+        centered: prev?.centered && !el ? true : false,
+      }));
+    };
+    window.addEventListener('resize', sync);
+    window.addEventListener('scroll', sync, { passive: true });
+    return () => {
+      window.removeEventListener('resize', sync);
+      window.removeEventListener('scroll', sync);
+    };
+  }, [active, currentStep]);
 
   // Esc closes the tour
   useEffect(() => {
@@ -104,12 +156,12 @@ export default function OnboardingTour({ active, step, steps, onNext, onPrev, on
     return () => window.removeEventListener('keydown', handler);
   }, [active, onDismiss]);
 
-  if (!active || !pos) return null;
+  if (!active || !pos || !currentStep) return null;
 
   return (
     <>
-      {/* Overlay */}
-      <div className="fixed inset-0 bg-black/40 z-[9998]" onClick={onDismiss} />
+      {/* Overlay — clicking the overlay should NOT dismiss; only the X / Concluir do. */}
+      <div className="fixed inset-0 bg-black/40 z-[9998]" />
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -120,7 +172,7 @@ export default function OnboardingTour({ active, step, steps, onNext, onPrev, on
           className="fixed z-[9999] bg-card border border-border rounded-xl shadow-xl p-4"
           style={{ top: pos.top, left: pos.left, width: pos.width }}
         >
-          <button onClick={onDismiss} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground">
+          <button onClick={onDismiss} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground" aria-label="Fechar tour">
             <X className="h-4 w-4" />
           </button>
 
