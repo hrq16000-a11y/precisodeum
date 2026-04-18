@@ -53,12 +53,33 @@ interface UserTableProps {
   onViewDetails: (u: any) => void;
   selectedIds?: Set<string>;
   onToggleSelection?: (id: string) => void;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+  onSortChange?: (key: string) => void;
 }
+
+const SortableHeader = ({
+  label, sortKey, currentKey, dir, onClick,
+}: { label: string; sortKey: string; currentKey?: string; dir?: 'asc' | 'desc'; onClick?: (k: string) => void }) => {
+  const active = currentKey === sortKey;
+  if (!onClick) return <span>{label}</span>;
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(sortKey)}
+      className={`inline-flex items-center gap-1 transition-colors hover:text-foreground ${active ? 'text-foreground' : ''}`}
+    >
+      {label}
+      {active ? (dir === 'asc' ? <ArrowUp className="h-2.5 w-2.5" /> : <ArrowDown className="h-2.5 w-2.5" />) : <ArrowUpDown className="h-2.5 w-2.5 opacity-40" />}
+    </button>
+  );
+};
 
 const UserTable = ({
   users, adminIds, levels = [], accountTypes = [], providersMap = {},
   accessLogsMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin,
   onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection,
+  sortBy, sortDir, onSortChange,
 }: UserTableProps) => {
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
 
