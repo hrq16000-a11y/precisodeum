@@ -168,6 +168,23 @@ const AdminStaffPage = () => {
         <p className="text-sm text-muted-foreground mt-0.5">Gerencie administradores, moderadores e analistas</p>
       </div>
 
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {(['admin', 'moderator', 'analyst'] as const).map(r => {
+          const count = staff.filter(s => s.role === r).length;
+          return (
+            <Card key={r} className="border-border/60">
+              <CardContent className="p-3 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">{ROLE_LABELS[r]}</p>
+                  <p className="text-2xl font-bold text-foreground">{count}</p>
+                </div>
+                <Badge className={ROLE_COLORS[r]} variant="outline">{r === 'admin' ? 'ADM' : r === 'moderator' ? 'MOD' : 'ANL'}</Badge>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
