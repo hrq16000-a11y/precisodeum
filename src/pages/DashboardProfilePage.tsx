@@ -418,11 +418,56 @@ const DashboardProfilePage = () => {
             {/* Tab: Profissional */}
             <TabsContent value="profissional">
               <motion.div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4" variants={fadeIn} initial="hidden" animate="visible">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className={labelCls}>Nome do negócio</label>
-                    <input name="business_name" value={form.business_name} onChange={handleChange} className={inputCls} />
+                {/* Pergunta inicial: Autônomo ou Empresa? */}
+                <div className="rounded-xl border-2 border-accent/30 bg-accent/5 p-4">
+                  <div className="flex items-start gap-2 mb-3">
+                    <HelpCircle className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Você atua como Profissional Autônomo ou Empresa?</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Isso ajuda a personalizar seu perfil e os campos exibidos.</p>
+                    </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, account_kind: 'autonomo', cnpj: '', business_name: '' }))}
+                      className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left transition-all ${
+                        form.account_kind === 'autonomo'
+                          ? 'border-accent bg-accent/15 shadow-sm'
+                          : 'border-border bg-card hover:border-accent/50'
+                      }`}
+                    >
+                      <User className={`h-4 w-4 shrink-0 ${form.account_kind === 'autonomo' ? 'text-accent' : 'text-muted-foreground'}`} />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Autônomo</p>
+                        <p className="text-[10px] text-muted-foreground">Profissional individual (sem CNPJ)</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, account_kind: 'empresa' }))}
+                      className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left transition-all ${
+                        form.account_kind === 'empresa'
+                          ? 'border-accent bg-accent/15 shadow-sm'
+                          : 'border-border bg-card hover:border-accent/50'
+                      }`}
+                    >
+                      <Briefcase className={`h-4 w-4 shrink-0 ${form.account_kind === 'empresa' ? 'text-accent' : 'text-muted-foreground'}`} />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Empresa / Agência</p>
+                        <p className="text-[10px] text-muted-foreground">Possui CNPJ e nome fantasia</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {form.account_kind === 'empresa' && (
+                    <div>
+                      <label className={labelCls}>Nome do negócio</label>
+                      <input name="business_name" value={form.business_name} onChange={handleChange} className={inputCls} />
+                    </div>
+                  )}
 
                   {/* Hierarchical category picker */}
                   <div className="relative">
@@ -480,7 +525,7 @@ const DashboardProfilePage = () => {
                           setCategorySearch(customVal);
                           setShowCategorySuggestions(false);
                         }} className="w-full border-t border-border px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted transition-colors">
-                          🏷️ Outro {categorySearch.trim() ? `("${categorySearch.trim()}")` : ''}
+                          Outro {categorySearch.trim() ? `("${categorySearch.trim()}")` : ''}
                         </button>
                       </div>
                     )}
@@ -489,17 +534,19 @@ const DashboardProfilePage = () => {
                     )}
                   </div>
 
-                  <div>
-                    <label className={labelCls}>CNPJ <span className="text-muted-foreground font-normal">(opcional)</span></label>
-                    <input type="text" value={form.cnpj} onChange={(e) => {
-                      let v = e.target.value.replace(/\D/g, '').slice(0, 14);
-                      if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5');
-                      else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4');
-                      else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3');
-                      else if (v.length > 2) v = v.replace(/^(\d{2})(\d{1,3})/, '$1.$2');
-                      setForm(prev => ({ ...prev, cnpj: v }));
-                    }} placeholder="00.000.000/0000-00" className={inputCls} />
-                  </div>
+                  {form.account_kind === 'empresa' && (
+                    <div>
+                      <label className={labelCls}>CNPJ <span className="text-muted-foreground font-normal">(opcional)</span></label>
+                      <input type="text" value={form.cnpj} onChange={(e) => {
+                        let v = e.target.value.replace(/\D/g, '').slice(0, 14);
+                        if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5');
+                        else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4');
+                        else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                        else if (v.length > 2) v = v.replace(/^(\d{2})(\d{1,3})/, '$1.$2');
+                        setForm(prev => ({ ...prev, cnpj: v }));
+                      }} placeholder="00.000.000/0000-00" className={inputCls} />
+                    </div>
+                  )}
 
                   <div>
                     <label className={labelCls}>Anos de experiência</label>
