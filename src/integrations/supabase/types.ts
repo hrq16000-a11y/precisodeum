@@ -1161,6 +1161,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ip_blocks: {
+        Row: {
+          blocked_until: string
+          created_at: string
+          id: string
+          ip_address: string
+          reason: string
+          signup_count: number
+        }
+        Insert: {
+          blocked_until?: string
+          created_at?: string
+          id?: string
+          ip_address: string
+          reason?: string
+          signup_count?: number
+        }
+        Update: {
+          blocked_until?: string
+          created_at?: string
+          id?: string
+          ip_address?: string
+          reason?: string
+          signup_count?: number
+        }
+        Relationships: []
+      }
       jobs: {
         Row: {
           activities: string | null
@@ -1880,6 +1907,7 @@ export type Database = {
           engagement_points: number
           full_name: string
           id: string
+          is_suspicious: boolean
           level_id: string | null
           onboarding_completed: boolean
           permissions: Json
@@ -1890,6 +1918,9 @@ export type Database = {
           suspended_at: string | null
           suspended_by: string | null
           suspended_reason: string | null
+          suspicious_at: string | null
+          suspicious_ip: string | null
+          suspicious_reason: string | null
           updated_at: string
           user_ref: string
           whatsapp: string | null
@@ -1903,6 +1934,7 @@ export type Database = {
           engagement_points?: number
           full_name?: string
           id: string
+          is_suspicious?: boolean
           level_id?: string | null
           onboarding_completed?: boolean
           permissions?: Json
@@ -1913,6 +1945,9 @@ export type Database = {
           suspended_at?: string | null
           suspended_by?: string | null
           suspended_reason?: string | null
+          suspicious_at?: string | null
+          suspicious_ip?: string | null
+          suspicious_reason?: string | null
           updated_at?: string
           user_ref: string
           whatsapp?: string | null
@@ -1926,6 +1961,7 @@ export type Database = {
           engagement_points?: number
           full_name?: string
           id?: string
+          is_suspicious?: boolean
           level_id?: string | null
           onboarding_completed?: boolean
           permissions?: Json
@@ -1936,6 +1972,9 @@ export type Database = {
           suspended_at?: string | null
           suspended_by?: string | null
           suspended_reason?: string | null
+          suspicious_at?: string | null
+          suspicious_ip?: string | null
+          suspicious_reason?: string | null
           updated_at?: string
           user_ref?: string
           whatsapp?: string | null
@@ -4266,6 +4305,8 @@ export type Database = {
         }
         Returns: number
       }
+      admin_ban_suspicious: { Args: { _user_ids: string[] }; Returns: number }
+      admin_clear_suspicion: { Args: { _user_ids: string[] }; Returns: number }
       admin_get_level_distribution: {
         Args: never
         Returns: {
@@ -4305,6 +4346,19 @@ export type Database = {
           total_points: number
         }[]
       }
+      admin_recent_ip_blocks: {
+        Args: { _limit?: number }
+        Returns: {
+          active: boolean
+          blocked_until: string
+          created_at: string
+          id: string
+          ip_address: string
+          reason: string
+          signup_count: number
+        }[]
+      }
+      admin_suspicious_summary: { Args: { _limit?: number }; Returns: Json }
       admin_system_health: { Args: { _limit?: number }; Returns: Json }
       audit_user_ref_full: {
         Args: never

@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { ShieldAlert } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -69,8 +71,10 @@ const AdminUsersPage = () => {
   const [filterProviderStatus, setFilterProviderStatus] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [qualityFilter, setQualityFilter] = useState('all');
+  const [suspiciousOnly, setSuspiciousOnly] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [editUser, setEditUser] = useState<any | null>(null);
   const [pwUser, setPwUser] = useState<any | null>(null);
@@ -182,6 +186,13 @@ const AdminUsersPage = () => {
     fetchLevels();
     fetchAccountTypes();
   }, [isAdmin]);
+
+  // Sync ?suspicious=1 query string → suspiciousOnly filter (deep link from Overview)
+  useEffect(() => {
+    if (searchParams.get('suspicious') === '1' && !suspiciousOnly) {
+      setSuspiciousOnly(true);
+    }
+  }, [searchParams]);
 
   // ── Real KPIs ──
   const realKpis = useMemo(() => {
@@ -346,6 +357,10 @@ const AdminUsersPage = () => {
       });
     }
 
+    if (suspiciousOnly) {
+      list = list.filter(p => p.is_suspicious === true);
+    }
+
     // Sorting
     if (sortBy === 'oldest') {
       list = [...list].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
@@ -355,7 +370,7 @@ const AdminUsersPage = () => {
     // 'recent' is already the default order from DB
 
     return list;
-  }, [profiles, debouncedSearch, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy, qualityFilter]);
+  }, [profiles, debouncedSearch, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy, qualityFilter, suspiciousOnly]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -407,6 +422,35 @@ const AdminUsersPage = () => {
     toast.success(`${count} usuário(s) promovido(s) a admin`);
     setSelectedIds(new Set());
     fetchAdmins();
+    setBulkLoading(false);
+  };
+
+  const bulkClearSuspicion = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    const ids = Array.from(selectedIds);
+    const { data, error } = await supabase.rpc('admin_clear_suspicion' as any, { _user_ids: ids });
+    if (error) toast.error('Erro: ' + error.message);
+    else {
+      toast.success(`${data || 0} perfil(is) marcado(s) como confiável(eis)`);
+      setSelectedIds(new Set());
+      fetchProfiles();
+    }
+    setBulkLoading(false);
+  };
+
+  const bulkBanSuspicious = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Banir ${selectedIds.size} perfil(is) suspeito(s)? Os profissionais vinculados serão removidos.`)) return;
+    setBulkLoading(true);
+    const ids = Array.from(selectedIds);
+    const { data, error } = await supabase.rpc('admin_ban_suspicious' as any, { _user_ids: ids });
+    if (error) toast.error('Erro: ' + error.message);
+    else {
+      toast.success(`${data || 0} perfil(is) suspeito(s) banido(s)`);
+      setSelectedIds(new Set());
+      fetchProfiles();
+    }
     setBulkLoading(false);
   };
 
@@ -763,6 +807,31 @@ const AdminUsersPage = () => {
             onExport={handleExport}
           />
 
+          {/* Quick filter: Sob Suspeita */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const next = !suspiciousOnly;
+                setSuspiciousOnly(next);
+                setPage(1);
+                if (!next) {
+                  searchParams.delete('suspicious');
+                  setSearchParams(searchParams, { replace: true });
+                }
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors border ${
+                suspiciousOnly
+                  ? 'bg-destructive text-destructive-foreground border-destructive'
+                  : 'bg-muted text-muted-foreground border-transparent hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30'
+              }`}
+              title="Mostrar apenas perfis marcados como suspeitos pelo sistema anti-abuso"
+            >
+              <ShieldAlert className="h-3.5 w-3.5" />
+              {suspiciousOnly ? 'Mostrando apenas Suspeitos' : 'Ver apenas Suspeitos'}
+            </button>
+          </div>
+
           <div className="flex items-center gap-3">
             <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={selectAllOnPage}>
               <CheckSquare className="h-3.5 w-3.5" />
@@ -812,6 +881,12 @@ const AdminUsersPage = () => {
               </Button>
               <Button size="sm" variant="outline" onClick={handleExport} disabled={bulkLoading} className="h-7 text-xs">
                 <Download className="h-3 w-3 mr-1" /> Exportar
+              </Button>
+              <Button size="sm" variant="outline" onClick={bulkClearSuspicion} disabled={bulkLoading} className="h-7 text-xs gap-1">
+                <ShieldAlert className="h-3 w-3" /> Ignorar Suspeita
+              </Button>
+              <Button size="sm" variant="destructive" onClick={bulkBanSuspicious} disabled={bulkLoading} className="h-7 text-xs gap-1">
+                <ShieldAlert className="h-3 w-3" /> Banir e Deletar Suspeitos
               </Button>
               <Button size="sm" variant="destructive" onClick={bulkSoftDelete} disabled={bulkLoading} className="h-7 text-xs">
                 <Trash2 className="h-3 w-3 mr-1" /> Desativar

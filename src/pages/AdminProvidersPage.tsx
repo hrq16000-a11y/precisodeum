@@ -26,6 +26,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { motion } from 'framer-motion';
 import ProviderAuditBlock from '@/components/admin/ProviderAuditBlock';
+import SuspiciousBadge from '@/components/admin/SuspiciousBadge';
+import { ShieldAlert } from 'lucide-react';
 
 const statusLabels: Record<string, { label: string; cls: string }> = {
   pending: { label: 'Pendente', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
@@ -75,6 +77,7 @@ const AdminProvidersPage = () => {
   const [autoApproveLoading, setAutoApproveLoading] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [duplicateIpFilter, setDuplicateIpFilter] = useState(false);
+  const [suspiciousOnly, setSuspiciousOnly] = useState(false);
   const [duplicateIps, setDuplicateIps] = useState<Set<string>>(new Set());
   const [duplicateUserIds, setDuplicateUserIds] = useState<Set<string>>(new Set());
 
@@ -194,7 +197,7 @@ const AdminProvidersPage = () => {
 
     const userIds = [...new Set(providerData.map(p => p.user_id))];
     const { data: profileData } = await supabase
-      .from('profiles').select('id, full_name, email, avatar_url').in('id', userIds);
+      .from('profiles').select('id, full_name, email, avatar_url, is_suspicious, suspicious_reason, suspicious_ip').in('id', userIds);
     const profileMap = new Map((profileData || []).map(p => [p.id, p]));
 
     setProviders(providerData.map(p => ({
@@ -243,6 +246,7 @@ const AdminProvidersPage = () => {
     if (filterCategory !== 'all') list = list.filter(p => (p.categories as any)?.name === filterCategory);
     if (filterState !== 'all') list = list.filter(p => p.state === filterState);
     if (duplicateIpFilter) list = list.filter(p => duplicateUserIds.has(p.id));
+    if (suspiciousOnly) list = list.filter(p => p.profiles?.is_suspicious === true);
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
       list = list.filter(p =>
@@ -254,7 +258,7 @@ const AdminProvidersPage = () => {
       );
     }
     return list;
-  }, [providers, debouncedSearch, filter, filterCategory, filterState, duplicateIpFilter, duplicateUserIds]);
+  }, [providers, debouncedSearch, filter, filterCategory, filterState, duplicateIpFilter, duplicateUserIds, suspiciousOnly]);
 
   const isVerified = (p: any) => {
     const checks = [
@@ -378,21 +382,37 @@ const AdminProvidersPage = () => {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar nome, email, CNPJ, cidade..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
         </div>
-        {duplicateIps.size > 0 && (
-          <button
-            type="button"
-            onClick={() => { setDuplicateIpFilter(v => !v); setPage(1); }}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors border ${
-              duplicateIpFilter
-                ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700'
+        {/* IP duplicates filter — sempre visível para mostrar que a ferramenta existe */}
+        <button
+          type="button"
+          disabled={duplicateIps.size === 0}
+          onClick={() => { setDuplicateIpFilter(v => !v); setPage(1); }}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors border ${
+            duplicateIpFilter
+              ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700'
+              : duplicateIps.size === 0
+                ? 'bg-muted/50 text-muted-foreground/60 border-transparent cursor-not-allowed'
                 : 'bg-muted text-muted-foreground border-transparent hover:bg-muted/80'
-            }`}
-            title="Mostrar apenas cadastros do mesmo IP (potenciais duplicatas)"
-          >
-            <AlertCircle className="h-3.5 w-3.5" />
-            IPs duplicados ({duplicateIps.size})
-          </button>
-        )}
+          }`}
+          title={duplicateIps.size === 0 ? 'Nenhum IP duplicado detectado no momento' : 'Mostrar apenas cadastros do mesmo IP (potenciais duplicatas)'}
+        >
+          <AlertCircle className="h-3.5 w-3.5" />
+          IPs duplicados ({duplicateIps.size})
+        </button>
+        {/* Suspicious-only filter */}
+        <button
+          type="button"
+          onClick={() => { setSuspiciousOnly(v => !v); setPage(1); }}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors border ${
+            suspiciousOnly
+              ? 'bg-destructive text-destructive-foreground border-destructive'
+              : 'bg-muted text-muted-foreground border-transparent hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30'
+          }`}
+          title="Mostrar apenas perfis marcados como suspeitos pelo sistema anti-abuso"
+        >
+          <ShieldAlert className="h-3.5 w-3.5" />
+          {suspiciousOnly ? 'Suspeitos' : 'Ver Suspeitos'}
+        </button>
       </div>
 
       {/* Auto-approve toggle + Bulk actions */}
@@ -479,6 +499,7 @@ const AdminProvidersPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: i * 0.03 }}
               className={`group relative rounded-xl border bg-card shadow-card transition-all hover:shadow-card-hover ${
+                p.profiles?.is_suspicious ? 'border-destructive/60 ring-1 ring-destructive/30' :
                 p.status === 'rejected' ? 'opacity-70 border-destructive/30' : 'border-border'
               } ${bulk.selectedIds.has(p.id) ? 'ring-2 ring-accent' : ''}`}
             >
@@ -543,6 +564,9 @@ const AdminProvidersPage = () => {
 
                 {/* Status + Completion Score */}
                 <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                  {p.profiles?.is_suspicious && (
+                    <SuspiciousBadge reason={p.profiles?.suspicious_reason} ip={p.profiles?.suspicious_ip} />
+                  )}
                   <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusLabels[p.status]?.cls || 'bg-muted text-muted-foreground'}`}>
                     {statusLabels[p.status]?.label || p.status}
                   </span>
@@ -647,8 +671,8 @@ const AdminProvidersPage = () => {
                         </div>
                       )}
 
-                      {/* Audit / Registration trace */}
-                      {isExpanded && (
+                      {/* Audit / Registration trace — sempre visível para suspeitos */}
+                      {(isExpanded || p.profiles?.is_suspicious) && (
                         <ProviderAuditBlock providerId={p.id} duplicateIps={duplicateIps} />
                       )}
                     </div>
