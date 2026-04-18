@@ -223,14 +223,6 @@ const ProviderProfile = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
-  const verifiedEnabled = useFeatureEnabled('verified_badge_enabled');
-  const vMinServices = Number(useSettingValue('verified_badge_min_services')) || 2;
-  const vMinAlbums = Number(useSettingValue('verified_badge_min_albums')) || 1;
-  const vMinReviews = Number(useSettingValue('verified_badge_min_reviews')) || 1;
-  const vMinRating = Number(useSettingValue('verified_badge_min_rating')) || 0;
-  const vRequirePhoto = useSettingValue('verified_badge_require_photo') !== 'false';
-  const vRequireCnpj = useSettingValue('verified_badge_require_cnpj') !== 'false';
-  const vRequireCity = useSettingValue('verified_badge_require_city') !== 'false';
   const { slug } = useParams();
   const navigate = useNavigate();
   const [provider, setProvider] = useState<any>(null);
@@ -547,8 +539,8 @@ const ProviderProfile = () => {
   const categoryIcon = provider ? ((provider.categories as any)?.icon || '') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
 
-  // DESTAQUE: OR logic — at least 1 criterion met
-  const isDestaque = !!provider && provider.plan === 'premium' && (
+  // DESTAQUE: based on profile completeness (no longer requires legacy 'premium' plan)
+  const isDestaque = !!provider && (
     hasOwnAvatar ||
     (provider.services_count || 0) >= (destaqueMinServices || 1) ||
     (provider.portfolio_album_count || 0) > 0 ||
@@ -628,17 +620,8 @@ const ProviderProfile = () => {
   const scaleIn = { hidden: { opacity: 0, scale: 0.92 }, visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
   const slideInLeft = { hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
 
-  // Verified badge logic — same rules as ProviderCard, admin-configurable
+  // 'Verificado' badge removed — replaced by Engagement Tier ranking (see ProviderCard)
   const hasProfileImages = !!(provider?.photo_url || portfolioImages.length > 0);
-  const isProfileVerified = verifiedEnabled && !!provider && (
-    (provider.services_count || 0) >= vMinServices &&
-    (provider.portfolio_album_count || 0) >= vMinAlbums &&
-    (provider.review_count || 0) >= vMinReviews &&
-    (vMinRating <= 0 || (provider.rating_avg || 0) >= vMinRating) &&
-    (!vRequirePhoto || !!provider.photo_url) &&
-    (!vRequireCnpj || !!provider.cnpj) &&
-    (!vRequireCity || !!provider.city)
-  );
 
   if (loading) {
     return (

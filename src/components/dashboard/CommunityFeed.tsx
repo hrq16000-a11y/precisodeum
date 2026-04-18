@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Award, TrendingUp, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -93,7 +94,7 @@ const CommunityFeed = () => {
               transition={{ delay: i * 0.08 }}
               className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-muted/40 transition-colors"
             >
-              <span className="text-base shrink-0">{item.icon}</span>
+              <CategoryIcon icon={item.icon} size={16} className="text-foreground shrink-0" />
               <p className="text-[11px] text-foreground flex-1 min-w-0 truncate">{item.message}</p>
               <span className="text-[10px] text-muted-foreground shrink-0">
                 {formatDistanceToNow(new Date(item.time), { addSuffix: true, locale: ptBR })}

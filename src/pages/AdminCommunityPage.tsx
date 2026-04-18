@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -105,7 +106,7 @@ const AdminCommunityPage = () => {
         ) : (links as any[]).map((link) => (
           <div key={link.id} className="flex items-center justify-between rounded-lg border border-border bg-card p-4">
             <div className="flex items-center gap-3 min-w-0">
-              <span className="text-xl">{link.icon}</span>
+              <CategoryIcon icon={link.icon} size={20} className="text-foreground" />
               <div>
                 <h3 className="text-sm font-medium text-foreground">{link.title}</h3>
                 <p className="text-xs text-muted-foreground truncate max-w-xs">{link.url}</p>

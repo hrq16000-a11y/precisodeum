@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DynamicPageBlocksProps {
@@ -111,7 +112,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {(content.items || []).map((item: any, i: number) => (
               <div key={i} className="rounded-lg border border-border bg-card p-4">
-                {item.icon && <span className="text-2xl mb-2 block">{item.icon}</span>}
+                {item.icon && <div className="mb-2"><CategoryIcon icon={item.icon} size={28} className="text-foreground" /></div>}
                 {item.title && <h3 className="font-semibold text-foreground">{item.title}</h3>}
                 {item.description && <p className="text-sm text-muted-foreground mt-1">{item.description}</p>}
               </div>

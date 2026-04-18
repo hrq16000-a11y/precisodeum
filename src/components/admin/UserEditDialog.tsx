@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -132,7 +133,7 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
                     ? profileTypeOptions.map((o: any) => (
                         <SelectItem key={o.profile_key} value={o.profile_key}>
                           <div className="flex items-center gap-2">
-                            <span>{o.icon}</span>
+                            <CategoryIcon icon={o.icon} size={16} className="text-foreground" />
                             {o.label}
                           </div>
                         </SelectItem>
