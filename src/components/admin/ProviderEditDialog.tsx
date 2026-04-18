@@ -1,18 +1,19 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import CategoryIcon from '@/components/CategoryIcon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
-import { fetchAllMunicipalities, geocodeCity, normalize, type CityResult } from '@/lib/geoUtils';
+import { fetchAllMunicipalities, normalize, type CityResult } from '@/lib/geoUtils';
+import { geocodeAddress } from '@/lib/geocodeAddress';
 import { Search, Loader2, MapPin } from 'lucide-react';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import { sanitizePhone } from '@/lib/whatsapp';
+import CategoryCombobox from '@/components/admin/CategoryCombobox';
+import UFSelect from '@/components/admin/UFSelect';
 
 interface Props {
   provider: any;
@@ -50,7 +51,7 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
   const cityDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    supabase.from('categories').select('id, name, icon').is('deleted_at', null).order('name')
+    supabase.from('categories').select('id, name, icon, parent_id').is('deleted_at', null).order('name')
       .then(({ data }) => setCategories(data || []));
   }, []);
 
@@ -83,7 +84,12 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
     setForm(prev => ({ ...prev, city: c.name, state: c.state }));
     setCitySearch(`${c.name}, ${c.state}`);
     setShowCitySuggestions(false);
-    const { latitude, longitude } = await geocodeCity(c.name, c.state);
+    // Geocoding invisível
+    const { latitude, longitude } = await geocodeAddress({
+      city: c.name,
+      state: c.state,
+      neighborhood: form.neighborhood,
+    });
     setForm(prev => ({ ...prev, latitude, longitude }));
   };
 
@@ -101,6 +107,23 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
   const handleSave = async () => {
     if (!form.city || !form.state) { toast.error('Selecione uma cidade válida'); return; }
     setSaving(true);
+
+    // Geocoding invisível ao salvar (se algo mudou ou se faltam coords)
+    let lat = form.latitude;
+    let lon = form.longitude;
+    const cityChanged = form.city !== provider.city || form.state !== provider.state || form.neighborhood !== provider.neighborhood;
+    if (cityChanged || lat == null || lon == null) {
+      const geo = await geocodeAddress({
+        city: form.city,
+        state: form.state,
+        neighborhood: form.neighborhood,
+      });
+      if (geo.latitude && geo.longitude) {
+        lat = geo.latitude;
+        lon = geo.longitude;
+      }
+    }
+
     const { error } = await supabase.from('providers').update({
       business_name: form.business_name || null,
       city: form.city,
@@ -114,8 +137,8 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
       website: form.website || null,
       working_hours: form.working_hours || null,
       years_experience: Number(form.years_experience) || 0,
-      latitude: form.latitude,
-      longitude: form.longitude,
+      latitude: lat,
+      longitude: lon,
     }).eq('id', provider.id);
 
     if (error) toast.error('Erro: ' + error.message);
@@ -183,8 +206,8 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
               )}
             </div>
             <div>
-              <Label>Estado</Label>
-              <Input value={form.state} readOnly className="bg-muted" />
+              <Label>Estado (UF)</Label>
+              <UFSelect value={form.state} onChange={(uf) => update('state', uf)} placeholder="UF" />
             </div>
             <div>
               <Label>Bairro</Label>
@@ -216,18 +239,12 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
 
           <div>
             <Label>Categoria</Label>
-            <Select value={form.category_id} onValueChange={v => update('category_id', v)}>
-              <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-              <SelectContent>
-                {categories.map(c => (
-                  <SelectItem key={c.id} value={c.id}>
-                    <span className="inline-flex items-center gap-1.5">
-                      <CategoryIcon icon={c.icon} size={14} /> {c.name}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CategoryCombobox
+              categories={categories}
+              value={form.category_id || null}
+              onChange={(id) => update('category_id', id || '')}
+              placeholder="Digite para buscar (ex: Acu...)"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
