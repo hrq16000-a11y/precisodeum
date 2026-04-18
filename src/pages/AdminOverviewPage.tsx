@@ -7,7 +7,9 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
-import { Users, TrendingUp, TrendingDown, DollarSign, Target, LayoutGrid, Megaphone, BarChart3, Minus } from 'lucide-react';
+import { Users, TrendingUp, TrendingDown, DollarSign, Target, LayoutGrid, Megaphone, BarChart3, Minus, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { differenceInDays, subDays } from 'date-fns';
 
@@ -222,11 +224,53 @@ const AdminOverviewPage = () => {
       <div className="space-y-6">
         <AdminCriticalAlerts />
         <AdminErrorAlerts />
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" /> Visão Executiva
-          </h1>
-          <p className="text-sm text-muted-foreground">Painel unificado do sistema</p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" /> Visão Executiva
+            </h1>
+            <p className="text-sm text-muted-foreground">Painel unificado do sistema</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={async () => {
+              const tid = toast.loading('Gerando relatório...');
+              const { data, error } = await (supabase.rpc as any)('admin_export_audit_logs', { _days: 30 });
+              if (error) { toast.error('Falha ao exportar', { id: tid }); return; }
+              const rows: any[] = data || [];
+              if (rows.length === 0) { toast.warning('Nenhum log nos últimos 30 dias', { id: tid }); return; }
+              const esc = (v: any) => {
+                if (v === null || v === undefined) return '';
+                const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+                return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+              };
+              const headers = ['data', 'staff_email', 'acao', 'alvo_email', 'old_values', 'new_values'];
+              const csv = [
+                headers.join(';'),
+                ...rows.map((r) => [
+                  new Date(r.created_at).toLocaleString('pt-BR'),
+                  r.staff_email || '',
+                  r.action,
+                  r.target_email || '',
+                  r.old_values || '',
+                  r.new_values || '',
+                ].map(esc).join(';')),
+              ].join('\n');
+              const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `auditoria-${new Date().toISOString().slice(0, 10)}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+              toast.success(`${rows.length} registros exportados`, { id: tid });
+            }}
+          >
+            <Download className="h-4 w-4" />
+            Exportar Auditoria (CSV)
+          </Button>
         </div>
 
         {/* KPI Cards — Modern Dashboard Style */}
