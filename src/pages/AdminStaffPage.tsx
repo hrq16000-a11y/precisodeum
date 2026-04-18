@@ -168,6 +168,23 @@ const AdminStaffPage = () => {
         <p className="text-sm text-muted-foreground mt-0.5">Gerencie administradores, moderadores e analistas</p>
       </div>
 
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {(['admin', 'moderator', 'analyst'] as const).map(r => {
+          const count = staff.filter(s => s.role === r).length;
+          return (
+            <Card key={r} className="border-border/60">
+              <CardContent className="p-3 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">{ROLE_LABELS[r]}</p>
+                  <p className="text-2xl font-bold text-foreground">{count}</p>
+                </div>
+                <Badge className={ROLE_COLORS[r]} variant="outline">{r === 'admin' ? 'ADM' : r === 'moderator' ? 'MOD' : 'ANL'}</Badge>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -207,60 +224,68 @@ const AdminStaffPage = () => {
         </Card>
       )}
 
-      {Object.entries(grouped).map(([role, members]) => {
-        if (members.length === 0) return null;
+      {(['admin', 'moderator', 'analyst'] as const).map(role => {
+        const members = grouped[role];
         return (
           <div key={role} className="mb-6">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
               <Badge className={ROLE_COLORS[role]}>{ROLE_LABELS[role]}</Badge>
               <span className="text-xs">({members.length})</span>
             </h3>
-            <div className="grid gap-2">
-              {members.map(member => (
-                <Card key={member.id}>
-                  <CardContent className="p-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground shrink-0">
-                          {member.avatar_url ? (
-                            <img src={member.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
-                          ) : (
-                            member.full_name.charAt(0).toUpperCase()
-                          )}
+            {members.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="p-4 text-center text-sm text-muted-foreground">
+                  Nenhum {ROLE_LABELS[role].toLowerCase()} cadastrado
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-2">
+                {members.map(member => (
+                  <Card key={member.id}>
+                    <CardContent className="p-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground shrink-0">
+                            {member.avatar_url ? (
+                              <img src={member.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                            ) : (
+                              member.full_name.charAt(0).toUpperCase()
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm text-foreground truncate">{member.full_name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-sm text-foreground truncate">{member.full_name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Select value={member.role} onValueChange={v => handleChangeRole(member, v)}>
+                            <SelectTrigger className="w-36 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="admin">Administrador</SelectItem>
+                              <SelectItem value="moderator">Moderador</SelectItem>
+                              <SelectItem value="analyst">Analista</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button variant="ghost" size="sm" className="text-destructive h-8" onClick={() => handleRemoveRole(member)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Select value={member.role} onValueChange={v => handleChangeRole(member, v)}>
-                          <SelectTrigger className="w-36 h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Administrador</SelectItem>
-                            <SelectItem value="moderator">Moderador</SelectItem>
-                            <SelectItem value="analyst">Analista</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button variant="ghost" size="sm" className="text-destructive h-8" onClick={() => handleRemoveRole(member)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         );
       })}
 
-      {filtered.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          <Shield className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p>Nenhum membro do staff encontrado</p>
+      {filtered.length === 0 && search && (
+        <div className="text-center py-8 text-muted-foreground">
+          <Shield className="h-10 w-10 mx-auto mb-2 opacity-30" />
+          <p className="text-sm">Nenhum resultado para "{search}"</p>
         </div>
       )}
     </AdminLayout>
