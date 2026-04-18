@@ -85,6 +85,11 @@ const AdminUsersPage = () => {
   const [createPassword, setCreatePassword] = useState('');
   const [createName, setCreateName] = useState('');
   const [createType, setCreateType] = useState('client');
+  const [createAccountTypeId, setCreateAccountTypeId] = useState<string>('');
+  const [createLevelId, setCreateLevelId] = useState<string>('');
+  const [createStaffRole, setCreateStaffRole] = useState<string>('none');
+  const [accountTypeOptions, setAccountTypeOptions] = useState<{ id: string; name: string }[]>([]);
+  const [levelOptions, setLevelOptions] = useState<{ id: string; name: string; min_points: number }[]>([]);
   const [creating, setCreating] = useState(false);
 
   // Bulk selection
