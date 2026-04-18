@@ -206,7 +206,7 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
               )}
             </div>
             <div>
-              <Label>Estado (UF)</Label>
+              <Label>Estado (UF) <span className="text-[10px] text-muted-foreground font-normal">— auto ao escolher cidade</span></Label>
               <UFSelect value={form.state} onChange={(uf) => update('state', uf)} placeholder="UF" />
             </div>
             <div>
