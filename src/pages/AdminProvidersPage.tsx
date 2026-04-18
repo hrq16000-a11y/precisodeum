@@ -238,10 +238,10 @@ const AdminProvidersPage = () => {
     return Array.from(s).sort();
   }, [allProviders]);
 
-  const debouncedSearch = useDebounce(search, 300);
+  const debouncedSearch = useDebounce(search ?? '', 300);
 
   const filtered = useMemo(() => {
-    let list = providers;
+    let list = Array.isArray(providers) ? providers : [];
     if (filter !== 'all') list = list.filter(p => p.status === filter);
     if (filterCategory !== 'all') list = list.filter(p => (p.categories as any)?.name === filterCategory);
     if (filterState !== 'all') list = list.filter(p => p.state === filterState);
