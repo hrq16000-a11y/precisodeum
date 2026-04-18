@@ -31,14 +31,6 @@ const MAX_BADGES_MOBILE = 3;
 
 const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', index = 0 }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
-  const verifiedEnabled = useFeatureEnabled('verified_badge_enabled');
-  const minServices = Number(useSettingValue('verified_badge_min_services')) || 2;
-  const minAlbums = Number(useSettingValue('verified_badge_min_albums')) || 1;
-  const minReviews = Number(useSettingValue('verified_badge_min_reviews')) || 1;
-  const minRating = Number(useSettingValue('verified_badge_min_rating')) || 0;
-  const requirePhoto = useSettingValue('verified_badge_require_photo') !== 'false';
-  const requireCnpj = useSettingValue('verified_badge_require_cnpj') !== 'false';
-  const requireCity = useSettingValue('verified_badge_require_city') !== 'false';
 
   const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
   const destaqueRequirePortfolio = useSettingValue('destaque_require_portfolio') !== 'false';
@@ -65,16 +57,6 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const generatedAvatar = `https://api.dicebear.com/9.x/${avatarFallbackStyle}/svg?seed=${encodeURIComponent(provider.userId || provider.id)}`;
   const hasOwnPhoto = !!(provider.photo || provider.serviceImage);
   const displayPhoto = provider.photo || provider.serviceImage || generatedAvatar;
-
-  const isVerified = verifiedEnabled && (
-    provider.servicesCount >= minServices &&
-    provider.portfolioAlbumCount >= minAlbums &&
-    provider.reviewCount >= minReviews &&
-    (minRating <= 0 || provider.rating >= minRating) &&
-    (!requirePhoto || !!displayPhoto) &&
-    (!requireCnpj || !!(provider as any).cnpj) &&
-    (!requireCity || !!provider.city)
-  );
 
   // Build badges array for mobile limiting
   const badges: React.ReactNode[] = [];
