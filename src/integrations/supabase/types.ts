@@ -1860,6 +1860,7 @@ export type Database = {
           full_name: string
           id: string
           level_id: string | null
+          onboarding_completed: boolean
           permissions: Json
           phone: string | null
           profile_type: string
@@ -1882,6 +1883,7 @@ export type Database = {
           full_name?: string
           id: string
           level_id?: string | null
+          onboarding_completed?: boolean
           permissions?: Json
           phone?: string | null
           profile_type?: string
@@ -1904,6 +1906,7 @@ export type Database = {
           full_name?: string
           id?: string
           level_id?: string | null
+          onboarding_completed?: boolean
           permissions?: Json
           phone?: string | null
           profile_type?: string
@@ -3698,6 +3701,86 @@ export type Database = {
             columns: ["config_id"]
             isOneToOne: false
             referencedRelation: "ui_bottom_nav_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_access_logs: {
+        Row: {
+          browser: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          device_type: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          isp: string | null
+          metadata: Json | null
+          os: string | null
+          region: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          isp?: string | null
+          metadata?: Json | null
+          os?: string | null
+          region?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          isp?: string | null
+          metadata?: Json | null
+          os?: string | null
+          region?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_access_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "export_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_access_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_access_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_access_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
             referencedColumns: ["id"]
           },
         ]
