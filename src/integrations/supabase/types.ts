@@ -4507,7 +4507,13 @@ export type Database = {
       user_lead_quota_usage: { Args: { _user_id: string }; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role:
+        | "admin"
+        | "moderator"
+        | "user"
+        | "gerente"
+        | "supervisor"
+        | "analista"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4635,7 +4641,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: [
+        "admin",
+        "moderator",
+        "user",
+        "gerente",
+        "supervisor",
+        "analista",
+      ],
     },
   },
 } as const
