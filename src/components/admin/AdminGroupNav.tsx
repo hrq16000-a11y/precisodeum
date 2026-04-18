@@ -86,6 +86,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
   {
     label: 'Operação',
     items: [
+      { label: 'Saúde do Sistema', icon: 'Activity', path: '/admin/sistema/saude' },
       { label: 'Configurações Globais', icon: 'ScrollText', path: '/admin/governanca' },
       { label: 'Staff & Acessos', icon: 'ShieldCheck', path: '/admin/staff' },
       { label: 'Permissões', icon: 'KeyRound', path: '/admin/sistema/permissoes' },

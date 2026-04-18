@@ -103,6 +103,7 @@ const AdminOverviewPage = lazy(() => import("./pages/AdminOverviewPage"));
 const AdminNotificationsPage = lazy(() => import("./pages/AdminNotificationsPage"));
 const AdminChatPage = lazy(() => import("./pages/AdminChatPage"));
 const AdminGovernancePage = lazy(() => import("./pages/AdminGovernancePage"));
+const AdminSystemHealthPage = lazy(() => import("./pages/AdminSystemHealthPage"));
 const AdminPermissionsPage = lazy(() => import("./pages/AdminPermissionsPage"));
 const AdminStaffPage = lazy(() => import("./pages/AdminStaffPage"));
 const AdminApprovalSettingsPage = lazy(() => import("./pages/AdminApprovalSettingsPage"));
@@ -324,6 +325,7 @@ const App = () => {
                 <Route path="/admin/boosts" element={<AdminBoostsPage />} />
                 <Route path="/admin/barra-inferior" element={<AdminBottomNavPage />} />
                 <Route path="/admin/governanca" element={<AdminGovernancePage />} />
+                <Route path="/admin/sistema/saude" element={<AdminSystemHealthPage />} />
                 <Route path="/admin/sistema/permissoes" element={<AdminPermissionsPage />} />
                 <Route path="/admin/permissoes" element={<Navigate to="/admin/sistema/permissoes" replace />} />
                 <Route path="/admin/gamificacao" element={<AdminGamificationPage />} />
