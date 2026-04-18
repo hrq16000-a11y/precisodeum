@@ -1,8 +1,13 @@
 /**
  * Engagement tier system aligned with the 7-level gamification ladder.
  * Names match gamification_levels rows in the database:
- * Iniciante (0) → Entusiasta (20) → Engajado (50) → Ouro (100) →
- * Platina (200) → Diamante (400) → Mestre (700)
+ * Iniciante (0) → Entusiasta (100) → Engajado (300) → Ouro (700) →
+ * Platina (1500) → Diamante (3000) → Mestre (5000)
+ *
+ * NOTE: This is a static fallback/preset for client-side helpers (badges, borders).
+ * The source of truth lives in the gamification_levels table — the admin can change
+ * thresholds there and Apex/RPC consumers (recalculate_engagement_points,
+ * user_lead_quota, etc.) will use the DB values.
  */
 
 export type EngagementTier =

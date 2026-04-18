@@ -165,9 +165,16 @@ const AdminUsersPage = () => {
     });
   }, []);
 
-  const fetchAdmins = () => {
-    supabase.from('user_roles').select('user_id').eq('role', 'admin')
-      .then(({ data }) => setAdminIds(new Set((data || []).map((r: any) => r.user_id))));
+  const fetchAdmins = async () => {
+    // Staff = admin (via user_roles) OR profiles.staff_role in (gerente, supervisor, analista)
+    const [rolesRes, staffRes] = await Promise.all([
+      supabase.from('user_roles').select('user_id').eq('role', 'admin'),
+      (supabase.from('profiles') as any).select('id').in('staff_role', ['gerente', 'supervisor', 'analista']),
+    ]);
+    const ids = new Set<string>();
+    (rolesRes.data || []).forEach((r: any) => ids.add(r.user_id));
+    (staffRes.data || []).forEach((r: any) => ids.add(r.id));
+    setAdminIds(ids);
   };
 
   const fetchLevels = () => {

@@ -88,6 +88,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'SEO', icon: 'Globe', path: '/admin/metatags' },
       { label: 'Menus', icon: 'MenuIcon', path: '/admin/menus' },
       { label: 'Barra Inferior', icon: 'Smartphone', path: '/admin/barra-inferior' },
+      { label: 'Staff & Acessos', icon: 'Users', path: '/admin/staff' },
       { label: 'Permissões', icon: 'Shield', path: '/admin/sistema/permissoes' },
       { label: 'Regras', icon: 'ScrollText', path: '/admin/governanca' },
       { label: 'Aprovação', icon: 'Shield', path: '/admin/aprovacao' },
