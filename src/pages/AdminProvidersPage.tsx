@@ -26,6 +26,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { motion } from 'framer-motion';
 import ProviderAuditBlock from '@/components/admin/ProviderAuditBlock';
+import SuspiciousBadge from '@/components/admin/SuspiciousBadge';
+import { ShieldAlert } from 'lucide-react';
 
 const statusLabels: Record<string, { label: string; cls: string }> = {
   pending: { label: 'Pendente', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
@@ -75,6 +77,7 @@ const AdminProvidersPage = () => {
   const [autoApproveLoading, setAutoApproveLoading] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [duplicateIpFilter, setDuplicateIpFilter] = useState(false);
+  const [suspiciousOnly, setSuspiciousOnly] = useState(false);
   const [duplicateIps, setDuplicateIps] = useState<Set<string>>(new Set());
   const [duplicateUserIds, setDuplicateUserIds] = useState<Set<string>>(new Set());
 
