@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import CategoryIcon from '@/components/CategoryIcon';
+import IconRenderer from '@/components/ui/IconRenderer';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
@@ -91,7 +91,7 @@ const AdminGamificationPage = () => {
     const maxPriority = Math.max(0, ...levels.map(l => l.priority));
     const maxPoints = Math.max(0, ...levels.map(l => l.max_points ?? l.min_points));
     const { error } = await supabase.from('gamification_levels').insert({
-      name: 'Novo Nível', icon: '⭐', color: '#6b7280',
+      name: 'Novo Nível', icon: 'Star', color: '#6b7280',
       min_points: maxPoints + 1, priority: maxPriority + 10,
       badge_class: 'bg-muted text-muted-foreground',
     });
@@ -175,7 +175,7 @@ const AdminGamificationPage = () => {
                     ) : (
                       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <CategoryIcon icon={level.icon} size={24} className="text-foreground" />
+                          <IconRenderer name={level.icon} size={24} style={{ color: level.color }} />
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-foreground">{level.name}</span>
@@ -259,8 +259,11 @@ const LevelEditForm = ({ level, onSave, onCancel }: { level: GamificationLevel; 
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-xs font-medium text-muted-foreground">Ícone</label>
-          <Input value={form.icon} onChange={e => set('icon', e.target.value)} />
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+            Ícone (Lucide)
+            <IconRenderer name={form.icon} size={14} style={{ color: form.color }} />
+          </label>
+          <Input value={form.icon} onChange={e => set('icon', e.target.value)} placeholder="Ex: Sparkles, Crown, Gem" />
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground">Cor</label>

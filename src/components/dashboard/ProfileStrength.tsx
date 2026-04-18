@@ -4,6 +4,7 @@ import { Trophy, ArrowUp, Zap, Sparkles, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
+import IconRenderer from '@/components/ui/IconRenderer';
 
 interface GamificationLevel {
   id: string;
@@ -72,9 +73,9 @@ const ProfileStrength = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl"
             style={{ backgroundColor: `${currentLevel.color}20` }}>
-            {currentLevel.icon}
+            <IconRenderer name={currentLevel.icon} size={22} style={{ color: currentLevel.color }} />
           </div>
           <div>
             <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
@@ -91,7 +92,7 @@ const ProfileStrength = () => {
           <div className="text-right">
             <p className="text-[10px] text-muted-foreground">Próximo nível</p>
             <p className="text-xs font-bold flex items-center gap-1" style={{ color: nextLevel.color }}>
-              {nextLevel.icon} {nextLevel.name}
+              <IconRenderer name={nextLevel.icon} size={14} /> {nextLevel.name}
             </p>
           </div>
         )}
@@ -100,12 +101,12 @@ const ProfileStrength = () => {
       {/* Progress bar */}
       <div className="relative">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] font-semibold" style={{ color: currentLevel.color }}>
-            {currentLevel.icon} {currentLevel.name}
+          <span className="text-[10px] font-semibold inline-flex items-center gap-1" style={{ color: currentLevel.color }}>
+            <IconRenderer name={currentLevel.icon} size={12} /> {currentLevel.name}
           </span>
           {nextLevel && (
-            <span className="text-[10px] font-semibold" style={{ color: nextLevel.color }}>
-              {nextLevel.icon} {nextLevel.name}
+            <span className="text-[10px] font-semibold inline-flex items-center gap-1" style={{ color: nextLevel.color }}>
+              <IconRenderer name={nextLevel.icon} size={12} /> {nextLevel.name}
             </span>
           )}
         </div>
