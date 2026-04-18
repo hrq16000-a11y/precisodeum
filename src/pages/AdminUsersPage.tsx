@@ -10,7 +10,7 @@ import {
   Users, Key, Trash2, Download, CheckSquare, UserCog, Shield, UserPlus,
   BarChart3, Target, Briefcase, TrendingUp, Send, Tag, X, Plus,
   Activity, Filter, Search, ChevronDown, FileText, AlertTriangle,
-  CheckCircle, XCircle, User, Wrench, Building2
+  CheckCircle, XCircle, User, Wrench, Building2, LayoutGrid, List
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import PaginationControls from '@/components/PaginationControls';
 import UserFilters from '@/components/admin/UserFilters';
 import UserTable from '@/components/admin/UserTable';
+import UserGrid from '@/components/admin/UserGrid';
 import LevelDistributionBar from '@/components/admin/LevelDistributionBar';
 import UserEditDialog from '@/components/admin/UserEditDialog';
 import UserDetailSheet from '@/components/admin/UserDetailSheet';
@@ -74,6 +75,11 @@ const AdminUsersPage = () => {
   const [suspiciousOnly, setSuspiciousOnly] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
+    if (typeof window === 'undefined') return 'list';
+    return (localStorage.getItem('admin_users_view') as 'list' | 'grid') || 'list';
+  });
+  const [headerSort, setHeaderSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [editUser, setEditUser] = useState<any | null>(null);
@@ -392,8 +398,30 @@ const AdminUsersPage = () => {
     }
     // 'recent' is already the default order from DB
 
+    // Apply column-header sort (overrides sortBy if active)
+    if (headerSort) {
+      const { key, dir } = headerSort;
+      const mult = dir === 'asc' ? 1 : -1;
+      const cmp = (a: any, b: any) => {
+        const provA = providersMap[a.id];
+        const provB = providersMap[b.id];
+        let va: any = ''; let vb: any = '';
+        switch (key) {
+          case 'name': va = a.full_name || ''; vb = b.full_name || ''; break;
+          case 'business': va = provA?.business_name || ''; vb = provB?.business_name || ''; break;
+          case 'type': va = a.profile_type || ''; vb = b.profile_type || ''; break;
+          case 'points': va = a.engagement_points || 0; vb = b.engagement_points || 0; break;
+          case 'status': va = a.status || ''; vb = b.status || ''; break;
+          case 'created': va = a.created_at || ''; vb = b.created_at || ''; break;
+        }
+        if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * mult;
+        return String(va).localeCompare(String(vb), 'pt-BR') * mult;
+      };
+      list = [...list].sort(cmp);
+    }
+
     return list;
-  }, [profiles, debouncedSearch, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy, qualityFilter, suspiciousOnly]);
+  }, [profiles, debouncedSearch, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy, qualityFilter, suspiciousOnly, headerSort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -855,7 +883,7 @@ const AdminUsersPage = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={selectAllOnPage}>
               <CheckSquare className="h-3.5 w-3.5" />
               {allPageSelected ? 'Desmarcar Página' : 'Selecionar Página'}
@@ -869,6 +897,30 @@ const AdminUsersPage = () => {
             {selectedIds.size > 0 && (
               <span className="text-xs text-muted-foreground">{selectedIds.size} selecionado(s)</span>
             )}
+
+            {/* View mode toggle */}
+            <div className="ml-auto inline-flex items-center rounded-lg border border-border bg-muted/30 p-0.5">
+              <button
+                type="button"
+                onClick={() => { setViewMode('list'); localStorage.setItem('admin_users_view', 'list'); }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  viewMode === 'list' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Visualização em lista"
+              >
+                <List className="h-3.5 w-3.5" /> Lista
+              </button>
+              <button
+                type="button"
+                onClick={() => { setViewMode('grid'); localStorage.setItem('admin_users_view', 'grid'); }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  viewMode === 'grid' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Visualização em miniaturas"
+              >
+                <LayoutGrid className="h-3.5 w-3.5" /> Miniaturas
+              </button>
+            </div>
           </div>
 
           {/* Bulk actions */}
@@ -920,23 +972,46 @@ const AdminUsersPage = () => {
             </div>
           )}
 
-          <UserTable
-            users={paginated}
-            adminIds={adminIds}
-            levels={levels}
-            accountTypes={accountTypes}
-            providersMap={providersMap}
-            accessLogsMap={accessLogsMap}
-            onEdit={setEditUser}
-            onResetPassword={setPwUser}
-            onBlock={handleBlock}
-            onMakeAdmin={makeAdmin}
-            onRemoveAdmin={removeAdmin}
-            onDelete={setDeleteUser}
-            onViewDetails={setDetailUser}
-            selectedIds={selectedIds}
-            onToggleSelection={toggleSelection}
-          />
+          {viewMode === 'grid' ? (
+            <UserGrid
+              users={paginated}
+              adminIds={adminIds}
+              levels={levels}
+              providersMap={providersMap}
+              selectedIds={selectedIds}
+              onToggleSelection={toggleSelection}
+              onViewDetails={setDetailUser}
+              onEdit={setEditUser}
+              onResetPassword={setPwUser}
+              onBlock={handleBlock}
+              onDelete={setDeleteUser}
+            />
+          ) : (
+            <UserTable
+              users={paginated}
+              adminIds={adminIds}
+              levels={levels}
+              accountTypes={accountTypes}
+              providersMap={providersMap}
+              accessLogsMap={accessLogsMap}
+              onEdit={setEditUser}
+              onResetPassword={setPwUser}
+              onBlock={handleBlock}
+              onMakeAdmin={makeAdmin}
+              onRemoveAdmin={removeAdmin}
+              onDelete={setDeleteUser}
+              onViewDetails={setDetailUser}
+              selectedIds={selectedIds}
+              onToggleSelection={toggleSelection}
+              sortBy={headerSort?.key}
+              sortDir={headerSort?.dir}
+              onSortChange={(key) => {
+                setHeaderSort(prev => prev?.key === key
+                  ? (prev.dir === 'asc' ? { key, dir: 'desc' } : null)
+                  : { key, dir: 'asc' });
+              }}
+            />
+          )}
 
           {totalPages > 1 && (
             <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
