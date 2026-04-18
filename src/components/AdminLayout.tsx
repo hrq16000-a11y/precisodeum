@@ -45,7 +45,6 @@ const menuGroups = [
     items: [
       { label: 'Rankings & Pontos', icon: Crown, path: '/admin/rankings' },
       { label: 'Níveis & Pontuação', icon: Crown, path: '/admin/gamificacao' },
-      
     ],
   },
   {
@@ -85,6 +84,9 @@ const menuGroups = [
       { label: 'Meta Tags & SEO', icon: Globe, path: '/admin/metatags' },
       { label: 'Menus', icon: Menu, path: '/admin/menus' },
       { label: 'Configurações', icon: Shield, path: '/admin/configuracoes' },
+      { label: 'Permissões', icon: Shield, path: '/admin/sistema/permissoes' },
+      { label: 'Regras', icon: ScrollText, path: '/admin/governanca' },
+      { label: 'Aprovação', icon: Shield, path: '/admin/aprovacao' },
       { label: 'Trilha de Auditoria', icon: ScrollText, path: '/admin/auditoria' },
       { label: 'Auditoria Ref', icon: Shield, path: '/admin/auditoria-ref' },
       { label: 'Mídia & Arquivos', icon: FileImage, path: '/admin/midia' },
