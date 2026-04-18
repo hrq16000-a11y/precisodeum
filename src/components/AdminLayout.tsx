@@ -167,7 +167,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   const filteredGroups = useMemo(() => {
-    const q = sidebarSearch.trim().toLowerCase();
+    const q = normalizeAdminSearch(sidebarSearch.trim());
     return menuGroups.map(group => ({
       ...group,
       items: group.items.filter(item => {
@@ -175,8 +175,11 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           const requiredPerm = ADMIN_ROUTE_PERMISSIONS[item.path];
           if (requiredPerm && !hasPermission(requiredPerm)) return false;
         }
-        if (q && !item.label.toLowerCase().includes(q)) return false;
-        return true;
+        if (!q) return true;
+        const label = normalizeAdminSearch(item.label);
+        const groupLabel = normalizeAdminSearch(group.label);
+        const path = normalizeAdminSearch(item.path);
+        return label.includes(q) || groupLabel.includes(q) || path.includes(q);
       }),
     })).filter(group => group.items.length > 0);
   }, [isAdmin, hasPermission, sidebarSearch]);
