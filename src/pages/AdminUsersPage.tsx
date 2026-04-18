@@ -718,6 +718,8 @@ const AdminUsersPage = () => {
             onFilterProviderStatusChange={v => { setFilterProviderStatus(v); setPage(1); }}
             sortBy={sortBy}
             onSortChange={v => { setSortBy(v); setPage(1); }}
+            qualityFilter={qualityFilter}
+            onQualityFilterChange={v => { setQualityFilter(v); setPage(1); }}
             totalResults={filtered.length}
             onExport={handleExport}
           />
