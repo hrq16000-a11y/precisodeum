@@ -48,7 +48,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Serviços', icon: 'Package', path: '/admin/servicos' },
       { label: 'Leads', icon: 'FileText', path: '/admin/leads' },
       { label: 'Gamificação', icon: 'Crown', path: '/admin/gamificacao' },
-      { label: 'Staff & Acessos', icon: 'Shield', path: '/admin/staff' },
+      
       { label: 'Comunidade', icon: 'Users2', path: '/admin/comunidade' },
     ],
   },
