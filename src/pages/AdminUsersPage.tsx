@@ -341,25 +341,30 @@ const AdminUsersPage = () => {
     }
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
-      list = list.filter(p => {
-        const prov = providersMap[p.id];
-        return (
-          (p.full_name || '').toLowerCase().includes(q) ||
-          (p.email || '').toLowerCase().includes(q) ||
-          (p.phone || '').toLowerCase().includes(q) ||
-          (p.whatsapp || '').toLowerCase().includes(q) ||
-          (p.id || '').toLowerCase().includes(q) ||
-          (p.user_ref || '').toLowerCase().includes(q) ||
-          (p.staff_role || '').toLowerCase().includes(q) ||
-          (p.commercial_plan || '').toLowerCase().includes(q) ||
-          (prov?.business_name || '').toLowerCase().includes(q) ||
-          (prov?.city || '').toLowerCase().includes(q) ||
-          (prov?.state || '').toLowerCase().includes(q) ||
-          (prov?.cnpj || '').toLowerCase().includes(q) ||
-          ((prov?.categories as any)?.name || '').toLowerCase().includes(q) ||
-          (prov?.slug || '').toLowerCase().includes(q)
-        );
-      });
+      const safe = (v: unknown) => (typeof v === 'string' ? v.toLowerCase() : v == null ? '' : String(v).toLowerCase());
+      try {
+        list = list.filter(p => {
+          const prov = providersMap[p.id];
+          return (
+            safe(p.full_name).includes(q) ||
+            safe(p.email).includes(q) ||
+            safe(p.phone).includes(q) ||
+            safe(p.whatsapp).includes(q) ||
+            safe(p.id).includes(q) ||
+            safe(p.user_ref).includes(q) ||
+            safe(p.staff_role).includes(q) ||
+            safe(p.commercial_plan).includes(q) ||
+            safe(prov?.business_name).includes(q) ||
+            safe(prov?.city).includes(q) ||
+            safe(prov?.state).includes(q) ||
+            safe(prov?.cnpj).includes(q) ||
+            safe((prov?.categories as any)?.name).includes(q) ||
+            safe(prov?.slug).includes(q)
+          );
+        });
+      } catch (err) {
+        console.error('[AdminUsers] search filter error:', err);
+      }
     }
 
     // Quality filter
