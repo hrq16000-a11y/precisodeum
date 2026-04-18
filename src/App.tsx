@@ -324,7 +324,7 @@ const App = () => {
                 <Route path="/admin/governanca" element={<AdminGovernancePage />} />
                 <Route path="/admin/gamificacao" element={<AdminGamificationPage />} />
                 <Route path="/admin/rankings" element={<AdminRankingsPage />} />
-                <Route path="/admin/staff" element={<AdminStaffPage />} />
+                <Route path="/admin/staff" element={<Navigate to="/admin/usuarios?tab=staff" replace />} />
                 <Route path="/admin/aprovacao" element={<AdminApprovalSettingsPage />} />
                 <Route path="/admin/cursos" element={<AdminCoursesPage />} />
                 <Route path="/cursos" element={<CoursesPage />} />
