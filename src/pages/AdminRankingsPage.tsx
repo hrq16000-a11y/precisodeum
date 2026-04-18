@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Crown, RefreshCw, Pencil, Save, X, Trophy, TrendingUp, Users } from 'lucide-react';
+import { IconRenderer } from '@/components/ui/IconRenderer';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
