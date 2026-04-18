@@ -39,6 +39,8 @@ interface UserFiltersProps {
   onFilterProviderStatusChange?: (v: string) => void;
   sortBy?: string;
   onSortChange?: (v: string) => void;
+  qualityFilter?: string;
+  onQualityFilterChange?: (v: string) => void;
   totalResults: number;
   onExport: () => void;
 }
@@ -49,6 +51,7 @@ const UserFilters = ({
   filterStatus, onFilterStatusChange,
   filterProviderStatus, onFilterProviderStatusChange,
   sortBy, onSortChange,
+  qualityFilter, onQualityFilterChange,
   totalResults, onExport,
 }: UserFiltersProps) => (
   <div className="space-y-3">
