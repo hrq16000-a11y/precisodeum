@@ -98,7 +98,6 @@ const BOOL_RESOURCES: { key: keyof TierRule; label: string }[] = [
   { key: 'can_access_crm',             label: 'Acesso ao CRM' },
   { key: 'can_access_reports',         label: 'Relatórios' },
   { key: 'can_access_featured',        label: 'Pode ser destaque' },
-  { key: 'verified_badge',             label: 'Selo verificado' },
   { key: 'top_search_placement',       label: 'Top da busca' },
   { key: 'can_view_client_phone',      label: 'Ver telefone do cliente' },
   { key: 'can_use_advanced_dashboard', label: 'Dashboard avançado' },
@@ -639,7 +638,6 @@ const AdminGamificationPage = () => {
                             <span className="bg-muted/60 rounded px-1.5 py-0.5">Raio: <b>{t.radius_km}km</b></span>
                             <span className="bg-muted/60 rounded px-1.5 py-0.5">Boost: <b>{t.search_boost}</b></span>
                             {t.can_access_crm && <Badge variant="secondary" className="text-[10px]">CRM</Badge>}
-                            {t.verified_badge && <Badge variant="secondary" className="text-[10px]">Verificado</Badge>}
                             {t.top_search_placement && <Badge variant="secondary" className="text-[10px]">Top busca</Badge>}
                             {t.can_view_client_phone && <Badge variant="secondary" className="text-[10px]">Tel cliente</Badge>}
                           </div>
@@ -823,7 +821,6 @@ const TierEditForm = ({
         <label className="flex items-center gap-2 text-xs"><Switch checked={form.can_access_crm} onCheckedChange={v => set('can_access_crm', v)} /> CRM</label>
         <label className="flex items-center gap-2 text-xs"><Switch checked={form.can_access_reports} onCheckedChange={v => set('can_access_reports', v)} /> Relatórios</label>
         <label className="flex items-center gap-2 text-xs"><Switch checked={form.can_access_featured} onCheckedChange={v => set('can_access_featured', v)} /> Destaque</label>
-        <label className="flex items-center gap-2 text-xs"><Switch checked={form.verified_badge} onCheckedChange={v => set('verified_badge', v)} /> Selo verificado</label>
         <label className="flex items-center gap-2 text-xs"><Switch checked={form.top_search_placement} onCheckedChange={v => set('top_search_placement', v)} /> Top da busca</label>
         <label className="flex items-center gap-2 text-xs"><Switch checked={form.can_view_client_phone} onCheckedChange={v => set('can_view_client_phone', v)} /> Ver telefone</label>
         <label className="flex items-center gap-2 text-xs"><Switch checked={form.can_use_advanced_dashboard} onCheckedChange={v => set('can_use_advanced_dashboard', v)} /> Dashboard avançado</label>
