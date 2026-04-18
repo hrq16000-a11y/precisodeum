@@ -203,7 +203,7 @@ const AdminProvidersPage = () => {
     })));
   };
 
-  useEffect(() => { if (isAdmin) { fetchProviders(); fetchRules(); fetchAutoApprove(); } }, [isAdmin]);
+  useEffect(() => { if (isAdmin) { fetchProviders(); fetchRules(); fetchAutoApprove(); fetchDuplicateIps(); } }, [isAdmin, fetchDuplicateIps]);
 
   const bulk = useAdminBulkActions({
     table: 'providers',
@@ -242,6 +242,7 @@ const AdminProvidersPage = () => {
     if (filter !== 'all') list = list.filter(p => p.status === filter);
     if (filterCategory !== 'all') list = list.filter(p => (p.categories as any)?.name === filterCategory);
     if (filterState !== 'all') list = list.filter(p => p.state === filterState);
+    if (duplicateIpFilter) list = list.filter(p => duplicateUserIds.has(p.id));
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
       list = list.filter(p =>
@@ -253,7 +254,7 @@ const AdminProvidersPage = () => {
       );
     }
     return list;
-  }, [providers, debouncedSearch, filter, filterCategory, filterState]);
+  }, [providers, debouncedSearch, filter, filterCategory, filterState, duplicateIpFilter, duplicateUserIds]);
 
   const isVerified = (p: any) => {
     const checks = [
