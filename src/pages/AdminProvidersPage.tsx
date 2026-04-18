@@ -499,6 +499,7 @@ const AdminProvidersPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: i * 0.03 }}
               className={`group relative rounded-xl border bg-card shadow-card transition-all hover:shadow-card-hover ${
+                p.profiles?.is_suspicious ? 'border-destructive/60 ring-1 ring-destructive/30' :
                 p.status === 'rejected' ? 'opacity-70 border-destructive/30' : 'border-border'
               } ${bulk.selectedIds.has(p.id) ? 'ring-2 ring-accent' : ''}`}
             >
@@ -563,6 +564,9 @@ const AdminProvidersPage = () => {
 
                 {/* Status + Completion Score */}
                 <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                  {p.profiles?.is_suspicious && (
+                    <SuspiciousBadge reason={p.profiles?.suspicious_reason} ip={p.profiles?.suspicious_ip} />
+                  )}
                   <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusLabels[p.status]?.cls || 'bg-muted text-muted-foreground'}`}>
                     {statusLabels[p.status]?.label || p.status}
                   </span>
@@ -667,8 +671,8 @@ const AdminProvidersPage = () => {
                         </div>
                       )}
 
-                      {/* Audit / Registration trace */}
-                      {isExpanded && (
+                      {/* Audit / Registration trace — sempre visível para suspeitos */}
+                      {(isExpanded || p.profiles?.is_suspicious) && (
                         <ProviderAuditBlock providerId={p.id} duplicateIps={duplicateIps} />
                       )}
                     </div>
