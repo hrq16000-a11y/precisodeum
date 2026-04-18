@@ -311,7 +311,7 @@ const AdminGamificationPage = () => {
     if (error) { toast.error('Erro: ' + error.message); return; }
     setTiers(prev => prev.map(t => t.id === tier.id ? { ...t, [key]: value } as TierRule : t));
     toast.success(`${tier.tier_label}: ${key} → ${value ? 'liberado' : 'bloqueado'}`);
-    logAction({ action: 'matrix_toggle', resource_type: 'tier_rule', resource_id: tier.id, details: { key, value } });
+    logAction({ action: 'update', resource_type: 'tier_rule', resource_id: tier.id, details: { matrix_toggle: { key, value } } });
   };
 
   const updateMatrixNumber = async (tier: TierRule, key: keyof TierRule, value: number) => {
@@ -321,7 +321,7 @@ const AdminGamificationPage = () => {
       .eq('id', tier.id);
     if (error) { toast.error('Erro: ' + error.message); return; }
     setTiers(prev => prev.map(t => t.id === tier.id ? { ...t, [key]: value } as TierRule : t));
-    logAction({ action: 'matrix_value', resource_type: 'tier_rule', resource_id: tier.id, details: { key, value } });
+    logAction({ action: 'update', resource_type: 'tier_rule', resource_id: tier.id, details: { matrix_value: { key, value } } });
   };
 
   if (adminLoading || loadingData) {
