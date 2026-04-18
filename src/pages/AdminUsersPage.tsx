@@ -807,6 +807,31 @@ const AdminUsersPage = () => {
             onExport={handleExport}
           />
 
+          {/* Quick filter: Sob Suspeita */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const next = !suspiciousOnly;
+                setSuspiciousOnly(next);
+                setPage(1);
+                if (!next) {
+                  searchParams.delete('suspicious');
+                  setSearchParams(searchParams, { replace: true });
+                }
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors border ${
+                suspiciousOnly
+                  ? 'bg-destructive text-destructive-foreground border-destructive'
+                  : 'bg-muted text-muted-foreground border-transparent hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30'
+              }`}
+              title="Mostrar apenas perfis marcados como suspeitos pelo sistema anti-abuso"
+            >
+              <ShieldAlert className="h-3.5 w-3.5" />
+              {suspiciousOnly ? 'Mostrando apenas Suspeitos' : 'Ver apenas Suspeitos'}
+            </button>
+          </div>
+
           <div className="flex items-center gap-3">
             <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={selectAllOnPage}>
               <CheckSquare className="h-3.5 w-3.5" />
@@ -856,6 +881,12 @@ const AdminUsersPage = () => {
               </Button>
               <Button size="sm" variant="outline" onClick={handleExport} disabled={bulkLoading} className="h-7 text-xs">
                 <Download className="h-3 w-3 mr-1" /> Exportar
+              </Button>
+              <Button size="sm" variant="outline" onClick={bulkClearSuspicion} disabled={bulkLoading} className="h-7 text-xs gap-1">
+                <ShieldAlert className="h-3 w-3" /> Ignorar Suspeita
+              </Button>
+              <Button size="sm" variant="destructive" onClick={bulkBanSuspicious} disabled={bulkLoading} className="h-7 text-xs gap-1">
+                <ShieldAlert className="h-3 w-3" /> Banir e Deletar Suspeitos
               </Button>
               <Button size="sm" variant="destructive" onClick={bulkSoftDelete} disabled={bulkLoading} className="h-7 text-xs">
                 <Trash2 className="h-3 w-3 mr-1" /> Desativar
