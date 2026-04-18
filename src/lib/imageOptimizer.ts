@@ -28,17 +28,42 @@ interface ImageOptions {
  * Only transforms Supabase storage URLs; external URLs pass through unchanged.
  * If transforms aren't available, the URL will 404 — use handleImageError on <img>.
  */
+/**
+ * Sanitiza a URL antes de processar:
+ * - Bloqueia placeholders externos quebrados (ui-avatars.com)
+ * - Reconstrói URL pública para caminhos relativos do storage
+ */
+function sanitizeUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  const trimmed = String(url).trim();
+  if (!trimmed) return '';
+  if (trimmed.includes('ui-avatars.com')) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:') || trimmed.startsWith('/')) return trimmed;
+
+  // Caminho relativo → reconstruir URL pública do bucket apropriado
+  const projectId = (import.meta as any).env?.VITE_SUPABASE_PROJECT_ID;
+  if (!projectId) return '';
+  const knownBuckets = ['avatars', 'portfolio', 'service-images', 'sponsors'];
+  const firstSegment = trimmed.split('/')[0];
+  const bucket = knownBuckets.includes(firstSegment) ? firstSegment : 'avatars';
+  const path = knownBuckets.includes(firstSegment) ? trimmed.slice(firstSegment.length + 1) : trimmed;
+  return `https://${projectId}.supabase.co/storage/v1/object/public/${bucket}/${path}`;
+}
+
 export function optimizedImageUrl(
   url: string | null | undefined,
   options: ImageOptions = {}
 ): string {
-  if (!url) return '';
+  const sanitized = sanitizeUrl(url);
+  if (!sanitized) return '';
 
   // Never transform video URLs
-  if (isVideoUrl(url)) return url;
+  if (isVideoUrl(sanitized)) return sanitized;
 
   // Only transform Supabase storage URLs
-  if (!url.includes('/storage/v1/object/public/')) return url;
+  if (!sanitized.includes('/storage/v1/object/public/')) return sanitized;
+  const url2 = sanitized;
 
   const { width, height, quality = 75, resize = 'cover' } = options;
 
