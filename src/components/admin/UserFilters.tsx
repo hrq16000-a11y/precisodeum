@@ -113,6 +113,21 @@ const UserFilters = ({
           </SelectContent>
         </Select>
       )}
+      {onQualityFilterChange && (
+        <Select value={qualityFilter || 'all'} onValueChange={onQualityFilterChange}>
+          <SelectTrigger className="w-full sm:w-52">
+            <AlertTriangle className="h-3.5 w-3.5 mr-1.5 text-orange-500" />
+            <SelectValue placeholder="Qualidade do perfil" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toda qualidade</SelectItem>
+            <SelectItem value="no_photo">Sem foto de portfólio</SelectItem>
+            <SelectItem value="company_no_cnpj">Empresa sem CNPJ</SelectItem>
+            <SelectItem value="no_location">Sem localização</SelectItem>
+            <SelectItem value="no_whatsapp">Sem WhatsApp</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
       <Button variant="outline" size="sm" onClick={onExport} className="gap-2">
         <Download className="h-4 w-4" /> Exportar
       </Button>
