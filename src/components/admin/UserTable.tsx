@@ -95,12 +95,17 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
         const provider = providersMap[p.id];
         const accessLog = accessLogsMap[p.id];
         const hasLocation = !!(provider?.city || provider?.state);
+        const isProvider = type === 'provider';
+        const isCompany = !!provider?.cnpj;
+        const hasNoPhotos = isProvider && !provider?.photo_url;
+        const levelName = (userLevel?.name || '').toLowerCase();
+        const isElite = isProvider && (levelName.includes('ouro') || levelName.includes('mestre') || levelName.includes('platina') || levelName.includes('diamante'));
 
         return (
           <div
             key={p.id}
             className={`group relative rounded-2xl border bg-card shadow-sm transition-all hover:shadow-md ${
-              isInactive ? 'opacity-60 border-red-200 dark:border-red-500/20' : 'border-border/60'
+              isInactive ? 'opacity-60 border-red-200 dark:border-red-500/20' : isElite ? 'border-amber-400/70 ring-1 ring-amber-300/40 bg-gradient-to-br from-amber-50/50 to-card dark:from-amber-950/10' : 'border-border/60'
             } ${selectedIds?.has(p.id) ? 'ring-2 ring-accent' : ''}`}
           >
             {/* Selection & Menu */}
