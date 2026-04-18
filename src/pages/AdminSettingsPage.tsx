@@ -117,8 +117,7 @@ const AdminSettingsPage = () => {
         className="mt-4 max-w-sm"
       />
 
-      {/* ====== Badge Verificado Section ====== */}
-      <VerifiedBadgeSection settings={settings} onToggle={toggleSetting} onSaveText={updateTextSetting} onRefresh={fetchSettings} />
+      {/* 'Selo Verificado' removed — destaque agora é exclusivamente o Ranking de Gamificação (vide /admin/rankings) */}
 
       {/* ====== Regras de Perfil / DESTAQUE Section ====== */}
       <ProfileRulesSection settings={settings} onToggle={toggleSetting} onSaveText={updateTextSetting} />
