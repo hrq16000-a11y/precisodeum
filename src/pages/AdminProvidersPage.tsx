@@ -378,6 +378,21 @@ const AdminProvidersPage = () => {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar nome, email, CNPJ, cidade..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
         </div>
+        {duplicateIps.size > 0 && (
+          <button
+            type="button"
+            onClick={() => { setDuplicateIpFilter(v => !v); setPage(1); }}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors border ${
+              duplicateIpFilter
+                ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700'
+                : 'bg-muted text-muted-foreground border-transparent hover:bg-muted/80'
+            }`}
+            title="Mostrar apenas cadastros do mesmo IP (potenciais duplicatas)"
+          >
+            <AlertCircle className="h-3.5 w-3.5" />
+            IPs duplicados ({duplicateIps.size})
+          </button>
+        )}
       </div>
 
       {/* Auto-approve toggle + Bulk actions */}
@@ -630,6 +645,11 @@ const AdminProvidersPage = () => {
                             )}
                           </div>
                         </div>
+                      )}
+
+                      {/* Audit / Registration trace */}
+                      {isExpanded && (
+                        <ProviderAuditBlock providerId={p.id} duplicateIps={duplicateIps} />
                       )}
                     </div>
                   </CollapsibleContent>
