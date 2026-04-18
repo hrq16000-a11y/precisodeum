@@ -972,23 +972,46 @@ const AdminUsersPage = () => {
             </div>
           )}
 
-          <UserTable
-            users={paginated}
-            adminIds={adminIds}
-            levels={levels}
-            accountTypes={accountTypes}
-            providersMap={providersMap}
-            accessLogsMap={accessLogsMap}
-            onEdit={setEditUser}
-            onResetPassword={setPwUser}
-            onBlock={handleBlock}
-            onMakeAdmin={makeAdmin}
-            onRemoveAdmin={removeAdmin}
-            onDelete={setDeleteUser}
-            onViewDetails={setDetailUser}
-            selectedIds={selectedIds}
-            onToggleSelection={toggleSelection}
-          />
+          {viewMode === 'grid' ? (
+            <UserGrid
+              users={paginated}
+              adminIds={adminIds}
+              levels={levels}
+              providersMap={providersMap}
+              selectedIds={selectedIds}
+              onToggleSelection={toggleSelection}
+              onViewDetails={setDetailUser}
+              onEdit={setEditUser}
+              onResetPassword={setPwUser}
+              onBlock={handleBlock}
+              onDelete={setDeleteUser}
+            />
+          ) : (
+            <UserTable
+              users={paginated}
+              adminIds={adminIds}
+              levels={levels}
+              accountTypes={accountTypes}
+              providersMap={providersMap}
+              accessLogsMap={accessLogsMap}
+              onEdit={setEditUser}
+              onResetPassword={setPwUser}
+              onBlock={handleBlock}
+              onMakeAdmin={makeAdmin}
+              onRemoveAdmin={removeAdmin}
+              onDelete={setDeleteUser}
+              onViewDetails={setDetailUser}
+              selectedIds={selectedIds}
+              onToggleSelection={toggleSelection}
+              sortBy={headerSort?.key}
+              sortDir={headerSort?.dir}
+              onSortChange={(key) => {
+                setHeaderSort(prev => prev?.key === key
+                  ? (prev.dir === 'asc' ? { key, dir: 'desc' } : null)
+                  : { key, dir: 'asc' });
+              }}
+            />
+          )}
 
           {totalPages > 1 && (
             <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
