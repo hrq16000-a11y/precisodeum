@@ -221,9 +221,10 @@ const AdminGovernancePage = () => {
             </TabsContent>
           );
         })}
-      </Tabs>
+        </Tabs>
 
-      <CreateRuleDialog open={showCreate} onOpenChange={setShowCreate} onCreated={fetchRules} />
+        <CreateRuleDialog open={showCreate} onOpenChange={setShowCreate} onCreated={fetchRules} />
+      </div>
     </AdminLayout>
   );
 };
