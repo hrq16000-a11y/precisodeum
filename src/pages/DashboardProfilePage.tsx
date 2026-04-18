@@ -236,12 +236,16 @@ const DashboardProfilePage = () => {
         setSaving(false); return;
       }
 
+      const isAutonomo = form.account_kind === 'autonomo';
+      const finalCnpj = isAutonomo ? null : (cnpjDigits || null);
+      const finalBusinessName = isAutonomo ? null : (form.business_name || null);
+
       const providerPayload = {
-        business_name: form.business_name || null, description: form.description,
+        business_name: finalBusinessName, description: form.description,
         city: form.city, state: form.state, neighborhood: form.neighborhood,
         whatsapp: finalWhatsapp, website: form.website || null, years_experience: form.years_experience,
         category_id: form.category_id || null, category_custom: form.category_custom || null,
-        cnpj: cnpjDigits || null, ibge_code: form.ibge_code || null, latitude, longitude,
+        cnpj: finalCnpj, ibge_code: form.ibge_code || null, latitude, longitude,
       };
 
       if (provider) {
