@@ -1,4 +1,4 @@
-import { Search, Download, ArrowUpDown } from 'lucide-react';
+import { Search, Download, ArrowUpDown, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -39,6 +39,8 @@ interface UserFiltersProps {
   onFilterProviderStatusChange?: (v: string) => void;
   sortBy?: string;
   onSortChange?: (v: string) => void;
+  qualityFilter?: string;
+  onQualityFilterChange?: (v: string) => void;
   totalResults: number;
   onExport: () => void;
 }
@@ -49,6 +51,7 @@ const UserFilters = ({
   filterStatus, onFilterStatusChange,
   filterProviderStatus, onFilterProviderStatusChange,
   sortBy, onSortChange,
+  qualityFilter, onQualityFilterChange,
   totalResults, onExport,
 }: UserFiltersProps) => (
   <div className="space-y-3">
@@ -107,6 +110,21 @@ const UserFilters = ({
             {SORT_OPTIONS.map(o => (
               <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+      )}
+      {onQualityFilterChange && (
+        <Select value={qualityFilter || 'all'} onValueChange={onQualityFilterChange}>
+          <SelectTrigger className="w-full sm:w-52">
+            <AlertTriangle className="h-3.5 w-3.5 mr-1.5 text-orange-500" />
+            <SelectValue placeholder="Qualidade do perfil" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toda qualidade</SelectItem>
+            <SelectItem value="no_photo">Sem foto de portfólio</SelectItem>
+            <SelectItem value="company_no_cnpj">Empresa sem CNPJ</SelectItem>
+            <SelectItem value="no_location">Sem localização</SelectItem>
+            <SelectItem value="no_whatsapp">Sem WhatsApp</SelectItem>
           </SelectContent>
         </Select>
       )}

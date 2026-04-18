@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink, Zap, RotateCcw, Plus, Minus, Globe, Wifi } from 'lucide-react';
+import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink, Zap, RotateCcw, Plus, Minus, Globe, Wifi, Camera, User, Building2, AlertCircle } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -95,12 +95,17 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
         const provider = providersMap[p.id];
         const accessLog = accessLogsMap[p.id];
         const hasLocation = !!(provider?.city || provider?.state);
+        const isProvider = type === 'provider';
+        const isCompany = !!provider?.cnpj;
+        const hasNoPhotos = isProvider && !provider?.photo_url;
+        const levelName = (userLevel?.name || '').toLowerCase();
+        const isElite = isProvider && (levelName.includes('ouro') || levelName.includes('mestre') || levelName.includes('platina') || levelName.includes('diamante'));
 
         return (
           <div
             key={p.id}
             className={`group relative rounded-2xl border bg-card shadow-sm transition-all hover:shadow-md ${
-              isInactive ? 'opacity-60 border-red-200 dark:border-red-500/20' : 'border-border/60'
+              isInactive ? 'opacity-60 border-red-200 dark:border-red-500/20' : isElite ? 'border-amber-400/70 ring-1 ring-amber-300/40 bg-gradient-to-br from-amber-50/50 to-card dark:from-amber-950/10' : 'border-border/60'
             } ${selectedIds?.has(p.id) ? 'ring-2 ring-accent' : ''}`}
           >
             {/* Selection & Menu */}
@@ -320,6 +325,11 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
 
               {/* Badges */}
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {isElite && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                    <Star className="h-2.5 w-2.5 fill-white" /> ELITE
+                  </span>
+                )}
                 {isAdminUser && (
                   <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
                     Admin
@@ -328,6 +338,25 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${profileTypeBadge(type)}`}>
                   {profileTypeIcon(type)} {profileTypeLabel(type)}
                 </span>
+                {isProvider && (
+                  isCompany ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 px-2 py-0.5 text-[10px] font-bold">
+                      <Building2 className="h-2.5 w-2.5" /> EMPRESA
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300 px-2 py-0.5 text-[10px] font-bold">
+                      <User className="h-2.5 w-2.5" /> AUTÔNOMO
+                    </span>
+                  )
+                )}
+                {hasNoPhotos && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 px-2 py-0.5 text-[10px] font-semibold" title="Prestador sem foto de portfólio">
+                    <Camera className="h-2.5 w-2.5" /> Sem Fotos
+                  </span>
+                )}
+                {isProvider && !isCompany && type === 'provider' && provider && !provider.cnpj === false && (
+                  <></>
+                )}
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                   isInactive
                     ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'

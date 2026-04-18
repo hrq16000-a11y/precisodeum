@@ -67,6 +67,7 @@ const AdminUsersPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterProviderStatus, setFilterProviderStatus] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const [qualityFilter, setQualityFilter] = useState('all');
   const [activeTab, setActiveTab] = useState('all');
   const [page, setPage] = useState(1);
 
@@ -323,6 +324,19 @@ const AdminUsersPage = () => {
       );
     }
 
+    // Quality filter
+    if (qualityFilter !== 'all') {
+      list = list.filter(p => {
+        const prov = providersMap[p.id];
+        if (!prov) return false;
+        if (qualityFilter === 'no_photo') return !prov.photo_url;
+        if (qualityFilter === 'company_no_cnpj') return !!prov.business_name && !prov.cnpj;
+        if (qualityFilter === 'no_location') return !prov.city && !prov.state;
+        if (qualityFilter === 'no_whatsapp') return !prov.whatsapp && !prov.phone;
+        return true;
+      });
+    }
+
     // Sorting
     if (sortBy === 'oldest') {
       list = [...list].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
@@ -332,7 +346,7 @@ const AdminUsersPage = () => {
     // 'recent' is already the default order from DB
 
     return list;
-  }, [profiles, debouncedSearch, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy]);
+  }, [profiles, debouncedSearch, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy, qualityFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -704,6 +718,8 @@ const AdminUsersPage = () => {
             onFilterProviderStatusChange={v => { setFilterProviderStatus(v); setPage(1); }}
             sortBy={sortBy}
             onSortChange={v => { setSortBy(v); setPage(1); }}
+            qualityFilter={qualityFilter}
+            onQualityFilterChange={v => { setQualityFilter(v); setPage(1); }}
             totalResults={filtered.length}
             onExport={handleExport}
           />
