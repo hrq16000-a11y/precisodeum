@@ -97,7 +97,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
   {
     label: 'Sistema',
     items: [
-      { label: 'Config. Globais', icon: 'Shield', path: '/admin/configuracoes' },
+      { label: 'Site Settings', icon: 'Shield', path: '/admin/configuracoes' },
       { label: 'SEO', icon: 'Globe', path: '/admin/metatags' },
       { label: 'Menus', icon: 'MenuIcon', path: '/admin/menus' },
       { label: 'Barra Inferior', icon: 'Smartphone', path: '/admin/barra-inferior' },
