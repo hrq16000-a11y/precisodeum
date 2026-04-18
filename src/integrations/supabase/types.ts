@@ -4196,6 +4196,15 @@ export type Database = {
           user_count: number
         }[]
       }
+      admin_notify_users: {
+        Args: {
+          _link?: string
+          _message: string
+          _title: string
+          _user_ids: string[]
+        }
+        Returns: number
+      }
       admin_recalculate_all_engagement: {
         Args: never
         Returns: {
@@ -4203,6 +4212,7 @@ export type Database = {
           total_points: number
         }[]
       }
+      admin_system_health: { Args: { _limit?: number }; Returns: Json }
       audit_user_ref_full: {
         Args: never
         Returns: {
