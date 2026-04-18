@@ -68,7 +68,7 @@ export function optimizedImageUrl(
   const { width, height, quality = 75, resize = 'cover' } = options;
 
   // Convert /object/public/ → /render/image/public/
-  const transformUrl = url.replace(
+  const transformUrl = url2.replace(
     '/storage/v1/object/public/',
     '/storage/v1/render/image/public/'
   );
