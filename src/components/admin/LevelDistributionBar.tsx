@@ -1,17 +1,30 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Crown, Trophy } from 'lucide-react';
 import { ALL_TIERS, getEngagementTier, type EngagementTier } from '@/lib/engagementTiers';
+import { IconRenderer } from '@/components/ui/IconRenderer';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   profiles: Array<{ engagement_points?: number | null }>;
 }
 
+interface LevelMeta { name: string; icon: string; color: string; min_points: number; }
+
 /**
  * Compact stat strip showing how many users are in each gamification tier.
- * Computed client-side from already-loaded profiles for instant updates
- * after admin point adjustments.
+ * Pulls live icon + color from gamification_levels so admin edits reflect instantly.
  */
 const LevelDistributionBar = ({ profiles }: Props) => {
+  const [levels, setLevels] = useState<LevelMeta[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from('gamification_levels')
+      .select('name,icon,color,min_points')
+      .eq('active', true)
+      .then(({ data }) => setLevels((data as any) || []));
+  }, []);
+
   const counts = useMemo(() => {
     const map: Record<EngagementTier, number> = {
       iniciante: 0, entusiasta: 0, engajado: 0,
@@ -24,8 +37,9 @@ const LevelDistributionBar = ({ profiles }: Props) => {
     return map;
   }, [profiles]);
 
-  // Display from highest tier to lowest
   const ordered = [...ALL_TIERS].sort((a, b) => b.minPoints - a.minPoints);
+  const metaByLabel = (label: string) =>
+    levels.find(l => l.name.toLowerCase() === label.toLowerCase());
 
   return (
     <div className="mt-4 rounded-xl border border-border bg-card p-3 sm:p-4">
@@ -37,14 +51,17 @@ const LevelDistributionBar = ({ profiles }: Props) => {
       <div className="flex flex-wrap gap-2">
         {ordered.map(t => {
           const count = counts[t.tier];
-          const isElite = t.isElite;
+          const meta = metaByLabel(t.label);
           return (
             <div
               key={t.tier}
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${t.badgeClass} ${isElite ? 'ring-1 ring-current/20' : ''}`}
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${t.badgeClass} ${t.isElite ? 'ring-1 ring-current/20' : ''}`}
               title={`A partir de ${t.minPoints} pontos`}
             >
               {t.showCrown && <Crown className="h-3 w-3" />}
+              {meta?.icon && (
+                <IconRenderer name={meta.icon} size={12} color={meta.color} glow={t.isElite} />
+              )}
               <span>{t.label}</span>
               <span className="rounded-full bg-white/40 px-1.5 py-0.5 text-[10px] font-bold tabular-nums">
                 {count}
