@@ -512,6 +512,18 @@ const AdminUsersPage = () => {
     toast.success(`${source.length} usuário(s) exportado(s)!`);
   };
 
+  const openCreateDialog = async () => {
+    setShowCreateDialog(true);
+    if (accountTypeOptions.length === 0) {
+      const { data: ats } = await supabase.from('account_types').select('id, name').eq('active', true).order('display_order');
+      setAccountTypeOptions(ats || []);
+    }
+    if (levelOptions.length === 0) {
+      const { data: lvls } = await supabase.from('gamification_levels').select('id, name, min_points').eq('active', true).order('min_points');
+      setLevelOptions(lvls || []);
+    }
+  };
+
   const handleCreateUser = async () => {
     if (!createEmail.includes('@')) { toast.error('Email inválido'); return; }
     if (createPassword.length < 6) { toast.error('Senha mínima: 6 caracteres'); return; }
@@ -519,14 +531,23 @@ const AdminUsersPage = () => {
     setCreating(true);
     try {
       const res = await supabase.functions.invoke('admin-create-user', {
-        body: { email: createEmail, password: createPassword, full_name: createName, profile_type: createType },
+        body: {
+          email: createEmail,
+          password: createPassword,
+          full_name: createName,
+          profile_type: createType,
+          account_type_id: createAccountTypeId || null,
+          level_id: createLevelId || null,
+          staff_role: createStaffRole !== 'none' ? createStaffRole : null,
+        },
       });
       if (res.error) throw res.error;
       if (res.data?.error) throw new Error(res.data.error);
-      await logAuditAction({ action: 'create', resource_type: 'user', resource_id: res.data?.user_id, details: { email: createEmail, profile_type: createType } });
+      await logAuditAction({ action: 'create', resource_type: 'user', resource_id: res.data?.user_id, details: { email: createEmail, profile_type: createType, staff_role: createStaffRole } });
       toast.success('Usuário criado com sucesso!');
       setShowCreateDialog(false);
       setCreateEmail(''); setCreatePassword(''); setCreateName(''); setCreateType('client');
+      setCreateAccountTypeId(''); setCreateLevelId(''); setCreateStaffRole('none');
       fetchProfiles();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'Falha ao criar usuário'));
