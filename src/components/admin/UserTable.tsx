@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink, Zap, RotateCcw, Plus, Minus, Globe, Wifi } from 'lucide-react';
+import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink, Zap, RotateCcw, Plus, Minus, Globe, Wifi, Camera, User, Building2, AlertCircle } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
