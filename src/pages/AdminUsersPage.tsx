@@ -187,6 +187,13 @@ const AdminUsersPage = () => {
     fetchAccountTypes();
   }, [isAdmin]);
 
+  // Sync ?suspicious=1 query string → suspiciousOnly filter (deep link from Overview)
+  useEffect(() => {
+    if (searchParams.get('suspicious') === '1' && !suspiciousOnly) {
+      setSuspiciousOnly(true);
+    }
+  }, [searchParams]);
+
   // ── Real KPIs ──
   const realKpis = useMemo(() => {
     const total = profiles.length;
@@ -415,6 +422,35 @@ const AdminUsersPage = () => {
     toast.success(`${count} usuário(s) promovido(s) a admin`);
     setSelectedIds(new Set());
     fetchAdmins();
+    setBulkLoading(false);
+  };
+
+  const bulkClearSuspicion = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    const ids = Array.from(selectedIds);
+    const { data, error } = await supabase.rpc('admin_clear_suspicion' as any, { _user_ids: ids });
+    if (error) toast.error('Erro: ' + error.message);
+    else {
+      toast.success(`${data || 0} perfil(is) marcado(s) como confiável(eis)`);
+      setSelectedIds(new Set());
+      fetchProfiles();
+    }
+    setBulkLoading(false);
+  };
+
+  const bulkBanSuspicious = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Banir ${selectedIds.size} perfil(is) suspeito(s)? Os profissionais vinculados serão removidos.`)) return;
+    setBulkLoading(true);
+    const ids = Array.from(selectedIds);
+    const { data, error } = await supabase.rpc('admin_ban_suspicious' as any, { _user_ids: ids });
+    if (error) toast.error('Erro: ' + error.message);
+    else {
+      toast.success(`${data || 0} perfil(is) suspeito(s) banido(s)`);
+      setSelectedIds(new Set());
+      fetchProfiles();
+    }
     setBulkLoading(false);
   };
 
