@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, Megaphone, Globe, HelpCircle, Wrench, Sparkles,
   ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Smartphone, Crown,
   FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList,
-  Target, CreditCard, Shield, Menu as MenuIcon, ImageIcon,
+  Target, CreditCard, Shield, Menu as MenuIcon, ImageIcon, ShieldCheck, KeyRound, GitBranch,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
@@ -29,6 +29,7 @@ const groupColors: Record<string, { active: string; bg: string; dot: string }> =
   'Gestão': { active: 'bg-blue-600 text-white', bg: 'hover:bg-blue-50 dark:hover:bg-blue-950', dot: 'bg-blue-500' },
   'Conteúdo': { active: 'bg-emerald-600 text-white', bg: 'hover:bg-emerald-50 dark:hover:bg-emerald-950', dot: 'bg-emerald-500' },
   'Comercial': { active: 'bg-purple-600 text-white', bg: 'hover:bg-purple-50 dark:hover:bg-purple-950', dot: 'bg-purple-500' },
+  'Operação': { active: 'bg-rose-600 text-white', bg: 'hover:bg-rose-50 dark:hover:bg-rose-950', dot: 'bg-rose-500' },
   'Sistema': { active: 'bg-gray-600 text-white', bg: 'hover:bg-gray-50 dark:hover:bg-gray-800', dot: 'bg-gray-500' },
 };
 
@@ -83,18 +84,23 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
     ],
   },
   {
+    label: 'Operação',
+    items: [
+      { label: 'Staff & Acessos', icon: 'ShieldCheck', path: '/admin/staff' },
+      { label: 'Permissões', icon: 'KeyRound', path: '/admin/sistema/permissoes' },
+      { label: 'Regras (Governança)', icon: 'ScrollText', path: '/admin/governanca' },
+      { label: 'Aprovação', icon: 'Shield', path: '/admin/aprovacao' },
+      { label: 'Auditoria', icon: 'GitBranch', path: '/admin/auditoria' },
+      { label: 'Auditoria Ref', icon: 'Shield', path: '/admin/auditoria-ref' },
+    ],
+  },
+  {
     label: 'Sistema',
     items: [
+      { label: 'Config. Globais', icon: 'Shield', path: '/admin/configuracoes' },
       { label: 'SEO', icon: 'Globe', path: '/admin/metatags' },
       { label: 'Menus', icon: 'MenuIcon', path: '/admin/menus' },
       { label: 'Barra Inferior', icon: 'Smartphone', path: '/admin/barra-inferior' },
-      { label: 'Staff & Acessos', icon: 'Users', path: '/admin/staff' },
-      { label: 'Permissões', icon: 'Shield', path: '/admin/sistema/permissoes' },
-      { label: 'Regras', icon: 'ScrollText', path: '/admin/governanca' },
-      { label: 'Aprovação', icon: 'Shield', path: '/admin/aprovacao' },
-      { label: 'Config.', icon: 'Shield', path: '/admin/configuracoes' },
-      { label: 'Auditoria', icon: 'ScrollText', path: '/admin/auditoria' },
-      { label: 'Auditoria Ref', icon: 'Shield', path: '/admin/auditoria-ref' },
       { label: 'Mídia', icon: 'FileImage', path: '/admin/midia' },
       { label: 'PWA', icon: 'Smartphone', path: '/admin/pwa' },
       { label: 'Módulos', icon: 'Blocks', path: '/admin/modulos' },
