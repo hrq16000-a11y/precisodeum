@@ -27,31 +27,37 @@ Deno.serve(async (req) => {
     const { data: isAdmin } = await callerClient.rpc('has_role', { _user_id: caller.id, _role: 'admin' })
     if (!isAdmin) throw new Error('Not authorized')
 
-    const { email, password, full_name, profile_type, account_type_id, level_id, staff_role } = await req.json()
+    const { email, password, full_name, profile_type, account_type_id, level_id, staff_role, sponsor_id } = await req.json()
 
     if (!email || typeof email !== 'string' || !email.includes('@')) throw new Error('Email inválido')
     if (!password || typeof password !== 'string' || password.length < 6) throw new Error('Senha deve ter no mínimo 6 caracteres')
     if (!full_name || typeof full_name !== 'string' || full_name.trim().length < 2) throw new Error('Nome deve ter no mínimo 2 caracteres')
 
-    const validTypes = ['client', 'provider', 'rh', 'company']
+    const validTypes = ['client', 'provider', 'rh', 'sponsor']
     const type = validTypes.includes(profile_type) ? profile_type : 'client'
+
+    if (type === 'sponsor' && !sponsor_id) throw new Error('Patrocinador não selecionado')
 
     const validStaffRoles = ['admin', 'moderator', 'analyst']
     const sRole = staff_role && validStaffRoles.includes(staff_role) ? staff_role : null
+
+    // Profiles table only accepts client/provider/rh — sponsor maps to client + sponsor_contacts link
+    const profileType = type === 'sponsor' ? 'client' : type
+    const profileRole = type === 'rh' || type === 'sponsor' ? 'client' : type
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey)
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email: email.trim().toLowerCase(),
       password,
       email_confirm: true,
-      user_metadata: { full_name: full_name.trim(), profile_type: type },
+      user_metadata: { full_name: full_name.trim(), profile_type: profileType },
     })
     if (createError) throw createError
 
     if (newUser.user) {
       const updates: Record<string, unknown> = {
-        profile_type: type,
-        role: type === 'rh' ? 'client' : type,
+        profile_type: profileType,
+        role: profileRole,
         full_name: full_name.trim(),
       }
       if (account_type_id) updates.account_type_id = account_type_id
@@ -61,6 +67,15 @@ Deno.serve(async (req) => {
 
       if (sRole) {
         await adminClient.from('user_roles').insert({ user_id: newUser.user.id, role: sRole })
+      }
+
+      if (type === 'sponsor' && sponsor_id) {
+        await adminClient.from('sponsor_contacts').insert({
+          sponsor_id,
+          user_id: newUser.user.id,
+          contact_name: full_name.trim(),
+          email: email.trim().toLowerCase(),
+        })
       }
     }
 
