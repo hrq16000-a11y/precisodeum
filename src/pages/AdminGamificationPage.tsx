@@ -441,9 +441,9 @@ const AdminGamificationPage = () => {
                 </table>
               </div>
               <div className="p-3 border-t bg-muted/20 text-[11px] text-muted-foreground flex items-center gap-3 flex-wrap">
-                <span className="flex items-center gap-1"><Check className="h-3 w-3 text-emerald-600" /> Liberado</span>
+                <span className="flex items-center gap-1"><Check className="h-3 w-3 text-primary" /> Liberado</span>
                 <span className="flex items-center gap-1"><X className="h-3 w-3 text-destructive" /> Bloqueado</span>
-                <span className="ml-auto">Alterações são aplicadas imediatamente em produção via <code>effective_user_permissions</code>.</span>
+                <span className="ml-auto">Alterações aplicadas em produção via <code>effective_user_permissions</code>.</span>
               </div>
             </CardContent>
           </Card>
