@@ -1,6 +1,6 @@
 import { lazy as reactLazy, Suspense, useEffect, useState, type ComponentType } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 const Sonner = reactLazy(() => importWithRetry(() => import("@/components/ui/sonner").then(m => ({ default: m.Toaster }))));
 const Toaster = reactLazy(() => importWithRetry(() => import("@/components/ui/toaster").then(m => ({ default: m.Toaster }))));
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -98,7 +98,7 @@ const AdminBottomNavPage = lazy(() => import("./pages/AdminBottomNavPage"));
 const AdminSponsorLeadsPage = lazy(() => import("./pages/AdminSponsorLeadsPage"));
 const AdminGamificationPage = lazy(() => import("./pages/AdminGamificationPage"));
 const AdminRankingsPage = lazy(() => import("./pages/AdminRankingsPage"));
-const AdminStaffPage = lazy(() => import("./pages/AdminStaffPage"));
+
 const AdminOverviewPage = lazy(() => import("./pages/AdminOverviewPage"));
 const AdminNotificationsPage = lazy(() => import("./pages/AdminNotificationsPage"));
 const AdminChatPage = lazy(() => import("./pages/AdminChatPage"));
@@ -324,7 +324,7 @@ const App = () => {
                 <Route path="/admin/governanca" element={<AdminGovernancePage />} />
                 <Route path="/admin/gamificacao" element={<AdminGamificationPage />} />
                 <Route path="/admin/rankings" element={<AdminRankingsPage />} />
-                <Route path="/admin/staff" element={<AdminStaffPage />} />
+                <Route path="/admin/staff" element={<Navigate to="/admin/usuarios?tab=staff" replace />} />
                 <Route path="/admin/aprovacao" element={<AdminApprovalSettingsPage />} />
                 <Route path="/admin/cursos" element={<AdminCoursesPage />} />
                 <Route path="/cursos" element={<CoursesPage />} />

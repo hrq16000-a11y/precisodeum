@@ -85,6 +85,11 @@ const AdminUsersPage = () => {
   const [createPassword, setCreatePassword] = useState('');
   const [createName, setCreateName] = useState('');
   const [createType, setCreateType] = useState('client');
+  const [createAccountTypeId, setCreateAccountTypeId] = useState<string>('');
+  const [createLevelId, setCreateLevelId] = useState<string>('');
+  const [createStaffRole, setCreateStaffRole] = useState<string>('none');
+  const [accountTypeOptions, setAccountTypeOptions] = useState<{ id: string; name: string }[]>([]);
+  const [levelOptions, setLevelOptions] = useState<{ id: string; name: string; min_points: number }[]>([]);
   const [creating, setCreating] = useState(false);
 
   // Bulk selection
@@ -507,6 +512,18 @@ const AdminUsersPage = () => {
     toast.success(`${source.length} usuário(s) exportado(s)!`);
   };
 
+  const openCreateDialog = async () => {
+    setShowCreateDialog(true);
+    if (accountTypeOptions.length === 0) {
+      const { data: ats } = await supabase.from('account_types').select('id, name').eq('active', true).order('display_order');
+      setAccountTypeOptions(ats || []);
+    }
+    if (levelOptions.length === 0) {
+      const { data: lvls } = await supabase.from('gamification_levels').select('id, name, min_points').eq('active', true).order('min_points');
+      setLevelOptions(lvls || []);
+    }
+  };
+
   const handleCreateUser = async () => {
     if (!createEmail.includes('@')) { toast.error('Email inválido'); return; }
     if (createPassword.length < 6) { toast.error('Senha mínima: 6 caracteres'); return; }
@@ -514,14 +531,23 @@ const AdminUsersPage = () => {
     setCreating(true);
     try {
       const res = await supabase.functions.invoke('admin-create-user', {
-        body: { email: createEmail, password: createPassword, full_name: createName, profile_type: createType },
+        body: {
+          email: createEmail,
+          password: createPassword,
+          full_name: createName,
+          profile_type: createType,
+          account_type_id: createAccountTypeId || null,
+          level_id: createLevelId || null,
+          staff_role: createStaffRole !== 'none' ? createStaffRole : null,
+        },
       });
       if (res.error) throw res.error;
       if (res.data?.error) throw new Error(res.data.error);
-      await logAuditAction({ action: 'create', resource_type: 'user', resource_id: res.data?.user_id, details: { email: createEmail, profile_type: createType } });
+      await logAuditAction({ action: 'create', resource_type: 'user', resource_id: res.data?.user_id, details: { email: createEmail, profile_type: createType, staff_role: createStaffRole } });
       toast.success('Usuário criado com sucesso!');
       setShowCreateDialog(false);
       setCreateEmail(''); setCreatePassword(''); setCreateName(''); setCreateType('client');
+      setCreateAccountTypeId(''); setCreateLevelId(''); setCreateStaffRole('none');
       fetchProfiles();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'Falha ao criar usuário'));
@@ -617,7 +643,7 @@ const AdminUsersPage = () => {
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestão unificada — usuários, métricas e segmentação</p>
         </div>
-        <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+        <Button size="sm" onClick={openCreateDialog}>
           <UserPlus className="h-4 w-4 mr-1" /> Criar Usuário
         </Button>
       </div>
@@ -1076,17 +1102,58 @@ const AdminUsersPage = () => {
 
       {/* Create User */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" /> Criar Novo Usuário</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Nome completo</Label><Input value={createName} onChange={e => setCreateName(e.target.value)} placeholder="Nome do usuário" /></div>
-            <div><Label>Email</Label><Input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="email@exemplo.com" /></div>
-            <div><Label>Senha (mín. 6 caracteres)</Label><Input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Senha inicial" /></div>
-            <div><Label>Tipo de conta</Label>
-              <Select value={createType} onValueChange={setCreateType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>
-                <SelectItem value="client">Cliente</SelectItem><SelectItem value="provider">Profissional</SelectItem><SelectItem value="rh">Agência/RH</SelectItem>
-              </SelectContent></Select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><Label>Email</Label><Input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="email@exemplo.com" /></div>
+              <div><Label>Senha (mín. 6)</Label><Input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Senha inicial" /></div>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><Label>Tipo de Perfil</Label>
+                <Select value={createType} onValueChange={setCreateType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>
+                  <SelectItem value="client">Cliente</SelectItem>
+                  <SelectItem value="provider">Profissional</SelectItem>
+                  <SelectItem value="rh">Agência / RH</SelectItem>
+                  <SelectItem value="company">Empresa</SelectItem>
+                </SelectContent></Select>
+              </div>
+              <div><Label>Tipo de Conta</Label>
+                <Select value={createAccountTypeId} onValueChange={setCreateAccountTypeId}>
+                  <SelectTrigger><SelectValue placeholder="Padrão do sistema" /></SelectTrigger>
+                  <SelectContent>
+                    {accountTypeOptions.map(at => <SelectItem key={at.id} value={at.id}>{at.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><Label>Nível Inicial</Label>
+                <Select value={createLevelId} onValueChange={setCreateLevelId}>
+                  <SelectTrigger><SelectValue placeholder="Iniciante (padrão)" /></SelectTrigger>
+                  <SelectContent>
+                    {levelOptions.map(l => <SelectItem key={l.id} value={l.id}>{l.name} ({l.min_points} pts)</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label className="flex items-center gap-1"><Shield className="h-3 w-3" /> Acesso Staff</Label>
+                <Select value={createStaffRole} onValueChange={setCreateStaffRole}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    <SelectItem value="analyst">Analista</SelectItem>
+                    <SelectItem value="moderator">Moderador</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {createStaffRole !== 'none' && (
+              <p className="text-xs text-amber-700 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded p-2">
+                Este usuário receberá privilégios de <strong>{createStaffRole === 'admin' ? 'Administrador' : createStaffRole === 'moderator' ? 'Moderador' : 'Analista'}</strong> no painel.
+              </p>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancelar</Button>
