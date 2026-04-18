@@ -258,6 +258,9 @@ const AdminOverviewPage = () => {
           })}
         </div>
 
+        {/* System Health (real operational counters + actions) */}
+        <SystemHealthPanel />
+
         {/* Charts Row */}
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
