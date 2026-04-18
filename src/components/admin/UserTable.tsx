@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink, Zap, RotateCcw, Plus, Minus } from 'lucide-react';
+import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink, Zap, RotateCcw, Plus, Minus, Globe, Wifi } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ interface UserTableProps {
   levels?: any[];
   accountTypes?: any[];
   providersMap?: Record<string, any>;
+  accessLogsMap?: Record<string, any>;
   onEdit: (u: any) => void;
   onResetPassword: (u: any) => void;
   onBlock: (u: any) => void;
@@ -53,7 +54,7 @@ interface UserTableProps {
   onToggleSelection?: (id: string) => void;
 }
 
-const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
+const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersMap = {}, accessLogsMap = {}, onEdit, onResetPassword, onBlock, onMakeAdmin, onRemoveAdmin, onDelete, onViewDetails, selectedIds, onToggleSelection }: UserTableProps) => {
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
 
   const handleAdjustPoints = async (userId: string, delta: number, reset = false) => {
@@ -92,6 +93,8 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
         const userLevel = levels.find((l: any) => l.id === p.level_id);
         const userAccType = accountTypes.find((a: any) => a.id === p.account_type_id);
         const provider = providersMap[p.id];
+        const accessLog = accessLogsMap[p.id];
+        const hasLocation = !!(provider?.city || provider?.state);
 
         return (
           <div
@@ -188,16 +191,15 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                     </p>
                   )}
                   <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                    {(provider.city || provider.state) && (
+                    {hasLocation ? (
                       <span className="flex items-center gap-0.5 truncate">
                         <MapPin className="h-2.5 w-2.5 shrink-0" />
                         {[provider.city, provider.state].filter(Boolean).join(', ')}
                       </span>
-                    )}
-                    {provider.plan && (
-                      <span className="flex items-center gap-0.5">
-                        <Star className="h-2.5 w-2.5 shrink-0 text-amber-500" />
-                        {provider.plan}
+                    ) : (
+                      <span className="flex items-center gap-0.5 truncate italic text-muted-foreground/70">
+                        <MapPin className="h-2.5 w-2.5 shrink-0" />
+                        Localização não definida
                       </span>
                     )}
                     {provider.categories && (
@@ -207,6 +209,30 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                       </span>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Audit Log: último IP / ISP capturado */}
+              {accessLog && (
+                <div
+                  className="mt-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 py-1.5 space-y-0.5"
+                  title={`Último acesso: ${new Date(accessLog.created_at).toLocaleString('pt-BR')}`}
+                >
+                  <div className="flex items-center gap-1.5 text-[10px] text-foreground/80">
+                    <Wifi className="h-2.5 w-2.5 shrink-0 text-emerald-600" />
+                    <span className="font-mono truncate">{accessLog.ip_address || '—'}</span>
+                    {accessLog.isp && (
+                      <span className="truncate text-muted-foreground">• {accessLog.isp}</span>
+                    )}
+                  </div>
+                  {(accessLog.city || accessLog.country) && (
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                      <Globe className="h-2.5 w-2.5 shrink-0" />
+                      <span className="truncate">
+                        {[accessLog.city, accessLog.region, accessLog.country].filter(Boolean).join(', ')}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 

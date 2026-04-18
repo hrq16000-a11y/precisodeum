@@ -62,7 +62,7 @@ const DashboardLeadsPage = () => {
           <AlertTriangle className="h-12 w-12 text-destructive/60 mb-4" />
           <h1 className="font-display text-xl font-bold text-foreground">Leads indisponível</h1>
           <p className="mt-2 text-sm text-muted-foreground max-w-md">
-            Seu tipo de conta não permite receber leads. Atualize seu plano para ter acesso.
+            Sua categoria de conta atual não permite receber leads. Aumente seu engajamento para desbloquear este recurso.
           </p>
         </motion.div>
       </DashboardLayout>
@@ -88,8 +88,8 @@ const DashboardLeadsPage = () => {
             {!canReceiveMoreLeads && <AlertTriangle className="h-4 w-4 shrink-0" />}
             <span>
               {!canReceiveMoreLeads
-                ? `Limite de ${limits.max_leads} lead(s) atingido. Atualize seu plano para receber mais.`
-                : `${remainingLeads} de ${limits.max_leads} lead(s) restante(s) no seu plano.`}
+                ? `Limite de ${limits.max_leads} lead(s) atingido para sua categoria. Engaje-se mais para desbloquear capacidade adicional.`
+                : `${remainingLeads} de ${limits.max_leads} lead(s) restante(s) na sua categoria.`}
             </span>
           </div>
         </motion.div>

@@ -59,6 +59,7 @@ const AdminUsersPage = () => {
   const [accountTypes, setAccountTypes] = useState<any[]>([]);
   const [providersMap, setProvidersMap] = useState<Record<string, any>>({});
   const [providersRaw, setProvidersRaw] = useState<any[]>([]);
+  const [accessLogsMap, setAccessLogsMap] = useState<Record<string, any>>({});
   const [userTags, setUserTags] = useState<any[]>([]);
   const [sponsorUserIds, setSponsorUserIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
@@ -135,7 +136,8 @@ const AdminUsersPage = () => {
       supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at, cnpj, photo_url, whatsapp, phone, description, services_count, latitude, longitude').is('deleted_at', null),
       supabase.from('user_tags').select('*'),
       supabase.from('sponsor_contacts' as any).select('user_id'),
-    ]).then(([pRes, prRes, tRes, scRes]) => {
+      supabase.rpc('get_latest_user_access_logs' as any),
+    ]).then(([pRes, prRes, tRes, scRes, alRes]) => {
       setProfiles(pRes.data || []);
       const provs = prRes.data || [];
       setProvidersRaw(provs);
@@ -144,6 +146,9 @@ const AdminUsersPage = () => {
       setProvidersMap(map);
       setUserTags(tRes.data || []);
       setSponsorUserIds(new Set((scRes.data || []).map((r: any) => r.user_id)));
+      const logsMap: Record<string, any> = {};
+      ((alRes as any)?.data || []).forEach((row: any) => { logsMap[row.user_id] = row; });
+      setAccessLogsMap(logsMap);
     });
   }, []);
 
@@ -768,6 +773,7 @@ const AdminUsersPage = () => {
             levels={levels}
             accountTypes={accountTypes}
             providersMap={providersMap}
+            accessLogsMap={accessLogsMap}
             onEdit={setEditUser}
             onResetPassword={setPwUser}
             onBlock={handleBlock}
