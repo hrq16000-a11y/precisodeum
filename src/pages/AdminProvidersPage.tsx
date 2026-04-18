@@ -254,7 +254,11 @@ const AdminProvidersPage = () => {
         (p.profiles?.email || '').toLowerCase().includes(q) ||
         (p.business_name || '').toLowerCase().includes(q) ||
         (p.city || '').toLowerCase().includes(q) ||
-        (p.cnpj || '').toLowerCase().includes(q)
+        (p.state || '').toLowerCase().includes(q) ||
+        (p.cnpj || '').toLowerCase().includes(q) ||
+        (p.phone || '').toLowerCase().includes(q) ||
+        (p.whatsapp || '').toLowerCase().includes(q) ||
+        ((p.categories as any)?.name || '').toLowerCase().includes(q)
       );
     }
     return list;
@@ -317,17 +321,43 @@ const AdminProvidersPage = () => {
           <Button
             variant="outline" size="sm" disabled={backfilling}
             onClick={async () => {
+              if (!confirm('Geocodificar TODOS os prestadores sem coordenadas? Pode levar alguns minutos (1 req/s para respeitar a API).')) return;
               setBackfilling(true);
+              const tId = toast.loading('Geocodificando em massa... aguarde.');
               try {
-                const { data, error } = await supabase.functions.invoke('backfill-provider-coords');
+                const { data, error } = await supabase.functions.invoke('bulk-geocode-providers');
                 if (error) throw error;
-                toast.success(`Coordenadas: ${data?.updated || 0}/${data?.total || 0}`);
-              } catch (e: any) { toast.error(e.message || 'Erro'); }
-              finally { setBackfilling(false); }
+                toast.success(
+                  `Coordenadas atualizadas: ${data?.updated || 0}/${data?.total || 0} (Nominatim ${data?.nominatim_hits || 0}, IBGE ${data?.ibge_hits || 0}, falhas ${data?.failed || 0})`,
+                  { id: tId, duration: 8000 }
+                );
+                fetchProviders();
+              } catch (e: any) {
+                toast.error(e.message || 'Erro', { id: tId });
+              } finally { setBackfilling(false); }
             }}
           >
             <MapPin className="mr-1.5 h-4 w-4" />
-            {backfilling ? 'Geocodificando...' : 'Preencher Coordenadas'}
+            {backfilling ? 'Geocodificando...' : 'Geocodificar TODOS'}
+          </Button>
+          <Button
+            variant="outline" size="sm"
+            onClick={async () => {
+              const tId = toast.loading('Recalculando engagement e níveis de todos os perfis...');
+              try {
+                const { data: lvl, error: e1 } = await supabase.rpc('admin_recalc_provider_levels_from_account' as any);
+                if (e1) throw e1;
+                const { data: eng, error: e2 } = await supabase.rpc('admin_recalculate_all_engagement' as any);
+                if (e2) throw e2;
+                toast.success(`Recalculados: ${lvl || 0} níveis | ${(eng as any)?.[0]?.processed_count || 0} perfis (${(eng as any)?.[0]?.total_points || 0} pts totais)`, { id: tId, duration: 6000 });
+                fetchProviders();
+              } catch (e: any) {
+                toast.error(e.message || 'Erro ao recalcular', { id: tId });
+              }
+            }}
+          >
+            <Star className="mr-1.5 h-4 w-4" />
+            Recalcular Níveis
           </Button>
         </div>
       </div>
@@ -380,7 +410,7 @@ const AdminProvidersPage = () => {
         </Select>
         <div className="relative flex-1 sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar nome, email, CNPJ, cidade..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
+          <Input placeholder="Buscar nome, empresa, cidade, UF, CNPJ, categoria, telefone..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
         </div>
         {/* IP duplicates filter — sempre visível para mostrar que a ferramenta existe */}
         <button

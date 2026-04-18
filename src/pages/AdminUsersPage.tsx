@@ -334,14 +334,23 @@ const AdminUsersPage = () => {
     }
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
-      list = list.filter(p =>
-        (p.full_name || '').toLowerCase().includes(q) ||
-        (p.email || '').toLowerCase().includes(q) ||
-        (p.phone || '').toLowerCase().includes(q) ||
-        (p.whatsapp || '').toLowerCase().includes(q) ||
-        (p.id || '').toLowerCase().includes(q) ||
-        (p.user_ref || '').toLowerCase().includes(q)
-      );
+      list = list.filter(p => {
+        const prov = providersMap[p.id];
+        return (
+          (p.full_name || '').toLowerCase().includes(q) ||
+          (p.email || '').toLowerCase().includes(q) ||
+          (p.phone || '').toLowerCase().includes(q) ||
+          (p.whatsapp || '').toLowerCase().includes(q) ||
+          (p.id || '').toLowerCase().includes(q) ||
+          (p.user_ref || '').toLowerCase().includes(q) ||
+          (prov?.business_name || '').toLowerCase().includes(q) ||
+          (prov?.city || '').toLowerCase().includes(q) ||
+          (prov?.state || '').toLowerCase().includes(q) ||
+          (prov?.cnpj || '').toLowerCase().includes(q) ||
+          ((prov?.categories as any)?.name || '').toLowerCase().includes(q) ||
+          (prov?.slug || '').toLowerCase().includes(q)
+        );
+      });
     }
 
     // Quality filter
