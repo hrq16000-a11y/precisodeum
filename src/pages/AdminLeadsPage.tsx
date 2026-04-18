@@ -80,16 +80,16 @@ const AdminLeadsPage = () => {
 
   const stats = useMemo(() => {
     const total = leads.length;
-    const counts: Record<string, number> = { new: 0, contacted: 0, converted: 0, closed: 0 };
+    const counts = { new: 0, contacted: 0, converted: 0, closed: 0 };
     let scoreSum = 0, scored = 0;
     leads.forEach(l => {
-      const s = l.status || 'new';
-      if (counts[s] !== undefined) counts[s]++;
+      const s = (l.status || 'new') as keyof typeof counts;
+      if (s in counts) counts[s]++;
       if (typeof l.lead_score === 'number') { scoreSum += l.lead_score; scored++; }
     });
     const avg = scored ? Math.round(scoreSum / scored) : 0;
     const conversionRate = total ? Math.round((counts.converted / total) * 100) : 0;
-    return { total, ...counts, avg, conversionRate };
+    return { total, new: counts.new, contacted: counts.contacted, converted: counts.converted, closed: counts.closed, avg, conversionRate };
   }, [leads]);
 
   const filtered = useMemo(() => {
