@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Phone, Mail, Calendar, Briefcase, MapPin, Star, ExternalLink, Zap, RotateCcw, Plus, Minus, Globe, Wifi, Camera, User, Building2, AlertCircle } from 'lucide-react';
+import SuspiciousBadge from '@/components/admin/SuspiciousBadge';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -105,7 +106,10 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
           <div
             key={p.id}
             className={`group relative rounded-2xl border bg-card shadow-sm transition-all hover:shadow-md ${
-              isInactive ? 'opacity-60 border-red-200 dark:border-red-500/20' : isElite ? 'border-amber-400/70 ring-1 ring-amber-300/40 bg-gradient-to-br from-amber-50/50 to-card dark:from-amber-950/10' : 'border-border/60'
+              p.is_suspicious ? 'border-destructive/60 ring-1 ring-destructive/30' :
+              isInactive ? 'opacity-60 border-red-200 dark:border-red-500/20' :
+              isElite ? 'border-amber-400/70 ring-1 ring-amber-300/40 bg-gradient-to-br from-amber-50/50 to-card dark:from-amber-950/10' :
+              'border-border/60'
             } ${selectedIds?.has(p.id) ? 'ring-2 ring-accent' : ''}`}
           >
             {/* Selection & Menu */}
