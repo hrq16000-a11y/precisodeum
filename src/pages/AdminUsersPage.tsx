@@ -1102,17 +1102,58 @@ const AdminUsersPage = () => {
 
       {/* Create User */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" /> Criar Novo Usuário</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Nome completo</Label><Input value={createName} onChange={e => setCreateName(e.target.value)} placeholder="Nome do usuário" /></div>
-            <div><Label>Email</Label><Input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="email@exemplo.com" /></div>
-            <div><Label>Senha (mín. 6 caracteres)</Label><Input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Senha inicial" /></div>
-            <div><Label>Tipo de conta</Label>
-              <Select value={createType} onValueChange={setCreateType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>
-                <SelectItem value="client">Cliente</SelectItem><SelectItem value="provider">Profissional</SelectItem><SelectItem value="rh">Agência/RH</SelectItem>
-              </SelectContent></Select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><Label>Email</Label><Input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="email@exemplo.com" /></div>
+              <div><Label>Senha (mín. 6)</Label><Input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Senha inicial" /></div>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><Label>Tipo de Perfil</Label>
+                <Select value={createType} onValueChange={setCreateType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>
+                  <SelectItem value="client">Cliente</SelectItem>
+                  <SelectItem value="provider">Profissional</SelectItem>
+                  <SelectItem value="rh">Agência / RH</SelectItem>
+                  <SelectItem value="company">Empresa</SelectItem>
+                </SelectContent></Select>
+              </div>
+              <div><Label>Tipo de Conta</Label>
+                <Select value={createAccountTypeId} onValueChange={setCreateAccountTypeId}>
+                  <SelectTrigger><SelectValue placeholder="Padrão do sistema" /></SelectTrigger>
+                  <SelectContent>
+                    {accountTypeOptions.map(at => <SelectItem key={at.id} value={at.id}>{at.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><Label>Nível Inicial</Label>
+                <Select value={createLevelId} onValueChange={setCreateLevelId}>
+                  <SelectTrigger><SelectValue placeholder="Iniciante (padrão)" /></SelectTrigger>
+                  <SelectContent>
+                    {levelOptions.map(l => <SelectItem key={l.id} value={l.id}>{l.name} ({l.min_points} pts)</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label className="flex items-center gap-1"><Shield className="h-3 w-3" /> Acesso Staff</Label>
+                <Select value={createStaffRole} onValueChange={setCreateStaffRole}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    <SelectItem value="analyst">Analista</SelectItem>
+                    <SelectItem value="moderator">Moderador</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {createStaffRole !== 'none' && (
+              <p className="text-xs text-amber-700 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded p-2">
+                Este usuário receberá privilégios de <strong>{createStaffRole === 'admin' ? 'Administrador' : createStaffRole === 'moderator' ? 'Moderador' : 'Analista'}</strong> no painel.
+              </p>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancelar</Button>
