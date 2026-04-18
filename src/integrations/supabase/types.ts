@@ -4185,6 +4185,24 @@ export type Database = {
         }
         Returns: number
       }
+      admin_get_level_distribution: {
+        Args: never
+        Returns: {
+          level_color: string
+          level_icon: string
+          level_id: string
+          level_name: string
+          min_points: number
+          user_count: number
+        }[]
+      }
+      admin_recalculate_all_engagement: {
+        Args: never
+        Returns: {
+          processed_count: number
+          total_points: number
+        }[]
+      }
       audit_user_ref_full: {
         Args: never
         Returns: {
