@@ -96,11 +96,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
           setTimeout(() => fetchProfile(session.user.id), 0);
+          // Log access (IP, ISP, UA) for legal audit on every fresh sign-in
+          if (event === 'SIGNED_IN') {
+            setTimeout(() => {
+              supabase.functions.invoke('log-user-access', {
+                body: { event_type: 'login', source: 'web' },
+              }).catch(() => {/* silent */});
+            }, 500);
+          }
         } else {
           setProfile(null);
           setProvider(null);
