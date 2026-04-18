@@ -112,13 +112,13 @@ const UserTable = ({
     <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
       {/* Table header */}
       <div className="hidden md:grid grid-cols-[28px_minmax(220px,2fr)_minmax(180px,1.5fr)_140px_120px_120px_90px_44px] gap-2 items-center border-b border-border/60 bg-muted/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {onToggleSelection ? <span /> : <span />}
-        <span>Usuário</span>
-        <span>Empresa / Local</span>
-        <span>Tipo</span>
-        <span>Nível / Pts</span>
-        <span>Status</span>
-        <span>Cadastro</span>
+        <span />
+        <SortableHeader label="Usuário" sortKey="name" currentKey={sortBy} dir={sortDir} onClick={onSortChange} />
+        <SortableHeader label="Empresa / Local" sortKey="business" currentKey={sortBy} dir={sortDir} onClick={onSortChange} />
+        <SortableHeader label="Tipo" sortKey="type" currentKey={sortBy} dir={sortDir} onClick={onSortChange} />
+        <SortableHeader label="Nível / Pts" sortKey="points" currentKey={sortBy} dir={sortDir} onClick={onSortChange} />
+        <SortableHeader label="Status" sortKey="status" currentKey={sortBy} dir={sortDir} onClick={onSortChange} />
+        <SortableHeader label="Cadastro" sortKey="created" currentKey={sortBy} dir={sortDir} onClick={onSortChange} />
         <span className="text-right">Ações</span>
       </div>
 
