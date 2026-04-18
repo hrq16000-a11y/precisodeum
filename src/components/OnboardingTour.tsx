@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TourStep {
   target: string; // CSS selector
@@ -19,26 +20,41 @@ const PROVIDER_STEPS: TourStep[] = [
 
 const TOUR_KEY = 'onboarding_tour_completed';
 
-export function useOnboardingTour(profileType: string) {
+async function persistOnboardingCompleted() {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data?.user?.id;
+    if (uid) {
+      await supabase.from('profiles').update({ onboarding_completed: true } as any).eq('id', uid);
+    }
+  } catch (_) { /* silent */ }
+}
+
+export function useOnboardingTour(profileType: string, onboardingCompletedFromDb?: boolean) {
   const [active, setActive] = useState(false);
   const [step, setStep] = useState(0);
 
   useEffect(() => {
+    // Banco é a fonte de verdade — se já marcado como concluído, nem dispara.
+    if (onboardingCompletedFromDb) {
+      localStorage.setItem(TOUR_KEY, 'true');
+      return;
+    }
     const completed = localStorage.getItem(TOUR_KEY);
     if (!completed && profileType === 'provider') {
       const timer = setTimeout(() => {
-        // Only activate if at least one tour target exists in the DOM
         const hasAnyTarget = PROVIDER_STEPS.some(s => document.querySelector(s.target));
         if (hasAnyTarget) setActive(true);
-        else localStorage.setItem(TOUR_KEY, 'skipped'); // avoid re-triggering on every page
+        else localStorage.setItem(TOUR_KEY, 'skipped');
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [profileType]);
+  }, [profileType, onboardingCompletedFromDb]);
 
   const dismiss = useCallback(() => {
     setActive(false);
     localStorage.setItem(TOUR_KEY, 'true');
+    persistOnboardingCompleted();
   }, []);
 
   const next = useCallback(() => {
