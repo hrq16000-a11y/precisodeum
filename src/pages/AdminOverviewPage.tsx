@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import AdminErrorAlerts from '@/components/admin/AdminErrorAlerts';
+import SystemHealthPanel from '@/components/admin/SystemHealthPanel';
 import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -256,6 +257,9 @@ const AdminOverviewPage = () => {
             );
           })}
         </div>
+
+        {/* System Health (real operational counters + actions) */}
+        <SystemHealthPanel />
 
         {/* Charts Row */}
         <div className="grid gap-4 lg:grid-cols-2">

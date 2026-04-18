@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Gift, Lock, CheckCircle2, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import IconRenderer from '@/components/ui/IconRenderer';
 
 interface GamLevel {
   id: string;
@@ -48,7 +49,7 @@ const LevelBenefits = () => {
       {/* Current level benefits */}
       <div className="rounded-xl p-3 border" style={{ borderColor: `${currentLevel.color}30`, backgroundColor: `${currentLevel.color}08` }}>
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-lg">{currentLevel.icon}</span>
+          <IconRenderer name={currentLevel.icon} size={20} style={{ color: currentLevel.color }} />
           <span className="text-xs font-bold" style={{ color: currentLevel.color }}>{currentLevel.name}</span>
           <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-accent/10 text-accent font-semibold">Atual</span>
         </div>
@@ -74,7 +75,7 @@ const LevelBenefits = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-muted/50" />
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg opacity-60">{nextLevel.icon}</span>
+              <IconRenderer name={nextLevel.icon} size={20} className="opacity-60" style={{ color: nextLevel.color }} />
               <span className="text-xs font-bold text-muted-foreground">{nextLevel.name}</span>
               <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold flex items-center gap-0.5">
                 <Lock className="h-2.5 w-2.5" /> Desbloquear
