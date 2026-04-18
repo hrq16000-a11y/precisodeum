@@ -210,22 +210,28 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                 </div>
               )}
 
-              {/* Level & Account Type */}
+              {/* Nível (destaque) + Tipo de Conta (discreto) */}
               <div className="mt-2 space-y-1 text-xs">
                 {userLevel && (
                   <div className="flex items-center gap-1.5">
                     <span className="text-muted-foreground">Nível:</span>
-                    <span className="inline-flex items-center gap-1 font-semibold">
-                      <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: userLevel.color }} />
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold"
+                      style={{
+                        backgroundColor: `${userLevel.color}1a`,
+                        color: userLevel.color,
+                        border: `1px solid ${userLevel.color}40`,
+                      }}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: userLevel.color }} />
                       {userLevel.name}
                     </span>
                   </div>
                 )}
                 {userAccType && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">Categoria:</span>
-                    <span className="inline-flex items-center gap-1 font-semibold">
-                      <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: userAccType.color }} />
+                    <span className="text-muted-foreground">Tipo:</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                       {userAccType.name}
                     </span>
                   </div>
