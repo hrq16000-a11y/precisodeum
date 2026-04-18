@@ -723,6 +723,7 @@ export type Database = {
           benefits: Json
           color: string
           created_at: string
+          feature_unlocks: Json
           icon: string
           id: string
           max_points: number | null
@@ -737,6 +738,7 @@ export type Database = {
           benefits?: Json
           color?: string
           created_at?: string
+          feature_unlocks?: Json
           icon?: string
           id?: string
           max_points?: number | null
@@ -751,6 +753,7 @@ export type Database = {
           benefits?: Json
           color?: string
           created_at?: string
+          feature_unlocks?: Json
           icon?: string
           id?: string
           max_points?: number | null
@@ -3694,17 +3697,22 @@ export type Database = {
           can_access_reports: boolean
           can_create_services: boolean
           can_receive_leads: boolean
+          can_use_advanced_dashboard: boolean
+          can_view_client_phone: boolean
           created_at: string
           id: string
           max_ads: number
           max_leads: number
           max_services: number
           max_slots: number
+          radius_km: number
           ranking_priority: number
           search_boost: number
           tier_key: string
           tier_label: string
+          top_search_placement: boolean
           updated_at: string
+          verified_badge: boolean
         }
         Insert: {
           can_access_crm?: boolean
@@ -3712,17 +3720,22 @@ export type Database = {
           can_access_reports?: boolean
           can_create_services?: boolean
           can_receive_leads?: boolean
+          can_use_advanced_dashboard?: boolean
+          can_view_client_phone?: boolean
           created_at?: string
           id?: string
           max_ads?: number
           max_leads?: number
           max_services?: number
           max_slots?: number
+          radius_km?: number
           ranking_priority?: number
           search_boost?: number
           tier_key: string
           tier_label?: string
+          top_search_placement?: boolean
           updated_at?: string
+          verified_badge?: boolean
         }
         Update: {
           can_access_crm?: boolean
@@ -3730,17 +3743,22 @@ export type Database = {
           can_access_reports?: boolean
           can_create_services?: boolean
           can_receive_leads?: boolean
+          can_use_advanced_dashboard?: boolean
+          can_view_client_phone?: boolean
           created_at?: string
           id?: string
           max_ads?: number
           max_leads?: number
           max_services?: number
           max_slots?: number
+          radius_km?: number
           ranking_priority?: number
           search_boost?: number
           tier_key?: string
           tier_label?: string
+          top_search_placement?: boolean
           updated_at?: string
+          verified_badge?: boolean
         }
         Relationships: []
       }
@@ -4383,6 +4401,10 @@ export type Database = {
         }
         Returns: number
       }
+      admin_assign_user_level: {
+        Args: { _level_id: string; _user_id: string }
+        Returns: undefined
+      }
       admin_ban_suspicious: { Args: { _user_ids: string[] }; Returns: number }
       admin_clear_suspicion: { Args: { _user_ids: string[] }; Returns: number }
       admin_export_audit_logs: {
@@ -4483,6 +4505,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      effective_user_permissions: { Args: { _user_id: string }; Returns: Json }
       find_orphan_media: {
         Args: { _min_age_hours?: number }
         Returns: {
