@@ -643,7 +643,7 @@ const AdminUsersPage = () => {
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestão unificada — usuários, métricas e segmentação</p>
         </div>
-        <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+        <Button size="sm" onClick={openCreateDialog}>
           <UserPlus className="h-4 w-4 mr-1" /> Criar Usuário
         </Button>
       </div>
