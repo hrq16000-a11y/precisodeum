@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { ShieldAlert } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -69,8 +71,10 @@ const AdminUsersPage = () => {
   const [filterProviderStatus, setFilterProviderStatus] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [qualityFilter, setQualityFilter] = useState('all');
+  const [suspiciousOnly, setSuspiciousOnly] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [editUser, setEditUser] = useState<any | null>(null);
   const [pwUser, setPwUser] = useState<any | null>(null);
@@ -346,6 +350,10 @@ const AdminUsersPage = () => {
       });
     }
 
+    if (suspiciousOnly) {
+      list = list.filter(p => p.is_suspicious === true);
+    }
+
     // Sorting
     if (sortBy === 'oldest') {
       list = [...list].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
@@ -355,7 +363,7 @@ const AdminUsersPage = () => {
     // 'recent' is already the default order from DB
 
     return list;
-  }, [profiles, debouncedSearch, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy, qualityFilter]);
+  }, [profiles, debouncedSearch, filterType, filterStatus, filterProviderStatus, providersMap, activeTab, adminIds, sponsorUserIds, sortBy, qualityFilter, suspiciousOnly]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
