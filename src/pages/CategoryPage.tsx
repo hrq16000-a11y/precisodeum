@@ -139,7 +139,7 @@ const CategoryPage = () => {
   useSeoHead({
     title: category ? `${category.name} - Profissionais` : 'Categoria',
     description: category
-      ? `Encontre os melhores profissionais de ${category.name}. ${allProviders.length} cadastrados com avaliações verificadas.`
+      ? `Encontre os melhores profissionais de ${category.name}. ${allProviders.length} cadastrados com avaliações reais.`
       : 'Encontre profissionais por categoria.',
     canonical: slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined,
   });

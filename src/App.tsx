@@ -97,6 +97,7 @@ const AdminBottomNavPage = lazy(() => import("./pages/AdminBottomNavPage"));
 
 const AdminSponsorLeadsPage = lazy(() => import("./pages/AdminSponsorLeadsPage"));
 const AdminGamificationPage = lazy(() => import("./pages/AdminGamificationPage"));
+const AdminRankingsPage = lazy(() => import("./pages/AdminRankingsPage"));
 const AdminStaffPage = lazy(() => import("./pages/AdminStaffPage"));
 const AdminOverviewPage = lazy(() => import("./pages/AdminOverviewPage"));
 const AdminNotificationsPage = lazy(() => import("./pages/AdminNotificationsPage"));
@@ -322,6 +323,7 @@ const App = () => {
                 <Route path="/admin/barra-inferior" element={<AdminBottomNavPage />} />
                 <Route path="/admin/governanca" element={<AdminGovernancePage />} />
                 <Route path="/admin/gamificacao" element={<AdminGamificationPage />} />
+                <Route path="/admin/rankings" element={<AdminRankingsPage />} />
                 <Route path="/admin/staff" element={<AdminStaffPage />} />
                 <Route path="/admin/aprovacao" element={<AdminApprovalSettingsPage />} />
                 <Route path="/admin/cursos" element={<AdminCoursesPage />} />

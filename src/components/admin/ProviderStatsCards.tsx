@@ -15,7 +15,7 @@ const ProviderStatsCards = ({ stats }: { stats: ProviderStats }) => {
     { label: 'Pendentes', value: stats.pending, icon: Clock, color: 'border-l-amber-500 text-amber-600' },
     { label: 'Aprovados', value: stats.approved, icon: CheckCircle2, color: 'border-l-emerald-500 text-emerald-600' },
     { label: 'Rejeitados', value: stats.rejected, icon: XCircle, color: 'border-l-destructive text-destructive' },
-    { label: 'Verificados', value: stats.verified, icon: Shield, color: 'border-l-blue-500 text-blue-600' },
+    { label: 'Perfis Completos', value: stats.verified, icon: Shield, color: 'border-l-blue-500 text-blue-600' },
   ];
 
   return (

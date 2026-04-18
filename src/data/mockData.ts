@@ -224,12 +224,12 @@ export const providers: Provider[] = [
 
 export const testimonials = [
   { name: 'Fernanda M.', city: 'Curitiba, PR', text: 'Encontrei um eletricista excelente em menos de 5 minutos. Super recomendo!', rating: 5 },
-  { name: 'Ricardo S.', city: 'São Paulo, SP', text: 'Plataforma incrível! Os profissionais são verificados e confiáveis.', rating: 5 },
+  { name: 'Ricardo S.', city: 'São Paulo, SP', text: 'Plataforma incrível! Os profissionais são bem avaliados e confiáveis.', rating: 5 },
   { name: 'Juliana A.', city: 'Rio de Janeiro, RJ', text: 'Já usei 3 vezes e sempre encontrei profissionais ótimos. Nota 10!', rating: 5 },
 ];
 
 export const howItWorks = [
   { step: 1, title: 'Busque o serviço', description: 'Digite o serviço que você precisa e sua localização.', icon: '🔍' },
-  { step: 2, title: 'Compare profissionais', description: 'Veja avaliações, preços e portfólios de profissionais verificados.', icon: '⭐' },
+  { step: 2, title: 'Compare profissionais', description: 'Veja avaliações, preços e portfólios de profissionais avaliados pela comunidade.', icon: '⭐' },
   { step: 3, title: 'Entre em contato', description: 'Fale diretamente com o profissional pelo WhatsApp ou formulário.', icon: '💬' },
 ];

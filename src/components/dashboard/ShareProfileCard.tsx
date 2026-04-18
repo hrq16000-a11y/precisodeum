@@ -38,7 +38,7 @@ const ShareProfileCard = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${name} — Profissional Verificado`,
+          title: `${name} — Perfil Profissional`,
           text: `Conheça o perfil profissional de ${name} no Preciso de um!`,
           url: profileUrl,
         });

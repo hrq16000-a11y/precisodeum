@@ -286,7 +286,7 @@ const UserTable = ({ users, adminIds, levels = [], accountTypes = [], providersM
                         <Zap className="h-3 w-3 text-accent" />
                         <span className="text-xs font-semibold">{pts} pts</span>
                         <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${tier.badgeClass}`}>
-                          {tier.icon} {tier.label}
+                          {tier.label}
                         </span>
                       </div>
                       <div className="flex items-center gap-0.5">

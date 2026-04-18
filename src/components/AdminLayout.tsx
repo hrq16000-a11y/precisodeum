@@ -37,6 +37,7 @@ const menuGroups = [
   {
     label: 'Gamificação',
     items: [
+      { label: 'Rankings & Pontos', icon: Crown, path: '/admin/rankings' },
       { label: 'Níveis & Pontuação', icon: Crown, path: '/admin/gamificacao' },
       { label: 'Staff & Acessos', icon: Shield, path: '/admin/staff' },
     ],
