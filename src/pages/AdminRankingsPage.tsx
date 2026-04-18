@@ -92,7 +92,7 @@ const AdminRankingsPage = () => {
 
   const startEditLevel = (l: LevelRow) => {
     setEditingLevel(l.id);
-    setTempLevel({ name: l.name, min_points: l.min_points, color: l.color });
+    setTempLevel({ name: l.name, min_points: l.min_points, color: l.color, icon: l.icon });
   };
 
   const saveLevel = async (id: string) => {
