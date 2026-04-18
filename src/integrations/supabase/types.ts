@@ -1901,6 +1901,7 @@ export type Database = {
         Row: {
           account_type_id: string | null
           avatar_url: string | null
+          commercial_plan: string | null
           created_at: string
           department: string | null
           email: string | null
@@ -1914,6 +1915,7 @@ export type Database = {
           phone: string | null
           profile_type: string
           role: string
+          staff_role: Database["public"]["Enums"]["app_role"] | null
           status: string
           suspended_at: string | null
           suspended_by: string | null
@@ -1928,6 +1930,7 @@ export type Database = {
         Insert: {
           account_type_id?: string | null
           avatar_url?: string | null
+          commercial_plan?: string | null
           created_at?: string
           department?: string | null
           email?: string | null
@@ -1941,6 +1944,7 @@ export type Database = {
           phone?: string | null
           profile_type?: string
           role?: string
+          staff_role?: Database["public"]["Enums"]["app_role"] | null
           status?: string
           suspended_at?: string | null
           suspended_by?: string | null
@@ -1955,6 +1959,7 @@ export type Database = {
         Update: {
           account_type_id?: string | null
           avatar_url?: string | null
+          commercial_plan?: string | null
           created_at?: string
           department?: string | null
           email?: string | null
@@ -1968,6 +1973,7 @@ export type Database = {
           phone?: string | null
           profile_type?: string
           role?: string
+          staff_role?: Database["public"]["Enums"]["app_role"] | null
           status?: string
           suspended_at?: string | null
           suspended_by?: string | null
@@ -3456,6 +3462,36 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_permissions: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          permission_key: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          permission_key: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          permission_key?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       states: {
         Row: {
           created_at: string
@@ -3548,6 +3584,48 @@ export type Database = {
             referencedColumns: ["provider_id"]
           },
         ]
+      }
+      system_audit_logs: {
+        Row: {
+          action: string
+          context_metadata: Json | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          old_values: Json | null
+          staff_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          context_metadata?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          staff_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          context_metadata?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          staff_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
       }
       system_contract_map: {
         Row: {
@@ -4423,6 +4501,7 @@ export type Database = {
         Returns: string
       }
       get_rss_import_headers: { Args: never; Returns: Json }
+      get_staff_permissions: { Args: { _user_id: string }; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       get_user_storage_usage: { Args: { _user_ref: string }; Returns: number }
       has_role: {
@@ -4453,6 +4532,7 @@ export type Database = {
         Args: { sponsor_id: string }
         Returns: undefined
       }
+      is_caller_admin: { Args: never; Returns: boolean }
       is_sponsor: { Args: { _user_id: string }; Returns: boolean }
       nearby_providers: {
         Args: {
