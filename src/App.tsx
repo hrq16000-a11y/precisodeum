@@ -323,6 +323,7 @@ const App = () => {
                 <Route path="/admin/barra-inferior" element={<AdminBottomNavPage />} />
                 <Route path="/admin/governanca" element={<AdminGovernancePage />} />
                 <Route path="/admin/gamificacao" element={<AdminGamificationPage />} />
+                <Route path="/admin/rankings" element={<AdminRankingsPage />} />
                 <Route path="/admin/staff" element={<AdminStaffPage />} />
                 <Route path="/admin/aprovacao" element={<AdminApprovalSettingsPage />} />
                 <Route path="/admin/cursos" element={<AdminCoursesPage />} />
