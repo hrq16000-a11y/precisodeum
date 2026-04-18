@@ -343,6 +343,8 @@ const AdminUsersPage = () => {
           (p.whatsapp || '').toLowerCase().includes(q) ||
           (p.id || '').toLowerCase().includes(q) ||
           (p.user_ref || '').toLowerCase().includes(q) ||
+          (p.staff_role || '').toLowerCase().includes(q) ||
+          (p.commercial_plan || '').toLowerCase().includes(q) ||
           (prov?.business_name || '').toLowerCase().includes(q) ||
           (prov?.city || '').toLowerCase().includes(q) ||
           (prov?.state || '').toLowerCase().includes(q) ||
