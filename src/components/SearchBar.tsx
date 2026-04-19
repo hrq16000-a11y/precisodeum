@@ -7,6 +7,7 @@ import { useSearchSuggestions } from '@/hooks/useProviders';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useTypingPlaceholder } from '@/hooks/useTypingPlaceholder';
 import { matchNaturalLanguage } from '@/lib/naturalLanguageMap';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface SearchBarProps {
   variant?: 'hero' | 'compact';
@@ -101,16 +102,19 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
     };
   }, []);
 
+  // Debounce the query so heavy filtering/NLP only runs after typing pauses
+  const debouncedQuery = useDebounce(query, 180);
+
   // NLP match
   const nlpMatch = useMemo(() => {
-    const q = query.trim();
+    const q = debouncedQuery.trim();
     if (q.length < 3) return null;
     return matchNaturalLanguage(q);
-  }, [query]);
+  }, [debouncedQuery]);
 
   const filteredSuggestions = useMemo((): Suggestion[] => {
     if (!suggestions) return [];
-    const q = query.trim().toLowerCase();
+    const q = debouncedQuery.trim().toLowerCase();
 
     if (!q) {
       const trending: Suggestion[] = TRENDING_QUERIES.map(label => {
@@ -156,7 +160,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
 
     return results.slice(0, 8);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, suggestions, openCount, nlpMatch]);
+  }, [debouncedQuery, suggestions, openCount, nlpMatch]);
 
   const [searchError, setSearchError] = useState('');
 
