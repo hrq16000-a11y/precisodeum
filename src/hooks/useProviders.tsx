@@ -359,34 +359,50 @@ export function useCategoriesWithCount() {
 export function useFeaturedProviders() {
   return useQuery({
     queryKey: ['featured-providers'],
-    queryFn: async () => {
-      const allProviders = await fetchProvidersLightweight(
-        supabase
-          .from('providers')
-          .select(providerSelect)
-          .eq('status', 'approved')
-          .limit(500)
-      );
+    queryFn: async (): Promise<DbProvider[]> => {
+      const { data, error } = await supabase.rpc('get_featured_providers', { _limit: 6 });
+      if (error) throw error;
+      const rows = (data || []) as any[];
+      if (rows.length === 0) return [];
 
-      if (allProviders.length === 0) return [];
+      // Map MV rows (snake_case + flat category fields) to DbProvider shape
+      return rows.map((p) => {
+        const provWhatsapp = (p.whatsapp || '').trim();
+        const provPhone = (p.phone || '').trim();
+        const effectiveWhatsapp = provWhatsapp || provPhone || '';
+        const effectivePhone = provPhone || provWhatsapp || '';
 
-      // Sort by hybrid score desc — featured = top of ranking, no fixed threshold
-      const scored = allProviders
-        .map((p) => ({
-          ...p,
-          _totalScore: (p as any)._finalScore || (p as any)._contentScore || 0,
-        }))
-        .sort((a, b) => b._totalScore - a._totalScore);
-
-      // Pick target count: 9 > 6 > 3
-      let target = 3;
-      if (scored.length >= 9) target = 9;
-      else if (scored.length >= 6) target = 6;
-
-      // Take top candidates, light shuffle for variety
-      const candidates = scored.slice(0, Math.min(scored.length, target * 2));
-      const shuffled = shuffleArray(candidates);
-      return shuffled.slice(0, target).map(({ _totalScore, _contentScore, _finalScore, _boostScore, ...p }: any) => p);
+        const mapped: DbProvider = {
+          id: p.id,
+          userId: p.user_id,
+          name: p.business_name || 'Profissional',
+          businessName: p.business_name || undefined,
+          category: p.category_name || '',
+          categorySlug: p.category_slug || '',
+          categoryIcon: p.category_icon || 'Wrench',
+          city: (p.city || '').trim(),
+          state: (p.state || '').trim(),
+          neighborhood: (p.neighborhood || '').trim(),
+          latitude: p.latitude ?? null,
+          longitude: p.longitude ?? null,
+          rating: Number(p.rating_avg) || 0,
+          reviewCount: p.review_count || 0,
+          photo: p.photo_url || '',
+          serviceImage: undefined,
+          hasPortfolio: (p.portfolio_photo_count || 0) > 0,
+          description: (p.description || '').trim(),
+          phone: effectivePhone,
+          whatsapp: effectiveWhatsapp,
+          yearsExperience: p.years_experience || 0,
+          plan: p.plan || '',
+          slug: p.slug || p.id,
+          featured: !!p.featured,
+          servicesCount: p.services_count || 0,
+          portfolioAlbumCount: p.portfolio_album_count || 0,
+          portfolioPhotoCount: p.portfolio_photo_count || 0,
+        };
+        return mapped;
+      });
     },
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
