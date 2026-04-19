@@ -1,11 +1,15 @@
-// ─── Preciso de um — Service Worker v4 ───
-// Estratégia segura para SPA com bundles versionados (Vite hash):
-//  - NUNCA cacheia /assets/*-{hash}.{js,css} (deixa Cache-Control HTTP gerenciar)
-//  - Navigation: network-first → fallback HTML cacheado → fallback offline.html
-//  - Imagens/fontes: stale-while-revalidate
-//  - Bump de versão (v3→v4) força limpeza dos caches corrompidos em clientes existentes
-const CACHE_NAME = 'pwa-v4';
+// ─── Preciso de um — Service Worker v5 ───
+// v5: adiciona cache runtime para imagens cross-origin (Supabase Storage, GCS)
+const CACHE_NAME = 'pwa-v5';
+const IMG_CACHE = 'img-runtime-v1';
+const IMG_CACHE_MAX = 120;
 const OFFLINE_URL = '/offline.html';
+
+// Hosts permitidos para cache de imagens cross-origin
+const IMG_ALLOWED_HOSTS = [
+  'qaftogrqeyymewoofexc.supabase.co',
+  'storage.googleapis.com',
+];
 
 const PRECACHE_URLS = [
   '/',
@@ -14,6 +18,16 @@ const PRECACHE_URLS = [
   '/icons/icon-512.png',
   '/manifest.json',
 ];
+
+// Limita entradas do cache de imagens (LRU simples)
+async function trimCache(cacheName, maxItems) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length > maxItems) {
+    await cache.delete(keys[0]);
+    await trimCache(cacheName, maxItems);
+  }
+}
 
 // Detecta bundle versionado do Vite (ex: /assets/index-9EjBEZ4G.js)
 const HASHED_ASSET_RE = /\/assets\/.+-[A-Za-z0-9_-]{8,}\.(?:js|css|woff2?|ttf|otf)$/;
@@ -26,11 +40,11 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// ── Activate: limpa caches antigos ──
+// Activate: limpa caches antigos (mantém o cache de imagens runtime)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => k !== CACHE_NAME && k !== IMG_CACHE).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
@@ -42,11 +56,31 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // Bypass total para chamadas cross-origin (Supabase, fontes, APIs externas)
-  if (url.origin !== self.location.origin) return;
+  // Imagens cross-origin de hosts permitidos: stale-while-revalidate em cache dedicado
+  const isCrossOrigin = url.origin !== self.location.origin;
+  const isAllowedImageHost = IMG_ALLOWED_HOSTS.includes(url.hostname);
+  const looksLikeImage = request.destination === 'image' || /\.(?:png|jpe?g|webp|avif|gif|svg)(?:\?|$)/i.test(url.pathname);
 
-  // Bypass total para bundles hash (imutáveis — HTTP cache cuida)
-  // Isso é o que evita "tela branca após deploy"
+  if (isCrossOrigin && isAllowedImageHost && looksLikeImage) {
+    event.respondWith(
+      caches.open(IMG_CACHE).then(async (cache) => {
+        const cached = await cache.match(request);
+        const fetched = fetch(request).then((response) => {
+          if (response && (response.ok || response.type === 'opaque')) {
+            cache.put(request, response.clone()).then(() => trimCache(IMG_CACHE, IMG_CACHE_MAX));
+          }
+          return response;
+        }).catch(() => cached);
+        return cached || fetched;
+      })
+    );
+    return;
+  }
+
+  // Bypass para outras chamadas cross-origin (Supabase API, fontes Google, etc.)
+  if (isCrossOrigin) return;
+
+  // Bypass para bundles hash (imutáveis — HTTP cache cuida) — evita tela branca pós-deploy
   if (HASHED_ASSET_RE.test(url.pathname)) return;
 
   // Navegação SPA: network-first → cache do "/" → offline
@@ -68,7 +102,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Imagens e fontes não-versionadas: stale-while-revalidate
+  // Imagens e fontes same-origin: stale-while-revalidate
   if (request.destination === 'image' || request.destination === 'font') {
     event.respondWith(
       caches.match(request).then((cached) => {
