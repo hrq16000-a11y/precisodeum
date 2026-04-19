@@ -141,22 +141,23 @@ const Index = () => {
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
 
-  // Consolidated secondary data — fires in parallel (no waterfall)
+  // Consolidated secondary data — single RPC call (replaces 4 parallel queries)
   const { data: secondaryData } = useQuery({
     queryKey: ['home-secondary-data'],
     queryFn: async () => {
-      const [citiesRes, sponsorsRes, servicesRes, jobsRes] = await Promise.all([
-        supabase.from('cities').select('name, slug, state').eq('has_providers', true).order('provider_count', { ascending: false }).limit(6).then(r => r.data || []),
-        supabase.from('sponsors').select('id, title, company_name, image_url, logo_url, link_url, tier, position, active, display_order, short_description, max_width, max_height').eq('active', true).order('display_order').then(r => r.data || []),
-        supabase.from('services').select('id', { count: 'exact', head: true }),
-        supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-      ]);
+      const { data, error } = await supabase.rpc('get_home_bootstrap');
+      if (error) throw error;
+      const payload = (data ?? {}) as {
+        topCities?: Array<{ name: string; slug: string; state: string }>;
+        sponsors?: Array<any>;
+        counts?: { services?: number; jobs?: number };
+      };
       return {
-        topCities: citiesRes,
-        sponsors: sponsorsRes,
+        topCities: payload.topCities ?? [],
+        sponsors: payload.sponsors ?? [],
         counts: {
-          services: servicesRes.count || 0,
-          jobs: jobsRes.count || 0,
+          services: payload.counts?.services ?? 0,
+          jobs: payload.counts?.jobs ?? 0,
         },
       };
     },
