@@ -56,11 +56,31 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // Bypass total para chamadas cross-origin (Supabase, fontes, APIs externas)
-  if (url.origin !== self.location.origin) return;
+  // Imagens cross-origin de hosts permitidos: stale-while-revalidate em cache dedicado
+  const isCrossOrigin = url.origin !== self.location.origin;
+  const isAllowedImageHost = IMG_ALLOWED_HOSTS.includes(url.hostname);
+  const looksLikeImage = request.destination === 'image' || /\.(?:png|jpe?g|webp|avif|gif|svg)(?:\?|$)/i.test(url.pathname);
 
-  // Bypass total para bundles hash (imutáveis — HTTP cache cuida)
-  // Isso é o que evita "tela branca após deploy"
+  if (isCrossOrigin && isAllowedImageHost && looksLikeImage) {
+    event.respondWith(
+      caches.open(IMG_CACHE).then(async (cache) => {
+        const cached = await cache.match(request);
+        const fetched = fetch(request).then((response) => {
+          if (response && (response.ok || response.type === 'opaque')) {
+            cache.put(request, response.clone()).then(() => trimCache(IMG_CACHE, IMG_CACHE_MAX));
+          }
+          return response;
+        }).catch(() => cached);
+        return cached || fetched;
+      })
+    );
+    return;
+  }
+
+  // Bypass para outras chamadas cross-origin (Supabase API, fontes Google, etc.)
+  if (isCrossOrigin) return;
+
+  // Bypass para bundles hash (imutáveis — HTTP cache cuida) — evita tela branca pós-deploy
   if (HASHED_ASSET_RE.test(url.pathname)) return;
 
   // Navegação SPA: network-first → cache do "/" → offline
@@ -82,10 +102,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Imagens e fontes não-versionadas: stale-while-revalidate
-  if (request.destination === 'image' || request.destination === 'font') {
-    // Suporta também imagens cross-origin (Supabase Storage, GCS) cacheando localmente
-  }
+  // Imagens e fontes same-origin: stale-while-revalidate
   if (request.destination === 'image' || request.destination === 'font') {
     event.respondWith(
       caches.match(request).then((cached) => {
