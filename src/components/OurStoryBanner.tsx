@@ -1,4 +1,3 @@
-import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart, ArrowRight } from 'lucide-react';
@@ -8,7 +7,7 @@ interface OurStoryBannerProps {
   variant?: 'full' | 'compact';
 }
 
-const OurStoryBanner = forwardRef<HTMLDivElement, OurStoryBannerProps>(({ variant = 'full' }, _ref) => {
+const OurStoryBanner = ({ variant = 'full' }: OurStoryBannerProps) => {
   if (variant === 'compact') {
     return (
       <motion.div
@@ -79,8 +78,6 @@ const OurStoryBanner = forwardRef<HTMLDivElement, OurStoryBannerProps>(({ varian
       </div>
     </motion.section>
   );
-});
-
-OurStoryBanner.displayName = 'OurStoryBanner';
+};
 
 export default OurStoryBanner;
