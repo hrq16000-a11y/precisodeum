@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { MapPin, Clock, ArrowRight } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
 
 interface RecentService {
   id: string;
@@ -38,16 +37,6 @@ function timeAgo(dateStr?: string) {
   return `${days}d atrás`;
 }
 
-const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.07 } },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 18, scale: 0.97 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const } },
-};
-
 const RecentServices = ({ services }: Props) => {
   const displayed = useMemo(() => shuffle(services).slice(0, 6), [services]);
 
@@ -56,12 +45,7 @@ const RecentServices = ({ services }: Props) => {
   return (
     <section className="py-10">
       <div className="container">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mb-6 text-center"
-        >
+        <div className="mb-6 text-center animate-fade-in">
           <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary mb-2">
             🆕 Novidades
           </span>
@@ -71,16 +55,10 @@ const RecentServices = ({ services }: Props) => {
           <p className="mt-1 text-xs text-muted-foreground">
             Profissionais que acabaram de publicar seus serviços
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div
-          variants={container}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-40px' }}
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          {displayed.map((s) => {
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {displayed.map((s, i) => {
             const location = s.provider?.city
               ? `${s.provider.city}${s.provider.state ? ` - ${s.provider.state}` : ''}`
               : s.service_area || 'Brasil';
@@ -95,14 +73,10 @@ const RecentServices = ({ services }: Props) => {
                 <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:to-accent/5 transition-all duration-500" />
                 {/* Shine sweep */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-out" />
-                
-                <motion.span
-                  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"
-                  whileHover={{ scale: 1.15, rotate: 5 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                >
+
+                <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 transition-transform duration-300 group-hover:scale-110">
                   <CategoryIcon icon={catIcon} size={20} className="text-primary" />
-                </motion.span>
+                </span>
                 <div className="relative min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-primary transition-colors">
                     {s.service_name}
@@ -130,31 +104,29 @@ const RecentServices = ({ services }: Props) => {
             );
 
             return (
-              <motion.div key={s.id} variants={item}>
+              <div
+                key={s.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${i * 70}ms`, animationFillMode: 'both' }}
+              >
                 {catSlug ? (
                   <Link to={`/categoria/${catSlug}`}>{content}</Link>
                 ) : (
                   content
                 )}
-              </motion.div>
+              </div>
             );
           })}
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-          className="mt-5 text-center"
-        >
+        <div className="mt-5 text-center animate-fade-in" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
           <Button variant="outline" size="sm" className="gap-1.5 rounded-full" asChild>
             <Link to="/buscar">
               Ver Todos os Serviços
               <ArrowRight className="h-3 w-3" />
             </Link>
           </Button>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
