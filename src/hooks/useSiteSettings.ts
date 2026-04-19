@@ -17,8 +17,11 @@ export function useSiteSettings() {
       });
       return { flags: map, values: raw };
     },
-    staleTime: 1000 * 60 * 30, // 30 min (rarely changes)
-    gcTime: 1000 * 60 * 60, // 1 hour
+    staleTime: Infinity, // settings raramente mudam — invalidar manualmente após edição admin
+    gcTime: 1000 * 60 * 60 * 24, // 24h
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 }
 

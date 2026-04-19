@@ -70,6 +70,9 @@ self.addEventListener('fetch', (event) => {
 
   // Imagens e fontes não-versionadas: stale-while-revalidate
   if (request.destination === 'image' || request.destination === 'font') {
+    // Suporta também imagens cross-origin (Supabase Storage, GCS) cacheando localmente
+  }
+  if (request.destination === 'image' || request.destination === 'font') {
     event.respondWith(
       caches.match(request).then((cached) => {
         const fetched = fetch(request).then((response) => {
