@@ -24,7 +24,8 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List } from 'lucide-react';
-import RouteSearchModal, { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchModal';
+import { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchModal';
+const RouteSearchModal = lazy(() => import('@/components/RouteSearchModal'));
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -807,7 +808,9 @@ const SearchPage = () => {
         </div>
       </div>
       <Footer />
-      <RouteSearchModal open={routeModalOpen} onOpenChange={setRouteModalOpen} onRouteReady={setRouteCorridor} />
+      <Suspense fallback={null}>
+        <RouteSearchModal open={routeModalOpen} onOpenChange={setRouteModalOpen} onRouteReady={setRouteCorridor} />
+      </Suspense>
     </div>
   );
 };

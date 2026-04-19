@@ -6,7 +6,7 @@ import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import { formatLocationString, capitalizeName } from '@/lib/normalize';
-import ImageLightbox from '@/components/ImageLightbox';
+const ImageLightbox = lazy(() => import('@/components/ImageLightbox'));
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -1577,12 +1577,14 @@ const ProviderProfile = () => {
       </div>
 
       <Footer />
-      <ImageLightbox
-        images={lightboxImages}
-        initialIndex={lightboxIndex}
-        open={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <ImageLightbox
+          images={lightboxImages}
+          initialIndex={lightboxIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+        />
+      </Suspense>
     </div>
   );
 };
