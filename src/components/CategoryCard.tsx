@@ -10,6 +10,7 @@ interface CategoryCardProps {
     slug: string;
     icon: string;
     count: number;
+    image_url?: string | null;
   };
   index?: number;
 }

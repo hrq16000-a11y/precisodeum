@@ -107,6 +107,8 @@ const HeroBanner = () => {
         fetchPriority="high"
         loading="eager"
         decoding="sync"
+        // @ts-expect-error - non-standard but supported by Chromium for LCP hinting
+        elementtiming="hero-lcp"
         className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700"
         style={{ width: '100%', height: '100%' }}
       />

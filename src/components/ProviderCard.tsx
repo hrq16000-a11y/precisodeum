@@ -11,7 +11,7 @@ import type { DbProvider } from '@/hooks/useProviders';
 import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { handleImageError } from '@/lib/imageResolver';
+import { handleImageError, getOptimizedUrl } from '@/lib/imageResolver';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { motion } from 'framer-motion';
@@ -140,7 +140,14 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       <div className="flex flex-1 flex-col p-3 sm:p-[1.25rem] relative">
         <div className="flex gap-3 sm:gap-4">
            <Avatar className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 transition-transform duration-300 group-hover:scale-105 ring-2 ring-transparent group-hover:ring-accent/20">
-            <AvatarImage src={displayPhoto || undefined} alt={displayName} loading="lazy" decoding="async" onError={handleImageError} />
+            <AvatarImage
+              src={getOptimizedUrl(displayPhoto, 112) || displayPhoto || undefined}
+              alt={displayName}
+              loading={index < 3 ? 'eager' : 'lazy'}
+              fetchPriority={index < 3 ? 'high' : 'auto'}
+              decoding="async"
+              onError={handleImageError}
+            />
             <AvatarFallback className="bg-primary/10">
               <CategoryIcon icon={provider.categoryIcon || ''} size={24} className="text-muted-foreground" />
             </AvatarFallback>
