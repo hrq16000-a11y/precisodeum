@@ -1,4 +1,4 @@
-import { forwardRef, useRef, useImperativeHandle } from 'react';
+import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import type { ReactNode } from 'react';
 
@@ -11,15 +11,14 @@ interface ParallaxSectionProps {
   orbColor?: string;
 }
 
-const ParallaxSection = forwardRef<HTMLDivElement, ParallaxSectionProps>(({
+const ParallaxSection = ({
   children,
   className = '',
   speed = 0.15,
   orb = false,
   orbColor = 'primary',
-}, forwardedRef) => {
+}: ParallaxSectionProps) => {
   const ref = useRef<HTMLDivElement>(null);
-  useImperativeHandle(forwardedRef, () => ref.current as HTMLDivElement);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ['start end', 'end start'],
@@ -42,8 +41,6 @@ const ParallaxSection = forwardRef<HTMLDivElement, ParallaxSectionProps>(({
       </motion.div>
     </div>
   );
-});
-
-ParallaxSection.displayName = 'ParallaxSection';
+};
 
 export default ParallaxSection;
