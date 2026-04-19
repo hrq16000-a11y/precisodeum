@@ -70,7 +70,7 @@ const FeaturedJobs = () => {
           </div>
         </FadeInSection>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 [content-visibility:auto] [contain-intrinsic-size:1px_600px]">
           {jobs.map((job: any) => {
             const typeClass = typeColors[job.opportunity_type] || typeColors.servico;
             const ago = timeAgo(job.created_at);
