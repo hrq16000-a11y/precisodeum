@@ -1,5 +1,10 @@
-// ─── Preciso de um — Service Worker v3 ───
-const CACHE_NAME = 'pwa-v3';
+// ─── Preciso de um — Service Worker v4 ───
+// Estratégia segura para SPA com bundles versionados (Vite hash):
+//  - NUNCA cacheia /assets/*-{hash}.{js,css} (deixa Cache-Control HTTP gerenciar)
+//  - Navigation: network-first → fallback HTML cacheado → fallback offline.html
+//  - Imagens/fontes: stale-while-revalidate
+//  - Bump de versão (v3→v4) força limpeza dos caches corrompidos em clientes existentes
+const CACHE_NAME = 'pwa-v4';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_URLS = [
@@ -10,7 +15,10 @@ const PRECACHE_URLS = [
   '/manifest.json',
 ];
 
-// ── Install: pre-cache essential assets ──
+// Detecta bundle versionado do Vite (ex: /assets/index-9EjBEZ4G.js)
+const HASHED_ASSET_RE = /\/assets\/.+-[A-Za-z0-9_-]{8,}\.(?:js|css|woff2?|ttf|otf)$/;
+
+// ── Install ──
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
@@ -18,47 +26,54 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// ── Activate: clean old caches ──
+// ── Activate: limpa caches antigos ──
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// ── Fetch: Network-first for navigations, Cache-first for static assets ──
+// ── Fetch ──
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
-  // Navigation requests: network-first with offline fallback
+  const url = new URL(request.url);
+
+  // Bypass total para chamadas cross-origin (Supabase, fontes, APIs externas)
+  if (url.origin !== self.location.origin) return;
+
+  // Bypass total para bundles hash (imutáveis — HTTP cache cuida)
+  // Isso é o que evita "tela branca após deploy"
+  if (HASHED_ASSET_RE.test(url.pathname)) return;
+
+  // Navegação SPA: network-first → cache do "/" → offline
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('/', clone));
+          }
           return response;
         })
-        .catch(() => caches.match(OFFLINE_URL))
+        .catch(async () => {
+          const cache = await caches.open(CACHE_NAME);
+          return (await cache.match('/')) || (await cache.match(OFFLINE_URL));
+        })
     );
     return;
   }
 
-  // Static assets: cache-first with background revalidation (long-lived cache)
-  if (
-    request.destination === 'style' ||
-    request.destination === 'script' ||
-    request.destination === 'image' ||
-    request.destination === 'font'
-  ) {
+  // Imagens e fontes não-versionadas: stale-while-revalidate
+  if (request.destination === 'image' || request.destination === 'font') {
     event.respondWith(
       caches.match(request).then((cached) => {
-        // Background revalidation
         const fetched = fetch(request).then((response) => {
-          if (response.ok) {
+          if (response && response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
@@ -69,6 +84,8 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
+
+  // Demais requests: passa direto pra rede
 });
 
 // ── Push notifications ──
@@ -123,4 +140,9 @@ self.addEventListener('periodicsync', (event) => {
       caches.open(CACHE_NAME).then((cache) => cache.add('/'))
     );
   }
+});
+
+// ── Permite ao app forçar atualização imediata ──
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
