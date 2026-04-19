@@ -4613,6 +4613,44 @@ export type Database = {
           user_ref: string
         }[]
       }
+      get_featured_providers: {
+        Args: { _limit?: number }
+        Returns: {
+          business_name: string | null
+          category_icon: string | null
+          category_id: string | null
+          category_name: string | null
+          category_slug: string | null
+          city: string | null
+          created_at: string | null
+          description: string | null
+          featured: boolean | null
+          id: string | null
+          latitude: number | null
+          longitude: number | null
+          neighborhood: string | null
+          phone: string | null
+          photo_url: string | null
+          plan: string | null
+          portfolio_album_count: number | null
+          portfolio_photo_count: number | null
+          rating_avg: number | null
+          review_count: number | null
+          services_count: number | null
+          slug: string | null
+          state: string | null
+          user_id: string | null
+          user_ref: string | null
+          whatsapp: string | null
+          years_experience: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "featured_providers_mv"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_gamification_level: {
         Args: { _points: number }
         Returns: {
