@@ -4526,6 +4526,7 @@ export type Database = {
           level_name: string
         }[]
       }
+      get_home_bootstrap: { Args: never; Returns: Json }
       get_latest_user_access_logs: {
         Args: never
         Returns: {
