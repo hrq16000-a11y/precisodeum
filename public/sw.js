@@ -1,11 +1,15 @@
-// ─── Preciso de um — Service Worker v4 ───
-// Estratégia segura para SPA com bundles versionados (Vite hash):
-//  - NUNCA cacheia /assets/*-{hash}.{js,css} (deixa Cache-Control HTTP gerenciar)
-//  - Navigation: network-first → fallback HTML cacheado → fallback offline.html
-//  - Imagens/fontes: stale-while-revalidate
-//  - Bump de versão (v3→v4) força limpeza dos caches corrompidos em clientes existentes
-const CACHE_NAME = 'pwa-v4';
+// ─── Preciso de um — Service Worker v5 ───
+// v5: adiciona cache runtime para imagens cross-origin (Supabase Storage, GCS)
+const CACHE_NAME = 'pwa-v5';
+const IMG_CACHE = 'img-runtime-v1';
+const IMG_CACHE_MAX = 120;
 const OFFLINE_URL = '/offline.html';
+
+// Hosts permitidos para cache de imagens cross-origin
+const IMG_ALLOWED_HOSTS = [
+  'qaftogrqeyymewoofexc.supabase.co',
+  'storage.googleapis.com',
+];
 
 const PRECACHE_URLS = [
   '/',
@@ -14,6 +18,16 @@ const PRECACHE_URLS = [
   '/icons/icon-512.png',
   '/manifest.json',
 ];
+
+// Limita entradas do cache de imagens (LRU simples)
+async function trimCache(cacheName, maxItems) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length > maxItems) {
+    await cache.delete(keys[0]);
+    await trimCache(cacheName, maxItems);
+  }
+}
 
 // Detecta bundle versionado do Vite (ex: /assets/index-9EjBEZ4G.js)
 const HASHED_ASSET_RE = /\/assets\/.+-[A-Za-z0-9_-]{8,}\.(?:js|css|woff2?|ttf|otf)$/;
