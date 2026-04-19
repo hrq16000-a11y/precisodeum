@@ -1,7 +1,6 @@
 import { ArrowRight, Megaphone, Sparkles, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -43,7 +42,6 @@ const CtaSection = () => {
 
   return (
     <>
-      {/* Mid CTA - Dynamic cards */}
       {midBlocks.length > 0 && (
         <section className="py-12">
           <div className="container">
@@ -54,20 +52,13 @@ const CtaSection = () => {
                 const colorBase = isAccent ? 'accent' : 'primary';
 
                 return (
-                  <motion.div
+                  <div
                     key={block.id}
-                    initial={{ opacity: 0, y: 30, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ duration: 0.5, delay: i * 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    className="animate-fade-in"
+                    style={{ animationDelay: `${i * 120}ms`, animationFillMode: 'backwards' }}
                   >
                     <div className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br from-${colorBase}/5 to-${colorBase}/10 border border-${colorBase}/20 p-8 text-center transition-all duration-500 hover:border-${colorBase}/40 hover:shadow-lg`}>
-                      {/* Animated background circle */}
-                      <motion.div
-                        className={`absolute -top-10 -right-10 h-32 w-32 rounded-full bg-${colorBase}/5`}
-                        animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
-                        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-                      />
-                      {/* Shine sweep */}
+                      <div className={`absolute -top-10 -right-10 h-32 w-32 rounded-full bg-${colorBase}/5`} />
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000 ease-out" />
 
                       <h2 className="relative font-display text-xl font-bold text-foreground md:text-2xl">
@@ -77,17 +68,13 @@ const CtaSection = () => {
                       <p className="relative mx-auto mt-3 max-w-sm text-sm text-muted-foreground leading-relaxed">
                         {block.subtitle}
                       </p>
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.97 }}
-                        className="relative mt-5 inline-block"
-                      >
+                      <div className="relative mt-5 inline-block transition-transform duration-200 hover:scale-105 active:scale-95">
                         <Button variant="accent" size="lg" className="rounded-full shadow-md" asChild>
                           <Link to={block.button_link}>{block.button_text} <ArrowRight className="h-4 w-4 icon-cta" /></Link>
                         </Button>
-                      </motion.div>
+                      </div>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
@@ -95,57 +82,32 @@ const CtaSection = () => {
         </section>
       )}
 
-      {/* Final CTA */}
       {finalBlock && (
         <section className="py-14 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">
-          {/* Floating particles */}
-          <div className="pointer-events-none absolute inset-0" aria-hidden>
-            {[...Array(4)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute rounded-full bg-accent/10"
-                style={{
-                  width: 8 + i * 6,
-                  height: 8 + i * 6,
-                  left: `${20 + i * 20}%`,
-                  top: `${30 + (i % 2) * 30}%`,
-                }}
-                animate={{ y: [0, -15, 0], opacity: [0.2, 0.5, 0.2] }}
-                transition={{ duration: 4 + i, repeat: Infinity, ease: 'easeInOut', delay: i * 0.5 }}
-              />
-            ))}
-          </div>
-
           <div className="container text-center relative">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+            <div className="animate-fade-in">
               <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
                 {finalBlock.title}
               </h2>
               <p className="mx-auto mt-3 max-w-md text-muted-foreground">
                 {finalBlock.subtitle}
               </p>
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
+              <div
+                className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center animate-fade-in"
+                style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}
               >
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
+                <div className="transition-transform duration-200 hover:scale-105 active:scale-95">
                   <Button variant="hero" size="xl" className="rounded-full shadow-lg" asChild>
                     <Link to={finalBlock.button_link}>{finalBlock.button_text}</Link>
                   </Button>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
+                </div>
+                <div className="transition-transform duration-200 hover:scale-105 active:scale-95">
                   <Button variant="outline" size="xl" className="rounded-full" asChild>
                     <Link to="/cadastro">Sou Profissional</Link>
                   </Button>
-                </motion.div>
-              </motion.div>
-            </motion.div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       )}

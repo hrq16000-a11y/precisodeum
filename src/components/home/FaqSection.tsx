@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { HelpCircle, ChevronDown, ArrowRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import FadeInSection from '@/components/FadeInSection';
 
 const INITIAL_COUNT = 6;
@@ -80,33 +79,26 @@ const FaqSection = () => {
                 <div className="rounded-xl border border-border bg-card overflow-hidden transition-all duration-300 hover:border-primary/20">
                   <button
                     onClick={() => setOpenId(isOpen ? null : faq.id)}
+                    aria-expanded={isOpen}
                     className="flex w-full items-center justify-between px-5 py-4 text-left"
                   >
                     <span className="text-sm font-semibold text-foreground pr-4">
                       {faq.question}
                     </span>
-                    <motion.div
-                      animate={{ rotate: isOpen ? 180 : 0 }}
-                      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                    >
-                      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    </motion.div>
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+                    />
                   </button>
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                        className="overflow-hidden"
-                      >
-                        <p className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed">
-                          {faq.answer}
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <div
+                    className="grid transition-all duration-300 ease-out"
+                    style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
+                  >
+                    <div className="overflow-hidden">
+                      <p className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed">
+                        {faq.answer}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </FadeInSection>
             );
