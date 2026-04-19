@@ -510,6 +510,13 @@ export type Database = {
             foreignKeyName: "contact_clicks_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_clicks_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -1346,6 +1353,13 @@ export type Database = {
             foreignKeyName: "leads_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -1754,6 +1768,13 @@ export type Database = {
             foreignKeyName: "portfolio_albums_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_albums_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -2029,6 +2050,13 @@ export type Database = {
             foreignKeyName: "provider_impressions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_impressions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -2117,6 +2145,13 @@ export type Database = {
           youtube_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "provider_page_settings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "provider_page_settings_provider_id_fkey"
             columns: ["provider_id"]
@@ -2491,6 +2526,13 @@ export type Database = {
             foreignKeyName: "reviews_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -2790,6 +2832,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "featured_providers_mv"
             referencedColumns: ["id"]
           },
           {
@@ -3562,6 +3611,13 @@ export type Database = {
             foreignKeyName: "subscriptions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -4142,6 +4198,46 @@ export type Database = {
         }
         Relationships: []
       }
+      featured_providers_mv: {
+        Row: {
+          business_name: string | null
+          category_icon: string | null
+          category_id: string | null
+          category_name: string | null
+          category_slug: string | null
+          city: string | null
+          created_at: string | null
+          description: string | null
+          featured: boolean | null
+          id: string | null
+          latitude: number | null
+          longitude: number | null
+          neighborhood: string | null
+          phone: string | null
+          photo_url: string | null
+          plan: string | null
+          portfolio_album_count: number | null
+          portfolio_photo_count: number | null
+          rating_avg: number | null
+          review_count: number | null
+          services_count: number | null
+          slug: string | null
+          state: string | null
+          user_id: string | null
+          user_ref: string | null
+          whatsapp: string | null
+          years_experience: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "providers_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_audit_view: {
         Row: {
           business_name: string | null
@@ -4517,6 +4613,44 @@ export type Database = {
           user_ref: string
         }[]
       }
+      get_featured_providers: {
+        Args: { _limit?: number }
+        Returns: {
+          business_name: string | null
+          category_icon: string | null
+          category_id: string | null
+          category_name: string | null
+          category_slug: string | null
+          city: string | null
+          created_at: string | null
+          description: string | null
+          featured: boolean | null
+          id: string | null
+          latitude: number | null
+          longitude: number | null
+          neighborhood: string | null
+          phone: string | null
+          photo_url: string | null
+          plan: string | null
+          portfolio_album_count: number | null
+          portfolio_photo_count: number | null
+          rating_avg: number | null
+          review_count: number | null
+          services_count: number | null
+          slug: string | null
+          state: string | null
+          user_id: string | null
+          user_ref: string | null
+          whatsapp: string | null
+          years_experience: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "featured_providers_mv"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_gamification_level: {
         Args: { _points: number }
         Returns: {
@@ -4621,6 +4755,7 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: number
       }
+      refresh_featured_providers_mv: { Args: never; Returns: undefined }
       track_sponsor_metric: {
         Args: {
           _event_type: string
