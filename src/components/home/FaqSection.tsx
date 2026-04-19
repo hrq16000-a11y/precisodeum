@@ -71,7 +71,7 @@ const FaqSection = () => {
           </h2>
         </FadeInSection>
 
-        <div className="space-y-2.5">
+        <div className="space-y-2.5 [content-visibility:auto] [contain-intrinsic-size:1px_600px]">
           {visibleFaqs.map((faq: any, idx: number) => {
             const isOpen = openId === faq.id;
             return (

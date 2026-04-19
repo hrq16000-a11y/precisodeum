@@ -96,7 +96,7 @@ const BlogHighlight = () => {
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0"
+          className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 [content-visibility:auto] [contain-intrinsic-size:1px_360px]"
         >
           {displayed.map((post, idx) => (
             <FadeInSection key={post.id} delay={idx * 0.04} className="flex-shrink-0 w-[220px] sm:w-[250px] snap-start">

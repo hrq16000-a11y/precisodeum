@@ -62,7 +62,7 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
         ) : providers.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground">Nenhum profissional em destaque ainda.</p>
         ) : (
-          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 [content-visibility:auto] [contain-intrinsic-size:1px_800px]">
             {items.map((item, idx) => {
               if (item.type === 'ad') {
                 return (

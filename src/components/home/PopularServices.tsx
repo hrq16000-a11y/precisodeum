@@ -114,7 +114,7 @@ const PopularServices = () => {
         </FadeInSection>
 
         <motion.div
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 [content-visibility:auto] [contain-intrinsic-size:1px_700px]"
           variants={containerVariants}
           initial="hidden"
           animate="show"

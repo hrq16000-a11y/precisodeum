@@ -52,7 +52,7 @@ const CitiesSection = ({ cities }: Props) => {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 [content-visibility:auto] [contain-intrinsic-size:1px_400px]">
           {randomCities.map((city, i) => {
             const gradient = stateColors[city.state] || 'from-primary/10 to-accent/5';
             return (

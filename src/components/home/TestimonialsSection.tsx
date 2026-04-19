@@ -92,7 +92,7 @@ const TestimonialsSection = () => {
             animate="center"
             exit="exit"
             transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="grid gap-5 md:grid-cols-3"
+            className="grid gap-5 md:grid-cols-3 [content-visibility:auto] [contain-intrinsic-size:1px_500px]"
           >
             {visible.map((t, i) => {
               const grad = ratingGradients[Math.round(t.rating)] || ratingGradients[3];
