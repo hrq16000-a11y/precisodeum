@@ -231,7 +231,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         </motion.button>
       </div>
 
-      <aside className={`fixed inset-y-0 left-0 z-40 w-64 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
+      <aside className={`fixed inset-y-0 left-0 z-40 w-64 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
         <div className="flex h-14 shrink-0 items-center gap-2 px-5 border-b border-sidebar-border">
           <motion.div
             className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/10"

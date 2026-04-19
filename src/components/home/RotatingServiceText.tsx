@@ -80,7 +80,7 @@ const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
         style={{ minHeight: '1.2em' }}
       >
         <span
-          className="text-secondary inline-block sm:whitespace-nowrap transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] break-words"
+          className="text-secondary inline-block sm:whitespace-nowrap transition-all duration-500 ease-in-out break-words"
           style={{
             opacity: phase === 'in' ? 1 : 0,
             transform: phase === 'in' ? 'translateY(0)' : 'translateY(-20px)',
