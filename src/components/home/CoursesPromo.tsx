@@ -1,5 +1,3 @@
-import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
 import { GraduationCap, BookOpen, Award, ArrowRight, Sparkles, TrendingUp, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,12 +11,10 @@ const highlights = [
 ];
 
 const CoursesPromo = () => {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: '-80px' });
   const navigate = useNavigate();
 
   return (
-    <section ref={ref} className="py-16 md:py-20 px-4">
+    <section className="py-16 md:py-20 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/90 p-8 md:p-14">
           {/* Decorative elements */}
@@ -34,43 +30,25 @@ const CoursesPromo = () => {
           <div className="relative grid md:grid-cols-2 gap-8 items-center">
             {/* Left — text */}
             <div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5 }}
-              >
+              <div className="animate-fade-in">
                 <Badge className="mb-4 bg-white/10 text-primary-foreground border border-white/20 backdrop-blur-sm">
                   <Sparkles className="w-3 h-3 mr-1" /> Portal de Capacitação
                 </Badge>
-              </motion.div>
+              </div>
 
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: 0.1, duration: 0.5 }}
-                className="text-2xl md:text-4xl font-extrabold text-primary-foreground leading-tight mb-4"
-              >
+              <h2 className="text-2xl md:text-4xl font-extrabold text-primary-foreground leading-tight mb-4 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
                 Invista no seu{' '}
                 <span className="bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 bg-clip-text text-transparent">
                   futuro profissional
                 </span>
-              </motion.h2>
+              </h2>
 
-              <motion.p
-                initial={{ opacity: 0, y: 15 }}
-                animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="text-primary-foreground/70 text-sm md:text-base leading-relaxed mb-6 max-w-md"
-              >
+              <p className="text-primary-foreground/70 text-sm md:text-base leading-relaxed mb-6 max-w-md animate-fade-in" style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
                 Cursos gratuitos das melhores instituições do Brasil. Conquiste certificados,
                 aprimore suas habilidades e atraia mais clientes.
-              </motion.p>
+              </p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: 0.3, duration: 0.5 }}
-              >
+              <div className="animate-fade-in" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
                 <Button
                   size="lg"
                   className="bg-gradient-to-r from-secondary to-accent text-secondary-foreground shadow-xl shadow-secondary/30 hover:shadow-2xl group"
@@ -80,39 +58,29 @@ const CoursesPromo = () => {
                   Ver Cursos Gratuitos
                   <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
-              </motion.div>
+              </div>
             </div>
 
             {/* Right — cards grid */}
             <div className="grid grid-cols-2 gap-3">
               {highlights.map((item, i) => (
-                <motion.div
+                <div
                   key={item.label}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
-                  transition={{ delay: 0.2 + i * 0.1, duration: 0.4 }}
-                  className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-colors group cursor-default"
+                  className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all duration-300 group cursor-default animate-fade-in"
+                  style={{ animationDelay: `${200 + i * 100}ms`, animationFillMode: 'both' }}
                 >
-                  <motion.div
-                    className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mb-3"
-                    whileHover={{ rotate: [0, -5, 5, 0], scale: 1.05 }}
-                  >
+                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-105">
                     <item.icon className="w-5 h-5 text-amber-300" />
-                  </motion.div>
+                  </div>
                   <h3 className="text-sm font-bold text-primary-foreground mb-0.5">{item.label}</h3>
                   <p className="text-[11px] text-primary-foreground/50">{item.desc}</p>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
 
           {/* Bottom trust bar */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : {}}
-            transition={{ delay: 0.6 }}
-            className="relative flex items-center justify-center gap-6 mt-8 pt-6 border-t border-white/10 flex-wrap"
-          >
+          <div className="relative flex items-center justify-center gap-6 mt-8 pt-6 border-t border-white/10 flex-wrap animate-fade-in" style={{ animationDelay: '600ms', animationFillMode: 'both' }}>
             <span className="flex items-center gap-1.5 text-xs text-primary-foreground/50">
               <Heart className="w-3 h-3" /> Valorize sua carreira
             </span>
@@ -122,7 +90,7 @@ const CoursesPromo = () => {
             <span className="flex items-center gap-1.5 text-xs text-primary-foreground/50">
               <TrendingUp className="w-3 h-3" /> Destaque na plataforma
             </span>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

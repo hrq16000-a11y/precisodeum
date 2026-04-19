@@ -1,5 +1,4 @@
 import { useEffect, useState, memo, useCallback, useRef, forwardRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink } from 'lucide-react';
 import { handleImageError } from '@/lib/imageResolver';
 import { optimizedImageUrl } from '@/lib/imageOptimizer';
@@ -61,44 +60,35 @@ const LeaderSponsor = memo(forwardRef<HTMLElement, Props>(({ sponsors, onClickTr
   const imageSrc = optimizedImageUrl(rawSrc, { width: 800, quality: 70, resize: 'contain' });
 
   return (
-    <motion.section
+    <section
       ref={ref}
       aria-label="Patrocinador"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      className="relative w-full"
+      className="relative w-full animate-fade-in"
       style={{ marginTop: 12, paddingLeft: 12, paddingRight: 12 }}
     >
-      <AnimatePresence mode="wait">
-        <motion.a
-          key={current.id}
-          href={current.link_url || '#'}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => handleClick(current.id)}
-          data-sponsor={displayName}
-          data-click="true"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="block w-full cursor-pointer group"
-        >
-          {imageSrc && (
-            <img
-              src={imageSrc}
-              alt={`${displayName}${current.short_description ? ' — ' + current.short_description : ''}`}
-              className="w-full object-cover object-center"
-              style={{ borderRadius: 10, aspectRatio: '8/1' }}
-              loading="lazy"
-              width={1600}
-              height={200}
-              onError={handleImageError}
-            />
-          )}
-        </motion.a>
-      </AnimatePresence>
+      <a
+        key={current.id}
+        href={current.link_url || '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => handleClick(current.id)}
+        data-sponsor={displayName}
+        data-click="true"
+        className="block w-full cursor-pointer group transition-opacity duration-300 animate-fade-in"
+      >
+        {imageSrc && (
+          <img
+            src={imageSrc}
+            alt={`${displayName}${current.short_description ? ' — ' + current.short_description : ''}`}
+            className="w-full object-cover object-center"
+            style={{ borderRadius: 10, aspectRatio: '8/1' }}
+            loading="lazy"
+            width={1600}
+            height={200}
+            onError={handleImageError}
+          />
+        )}
+      </a>
 
       <div className="flex items-center justify-between px-1 py-1 mt-1">
         <div className="flex items-center gap-2 min-w-0">
@@ -144,7 +134,7 @@ const LeaderSponsor = memo(forwardRef<HTMLElement, Props>(({ sponsors, onClickTr
           ))}
         </div>
       )}
-    </motion.section>
+    </section>
   );
 }));
 
