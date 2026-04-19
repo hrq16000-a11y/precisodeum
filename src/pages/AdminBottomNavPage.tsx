@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, Trash2, GripVertical, Save, Eye, Smartphone, ArrowUp, ArrowDown, Pencil } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
+import { IconRenderer } from '@/components/ui/IconRenderer';
 
 interface NavConfig {
   id: string;
@@ -230,11 +230,9 @@ const AdminBottomNavPage = () => {
     );
   }
 
-  const IconPreview = ({ name }: { name: string }) => {
-    const icons = LucideIcons as Record<string, any>;
-    const Ic = icons[name] || LucideIcons.HelpCircle;
-    return <Ic className="h-5 w-5" />;
-  };
+  const IconPreview = ({ name }: { name: string }) => (
+    <IconRenderer name={name} size={20} className="text-foreground" />
+  );
 
   return (
     <AdminLayout>
