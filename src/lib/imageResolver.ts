@@ -34,6 +34,25 @@ export function safeImageUrl(url: string | null | undefined): string {
  * Get optimized thumbnail URL. Uses Supabase render endpoint with graceful fallback.
  * The <img> tag's onerror should fallback to original URL.
  */
+/**
+ * Inject Supabase Storage transformation params (width, quality, webp).
+ * Safely no-ops on external/non-Supabase URLs.
+ */
+export function getOptimizedUrl(
+  url: string | null | undefined,
+  width = 400,
+  quality = 75
+): string {
+  if (!url) return '';
+  if (!url.includes('supabase.co/storage') && !url.includes('/storage/v1/')) return url;
+  // Prefer the render endpoint when applicable
+  const base = url.includes('/storage/v1/object/public/')
+    ? url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
+    : url;
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}width=${width}&quality=${quality}&format=webp&resize=cover`;
+}
+
 export function thumbUrl(url: string | null | undefined, width = 400): string {
   if (!url) return '';
   if (!url.includes('/storage/v1/object/public/')) return url;
