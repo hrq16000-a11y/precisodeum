@@ -47,19 +47,21 @@ const DashboardPage = () => {
 
   const handleResetOnboarding = async () => {
     if (!user?.id) return;
-    if (!window.confirm('Reiniciar seu cadastro? Você verá o assistente de boas-vindas novamente.')) return;
+    if (!window.confirm('Reiniciar o assistente? Seus dados (nome, telefone, cidade) serão preservados.')) return;
     try {
+      // Smart reset: only reopens the wizard. Keep full_name, phone, whatsapp, city.
       const [{ error: profErr }, { error: metaErr }] = await Promise.all([
         supabase.from('profiles').update({
           profile_type: null,
-          role: null,
           onboarding_completed: false,
         } as any).eq('id', user.id),
-        supabase.auth.updateUser({ data: { profile_type_chosen: false, profile_type: null } }),
+        supabase.auth.updateUser({ data: { profile_type_chosen: false } }),
       ]);
       if (profErr || metaErr) throw profErr || metaErr;
+      // Clear local wizard progress so it starts at step 1
+      try { localStorage.removeItem('onboarding_wizard_state'); } catch {}
       await refetchProfile();
-      toast.success('Cadastro reiniciado. Recarregando...');
+      toast.success('Assistente reiniciado. Recarregando...');
       setTimeout(() => window.location.href = '/dashboard', 600);
     } catch (e) {
       console.error('[Reset Onboarding]', e);
