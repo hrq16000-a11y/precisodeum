@@ -285,6 +285,28 @@ const SmartOnboardingWizard = () => {
               <p className="text-sm text-muted-foreground mt-1">
                 Quer cadastrar mais um serviço ou já podemos liberar sua página?
               </p>
+
+              {/* Confidence Level Bar */}
+              <div className="mt-4 text-left">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground">
+                    <TrendingUp className="h-3 w-3 text-accent" /> Nível de confiança
+                  </span>
+                  <span className="text-[11px] font-bold text-accent">
+                    {servicesCreated >= 3 ? '100% — Portfólio Forte' : servicesCreated === 2 ? '80% — Engajado' : '60% — Iniciante consolidado'}
+                  </span>
+                </div>
+                <Progress
+                  value={servicesCreated >= 3 ? 100 : servicesCreated === 2 ? 80 : 60}
+                  className="h-2"
+                />
+                {servicesCreated < 3 && (
+                  <p className="mt-1.5 text-[10px] text-muted-foreground">
+                    Cadastre mais {3 - servicesCreated} {3 - servicesCreated === 1 ? 'serviço' : 'serviços'} para chegar ao topo.
+                  </p>
+                )}
+              </div>
+
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
