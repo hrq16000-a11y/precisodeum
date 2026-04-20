@@ -5,10 +5,13 @@ import "./index.css";
 const rootElement = document.getElementById("root")!;
 const shellElement = document.getElementById("app-shell");
 
-const host = window.location.hostname;
-const isPreviewHost = host.endsWith(".lovableproject.com") || host.startsWith("id-preview--");
-const shouldUseServiceWorker = import.meta.env.PROD && !isPreviewHost;
-const PREVIEW_CACHE_RESET_KEY = "preview-cache-reset-v1";
+// POLÍTICA DEFINITIVA: nunca usar Service Worker.
+// Sempre limpar caches/SWs antigos a cada visita para garantir versão fresca.
+const SESSION_RESET_KEY = "sw-killswitch-reset-v2";
+const VERSION_CHECK_INTERVAL_MS = 5 * 60 * 1000; // verifica nova versão a cada 5min
+const CURRENT_BUILD_ID = (import.meta as any).env?.VITE_BUILD_ID
+  || document.querySelector<HTMLScriptElement>('script[type="module"][src*="/assets/"]')?.src
+  || '';
 
 const removeShell = () => {
   requestAnimationFrame(() => {
@@ -24,34 +27,69 @@ const deferWork = (fn: () => void) => {
   }
 };
 
-const resetPreviewCachesIfNeeded = async () => {
-  if (shouldUseServiceWorker) return false;
-
+// Limpa qualquer SW/cache antigo. Roda em TODA visita (preview + produção).
+const purgeAllCachesAndSWs = async (): Promise<{ hadAny: boolean }> => {
+  let hadAny = false;
   try {
-    const registrations = "serviceWorker" in navigator
-      ? await navigator.serviceWorker.getRegistrations()
-      : [];
-    const cacheNames = "caches" in window ? await caches.keys() : [];
-
-    await Promise.all(registrations.map((registration) => registration.unregister()));
-    await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
-
-    const alreadyReset = sessionStorage.getItem(PREVIEW_CACHE_RESET_KEY) === "1";
-    if (!alreadyReset && (registrations.length > 0 || cacheNames.length > 0)) {
-      sessionStorage.setItem(PREVIEW_CACHE_RESET_KEY, "1");
-      window.location.reload();
-      return true;
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      if (registrations.length > 0) hadAny = true;
+      await Promise.all(registrations.map((r) => r.unregister().catch(() => false)));
+    }
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+      if (cacheNames.length > 0) hadAny = true;
+      await Promise.all(cacheNames.map((n) => caches.delete(n).catch(() => false)));
     }
   } catch {
-    // silent: preview cleanup is best-effort
+    // best-effort
   }
+  return { hadAny };
+};
 
+const resetCachesIfNeeded = async () => {
+  const { hadAny } = await purgeAllCachesAndSWs();
+  const alreadyReset = sessionStorage.getItem(SESSION_RESET_KEY) === "1";
+  if (hadAny && !alreadyReset) {
+    sessionStorage.setItem(SESSION_RESET_KEY, "1");
+    // Força reload sem cache para garantir bundle atual
+    window.location.reload();
+    return true;
+  }
   return false;
 };
 
+// Verifica periodicamente se o index.html mudou (novo deploy) e recarrega.
+const startVersionWatcher = () => {
+  if (!CURRENT_BUILD_ID) return;
+  const check = async () => {
+    try {
+      const res = await fetch(window.location.origin + "/?v=" + Date.now(), {
+        cache: "no-store",
+        headers: { "cache-control": "no-cache" },
+      });
+      if (!res.ok) return;
+      const html = await res.text();
+      const match = html.match(/\/assets\/index-[A-Za-z0-9_-]+\.js/);
+      const remoteBuild = match?.[0];
+      if (remoteBuild && !CURRENT_BUILD_ID.includes(remoteBuild)) {
+        // Nova versão publicada → recarrega já
+        window.location.reload();
+      }
+    } catch {
+      // offline / falha de rede — ignora
+    }
+  };
+  setInterval(check, VERSION_CHECK_INTERVAL_MS);
+  // Verifica também ao voltar para a aba
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") check();
+  });
+};
+
 const bootstrap = async () => {
-  const reloadingForFreshPreview = await resetPreviewCachesIfNeeded();
-  if (reloadingForFreshPreview) return;
+  const reloading = await resetCachesIfNeeded();
+  if (reloading) return;
 
   createRoot(rootElement).render(<App />);
   removeShell();
@@ -59,10 +97,7 @@ const bootstrap = async () => {
   deferWork(() => {
     import("@/styles/deferred-animations.css");
     import("@/lib/sponsorRanking").then((m) => m.cleanupFrequencyData());
-
-    if (!shouldUseServiceWorker) return;
-
-    // Register SW — Vite PWA handles versioning via precache manifest
+    startVersionWatcher();
   });
 
   deferWork(() => {
@@ -109,8 +144,10 @@ const bootstrap = async () => {
     observeLazyImages();
   });
 
+  // Registra o kill-switch UMA vez para limpar SWs legados em devices antigos.
+  // O próprio sw.js se auto-desregistra após limpar tudo.
   deferWork(() => {
-    if (shouldUseServiceWorker && "serviceWorker" in navigator) {
+    if ("serviceWorker" in navigator && window.location.protocol === "https:") {
       navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
     }
   });
