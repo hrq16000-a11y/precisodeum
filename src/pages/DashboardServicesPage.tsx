@@ -860,8 +860,10 @@ const DashboardServicesPage = () => {
                 </div>
               </div>
             </div>
+            )}
 
             {/* ── Section 3: Contato & Mídia ── */}
+            {formStep === 3 && (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 📱 Contato & Mídia
