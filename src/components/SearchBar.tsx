@@ -366,7 +366,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
           >
             <Search className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isFocused ? 'text-accent' : 'text-muted-foreground'}`} />
             <input
-              ref={inputRef}
+              ref={(el) => { if (el && window.innerWidth < 640) inputRef.current = el; }}
               type="text"
               placeholder={typingPlaceholder || "O que você precisa?"}
               value={query}
@@ -398,6 +398,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
         >
           <Search className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isFocused ? 'text-accent' : 'text-muted-foreground'}`} />
           <input
+            ref={(el) => { if (el && window.innerWidth >= 640) inputRef.current = el; }}
             type="text"
             placeholder={typingPlaceholder || "O que você precisa? Ex: eletricista, pintor..."}
             value={query}
