@@ -6,7 +6,6 @@ import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import { formatLocationString, capitalizeName } from '@/lib/normalize';
-const ImageLightbox = lazy(() => import('@/components/ImageLightbox'));
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -21,6 +20,7 @@ import GamificationLevelBadge from '@/components/dashboard/GamificationLevelBadg
 import { lazy, Suspense } from 'react';
 import ErrorGuard from '@/components/ErrorGuard';
 import { importWithRetry } from '@/lib/lazyWithRetry';
+const ImageLightbox = lazy(() => importWithRetry(() => import('@/components/ImageLightbox')));
 const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
 const SponsorAdSlot = lazy(() => importWithRetry(() => import('@/components/ads/SponsorAdSlot')));
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
