@@ -420,17 +420,24 @@ const DashboardServicesPage = () => {
       }
 
       trackAction('service_save_success', editId ? 'Serviço atualizado' : 'Serviço criado');
-      toast.success(
-        editId ? 'Serviço atualizado com sucesso!' : '🎉 Serviço publicado!', 
-        { 
-          description: editId 
-            ? 'Suas alterações já estão visíveis.' 
-            : '🏆 +15 pontos de Engajamento conquistados! Seu ranking local subiu.',
+
+      if (editId) {
+        // Editing existing service: keep current behavior (close + refresh)
+        toast.success('Serviço atualizado com sucesso!', {
+          description: 'Suas alterações já estão visíveis.',
+          duration: 4000,
+        });
+        resetForm();
+        setShowDialog(false);
+      } else {
+        // First publish: enter photos step (Wizard mode) — DO NOT close dialog
+        toast.success('🎉 Serviço publicado!', {
+          description: 'Agora adicione as fotos e escolha a capa para destacar seu anúncio.',
           duration: 5000,
-        }
-      );
-      resetForm();
-      setShowDialog(false);
+        });
+        setEditId(serviceId!);
+        setWizardStep('photos');
+      }
       await fetchServices();
       refetchLimits();
     } catch (err: any) {
