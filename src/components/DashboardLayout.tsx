@@ -244,9 +244,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </motion.div>
           )}
         </nav>
-        <div className="shrink-0 border-t border-sidebar-border p-3">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground/50 transition-transform active:scale-95" onClick={handleSignOut}>
-            <LogOut className="h-4 w-4" /> Sair
+        <div
+          className="shrink-0 border-t border-sidebar-border p-3 bg-sidebar"
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+        >
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10 hover:text-destructive font-semibold transition-transform active:scale-95"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4" /> Sair da conta
           </Button>
         </div>
       </aside>
