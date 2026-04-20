@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 
-const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.webp';
+const DEFAULT_LOGO_URL = '/lovable-uploads/logo-pdup-v3.png';
 
 interface LogoProps {
   variant?: 'default' | 'white' | 'dark';
@@ -27,6 +27,10 @@ const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-2
       className={`${height} ${filterClass} ${className}`}
       width="111"
       height="40"
+      onError={(e) => {
+        const t = e.currentTarget;
+        if (t.src.indexOf(DEFAULT_LOGO_URL) === -1) t.src = DEFAULT_LOGO_URL;
+      }}
     />
   );
 
