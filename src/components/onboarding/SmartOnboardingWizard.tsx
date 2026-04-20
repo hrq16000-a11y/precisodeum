@@ -272,9 +272,51 @@ const SmartOnboardingWizard = ({ mode = 'basic' }: SmartOnboardingWizardProps = 
     }
   };
 
-  const handleServiceCreated = () => {
+  const handleServiceCreated = (_serviceId: string) => {
+    // ServiceWizard agora exige ≥1 foto antes de habilitar "Concluir",
+    // portanto qualquer chamada aqui já garante hasImage=true.
     setServicesCreated(c => c + 1);
   };
+
+  // ─────────── MODOS FUTUROS (estrutura preparada) ───────────
+  // TODO: implementar UI completa quando estes fluxos forem ativados.
+  if (mode === 'complete') {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm p-4">
+        <div className="max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-2xl">
+          <h2 className="font-display text-lg font-bold text-foreground">Complete seu perfil</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Em breve você poderá adicionar CPF, links sociais e outros dados aqui.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  if (mode === 'portfolio') {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm p-4">
+        <div className="max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-2xl">
+          <h2 className="font-display text-lg font-bold text-foreground">Criar álbum de portfólio</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Em breve você poderá organizar fotos de trabalhos realizados em álbuns temáticos aqui.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  if (mode === 'affiliate') {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm p-4">
+        <div className="max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-2xl">
+          <h2 className="font-display text-lg font-bold text-foreground">Programa de Afiliados</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Em breve você acompanhará seu código de indicação e ganhos aqui.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  // ──────────────────────────────────────────────────────────
 
   const finishToPublicProfile = () => {
     clearPersisted();
