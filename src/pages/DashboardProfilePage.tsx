@@ -252,7 +252,7 @@ const DashboardProfilePage = () => {
         whatsapp: finalWhatsapp, website: form.website || null, years_experience: form.years_experience,
         working_hours: form.working_hours || null,
         category_id: form.category_id || null, category_custom: form.category_custom || null,
-        cnpj: finalCnpj, cpf: finalCpf, ibge_code: form.ibge_code || null, latitude, longitude,
+        cnpj: finalCnpj, cpf: finalCpf, birth_date: form.birth_date || null, ibge_code: form.ibge_code || null, latitude, longitude,
       };
 
       if (provider) {
