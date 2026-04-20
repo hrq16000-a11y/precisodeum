@@ -37,3 +37,7 @@ export function generateProviderSlug(name: string, city: string): string {
   const raw = `${name} ${city}`;
   return sanitizeSlug(raw);
 }
+
+// Alias retrocompatível
+export const slugify = sanitizeSlug;
+
