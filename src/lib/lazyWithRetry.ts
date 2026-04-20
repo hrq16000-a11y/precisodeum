@@ -14,6 +14,16 @@ const prefetchCache = new Map<string, Promise<unknown>>();
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+const forceFreshReload = () => {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('__fresh', String(Date.now()));
+    window.location.replace(url.toString());
+  } catch {
+    window.location.reload();
+  }
+};
+
 const isDynamicImportError = (error: unknown) => {
   if (!(error instanceof Error)) return false;
   const message = error.message.toLowerCase();
@@ -41,7 +51,7 @@ async function runImportWithRetry<T>(loader: Loader<T>): Promise<T> {
     const now = Date.now();
     if (!lastReload || now - Number(lastReload) > 10_000) {
       sessionStorage.setItem(reloadKey, String(now));
-      window.location.reload();
+      forceFreshReload();
     }
   }
 

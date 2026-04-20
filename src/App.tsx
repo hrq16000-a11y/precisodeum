@@ -159,6 +159,9 @@ const CurtainReveal = reactLazy(() => importWithRetry(() => import("./components
 
 const PageFallback = () => null;
 
+const hasRequestIdleCallback = () => typeof window !== 'undefined' && typeof (window as any).requestIdleCallback === 'function';
+const hasCancelIdleCallback = () => typeof window !== 'undefined' && typeof (window as any).cancelIdleCallback === 'function';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -187,11 +190,11 @@ const TypeSelectionGate = () => {
 const DeferredShell = () => {
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    const id = requestIdleCallback
-      ? requestIdleCallback(() => setReady(true), { timeout: 3000 })
+    const id = hasRequestIdleCallback()
+      ? (window as any).requestIdleCallback(() => setReady(true), { timeout: 3000 })
       : window.setTimeout(() => setReady(true), 1500);
     return () => {
-      if (typeof cancelIdleCallback === 'function') cancelIdleCallback(id as number);
+      if (hasCancelIdleCallback()) (window as any).cancelIdleCallback(id as number);
       else clearTimeout(id as number);
     };
   }, []);
