@@ -2829,21 +2829,27 @@ export type Database = {
           display_order: number
           id: string
           image_url: string
+          is_cover: boolean
           service_id: string
+          storage_path: string | null
         }
         Insert: {
           created_at?: string
           display_order?: number
           id?: string
           image_url: string
+          is_cover?: boolean
           service_id: string
+          storage_path?: string | null
         }
         Update: {
           created_at?: string
           display_order?: number
           id?: string
           image_url?: string
+          is_cover?: boolean
           service_id?: string
+          storage_path?: string | null
         }
         Relationships: [
           {
