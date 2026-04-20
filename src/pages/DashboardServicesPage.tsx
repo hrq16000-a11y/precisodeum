@@ -168,6 +168,8 @@ const DashboardServicesPage = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [showDialog, setShowDialog] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  // Wizard step inside the create/edit dialog: 'form' (fields) | 'photos' (post-publish photo step)
+  const [wizardStep, setWizardStep] = useState<'form' | 'photos'>('form');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({});
