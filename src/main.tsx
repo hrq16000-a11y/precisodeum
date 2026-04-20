@@ -13,6 +13,16 @@ const CURRENT_BUILD_ID = (import.meta as any).env?.VITE_BUILD_ID
   || document.querySelector<HTMLScriptElement>('script[type="module"][src*="/assets/"]')?.src
   || '';
 
+const forceFreshReload = () => {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("__fresh", String(Date.now()));
+    window.location.replace(url.toString());
+  } catch {
+    window.location.reload();
+  }
+};
+
 const removeShell = () => {
   requestAnimationFrame(() => {
     shellElement?.remove();
@@ -53,7 +63,7 @@ const resetCachesIfNeeded = async () => {
   if (hadAny && !alreadyReset) {
     sessionStorage.setItem(SESSION_RESET_KEY, "1");
     // Força reload sem cache para garantir bundle atual
-    window.location.reload();
+    forceFreshReload();
     return true;
   }
   return false;
@@ -74,7 +84,7 @@ const startVersionWatcher = () => {
       const remoteBuild = match?.[0];
       if (remoteBuild && !CURRENT_BUILD_ID.includes(remoteBuild)) {
         // Nova versão publicada → recarrega já
-        window.location.reload();
+        forceFreshReload();
       }
     } catch {
       // offline / falha de rede — ignora
@@ -142,14 +152,6 @@ const bootstrap = async () => {
 
     bodyObserver.observe(root, { childList: true, subtree: true });
     observeLazyImages();
-  });
-
-  // Registra o kill-switch UMA vez para limpar SWs legados em devices antigos.
-  // O próprio sw.js se auto-desregistra após limpar tudo.
-  deferWork(() => {
-    if ("serviceWorker" in navigator && window.location.protocol === "https:") {
-      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
-    }
   });
 };
 
