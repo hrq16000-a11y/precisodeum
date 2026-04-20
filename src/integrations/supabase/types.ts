@@ -2289,6 +2289,7 @@ export type Database = {
       }
       providers: {
         Row: {
+          birth_date: string | null
           business_name: string | null
           category_custom: string | null
           category_id: string | null
@@ -2331,6 +2332,7 @@ export type Database = {
           years_experience: number
         }
         Insert: {
+          birth_date?: string | null
           business_name?: string | null
           category_custom?: string | null
           category_id?: string | null
@@ -2373,6 +2375,7 @@ export type Database = {
           years_experience?: number
         }
         Update: {
+          birth_date?: string | null
           business_name?: string | null
           category_custom?: string | null
           category_id?: string | null
