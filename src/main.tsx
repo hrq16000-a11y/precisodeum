@@ -7,11 +7,12 @@ const shellElement = document.getElementById("app-shell");
 
 // POLÍTICA DEFINITIVA: nunca usar Service Worker.
 // Sempre limpar caches/SWs antigos a cada visita para garantir versão fresca.
-const SESSION_RESET_KEY = "sw-killswitch-reset-v2";
+const DAILY_RESET_KEY = "sw-killswitch-reset-day-v1";
 const VERSION_CHECK_INTERVAL_MS = 5 * 60 * 1000; // verifica nova versão a cada 5min
 const CURRENT_BUILD_ID = (import.meta as any).env?.VITE_BUILD_ID
   || document.querySelector<HTMLScriptElement>('script[type="module"][src*="/assets/"]')?.src
   || '';
+const CURRENT_DAY_KEY = new Date().toISOString().slice(0, 10);
 
 const forceFreshReload = () => {
   try {
@@ -58,10 +59,25 @@ const purgeAllCachesAndSWs = async (): Promise<{ hadAny: boolean }> => {
 };
 
 const resetCachesIfNeeded = async () => {
+  const alreadyResetToday = (() => {
+    try {
+      return localStorage.getItem(DAILY_RESET_KEY) === CURRENT_DAY_KEY;
+    } catch {
+      return false;
+    }
+  })();
+
+  if (alreadyResetToday) return false;
+
   const { hadAny } = await purgeAllCachesAndSWs();
-  const alreadyReset = sessionStorage.getItem(SESSION_RESET_KEY) === "1";
-  if (hadAny && !alreadyReset) {
-    sessionStorage.setItem(SESSION_RESET_KEY, "1");
+
+  try {
+    localStorage.setItem(DAILY_RESET_KEY, CURRENT_DAY_KEY);
+  } catch {
+    // best-effort
+  }
+
+  if (hadAny) {
     // Força reload sem cache para garantir bundle atual
     forceFreshReload();
     return true;
