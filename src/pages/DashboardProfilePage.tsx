@@ -48,7 +48,7 @@ const DashboardProfilePage = () => {
     full_name: '', phone: '', business_name: '', description: '',
     city: '', state: '', neighborhood: '', whatsapp: '', website: '',
     years_experience: 0, category_id: '', category_name: '', category_custom: '',
-    cnpj: '', ibge_code: '',
+    cnpj: '', ibge_code: '', working_hours: '',
     latitude: null as number | null, longitude: null as number | null,
     account_kind: '' as '' | 'autonomo' | 'empresa',
   });
@@ -133,6 +133,7 @@ const DashboardProfilePage = () => {
         whatsapp: provider.whatsapp || '',
         website: provider.website || '',
         years_experience: provider.years_experience || 0,
+        working_hours: (provider as any).working_hours || '',
         category_id: provider.category_id || '',
         category_name: catName,
         category_custom: (provider as any).category_custom || '',
@@ -244,6 +245,7 @@ const DashboardProfilePage = () => {
         business_name: finalBusinessName, description: form.description,
         city: form.city, state: form.state, neighborhood: form.neighborhood,
         whatsapp: finalWhatsapp, website: form.website || null, years_experience: form.years_experience,
+        working_hours: form.working_hours || null,
         category_id: form.category_id || null, category_custom: form.category_custom || null,
         cnpj: finalCnpj, ibge_code: form.ibge_code || null, latitude, longitude,
       };
@@ -458,7 +460,7 @@ const DashboardProfilePage = () => {
                     >
                       <Briefcase className={`h-4 w-4 shrink-0 ${form.account_kind === 'empresa' ? 'text-accent' : 'text-muted-foreground'}`} />
                       <div>
-                        <p className="text-sm font-semibold text-foreground">Empresa / Agência</p>
+                        <p className="text-sm font-semibold text-foreground">Empresa</p>
                         <p className="text-[10px] text-muted-foreground">Possui CNPJ e nome fantasia</p>
                       </div>
                     </button>
@@ -555,6 +557,20 @@ const DashboardProfilePage = () => {
                   <div>
                     <label className={labelCls}>Anos de experiência</label>
                     <input name="years_experience" type="number" value={form.years_experience} onChange={handleChange} className={inputCls} />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className={labelCls}>Horário de atendimento</label>
+                    <input
+                      name="working_hours"
+                      value={form.working_hours}
+                      onChange={handleChange}
+                      placeholder="Ex: Seg–Sex 8h–18h · Sáb 8h–12h"
+                      className={inputCls}
+                    />
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Aparece no seu perfil público e ajuda clientes a saber quando podem te chamar.
+                    </p>
                   </div>
                 </div>
 
