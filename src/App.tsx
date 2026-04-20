@@ -6,6 +6,7 @@ const Toaster = reactLazy(() => importWithRetry(() => import("@/components/ui/to
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdDebugProvider } from "@/contexts/AdDebugContext";
+import { WhatsAppGateProvider, WhatsAppGateInterceptor } from "@/contexts/WhatsAppGateContext";
 import { importWithRetry, prefetchImportWithRetry } from "@/lib/lazyWithRetry";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -250,6 +251,8 @@ const App = () => {
           <ScrollToTop />
             <AuthProvider>
             <AdDebugProvider>
+            <WhatsAppGateProvider>
+            <WhatsAppGateInterceptor />
             <Suspense fallback={null}><OAuthRedirectHandler /></Suspense>
             <Suspense fallback={<PageFallback />}>
               <Routes>
