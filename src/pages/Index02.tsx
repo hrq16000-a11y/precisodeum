@@ -46,12 +46,12 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
       return (
         <div className="flex flex-col items-center justify-center py-12 gap-3">
           <p className="text-sm text-muted-foreground">Algo deu errado ao carregar esta seção.</p>
-          <button
-            onClick={() => window.location.reload()}
+          <a
+            href="/ajuda"
             className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            Tentar novamente
-          </button>
+            Acionar suporte
+          </a>
         </div>
       );
     }
