@@ -170,6 +170,8 @@ const DashboardServicesPage = () => {
   const [editId, setEditId] = useState<string | null>(null);
   // Wizard step inside the create/edit dialog: 'form' (fields) | 'photos' (post-publish photo step)
   const [wizardStep, setWizardStep] = useState<'form' | 'photos'>('form');
+  // Sub-step inside the 'form' wizard for NEW services (1=Básico, 2=Localização, 3=Contato). Editing skips this and shows everything.
+  const [formStep, setFormStep] = useState<1 | 2 | 3>(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({});
@@ -478,6 +480,7 @@ const DashboardServicesPage = () => {
     setSeoTags([]);
     setTagInput('');
     setWizardStep('form');
+    setFormStep(1);
   };
 
   const handleEdit = async (s: any) => {
@@ -504,6 +507,7 @@ const DashboardServicesPage = () => {
     setSelectedCategoryIds((data || []).map((d: any) => d.category_id));
     setNewServicePhoto(null);
     setNewServicePhotoPreview(null);
+    setFormStep(1);
     setShowDialog(true);
   };
 
@@ -689,8 +693,27 @@ const DashboardServicesPage = () => {
             {/* ── FORM STEP (initial create or edit) ── */}
             {wizardStep === 'form' && (<>
 
-            {/* ── Section 1: Informações Básicas ── */}
+            {/* Wizard Step Indicator */}
+            <div className="flex items-center justify-center gap-2 -mt-1">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="flex items-center gap-2">
+                  <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                    formStep === n ? 'bg-accent text-accent-foreground' : formStep > n ? 'bg-accent/30 text-accent' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {formStep > n ? '✓' : n}
+                  </div>
+                  {n < 3 && <div className={`h-0.5 w-8 ${formStep > n ? 'bg-accent/40' : 'bg-muted'}`} />}
+                </div>
+              ))}
+            </div>
+            <p className="text-center text-xs text-muted-foreground -mt-2">
+              {formStep === 1 && 'Etapa 1 de 3 · Informações Básicas'}
+              {formStep === 2 && 'Etapa 2 de 3 · Localização & Atendimento'}
+              {formStep === 3 && 'Etapa 3 de 3 · Contato & Mídia'}
+            </p>
 
+            {/* ── Section 1: Informações Básicas ── */}
+            {formStep === 1 && (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 📝 Informações Básicas
@@ -758,8 +781,10 @@ const DashboardServicesPage = () => {
                 </div>
               </div>
             </div>
+            )}
 
             {/* ── Section 2: Localização & Atendimento ── */}
+            {formStep === 2 && (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <MapPinned className="h-3.5 w-3.5" /> Localização & Atendimento
@@ -835,8 +860,10 @@ const DashboardServicesPage = () => {
                 </div>
               </div>
             </div>
+            )}
 
             {/* ── Section 3: Contato & Mídia ── */}
+            {formStep === 3 && (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 📱 Contato & Mídia
@@ -964,8 +991,7 @@ const DashboardServicesPage = () => {
                 </div>
               </div>
             </div>
-
-            {/* Visual affordance spacer — lets last item peek above sticky bar */}
+            )}
             <div className="h-2" />
             </>)}
           </div>
@@ -982,12 +1008,35 @@ const DashboardServicesPage = () => {
               </Button>
             ) : (
               <>
-                <Button variant="outline" className="flex-1 h-11" onClick={() => { resetForm(); setShowDialog(false); }}>
-                  Cancelar
+                <Button variant="outline" className="flex-1 h-11" onClick={() => {
+                  if (formStep > 1) setFormStep((formStep - 1) as 1 | 2 | 3);
+                  else { resetForm(); setShowDialog(false); }
+                }}>
+                  {formStep > 1 ? '← Voltar' : 'Cancelar'}
                 </Button>
-                <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={handleSave}>
-                  📢 {editId ? 'Salvar' : 'Publicar'}
-                </Button>
+                {formStep < 3 ? (
+                  <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={() => {
+                    // Validate per step before advancing
+                    if (formStep === 1 && !form.service_name.trim()) {
+                      setFormErrors({ service_name: 'Título é obrigatório' });
+                      toast.error('Informe o título do serviço');
+                      return;
+                    }
+                    if (formStep === 2 && !form.service_area.trim()) {
+                      setFormErrors({ service_area: 'Cidade é obrigatória' });
+                      toast.error('Informe a cidade de atendimento');
+                      return;
+                    }
+                    setFormErrors({});
+                    setFormStep((formStep + 1) as 1 | 2 | 3);
+                  }}>
+                    Avançar →
+                  </Button>
+                ) : (
+                  <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={handleSave}>
+                    📢 {editId ? 'Salvar' : 'Publicar'}
+                  </Button>
+                )}
               </>
             )}
           </div>
