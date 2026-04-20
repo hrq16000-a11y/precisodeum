@@ -40,12 +40,12 @@ class ModuleBoundary extends Component<Props, State> {
             <p className="text-xs text-muted-foreground">
               A plataforma principal continua funcionando normalmente.
             </p>
-            <button
-              onClick={() => this.setState({ hasError: false, error: null })}
-              className="mt-3 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            <a
+              href="/ajuda"
+              className="mt-3 inline-flex rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              Tentar novamente
-            </button>
+              Acionar suporte
+            </a>
           </div>
         </div>
       );
