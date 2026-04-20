@@ -47,6 +47,7 @@ const FloatingWhatsApp = ({ jobTitle }: Props) => {
           : 'calc(env(safe-area-inset-bottom, 0px) + 20px)',
       }}
       aria-label="Falar pelo WhatsApp"
+      data-wa-skip="true"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 1 }}
