@@ -133,13 +133,13 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
             </div>
             )}
           </div>
-          <div className="min-w-0 flex-1 overflow-hidden">
+          <div className="min-w-0 w-0 flex-1 overflow-hidden">
             <Link
               to={`/profissional/${p.slug}`}
-              className="block min-w-0 max-w-full"
+              className="block min-w-0 w-full max-w-full overflow-hidden"
               onClick={() => trackProfileClick(p.id, p.slug, 'featured')}
             >
-              <h3 className="max-w-full truncate font-display text-base font-bold text-foreground transition-colors group-hover:text-accent">
+              <h3 className="block w-full overflow-hidden text-ellipsis whitespace-nowrap font-display text-base font-bold text-foreground transition-colors group-hover:text-accent">
                 {displayName}
               </h3>
             </Link>
@@ -155,12 +155,12 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
               })()}
             </div>
             {p.category && (
-              <p className="mt-0.5 max-w-full truncate text-sm font-medium text-accent">{p.category}</p>
+              <p className="mt-0.5 block w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium text-accent">{p.category}</p>
             )}
             {(p.city || p.state) && (
               <div className="mt-1 flex min-w-0 max-w-full items-center gap-1 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
-                <span className="truncate">{[p.city, p.state].filter(Boolean).join(' - ')}</span>
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="block min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{[p.city, p.state].filter(Boolean).join(' - ')}</span>
               </div>
             )}
           </div>
@@ -189,7 +189,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
           </Badge>
         )}
 
-        <div className="flex-1" />
+        <div className="h-3 sm:flex-1" />
 
         <div className="mt-4 flex w-full min-w-0 flex-nowrap items-stretch gap-2 overflow-hidden">
           {p.whatsapp && (
