@@ -162,6 +162,24 @@ const DashboardPage = () => {
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
+  const debugResetBar = (
+    <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2">
+      <div className="flex items-center gap-2 text-[11px] text-amber-700 dark:text-amber-400">
+        <Settings className="h-3.5 w-3.5" />
+        <span>Modo Debug — tipo atual: <strong>{profile?.profile_type || 'não definido'}</strong></span>
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-7 gap-1.5 border-amber-500/40 text-[11px] text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
+        onClick={handleResetOnboarding}
+      >
+        <RotateCcw className="h-3 w-3" />
+        Reiniciar Cadastro
+      </Button>
+    </div>
+  );
+
   // Modal legado de triagem: só pode abrir se ainda não existir tipo definido.
   const showWelcomeOnboarding = !!profile && !profile.profile_type;
 
