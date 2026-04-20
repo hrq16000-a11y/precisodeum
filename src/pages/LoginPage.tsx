@@ -33,34 +33,13 @@ const LoginPage = () => {
   // Get the URL to redirect back to after login
   const from = (location.state as any)?.from || null;
 
-  // If already authenticated, redirect away from login page
+  // If already authenticated, redirect to dashboard (triagem cuida do resto)
   useEffect(() => {
     if (authLoading || !user) return;
-    const redirect = async () => {
-      const dest = await getRedirectForProfile(user.id);
-      navigate(dest, { replace: true });
-    };
-    redirect();
+    navigate(from || '/dashboard', { replace: true });
   }, [user, authLoading]);
 
   useSeoHead({ title: 'Entrar', description: 'Faça login na plataforma Preciso de um.', noindex: true });
-
-  const getRedirectForProfile = async (userId: string): Promise<string> => {
-    if (from) return from;
-    try {
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('profile_type')
-        .eq('id', userId)
-        .single();
-      const type = prof?.profile_type || 'client';
-      if (type === 'client') return '/';
-      if (type === 'rh') return '/dashboard/vagas';
-      return '/dashboard/servicos';
-    } catch {
-      return '/dashboard';
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,8 +50,7 @@ const LoginPage = () => {
       toast.error('E-mail ou senha inválidos');
     } else if (data.session) {
       toast.success('Login realizado com sucesso!');
-      const dest = await getRedirectForProfile(data.session.user.id);
-      navigate(dest, { replace: true });
+      navigate(from || '/dashboard', { replace: true });
     }
   };
 

@@ -1,14 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 /**
- * After OAuth login (Google), checks sessionStorage for a saved redirect URL
- * and navigates the user back to where they were.
+ * After OAuth login (Google), redireciona para o /dashboard (triagem decide o destino final)
+ * — exceto quando o usuário já está numa rota interna válida.
  */
 const OAuthRedirectHandler = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const handled = useRef(false);
 
   useEffect(() => {
@@ -20,8 +21,16 @@ const OAuthRedirectHandler = () => {
       handled.current = true;
       sessionStorage.removeItem('auth_redirect');
       navigate(saved, { replace: true });
+      return;
     }
-  }, [user, loading, navigate]);
+
+    // Após OAuth, o Google retorna para "/" ou "/login" — encaminhar para /dashboard.
+    const path = location.pathname;
+    if (path === '/' || path === '/login' || path === '/cadastro') {
+      handled.current = true;
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate, location.pathname]);
 
   return null;
 };
