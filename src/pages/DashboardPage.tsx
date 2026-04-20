@@ -191,9 +191,7 @@ const DashboardPage = () => {
     return (
       <DashboardLayout>
         {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
-          <motion.div
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10"
+        {debugResetBar}
             animate={{ rotate: [0, 5, -5, 0] }}
             transition={{ duration: 6, repeat: Infinity }}
           >
@@ -274,9 +272,7 @@ const DashboardPage = () => {
     return (
       <DashboardLayout>
         {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
-          <motion.div
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-slate-700/10"
+        {debugResetBar}
             animate={{ rotate: [0, 5, -5, 0] }}
             transition={{ duration: 6, repeat: Infinity }}
           >
@@ -414,6 +410,7 @@ const DashboardPage = () => {
       {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
       {/* Profile check-up modal for incomplete providers */}
       {showCheckup && !showWelcomeOnboarding && <Suspense fallback={null}><ProfileCheckupModal /></Suspense>}
+      {debugResetBar}
       <RealtimeEngagementToast />
       <OnboardingTour active={tour.active} step={tour.step} steps={tour.steps} onNext={tour.next} onPrev={tour.prev} onDismiss={tour.dismiss} />
       {/* Enhanced Welcome Hero */}
