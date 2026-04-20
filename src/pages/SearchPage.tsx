@@ -521,7 +521,6 @@ const SearchPage = () => {
                   Acionar suporte
                 </a>
               </div>
-              </div>
             )}
 
             <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-2">
