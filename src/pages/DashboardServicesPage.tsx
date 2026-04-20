@@ -480,6 +480,7 @@ const DashboardServicesPage = () => {
     setSeoTags([]);
     setTagInput('');
     setWizardStep('form');
+    setFormStep(1);
   };
 
   const handleEdit = async (s: any) => {
@@ -506,6 +507,7 @@ const DashboardServicesPage = () => {
     setSelectedCategoryIds((data || []).map((d: any) => d.category_id));
     setNewServicePhoto(null);
     setNewServicePhotoPreview(null);
+    setFormStep(1);
     setShowDialog(true);
   };
 
