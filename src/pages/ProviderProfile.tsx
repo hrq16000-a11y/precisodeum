@@ -721,6 +721,7 @@ const ProviderProfile = () => {
   const citySlug = provider.city?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
   const visibleSections = pageSettings.sections_order.filter(s => !pageSettings.hidden_sections.includes(s));
   const tc = THEME_CLASSES[pageSettings.theme] || THEME_CLASSES.default;
+  const { requestWhatsApp } = useWhatsAppGate();
 
   // ── Section renderers ──
 
