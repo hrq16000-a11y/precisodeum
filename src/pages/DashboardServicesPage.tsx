@@ -704,11 +704,13 @@ const DashboardServicesPage = () => {
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">Categoria</label>
-                    <SmartCategoryPicker
-                      categories={categories}
-                      selectedIds={selectedCategoryIds}
-                      onToggle={toggleCategory}
-                    />
+                    <Suspense fallback={<SuspenseFallback />}>
+                      <SmartCategoryPicker
+                        categories={categories}
+                        selectedIds={selectedCategoryIds}
+                        onToggle={toggleCategory}
+                      />
+                    </Suspense>
                   </div>
                 </div>
               </div>
@@ -813,7 +815,9 @@ const DashboardServicesPage = () => {
                   <label className="mb-1 block text-sm font-medium text-foreground">Foto do Serviço</label>
                   {editId && user ? (
                     <div className="rounded-lg border border-border p-3">
-                      <ServiceImageUpload serviceId={editId} userId={user.id} />
+                      <Suspense fallback={<SuspenseFallback />}>
+                        <ServiceImageUpload serviceId={editId} userId={user.id} />
+                      </Suspense>
                     </div>
                   ) : (
                     <label className="cursor-pointer block">
