@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { reportError, getActionHistory } from '@/lib/errorReporter';
-import { AlertTriangle, RefreshCw, ArrowLeft, Camera, MessageCircle, Home } from 'lucide-react';
+import { reportError } from '@/lib/errorReporter';
+import { AlertTriangle, MessageCircle } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -43,17 +43,6 @@ class ErrorGuard extends Component<Props, State> {
     this.setState({ reportId, reporting: false });
   }
 
-  handleRetry = () => {
-    this.setState({ hasError: false, error: null, reportId: null });
-  };
-
-  handleGoBack = () => {
-    window.history.back();
-  };
-
-  handleGoHome = () => {
-    window.location.href = '/';
-  };
 
   render() {
     if (this.state.hasError) {
@@ -79,45 +68,20 @@ class ErrorGuard extends Component<Props, State> {
             )}
 
             <div className="rounded-lg border border-border bg-muted/30 p-3 text-left text-xs text-muted-foreground space-y-1">
-              <p className="font-medium text-foreground">O que você pode fazer:</p>
-              <p>• Tire um print da tela e envie para o suporte</p>
-              <p>• Tente novamente clicando no botão abaixo</p>
-              <p>• Se o problema persistir, entre em contato conosco</p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={this.handleRetry}
-                className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                <RefreshCw className="h-4 w-4" /> Tentar novamente
-              </button>
-              
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={this.handleGoBack}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-                </button>
-                <button
-                  onClick={this.handleGoHome}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
-                >
-                  <Home className="h-3.5 w-3.5" /> Início
-                </button>
-              </div>
+              <p className="font-medium text-foreground">Suporte disponível:</p>
+              <p>• Nossa equipe já recebeu o relatório técnico</p>
+              <p>• Se precisar, acione a Central de Ajuda abaixo</p>
             </div>
 
             <a
               href="/ajuda"
               className="flex items-center justify-center gap-1.5 rounded-lg bg-accent/10 px-4 py-2 text-xs font-medium text-accent hover:bg-accent/20 transition-colors"
             >
-              <MessageCircle className="h-3.5 w-3.5" /> Falar com o Suporte
+              <MessageCircle className="h-3.5 w-3.5" /> Acionar suporte
             </a>
 
             <p className="text-[11px] text-muted-foreground pt-2">
-              Se o erro persistir, entre em contato com nosso suporte informando o código acima.
+              Se precisar falar com o suporte, informe o código acima.
             </p>
           </div>
         </div>
