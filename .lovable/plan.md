@@ -1,127 +1,43 @@
-## Cadastro Inteligente + Mural Realtime
 
-### 1. Infraestrutura (DB + libs)
 
-**Instalar**: `canvas-confetti` + `@types/canvas-confetti`
+## Auditoria Final: Onboarding "Imã de Prestadores" — Status
 
-**Migration SQL**:
+### Verificação dos 5 pontos do prompt
 
-```sql
-CREATE TABLE public.public_activities (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  actor_alias text NOT NULL,        -- "Mestre H.", "Eletricista de Curitiba"
-  action_text text NOT NULL,        -- "acaba de se cadastrar"
-  icon text DEFAULT 'Sparkles',     -- Lucide PascalCase
-  city text,
-  profile_type text,                -- 'provider' | 'rh' | 'client'
-  category_name text,
-  is_seed boolean DEFAULT false,
-  created_at timestamptz DEFAULT now()
-);
-ALTER TABLE public.public_activities ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anyone reads activities" ON public.public_activities FOR SELECT USING (true);
-CREATE POLICY "system inserts activities" ON public.public_activities FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-ALTER PUBLICATION supabase_realtime ADD TABLE public.public_activities;
-ALTER TABLE public.public_activities REPLICA IDENTITY FULL;
+| # | Requisito | Status | Evidência |
+|---|-----------|--------|-----------|
+| **1** | Reset Inteligente (sem apagar nome/telefone) | ✅ OK | `DashboardPage.tsx` linhas 53-58: `update({ profile_type: null, onboarding_completed: false })` — preserva `full_name`, `phone`, `whatsapp`, `city`. |
+| **2** | Persistência de progresso (não recomeça do zero) | ✅ OK | `SmartOnboardingWizard.tsx` linhas 60-65, 95-101: `localStorage` (`onboarding_wizard_state`) salva `step`, `profileType`, `city`, `state`, `fullName`, `selectedCategoryIds`. Resume exato no retorno. |
+| **3a** | CityAutocomplete visível com z-index alto | ✅ OK | `CityAutocomplete.tsx` linha 87: `PopoverContent` com `z-[200]`. Substituiu campo de texto livre. Conectado à tabela `cities` (5.5k IBGE). |
+| **3b** | Categoria única (radio) | ✅ OK | `SmartOnboardingWizard.tsx` linha 116: `setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id])` — força escolha única. |
+| **4a** | Não encerra no Step 3 — Step 4 integrado | ✅ OK | Linha 18: `WizardStep = 1 \| 2 \| 3 \| 4`. Linhas 219-221: após confirmar, `setStep(4)` em vez de redirect. |
+| **4b** | Transição "Perfil validado!" + ServiceWizard injetado | ✅ OK | Linhas 249-260: card de transição com `PartyPopper`. Linhas 289-303: `<ServiceWizard>` renderizado dentro do wizard. |
+| **4c** | Portfólio infinito ("+ Novo serviço" / "Ver minha página") | ✅ OK | Linhas 263-286: após cada serviço, mostra duas opções. `key={sw-${servicesCreated}}` força re-render limpo do ServiceWizard. |
+| **5a** | Liberação só após ≥1 serviço | ✅ OK | Linhas 296-302: `onCancel` bloqueia saída se `servicesCreated === 0` com toast "Você precisa publicar pelo menos 1 serviço". |
+| **5b** | Sem redirect para Vagas RH | ✅ OK | Linha 209: `if (confirmedProfileType !== 'provider') navigate('/')` — clientes vão pra home. Provider sempre `setStep(4)`. **Zero ocorrências de `/vagas` no fluxo.** |
+| **5c** | Destino final = perfil público | ✅ OK | Linhas 234-240: `finishToPublicProfile()` → `/profissional/${slug}` com fallback `/dashboard`. |
 
--- RPC mural híbrido
-CREATE OR REPLACE FUNCTION public.get_community_feed(_limit int DEFAULT 10)
-RETURNS SETOF public.public_activities
-LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
-DECLARE v_real int;
-BEGIN
-  SELECT count(*) INTO v_real FROM public.public_activities
-   WHERE is_seed=false AND created_at > now() - interval '7 days';
-  IF v_real >= _limit THEN
-    RETURN QUERY SELECT * FROM public.public_activities
-      WHERE is_seed=false ORDER BY created_at DESC LIMIT _limit;
-  ELSE
-    RETURN QUERY
-      (SELECT * FROM public.public_activities WHERE is_seed=false ORDER BY created_at DESC LIMIT v_real)
-      UNION ALL
-      (SELECT * FROM public.public_activities WHERE is_seed=true ORDER BY random() LIMIT (_limit - v_real));
-  END IF;
-END $$;
-```
+### Extras já implementados
+- **Botão "Recomeçar"** (Step 2/3): linhas 325-339, ícone `RotateCcw` no canto superior, volta ao Step 1 sem apagar dados do banco.
+- **Loading overlay** ("Segura as ferramentas!"): linhas 312-322, evita duplo clique no salvamento.
+- **Validação pós-save** (anti race-condition): linhas 197-201, `await refetchProfile()` + verificação `confirmedProfileType === profileType` antes de navegar.
+- **Logs de diagnóstico** dev-only: linhas 212, 238: `[Redirect Debug] Usuário tipo X indo para rota Y`.
+- **Atividade pública** (Mural Realtime): linhas 187-195, insert em `public_activities` com `is_seed: false` ao concluir cadastro.
 
-**Seed**: ~25 atividades fake variadas (eletricista/encanador/pintor) em capitais.
+### Conclusão
 
-### 2. Novo Wizard "Mestre de Obras"
+**Sim, está tudo certo.** Os 5 pontos do "Prompt Final" estão 100% implementados e blindados:
+1. Reset preserva dados ✅
+2. Progresso persistido em localStorage ✅
+3. CityAutocomplete com z-200 + categoria única ✅
+4. Step 4 integrado com portfólio infinito ✅
+5. Bloqueio até 1 serviço + destino = perfil público (sem chance de cair em RH) ✅
 
-Substituir `ProfileTypeChooser.tsx` por `SmartOnboardingWizard.tsx` (3 passos):
+**Nenhuma alteração de código é necessária.** O fluxo está pronto para teste end-to-end.
 
-- **Step 1 — Identidade**: 2 botões gigantes  
-`[Sou Autônomo]` (provider) · `[Sou Empresa/RH]` (rh)  
-*(Cliente fica acessível como link discreto "Só quero contratar")*
-- **Step 2 — Geo Silenciosa**: chama `useGeoCity()` → "Vimos que você está em **{cidade}**. Correto?" `[SIM]` `[Outra cidade]` (input fallback).
-- **Step 3 — Gancho**: Nome completo + `SmartCategoryPicker` (categoria principal). Badge "+20 pontos de confiança".
+### Próximo passo recomendado
+Realizar um teste manual completo com a conta debug:
+1. Clicar em "Reiniciar Cadastro (Debug)" no topo do Dashboard.
+2. Percorrer Steps 1→2→3→4.
+3. Validar que cidade só aceita seleção da lista, categoria é única, e saída só ocorre após publicar 1 serviço, indo para `/profissional/{slug}`.
 
-**Persistência (atomic, evita user_id missing)**:
-
-1. `UPDATE profiles SET profile_type, full_name, role`
-2. `auth.updateUser({ data: { profile_type_chosen: true }})`
-3. Se provider/rh: `INSERT INTO providers (user_id, slug, city, state, category_id, status)` — **aguardar retornar** `id` antes de prosseguir.
-4. `INSERT INTO public_activities` (actor_alias = "Mestre " + primeira letra do nome, city, category).
-5. `await refetchProfile()` → confeti → redirect.
-
-### 3. Festa + Redirecionamento
-
-```ts
-import confetti from 'canvas-confetti';
-confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }});
-toast.success('Parabéns, Mestre! Você já está na vitrine.');
-```
-
-Redirect:
-
-- provider → `/dashboard?wizard=1` (abre ServiceWizard)
-- rh → `/dashboard/vagas?new=1`
-- client → `/`
-
-### 4. CommunityFeed Realtime
-
-Atualizar `src/components/dashboard/CommunityFeed.tsx`:
-
-- Trocar query `audit_log` por `supabase.rpc('get_community_feed', { _limit: 10 })`.
-- Subscribe `postgres_changes` em `public_activities` → prepend novo item com animação framer-motion (slide-in + balão flutuante 4s).
-- Renderizar texto dinâmico: `"{icon} {actor_alias} {action_text} em {city}"`.
-
-**Injeção**:
-
-- `src/pages/Index.tsx`: adicionar abaixo do `<HeroBanner />`.
-- `src/pages/DashboardPage.tsx`: já existe — só substituir versão.
-
-### 5. Segurança & Correções
-
-- Wizard usa `try/finally` com `setSaving`; botão desabilitado durante saves.
-- Validação: bloquear Step 3 se `user.id` for null (re-fetch session).
-- `TypeSelectionGate` em `App.tsx` passa a renderizar `SmartOnboardingWizard` em vez de `ProfileTypeChooser`.
-- Manter `ProfileTypeChooser.tsx` como deprecated (deletar após validação).
-
-### Arquivos afetados
-
-- **Novo**: `src/components/onboarding/SmartOnboardingWizard.tsx`, migration SQL
-- **Editado**: `App.tsx`, `CommunityFeed.tsx`, `Index.tsx`, `package.json`
-- **Deletado**: `ProfileTypeChooser.tsx` (após swap)
-
-&nbsp;
-
-Tenho apenas dois aditivos pequenos, mas que fazem toda a diferença para o "Mestre de 70 anos" e para a credibilidade do mural:
-
-1. Ícone Dinâmico no Mural (Aditivo de UX)
-
-No plano, o icon está como DEFAULT 'Sparkles'. Para ficar realmente lúdico e profissional:
-
-Aditivo: Peça ao Lovable que, ao gravar a atividade no Step 3, o sistema escolha o ícone baseado na categoria selecionada (Ex: se escolheu Pintor, grava um ícone de Palette; se Pedreiro, Hammer). Isso visualmente "vende" muito mais a prova social no mural.
-
-2. O Indicador "AO VIVO" (Aditivo de Prova Social)
-
-Para reforçar que o mural é "Realtime", um detalhe visual ajuda muito.
-
-Aditivo: No componente CommunityFeed.tsx, adicione uma pequena luz verde pulsante (badge) com o texto "AO VIVO" ou "AGORA". Isso dá o gatilho de urgência para quem está olhando, mostrando que a plataforma está fervendo naquele exato momento.
-
-🛠️ Ajuste sugerido no Step 2 (Persistência)
-
-Para garantir que o senhor de 70 anos não fique travado caso a internet dele oscile no 3G bem na hora do "Salvar":
-
-Aditivo: Solicite um Loading Overlay (um "Carregando" em tela cheia) com uma frase amigável enquanto o banco processa, tipo: "Segura as ferramentas, Mestre! Estamos preparando seu espaço...". Isso evita que ele clique duas vezes no botão e gere erro.
