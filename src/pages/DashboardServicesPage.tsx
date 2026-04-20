@@ -653,13 +653,44 @@ const DashboardServicesPage = () => {
         <DialogContent className="max-w-md p-0 flex flex-col max-h-[90vh] overflow-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-accent/60 [&::-webkit-scrollbar-thumb]:rounded-full">
           <DialogHeader className="px-5 pt-5 pb-2 shrink-0">
             <DialogTitle className="flex items-center gap-2 text-lg">
-              🔧 {editId ? 'Editar Serviço' : 'Novo Serviço'}
+              {wizardStep === 'photos'
+                ? <>📸 Adicione Fotos do Serviço</>
+                : <>🔧 {editId ? 'Editar Serviço' : 'Novo Serviço'}</>}
             </DialogTitle>
+            {wizardStep === 'photos' && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Passo final: envie suas fotos. A primeira será a capa. Anúncios com foto recebem até <strong className="text-accent">3x mais contatos</strong>.
+              </p>
+            )}
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-accent/60 [&::-webkit-scrollbar-thumb]:rounded-full">
 
+            {/* ── PHOTOS WIZARD STEP (post-publish) ── */}
+            {wizardStep === 'photos' && editId && user && (
+              <div className="space-y-3">
+                <div className="rounded-lg border border-accent/30 bg-accent/5 p-3 flex items-start gap-2">
+                  <Zap className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                  <div className="text-xs text-foreground">
+                    <p className="font-semibold">Serviço publicado com sucesso!</p>
+                    <p className="text-muted-foreground mt-0.5">
+                      Para finalizar, adicione fotos abaixo. A primeira foto será usada como capa do anúncio.
+                    </p>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border bg-card p-3">
+                  <Suspense fallback={<SuspenseFallback />}>
+                    <ServiceImageUpload serviceId={editId} userId={user.id} />
+                  </Suspense>
+                </div>
+              </div>
+            )}
+
+            {/* ── FORM STEP (initial create or edit) ── */}
+            {wizardStep === 'form' && (<>
+
             {/* ── Section 1: Informações Básicas ── */}
+
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 📝 Informações Básicas
