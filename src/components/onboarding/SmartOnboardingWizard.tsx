@@ -96,6 +96,7 @@ const SmartOnboardingWizard = () => {
         .update({
           profile_type: profileType,
           role: profileType,
+          onboarding_completed: true,
           full_name: fullName.trim() || undefined,
         } as any)
         .eq('id', user.id);
@@ -124,7 +125,7 @@ const SmartOnboardingWizard = () => {
             state: state || null,
             category_id: selectedCategoryIds[0] || null,
             status: 'pending',
-          });
+          }).select('id').single();
           if (provErr) throw provErr;
         }
       }
@@ -154,8 +155,10 @@ const SmartOnboardingWizard = () => {
       toast.success('Parabéns! Você já está na vitrine.');
 
       // 7. Redirect
-      if (profileType === 'client') navigate('/', { replace: true });
-      else navigate('/dashboard?wizard=1', { replace: true });
+      const targetRoute = profileType === 'provider' ? '/dashboard?wizard=1' : '/';
+      console.log('[Onboarding Redirect]', { profileType, targetRoute });
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      navigate(targetRoute, { replace: true });
     } catch (err) {
       console.error('[Onboarding]', err);
       toast.error('Não conseguimos salvar. Tente novamente em instantes.');
