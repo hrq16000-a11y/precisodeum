@@ -569,19 +569,65 @@ const ProviderProfile = () => {
     ],
   }) : null, [provider, name, category, categorySlug]);
 
-  const localBusinessLd = useMemo(() => provider ? ({
-    '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
-    name: provider.business_name || name,
-    description: provider.description,
-    image: avatarUrl || undefined,
-    telephone: provider.phone,
-    address: { '@type': 'PostalAddress', addressLocality: provider.city, addressRegion: provider.state, addressCountry: 'BR' },
-    ...(provider.review_count > 0 ? {
-      aggregateRating: { '@type': 'AggregateRating', ratingValue: Number(provider.rating_avg).toFixed(1), reviewCount: provider.review_count, bestRating: 5 },
-    } : {}),
-    url: `${SITE_BASE_URL}/profissional/${slug}`,
-  }) : null, [provider, name, avatarUrl, slug]);
+  const localBusinessLd = useMemo(() => {
+    if (!provider) return null;
+    const sameAs = [
+      pageSettings.instagram_url,
+      pageSettings.facebook_url,
+      pageSettings.youtube_url,
+      pageSettings.tiktok_url,
+    ].filter(Boolean) as string[];
+
+    return {
+      '@context': 'https://schema.org',
+      // ProfessionalService is a more specific subtype of LocalBusiness — better for SEO of service providers.
+      '@type': ['ProfessionalService', 'LocalBusiness'],
+      '@id': `${SITE_BASE_URL}/profissional/${slug}`,
+      name: provider.business_name || name,
+      description: provider.description || `${name}, ${category} em ${provider.city}-${provider.state}.`,
+      image: avatarUrl || undefined,
+      url: `${SITE_BASE_URL}/profissional/${slug}`,
+      telephone: effectiveWhatsApp || provider.phone || undefined,
+      priceRange: '$$',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: provider.city,
+        addressRegion: provider.state,
+        addressCountry: 'BR',
+      },
+      ...(provider.latitude && provider.longitude
+        ? {
+            geo: {
+              '@type': 'GeoCoordinates',
+              latitude: Number(provider.latitude),
+              longitude: Number(provider.longitude),
+            },
+          }
+        : {}),
+      ...(provider.city
+        ? {
+            areaServed: {
+              '@type': 'City',
+              name: provider.city,
+              containedInPlace: { '@type': 'AdministrativeArea', name: provider.state },
+            },
+          }
+        : {}),
+      ...(category ? { serviceType: category } : {}),
+      ...(provider.review_count > 0
+        ? {
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: Number(provider.rating_avg).toFixed(1),
+              reviewCount: provider.review_count,
+              bestRating: 5,
+              worstRating: 1,
+            },
+          }
+        : {}),
+      ...(sameAs.length > 0 ? { sameAs } : {}),
+    };
+  }, [provider, name, category, avatarUrl, slug, effectiveWhatsApp, pageSettings.instagram_url, pageSettings.facebook_url, pageSettings.youtube_url, pageSettings.tiktok_url]);
 
   useJsonLd(breadcrumbLd);
   useJsonLd(localBusinessLd);
