@@ -111,7 +111,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
   return (
     <div
       ref={impressionRef}
-      className="group relative flex h-full min-h-[238px] min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:min-h-[252px]"
+      className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:min-h-[252px]"
     >
       {/* Shine sweep */}
       <div className="card-shine-sweep pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent" style={{ left: '-100%', width: '50%' }} />
@@ -191,26 +191,28 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
 
         <div className="flex-1" />
 
-        <div className="mt-4 flex w-full items-stretch gap-2">
+        <div className="mt-4 flex w-full min-w-0 flex-nowrap items-stretch gap-2 overflow-hidden">
           {p.whatsapp && (
-            <Button variant="accent" size="sm" className="min-w-0 flex-1 px-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" asChild>
+            <Button variant="accent" size="sm" className="h-10 min-w-0 flex-1 basis-0 px-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" asChild>
               <a
                 href={whatsappLink(p.whatsapp, buildSmartMessage(displayName, p.category, geoCity, geoState))}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackWhatsAppClick(p.id, p.slug, 'featured')}
+                className="inline-flex w-full min-w-0 items-center justify-center gap-2 overflow-hidden"
               >
                 <MessageCircle className="h-4 w-4 shrink-0" />
                 <span className="truncate">WhatsApp</span>
               </a>
             </Button>
           )}
-          <Button variant="outline" size="sm" className={`px-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] ${p.whatsapp ? 'min-w-[112px] shrink-0 whitespace-nowrap' : 'flex-1'}`} asChild>
+          <Button variant="outline" size="sm" className={`h-10 overflow-hidden px-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] ${p.whatsapp ? 'w-[108px] shrink-0 whitespace-nowrap' : 'flex-1'}`} asChild>
             <Link
               to={`/profissional/${p.slug}`}
               onClick={() => trackProfileClick(p.id, p.slug, 'featured')}
+              className="inline-flex w-full items-center justify-center truncate"
             >
-              Ver Perfil
+              <span className="truncate">Ver Perfil</span>
             </Link>
           </Button>
         </div>
