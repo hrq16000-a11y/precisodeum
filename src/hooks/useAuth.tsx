@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [provider, setProvider] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [needsTypeSelection, setNeedsTypeSelection] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string, authUser?: User | null) => {
@@ -99,17 +99,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, fetchProfile]);
 
   useEffect(() => {
+    // Safety net: never block UI for more than 3s on initial auth
+    const safetyTimer = window.setTimeout(() => setLoading(false), 3000);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          setLoading(true);
+          // Background fetch — do NOT toggle global loading
           setTimeout(() => {
-            void fetchProfile(session.user.id, session.user)
-              .finally(() => setLoading(false));
+            try {
+              void fetchProfile(session.user.id, session.user).catch((err) => {
+                console.error('[useAuth] fetchProfile failed:', err);
+              });
+            } catch (err) {
+              console.error('[useAuth] fetchProfile threw:', err);
+            }
           }, 0);
-          // Log access (IP, ISP, UA) for legal audit on every fresh sign-in
           if (event === 'SIGNED_IN') {
             setTimeout(() => {
               supabase.functions.invoke('log-user-access', {
@@ -126,19 +133,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setLoading(true);
-        void fetchProfile(session.user.id, session.user)
-          .finally(() => setLoading(false));
-      } else {
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          setLoading(true);
+          fetchProfile(session.user.id, session.user)
+            .catch((err) => console.error('[useAuth] initial fetchProfile failed:', err))
+            .finally(() => {
+              setLoading(false);
+              window.clearTimeout(safetyTimer);
+            });
+        } else {
+          setLoading(false);
+          window.clearTimeout(safetyTimer);
+        }
+      })
+      .catch((err) => {
+        console.error('[useAuth] getSession failed:', err);
         setLoading(false);
-      }
-    });
+        window.clearTimeout(safetyTimer);
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      window.clearTimeout(safetyTimer);
+    };
   }, [fetchProfile]);
 
   const signOut = async () => {
