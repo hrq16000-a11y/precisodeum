@@ -170,6 +170,8 @@ const DashboardServicesPage = () => {
   const [editId, setEditId] = useState<string | null>(null);
   // Wizard step inside the create/edit dialog: 'form' (fields) | 'photos' (post-publish photo step)
   const [wizardStep, setWizardStep] = useState<'form' | 'photos'>('form');
+  // Sub-step inside the 'form' wizard for NEW services (1=Básico, 2=Localização, 3=Contato). Editing skips this and shows everything.
+  const [formStep, setFormStep] = useState<1 | 2 | 3>(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({});
