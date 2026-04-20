@@ -48,7 +48,7 @@ const DashboardProfilePage = () => {
     full_name: '', phone: '', business_name: '', description: '',
     city: '', state: '', neighborhood: '', whatsapp: '', website: '',
     years_experience: 0, category_id: '', category_name: '', category_custom: '',
-    cnpj: '', ibge_code: '', working_hours: '',
+    cnpj: '', cpf: '', ibge_code: '', working_hours: '',
     latitude: null as number | null, longitude: null as number | null,
     account_kind: '' as '' | 'autonomo' | 'empresa',
   });
@@ -138,6 +138,7 @@ const DashboardProfilePage = () => {
         category_name: catName,
         category_custom: (provider as any).category_custom || '',
         cnpj: (provider as any).cnpj || '',
+        cpf: (provider as any).cpf || '',
         ibge_code: (provider as any).ibge_code || '',
         latitude: provider.latitude ?? null,
         longitude: provider.longitude ?? null,
@@ -220,6 +221,8 @@ const DashboardProfilePage = () => {
     if (form.phone.trim() && !finalPhone) { toast.error('Número de telefone inválido (deve ter 10 ou 11 dígitos)'); return; }
     const cnpjDigits = form.cnpj.replace(/\D/g, '');
     if (cnpjDigits && cnpjDigits.length !== 14) { toast.error('CNPJ deve ter 14 dígitos'); return; }
+    const cpfDigits = form.cpf.replace(/\D/g, '');
+    if (cpfDigits && cpfDigits.length !== 11) { toast.error('CPF deve ter 11 dígitos'); return; }
 
     setSaving(true);
     let { latitude, longitude } = form;
@@ -239,6 +242,7 @@ const DashboardProfilePage = () => {
 
       const isAutonomo = form.account_kind === 'autonomo';
       const finalCnpj = isAutonomo ? null : (cnpjDigits || null);
+      const finalCpf = isAutonomo ? (cpfDigits || null) : null;
       const finalBusinessName = isAutonomo ? null : (form.business_name || null);
 
       const providerPayload = {
@@ -247,7 +251,7 @@ const DashboardProfilePage = () => {
         whatsapp: finalWhatsapp, website: form.website || null, years_experience: form.years_experience,
         working_hours: form.working_hours || null,
         category_id: form.category_id || null, category_custom: form.category_custom || null,
-        cnpj: finalCnpj, ibge_code: form.ibge_code || null, latitude, longitude,
+        cnpj: finalCnpj, cpf: finalCpf, ibge_code: form.ibge_code || null, latitude, longitude,
       };
 
       if (provider) {
@@ -539,6 +543,20 @@ const DashboardProfilePage = () => {
                       <div className="fixed inset-0 z-10" onClick={() => setShowCategorySuggestions(false)} />
                     )}
                   </div>
+
+                  {form.account_kind === 'autonomo' && (
+                    <div>
+                      <label className={labelCls}>CPF <span className="text-muted-foreground font-normal">(opcional · pontua engajamento)</span></label>
+                      <input type="text" inputMode="numeric" value={form.cpf} onChange={(e) => {
+                        let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+                        if (v.length > 9) v = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+                        else if (v.length > 6) v = v.replace(/^(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                        else if (v.length > 3) v = v.replace(/^(\d{3})(\d{1,3})/, '$1.$2');
+                        setForm(prev => ({ ...prev, cpf: v }));
+                      }} placeholder="000.000.000-00" className={inputCls} />
+                      <p className="mt-1 text-[11px] text-muted-foreground">Não exibido publicamente. Aumenta sua pontuação de confiança.</p>
+                    </div>
+                  )}
 
                   {form.account_kind === 'empresa' && (
                     <div>
