@@ -477,6 +477,7 @@ const DashboardServicesPage = () => {
     setServiceRadius('city');
     setSeoTags([]);
     setTagInput('');
+    setWizardStep('form');
   };
 
   const handleEdit = async (s: any) => {
