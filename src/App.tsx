@@ -379,6 +379,7 @@ const App = () => {
               </Routes>
             </Suspense>
             <DeferredShell />
+            </WhatsAppGateProvider>
             </AdDebugProvider>
           </AuthProvider>
         </BrowserRouter>
