@@ -62,17 +62,17 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
         ) : providers.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground">Nenhum profissional em destaque ainda.</p>
         ) : (
-          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 [content-visibility:auto] [contain-intrinsic-size:1px_800px]">
+          <div className="grid justify-items-center gap-3 sm:gap-4 sm:grid-cols-2 sm:justify-items-stretch lg:grid-cols-3 [content-visibility:auto] [contain-intrinsic-size:1px_800px]">
             {items.map((item, idx) => {
               if (item.type === 'ad') {
                 return (
-                  <div key={`ad-${item.adIndex}`} className="animate-fade-in" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
+                  <div key={`ad-${item.adIndex}`} className="w-full max-w-[90%] animate-fade-in sm:max-w-none" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
                     <AdNativeCard sponsorIndex={item.adIndex} className="h-full" />
                   </div>
                 );
               }
               return (
-                <div key={item.data.id} className="animate-fade-in" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
+                <div key={item.data.id} className="w-full max-w-[90%] animate-fade-in sm:max-w-none" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
                   <ProviderCardFeatured provider={item.data} />
                 </div>
               );
@@ -118,10 +118,10 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
       {/* Premium accent bar */}
       <div className="h-1 bg-gradient-to-r from-accent via-amber-400 to-accent" />
       
-      <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
+      <div className="flex min-w-0 flex-1 flex-col p-3.5 sm:p-5">
         <div className="flex items-start gap-3 sm:gap-4">
           <div className="relative shrink-0">
-            <Avatar className="h-12 w-12 sm:h-16 sm:w-16 shrink-0 ring-2 ring-accent/20 transition-transform duration-300 group-hover:scale-105">
+             <Avatar className="h-11 w-11 shrink-0 ring-2 ring-accent/20 transition-transform duration-300 group-hover:scale-105 sm:h-16 sm:w-16">
               <AvatarImage src={displayPhoto || undefined} alt={displayName} />
               <AvatarFallback className="bg-accent/10 text-2xl">
                 {p.categoryIcon || '🔧'}
@@ -139,7 +139,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
               className="block min-w-0 w-full max-w-full overflow-hidden"
               onClick={() => trackProfileClick(p.id, p.slug, 'featured')}
             >
-              <h3 className="block w-full overflow-hidden text-ellipsis whitespace-nowrap font-display text-base font-bold text-foreground transition-colors group-hover:text-accent">
+              <h3 className="block w-full overflow-hidden text-ellipsis whitespace-nowrap font-display text-[15px] font-bold text-foreground transition-colors group-hover:text-accent sm:text-base">
                 {displayName}
               </h3>
             </Link>
@@ -155,10 +155,10 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
               })()}
             </div>
             {p.category && (
-              <p className="mt-0.5 block w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium text-accent">{p.category}</p>
+              <p className="mt-0.5 block w-full overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-medium text-accent sm:text-sm">{p.category}</p>
             )}
             {(p.city || p.state) && (
-              <div className="mt-1 flex min-w-0 max-w-full items-center gap-1 text-xs text-muted-foreground">
+              <div className="mt-1 flex min-w-0 max-w-full items-center gap-1 text-[11px] text-muted-foreground sm:text-xs">
                 <MapPin className="h-3 w-3 shrink-0" />
                 <span className="block min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{[p.city, p.state].filter(Boolean).join(' - ')}</span>
               </div>
@@ -189,11 +189,11 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
           </Badge>
         )}
 
-        <div className="h-3 sm:flex-1" />
+        <div className="h-2.5 sm:flex-1" />
 
-        <div className="mt-4 flex w-full min-w-0 flex-nowrap items-stretch gap-2 overflow-hidden">
+        <div className="mt-3.5 flex w-full min-w-0 flex-nowrap items-stretch gap-1.5 overflow-hidden sm:mt-4 sm:gap-2">
           {p.whatsapp && (
-            <Button variant="accent" size="sm" className="h-10 min-w-0 flex-1 basis-0 px-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" asChild>
+            <Button variant="accent" size="sm" className="h-8.5 min-w-0 flex-1 basis-0 px-2.5 text-xs transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:h-10 sm:px-3 sm:text-sm" asChild>
               <a
                 href={whatsappLink(p.whatsapp, buildSmartMessage(displayName, p.category, geoCity, geoState))}
                 target="_blank"
@@ -201,12 +201,12 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
                 onClick={() => trackWhatsAppClick(p.id, p.slug, 'featured')}
                 className="inline-flex w-full min-w-0 items-center justify-center gap-2 overflow-hidden"
               >
-                <MessageCircle className="h-4 w-4 shrink-0" />
+                <MessageCircle className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                 <span className="truncate">WhatsApp</span>
               </a>
             </Button>
           )}
-          <Button variant="outline" size="sm" className={`h-10 overflow-hidden px-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] ${p.whatsapp ? 'w-[108px] shrink-0 whitespace-nowrap' : 'flex-1'}`} asChild>
+          <Button variant="outline" size="sm" className={`h-8.5 overflow-hidden px-2.5 text-xs transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:h-10 sm:px-3 sm:text-sm ${p.whatsapp ? 'w-[92px] shrink-0 whitespace-nowrap sm:w-[108px]' : 'flex-1'}`} asChild>
             <Link
               to={`/profissional/${p.slug}`}
               onClick={() => trackProfileClick(p.id, p.slug, 'featured')}
