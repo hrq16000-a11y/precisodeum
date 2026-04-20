@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
+  optimizeDeps: {
+    include: ["react", "react-dom", "react-dom/client", "scheduler"],
+  },
   plugins: [
     react(),
     mode === "development" && componentTagger(),
@@ -23,6 +26,7 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ["react", "react-dom", "scheduler"],
   },
   build: {
     minify: 'terser',
@@ -37,7 +41,12 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react-dom') || id.includes('react-router') || id.includes('/react/')) {
+            if (
+              id.includes('/react/') ||
+              id.includes('react-dom') ||
+              id.includes('/scheduler/') ||
+              id.includes('react-router')
+            ) {
               return 'vendor-react';
             }
             if (
