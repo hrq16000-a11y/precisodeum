@@ -240,7 +240,7 @@ const Header = () => {
               src={logo}
               alt="Preciso de um Profissional"
               className={`drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] object-contain transition-all duration-300 ease-in-out ${
-                isCompact ? 'h-8 md:h-9' : 'h-10 md:h-12'
+                isCompact ? 'h-11 md:h-12' : 'h-14 md:h-16'
               }`}
               width="166"
               height="48"
