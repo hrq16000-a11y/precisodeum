@@ -52,9 +52,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProfile(profileData);
 
     const metaChosen = authUser?.user_metadata?.profile_type_chosen === true;
-    const isEmailUser = authUser?.app_metadata?.provider === 'email';
-    const hasExplicitChoice = metaChosen || isEmailUser || profileData?.profile_type !== 'client';
-    setNeedsTypeSelection(!hasExplicitChoice && !!profileData);
+    // Sempre exigir escolha explícita de tipo para novos usuários (email ou social)
+    setNeedsTypeSelection(!metaChosen && !!profileData);
 
     if (providerRows && providerRows.length > 0) {
       const best = providerRows.find(p => p.city && p.description) || providerRows[0];

@@ -298,6 +298,19 @@ const DashboardJobsPage = () => {
     setDialogOpen(true);
   };
 
+  // Auto-abre dialog "Nova Vaga" quando RH acaba de escolher o tipo
+  useEffect(() => {
+    if (!user) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('new') === '1') {
+      openNew();
+      params.delete('new');
+      const newSearch = params.toString();
+      window.history.replaceState({}, '', window.location.pathname + (newSearch ? '?' + newSearch : ''));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   const handleDuplicate = (job: any) => {
     setForm({
       title: `${job.title} (cópia)`, subtitle: job.subtitle || '',

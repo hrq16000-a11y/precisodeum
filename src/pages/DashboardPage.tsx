@@ -91,6 +91,18 @@ const DashboardPage = () => {
       .then(({ count }) => setJobsCount(count ?? 0));
   }, [user]);
 
+  // Auto-abre o ServiceWizard quando o usuário acaba de escolher tipo "Profissional"
+  useEffect(() => {
+    if (!provider) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('wizard') === '1') {
+      setWizardOpen(true);
+      params.delete('wizard');
+      const newSearch = params.toString();
+      window.history.replaceState({}, '', window.location.pathname + (newSearch ? '?' + newSearch : ''));
+    }
+  }, [provider]);
+
   // Fetch categories for ServiceWizard
   useEffect(() => {
     supabase.from('categories').select('id, name, slug, icon').order('name')
