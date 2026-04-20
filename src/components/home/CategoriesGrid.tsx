@@ -96,13 +96,6 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
         featured ? 'min-h-[8rem] p-4' : 'min-h-[6.5rem] p-3'
       }`}
     >
-      {/* Badge de quantidade */}
-      {cat.count > 0 && (
-        <span className="absolute -top-1.5 -right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-card">
-          {cat.count > 99 ? '99+' : cat.count}
-        </span>
-      )}
-
       {/* Hover overlay */}
       <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500" />
 

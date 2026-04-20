@@ -228,7 +228,7 @@ const Header = () => {
       >
         {/* Left: Logo + Geo */}
         <div className="flex items-center gap-2 -ml-1 sm:-ml-2">
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center logo-link">
             <img
               src={logo}
               alt="Preciso de um - Profissionais Confiáveis Perto de Você"
