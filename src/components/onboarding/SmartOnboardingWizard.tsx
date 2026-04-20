@@ -506,12 +506,15 @@ const SmartOnboardingWizard = () => {
 
               {profileType === 'provider' && (
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">
+                  <label className="text-xs font-semibold text-foreground mb-2 block">
                     Sua especialidade principal
                   </label>
-                  <p className="text-[10px] text-muted-foreground mb-2">
-                    Escolha <strong>uma única especialidade</strong>. Você poderá adicionar outros serviços depois.
-                  </p>
+                  <div className="mb-3 flex items-start gap-2 rounded-xl border-2 border-amber-400/60 bg-amber-50 dark:bg-amber-950/30 p-3 animate-in fade-in slide-in-from-top-1">
+                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] leading-relaxed text-amber-900 dark:text-amber-100">
+                      Escolha sua <strong>especialidade principal</strong> agora. Você poderá adicionar outras categorias e serviços depois, dentro do seu painel.
+                    </p>
+                  </div>
                   <SmartCategoryPicker
                     categories={categoriesForPicker}
                     selectedIds={selectedCategoryIds}
