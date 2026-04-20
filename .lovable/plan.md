@@ -1,41 +1,36 @@
 
 
-## Estado Atual (já implementado)
+## Diagnosis
 
-| Requisito do prompt | Status no código |
-|---|---|
-| 1. Persistência (localStorage) | ✅ `STORAGE_KEY = 'onboarding_wizard_state'` salva step, profileType, city, state, fullName, selectedCategoryIds (linhas 60–101) |
-| 2a. CityAutocomplete ativo | ✅ Step 2 renderiza `<CityAutocomplete>` quando `editingCity` ou sem cidade (linhas 446–469) |
-| 2b. Categoria única | ✅ `handleToggleCategory` força array de 1 (linha 116) + `maxSelections={1}` |
-| 3. Step 4 integrado + loop portfólio | ✅ Linhas 245–308: `<ServiceWizard>` injetado, "Novo serviço" / "Ver minha página" |
-| 4. Bloqueio de saída | ✅ `onCancel` bloqueia se `servicesCreated === 0` (linhas 296–302) |
-| 5. Smart Reset | ✅ `handleResetOnboarding` no DashboardPage limpa apenas profile_type/onboarding_completed |
+The fatal error `Cannot read properties of undefined (reading 'unstable_scheduleCallback')` occurs because `react-dom` internally imports the `scheduler` package, but `scheduler` is not present in `node_modules/`. The Vite deduplication added previously cannot help if the package does not exist on disk. The recovery buttons in the HTML shell do not fix this because the problem is a missing dependency, not a cache issue.
 
-## Refinamentos a aplicar (3 ajustes pequenos em 1 arquivo)
+## Plan (4 rules of fault tolerance)
 
-**Arquivo:** `src/components/onboarding/SmartOnboardingWizard.tsx`
+### 1. Fix the fatal dependency error
 
-### 1. Aviso "Especialidade principal" mais visível (Step 3)
-Mover o texto de instrução para dentro de um card destacado **acima** do `SmartCategoryPicker`, com ícone e cor de alerta, em vez do `<p>` neutro atual (linha 511–513).
+- Add `scheduler` as an explicit dependency in `package.json` (version `^0.23.2`, matching what `react-dom@18.3.1` requires).
+- Keep the existing Vite config (`optimizeDeps.include`, `resolve.dedupe`, `manualChunks`) which correctly groups `scheduler` with React.
 
-### 2. Barra de Nível de Confiança visível no Step 4
-Adicionar barra de progresso no card de sucesso pós-serviço (linhas 263–286) que cresce conforme `servicesCreated`:
-- 1 serviço = 60% (Iniciante consolidado)
-- 2 serviços = 80% (Engajado)
-- 3+ serviços = 100% (Portfólio Forte)
-Reforça o gatilho psicológico do "Loop de Portfólio" pedido no item 3 do prompt.
+### 2. Global Error Boundary shield (App.tsx)
 
-### 3. Confirmação visual + scroll automático ao selecionar categoria
-Quando o usuário selecionar a categoria, fazer scroll suave para o botão "Próximo" e aplicar pulse no botão (foco de ação) — atende ao "fechamento automático" pedido sem quebrar a UX de quem quer trocar de categoria.
+- Wrap the entire rendered tree inside `App.tsx` (everything inside `QueryClientProvider`) with `ErrorGuard` using `componentName="App"`.
+- This ensures that if any component crashes at any level, the app shows a clean fallback UI instead of a white screen or infinite splash. Navigation remains accessible via the fallback's "Go Home" and "Go Back" buttons.
 
-## Fora de escopo
+### 3. Optimistic loading -- no full-screen block
 
-- Reset Inteligente: já preserva nome/telefone/cidade no banco (apenas zera flags). Sem mudanças.
-- Persistência: já cobre 100% dos campos. Sem mudanças.
-- Bloqueio de saída: já implementado. Sem mudanças.
-- Step 1/2: sem mudanças.
+- In `useAuth.tsx`, change `loading` initial state from `true` to `false`. The AuthProvider will render children immediately. Components that need auth data already check `loading` individually.
+- Remove the `setLoading(true)` call inside `onAuthStateChange` for the `SIGNED_IN` path -- profile fetching happens in the background while the UI is already interactive. Keep `setLoading(true)` only in the initial `getSession` path, with a 3-second safety timeout.
 
-## Resultado esperado
+### 4. Network/session resilience (3-second timeout)
 
-Funil idêntico ao já aprovado, com 3 melhorias de UX que reforçam o "Funil Imparável": aviso claro de escolha única, feedback visual de progresso no portfólio, e guia visual para o próximo clique.
+- Add a `setTimeout(3000)` safety net in the `useEffect` of `AuthProvider`: if `getSession()` plus `fetchProfile()` haven't resolved in 3 seconds, force `setLoading(false)` so the app renders in "logged out" state with empty structure.
+- Wrap `fetchProfile` calls in try/catch to prevent unhandled rejections from blocking state updates.
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `package.json` | Add `"scheduler": "^0.23.2"` to dependencies |
+| `src/App.tsx` | Wrap root tree with `ErrorGuard componentName="App"` |
+| `src/hooks/useAuth.tsx` | Set `loading` default to `false`, add 3s safety timeout, try/catch on fetchProfile |
 
