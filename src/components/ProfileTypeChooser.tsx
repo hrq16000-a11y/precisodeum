@@ -82,13 +82,16 @@ const ProfileTypeChooser = () => {
       await refetchProfile();
       toast.success(`Conta configurada como ${TYPES.find(t => t.value === selected)?.label}`);
 
-      // Redirect based on type
+      // Redirect by type:
+      // - client → home (volta pra navegação normal)
+      // - provider → dashboard com wizard de serviço aberto
+      // - rh → dashboard de vagas com modal "nova vaga" aberto (auto-aprovada via trigger)
       if (selected === 'client') {
         navigate('/', { replace: true });
       } else if (selected === 'rh') {
-        navigate('/dashboard/vagas', { replace: true });
+        navigate('/dashboard/vagas?new=1', { replace: true });
       } else {
-        navigate('/dashboard/servicos', { replace: true });
+        navigate('/dashboard?wizard=1', { replace: true });
       }
     } catch {
       toast.error('Erro ao configurar conta. Tente novamente.');
