@@ -35,51 +35,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [needsTypeSelection, setNeedsTypeSelection] = useState(false);
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    setProfile(data);
+  const fetchProfile = useCallback(async (userId: string, authUser?: User | null) => {
+    const [{ data: profileData }, { data: providerRows }] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single(),
+      supabase
+        .from('providers')
+        .select('*, categories(name, slug, icon)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true }),
+    ]);
 
-    // Check if user needs to pick a profile type
-    // A social-login user who never chose will have profile_type='client' and
-    // a very recent created_at (within 60s of now) OR has the provider 'google'/'apple' in auth
-    // We use a simpler heuristic: profile_type is still 'client' AND
-    // user metadata has no explicit profile_type_chosen flag
-    const session = (await supabase.auth.getSession()).data.session;
-    const metaChosen = session?.user?.user_metadata?.profile_type_chosen === true;
-    const isEmailUser = session?.user?.app_metadata?.provider === 'email';
-    // User already chose if: metadata flag is set, signed up via email, or type isn't the default 'client'
-    const hasExplicitChoice = metaChosen || isEmailUser || data?.profile_type !== 'client';
-    
-    setNeedsTypeSelection(!hasExplicitChoice && !!data);
+    setProfile(profileData);
 
-    // Fetch the most complete provider
-    const { data: providerRows } = await supabase
-      .from('providers')
-      .select('*, categories(name, slug, icon)')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: true });
-    
+    const metaChosen = authUser?.user_metadata?.profile_type_chosen === true;
+    const isEmailUser = authUser?.app_metadata?.provider === 'email';
+    const hasExplicitChoice = metaChosen || isEmailUser || profileData?.profile_type !== 'client';
+    setNeedsTypeSelection(!hasExplicitChoice && !!profileData);
+
     if (providerRows && providerRows.length > 0) {
       const best = providerRows.find(p => p.city && p.description) || providerRows[0];
       setProvider(best);
 
-      // Auto-geocode providers missing coordinates on login
-      for (const prov of providerRows) {
-        if (prov.city && prov.city !== 'Não informada' && prov.state && (prov.latitude == null || prov.longitude == null)) {
-          geocodeCity(prov.city, prov.state).then(({ latitude, longitude }) => {
-            if (latitude != null && longitude != null) {
-              supabase.from('providers').update({ latitude, longitude }).eq('id', prov.id).then(() => {
-                if (prov.id === best.id) {
+      if (best.city && best.city !== 'Não informada' && best.state && (best.latitude == null || best.longitude == null)) {
+        window.setTimeout(() => {
+          geocodeCity(best.city, best.state)
+            .then(({ latitude, longitude }) => {
+              if (latitude != null && longitude != null) {
+                supabase.from('providers').update({ latitude, longitude }).eq('id', best.id).then(() => {
                   setProvider(prev => prev ? { ...prev, latitude, longitude } : prev);
-                }
-              });
-            }
-          }).catch(() => {});
-        }
+                });
+              }
+            })
+            .catch(() => {});
+        }, 1200);
       }
     } else {
       setProvider(null);
@@ -88,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refetchProfile = useCallback(async () => {
     if (user) {
-      await fetchProfile(user.id);
+      await fetchProfile(user.id, user);
       // After an explicit refetch (e.g. after choosing type), mark as chosen
       setNeedsTypeSelection(false);
     }
@@ -99,8 +91,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        setLoading(false);
         if (session?.user) {
-          setTimeout(() => fetchProfile(session.user.id), 0);
+          setTimeout(() => { void fetchProfile(session.user.id, session.user); }, 0);
           // Log access (IP, ISP, UA) for legal audit on every fresh sign-in
           if (event === 'SIGNED_IN') {
             setTimeout(() => {
@@ -114,17 +107,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setProvider(null);
           setNeedsTypeSelection(false);
         }
-        setLoading(false);
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
       setLoading(false);
+      if (session?.user) {
+        void fetchProfile(session.user.id, session.user);
+      }
     });
 
     return () => subscription.unsubscribe();

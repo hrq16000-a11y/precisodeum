@@ -191,8 +191,8 @@ const DeferredShell = () => {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     const id = hasRequestIdleCallback()
-      ? (window as any).requestIdleCallback(() => setReady(true), { timeout: 3000 })
-      : window.setTimeout(() => setReady(true), 1500);
+      ? (window as any).requestIdleCallback(() => setReady(true), { timeout: 800 })
+      : window.setTimeout(() => setReady(true), 250);
     return () => {
       if (hasCancelIdleCallback()) (window as any).cancelIdleCallback(id as number);
       else clearTimeout(id as number);
