@@ -65,7 +65,20 @@ const loadPersistedState = (): Partial<PersistedState> => {
   } catch { return {}; }
 };
 
-const SmartOnboardingWizard = () => {
+export type WizardMode = 'basic' | 'complete' | 'portfolio' | 'affiliate';
+
+interface SmartOnboardingWizardProps {
+  /**
+   * Modo de operação do Wizard.
+   * - basic (default): cadastro inicial completo (steps 1→4)
+   * - complete: usuário voltou para preencher dados que faltam (CPF, links sociais) — TODO UI
+   * - portfolio: criação de álbuns de fotos de trabalhos realizados — TODO UI
+   * - affiliate: acompanhamento de código/link de indicação — TODO UI
+   */
+  mode?: WizardMode;
+}
+
+const SmartOnboardingWizard = ({ mode = 'basic' }: SmartOnboardingWizardProps = {}) => {
   const { user, refetchProfile } = useAuth();
   const { city: geoCity, state: geoState } = useGeoCity();
   const { data: categoriesData = [] } = useCategoriesWithCount();
