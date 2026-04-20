@@ -256,10 +256,10 @@ const Index = () => {
       <HeroBanner />
       <Suspense fallback={<div className="h-8" />}><ActiveProvidersCounter /></Suspense>
 
-      {/* Mural de Prova Social — Realtime */}
+      {/* Mural de Prova Social — Realtime (compacto, ~40% menor) */}
       <Suspense fallback={null}>
-        <div className="container mx-auto px-4 mt-4">
-          <CommunityFeed />
+        <div className="container mx-auto px-4 mt-3 max-w-2xl">
+          <CommunityFeed compact />
         </div>
       </Suspense>
 

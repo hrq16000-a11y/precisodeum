@@ -4717,20 +4717,14 @@ export type Database = {
         Returns: {
           action_text: string
           actor_alias: string
-          category_name: string | null
-          city: string | null
-          created_at: string | null
-          icon: string | null
+          category_name: string
+          city: string
+          created_at: string
+          icon: string
           id: string
-          is_seed: boolean | null
-          profile_type: string | null
+          is_seed: boolean
+          profile_type: string
         }[]
-        SetofOptions: {
-          from: "*"
-          to: "public_activities"
-          isOneToOne: false
-          isSetofReturn: true
-        }
       }
       get_featured_providers: {
         Args: { _limit?: number }

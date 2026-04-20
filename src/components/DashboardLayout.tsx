@@ -109,23 +109,32 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Mobile header */}
       <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border glass-strong px-4 lg:hidden">
         <Link to="/" className="flex items-center"><img src={logo} alt="Preciso de um" className="h-7" /></Link>
-        <motion.button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="text-foreground p-1 rounded-lg hover:bg-muted/50 transition-colors"
-          whileTap={{ scale: 0.9 }}
-        >
-          <AnimatePresence mode="wait">
-            {sidebarOpen ? (
-              <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
-                <X className="h-5 w-5" />
-              </motion.div>
-            ) : (
-              <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
-                <Menu className="h-5 w-5" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleSignOut}
+            aria-label="Sair da conta"
+            className="text-destructive p-2 rounded-lg hover:bg-destructive/10 transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
+          <motion.button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="text-foreground p-1 rounded-lg hover:bg-muted/50 transition-colors"
+            whileTap={{ scale: 0.9 }}
+          >
+            <AnimatePresence mode="wait">
+              {sidebarOpen ? (
+                <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <X className="h-5 w-5" />
+                </motion.div>
+              ) : (
+                <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <Menu className="h-5 w-5" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </div>
       </div>
 
       {/* Sidebar */}
@@ -246,8 +255,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </nav>
         <div
           className="shrink-0 border-t border-sidebar-border p-3 bg-sidebar"
-          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+          style={{ paddingBottom: 'max(5rem, calc(env(safe-area-inset-bottom) + 5rem))' }}
         >
+          {/* Extra bottom padding on mobile so the button stays above the MobileBottomNav */}
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10 hover:text-destructive font-semibold transition-transform active:scale-95"

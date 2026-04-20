@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Briefcase, Building2, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -10,9 +10,10 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import SmartCategoryPicker from '@/components/SmartCategoryPicker';
+import CityAutocomplete from '@/components/CityAutocomplete';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
 
-type ProfileType = 'provider' | 'rh' | 'client';
+type ProfileType = 'provider' | 'client';
 
 const CATEGORY_ICON_MAP: Record<string, string> = {
   eletricista: 'Zap', eletrica: 'Zap',
@@ -82,15 +83,19 @@ const SmartOnboardingWizard = () => {
       return;
     }
     if (!profileType) return;
+    if (!city.trim()) {
+      toast.error('Selecione sua cidade.');
+      setStep(2);
+      return;
+    }
     setSaving(true);
     try {
-      // 1. Update profile
-      const profileRole = profileType === 'rh' ? 'client' : profileType;
+      // 1. Update profile (await — must complete before redirect)
       const { error: profErr } = await supabase
         .from('profiles')
         .update({
           profile_type: profileType,
-          role: profileRole,
+          role: profileType,
           full_name: fullName.trim() || undefined,
         } as any)
         .eq('id', user.id);
@@ -102,8 +107,8 @@ const SmartOnboardingWizard = () => {
       });
       if (metaErr) throw metaErr;
 
-      // 3. If provider/rh → create provider row (must wait for id)
-      if (profileType === 'provider' || profileType === 'rh') {
+      // 3. If provider → create provider row (must wait for id)
+      if (profileType === 'provider') {
         const { data: existing } = await supabase
           .from('providers')
           .select('id')
@@ -124,15 +129,13 @@ const SmartOnboardingWizard = () => {
         }
       }
 
-      // 4. Public activity (social proof)
-      const firstName = (fullName.trim().split(' ')[0] || 'Mestre');
+      // 4. Public activity (social proof) — neutral, no "Mestre"
+      const firstName = (fullName.trim().split(' ')[0] || 'Profissional');
       const initial = firstName.charAt(0).toUpperCase();
-      const alias = profileType === 'rh' ? `Empresa ${firstName}` : `Mestre ${initial}.`;
-      const action =
-        profileType === 'rh' ? 'acaba de abrir uma agência' : 'acaba de se cadastrar';
+      const alias = `${firstName} ${initial}.`;
       await supabase.from('public_activities').insert({
         actor_alias: alias,
-        action_text: action,
+        action_text: 'acaba de se cadastrar',
         icon: pickIconForCategory(selectedCategory?.name),
         city: city || null,
         profile_type: profileType,
@@ -140,19 +143,18 @@ const SmartOnboardingWizard = () => {
         is_seed: false,
       });
 
-      // 5. Refresh profile context
+      // 5. Refresh profile context (await — guarantees no race)
       await refetchProfile();
 
-      // 6. Party!
+      // 6. Party
       try {
         confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
         setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { y: 0.5 } }), 250);
       } catch {/* noop */}
-      toast.success('Parabéns, Mestre! Você já está na vitrine. 🎉');
+      toast.success('Parabéns! Você já está na vitrine.');
 
       // 7. Redirect
       if (profileType === 'client') navigate('/', { replace: true });
-      else if (profileType === 'rh') navigate('/dashboard/vagas?new=1', { replace: true });
       else navigate('/dashboard?wizard=1', { replace: true });
     } catch (err) {
       console.error('[Onboarding]', err);
@@ -164,12 +166,11 @@ const SmartOnboardingWizard = () => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm p-4 overflow-y-auto">
-      {/* Loading overlay (3G safety) */}
       {saving && (
         <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-background/90 backdrop-blur-md gap-4">
           <Loader2 className="h-12 w-12 animate-spin text-accent" />
           <p className="text-base font-bold text-foreground text-center px-6">
-            Segura as ferramentas, Mestre!
+            Segura as ferramentas!
           </p>
           <p className="text-sm text-muted-foreground text-center px-6 max-w-sm">
             Estamos preparando seu espaço na vitrine...
@@ -178,7 +179,6 @@ const SmartOnboardingWizard = () => {
       )}
 
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-300 my-auto">
-        {/* Progress dots */}
         <div className="flex items-center justify-center gap-2 mb-5">
           {[1, 2, 3].map(n => (
             <span
@@ -190,11 +190,11 @@ const SmartOnboardingWizard = () => {
           ))}
         </div>
 
-        {/* STEP 1 — Identidade */}
+        {/* STEP 1 — Identidade (somente Profissional ou Cliente) */}
         {step === 1 && (
           <>
             <h1 className="text-center font-display text-2xl font-bold text-foreground">
-              Bem-vindo, Mestre!
+              Bem-vindo!
             </h1>
             <p className="mt-2 text-center text-sm text-muted-foreground">
               Como você vai usar a plataforma?
@@ -210,38 +210,46 @@ const SmartOnboardingWizard = () => {
                     <Briefcase className="h-7 w-7" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-display text-lg font-bold text-foreground">Sou Autônomo</h3>
-                    <p className="text-xs text-muted-foreground">Quero divulgar meu serviço</p>
+                    <h3 className="font-display text-lg font-bold text-foreground">Sou Profissional</h3>
+                    <p className="text-xs text-muted-foreground">Quero divulgar meu serviço e receber clientes</p>
                   </div>
                 </div>
               </button>
 
               <button
-                onClick={() => { setProfileType('rh'); setStep(2); }}
-                className="group rounded-2xl border-2 border-purple-500/30 bg-purple-500/5 p-5 text-left transition-all hover:border-purple-500 hover:shadow-lg hover:-translate-y-0.5"
+                onClick={() => { setProfileType('client'); setStep(2); }}
+                className="group rounded-2xl border-2 border-blue-500/30 bg-blue-500/5 p-5 text-left transition-all hover:border-blue-500 hover:shadow-lg hover:-translate-y-0.5"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white">
-                    <Building2 className="h-7 w-7" />
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
+                    <UserRound className="h-7 w-7" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-display text-lg font-bold text-foreground">Sou Empresa / RH</h3>
-                    <p className="text-xs text-muted-foreground">Publico vagas e recruto</p>
+                    <h3 className="font-display text-lg font-bold text-foreground">Sou Cliente</h3>
+                    <p className="text-xs text-muted-foreground">Quero contratar um profissional</p>
                   </div>
                 </div>
               </button>
             </div>
 
-            <button
-              onClick={() => { setProfileType('client'); setStep(2); }}
-              className="mt-6 w-full text-xs text-muted-foreground hover:text-foreground transition-colors underline"
-            >
-              Só quero contratar um profissional
-            </button>
+            <div className="mt-6 pt-4 border-t border-border space-y-2 text-center">
+              <button
+                onClick={() => navigate('/cadastro/rh')}
+                className="block w-full text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Sou empresa / RH e quero publicar vagas →
+              </button>
+              <button
+                onClick={() => navigate('/anuncie')}
+                className="block w-full text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Quero anunciar minha marca na plataforma →
+              </button>
+            </div>
           </>
         )}
 
-        {/* STEP 2 — Geo silenciosa */}
+        {/* STEP 2 — Geo padronizada (autocomplete cities) */}
         {step === 2 && (
           <>
             <button
@@ -262,7 +270,7 @@ const SmartOnboardingWizard = () => {
             {!editingCity && city ? (
               <>
                 <p className="mt-3 text-center text-sm text-muted-foreground">
-                  Vimos que você está em
+                  Detectamos que você está em
                 </p>
                 <p className="mt-1 text-center text-2xl font-bold text-accent">
                   {city}{state ? ` • ${state}` : ''}
@@ -280,20 +288,15 @@ const SmartOnboardingWizard = () => {
             ) : (
               <>
                 <p className="mt-3 text-center text-sm text-muted-foreground">
-                  Digite sua cidade e estado:
+                  Selecione sua cidade na lista:
                 </p>
-                <div className="mt-4 space-y-2">
-                  <Input
-                    placeholder="Cidade"
-                    value={city}
-                    onChange={e => setCity(e.target.value)}
-                    autoFocus
-                  />
-                  <Input
-                    placeholder="UF (ex: SP, RJ)"
-                    value={state}
-                    onChange={e => setState(e.target.value.toUpperCase().slice(0, 2))}
-                    maxLength={2}
+                <div className="mt-4">
+                  <CityAutocomplete
+                    value={{ city, state }}
+                    onChange={({ city: c, state: s }) => {
+                      setCity(c);
+                      setState(s);
+                    }}
                   />
                 </div>
                 <Button
@@ -309,7 +312,7 @@ const SmartOnboardingWizard = () => {
           </>
         )}
 
-        {/* STEP 3 — Gancho */}
+        {/* STEP 3 — Nome + categoria única */}
         {step === 3 && (
           <>
             <button
@@ -342,17 +345,20 @@ const SmartOnboardingWizard = () => {
                 />
               </div>
 
-              {profileType !== 'client' && (
+              {profileType === 'provider' && (
                 <div>
                   <label className="text-xs font-semibold text-foreground mb-1 block">
-                    {profileType === 'rh' ? 'Área principal de recrutamento' : 'Sua ferramenta principal'}
+                    Sua categoria principal
                   </label>
+                  <p className="text-[10px] text-muted-foreground mb-2">
+                    Escolha uma única especialidade. Você poderá detalhar mais serviços depois.
+                  </p>
                   <SmartCategoryPicker
                     categories={categoriesForPicker}
                     selectedIds={selectedCategoryIds}
                     onToggle={handleToggleCategory}
                     maxSelections={1}
-                    placeholder={profileType === 'rh' ? 'Buscar área...' : 'Ex: Eletricista, Pintor...'}
+                    placeholder="Ex: Eletricista, Pintor, Diarista..."
                   />
                 </div>
               )}
@@ -368,10 +374,10 @@ const SmartOnboardingWizard = () => {
             <Button
               variant="accent"
               className="mt-5 w-full"
-              disabled={saving || !fullName.trim() || (profileType !== 'client' && selectedCategoryIds.length === 0)}
+              disabled={saving || !fullName.trim() || (profileType === 'provider' && selectedCategoryIds.length === 0)}
               onClick={handleConfirm}
             >
-              {saving ? 'Salvando...' : 'Entrar na vitrine 🚀'}
+              {saving ? 'Salvando...' : 'Entrar na vitrine'}
             </Button>
           </>
         )}
