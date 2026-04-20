@@ -66,7 +66,28 @@ const CommunityFeed = ({ compact = false }: CommunityFeedProps) => {
   // Em modo compacto, oculta totalmente se vazio (RPC já filtra horário comercial).
   if (items.length === 0) return null;
 
-  const displayItems = compact ? items.slice(0, 4) : items;
+  // Mostra apenas o primeiro nome ("Rafael R." → "Rafael") e remove acrônimos sobrando.
+  const firstName = (alias: string) => {
+    const cleaned = (alias || '').trim().replace(/\s+/g, ' ');
+    const first = cleaned.split(' ')[0] || cleaned;
+    // remove ponto final (ex.: "R.")
+    return first.replace(/\.$/, '');
+  };
+
+  // Deduplica por usuário (alias normalizado), mantendo apenas a ação mais recente.
+  // Garante que a sequência nunca repita o mesmo nome em itens consecutivos.
+  const seen = new Set<string>();
+  const uniqueItems: FeedItem[] = [];
+  for (const item of items) {
+    const key = firstName(item.actor_alias).toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    uniqueItems.push(item);
+  }
+
+  const displayItems = compact ? uniqueItems.slice(0, 4) : uniqueItems;
+
+  if (displayItems.length === 0) return null;
 
   return (
     <motion.div
@@ -119,7 +140,7 @@ const CommunityFeed = ({ compact = false }: CommunityFeedProps) => {
                 className="text-foreground shrink-0"
               />
               <p className={`text-foreground flex-1 min-w-0 truncate ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
-                <span className="font-semibold">{item.actor_alias}</span> {item.action_text}
+                <span className="font-semibold">{firstName(item.actor_alias)}</span> {item.action_text}
                 {item.city && (
                   <span className="text-muted-foreground"> em {item.city}</span>
                 )}
