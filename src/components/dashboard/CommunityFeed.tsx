@@ -6,7 +6,7 @@ import CategoryIcon from '@/components/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { slugify } from '@/lib/slugify';
+import { sanitizeSlug as slugify } from '@/lib/slugify';
 
 interface FeedItem {
   id: string;
