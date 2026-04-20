@@ -83,17 +83,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refetchProfile = useCallback(async () => {
     if (!user) return null;
 
-    const [{ data: authData }, profileData] = await Promise.all([
-      supabase.auth.getUser(),
-      fetchProfile(user.id, user),
-    ]);
+    const { data: authData } = await supabase.auth.getUser();
 
     const freshUser = authData.user ?? user;
     if (freshUser !== user) setUser(freshUser);
 
     const freshProfile = await fetchProfile(user.id, freshUser);
     setNeedsTypeSelection(false);
-    return freshProfile ?? profileData ?? null;
+    return freshProfile ?? null;
   }, [user, fetchProfile]);
 
   useEffect(() => {
@@ -101,9 +98,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
         if (session?.user) {
-          setTimeout(() => { void fetchProfile(session.user.id, session.user); }, 0);
+          setLoading(true);
+          setTimeout(() => {
+            void fetchProfile(session.user.id, session.user)
+              .finally(() => setLoading(false));
+          }, 0);
           // Log access (IP, ISP, UA) for legal audit on every fresh sign-in
           if (event === 'SIGNED_IN') {
             setTimeout(() => {
@@ -116,6 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setProfile(null);
           setProvider(null);
           setNeedsTypeSelection(false);
+          setLoading(false);
         }
       }
     );
@@ -123,9 +124,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
       if (session?.user) {
-        void fetchProfile(session.user.id, session.user);
+        setLoading(true);
+        void fetchProfile(session.user.id, session.user)
+          .finally(() => setLoading(false));
+      } else {
+        setLoading(false);
       }
     });
 
