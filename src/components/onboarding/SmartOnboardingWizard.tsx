@@ -78,7 +78,22 @@ interface SmartOnboardingWizardProps {
   mode?: WizardMode;
 }
 
+/* Placeholder centralizado para os 3 modos extras (UI completa virá em iterações futuras). */
+const PlaceholderModeShell = ({ title, body }: { title: string; body: string }) => (
+  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm p-4">
+    <div className="max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-2xl">
+      <h2 className="font-display text-lg font-bold text-foreground">{title}</h2>
+      <p className="mt-2 text-sm text-muted-foreground">{body}</p>
+    </div>
+  </div>
+);
+
 const SmartOnboardingWizard = ({ mode = 'basic' }: SmartOnboardingWizardProps = {}) => {
+  // ─── Modos extras: placeholders. Devolvem ANTES de qualquer hook adicional. ───
+  if (mode === 'complete') return <PlaceholderModeShell title="Complete seu perfil" body="Em breve você poderá adicionar CPF, links sociais e outros dados aqui." />;
+  if (mode === 'portfolio') return <PlaceholderModeShell title="Criar álbum de portfólio" body="Em breve você poderá organizar fotos de trabalhos realizados em álbuns temáticos aqui." />;
+  if (mode === 'affiliate') return <PlaceholderModeShell title="Programa de Afiliados" body="Em breve você acompanhará seu código de indicação e ganhos aqui." />;
+  // ────────────────────────────────────────────────────────────────────────────
   const { user, refetchProfile } = useAuth();
   const { city: geoCity, state: geoState } = useGeoCity();
   const { data: categoriesData = [] } = useCategoriesWithCount();
