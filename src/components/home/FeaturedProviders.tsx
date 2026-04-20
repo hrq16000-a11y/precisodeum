@@ -111,7 +111,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
   return (
     <div
       ref={impressionRef}
-      className="group relative flex h-full min-h-[260px] w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:min-h-[280px]"
+      className="group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
     >
       {/* Shine sweep */}
       <div className="card-shine-sweep pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent" style={{ left: '-100%', width: '50%' }} />
@@ -125,8 +125,8 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col p-3.5 sm:p-5">
-        <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+      <div className="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
+        <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
           <Avatar className="h-12 w-12 shrink-0 ring-2 ring-accent/20 transition-transform duration-300 group-hover:scale-105 sm:h-16 sm:w-16">
             <AvatarImage src={displayPhoto || undefined} alt={displayName} className="object-cover" />
             <AvatarFallback className="bg-accent/10 text-2xl">
@@ -153,7 +153,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
                 {displayName}
               </h3>
             </Link>
-            <div className="mt-1 flex flex-wrap items-center gap-1">
+             <div className="mt-0.5 flex flex-wrap items-center gap-1">
               <ProfileBadge hasPhoto={hasOwnPhoto} hasServices={(p.servicesCount || 0) >= 1} size="sm" />
               {(() => {
                 const tier = getRankTier(rating, reviewCount);
@@ -165,10 +165,10 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
               })()}
             </div>
             {p.category && (
-              <p className="mt-0.5 truncate text-[13px] font-medium text-accent sm:text-sm">{p.category}</p>
+               <p className="truncate text-[13px] font-medium text-accent sm:text-sm">{p.category}</p>
             )}
             {(p.city || p.state) && (
-              <div className="mt-1 flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground sm:text-xs">
+               <div className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground sm:text-xs">
                 <MapPin className="h-3 w-3 shrink-0" />
                 <span className="truncate">{[p.city, p.state].filter(Boolean).join(' - ')}</span>
               </div>
@@ -177,7 +177,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
         </div>
 
         {(rating > 0 || reviewCount > 0) && (
-          <div className="mt-3 flex items-center gap-2">
+           <div className="mt-2 flex items-center gap-2">
             <div className="flex items-center gap-0.5">
               {[1, 2, 3, 4, 5].map(star => (
                 <Star
@@ -194,15 +194,13 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
         )}
 
         {p.yearsExperience > 0 && (
-          <Badge variant="secondary" className="mt-2 w-fit max-w-full truncate text-[10px]">
+           <Badge variant="secondary" className="mt-1.5 w-fit max-w-full truncate text-[10px]">
             {p.yearsExperience}+ anos de experiência
           </Badge>
         )}
 
-        <div className="flex-1" />
-
-        {/* Buttons — flex-wrap allows stacking on extreme narrow screens */}
-        <div className="mt-3 flex w-full min-w-0 flex-wrap items-stretch gap-2">
+         {/* Buttons — flex-wrap allows stacking on extreme narrow screens */}
+         <div className="mt-2.5 flex w-full min-w-0 flex-wrap items-stretch gap-2">
           {p.whatsapp && (
             <Button
               variant="accent"
@@ -237,7 +235,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
             </Link>
           </Button>
         </div>
-        <p className="mt-1.5 text-center text-[10px] text-muted-foreground">Orçamento sem compromisso</p>
+         <p className="mt-1 text-center text-[10px] text-muted-foreground">Orçamento sem compromisso</p>
       </div>
     </div>
   );
