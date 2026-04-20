@@ -1305,6 +1305,48 @@ export type Database = {
           },
         ]
       }
+      lead_contacts: {
+        Row: {
+          agreed_terms: boolean
+          created_at: string
+          email: string | null
+          id: string
+          page_path: string | null
+          target_id: string | null
+          target_label: string | null
+          target_type: string
+          user_agent: string | null
+          user_id: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          agreed_terms?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          page_path?: string | null
+          target_id?: string | null
+          target_label?: string | null
+          target_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          agreed_terms?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          page_path?: string | null
+          target_id?: string | null
+          target_label?: string | null
+          target_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           client_name: string
