@@ -880,41 +880,25 @@ const DashboardServicesPage = () => {
                   />
                 </div>
 
-                {/* Photo */}
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">Foto do Serviço</label>
-                  {editId && user ? (
+                {/* Photos are added in the dedicated post-publish step (1 capa + até 4 extras com drag&drop) */}
+                {!editId && (
+                  <div className="rounded-lg bg-muted/30 border border-dashed border-border p-3 flex items-start gap-2">
+                    <ImagePlus className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground">
+                      Você poderá adicionar <strong className="text-foreground">até 5 fotos</strong> (1 capa + 4 extras, com arrastar para reordenar) logo após publicar.
+                    </p>
+                  </div>
+                )}
+                {editId && user && (
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-foreground">Fotos do Serviço</label>
                     <div className="rounded-lg border border-border p-3">
                       <Suspense fallback={<SuspenseFallback />}>
                         <ServiceImageUpload serviceId={editId} userId={user.id} />
                       </Suspense>
                     </div>
-                  ) : (
-                    <label className="cursor-pointer block">
-                      <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
-                      <div className="rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 flex flex-col items-center justify-center gap-2 hover:border-accent/40 transition-colors">
-                        {newServicePhotoPreview ? (
-                          <div className="relative w-full">
-                            <img src={newServicePhotoPreview} alt="Preview" className="w-full h-28 object-cover rounded-md" />
-                            <button
-                              type="button"
-                              onClick={(e) => { e.preventDefault(); setNewServicePhoto(null); setNewServicePhotoPreview(null); }}
-                              className="absolute top-1 right-1 rounded-full bg-card p-1 shadow"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <ImagePlus className="h-7 w-7 text-muted-foreground/50" />
-                            <span className="text-sm text-muted-foreground">Clique para enviar foto</span>
-                            <span className="text-[10px] text-muted-foreground/70">JPG, PNG • Max 5MB</span>
-                          </>
-                        )}
-                      </div>
-                    </label>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Social links */}
                 <div className="space-y-2">
