@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -10,7 +10,7 @@ import {
   Users, Key, Trash2, Download, CheckSquare, UserCog, Shield, UserPlus,
   BarChart3, Target, Briefcase, TrendingUp, Send, Tag, X, Plus,
   Activity, Filter, Search, ChevronDown, FileText, AlertTriangle,
-  CheckCircle, XCircle, User, Wrench, Building2, LayoutGrid, List
+  CheckCircle, XCircle, User, Wrench, Building2, LayoutGrid, List, Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,8 +28,15 @@ import UserFilters from '@/components/admin/UserFilters';
 import UserTable from '@/components/admin/UserTable';
 import UserGrid from '@/components/admin/UserGrid';
 import LevelDistributionBar from '@/components/admin/LevelDistributionBar';
-import UserEditDialog from '@/components/admin/UserEditDialog';
-import UserDetailSheet from '@/components/admin/UserDetailSheet';
+// Heavy edit/detail modals — only loaded when admin opens them
+const UserEditDialog = lazy(() => import('@/components/admin/UserEditDialog'));
+const UserDetailSheet = lazy(() => import('@/components/admin/UserDetailSheet'));
+
+const SuspenseFallback = () => (
+  <div className="flex justify-center p-8">
+    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+  </div>
+);
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { exportCrmPdf } from '@/lib/exportCrmPdf';
 import {
@@ -1252,10 +1259,11 @@ const AdminUsersPage = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Dialogs */}
-      {editUser && <UserEditDialog user={editUser} onClose={() => setEditUser(null)} onSaved={fetchProfiles} />}
-      <UserDetailSheet user={detailUser} isAdmin={adminIds.has(detailUser?.id)} onClose={() => setDetailUser(null)} onRefresh={fetchProfiles} />
-
+      {/* Dialogs (lazy-loaded on demand) */}
+      <Suspense fallback={<SuspenseFallback />}>
+        {editUser && <UserEditDialog user={editUser} onClose={() => setEditUser(null)} onSaved={fetchProfiles} />}
+        {detailUser && <UserDetailSheet user={detailUser} isAdmin={adminIds.has(detailUser?.id)} onClose={() => setDetailUser(null)} onRefresh={fetchProfiles} />}
+      </Suspense>
       {/* Password Reset */}
       <Dialog open={!!pwUser} onOpenChange={open => !open && setPwUser(null)}>
         <DialogContent className="sm:max-w-sm">

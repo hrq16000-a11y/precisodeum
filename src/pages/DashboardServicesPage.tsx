@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import { compressImage } from '@/lib/compressImage';
 import { getSuggestedTags } from '@/data/tagSuggestions';
 import { getTemplatesForCategory, DIFFERENTIAL_TAGS, buildExternalPrompt } from '@/data/serviceTemplates';
@@ -8,9 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Edit2, X, Search, ImagePlus, MapPin, Eye, Pause, Play, Zap, Tag, MapPinned, Copy, ExternalLink, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Search, ImagePlus, MapPin, Eye, Pause, Play, Zap, Tag, MapPinned, Copy, ExternalLink, FileText, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
-import SmartCategoryPicker from '@/components/SmartCategoryPicker';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccountLimits } from '@/hooks/useAccountLimits';
 import UpsellBanner from '@/components/dashboard/UpsellBanner';
@@ -18,8 +17,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
-import ServiceImageUpload from '@/components/ServiceImageUpload';
 import { handleImageError } from '@/lib/imageResolver';
+
+// Heavy editor sub-components — only loaded when the edit Dialog opens
+const SmartCategoryPicker = lazy(() => import('@/components/SmartCategoryPicker'));
+const ServiceImageUpload = lazy(() => import('@/components/ServiceImageUpload'));
+
+const SuspenseFallback = () => (
+  <div className="flex justify-center p-8">
+    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+  </div>
+);
 import { format } from 'date-fns';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { CITIES_INDEX, type CityEntry } from '@/lib/citiesIndex';
@@ -696,11 +704,13 @@ const DashboardServicesPage = () => {
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">Categoria</label>
-                    <SmartCategoryPicker
-                      categories={categories}
-                      selectedIds={selectedCategoryIds}
-                      onToggle={toggleCategory}
-                    />
+                    <Suspense fallback={<SuspenseFallback />}>
+                      <SmartCategoryPicker
+                        categories={categories}
+                        selectedIds={selectedCategoryIds}
+                        onToggle={toggleCategory}
+                      />
+                    </Suspense>
                   </div>
                 </div>
               </div>
@@ -805,7 +815,9 @@ const DashboardServicesPage = () => {
                   <label className="mb-1 block text-sm font-medium text-foreground">Foto do Serviço</label>
                   {editId && user ? (
                     <div className="rounded-lg border border-border p-3">
-                      <ServiceImageUpload serviceId={editId} userId={user.id} />
+                      <Suspense fallback={<SuspenseFallback />}>
+                        <ServiceImageUpload serviceId={editId} userId={user.id} />
+                      </Suspense>
                     </div>
                   ) : (
                     <label className="cursor-pointer block">
