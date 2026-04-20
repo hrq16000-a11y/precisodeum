@@ -2000,8 +2000,8 @@ export type Database = {
           onboarding_completed: boolean
           permissions: Json
           phone: string | null
-          profile_type: string
-          role: string
+          profile_type: string | null
+          role: string | null
           staff_role: Database["public"]["Enums"]["app_role"] | null
           status: string
           suspended_at: string | null
@@ -2029,8 +2029,8 @@ export type Database = {
           onboarding_completed?: boolean
           permissions?: Json
           phone?: string | null
-          profile_type?: string
-          role?: string
+          profile_type?: string | null
+          role?: string | null
           staff_role?: Database["public"]["Enums"]["app_role"] | null
           status?: string
           suspended_at?: string | null
@@ -2058,8 +2058,8 @@ export type Database = {
           onboarding_completed?: boolean
           permissions?: Json
           phone?: string | null
-          profile_type?: string
-          role?: string
+          profile_type?: string | null
+          role?: string | null
           staff_role?: Database["public"]["Enums"]["app_role"] | null
           status?: string
           suspended_at?: string | null
