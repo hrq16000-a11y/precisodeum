@@ -559,6 +559,21 @@ const DashboardProfilePage = () => {
                     </div>
                   )}
 
+                  {form.account_kind === 'autonomo' && (
+                    <div>
+                      <label className={labelCls}>Data de nascimento <span className="text-muted-foreground font-normal">(opcional · pontua engajamento)</span></label>
+                      <input
+                        type="date"
+                        value={form.birth_date}
+                        max={new Date().toISOString().slice(0, 10)}
+                        min="1900-01-01"
+                        onChange={(e) => setForm(prev => ({ ...prev, birth_date: e.target.value }))}
+                        className={inputCls}
+                      />
+                      <p className="mt-1 text-[11px] text-muted-foreground">Não exibida publicamente. Reforça a autenticidade do seu perfil.</p>
+                    </div>
+                  )}
+
                   {form.account_kind === 'empresa' && (
                     <div>
                       <label className={labelCls}>CNPJ <span className="text-muted-foreground font-normal">(opcional)</span></label>
