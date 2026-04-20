@@ -113,12 +113,41 @@ const startVersionWatcher = () => {
   });
 };
 
-const bootstrap = async () => {
-  const reloading = await resetCachesIfNeeded();
-  if (reloading) return;
+const showBootstrapError = (err: unknown) => {
+  try {
+    const recovery = document.getElementById('app-shell-recovery');
+    const bar = document.getElementById('app-shell-bar');
+    const msg = document.getElementById('app-shell-recovery-msg');
+    if (bar) (bar as HTMLElement).style.display = 'none';
+    if (recovery) (recovery as HTMLElement).style.display = 'block';
+    if (msg) {
+      const text = err instanceof Error ? err.message : String(err ?? 'Falha desconhecida');
+      msg.textContent = 'Erro ao iniciar: ' + text.slice(0, 200);
+    }
+    // eslint-disable-next-line no-console
+    console.error('[bootstrap] Falha ao iniciar a aplicação', err);
+  } catch {
+    // best-effort
+  }
+};
 
-  createRoot(rootElement).render(<App />);
-  removeShell();
+const bootstrap = async () => {
+  try {
+    // Guard rails: chaves Supabase ausentes => avisa em vez de loop
+    const env = (import.meta as any).env || {};
+    if (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_PUBLISHABLE_KEY) {
+      throw new Error('Configuração do backend ausente (VITE_SUPABASE_URL/KEY).');
+    }
+
+    const reloading = await resetCachesIfNeeded().catch(() => false);
+    if (reloading) return;
+
+    createRoot(rootElement).render(<App />);
+    if ((window as any).__appShellTimer) {
+      clearTimeout((window as any).__appShellTimer);
+      delete (window as any).__appShellTimer;
+    }
+    removeShell();
 
   deferWork(() => {
     import("@/styles/deferred-animations.css");
