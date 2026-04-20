@@ -608,7 +608,7 @@ const SmartOnboardingWizard = () => {
               disabled={saving || !fullName.trim() || (profileType === 'provider' && selectedCategoryIds.length === 0)}
               onClick={handleConfirm}
             >
-              {saving ? 'Salvando...' : profileType === 'provider' ? 'Próximo: criar meu serviço →' : 'Concluir cadastro'}
+              {saving ? 'Salvando seu perfil...' : profileType === 'provider' ? 'Avançando automaticamente...' : 'Concluir cadastro'}
             </Button>
           </>
         )}
