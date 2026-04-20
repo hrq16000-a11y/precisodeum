@@ -1374,6 +1374,7 @@ const ProviderProfile = () => {
                     href={whatsappLink('', `Olá! Agradeço por escolher meus serviços. Poderia me avaliar rapidinho na plataforma? Isso fortalece meu trabalho! ${window.location.href}`)}
                     target="_blank"
                     rel="noopener noreferrer"
+                    data-wa-skip="true"
                   >
                     <Star className="h-4 w-4 text-accent" /> Pedir Avaliação
                   </a>
