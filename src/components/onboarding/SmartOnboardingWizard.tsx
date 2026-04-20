@@ -113,8 +113,21 @@ const SmartOnboardingWizard = () => {
 
   const selectedCategory = categoriesForPicker.find(c => c.id === selectedCategoryIds[0]);
 
+  const nextBtnRef = useRef<HTMLButtonElement>(null);
+  const [pulseNext, setPulseNext] = useState(false);
+
   const handleToggleCategory = (id: string) => {
-    setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id]);
+    setSelectedCategoryIds(prev => {
+      const next = prev.includes(id) ? [] : [id];
+      if (next.length === 1) {
+        setTimeout(() => {
+          nextBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setPulseNext(true);
+          setTimeout(() => setPulseNext(false), 2400);
+        }, 150);
+      }
+      return next;
+    });
   };
 
   const clearPersisted = () => {
