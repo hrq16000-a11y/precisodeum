@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2, RotateCcw, PartyPopper } from 'lucide-react';
+import { Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2, RotateCcw, PartyPopper, AlertCircle, TrendingUp } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -112,8 +113,21 @@ const SmartOnboardingWizard = () => {
 
   const selectedCategory = categoriesForPicker.find(c => c.id === selectedCategoryIds[0]);
 
+  const nextBtnRef = useRef<HTMLButtonElement>(null);
+  const [pulseNext, setPulseNext] = useState(false);
+
   const handleToggleCategory = (id: string) => {
-    setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id]);
+    setSelectedCategoryIds(prev => {
+      const next = prev.includes(id) ? [] : [id];
+      if (next.length === 1) {
+        setTimeout(() => {
+          nextBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setPulseNext(true);
+          setTimeout(() => setPulseNext(false), 2400);
+        }, 150);
+      }
+      return next;
+    });
   };
 
   const clearPersisted = () => {
@@ -271,6 +285,28 @@ const SmartOnboardingWizard = () => {
               <p className="text-sm text-muted-foreground mt-1">
                 Quer cadastrar mais um serviço ou já podemos liberar sua página?
               </p>
+
+              {/* Confidence Level Bar */}
+              <div className="mt-4 text-left">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground">
+                    <TrendingUp className="h-3 w-3 text-accent" /> Nível de confiança
+                  </span>
+                  <span className="text-[11px] font-bold text-accent">
+                    {servicesCreated >= 3 ? '100% — Portfólio Forte' : servicesCreated === 2 ? '80% — Engajado' : '60% — Iniciante consolidado'}
+                  </span>
+                </div>
+                <Progress
+                  value={servicesCreated >= 3 ? 100 : servicesCreated === 2 ? 80 : 60}
+                  className="h-2"
+                />
+                {servicesCreated < 3 && (
+                  <p className="mt-1.5 text-[10px] text-muted-foreground">
+                    Cadastre mais {3 - servicesCreated} {3 - servicesCreated === 1 ? 'serviço' : 'serviços'} para chegar ao topo.
+                  </p>
+                )}
+              </div>
+
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
@@ -505,12 +541,15 @@ const SmartOnboardingWizard = () => {
 
               {profileType === 'provider' && (
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">
+                  <label className="text-xs font-semibold text-foreground mb-2 block">
                     Sua especialidade principal
                   </label>
-                  <p className="text-[10px] text-muted-foreground mb-2">
-                    Escolha <strong>uma única especialidade</strong>. Você poderá adicionar outros serviços depois.
-                  </p>
+                  <div className="mb-3 flex items-start gap-2 rounded-xl border-2 border-amber-400/60 bg-amber-50 dark:bg-amber-950/30 p-3 animate-in fade-in slide-in-from-top-1">
+                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] leading-relaxed text-amber-900 dark:text-amber-100">
+                      Escolha sua <strong>especialidade principal</strong> agora. Você poderá adicionar outras categorias e serviços depois, dentro do seu painel.
+                    </p>
+                  </div>
                   <SmartCategoryPicker
                     categories={categoriesForPicker}
                     selectedIds={selectedCategoryIds}
@@ -538,8 +577,9 @@ const SmartOnboardingWizard = () => {
             </div>
 
             <Button
+              ref={nextBtnRef}
               variant="accent"
-              className="mt-5 w-full"
+              className={`mt-5 w-full transition-shadow ${pulseNext ? 'animate-pulse ring-4 ring-accent/40 shadow-lg shadow-accent/30' : ''}`}
               disabled={saving || !fullName.trim() || (profileType === 'provider' && selectedCategoryIds.length === 0)}
               onClick={handleConfirm}
             >
