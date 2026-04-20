@@ -44,6 +44,7 @@ const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBann
 const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
 const CmsBannersCarousel = lazy(() => import('@/components/home/CmsBannersCarousel'));
 const CoursesPromo = lazy(() => import('@/components/home/CoursesPromo'));
+const CommunityFeed = lazy(() => import('@/components/dashboard/CommunityFeed'));
 
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
 const ActiveProvidersCounter = lazy(() => import('@/components/home/ActiveProvidersCounter'));
@@ -254,6 +255,13 @@ const Index = () => {
       <Header />
       <HeroBanner />
       <Suspense fallback={<div className="h-8" />}><ActiveProvidersCounter /></Suspense>
+
+      {/* Mural de Prova Social — Realtime */}
+      <Suspense fallback={null}>
+        <div className="container mx-auto px-4 mt-4">
+          <CommunityFeed />
+        </div>
+      </Suspense>
 
       {/* Categories rendered eagerly (not lazy) to eliminate CLS caused by lazy sections above */}
       <CategoriesGrid categories={categories} isLoading={catsLoading} />

@@ -2379,6 +2379,42 @@ export type Database = {
           },
         ]
       }
+      public_activities: {
+        Row: {
+          action_text: string
+          actor_alias: string
+          category_name: string | null
+          city: string | null
+          created_at: string | null
+          icon: string | null
+          id: string
+          is_seed: boolean | null
+          profile_type: string | null
+        }
+        Insert: {
+          action_text: string
+          actor_alias: string
+          category_name?: string | null
+          city?: string | null
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          is_seed?: boolean | null
+          profile_type?: string | null
+        }
+        Update: {
+          action_text?: string
+          actor_alias?: string
+          category_name?: string | null
+          city?: string | null
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          is_seed?: boolean | null
+          profile_type?: string | null
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -4675,6 +4711,26 @@ export type Database = {
           storage_path: string
           user_ref: string
         }[]
+      }
+      get_community_feed: {
+        Args: { _limit?: number }
+        Returns: {
+          action_text: string
+          actor_alias: string
+          category_name: string | null
+          city: string | null
+          created_at: string | null
+          icon: string | null
+          id: string
+          is_seed: boolean | null
+          profile_type: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "public_activities"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_featured_providers: {
         Args: { _limit?: number }
