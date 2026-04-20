@@ -1,7 +1,8 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap, Camera, FileText } from 'lucide-react';
+import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap, Camera, FileText, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,8 +42,30 @@ import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 
 const DashboardPage = () => {
-  const { user, profile, provider, loading } = useAuth();
+  const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
   const navigate = useNavigate();
+
+  const handleResetOnboarding = async () => {
+    if (!user?.id) return;
+    if (!window.confirm('Reiniciar seu cadastro? Você verá o assistente de boas-vindas novamente.')) return;
+    try {
+      const [{ error: profErr }, { error: metaErr }] = await Promise.all([
+        supabase.from('profiles').update({
+          profile_type: null,
+          role: null,
+          onboarding_completed: false,
+        } as any).eq('id', user.id),
+        supabase.auth.updateUser({ data: { profile_type_chosen: false, profile_type: null } }),
+      ]);
+      if (profErr || metaErr) throw profErr || metaErr;
+      await refetchProfile();
+      toast.success('Cadastro reiniciado. Recarregando...');
+      setTimeout(() => window.location.href = '/dashboard', 600);
+    } catch (e) {
+      console.error('[Reset Onboarding]', e);
+      toast.error('Não foi possível reiniciar o cadastro.');
+    }
+  };
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const wizardEnabled = useFeatureEnabled('enable_service_wizard_onboarding');
   const { levelName, levelColor, accountTypeName, accountTypeColor } = usePermissions();
