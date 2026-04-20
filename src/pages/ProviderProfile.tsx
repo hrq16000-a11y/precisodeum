@@ -40,6 +40,7 @@ import { toast } from 'sonner';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
+import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
 
 /** Fire-and-forget contact click tracker */
 const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone', pagePath: string) => {
