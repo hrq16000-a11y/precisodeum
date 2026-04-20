@@ -27,6 +27,10 @@ const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-2
       className={`${height} ${filterClass} ${className}`}
       width="111"
       height="40"
+      onError={(e) => {
+        const t = e.currentTarget;
+        if (t.src.indexOf(DEFAULT_LOGO_URL) === -1) t.src = DEFAULT_LOGO_URL;
+      }}
     />
   );
 
