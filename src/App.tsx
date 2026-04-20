@@ -242,6 +242,7 @@ const App = () => {
   }, []);
 
   return (
+    <ErrorGuard componentName="App">
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Suspense fallback={null}><Toaster /></Suspense>
@@ -385,6 +386,7 @@ const App = () => {
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
+    </ErrorGuard>
   );
 };
 
