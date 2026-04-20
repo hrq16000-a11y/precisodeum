@@ -693,8 +693,27 @@ const DashboardServicesPage = () => {
             {/* ── FORM STEP (initial create or edit) ── */}
             {wizardStep === 'form' && (<>
 
-            {/* ── Section 1: Informações Básicas ── */}
+            {/* Wizard Step Indicator */}
+            <div className="flex items-center justify-center gap-2 -mt-1">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="flex items-center gap-2">
+                  <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                    formStep === n ? 'bg-accent text-accent-foreground' : formStep > n ? 'bg-accent/30 text-accent' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {formStep > n ? '✓' : n}
+                  </div>
+                  {n < 3 && <div className={`h-0.5 w-8 ${formStep > n ? 'bg-accent/40' : 'bg-muted'}`} />}
+                </div>
+              ))}
+            </div>
+            <p className="text-center text-xs text-muted-foreground -mt-2">
+              {formStep === 1 && 'Etapa 1 de 3 · Informações Básicas'}
+              {formStep === 2 && 'Etapa 2 de 3 · Localização & Atendimento'}
+              {formStep === 3 && 'Etapa 3 de 3 · Contato & Mídia'}
+            </p>
 
+            {/* ── Section 1: Informações Básicas ── */}
+            {formStep === 1 && (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 📝 Informações Básicas
