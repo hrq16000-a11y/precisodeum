@@ -2295,6 +2295,7 @@ export type Database = {
           city: string
           cnpj: string | null
           content_flags: Json | null
+          cpf: string | null
           created_at: string
           deleted_at: string | null
           description: string
@@ -2336,6 +2337,7 @@ export type Database = {
           city?: string
           cnpj?: string | null
           content_flags?: Json | null
+          cpf?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string
@@ -2377,6 +2379,7 @@ export type Database = {
           city?: string
           cnpj?: string | null
           content_flags?: Json | null
+          cpf?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string
