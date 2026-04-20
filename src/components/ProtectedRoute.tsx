@@ -22,9 +22,10 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
       return;
     }
 
-    if (allowedTypes && profile) {
-      const profileType = profile.profile_type || 'client';
-      if (!allowedTypes.includes(profileType)) {
+    // Se autenticado mas sem profile_type definido, ProfileTypeChooser (renderizado em App)
+    // já cobrirá o bloqueio via needsTypeSelection. Aqui só validamos allowedTypes quando há tipo.
+    if (allowedTypes && profile?.profile_type) {
+      if (!allowedTypes.includes(profile.profile_type)) {
         navigate('/dashboard', { replace: true });
       }
     }
