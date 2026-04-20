@@ -991,8 +991,7 @@ const DashboardServicesPage = () => {
                 </div>
               </div>
             </div>
-
-            {/* Visual affordance spacer — lets last item peek above sticky bar */}
+            )}
             <div className="h-2" />
             </>)}
           </div>
@@ -1009,12 +1008,35 @@ const DashboardServicesPage = () => {
               </Button>
             ) : (
               <>
-                <Button variant="outline" className="flex-1 h-11" onClick={() => { resetForm(); setShowDialog(false); }}>
-                  Cancelar
+                <Button variant="outline" className="flex-1 h-11" onClick={() => {
+                  if (formStep > 1) setFormStep((formStep - 1) as 1 | 2 | 3);
+                  else { resetForm(); setShowDialog(false); }
+                }}>
+                  {formStep > 1 ? '← Voltar' : 'Cancelar'}
                 </Button>
-                <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={handleSave}>
-                  📢 {editId ? 'Salvar' : 'Publicar'}
-                </Button>
+                {formStep < 3 ? (
+                  <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={() => {
+                    // Validate per step before advancing
+                    if (formStep === 1 && !form.service_name.trim()) {
+                      setFormErrors({ service_name: 'Título é obrigatório' });
+                      toast.error('Informe o título do serviço');
+                      return;
+                    }
+                    if (formStep === 2 && !form.service_area.trim()) {
+                      setFormErrors({ service_area: 'Cidade é obrigatória' });
+                      toast.error('Informe a cidade de atendimento');
+                      return;
+                    }
+                    setFormErrors({});
+                    setFormStep((formStep + 1) as 1 | 2 | 3);
+                  }}>
+                    Avançar →
+                  </Button>
+                ) : (
+                  <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={handleSave}>
+                    📢 {editId ? 'Salvar' : 'Publicar'}
+                  </Button>
+                )}
               </>
             )}
           </div>
