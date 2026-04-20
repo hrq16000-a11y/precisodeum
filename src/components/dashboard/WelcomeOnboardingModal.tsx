@@ -70,11 +70,17 @@ export default function WelcomeOnboardingModal() {
   return (
     <Dialog open={open}>
       <DialogContent
-        className="max-w-2xl p-0 overflow-hidden border-0 [&>button]:hidden"
+        className="max-w-2xl p-0 overflow-hidden border-0 [&>button]:hidden animate-in fade-in-0 zoom-in-95 duration-300"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
       >
-        <div className="bg-gradient-to-br from-card via-card to-muted/40 p-6 sm:p-8">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-gradient-to-br from-card via-card to-muted/40 p-6 sm:p-8"
+        >
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
             <h2 className="font-display text-xl sm:text-2xl font-bold text-foreground text-center">{settings.title}</h2>
             <p className="mt-2 text-sm text-muted-foreground text-center">{settings.subtitle}</p>
@@ -115,7 +121,7 @@ export default function WelcomeOnboardingModal() {
           <p className="mt-5 text-center text-[11px] text-muted-foreground">
             Sua escolha personaliza sua experiência. Você pode alterar nas configurações depois.
           </p>
-        </div>
+        </motion.div>
       </DialogContent>
     </Dialog>
   );

@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Share2, Copy, Check, ExternalLink, Star, MapPin } from 'lucide-react';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Share2, Copy, Check, ExternalLink, Star, MapPin, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,30 +34,38 @@ const ShareProfileCard = () => {
     }
   };
 
+  const shareMessage = `Olá! Veja meu perfil profissional e serviços no portal Preciso de um Profissional: ${profileUrl}`;
+
   const handleNativeShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
           title: `${name} — Perfil Profissional`,
-          text: `Conheça o perfil profissional de ${name} no Preciso de um!`,
+          text: shareMessage,
           url: profileUrl,
         });
-      } catch { /* user cancelled */ }
-    } else {
-      handleCopy();
+        return;
+      } catch { /* user cancelled or unsupported */ }
     }
+    // Fallback: WhatsApp link
+    const wa = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+    window.open(wa, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleWhatsApp = () => {
+    const wa = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+    window.open(wa, '_blank', 'noopener,noreferrer');
   };
 
   return (
     <>
       <Button
-        variant="outline"
         size="sm"
         onClick={() => setOpen(true)}
-        className="gap-2"
+        className="gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all"
       >
         <Share2 className="h-4 w-4" />
-        Compartilhar Perfil
+        Compartilhar meu Perfil Profissional
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -110,9 +118,13 @@ const ShareProfileCard = () => {
 
           {/* Actions */}
           <div className="p-4 space-y-2">
+            <Button onClick={handleWhatsApp} className="w-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white">
+              <MessageCircle className="h-4 w-4" />
+              Enviar pelo WhatsApp
+            </Button>
             <Button onClick={handleNativeShare} className="w-full gap-2" variant="accent">
               <Share2 className="h-4 w-4" />
-              Compartilhar
+              Mais opções de compartilhamento
             </Button>
             <Button onClick={handleCopy} variant="outline" className="w-full gap-2">
               {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}

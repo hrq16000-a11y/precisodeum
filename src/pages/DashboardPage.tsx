@@ -216,38 +216,54 @@ const DashboardPage = () => {
     );
   }
 
-  // ---- RH DASHBOARD ----
+  // ---- RH DASHBOARD (Indigo Corporate Theme) ----
   if (isRH) {
     return (
       <DashboardLayout>
         {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
           <motion.div
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-slate-700/10"
             animate={{ rotate: [0, 5, -5, 0] }}
             transition={{ duration: 6, repeat: Infinity }}
           >
-            <Megaphone className="h-5 w-5 text-purple-600" />
+            <Megaphone className="h-5 w-5 text-indigo-600" />
           </motion.div>
           <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">Painel RH</h1>
-            <p className="text-sm text-muted-foreground">Gerencie vagas e recrutamento</p>
+            <h1 className="font-display text-2xl font-bold text-foreground">Painel RH Elite</h1>
+            <p className="text-sm text-muted-foreground">Gerencie suas vagas e seu time corporativo</p>
           </div>
         </motion.div>
 
-        <GlassCard variant="gradient" className="mt-6 border-purple-200 dark:border-purple-800">
+        <GlassCard variant="gradient" className="mt-6 border-indigo-200 dark:border-indigo-800/40 bg-gradient-to-br from-indigo-500/5 to-slate-500/5">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/15 text-purple-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-600">
               <Megaphone className="h-5 w-5" />
             </div>
             <div>
               <h2 className="font-display text-base font-bold text-foreground">Conta Agência / RH</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Publique vagas com auto-aprovação, acesse perfis de profissionais e gerencie processos seletivos.
+                Publique vagas com auto-aprovação, acesse perfis qualificados e gerencie processos seletivos.
               </p>
             </div>
           </div>
         </GlassCard>
+
+        {/* Métricas focadas em recrutamento (sem portfólio) */}
+        <div className="mt-4 grid gap-3 grid-cols-2 sm:grid-cols-3">
+          <div className="rounded-2xl border border-indigo-200/60 dark:border-indigo-800/40 bg-card p-4">
+            <div className="flex items-center gap-2 text-indigo-600"><Megaphone className="h-4 w-4" /><span className="text-[11px] font-semibold uppercase tracking-wide">Minhas Vagas</span></div>
+            <p className="mt-1 text-2xl font-bold text-foreground">{jobsCount}</p>
+          </div>
+          <div className="rounded-2xl border border-indigo-200/60 dark:border-indigo-800/40 bg-card p-4">
+            <div className="flex items-center gap-2 text-indigo-600"><MessageSquare className="h-4 w-4" /><span className="text-[11px] font-semibold uppercase tracking-wide">Candidatos</span></div>
+            <p className="mt-1 text-2xl font-bold text-foreground">{leadsCount}</p>
+          </div>
+          <div className="rounded-2xl border border-indigo-200/60 dark:border-indigo-800/40 bg-card p-4">
+            <div className="flex items-center gap-2 text-indigo-600"><Eye className="h-4 w-4" /><span className="text-[11px] font-semibold uppercase tracking-wide">Visualizações</span></div>
+            <p className="mt-1 text-2xl font-bold text-foreground">{viewsTotal}</p>
+          </div>
+        </div>
 
         <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {[
@@ -255,20 +271,20 @@ const DashboardPage = () => {
             { icon: Eye, title: 'Buscar Profissionais', desc: 'Encontre profissionais para suas vagas', path: '/buscar' },
             { icon: Users, title: 'Comunidade', desc: 'Conecte-se com a comunidade', path: '/dashboard/comunidade' },
           ].map((item, i) => (
-            <GlassCard key={item.path} variant="default" delay={0.1 + i * 0.1} className="cursor-pointer" onClick={() => navigate(item.path)}>
+            <GlassCard key={item.path} variant="default" delay={0.1 + i * 0.1} className="cursor-pointer border-indigo-200/40 dark:border-indigo-800/30" onClick={() => navigate(item.path)}>
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600">
                   <item.icon className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-foreground">{item.title}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
-                  {item.count && item.count > 0 && <span className="inline-block mt-1 text-xs font-medium text-accent">{item.count} {item.countLabel}{item.count !== 1 ? 's' : ''}</span>}
+                  {item.count && item.count > 0 && <span className="inline-block mt-1 text-xs font-medium text-indigo-600">{item.count} {item.countLabel}{item.count !== 1 ? 's' : ''}</span>}
                 </div>
               </div>
               {item.action && (
                 <button onClick={(e) => { e.stopPropagation(); navigate(item.path); }}
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:underline">
                   <PlusCircle className="h-3.5 w-3.5" /> {item.action}
                 </button>
               )}
