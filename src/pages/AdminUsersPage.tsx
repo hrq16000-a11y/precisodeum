@@ -1259,10 +1259,11 @@ const AdminUsersPage = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Dialogs */}
-      {editUser && <UserEditDialog user={editUser} onClose={() => setEditUser(null)} onSaved={fetchProfiles} />}
-      <UserDetailSheet user={detailUser} isAdmin={adminIds.has(detailUser?.id)} onClose={() => setDetailUser(null)} onRefresh={fetchProfiles} />
-
+      {/* Dialogs (lazy-loaded on demand) */}
+      <Suspense fallback={<SuspenseFallback />}>
+        {editUser && <UserEditDialog user={editUser} onClose={() => setEditUser(null)} onSaved={fetchProfiles} />}
+        {detailUser && <UserDetailSheet user={detailUser} isAdmin={adminIds.has(detailUser?.id)} onClose={() => setDetailUser(null)} onRefresh={fetchProfiles} />}
+      </Suspense>
       {/* Password Reset */}
       <Dialog open={!!pwUser} onOpenChange={open => !open && setPwUser(null)}>
         <DialogContent className="sm:max-w-sm">
