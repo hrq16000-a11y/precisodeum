@@ -115,6 +115,7 @@ const SmartOnboardingWizard = () => {
 
   const nextBtnRef = useRef<HTMLButtonElement>(null);
   const [pulseNext, setPulseNext] = useState(false);
+  const autoAdvancedRef = useRef(false);
 
   const handleToggleCategory = (id: string) => {
     setSelectedCategoryIds(prev => {
@@ -129,6 +130,23 @@ const SmartOnboardingWizard = () => {
       return next;
     });
   };
+
+  // Auto-advance Step 3 → confirm assim que a categoria for selecionada (provider)
+  // e nome já estiver preenchido. Cliente: dispara assim que nome existir + step 3.
+  useEffect(() => {
+    if (step !== 3 || saving || autoAdvancedRef.current) return;
+    if (!fullName.trim()) return;
+    if (profileType === 'provider' && selectedCategoryIds.length === 0) return;
+    autoAdvancedRef.current = true;
+    const t = setTimeout(() => { handleConfirm(); }, 650);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, selectedCategoryIds, fullName, profileType, saving]);
+
+  // Reset auto-advance guard quando voltar de step
+  useEffect(() => {
+    if (step !== 3) autoAdvancedRef.current = false;
+  }, [step]);
 
   const clearPersisted = () => {
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
@@ -490,6 +508,13 @@ const SmartOnboardingWizard = () => {
                     onChange={({ city: c, state: s }) => {
                       setCity(c);
                       setState(s);
+                      // Auto-avanço: se a seleção veio com cidade + UF da lista oficial, pula para o Step 3
+                      if (c.trim() && s.trim()) {
+                        setTimeout(() => {
+                          setEditingCity(false);
+                          setStep(3);
+                        }, 350);
+                      }
                     }}
                   />
                 </div>
@@ -583,7 +608,7 @@ const SmartOnboardingWizard = () => {
               disabled={saving || !fullName.trim() || (profileType === 'provider' && selectedCategoryIds.length === 0)}
               onClick={handleConfirm}
             >
-              {saving ? 'Salvando...' : profileType === 'provider' ? 'Próximo: criar meu serviço →' : 'Concluir cadastro'}
+              {saving ? 'Salvando seu perfil...' : profileType === 'provider' ? 'Avançando automaticamente...' : 'Concluir cadastro'}
             </Button>
           </>
         )}
