@@ -357,8 +357,40 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   return (
     <div ref={wrapperRef} className="relative z-40 w-full max-w-xl">
       <form onSubmit={handleSearch}>
+        {/* Mobile: stacked input + full-width button */}
+        <div className="flex flex-col gap-2 sm:hidden">
+          <div
+            className={`flex items-center gap-2 rounded-full bg-card px-4 py-2.5 transition-all duration-300 ${
+              isFocused ? 'shadow-lg ring-2 ring-accent/20' : 'shadow-card-hover'
+            }`}
+          >
+            <Search className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isFocused ? 'text-accent' : 'text-muted-foreground'}`} />
+            <input
+              ref={(el) => { if (el && window.innerWidth < 640) inputRef.current = el; }}
+              type="text"
+              placeholder={typingPlaceholder || "O que você precisa?"}
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setSearchError(''); setIsOpen(true); }}
+              onFocus={handleFocus}
+              onBlur={() => setIsFocused(false)}
+              onKeyDown={handleKeyDown}
+              className="min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/60 outline-none"
+              autoComplete="off"
+            />
+            {query && (
+              <button type="button" onClick={() => { setQuery(''); inputRef.current?.focus(); }} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <Button type="submit" variant="hero" size="lg" className="w-full rounded-full">
+            <Search className="h-4 w-4 mr-2" /> Buscar
+          </Button>
+        </div>
+
+        {/* Desktop: inline */}
         <div
-          className={`flex items-center gap-2 rounded-full bg-card p-2 pl-5 transition-all duration-300 ${
+          className={`hidden sm:flex items-center gap-2 rounded-full bg-card p-2 pl-5 transition-all duration-300 ${
             isFocused
               ? 'shadow-lg ring-2 ring-accent/20'
               : 'shadow-card-hover'
@@ -366,7 +398,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
         >
           <Search className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isFocused ? 'text-accent' : 'text-muted-foreground'}`} />
           <input
-            ref={inputRef}
+            ref={(el) => { if (el && window.innerWidth >= 640) inputRef.current = el; }}
             type="text"
             placeholder={typingPlaceholder || "O que você precisa? Ex: eletricista, pintor..."}
             value={query}

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { sanitizeSlug as slugify } from '@/lib/slugify';
 
 interface FeedItem {
   id: string;
@@ -139,16 +141,34 @@ const CommunityFeed = ({ compact = false }: CommunityFeedProps) => {
                 size={compact ? 12 : 16}
                 className="text-foreground shrink-0"
               />
-              <p className={`text-foreground flex-1 min-w-0 truncate ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
-                <span className="font-semibold">{firstName(item.actor_alias)}</span> {item.action_text}
+              <p
+                className={`text-foreground flex-1 min-w-0 ${compact ? 'text-[10px]' : 'text-[11px]'}`}
+                style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+              >
+                <Link
+                  to="/buscar"
+                  className="font-semibold hover:text-accent transition-colors"
+                >
+                  {firstName(item.actor_alias)}
+                </Link>{' '}{item.action_text}
                 {item.city && (
-                  <span className="text-muted-foreground"> em {item.city}</span>
+                  <Link
+                    to={`/cidade/${slugify(item.city)}`}
+                    className="text-foreground/70 hover:text-accent transition-colors"
+                  >
+                    {' '}em {item.city}
+                  </Link>
                 )}
                 {item.category_name && (
-                  <span className="text-muted-foreground"> • {item.category_name}</span>
+                  <Link
+                    to={`/categoria/${slugify(item.category_name)}`}
+                    className="text-foreground/70 hover:text-accent transition-colors"
+                  >
+                    {' '}• {item.category_name}
+                  </Link>
                 )}
               </p>
-              <span className={`text-muted-foreground shrink-0 ${compact ? 'text-[8px]' : 'text-[10px]'}`}>
+              <span className={`text-foreground/65 dark:text-foreground/55 shrink-0 font-medium ${compact ? 'text-[8px]' : 'text-[10px]'}`}>
                 {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: ptBR })}
               </span>
             </motion.div>

@@ -129,22 +129,26 @@ const HeroBanner = () => {
       <div
         className="absolute inset-0"
         style={{
-          background: `linear-gradient(135deg, hsl(var(--primary) / 0.8) 0%, hsl(var(--primary) / 0.65) 100%)`,
+          background: `linear-gradient(135deg, hsl(var(--primary) / 0.85) 0%, hsl(var(--primary) / 0.7) 100%)`,
         }}
       />
 
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background/20 to-transparent" />
+      {/* Stronger bottom shadow gradient for legibility on mobile */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/40 via-black/15 to-transparent" />
 
       <div className="container relative z-10 flex flex-col items-center text-center hero-entrance">
         <div className="w-full max-w-full overflow-hidden px-4">
-          <h1 className="font-display text-2xl font-extrabold tracking-tight text-primary-foreground sm:text-3xl md:text-5xl lg:text-6xl drop-shadow-sm max-w-full overflow-hidden">
+          <h1
+            className="font-display text-2xl font-black tracking-tight text-primary-foreground sm:text-3xl md:text-5xl lg:text-6xl max-w-full overflow-hidden"
+            style={{ textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)' }}
+          >
             <HeroPrefixRotator prefixes={prefixes} />
             <br />
             <RotatingServiceText onServiceChange={handleServiceChange} />
           </h1>
         </div>
 
-        <div className="relative z-30 mt-4 w-full max-w-2xl md:mt-6">
+        <div className="relative z-30 mt-4 w-full max-w-2xl md:mt-6 hero-search-wrapper">
           <Suspense fallback={<div className="h-12 rounded-full bg-primary-foreground/10 animate-pulse" />}>
             <div className="animate-glow-ring rounded-full">
               <SearchBar />

@@ -33,13 +33,6 @@ const CategoryCard = ({ category, index = 0 }: CategoryCardProps) => {
         className="group relative flex flex-col items-center gap-[0.75rem] rounded-3xl border border-border/50 bg-card p-[1.25rem] shadow-[0_2px_12px_-2px_rgb(0_0_0/0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgb(0_0_0/0.12)] hover:border-accent/30"
         {...handlers}
       >
-        {/* Badge de quantidade */}
-        {category.count > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-card">
-            {category.count > 99 ? '99+' : category.count}
-          </span>
-        )}
-
         <motion.span
           className="flex min-h-[3rem] min-w-[3rem] h-12 w-12 items-center justify-center rounded-2xl bg-accent/10"
           whileHover={{ scale: 1.2, rotate: [0, -10, 10, 0] }}
