@@ -89,11 +89,14 @@ const PlaceholderModeShell = ({ title, body }: { title: string; body: string }) 
 );
 
 const SmartOnboardingWizard = ({ mode = 'basic' }: SmartOnboardingWizardProps = {}) => {
-  // ─── Modos extras: placeholders. Devolvem ANTES de qualquer hook adicional. ───
+  // ─── Modos extras: placeholders. Só "basic" monta hooks reais. ───
   if (mode === 'complete') return <PlaceholderModeShell title="Complete seu perfil" body="Em breve você poderá adicionar CPF, links sociais e outros dados aqui." />;
   if (mode === 'portfolio') return <PlaceholderModeShell title="Criar álbum de portfólio" body="Em breve você poderá organizar fotos de trabalhos realizados em álbuns temáticos aqui." />;
   if (mode === 'affiliate') return <PlaceholderModeShell title="Programa de Afiliados" body="Em breve você acompanhará seu código de indicação e ganhos aqui." />;
-  // ────────────────────────────────────────────────────────────────────────────
+  return <BasicOnboardingWizard />;
+};
+
+const BasicOnboardingWizard = () => {
   const { user, refetchProfile } = useAuth();
   const { city: geoCity, state: geoState } = useGeoCity();
   const { data: categoriesData = [] } = useCategoriesWithCount();
