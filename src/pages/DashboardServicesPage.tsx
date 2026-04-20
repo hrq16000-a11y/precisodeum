@@ -967,16 +967,29 @@ const DashboardServicesPage = () => {
 
             {/* Visual affordance spacer — lets last item peek above sticky bar */}
             <div className="h-2" />
+            </>)}
           </div>
 
-          {/* ── Sticky Action Bar ── */}
+          {/* ── Sticky Action Bar (varies per wizard step) ── */}
           <div className="shrink-0 border-t border-border bg-card px-5 py-3 flex gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
-            <Button variant="outline" className="flex-1 h-11" onClick={() => { resetForm(); setShowDialog(false); }}>
-              Cancelar
-            </Button>
-            <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={handleSave}>
-              📢 {editId ? 'Salvar' : 'Publicar'}
-            </Button>
+            {wizardStep === 'photos' ? (
+              <Button
+                variant="accent"
+                className="flex-1 h-11 font-semibold"
+                onClick={() => { resetForm(); setShowDialog(false); }}
+              >
+                ✅ Concluir
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" className="flex-1 h-11" onClick={() => { resetForm(); setShowDialog(false); }}>
+                  Cancelar
+                </Button>
+                <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={handleSave}>
+                  📢 {editId ? 'Salvar' : 'Publicar'}
+                </Button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
