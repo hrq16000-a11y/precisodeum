@@ -139,7 +139,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
               className="block min-w-0 w-full max-w-full overflow-hidden"
               onClick={() => trackProfileClick(p.id, p.slug, 'featured')}
             >
-              <h3 className="block w-full overflow-hidden text-ellipsis whitespace-nowrap font-display text-[15px] font-bold text-foreground transition-colors group-hover:text-accent sm:text-base">
+              <h3 className="block w-full max-w-full overflow-hidden text-ellipsis whitespace-nowrap font-display text-[15px] font-bold text-foreground transition-colors group-hover:text-accent sm:text-base">
                 {displayName}
               </h3>
             </Link>
