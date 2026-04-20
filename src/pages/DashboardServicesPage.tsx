@@ -781,8 +781,10 @@ const DashboardServicesPage = () => {
                 </div>
               </div>
             </div>
+            )}
 
             {/* ── Section 2: Localização & Atendimento ── */}
+            {formStep === 2 && (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <MapPinned className="h-3.5 w-3.5" /> Localização & Atendimento
