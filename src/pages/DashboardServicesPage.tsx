@@ -21,7 +21,7 @@ import { handleImageError } from '@/lib/imageResolver';
 
 // Heavy editor sub-components — only loaded when the edit Dialog opens
 const SmartCategoryPicker = lazy(() => import('@/components/SmartCategoryPicker'));
-const ServiceImageUpload = lazy(() => import('@/components/ServiceImageUpload'));
+const ServiceImageUpload = lazy(() => import('@/components/dashboard/ServiceImageDragUploader'));
 
 const SuspenseFallback = () => (
   <div className="flex justify-center p-8">
