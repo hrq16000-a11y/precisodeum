@@ -514,13 +514,13 @@ const SearchPage = () => {
             {(categoriesError || searchError) && (
               <div className="mb-4 rounded-xl border border-border bg-card p-3 sm:p-4 text-sm text-muted-foreground">
                 Falha temporária ao carregar dados.{' '}
-                <button
-                  type="button"
-                  onClick={() => void refetch()}
+                <a
+                  href="/ajuda"
                   className="font-semibold text-primary underline-offset-2 hover:underline"
                 >
-                  Tentar novamente
-                </button>
+                  Acionar suporte
+                </a>
+              </div>
               </div>
             )}
 
