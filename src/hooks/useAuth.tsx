@@ -53,8 +53,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const metaChosen = authUser?.user_metadata?.profile_type_chosen === true;
     const hasType = !!profileData?.profile_type;
-    // Força escolha se: (a) banco não tem profile_type definido, OU (b) metadata não marca como escolhido
-    setNeedsTypeSelection(!!profileData && (!hasType || !metaChosen));
+    // Só força o wizard quando NÃO existe profile_type no banco.
+    // Se já tem tipo gravado mas a flag de metadata está ausente (contas antigas / OAuth),
+    // sincroniza silenciosamente — sem reabrir o wizard.
+    setNeedsTypeSelection(!!profileData && !hasType);
+    if (hasType && !metaChosen) {
+      supabase.auth.updateUser({ data: { profile_type_chosen: true } }).catch(() => {});
+    }
 
     if (providerRows && providerRows.length > 0) {
       const best = providerRows.find(p => p.city && p.description) || providerRows[0];
