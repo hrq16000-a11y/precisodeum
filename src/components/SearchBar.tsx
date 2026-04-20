@@ -381,14 +381,18 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
                 <X className="h-4 w-4" />
               </button>
             )}
-            <button
-              type="submit"
-              aria-label="Buscar"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md transition-transform active:scale-95 hover:bg-accent/90"
-            >
-              <Search className="h-5 w-5" />
-            </button>
           </div>
+        </div>
+        {/* Mobile: Botão Buscar largura total para acessibilidade (toque fácil 60+) */}
+        <div className="mt-2 flex sm:hidden">
+          <Button
+            type="submit"
+            variant="accent"
+            className="w-full rounded-full py-3 text-base font-bold shadow-md"
+          >
+            <Search className="mr-2 h-5 w-5" />
+            Buscar profissional
+          </Button>
         </div>
 
         {/* Desktop: inline */}

@@ -84,6 +84,7 @@ const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
           style={{
             opacity: phase === 'in' ? 1 : 0,
             transform: phase === 'in' ? 'translateY(0)' : 'translateY(-20px)',
+            textShadow: '0 2px 10px rgba(0,0,0,0.65), 0 1px 3px rgba(0,0,0,0.5), 0 0 18px rgba(0,0,0,0.35)',
           }}
         >
           {shuffled[index]}
