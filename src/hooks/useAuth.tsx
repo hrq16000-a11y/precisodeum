@@ -52,8 +52,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProfile(profileData);
 
     const metaChosen = authUser?.user_metadata?.profile_type_chosen === true;
-    // Sempre exigir escolha explícita de tipo para novos usuários (email ou social)
-    setNeedsTypeSelection(!metaChosen && !!profileData);
+    const hasType = !!profileData?.profile_type;
+    // Força escolha se: (a) banco não tem profile_type definido, OU (b) metadata não marca como escolhido
+    setNeedsTypeSelection(!!profileData && (!hasType || !metaChosen));
 
     if (providerRows && providerRows.length > 0) {
       const best = providerRows.find(p => p.city && p.description) || providerRows[0];
