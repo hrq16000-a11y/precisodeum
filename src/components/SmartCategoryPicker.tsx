@@ -112,8 +112,24 @@ const SmartCategoryPicker = ({
   const selectedCats = categories.filter((c) => selectedIds.includes(c.id));
 
   const handleToggle = (id: string) => {
-    if (!selectedIds.includes(id) && maxSelections && selectedIds.length >= maxSelections) return;
+    const isSelecting = !selectedIds.includes(id);
+    if (isSelecting && maxSelections && selectedIds.length >= maxSelections) {
+      // Single-select mode: replace current selection instead of blocking
+      if (maxSelections === 1) {
+        selectedIds.forEach((sid) => onToggle(sid));
+        onToggle(id);
+        setOpen(false);
+        setSearch('');
+        return;
+      }
+      return;
+    }
     onToggle(id);
+    // Auto-close after a successful single-select pick
+    if (isSelecting && maxSelections === 1) {
+      setOpen(false);
+      setSearch('');
+    }
   };
 
   const handleOpen = () => {
