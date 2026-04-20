@@ -57,11 +57,28 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('react-dom') || id.includes('react-router') || id.includes('/react/')) {
               return 'vendor-react';
             }
-            if (id.includes('@tanstack/react-query')) return 'vendor-query';
+            if (
+              id.includes('react-hook-form') ||
+              id.includes('@hookform/resolvers') ||
+              id.includes('/zod/')
+            ) {
+              return 'vendor-forms';
+            }
+            if (
+              id.includes('@radix-ui') ||
+              id.includes('/cmdk/') ||
+              id.includes('embla-carousel') ||
+              id.includes('/sonner/') ||
+              id.includes('/clsx/') ||
+              id.includes('tailwind-merge')
+            ) {
+              return 'vendor-ui';
+            }
+            if (id.includes('@supabase') || id.includes('@tanstack/react-query')) {
+              return 'vendor-data';
+            }
             if (id.includes('framer-motion')) return 'vendor-motion';
-            if (id.includes('@supabase')) return 'vendor-supabase';
             if (id.includes('lucide-react')) return 'vendor-icons';
-            if (id.includes('@radix-ui')) return 'vendor-radix';
             if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
             if (id.includes('leaflet')) return 'vendor-maps';
             if (id.includes('date-fns')) return 'vendor-dates';
