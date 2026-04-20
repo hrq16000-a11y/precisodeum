@@ -48,7 +48,7 @@ const DashboardProfilePage = () => {
     full_name: '', phone: '', business_name: '', description: '',
     city: '', state: '', neighborhood: '', whatsapp: '', website: '',
     years_experience: 0, category_id: '', category_name: '', category_custom: '',
-    cnpj: '', cpf: '', ibge_code: '', working_hours: '',
+    cnpj: '', cpf: '', birth_date: '', ibge_code: '', working_hours: '',
     latitude: null as number | null, longitude: null as number | null,
     account_kind: '' as '' | 'autonomo' | 'empresa',
   });
@@ -139,6 +139,7 @@ const DashboardProfilePage = () => {
         category_custom: (provider as any).category_custom || '',
         cnpj: (provider as any).cnpj || '',
         cpf: (provider as any).cpf || '',
+        birth_date: (provider as any).birth_date || '',
         ibge_code: (provider as any).ibge_code || '',
         latitude: provider.latitude ?? null,
         longitude: provider.longitude ?? null,
