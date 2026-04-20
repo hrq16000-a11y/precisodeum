@@ -709,6 +709,8 @@ const DashboardServicesPage = () => {
                         categories={categories}
                         selectedIds={selectedCategoryIds}
                         onToggle={toggleCategory}
+                        maxSelections={1}
+                        placeholder="Escolha 1 categoria..."
                       />
                     </Suspense>
                   </div>
