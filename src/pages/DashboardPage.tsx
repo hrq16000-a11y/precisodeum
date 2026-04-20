@@ -139,8 +139,8 @@ const DashboardPage = () => {
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
-  // Modal de triagem para novos usuários (bloqueia até escolher tipo de perfil)
-  const showWelcomeOnboarding = !!profile && profile.onboarding_completed === false;
+  // Modal legado de triagem: só pode abrir se ainda não existir tipo definido.
+  const showWelcomeOnboarding = !!profile && !profile.profile_type;
 
   // Profile check-up modal (providers only)
   const showCheckup = isProvider || isRH;
@@ -553,22 +553,6 @@ const DashboardPage = () => {
             <button onClick={(e) => { e.stopPropagation(); navigate('/dashboard/servicos'); }}
               className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
               <PlusCircle className="h-3.5 w-3.5" /> Adicionar novo serviço
-            </button>
-          </GlassCard>
-
-          <GlassCard variant="default" delay={0.6} className="cursor-pointer" onClick={() => navigate('/dashboard/vagas')}>
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                <Megaphone className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-foreground">Vagas</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Visualize e publique oportunidades</p>
-              </div>
-            </div>
-            <button onClick={(e) => { e.stopPropagation(); navigate('/dashboard/vagas'); }}
-              className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
-              <PlusCircle className="h-3.5 w-3.5" /> Publicar vaga
             </button>
           </GlassCard>
 
