@@ -111,35 +111,45 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
   return (
     <div
       ref={impressionRef}
-      className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:min-h-[252px]"
+      className="group relative flex h-full min-h-[260px] w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:min-h-[280px]"
     >
       {/* Shine sweep */}
       <div className="card-shine-sweep pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent" style={{ left: '-100%', width: '50%' }} />
       {/* Premium accent bar */}
-      <div className="h-1 bg-gradient-to-r from-accent via-amber-400 to-accent" />
-      
+      <div className="h-1 shrink-0 bg-gradient-to-r from-accent via-amber-400 to-accent" />
+
+      {/* Crown badge — absolute, never displaces name */}
+      {isDestaque && (
+        <div className="absolute right-2 top-3 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md">
+          <Crown className="h-3 w-3" />
+        </div>
+      )}
+
       <div className="flex min-w-0 flex-1 flex-col p-3.5 sm:p-5">
-        <div className="flex items-start gap-3 sm:gap-4">
-          <div className="relative shrink-0">
-             <Avatar className="h-11 w-11 shrink-0 ring-2 ring-accent/20 transition-transform duration-300 group-hover:scale-105 sm:h-16 sm:w-16">
-              <AvatarImage src={displayPhoto || undefined} alt={displayName} />
-              <AvatarFallback className="bg-accent/10 text-2xl">
-                {p.categoryIcon || '🔧'}
-              </AvatarFallback>
-            </Avatar>
-            {isDestaque && (
-            <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md">
-              <Crown className="h-3 w-3" />
-            </div>
-            )}
-          </div>
-          <div className="min-w-0 w-0 flex-1 overflow-hidden">
+        <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+          <Avatar className="h-12 w-12 shrink-0 ring-2 ring-accent/20 transition-transform duration-300 group-hover:scale-105 sm:h-16 sm:w-16">
+            <AvatarImage src={displayPhoto || undefined} alt={displayName} className="object-cover" />
+            <AvatarFallback className="bg-accent/10 text-2xl">
+              {p.categoryIcon || '🔧'}
+            </AvatarFallback>
+          </Avatar>
+
+          <div className="min-w-0 flex-1">
             <Link
               to={`/profissional/${p.slug}`}
-              className="block min-w-0 w-full max-w-full overflow-hidden"
+              className="block min-w-0"
               onClick={() => trackProfileClick(p.id, p.slug, 'featured')}
             >
-              <h3 className="block w-full max-w-full overflow-hidden text-ellipsis whitespace-nowrap font-display text-[15px] font-bold text-foreground transition-colors group-hover:text-accent sm:text-base">
+              <h3
+                className="font-display text-[15px] font-bold text-foreground transition-colors group-hover:text-accent sm:text-base"
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  wordBreak: 'break-word',
+                }}
+              >
                 {displayName}
               </h3>
             </Link>
@@ -155,12 +165,12 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
               })()}
             </div>
             {p.category && (
-              <p className="mt-0.5 block w-full overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-medium text-accent sm:text-sm">{p.category}</p>
+              <p className="mt-0.5 truncate text-[13px] font-medium text-accent sm:text-sm">{p.category}</p>
             )}
             {(p.city || p.state) && (
-              <div className="mt-1 flex min-w-0 max-w-full items-center gap-1 text-[11px] text-muted-foreground sm:text-xs">
+              <div className="mt-1 flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground sm:text-xs">
                 <MapPin className="h-3 w-3 shrink-0" />
-                <span className="block min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{[p.city, p.state].filter(Boolean).join(' - ')}</span>
+                <span className="truncate">{[p.city, p.state].filter(Boolean).join(' - ')}</span>
               </div>
             )}
           </div>
@@ -184,35 +194,46 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
         )}
 
         {p.yearsExperience > 0 && (
-          <Badge variant="secondary" className="mt-2 w-fit text-[10px]">
+          <Badge variant="secondary" className="mt-2 w-fit max-w-full truncate text-[10px]">
             {p.yearsExperience}+ anos de experiência
           </Badge>
         )}
 
-        <div className="h-2.5 sm:flex-1" />
+        <div className="flex-1" />
 
-        <div className="mt-3.5 flex w-full min-w-0 flex-nowrap items-stretch gap-1.5 overflow-hidden sm:mt-4 sm:gap-2">
+        {/* Buttons — flex-wrap allows stacking on extreme narrow screens */}
+        <div className="mt-3 flex w-full min-w-0 flex-wrap items-stretch gap-2">
           {p.whatsapp && (
-            <Button variant="accent" size="sm" className="h-9 min-w-0 flex-1 basis-0 px-2 text-[11px] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:h-10 sm:px-3 sm:text-sm" asChild>
+            <Button
+              variant="accent"
+              size="sm"
+              className="h-9 min-w-0 flex-1 basis-[120px] px-2 text-xs transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:h-10 sm:text-sm"
+              asChild
+            >
               <a
                 href={whatsappLink(p.whatsapp, buildSmartMessage(displayName, p.category, geoCity, geoState))}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackWhatsAppClick(p.id, p.slug, 'featured')}
-                className="inline-flex w-full min-w-0 items-center justify-center gap-1 overflow-hidden"
+                className="inline-flex w-full min-w-0 items-center justify-center gap-1"
               >
                 <MessageCircle className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
-                <span className="truncate whitespace-nowrap">WhatsApp</span>
+                <span className="truncate">WhatsApp</span>
               </a>
             </Button>
           )}
-          <Button variant="outline" size="sm" className={`h-9 min-w-0 overflow-hidden px-2 text-[11px] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:h-10 sm:px-3 sm:text-sm ${p.whatsapp ? 'flex-1 basis-0' : 'flex-1'}`} asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 min-w-0 flex-1 basis-[100px] px-2 text-xs transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:h-10 sm:text-sm"
+            asChild
+          >
             <Link
               to={`/profissional/${p.slug}`}
               onClick={() => trackProfileClick(p.id, p.slug, 'featured')}
-              className="inline-flex w-full min-w-0 items-center justify-center overflow-hidden"
+              className="inline-flex w-full min-w-0 items-center justify-center"
             >
-              <span className="truncate whitespace-nowrap">Ver Perfil</span>
+              <span className="truncate">Ver Perfil</span>
             </Link>
           </Button>
         </div>
