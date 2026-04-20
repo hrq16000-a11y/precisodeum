@@ -1583,6 +1583,69 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_settings: {
+        Row: {
+          active: boolean
+          card1_description: string
+          card1_icon: string
+          card1_profile_type: string
+          card1_title: string
+          card2_description: string
+          card2_icon: string
+          card2_profile_type: string
+          card2_title: string
+          card3_description: string
+          card3_icon: string
+          card3_profile_type: string
+          card3_title: string
+          created_at: string
+          id: string
+          subtitle: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          card1_description?: string
+          card1_icon?: string
+          card1_profile_type?: string
+          card1_title?: string
+          card2_description?: string
+          card2_icon?: string
+          card2_profile_type?: string
+          card2_title?: string
+          card3_description?: string
+          card3_icon?: string
+          card3_profile_type?: string
+          card3_title?: string
+          created_at?: string
+          id?: string
+          subtitle?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          card1_description?: string
+          card1_icon?: string
+          card1_profile_type?: string
+          card1_title?: string
+          card2_description?: string
+          card2_icon?: string
+          card2_profile_type?: string
+          card2_title?: string
+          card3_description?: string
+          card3_icon?: string
+          card3_profile_type?: string
+          card3_title?: string
+          created_at?: string
+          id?: string
+          subtitle?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       page_blocks: {
         Row: {
           active: boolean
