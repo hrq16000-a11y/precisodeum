@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense, useCallback, forwardRef } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,15 +20,16 @@ import { useMenuItems } from '@/hooks/useMenuItems';
 const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.webp';
 
 /* ── Geo badge (full & compact) ───────────────────────────── */
-const GeoBadge = ({ city, temp, compact = false, className = '' }: { city: string | null; temp: number | null; compact?: boolean; className?: string }) => {
+type GeoBadgeProps = { city: string | null; temp: number | null; compact?: boolean; className?: string };
+const GeoBadge = forwardRef<HTMLSpanElement, GeoBadgeProps>(({ city, temp, compact = false, className = '' }, ref) => {
   // Always render a placeholder to prevent layout shift
   if (!city) {
-    return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] h-[22px] ${className}`} />;
+    return <span ref={ref} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] h-[22px] ${className}`} />;
   }
 
   if (compact) {
     return (
-      <span className={`inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground ${className}`}>
+      <span ref={ref} className={`inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground ${className}`}>
         <MapPin className="h-3 w-3 text-accent" />
         {city.length > 12 ? city.slice(0, 12) + '…' : city}
         {temp !== null && (
@@ -43,6 +44,7 @@ const GeoBadge = ({ city, temp, compact = false, className = '' }: { city: strin
 
   return (
     <span
+      ref={ref}
       className={`inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all duration-500 ease-out ${className}`}
     >
       <MapPin className="h-3 w-3 text-accent" />
@@ -56,10 +58,12 @@ const GeoBadge = ({ city, temp, compact = false, className = '' }: { city: strin
       )}
     </span>
   );
-};
+});
+GeoBadge.displayName = 'GeoBadge';
 
 /* ── Compact inline search (appears after scroll) ─────────── */
-const CompactSearch = ({ onSubmit }: { onSubmit: (q: string) => void }) => {
+type CompactSearchProps = { onSubmit: (q: string) => void };
+const CompactSearch = forwardRef<HTMLFormElement, CompactSearchProps>(({ onSubmit }, ref) => {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -72,7 +76,7 @@ const CompactSearch = ({ onSubmit }: { onSubmit: (q: string) => void }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative hidden md:block">
+    <form ref={ref} onSubmit={handleSubmit} className="relative hidden md:block">
       <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
       <Input
         ref={inputRef}
@@ -83,7 +87,8 @@ const CompactSearch = ({ onSubmit }: { onSubmit: (q: string) => void }) => {
       />
     </form>
   );
-};
+});
+CompactSearch.displayName = 'CompactSearch';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -339,10 +344,11 @@ const Header = () => {
                   onKeyDown={(e) => { if (e.key === 'Escape') setSearchQuery(''); }}
                 />
               </form>
-              <GeoBadge city={geoCity} temp={geoTemp} compact className="text-[10px] px-1.5 py-0.5 shrink-0" />
+              {/* Hide geo on very narrow screens to prevent overflow */}
+              <GeoBadge city={geoCity} temp={geoTemp} compact className="hidden xs:inline-flex text-[10px] px-1.5 py-0.5 shrink-0" />
             </>
           ) : (
-            <GeoBadge city={geoCity} temp={geoTemp} className="text-[10px] px-1.5 py-0.5" />
+            <GeoBadge city={geoCity} temp={geoTemp} compact className="hidden xs:inline-flex text-[10px] px-1.5 py-0.5 shrink-0 max-w-[110px] truncate" />
           )}
           <NotificationBell />
           <button

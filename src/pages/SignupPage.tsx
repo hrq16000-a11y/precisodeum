@@ -94,13 +94,10 @@ const SignupPage = () => {
   const navigate = useNavigate();
   const { user: authUser, loading: authLoading, profile: authProfile } = useAuth();
 
-  // Redirect already-authenticated users (e.g. after Google OAuth)
+  // Redirect already-authenticated users (e.g. after Google OAuth) — sempre /dashboard (triagem decide o resto)
   useEffect(() => {
     if (authLoading || !authUser) return;
-    const type = authProfile?.profile_type || 'client';
-    if (type === 'client') navigate('/', { replace: true });
-    else if (type === 'rh') navigate('/dashboard/vagas', { replace: true });
-    else navigate('/dashboard/servicos', { replace: true });
+    navigate('/dashboard', { replace: true });
   }, [authUser, authLoading, authProfile, navigate]);
 
   useSeoHead({ title: 'Criar Conta', description: 'Cadastre-se na plataforma Preciso de um.', noindex: true });
@@ -342,13 +339,7 @@ const SignupPage = () => {
       description: accountType === 'provider' ? '🏅 Você começa no Nível Bronze! Cadastre serviços para subir.' : 'Explore os profissionais da plataforma.',
       duration: 5000,
     });
-    if (accountType === 'client') {
-      navigate('/');
-    } else if (accountType === 'rh') {
-      navigate('/dashboard/vagas');
-    } else {
-      navigate('/dashboard/servicos');
-    }
+    navigate('/dashboard');
   };
 
   const handleGoogleSignup = async () => {

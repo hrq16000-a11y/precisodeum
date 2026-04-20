@@ -36,6 +36,7 @@ import CoursesBanner from '@/components/dashboard/CoursesBanner';
 import OurStoryBanner from '@/components/OurStoryBanner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 const ProfileCheckupModal = lazy(() => import('@/components/dashboard/ProfileCheckupModal'));
+const WelcomeOnboardingModal = lazy(() => import('@/components/dashboard/WelcomeOnboardingModal'));
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 
@@ -126,6 +127,9 @@ const DashboardPage = () => {
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
+  // Modal de triagem para novos usuários (bloqueia até escolher tipo de perfil)
+  const showWelcomeOnboarding = !!profile && profile.onboarding_completed === false;
+
   // Profile check-up modal (providers only)
   const showCheckup = isProvider || isRH;
 
@@ -133,6 +137,7 @@ const DashboardPage = () => {
   if (isClient) {
     return (
       <DashboardLayout>
+        {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
           <motion.div
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10"
@@ -215,6 +220,7 @@ const DashboardPage = () => {
   if (isRH) {
     return (
       <DashboardLayout>
+        {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
           <motion.div
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10"
@@ -336,8 +342,9 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout>
+      {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
       {/* Profile check-up modal for incomplete providers */}
-      {showCheckup && <Suspense fallback={null}><ProfileCheckupModal /></Suspense>}
+      {showCheckup && !showWelcomeOnboarding && <Suspense fallback={null}><ProfileCheckupModal /></Suspense>}
       <RealtimeEngagementToast />
       <OnboardingTour active={tour.active} step={tour.step} steps={tour.steps} onNext={tour.next} onPrev={tour.prev} onDismiss={tour.dismiss} />
       {/* Enhanced Welcome Hero */}
