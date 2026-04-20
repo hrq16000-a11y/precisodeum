@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2, RotateCcw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -159,9 +159,11 @@ const SmartOnboardingWizard = () => {
       } catch {/* noop */}
       toast.success('Parabéns! Você já está na vitrine.');
 
-      // 7. Redirect
+      // 7. Redirect — strict: provider → dashboard, client → home. Never /vagas.
       const targetRoute = confirmedProfileType === 'provider' ? '/dashboard?wizard=1' : '/';
-      console.log('[Onboarding Redirect]', { selectedProfileType: profileType, confirmedProfileType, targetRoute });
+      if (import.meta.env.DEV) {
+        console.log(`[Redirect Debug] Usuário tipo ${confirmedProfileType} indo para rota ${targetRoute}`);
+      }
       await new Promise((resolve) => setTimeout(resolve, 1));
       navigate(targetRoute, { replace: true });
     } catch (err) {
@@ -186,7 +188,22 @@ const SmartOnboardingWizard = () => {
         </div>
       )}
 
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-300 my-auto">
+      <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-300 my-auto">
+        {step > 1 && (
+          <button
+            type="button"
+            onClick={() => {
+              setStep(1);
+              setProfileType(null);
+              setSelectedCategoryIds([]);
+            }}
+            className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-border bg-background/80 px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:border-accent transition-colors"
+            title="Recomeçar do zero"
+            aria-label="Recomeçar onboarding"
+          >
+            <RotateCcw className="h-3 w-3" /> Recomeçar
+          </button>
+        )}
         <div className="flex items-center justify-center gap-2 mb-5">
           {[1, 2, 3].map(n => (
             <span
