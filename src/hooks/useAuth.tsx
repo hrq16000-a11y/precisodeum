@@ -13,7 +13,7 @@ interface AuthContextType {
   /** True when the user exists but has never explicitly chosen a profile type (social login default) */
   needsTypeSelection: boolean;
   signOut: () => Promise<void>;
-  refetchProfile: () => Promise<void>;
+  refetchProfile: () => Promise<any | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -76,14 +76,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setProvider(null);
     }
+
+    return profileData ?? null;
   }, []);
 
   const refetchProfile = useCallback(async () => {
-    if (user) {
-      await fetchProfile(user.id, user);
-      // After an explicit refetch (e.g. after choosing type), mark as chosen
-      setNeedsTypeSelection(false);
-    }
+    if (!user) return null;
+
+    const [{ data: authData }, profileData] = await Promise.all([
+      supabase.auth.getUser(),
+      fetchProfile(user.id, user),
+    ]);
+
+    const freshUser = authData.user ?? user;
+    if (freshUser !== user) setUser(freshUser);
+
+    const freshProfile = await fetchProfile(user.id, freshUser);
+    setNeedsTypeSelection(false);
+    return freshProfile ?? profileData ?? null;
   }, [user, fetchProfile]);
 
   useEffect(() => {
