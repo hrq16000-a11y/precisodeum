@@ -5,6 +5,8 @@ import "./index.css";
 const rootElement = document.getElementById("root");
 const shellElement = document.getElementById("app-shell");
 
+(window as Window & { __appMainLoaded?: boolean }).__appMainLoaded = true;
+
 const AUTO_HEAL_KEY = "__bootstrap_autoheal_attempt_v2";
 const MAX_AUTO_HEAL_ATTEMPTS = 1;
 const DAILY_RESET_KEY = "sw-killswitch-reset-day-v1";
@@ -105,8 +107,8 @@ const tryAutomatedRecovery = async (reason: string, err?: unknown) => {
   }
 
   setShellSupportState(
-    "A restauração automática não foi concluída agora. Se precisar, acione o suporte na Central de Ajuda.",
-    true,
+    "Estamos finalizando a restauração automática em segundo plano.",
+    false,
   );
 };
 
@@ -200,17 +202,17 @@ const bootstrap = () => {
   try {
     if (!rootElement) throw new Error("Elemento root ausente.");
 
+    if ((window as any).__appShellTimer) {
+      clearTimeout((window as any).__appShellTimer);
+      delete (window as any).__appShellTimer;
+    }
+
     const env = (import.meta as any).env || {};
     if (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_PUBLISHABLE_KEY) {
       throw new Error("Configuração do backend ausente.");
     }
 
     createRoot(rootElement).render(<App />);
-
-    if ((window as any).__appShellTimer) {
-      clearTimeout((window as any).__appShellTimer);
-      delete (window as any).__appShellTimer;
-    }
 
     clearAutoHealAttempts();
     removeShell();

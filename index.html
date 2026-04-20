@@ -186,12 +186,13 @@
             return;
           }
 
-          setRecoveryState('A restauração automática não foi concluída agora. Se precisar, acione o suporte na Central de Ajuda.', true);
+          setRecoveryState('Estamos finalizando a restauração automática internamente.', false);
         }
 
         window.__appShellTimer = setTimeout(function(){
+          if (window.__appMainLoaded) return;
           if (shellOnly()) autoHeal('timeout');
-        }, 6000);
+        }, 12000);
 
         window.addEventListener('error', function(e){
           var message = e && e.message ? String(e.message) : '';
