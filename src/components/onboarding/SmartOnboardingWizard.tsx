@@ -104,7 +104,7 @@ const SmartOnboardingWizard = () => {
 
       // 2. Mark metadata
       const { error: metaErr } = await supabase.auth.updateUser({
-        data: { profile_type_chosen: true },
+        data: { profile_type_chosen: true, profile_type: profileType },
       });
       if (metaErr) throw metaErr;
 
@@ -145,7 +145,12 @@ const SmartOnboardingWizard = () => {
       });
 
       // 5. Refresh profile context (await — guarantees no race)
-      await refetchProfile();
+      const refreshedProfile = await refetchProfile();
+      const confirmedProfileType = refreshedProfile?.profile_type ?? profileType;
+
+      if (confirmedProfileType !== profileType) {
+        throw new Error(`Profile type mismatch after save: expected ${profileType}, got ${confirmedProfileType ?? 'null'}`);
+      }
 
       // 6. Party
       try {
@@ -155,8 +160,8 @@ const SmartOnboardingWizard = () => {
       toast.success('Parabéns! Você já está na vitrine.');
 
       // 7. Redirect
-      const targetRoute = profileType === 'provider' ? '/dashboard?wizard=1' : '/';
-      console.log('[Onboarding Redirect]', { profileType, targetRoute });
+      const targetRoute = confirmedProfileType === 'provider' ? '/dashboard?wizard=1' : '/';
+      console.log('[Onboarding Redirect]', { selectedProfileType: profileType, confirmedProfileType, targetRoute });
       await new Promise((resolve) => setTimeout(resolve, 1));
       navigate(targetRoute, { replace: true });
     } catch (err) {

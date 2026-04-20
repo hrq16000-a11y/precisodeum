@@ -13,7 +13,7 @@ interface AuthContextType {
   /** True when the user exists but has never explicitly chosen a profile type (social login default) */
   needsTypeSelection: boolean;
   signOut: () => Promise<void>;
-  refetchProfile: () => Promise<void>;
+  refetchProfile: () => Promise<any | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -76,14 +76,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setProvider(null);
     }
+
+    return profileData ?? null;
   }, []);
 
   const refetchProfile = useCallback(async () => {
-    if (user) {
-      await fetchProfile(user.id, user);
-      // After an explicit refetch (e.g. after choosing type), mark as chosen
-      setNeedsTypeSelection(false);
-    }
+    if (!user) return null;
+
+    const { data: authData } = await supabase.auth.getUser();
+
+    const freshUser = authData.user ?? user;
+    if (freshUser !== user) setUser(freshUser);
+
+    const freshProfile = await fetchProfile(user.id, freshUser);
+    setNeedsTypeSelection(false);
+    return freshProfile ?? null;
   }, [user, fetchProfile]);
 
   useEffect(() => {
@@ -91,9 +98,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
         if (session?.user) {
-          setTimeout(() => { void fetchProfile(session.user.id, session.user); }, 0);
+          setLoading(true);
+          setTimeout(() => {
+            void fetchProfile(session.user.id, session.user)
+              .finally(() => setLoading(false));
+          }, 0);
           // Log access (IP, ISP, UA) for legal audit on every fresh sign-in
           if (event === 'SIGNED_IN') {
             setTimeout(() => {
@@ -106,6 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setProfile(null);
           setProvider(null);
           setNeedsTypeSelection(false);
+          setLoading(false);
         }
       }
     );
@@ -113,9 +124,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
       if (session?.user) {
-        void fetchProfile(session.user.id, session.user);
+        setLoading(true);
+        void fetchProfile(session.user.id, session.user)
+          .finally(() => setLoading(false));
+      } else {
+        setLoading(false);
       }
     });
 
