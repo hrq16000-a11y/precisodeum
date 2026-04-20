@@ -23,7 +23,7 @@ const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-2
   const img = (
     <img
       src={logo}
-      alt="Preciso de um - Profissionais Confiáveis Perto de Você"
+      alt="Preciso de um Profissional"
       className={`${height} ${filterClass} ${className}`}
       width="111"
       height="40"
