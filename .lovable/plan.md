@@ -1,148 +1,127 @@
-# Plan: Refatorar Central de Usuários e Perfil Público
+## Cadastro Inteligente + Mural Realtime
 
-## Resumo
+### 1. Infraestrutura (DB + libs)
 
-Refatorar a label de tipo no perfil público (Prestador/Empresa, nunca Administrador), adicionar abas de navegação por tipo no admin, filtros de ordenação, eliminar emojis remanescentes no admin, e adicionar realtime sync para estatísticas.
+**Instalar**: `canvas-confetti` + `@types/canvas-confetti`
 
----
+**Migration SQL**:
 
-## 1. Perfil Público — Labels inteligentes (`ProviderProfile.tsx`)
+```sql
+CREATE TABLE public.public_activities (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_alias text NOT NULL,        -- "Mestre H.", "Eletricista de Curitiba"
+  action_text text NOT NULL,        -- "acaba de se cadastrar"
+  icon text DEFAULT 'Sparkles',     -- Lucide PascalCase
+  city text,
+  profile_type text,                -- 'provider' | 'rh' | 'client'
+  category_name text,
+  is_seed boolean DEFAULT false,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE public.public_activities ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anyone reads activities" ON public.public_activities FOR SELECT USING (true);
+CREATE POLICY "system inserts activities" ON public.public_activities FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+ALTER PUBLICATION supabase_realtime ADD TABLE public.public_activities;
+ALTER TABLE public.public_activities REPLICA IDENTITY FULL;
 
-**Onde:** Linhas ~1052-1056 (badge `accTypeInfo`)
-
-- Substituir a exibição direta de `provider.accTypeInfo.name` por lógica condicional:
-  - Se `provider.cnpj` preenchido: mostrar **"Empresa"** com ícone `Building2`
-  - Se provider sem CNPJ: mostrar **"Prestador"** com ícone `Wrench`
-  - **Nunca** exibir "Administrador" — ocultar o badge se `accTypeInfo.name` contiver "Admin"
-- Remover a dependência do `accTypeInfo.name` para a label pública
-
-## 2. Remover o badge `GamificationLevelBadge` da exibição pública se for Admin
-
-**Onde:** Linhas ~1060-1068
-
-- Adicionar check: não renderizar badges de nível para admins (verificar via `provider.levelInfo`)
-
-## 3. Admin — Abas de navegação por tipo (`AdminUsersPage.tsx`)
-
-**Onde:** Substituir o tab simples "Usuários | Métricas" (linhas ~614-618) por:
-
+-- RPC mural híbrido
+CREATE OR REPLACE FUNCTION public.get_community_feed(_limit int DEFAULT 10)
+RETURNS SETOF public.public_activities
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
+DECLARE v_real int;
+BEGIN
+  SELECT count(*) INTO v_real FROM public.public_activities
+   WHERE is_seed=false AND created_at > now() - interval '7 days';
+  IF v_real >= _limit THEN
+    RETURN QUERY SELECT * FROM public.public_activities
+      WHERE is_seed=false ORDER BY created_at DESC LIMIT _limit;
+  ELSE
+    RETURN QUERY
+      (SELECT * FROM public.public_activities WHERE is_seed=false ORDER BY created_at DESC LIMIT v_real)
+      UNION ALL
+      (SELECT * FROM public.public_activities WHERE is_seed=true ORDER BY random() LIMIT (_limit - v_real));
+  END IF;
+END $$;
 ```
-Clientes | Prestadores | Empresas | Agências | Patrocinadores | Staff | Métricas
+
+**Seed**: ~25 atividades fake variadas (eletricista/encanador/pintor) em capitais.
+
+### 2. Novo Wizard "Mestre de Obras"
+
+Substituir `ProfileTypeChooser.tsx` por `SmartOnboardingWizard.tsx` (3 passos):
+
+- **Step 1 — Identidade**: 2 botões gigantes  
+`[Sou Autônomo]` (provider) · `[Sou Empresa/RH]` (rh)  
+*(Cliente fica acessível como link discreto "Só quero contratar")*
+- **Step 2 — Geo Silenciosa**: chama `useGeoCity()` → "Vimos que você está em **{cidade}**. Correto?" `[SIM]` `[Outra cidade]` (input fallback).
+- **Step 3 — Gancho**: Nome completo + `SmartCategoryPicker` (categoria principal). Badge "+20 pontos de confiança".
+
+**Persistência (atomic, evita user_id missing)**:
+
+1. `UPDATE profiles SET profile_type, full_name, role`
+2. `auth.updateUser({ data: { profile_type_chosen: true }})`
+3. Se provider/rh: `INSERT INTO providers (user_id, slug, city, state, category_id, status)` — **aguardar retornar** `id` antes de prosseguir.
+4. `INSERT INTO public_activities` (actor_alias = "Mestre " + primeira letra do nome, city, category).
+5. `await refetchProfile()` → confeti → redirect.
+
+### 3. Festa + Redirecionamento
+
+```ts
+import confetti from 'canvas-confetti';
+confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }});
+toast.success('Parabéns, Mestre! Você já está na vitrine.');
 ```
 
-- **Clientes**: `profile_type === 'client'` e sem CNPJ
-- **Prestadores**: `profile_type === 'provider'` e sem CNPJ
-- **Empresas**: Qualquer profile com `cnpj` preenchido
-- **Agências**: `profile_type === 'rh'`
-- **Patrocinadores**: IDs presentes em `sponsor_contacts`
-- **Staff**: IDs presentes em `user_roles` com role `admin`
-- Cada aba filtra automaticamente a lista
+Redirect:
 
-## 4. Filtros de ordenação
+- provider → `/dashboard?wizard=1` (abre ServiceWizard)
+- rh → `/dashboard/vagas?new=1`
+- client → `/`
 
-**Onde:** `UserFilters.tsx` — adicionar novo `<Select>` de ordenação
+### 4. CommunityFeed Realtime
 
-- **Mais recentes** (default): `created_at DESC`
-- **Mais antigos**: `created_at ASC`
-- **Melhor Ranking**: `engagement_points DESC`
-- Propagar `sortBy` para `AdminUsersPage` e aplicar no `useMemo` do `filtered`
+Atualizar `src/components/dashboard/CommunityFeed.tsx`:
 
-## 5. Eliminar emojis no admin
+- Trocar query `audit_log` por `supabase.rpc('get_community_feed', { _limit: 10 })`.
+- Subscribe `postgres_changes` em `public_activities` → prepend novo item com animação framer-motion (slide-in + balão flutuante 4s).
+- Renderizar texto dinâmico: `"{icon} {actor_alias} {action_text} em {city}"`.
 
-**Arquivos afetados:**
+**Injeção**:
 
-- `AdminUsersPage.tsx` linhas 655-684: substituir `✅`, `🔴`, `👤`, `🔧`, `🏢`, `✕` por ícones Lucide (`CheckCircle`, `XCircle`, `User`, `Wrench`, `Building2`, `X`)
-- `UserFilters.tsx` linhas 15-16: substituir `⏸️ Suspenso` e `🚫 Banido` por texto puro ou ícones Lucide
+- `src/pages/Index.tsx`: adicionar abaixo do `<HeroBanner />`.
+- `src/pages/DashboardPage.tsx`: já existe — só substituir versão.
 
-## 6. Realtime sync para estatísticas do perfil público
+### 5. Segurança & Correções
 
-**Onde:** `ProviderProfile.tsx` — após o fetch inicial
+- Wizard usa `try/finally` com `setSaving`; botão desabilitado durante saves.
+- Validação: bloquear Step 3 se `user.id` for null (re-fetch session).
+- `TypeSelectionGate` em `App.tsx` passa a renderizar `SmartOnboardingWizard` em vez de `ProfileTypeChooser`.
+- Manter `ProfileTypeChooser.tsx` como deprecated (deletar após validação).
 
-- Adicionar `supabase.channel()` listening em:
-  - `providers` (filtrado por `id = provider.id`) para `services_count`, `portfolio_photo_count`, `years_experience`
-  - `reviews` (filtrado por `provider_id = provider.id`) para atualizar `reviews` e `review_count`
-- Atualizar state local via `setProvider(prev => ({...prev, ...changes}))` sem reload
-- Cleanup do channel no return do useEffect
+### Arquivos afetados
 
-## 7. Buscar dados de patrocinadores para aba Staff/Patrocinadores
-
-**Onde:** `AdminUsersPage.tsx` no `fetchProfiles`
-
-- Adicionar query `supabase.from('sponsor_contacts').select('user_id')` para popular `sponsorUserIds: Set<string>`
-- Usar no filtro da aba "Patrocinadores"
-
----
-
-## Arquivos modificados
-
-
-| Arquivo                                | Mudança                                                     |
-| -------------------------------------- | ----------------------------------------------------------- |
-| `src/pages/ProviderProfile.tsx`        | Labels Prestador/Empresa, ocultar Admin, realtime channel   |
-| `src/pages/AdminUsersPage.tsx`         | 7 abas por tipo, ordenação, eliminar emojis, fetch sponsors |
-| `src/components/admin/UserFilters.tsx` | Adicionar sort select, remover emojis                       |
-
-
-## Segurança
-
-Nenhuma mudança de schema ou RLS necessária. Apenas lógica de UI e queries de leitura.
+- **Novo**: `src/components/onboarding/SmartOnboardingWizard.tsx`, migration SQL
+- **Editado**: `App.tsx`, `CommunityFeed.tsx`, `Index.tsx`, `package.json`
+- **Deletado**: `ProfileTypeChooser.tsx` (após swap)
 
 &nbsp;
 
-&nbsp;
+Tenho apenas dois aditivos pequenos, mas que fazem toda a diferença para o "Mestre de 70 anos" e para a credibilidade do mural:
 
-"Execute a implementação completa dos módulos de gestão para a plataforma precisodeum.com.br, focando em uma vitrine de contato direto e sincronização via Supabase Realtime. Siga as especificações técnicas abaixo:
+1. Ícone Dinâmico no Mural (Aditivo de UX)
 
-1. Reestruturação de Perfil e Lógica de Identificação:
+No plano, o icon está como DEFAULT 'Sparkles'. Para ficar realmente lúdico e profissional:
 
-Automated Labels: Implemente lógica para que perfis com user_type = 'professional' sejam exibidos como 'Prestador'. Se o campo cnpj estiver preenchido, altere automaticamente para 'Empresa'.
+Aditivo: Peça ao Lovable que, ao gravar a atividade no Step 3, o sistema escolha o ícone baseado na categoria selecionada (Ex: se escolheu Pintor, grava um ícone de Palette; se Pedreiro, Hammer). Isso visualmente "vende" muito mais a prova social no mural.
 
-Admin Stealth: Garanta que usuários com is_admin: true não apareçam em nenhuma listagem pública, mapa ou ranking.
+2. O Indicador "AO VIVO" (Aditivo de Prova Social)
 
-Estatísticas Sincronizadas: Configure os componentes de perfil para ouvir mudanças via supabase.channel(). As contagens de 'Serviços Prestados', 'Fotos no Portfólio' e 'Avaliações' devem atualizar na UI assim que os dados mudarem no banco, sem recarregar a página.
+Para reforçar que o mural é "Realtime", um detalhe visual ajuda muito.
 
-2. Painel Administrativo Segmentado (Admin Dashboard):
+Aditivo: No componente CommunityFeed.tsx, adicione uma pequena luz verde pulsante (badge) com o texto "AO VIVO" ou "AGORA". Isso dá o gatilho de urgência para quem está olhando, mostrando que a plataforma está fervendo naquele exato momento.
 
-Crie uma área de gestão com abas (Shadcn UI Tabs):
+🛠️ Ajuste sugerido no Step 2 (Persistência)
 
-Clientes: Listagem de usuários finais.
+Para garantir que o senhor de 70 anos não fique travado caso a internet dele oscile no 3G bem na hora do "Salvar":
 
-Prestadores: Listagem de profissionais (ordenável por 'Últimos Cadastrados', 'Maior Ranking' e 'Cidade').
-
-Empresas: Somente perfis com CNPJ.
-
-Patrocinadores: Somente usuários com is_sponsor: true. Inclua campos de 'Data de Expiração' e 'Status do Pagamento' (apenas informativo).
-
-Staff: Gestão de administradores.
-
-Ações de Gestão: Adicione botões para 'Ajuste Manual de Ranking' e 'Atribuir Bônus de Qualidade' (campo points no banco).
-
-Log de Atividades: Crie uma tabela de logs que registre last_login e profile_updates para auditoria do admin.
-
-3. Módulo de SEO e Comercial Gerenciável:
-
-Editor de Metadados: Crie uma interface onde eu possa selecionar uma 'Categoria' e 'Cidade' e editar manualmente o Meta Title e Meta Description daquela página específica.
-
-Gestão de Vitrines: Interface para selecionar quais IDs de profissionais aparecerão no componente de 'Destaques' da Home e por quanto tempo.
-
-Dashboard de Crescimento: Implemente gráficos (Recharts) mostrando novos cadastros por dia e volume de leads (pedidos de orçamento) gerados.
-
-4. Fluxo de Contato e Isenção de Responsabilidade:
-
-Disclaimer de Contato: No botão 'Ver Telefone' ou 'WhatsApp', implemente um modal obrigatório: 'O precisodeum.com.br é apenas uma vitrine. Não intermediamos pagamentos nem garantimos serviços. A negociação é 100% direta entre as partes.'
-
-Gestão de Avisos: Crie um campo no admin para editar o texto deste disclaimer e do banner de rodapé globalmente.
-
-5. Recursos Técnicos Adicionais:
-
-Gestão de Leads: Interface para listar pedidos de orçamento feitos, mostrando quem respondeu e permitindo ao admin marcar o status (Aberto/Concluído) para fins estatísticos.
-
-Moderação: Filtro de denúncias para avaliações e fotos de portfólio.
-
-Mapa de Calor: Integre os dados de geolocalização (PostGIS) em um mapa administrativo para visualizar a densidade de prestadores por bairro/cidade."
-
-Instrução Adicional para você (Henrique):
-
-Ao colar esse prompt, a Lovable pode perguntar sobre as tabelas. Responda:
-
-"Pode criar as colunas e tabelas necessárias no Supabase via SQL, garantindo que o RLS (Row Level Security) permita que apenas o Admin edite os campos de Ranking, Status de Patrocinador e Metadados de SEO."
+Aditivo: Solicite um Loading Overlay (um "Carregando" em tela cheia) com uma frase amigável enquanto o banco processa, tipo: "Segura as ferramentas, Mestre! Estamos preparando seu espaço...". Isso evita que ele clique duas vezes no botão e gere erro.
