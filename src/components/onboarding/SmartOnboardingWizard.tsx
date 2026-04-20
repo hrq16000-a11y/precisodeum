@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2, RotateCcw } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2, RotateCcw, PartyPopper } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -11,9 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import SmartCategoryPicker from '@/components/SmartCategoryPicker';
 import CityAutocomplete from '@/components/CityAutocomplete';
+import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
 
 type ProfileType = 'provider' | 'client';
+type WizardStep = 1 | 2 | 3 | 4;
+
+const STORAGE_KEY = 'onboarding_wizard_state';
 
 const CATEGORY_ICON_MAP: Record<string, string> = {
   eletricista: 'Zap', eletrica: 'Zap',
@@ -44,24 +48,59 @@ const slugify = (s: string) =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+interface PersistedState {
+  step: WizardStep;
+  profileType: ProfileType | null;
+  city: string;
+  state: string;
+  fullName: string;
+  selectedCategoryIds: string[];
+}
+
+const loadPersistedState = (): Partial<PersistedState> => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+};
+
 const SmartOnboardingWizard = () => {
   const { user, refetchProfile } = useAuth();
   const { city: geoCity, state: geoState } = useGeoCity();
   const { data: categoriesData = [] } = useCategoriesWithCount();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [profileType, setProfileType] = useState<ProfileType | null>(null);
-  const [city, setCity] = useState(geoCity || '');
-  const [state, setState] = useState(geoState || '');
+  const persisted = useRef<Partial<PersistedState>>(loadPersistedState());
+
+  const [step, setStep] = useState<WizardStep>((persisted.current.step as WizardStep) || 1);
+  const [profileType, setProfileType] = useState<ProfileType | null>(persisted.current.profileType ?? null);
+  const [city, setCity] = useState(persisted.current.city ?? (geoCity || ''));
+  const [state, setState] = useState(persisted.current.state ?? (geoState || ''));
   const [editingCity, setEditingCity] = useState(false);
   const [fullName, setFullName] = useState(
-    (user?.user_metadata?.full_name as string) || user?.email?.split('@')[0] || ''
+    persisted.current.fullName ??
+    ((user?.user_metadata?.full_name as string) || user?.email?.split('@')[0] || '')
   );
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
+    persisted.current.selectedCategoryIds ?? []
+  );
   const [saving, setSaving] = useState(false);
 
-  // Sync geo
+  // After confirm: store provider so we can render the integrated ServiceWizard at Step 4
+  const [savedProvider, setSavedProvider] = useState<any | null>(null);
+  const [servicesCreated, setServicesCreated] = useState(0);
+  const [showStep4Intro, setShowStep4Intro] = useState(false);
+
+  // Persist progress
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        step, profileType, city, state, fullName, selectedCategoryIds,
+      } satisfies PersistedState));
+    } catch {}
+  }, [step, profileType, city, state, fullName, selectedCategoryIds]);
+
+  // Sync geo on first load only
   useEffect(() => {
     if (!editingCity && geoCity && !city) setCity(geoCity);
     if (geoState && !state) setState(geoState);
@@ -77,6 +116,10 @@ const SmartOnboardingWizard = () => {
     setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id]);
   };
 
+  const clearPersisted = () => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  };
+
   const handleConfirm = async () => {
     if (!user?.id) {
       toast.error('Sessão expirada. Faça login novamente.');
@@ -90,7 +133,6 @@ const SmartOnboardingWizard = () => {
     }
     setSaving(true);
     try {
-      // 1. Update profile (await — must complete before redirect)
       const { error: profErr } = await supabase
         .from('profiles')
         .update({
@@ -102,35 +144,43 @@ const SmartOnboardingWizard = () => {
         .eq('id', user.id);
       if (profErr) throw profErr;
 
-      // 2. Mark metadata
       const { error: metaErr } = await supabase.auth.updateUser({
         data: { profile_type_chosen: true, profile_type: profileType },
       });
       if (metaErr) throw metaErr;
 
-      // 3. If provider → create provider row (must wait for id)
+      let providerRow: any = null;
       if (profileType === 'provider') {
         const { data: existing } = await supabase
           .from('providers')
-          .select('id')
+          .select('*')
           .eq('user_id', user.id)
           .limit(1);
-        if (!existing || existing.length === 0) {
+        if (existing && existing.length > 0) {
+          providerRow = existing[0];
+          // Patch city/category if missing
+          await supabase.from('providers').update({
+            city: city || providerRow.city,
+            state: state || providerRow.state,
+            category_id: selectedCategoryIds[0] || providerRow.category_id,
+          }).eq('id', providerRow.id);
+          providerRow = { ...providerRow, city, state, category_id: selectedCategoryIds[0] || providerRow.category_id };
+        } else {
           const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'profissional');
           const uniqueSlug = `${baseSlug}-${user.id.slice(0, 6)}`;
-          const { error: provErr } = await supabase.from('providers').insert({
+          const { data: created, error: provErr } = await supabase.from('providers').insert({
             user_id: user.id,
             slug: uniqueSlug,
             city: city || null,
             state: state || null,
             category_id: selectedCategoryIds[0] || null,
             status: 'pending',
-          }).select('id').single();
+          }).select('*').single();
           if (provErr) throw provErr;
+          providerRow = created;
         }
       }
 
-      // 4. Public activity (social proof) — neutral, no "Mestre"
       const firstName = (fullName.trim().split(' ')[0] || 'Profissional');
       const initial = firstName.charAt(0).toUpperCase();
       const alias = `${firstName} ${initial}.`;
@@ -144,28 +194,31 @@ const SmartOnboardingWizard = () => {
         is_seed: false,
       });
 
-      // 5. Refresh profile context (await — guarantees no race)
       const refreshedProfile = await refetchProfile();
       const confirmedProfileType = refreshedProfile?.profile_type ?? profileType;
-
       if (confirmedProfileType !== profileType) {
-        throw new Error(`Profile type mismatch after save: expected ${profileType}, got ${confirmedProfileType ?? 'null'}`);
+        throw new Error(`Profile type mismatch: expected ${profileType}, got ${confirmedProfileType ?? 'null'}`);
       }
 
-      // 6. Party
       try {
         confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
         setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { y: 0.5 } }), 250);
       } catch {/* noop */}
-      toast.success('Parabéns! Você já está na vitrine.');
 
-      // 7. Redirect — strict: provider → dashboard, client → home. Never /vagas.
-      const targetRoute = confirmedProfileType === 'provider' ? '/dashboard?wizard=1' : '/';
-      if (import.meta.env.DEV) {
-        console.log(`[Redirect Debug] Usuário tipo ${confirmedProfileType} indo para rota ${targetRoute}`);
+      // Client → home immediately. Provider → Step 4 (integrated ServiceWizard).
+      if (confirmedProfileType !== 'provider') {
+        toast.success('Tudo pronto! Bem-vindo(a).');
+        clearPersisted();
+        if (import.meta.env.DEV) console.log('[Redirect Debug] Usuário tipo client indo para rota /');
+        navigate('/', { replace: true });
+        return;
       }
-      await new Promise((resolve) => setTimeout(resolve, 1));
-      navigate(targetRoute, { replace: true });
+
+      // Provider flow continues inside the wizard
+      toast.success('Perfil validado! Vamos criar seu primeiro serviço.');
+      setSavedProvider(providerRow);
+      setShowStep4Intro(true);
+      setStep(4);
     } catch (err) {
       console.error('[Onboarding]', err);
       toast.error('Não conseguimos salvar. Tente novamente em instantes.');
@@ -173,6 +226,86 @@ const SmartOnboardingWizard = () => {
       setSaving(false);
     }
   };
+
+  const handleServiceCreated = () => {
+    setServicesCreated(c => c + 1);
+  };
+
+  const finishToPublicProfile = () => {
+    clearPersisted();
+    const slug = savedProvider?.slug;
+    const target = slug ? `/profissional/${slug}` : '/dashboard';
+    if (import.meta.env.DEV) console.log(`[Redirect Debug] Usuário tipo provider indo para rota ${target}`);
+    navigate(target, { replace: true });
+  };
+
+  // ========================================
+  // STEP 4 — Integrated Service Creation
+  // ========================================
+  if (step === 4 && savedProvider) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-start justify-center bg-background/95 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="relative w-full max-w-lg my-6">
+          {showStep4Intro && servicesCreated === 0 && (
+            <div className="mb-4 rounded-2xl border-2 border-accent bg-gradient-to-br from-accent/10 to-transparent p-5 text-center animate-in fade-in slide-in-from-top-2">
+              <div className="flex justify-center mb-2">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                  <PartyPopper className="h-6 w-6" />
+                </div>
+              </div>
+              <h2 className="font-display text-lg font-bold text-foreground">Perfil validado!</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Agora descreva seu primeiro serviço para aparecer na busca.
+              </p>
+            </div>
+          )}
+
+          {servicesCreated > 0 && (
+            <div className="mb-4 rounded-2xl border border-border bg-card p-5 text-center">
+              <div className="flex justify-center mb-2">
+                <CheckCircle2 className="h-10 w-10 text-accent" />
+              </div>
+              <h2 className="font-display text-lg font-bold text-foreground">
+                {servicesCreated === 1 ? 'Primeiro serviço publicado!' : `${servicesCreated} serviços publicados!`}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Quer cadastrar mais um serviço ou já podemos liberar sua página?
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => { setShowStep4Intro(false); /* re-renders ServiceWizard for new entry */ window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                >
+                  + Novo serviço
+                </Button>
+                <Button variant="accent" onClick={finishToPublicProfile}>
+                  Ver minha página
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-2xl">
+            <ServiceWizard
+              key={`sw-${servicesCreated}`}
+              providerId={savedProvider.id}
+              userId={user!.id}
+              provider={savedProvider}
+              categories={categoriesData}
+              onComplete={handleServiceCreated}
+              onCancel={() => {
+                if (servicesCreated > 0) {
+                  finishToPublicProfile();
+                } else {
+                  toast.info('Você precisa publicar pelo menos 1 serviço.');
+                }
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm p-4 overflow-y-auto">
@@ -215,7 +348,7 @@ const SmartOnboardingWizard = () => {
           ))}
         </div>
 
-        {/* STEP 1 — Identidade (somente Profissional ou Cliente) */}
+        {/* STEP 1 — Identidade */}
         {step === 1 && (
           <>
             <h1 className="text-center font-display text-2xl font-bold text-foreground">
@@ -274,7 +407,7 @@ const SmartOnboardingWizard = () => {
           </>
         )}
 
-        {/* STEP 2 — Geo padronizada (autocomplete cities) */}
+        {/* STEP 2 — Geo via CityAutocomplete */}
         {step === 2 && (
           <>
             <button
@@ -313,7 +446,7 @@ const SmartOnboardingWizard = () => {
             ) : (
               <>
                 <p className="mt-3 text-center text-sm text-muted-foreground">
-                  Selecione sua cidade na lista:
+                  Selecione sua cidade na lista oficial:
                 </p>
                 <div className="mt-4">
                   <CityAutocomplete
@@ -373,10 +506,10 @@ const SmartOnboardingWizard = () => {
               {profileType === 'provider' && (
                 <div>
                   <label className="text-xs font-semibold text-foreground mb-1 block">
-                    Sua categoria principal
+                    Sua especialidade principal
                   </label>
                   <p className="text-[10px] text-muted-foreground mb-2">
-                    Escolha uma única especialidade. Você poderá detalhar mais serviços depois.
+                    Escolha <strong>uma única especialidade</strong>. Você poderá adicionar outros serviços depois.
                   </p>
                   <SmartCategoryPicker
                     categories={categoriesForPicker}
@@ -385,6 +518,14 @@ const SmartOnboardingWizard = () => {
                     maxSelections={1}
                     placeholder="Ex: Eletricista, Pintor, Diarista..."
                   />
+                  {selectedCategoryIds.length > 0 && selectedCategory && (
+                    <div className="mt-2 flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 animate-in fade-in slide-in-from-top-1">
+                      <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                      <span className="text-xs font-medium text-foreground">
+                        Selecionado: <strong>{selectedCategory.name}</strong>
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -402,7 +543,7 @@ const SmartOnboardingWizard = () => {
               disabled={saving || !fullName.trim() || (profileType === 'provider' && selectedCategoryIds.length === 0)}
               onClick={handleConfirm}
             >
-              {saving ? 'Salvando...' : 'Entrar na vitrine'}
+              {saving ? 'Salvando...' : profileType === 'provider' ? 'Próximo: criar meu serviço →' : 'Concluir cadastro'}
             </Button>
           </>
         )}
