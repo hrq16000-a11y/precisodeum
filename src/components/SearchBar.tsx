@@ -357,7 +357,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   return (
     <div ref={wrapperRef} className="relative z-40 w-full max-w-xl">
       <form onSubmit={handleSearch}>
-        {/* Mobile: input com ícone-botão de busca embutido */}
+        {/* Mobile: input com ícone-botão de busca embutido (acessível 60+) */}
         <div className="flex sm:hidden">
           <div
             className={`flex w-full items-center gap-2 rounded-full bg-card pl-4 pr-1.5 py-1.5 transition-all duration-300 ${
@@ -373,26 +373,22 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
               onFocus={handleFocus}
               onBlur={() => setIsFocused(false)}
               onKeyDown={handleKeyDown}
-              className="min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/60 outline-none"
+              className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 outline-none"
               autoComplete="off"
             />
             {query && (
-              <button type="button" onClick={() => { setQuery(''); inputRef.current?.focus(); }} className="shrink-0 text-muted-foreground hover:text-foreground">
+              <button type="button" onClick={() => { setQuery(''); inputRef.current?.focus(); }} className="shrink-0 text-muted-foreground hover:text-foreground" aria-label="Limpar">
                 <X className="h-4 w-4" />
               </button>
             )}
+            <button
+              type="submit"
+              aria-label="Buscar profissional"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md transition-transform active:scale-95 hover:bg-accent/90"
+            >
+              <Search className="h-5 w-5" />
+            </button>
           </div>
-        </div>
-        {/* Mobile: Botão Buscar largura total para acessibilidade (toque fácil 60+) */}
-        <div className="mt-2 flex sm:hidden">
-          <Button
-            type="submit"
-            variant="accent"
-            className="w-full rounded-full py-3 text-base font-bold shadow-md"
-          >
-            <Search className="mr-2 h-5 w-5" />
-            Buscar profissional
-          </Button>
         </div>
 
         {/* Desktop: inline */}
