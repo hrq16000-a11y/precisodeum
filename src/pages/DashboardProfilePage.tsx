@@ -48,7 +48,7 @@ const DashboardProfilePage = () => {
     full_name: '', phone: '', business_name: '', description: '',
     city: '', state: '', neighborhood: '', whatsapp: '', website: '',
     years_experience: 0, category_id: '', category_name: '', category_custom: '',
-    cnpj: '', cpf: '', ibge_code: '', working_hours: '',
+    cnpj: '', cpf: '', birth_date: '', ibge_code: '', working_hours: '',
     latitude: null as number | null, longitude: null as number | null,
     account_kind: '' as '' | 'autonomo' | 'empresa',
   });
@@ -139,6 +139,7 @@ const DashboardProfilePage = () => {
         category_custom: (provider as any).category_custom || '',
         cnpj: (provider as any).cnpj || '',
         cpf: (provider as any).cpf || '',
+        birth_date: (provider as any).birth_date || '',
         ibge_code: (provider as any).ibge_code || '',
         latitude: provider.latitude ?? null,
         longitude: provider.longitude ?? null,
@@ -251,7 +252,7 @@ const DashboardProfilePage = () => {
         whatsapp: finalWhatsapp, website: form.website || null, years_experience: form.years_experience,
         working_hours: form.working_hours || null,
         category_id: form.category_id || null, category_custom: form.category_custom || null,
-        cnpj: finalCnpj, cpf: finalCpf, ibge_code: form.ibge_code || null, latitude, longitude,
+        cnpj: finalCnpj, cpf: finalCpf, birth_date: form.birth_date || null, ibge_code: form.ibge_code || null, latitude, longitude,
       };
 
       if (provider) {
@@ -555,6 +556,21 @@ const DashboardProfilePage = () => {
                         setForm(prev => ({ ...prev, cpf: v }));
                       }} placeholder="000.000.000-00" className={inputCls} />
                       <p className="mt-1 text-[11px] text-muted-foreground">Não exibido publicamente. Aumenta sua pontuação de confiança.</p>
+                    </div>
+                  )}
+
+                  {form.account_kind === 'autonomo' && (
+                    <div>
+                      <label className={labelCls}>Data de nascimento <span className="text-muted-foreground font-normal">(opcional · pontua engajamento)</span></label>
+                      <input
+                        type="date"
+                        value={form.birth_date}
+                        max={new Date().toISOString().slice(0, 10)}
+                        min="1900-01-01"
+                        onChange={(e) => setForm(prev => ({ ...prev, birth_date: e.target.value }))}
+                        className={inputCls}
+                      />
+                      <p className="mt-1 text-[11px] text-muted-foreground">Não exibida publicamente. Reforça a autenticidade do seu perfil.</p>
                     </div>
                   )}
 
