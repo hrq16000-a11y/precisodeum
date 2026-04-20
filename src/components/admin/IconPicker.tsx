@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { icons, Search, CircleDot } from 'lucide-react';
+import { Search, CircleDot } from 'lucide-react';
+import { ICON_LIBRARY, resolveIcon } from '@/lib/iconLibrary';
 
-const ALL_ICON_NAMES = Object.keys(icons).sort();
+const ALL_ICON_NAMES = Object.keys(ICON_LIBRARY).sort();
 
 interface Props {
   value: string;
@@ -15,10 +16,10 @@ const IconPicker = ({ value, onChange }: Props) => {
   const filtered = useMemo(() => {
     if (!search) return ALL_ICON_NAMES.slice(0, 60);
     const q = search.toLowerCase();
-    return ALL_ICON_NAMES.filter(n => n.toLowerCase().includes(q)).slice(0, 60);
+    return ALL_ICON_NAMES.filter((n) => n.toLowerCase().includes(q)).slice(0, 60);
   }, [search]);
 
-  const SelectedIcon = value ? (icons as Record<string, any>)[value] : null;
+  const SelectedIcon = value ? resolveIcon(value) : null;
 
   return (
     <div className="relative">
@@ -52,7 +53,7 @@ const IconPicker = ({ value, onChange }: Props) => {
           </div>
           <div className="overflow-y-auto max-h-56 p-2 grid grid-cols-6 gap-1">
             {filtered.map((name) => {
-              const Icon = (icons as Record<string, any>)[name];
+              const Icon = ICON_LIBRARY[name];
               if (!Icon) return null;
               return (
                 <button

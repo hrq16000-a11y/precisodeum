@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, Trash2, GripVertical, Save, Eye, Smartphone, ArrowUp, ArrowDown, Pencil } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
+import { IconRenderer } from '@/components/ui/IconRenderer';
 
 interface NavConfig {
   id: string;
@@ -230,11 +230,9 @@ const AdminBottomNavPage = () => {
     );
   }
 
-  const IconPreview = ({ name }: { name: string }) => {
-    const icons = LucideIcons as Record<string, any>;
-    const Ic = icons[name] || LucideIcons.HelpCircle;
-    return <Ic className="h-5 w-5" />;
-  };
+  const IconPreview = ({ name }: { name: string }) => (
+    <IconRenderer name={name} size={20} className="text-foreground" />
+  );
 
   return (
     <AdminLayout>
@@ -363,17 +361,14 @@ const AdminBottomNavPage = () => {
             <CardContent>
               <div className="mx-auto max-w-[375px] rounded-2xl border-2 border-border bg-background overflow-hidden" style={{ height: 120 }}>
                 <div className="flex items-center justify-around px-2 py-1.5 h-full border-t border-border/40 bg-card/90">
-                  {items.filter(i => i.is_active).map((item) => {
-                    const Ic = (LucideIcons as any)[item.icon] || LucideIcons.HelpCircle;
-                    return (
-                      <div key={item.id} className="flex flex-col items-center gap-0.5">
-                        <div className="h-8 w-8 flex items-center justify-center">
-                          <Ic className="h-[18px] w-[18px] text-muted-foreground" />
-                        </div>
-                        <span className="text-[9px] text-muted-foreground">{item.label}</span>
+                  {items.filter(i => i.is_active).map((item) => (
+                    <div key={item.id} className="flex flex-col items-center gap-0.5">
+                      <div className="h-8 w-8 flex items-center justify-center">
+                        <IconRenderer name={item.icon} size={18} className="text-muted-foreground" />
                       </div>
-                    );
-                  })}
+                      <span className="text-[9px] text-muted-foreground">{item.label}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -422,19 +417,16 @@ const AdminBottomNavPage = () => {
               <div>
                 <Label className="text-xs mb-2 block">Ícone</Label>
                 <div className="flex flex-wrap gap-1.5">
-                  {POPULAR_ICONS.map((name) => {
-                    const Ic = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
-                    return (
-                      <button
-                        key={name}
-                        onClick={() => setEditItem({ ...editItem, icon: name })}
-                        className={`h-9 w-9 rounded-lg border flex items-center justify-center transition-colors ${editItem.icon === name ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted-foreground hover:bg-muted'}`}
-                        title={name}
-                      >
-                        <Ic className="h-4 w-4" />
-                      </button>
-                    );
-                  })}
+                  {POPULAR_ICONS.map((name) => (
+                    <button
+                      key={name}
+                      onClick={() => setEditItem({ ...editItem, icon: name })}
+                      className={`h-9 w-9 rounded-lg border flex items-center justify-center transition-colors ${editItem.icon === name ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted-foreground hover:bg-muted'}`}
+                      title={name}
+                    >
+                      <IconRenderer name={name} size={16} />
+                    </button>
+                  ))}
                 </div>
                 <Input value={editItem.icon} onChange={(e) => setEditItem({ ...editItem, icon: e.target.value })} placeholder="Nome do ícone Lucide" className="h-9 mt-2" />
               </div>

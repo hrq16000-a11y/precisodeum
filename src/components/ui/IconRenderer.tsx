@@ -1,5 +1,6 @@
-import { icons, CircleDot, type LucideProps } from 'lucide-react';
+import { CircleDot, type LucideProps } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { resolveIcon } from '@/lib/iconLibrary';
 
 /**
  * IconRenderer — universal Lucide icon renderer driven by a string from the database.
@@ -7,7 +8,11 @@ import { cn } from '@/lib/utils';
  * Single source of truth for "icon-as-string" patterns (gamification levels,
  * categories, plan resources, menu items, etc.). Whatever the admin types in
  * /admin/gamificacao or /admin/categorias is rendered here as a real Lucide SVG,
- * everywhere on the platform — instantly, no extra mapping table needed.
+ * everywhere on the platform.
+ *
+ * Tree-shaking note: this component resolves icons through the static
+ * `ICON_LIBRARY` registry in `@/lib/iconLibrary`, so only the ~250 explicitly
+ * imported icons ship in the bundle (vs. the entire 1,500+ Lucide catalog).
  *
  * Resolution order:
  *   1. Exact PascalCase match (e.g. "Sparkles")
@@ -18,19 +23,6 @@ import { cn } from '@/lib/utils';
  * Legacy emoji strings (e.g. "⭐") and unknown values gracefully degrade to the
  * fallback icon instead of leaking the raw string into the UI.
  */
-
-// Build case-insensitive + kebab lookup once
-const iconMap: Record<string, React.ComponentType<LucideProps>> = {};
-for (const [key, component] of Object.entries(icons)) {
-  iconMap[key.toLowerCase()] = component as React.ComponentType<LucideProps>;
-}
-
-const kebabToPascal = (s: string) =>
-  s
-    .split(/[-_\s]+/)
-    .filter(Boolean)
-    .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
-    .join('');
 
 const isLikelyEmoji = (s: string) => /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/u.test(s);
 
@@ -82,11 +74,7 @@ export const IconRenderer = ({
   const trimmed = name.trim();
   if (!trimmed || isLikelyEmoji(trimmed)) return fallback;
 
-  const exact = (icons as Record<string, React.ComponentType<LucideProps>>)[trimmed];
-  const ci = iconMap[trimmed.toLowerCase()];
-  const kebab = iconMap[kebabToPascal(trimmed).toLowerCase()];
-  const Component = exact || ci || kebab;
-
+  const Component = resolveIcon(trimmed);
   if (!Component) return fallback;
 
   return (
