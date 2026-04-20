@@ -266,6 +266,8 @@ const App = () => {
                 <Route path="/profissional/:slug" element={<ProviderProfile />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/cadastro" element={<SignupPage />} />
+                <Route path="/cadastro/rh" element={<SignupPage />} />
+                <Route path="/anuncie" element={<SponsorLandingPage />} />
                 <Route path="/vagas" element={<JobsPage />} />
                 <Route path="/quero-ser-patrocinador" element={<SponsorLandingPage />} />
                 <Route path="/espacos-patrocinio" element={<SponsorSlotsPage />} />
