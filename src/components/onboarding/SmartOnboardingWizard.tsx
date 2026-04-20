@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2, RotateCcw, PartyPopper } from 'lucide-react';
+import { Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2, RotateCcw, PartyPopper, AlertCircle, TrendingUp } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
