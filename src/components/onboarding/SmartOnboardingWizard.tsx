@@ -508,6 +508,13 @@ const SmartOnboardingWizard = () => {
                     onChange={({ city: c, state: s }) => {
                       setCity(c);
                       setState(s);
+                      // Auto-avanço: se a seleção veio com cidade + UF da lista oficial, pula para o Step 3
+                      if (c.trim() && s.trim()) {
+                        setTimeout(() => {
+                          setEditingCity(false);
+                          setStep(3);
+                        }, 350);
+                      }
                     }}
                   />
                 </div>
