@@ -1,7 +1,8 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap, Camera, FileText } from 'lucide-react';
+import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap, Camera, FileText, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,8 +42,30 @@ import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 
 const DashboardPage = () => {
-  const { user, profile, provider, loading } = useAuth();
+  const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
   const navigate = useNavigate();
+
+  const handleResetOnboarding = async () => {
+    if (!user?.id) return;
+    if (!window.confirm('Reiniciar seu cadastro? Você verá o assistente de boas-vindas novamente.')) return;
+    try {
+      const [{ error: profErr }, { error: metaErr }] = await Promise.all([
+        supabase.from('profiles').update({
+          profile_type: null,
+          role: null,
+          onboarding_completed: false,
+        } as any).eq('id', user.id),
+        supabase.auth.updateUser({ data: { profile_type_chosen: false, profile_type: null } }),
+      ]);
+      if (profErr || metaErr) throw profErr || metaErr;
+      await refetchProfile();
+      toast.success('Cadastro reiniciado. Recarregando...');
+      setTimeout(() => window.location.href = '/dashboard', 600);
+    } catch (e) {
+      console.error('[Reset Onboarding]', e);
+      toast.error('Não foi possível reiniciar o cadastro.');
+    }
+  };
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const wizardEnabled = useFeatureEnabled('enable_service_wizard_onboarding');
   const { levelName, levelColor, accountTypeName, accountTypeColor } = usePermissions();
@@ -139,6 +162,24 @@ const DashboardPage = () => {
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
+  const debugResetBar = (
+    <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2">
+      <div className="flex items-center gap-2 text-[11px] text-amber-700 dark:text-amber-400">
+        <Settings className="h-3.5 w-3.5" />
+        <span>Modo Debug — tipo atual: <strong>{profile?.profile_type || 'não definido'}</strong></span>
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-7 gap-1.5 border-amber-500/40 text-[11px] text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
+        onClick={handleResetOnboarding}
+      >
+        <RotateCcw className="h-3 w-3" />
+        Reiniciar Cadastro
+      </Button>
+    </div>
+  );
+
   // Modal legado de triagem: só pode abrir se ainda não existir tipo definido.
   const showWelcomeOnboarding = !!profile && !profile.profile_type;
 
@@ -150,6 +191,7 @@ const DashboardPage = () => {
     return (
       <DashboardLayout>
         {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
+        {debugResetBar}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
           <motion.div
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10"
@@ -233,6 +275,7 @@ const DashboardPage = () => {
     return (
       <DashboardLayout>
         {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
+        {debugResetBar}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
           <motion.div
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-slate-700/10"
@@ -373,6 +416,7 @@ const DashboardPage = () => {
       {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
       {/* Profile check-up modal for incomplete providers */}
       {showCheckup && !showWelcomeOnboarding && <Suspense fallback={null}><ProfileCheckupModal /></Suspense>}
+      {debugResetBar}
       <RealtimeEngagementToast />
       <OnboardingTour active={tour.active} step={tour.step} steps={tour.steps} onNext={tour.next} onPrev={tour.prev} onDismiss={tour.dismiss} />
       {/* Enhanced Welcome Hero */}
