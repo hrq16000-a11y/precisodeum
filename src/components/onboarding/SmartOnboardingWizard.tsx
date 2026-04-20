@@ -555,8 +555,9 @@ const SmartOnboardingWizard = () => {
             </div>
 
             <Button
+              ref={nextBtnRef}
               variant="accent"
-              className="mt-5 w-full"
+              className={`mt-5 w-full transition-shadow ${pulseNext ? 'animate-pulse ring-4 ring-accent/40 shadow-lg shadow-accent/30' : ''}`}
               disabled={saving || !fullName.trim() || (profileType === 'provider' && selectedCategoryIds.length === 0)}
               onClick={handleConfirm}
             >
