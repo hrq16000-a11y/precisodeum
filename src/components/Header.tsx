@@ -344,10 +344,11 @@ const Header = () => {
                   onKeyDown={(e) => { if (e.key === 'Escape') setSearchQuery(''); }}
                 />
               </form>
-              <GeoBadge city={geoCity} temp={geoTemp} compact className="text-[10px] px-1.5 py-0.5 shrink-0" />
+              {/* Hide geo on very narrow screens to prevent overflow */}
+              <GeoBadge city={geoCity} temp={geoTemp} compact className="hidden xs:inline-flex text-[10px] px-1.5 py-0.5 shrink-0" />
             </>
           ) : (
-            <GeoBadge city={geoCity} temp={geoTemp} className="text-[10px] px-1.5 py-0.5" />
+            <GeoBadge city={geoCity} temp={geoTemp} compact className="hidden xs:inline-flex text-[10px] px-1.5 py-0.5 shrink-0 max-w-[110px] truncate" />
           )}
           <NotificationBell />
           <button
