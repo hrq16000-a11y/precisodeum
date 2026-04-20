@@ -198,6 +198,9 @@ const bootstrap = async () => {
     bodyObserver.observe(root, { childList: true, subtree: true });
     observeLazyImages();
   });
+  } catch (err) {
+    showBootstrapError(err);
+  }
 };
 
 void bootstrap();
