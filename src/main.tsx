@@ -99,7 +99,6 @@ const tryAutomatedRecovery = async (reason: string, err?: unknown) => {
   const attempts = getAutoHealAttempts();
   if (attempts < MAX_AUTO_HEAL_ATTEMPTS) {
     markAutoHealAttempt();
-    setShellSupportState("Estamos restaurando automaticamente o aplicativo. Aguarde alguns segundos.");
     await purgeAllCachesAndSWs();
     forceFreshReload();
     return;

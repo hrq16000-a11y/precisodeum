@@ -175,7 +175,6 @@
 
           if (attempts < MAX_AUTO_HEAL_ATTEMPTS) {
             setAttempts(attempts + 1);
-            setRecoveryState('Estamos restaurando automaticamente o aplicativo. Aguarde alguns segundos.', false);
             await clearRuntimeCaches();
             try {
               var url = new URL(location.href);
