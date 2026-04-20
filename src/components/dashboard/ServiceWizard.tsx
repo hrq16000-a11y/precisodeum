@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import ServiceImageUpload from '@/components/ServiceImageUpload';
+import ServiceImageDragUploader from '@/components/dashboard/ServiceImageDragUploader';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import {
   ArrowRight, ArrowLeft, Store, Phone, ImagePlus,
@@ -39,6 +39,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   const [saving, setSaving] = useState(false);
   const [createdServiceId, setCreatedServiceId] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [photoCount, setPhotoCount] = useState(0);
 
   // Step 1 — Identity
   const [serviceName, setServiceName] = useState('');
@@ -409,7 +410,12 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                   <span><strong>{serviceName}</strong> foi criado com sucesso! Adicione fotos abaixo.</span>
                 </div>
 
-                <ServiceImageUpload serviceId={createdServiceId} userId={userId} />
+                <ServiceImageDragUploader
+                  serviceId={createdServiceId}
+                  userId={userId}
+                  maxPhotos={5}
+                  onChange={(imgs) => setPhotoCount(imgs.length)}
+                />
               </>
             )}
           </div>
@@ -420,11 +426,16 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
       <div className="flex items-center justify-between">
         {isPhotosStep ? (
           <>
-            <Button variant="outline" onClick={() => onComplete(createdServiceId!)}>
-              Pular →
+            <Button variant="outline" onClick={() => setStep(step - 1)}>
+              <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
             </Button>
-            <Button variant="accent" onClick={() => onComplete(createdServiceId!)}>
-              Concluir <Sparkles className="h-4 w-4 ml-1" />
+            <Button
+              variant="accent"
+              disabled={photoCount === 0}
+              onClick={() => onComplete(createdServiceId!)}
+              title={photoCount === 0 ? 'Adicione ao menos 1 foto para concluir' : ''}
+            >
+              {photoCount === 0 ? 'Adicione 1 foto' : 'Concluir'} <Sparkles className="h-4 w-4 ml-1" />
             </Button>
           </>
         ) : (
