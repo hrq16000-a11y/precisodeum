@@ -7,11 +7,12 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
-import { Users, TrendingUp, TrendingDown, DollarSign, Target, LayoutGrid, Megaphone, BarChart3, Minus, Download } from 'lucide-react';
+import { Users, TrendingUp, TrendingDown, DollarSign, Target, LayoutGrid, Megaphone, BarChart3, Minus, Download, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { differenceInDays, subDays } from 'date-fns';
+import { differenceInDays, subDays, startOfMonth } from 'date-fns';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444'];
 
@@ -22,7 +23,7 @@ const AdminOverviewPage = () => {
     queryKey: ['overview-profiles'],
     enabled: isAdmin,
     queryFn: async () => {
-      const { data } = await supabase.from('profiles').select('profile_type, status, created_at');
+      const { data } = await supabase.from('profiles').select('profile_type, status, created_at, onboarding_completed');
       return (data || []) as any[];
     },
   });
@@ -303,6 +304,42 @@ const AdminOverviewPage = () => {
             );
           })}
         </div>
+
+        {/* Goal Tracker — Rumo aos 30 Novos Profissionais */}
+        {(() => {
+          const monthStart = startOfMonth(new Date());
+          const newProsThisMonth = profiles.filter((p: any) =>
+            p.profile_type === 'provider' &&
+            p.onboarding_completed === true &&
+            new Date(p.created_at) >= monthStart
+          ).length;
+          const goal = 30;
+          const pct = Math.min(100, Math.round((newProsThisMonth / goal) * 100));
+          const remaining = Math.max(0, goal - newProsThisMonth);
+          return (
+            <div className="rounded-2xl border-2 border-amber-300/60 dark:border-amber-500/30 bg-gradient-to-br from-amber-50 via-card to-orange-50 dark:from-amber-500/5 dark:to-orange-500/5 p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md">
+                    <Trophy className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">Meta: 30 Novos Profissionais</h3>
+                    <p className="text-[11px] text-muted-foreground">Cadastros completos no mês atual</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-foreground tabular-nums">{newProsThisMonth}<span className="text-base text-muted-foreground">/{goal}</span></p>
+                  <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                    {remaining === 0 ? 'Meta batida!' : `Faltam ${remaining}`}
+                  </p>
+                </div>
+              </div>
+              <Progress value={pct} className="h-3" />
+              <p className="mt-2 text-[11px] text-muted-foreground text-right">{pct}% concluído</p>
+            </div>
+          );
+        })()}
 
         {/* System Health (real operational counters + actions) */}
         <SystemHealthPanel />
