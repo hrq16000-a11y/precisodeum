@@ -62,12 +62,10 @@ const deferWork = (fn: () => void) => {
 
 const setShellSupportState = (message: string, showSupport = false) => {
   const recovery = document.getElementById("app-shell-recovery");
-  const bar = document.getElementById("app-shell-bar");
   const title = document.getElementById("app-shell-recovery-title");
   const msg = document.getElementById("app-shell-recovery-msg");
   const actions = document.getElementById("app-shell-actions");
 
-  if (bar) (bar as HTMLElement).style.display = "none";
   if (recovery) (recovery as HTMLElement).style.display = "block";
   if (title) title.textContent = showSupport
     ? "Precisamos de ajuda para concluir a restauração"

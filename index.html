@@ -100,13 +100,9 @@
 
   <body>
     <div id="root">
-      <!-- Static shell for instant FCP — hidden once React mounts -->
+      <!-- Minimal shell — invisível por padrão, só aparece se a recuperação for necessária -->
       <div id="app-shell" aria-hidden="true" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:hsl(210 20% 98%);padding:24px;text-align:center">
-        <img src="/icons/icon-192.png" alt="" width="80" height="80" style="border-radius:16px;animation:shellPulse 1.5s ease-in-out infinite" />
-        <div id="app-shell-bar" style="margin-top:24px;width:180px;height:4px;border-radius:4px;background:hsl(210 15% 90%);overflow:hidden;position:relative">
-          <div style="position:absolute;inset:0;width:40%;border-radius:4px;background:hsl(25 95% 53%);animation:shellBar 1.2s ease-in-out infinite"></div>
-        </div>
-        <div id="app-shell-recovery" style="display:none;margin-top:32px;max-width:420px;font-family:'Inter',system-ui,sans-serif;color:hsl(215 40% 12%)">
+        <div id="app-shell-recovery" style="display:none;max-width:420px;font-family:'Inter',system-ui,sans-serif;color:hsl(215 40% 12%)">
           <h2 id="app-shell-recovery-title" style="font-size:18px;font-weight:700;margin:0 0 8px">Estamos restaurando o aplicativo</h2>
           <p id="app-shell-recovery-msg" style="font-size:14px;color:hsl(215 20% 40%);margin:0 0 16px">A recuperação é automática e acontece internamente.</p>
           <div id="app-shell-actions" style="display:none;justify-content:center;flex-wrap:wrap">
@@ -142,11 +138,9 @@
 
         function setRecoveryState(message, showSupport){
           var recovery = document.getElementById('app-shell-recovery');
-          var bar = document.getElementById('app-shell-bar');
           var title = document.getElementById('app-shell-recovery-title');
           var msg = document.getElementById('app-shell-recovery-msg');
           var actions = document.getElementById('app-shell-actions');
-          if (bar) bar.style.display = 'none';
           if (recovery) recovery.style.display = 'block';
           if (title) title.textContent = showSupport ? 'Precisamos de ajuda para concluir a restauração' : 'Estamos restaurando o aplicativo';
           if (msg) msg.textContent = message;
