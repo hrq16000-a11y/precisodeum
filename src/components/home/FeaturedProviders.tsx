@@ -193,26 +193,26 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
 
         <div className="mt-3.5 flex w-full min-w-0 flex-nowrap items-stretch gap-1.5 overflow-hidden sm:mt-4 sm:gap-2">
           {p.whatsapp && (
-            <Button variant="accent" size="sm" className="h-9 min-w-0 flex-1 basis-0 px-2 text-xs transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:h-10 sm:px-3 sm:text-sm" asChild>
+            <Button variant="accent" size="sm" className="h-9 min-w-0 flex-1 basis-0 px-2 text-[11px] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:h-10 sm:px-3 sm:text-sm" asChild>
               <a
                 href={whatsappLink(p.whatsapp, buildSmartMessage(displayName, p.category, geoCity, geoState))}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackWhatsAppClick(p.id, p.slug, 'featured')}
-                className="inline-flex w-full min-w-0 items-center justify-center gap-1.5 overflow-hidden"
+                className="inline-flex w-full min-w-0 items-center justify-center gap-1 overflow-hidden"
               >
                 <MessageCircle className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
-                <span className="truncate">WhatsApp</span>
+                <span className="truncate whitespace-nowrap">WhatsApp</span>
               </a>
             </Button>
           )}
-          <Button variant="outline" size="sm" className={`h-9 overflow-hidden px-2 text-xs transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:h-10 sm:px-3 sm:text-sm ${p.whatsapp ? 'w-[88px] shrink-0 whitespace-nowrap sm:w-[108px]' : 'flex-1'}`} asChild>
+          <Button variant="outline" size="sm" className={`h-9 min-w-0 overflow-hidden px-2 text-[11px] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:h-10 sm:px-3 sm:text-sm ${p.whatsapp ? 'flex-1 basis-0' : 'flex-1'}`} asChild>
             <Link
               to={`/profissional/${p.slug}`}
               onClick={() => trackProfileClick(p.id, p.slug, 'featured')}
-              className="inline-flex w-full items-center justify-center truncate"
+              className="inline-flex w-full min-w-0 items-center justify-center overflow-hidden"
             >
-              <span className="truncate">Ver Perfil</span>
+              <span className="truncate whitespace-nowrap">Ver Perfil</span>
             </Link>
           </Button>
         </div>
