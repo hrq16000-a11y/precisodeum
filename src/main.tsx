@@ -131,23 +131,25 @@ const showBootstrapError = (err: unknown) => {
   }
 };
 
-const bootstrap = async () => {
+const bootstrap = () => {
   try {
-    // Guard rails: chaves Supabase ausentes => avisa em vez de loop
     const env = (import.meta as any).env || {};
     if (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_PUBLISHABLE_KEY) {
       throw new Error('Configuração do backend ausente (VITE_SUPABASE_URL/KEY).');
     }
 
-    const reloading = await resetCachesIfNeeded().catch(() => false);
-    if (reloading) return;
-
+    // Render IMEDIATAMENTE — sem await em caches/SW. Limpeza vai pra background.
     createRoot(rootElement).render(<App />);
     if ((window as any).__appShellTimer) {
       clearTimeout((window as any).__appShellTimer);
       delete (window as any).__appShellTimer;
     }
     removeShell();
+
+    // Limpeza de SW/caches antigos em background (não bloqueia o paint)
+    deferWork(() => {
+      void resetCachesIfNeeded().catch(() => {});
+    });
 
   deferWork(() => {
     import("@/styles/deferred-animations.css");
