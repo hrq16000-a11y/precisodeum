@@ -41,6 +41,7 @@ import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
 import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
 import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
+import EngagementLoop from '@/components/dashboard/EngagementLoop';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
@@ -151,8 +152,9 @@ const DashboardPage = () => {
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
+  // Onboarding redirect is owned exclusively by `OnboardingGate` in App.tsx.
+  // We only guard against the brief instant where `profile_type` hasn't loaded yet.
   if (profile && !profileType) return null;
-  if (profile && (profile.onboarding_completed !== true || Number(profile.onboarding_step ?? 0) < 5)) return null;
 
   const debugResetBar = (
     <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2">
@@ -416,6 +418,11 @@ const DashboardPage = () => {
         memberSince={profile?.created_at}
         avatarUrl={profile?.avatar_url || undefined}
       />
+
+      {/* Engagement Loop — guides the user to the next highest-impact action */}
+      <div className="mt-4">
+        <EngagementLoop />
+      </div>
 
       {/* "Primeiro Lead Garantido" — checklist motivador + boost 7d */}
       <div className="mt-4 grid gap-4 md:grid-cols-2">

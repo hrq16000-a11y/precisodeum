@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,9 +12,12 @@ import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils';
+import { useSettingValue } from '@/hooks/useSiteSettings';
+import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 
-const MAX_ALBUMS = 4;
-const MAX_PHOTOS_PER_ALBUM = 20;
+// Defaults — overridden by site_settings (`portfolio_max_albums`, `portfolio_max_photos_per_album`)
+const DEFAULT_MAX_ALBUMS = 4;
+const DEFAULT_MAX_PHOTOS_PER_ALBUM = 20;
 
 interface Album {
   id: string;
@@ -35,12 +38,24 @@ interface Photo {
 
 const DashboardPortfolioPage = () => {
   const { user, provider } = useAuth();
+  const albumsLimitRaw = useSettingValue('portfolio_max_albums');
+  const photosLimitRaw = useSettingValue('portfolio_max_photos_per_album');
+  const MAX_ALBUMS = useMemo(() => {
+    const n = Number(String(albumsLimitRaw ?? '').replace(/[^0-9]/g, ''));
+    return Number.isFinite(n) && n > 0 ? n : DEFAULT_MAX_ALBUMS;
+  }, [albumsLimitRaw]);
+  const MAX_PHOTOS_PER_ALBUM = useMemo(() => {
+    const n = Number(String(photosLimitRaw ?? '').replace(/[^0-9]/g, ''));
+    return Number.isFinite(n) && n > 0 ? n : DEFAULT_MAX_PHOTOS_PER_ALBUM;
+  }, [photosLimitRaw]);
+
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [photosLoading, setPhotosLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [nextStep, setNextStep] = useState<null | 'album' | 'photo'>(null);
 
   // Album dialog
   const [albumDialogOpen, setAlbumDialogOpen] = useState(false);
@@ -136,20 +151,17 @@ const DashboardPortfolioPage = () => {
         }
         toast.success('Álbum atualizado!');
       } else {
-        const { error } = await supabase
-          .from('portfolio_albums')
-          .insert({
-            provider_id: provider.id,
-            user_id: user.id,
-            name: albumName.trim(),
-            description: albumDesc.trim(),
-            display_order: albums.length,
-          });
+        // Atomic RPC — guarantees provider_id + user_ref are written together
+        const { error } = await supabase.rpc('create_album_atomic' as any, {
+          _name: albumName.trim(),
+          _description: albumDesc.trim(),
+        });
         if (error) {
           await showSaveError({ actionContext: 'Criar álbum', componentName: 'DashboardPortfolioPage', errorMessage: error.message, retryFn: handleSaveAlbum });
           setAlbumSaving(false); return;
         }
         toast.success('Álbum criado!');
+        setNextStep('album');
       }
 
       trackAction('album_save_success', 'Álbum salvo');
@@ -255,14 +267,14 @@ const DashboardPortfolioPage = () => {
           toast.success(`Imagem otimizada: ${origLabel} → ${optLabel} (-${data.savings_percent}%)`);
         }
 
-        await supabase.from('portfolio_photos').insert({
-          album_id: selectedAlbum.id,
-          user_id: user.id,
-          image_url: publicUrl,
-          storage_path: storagePath,
-          original_name: file.name,
-          display_order: photos.length,
+        // Atomic insert — guarantees user_ref alignment with the album's provider
+        const { error: rpcErr } = await supabase.rpc('add_portfolio_photo_atomic' as any, {
+          _album_id: selectedAlbum.id,
+          _image_url: publicUrl,
+          _storage_path: storagePath,
+          _original_name: file.name,
         });
+        if (rpcErr) throw rpcErr;
 
         if (userRef) {
           await upsertMedia({
@@ -277,10 +289,6 @@ const DashboardPortfolioPage = () => {
           });
         }
 
-        // Set first photo as cover if no cover
-        if (!selectedAlbum.cover_image_url && photos.length === 0) {
-          await supabase.from('portfolio_albums').update({ cover_image_url: publicUrl }).eq('id', selectedAlbum.id);
-        }
         successCount++;
       } catch (err: any) {
         failCount++;
@@ -297,8 +305,9 @@ const DashboardPortfolioPage = () => {
     setUploading(false);
     if (successCount > 0) {
       toast.success(`${successCount} foto${successCount > 1 ? 's' : ''} enviada${successCount > 1 ? 's' : ''} com sucesso!`, {
-        description: failCount > 0 ? `${failCount} falharam — verifique os erros acima.` : '🏆 +5 pontos por foto adicionada!',
+        description: failCount > 0 ? `${failCount} falharam — verifique os erros acima.` : '+5 pontos por foto adicionada!',
       });
+      setNextStep('photo');
     } else if (failCount > 0) {
       toast.error('Nenhuma foto foi enviada. Verifique os erros acima.');
     }
