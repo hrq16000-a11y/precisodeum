@@ -5235,6 +5235,22 @@ export type Database = {
         }[]
       }
       get_rss_import_headers: { Args: never; Returns: Json }
+      get_smart_ads: {
+        Args: {
+          _location_key: string
+          _visitor_city?: string
+          _visitor_state?: string
+        }
+        Returns: {
+          company_name: string
+          id: string
+          image_url: string
+          link_url: string
+          priority: number
+          title: string
+          user_ref: string
+        }[]
+      }
       get_staff_permissions: { Args: { _user_id: string }; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       get_user_storage_usage: { Args: { _user_ref: string }; Returns: number }
