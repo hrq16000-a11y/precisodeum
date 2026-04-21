@@ -76,6 +76,8 @@ const SearchPage = () => {
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
+  const onlineSet = useOnlineProviders();
 
   const effectiveCity = selectedCity || cityParam || geoCity || '';
 
