@@ -508,7 +508,7 @@ const BasicOnboardingWizard = () => {
 
             <div className="mt-6 grid gap-3">
               <button
-                onClick={() => { setProfileType('provider'); setStep(2); }}
+                onClick={() => { setProfileType('provider'); setShowSubtypeStep(true); }}
                 className="group rounded-2xl border-2 border-accent/30 bg-accent/5 p-5 text-left transition-all hover:border-accent hover:shadow-lg hover:-translate-y-0.5"
               >
                 <div className="flex items-center gap-4">
@@ -548,8 +548,8 @@ const BasicOnboardingWizard = () => {
                     <Building2 className="h-7 w-7" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-display text-lg font-bold text-foreground">Sou Empresa / RH</h3>
-                    <p className="text-xs text-muted-foreground">Quero publicar vagas e contratar talentos</p>
+                    <h3 className="font-display text-lg font-bold text-foreground">Sou Agência de RH / Recrutamento</h3>
+                    <p className="text-xs text-muted-foreground">Recruto e contrato talentos para empresas</p>
                   </div>
                 </div>
               </button>
