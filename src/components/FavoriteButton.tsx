@@ -41,7 +41,7 @@ const FavoriteButton = ({ providerId, providerName, className }: Props) => {
       <Heart
         className={cn(
           'h-4 w-4 transition-colors',
-          fav ? 'fill-rose-500 text-rose-500' : 'text-muted-foreground'
+          fav ? 'fill-destructive text-destructive' : 'text-muted-foreground'
         )}
       />
     </motion.button>
