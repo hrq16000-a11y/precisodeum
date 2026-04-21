@@ -33,15 +33,28 @@ const AchievementHistory = () => {
     if (!user?.id) return;
     (async () => {
       setLoading(true);
+      // Fetch a slightly larger window so we can dedupe and still show 5 unique wins.
       const { data } = await supabase
         .from('audit_log')
-        .select('id, action, created_at, details')
+        .select('id, action, created_at, details, resource_id, resource_type')
         .eq('user_id', user.id)
         .in('action', Object.keys(ACTION_MAP))
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(25);
 
-      const mapped = (data || []).map((row: any) => {
+      // Dedupe by (action + resource_id) so a double-save from a flaky connection
+      // doesn't show as two trophies. Keep the most recent one.
+      const seen = new Set<string>();
+      const deduped: any[] = [];
+      for (const row of data || []) {
+        const key = `${row.action}:${row.resource_id ?? ''}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        deduped.push(row);
+        if (deduped.length >= 5) break;
+      }
+
+      const mapped = deduped.map((row: any) => {
         const meta = ACTION_MAP[row.action] || { title: row.action, icon: Trophy, cls: 'text-muted-foreground bg-muted' };
         return {
           id: row.id,
