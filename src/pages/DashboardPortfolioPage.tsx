@@ -38,12 +38,24 @@ interface Photo {
 
 const DashboardPortfolioPage = () => {
   const { user, provider } = useAuth();
+  const albumsLimitRaw = useSettingValue('portfolio_max_albums');
+  const photosLimitRaw = useSettingValue('portfolio_max_photos_per_album');
+  const MAX_ALBUMS = useMemo(() => {
+    const n = Number(String(albumsLimitRaw ?? '').replace(/[^0-9]/g, ''));
+    return Number.isFinite(n) && n > 0 ? n : DEFAULT_MAX_ALBUMS;
+  }, [albumsLimitRaw]);
+  const MAX_PHOTOS_PER_ALBUM = useMemo(() => {
+    const n = Number(String(photosLimitRaw ?? '').replace(/[^0-9]/g, ''));
+    return Number.isFinite(n) && n > 0 ? n : DEFAULT_MAX_PHOTOS_PER_ALBUM;
+  }, [photosLimitRaw]);
+
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [photosLoading, setPhotosLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [nextStep, setNextStep] = useState<null | 'album' | 'photo'>(null);
 
   // Album dialog
   const [albumDialogOpen, setAlbumDialogOpen] = useState(false);
