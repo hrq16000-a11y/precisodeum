@@ -17,6 +17,7 @@ import { useCategoriesWithCount } from '@/hooks/useProviders';
 
 type ProfileType = 'provider' | 'client' | 'rh';
 type WizardStep = 1 | 2 | 3 | 4;
+type ProviderSubtype = 'autonomous' | 'company';
 
 const STORAGE_KEY = 'onboarding_wizard_state';
 
@@ -52,6 +53,10 @@ const slugify = (s: string) =>
 interface PersistedState {
   step: WizardStep;
   profileType: ProfileType | null;
+  providerSubtype: ProviderSubtype | null;
+  legalName: string;
+  cnpj: string;
+  agencyName: string;
   city: string;
   state: string;
   fullName: string;
@@ -106,6 +111,11 @@ const BasicOnboardingWizard = () => {
 
   const [step, setStep] = useState<WizardStep>((persisted.current.step as WizardStep) || 1);
   const [profileType, setProfileType] = useState<ProfileType | null>(persisted.current.profileType ?? null);
+  const [providerSubtype, setProviderSubtype] = useState<ProviderSubtype | null>(persisted.current.providerSubtype ?? null);
+  const [showSubtypeStep, setShowSubtypeStep] = useState(false);
+  const [legalName, setLegalName] = useState(persisted.current.legalName ?? '');
+  const [cnpj, setCnpj] = useState(persisted.current.cnpj ?? '');
+  const [agencyName, setAgencyName] = useState(persisted.current.agencyName ?? '');
   const [city, setCity] = useState(persisted.current.city ?? (geoCity || ''));
   const [state, setState] = useState(persisted.current.state ?? (geoState || ''));
   const [editingCity, setEditingCity] = useState(false);
@@ -127,10 +137,10 @@ const BasicOnboardingWizard = () => {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        step, profileType, city, state, fullName, selectedCategoryIds,
+        step, profileType, providerSubtype, legalName, cnpj, agencyName, city, state, fullName, selectedCategoryIds,
       } satisfies PersistedState));
     } catch {}
-  }, [step, profileType, city, state, fullName, selectedCategoryIds]);
+  }, [step, profileType, providerSubtype, legalName, cnpj, agencyName, city, state, fullName, selectedCategoryIds]);
 
   // Sync geo on first load only
   useEffect(() => {
