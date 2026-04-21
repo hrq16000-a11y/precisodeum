@@ -763,7 +763,7 @@ const BasicOnboardingWizard = () => {
                 <>
                   <div>
                     <label className="text-xs font-semibold text-foreground mb-1 block">
-                      Razão Social
+                      Razão Social <span className="font-normal text-muted-foreground">(opcional)</span>
                     </label>
                     <Input
                       placeholder="Ex: João Silva Serviços LTDA"
@@ -773,13 +773,19 @@ const BasicOnboardingWizard = () => {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-foreground mb-1 block">
-                      CNPJ
+                      CNPJ <span className="font-normal text-muted-foreground">(opcional)</span>
                     </label>
                     <Input
                       placeholder="00.000.000/0000-00"
                       value={cnpj}
                       onChange={e => setCnpj(e.target.value)}
+                      aria-invalid={cnpj.trim().length > 0 && !isValidCnpj(cnpj)}
                     />
+                    {cnpj.trim().length > 0 && !isValidCnpj(cnpj) && (
+                      <p className="mt-1 text-[11px] text-destructive">
+                        CNPJ inválido. Verifique os dígitos ou deixe em branco.
+                      </p>
+                    )}
                   </div>
                 </>
               )}
@@ -842,13 +848,35 @@ const BasicOnboardingWizard = () => {
                 saving ||
                 !fullName.trim() ||
                 (profileType === 'provider' && selectedCategoryIds.length === 0) ||
-                (profileType === 'provider' && providerSubtype === 'company' && (!legalName.trim() || !cnpj.trim())) ||
-                (profileType === 'rh' && !agencyName.trim())
+                (profileType === 'rh' && !agencyName.trim()) ||
+                (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim().length > 0 && !isValidCnpj(cnpj))
               }
               onClick={handleConfirm}
             >
-              {saving ? 'Salvando seu perfil...' : profileType === 'provider' ? 'Avançando automaticamente...' : 'Concluir cadastro'}
+              {saving ? 'Salvando seu perfil...' : profileType === 'provider' ? 'Salvar e avançar' : 'Concluir cadastro'}
             </Button>
+
+            {/* Pular esta etapa — só faz sentido para provider (avança para Step 4 sem categoria).
+                Cliente/RH não tem próximo passo neste wizard, então o botão fica oculto. */}
+            {profileType === 'provider' && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={async () => {
+                  // Garante que pelo menos o nome (se digitado) seja salvo antes de avançar
+                  await persistPartialProgress();
+                  // Mesmo sem categoria, criamos o provider e seguimos para Step 4 (cadastro de serviço opcional)
+                  if (!fullName.trim()) {
+                    toast.info('Informe ao menos seu nome para continuar.');
+                    return;
+                  }
+                  handleConfirm();
+                }}
+                className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                Pular esta etapa
+              </button>
+            )}
           </>
         )}
       </div>
