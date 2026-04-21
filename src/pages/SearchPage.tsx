@@ -665,29 +665,12 @@ const SearchPage = () => {
             )}
 
             {isLoading ? (
-              <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="h-56 sm:h-64 rounded-xl bg-muted overflow-hidden relative"
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_1.5s_infinite] translate-x-[-200%]" style={{ animation: 'shimmer 1.5s infinite' }} />
-                    <div className="p-3 sm:p-4 space-y-3">
-                      <Skeleton className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl" />
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-3 w-1/2" />
-                      <Skeleton className="h-3 w-full" />
-                      <div className="flex gap-2 mt-4">
-                        <Skeleton className="h-8 w-24 rounded-lg" />
-                        <Skeleton className="h-8 w-24 rounded-lg" />
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              <>
+                <PinnedSponsorSkeleton />
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
+                  <ProviderCardSkeleton count={4} />
+                </div>
+              </>
             ) : (
               <>
                 {/* Pinned (Categoria Exclusiva) — primeiro resultado, identificado como Patrocinado */}
