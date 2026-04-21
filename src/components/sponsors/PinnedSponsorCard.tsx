@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ExternalLink, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { handleImageError, getOptimizedUrl } from '@/lib/imageResolver';
 import { whatsappLink } from '@/lib/whatsapp';
+import { sponsorInternalHref } from '@/lib/sponsorLink';
 import type { PinnedSponsor } from '@/hooks/usePinnedSponsor';
 
 interface Props {
@@ -28,6 +30,7 @@ const PinnedSponsorCard = ({ sponsor, onImpression, onClick }: Props) => {
     : sponsor.link_url || '#';
 
   const handleCta = () => onClick(sponsor.sponsor_id);
+  const internalHref = sponsorInternalHref(sponsor.slug);
 
   return (
     <motion.article
@@ -46,15 +49,28 @@ const PinnedSponsorCard = ({ sponsor, onImpression, onClick }: Props) => {
         {/* Image */}
         {cover && (
           <div className="relative h-40 w-full shrink-0 overflow-hidden sm:h-auto sm:w-48 md:w-56">
-            <img
-              src={getOptimizedUrl(cover, 480) || cover}
-              alt={sponsor.company_name || sponsor.title}
-              loading="lazy"
-              decoding="async"
-              onError={handleImageError}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent sm:bg-gradient-to-r sm:from-transparent sm:to-card/40" />
+            {internalHref ? (
+              <Link to={internalHref} aria-label={`Ver página de ${sponsor.company_name || sponsor.title}`} className="block h-full w-full">
+                <img
+                  src={getOptimizedUrl(cover, 480) || cover}
+                  alt={sponsor.company_name || sponsor.title}
+                  loading="lazy"
+                  decoding="async"
+                  onError={handleImageError}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </Link>
+            ) : (
+              <img
+                src={getOptimizedUrl(cover, 480) || cover}
+                alt={sponsor.company_name || sponsor.title}
+                loading="lazy"
+                decoding="async"
+                onError={handleImageError}
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent sm:bg-gradient-to-r sm:from-transparent sm:to-card/40 pointer-events-none" />
           </div>
         )}
 
@@ -63,9 +79,15 @@ const PinnedSponsorCard = ({ sponsor, onImpression, onClick }: Props) => {
           <p className="text-[11px] font-semibold uppercase tracking-wide text-accent">
             {sponsor.company_name || 'Anunciante'}
           </p>
-          <h3 className="mt-0.5 font-display text-base font-bold leading-tight text-foreground sm:text-lg">
-            {sponsor.title}
-          </h3>
+          {internalHref ? (
+            <Link to={internalHref} className="mt-0.5 font-display text-base font-bold leading-tight text-foreground sm:text-lg hover:text-accent hover:underline">
+              {sponsor.title}
+            </Link>
+          ) : (
+            <h3 className="mt-0.5 font-display text-base font-bold leading-tight text-foreground sm:text-lg">
+              {sponsor.title}
+            </h3>
+          )}
           {sponsor.short_description && (
             <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">
               {sponsor.short_description}

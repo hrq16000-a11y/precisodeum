@@ -5,6 +5,7 @@ import { getPositionConfig } from '@/config/sponsorPositions';
 
 export interface SponsorFull {
   id: string;
+  slug?: string | null;
   title: string;
   company_name: string;
   image_url: string | null;

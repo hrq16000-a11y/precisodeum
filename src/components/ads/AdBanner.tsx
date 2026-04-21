@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
 import { getPositionConfig } from '@/config/sponsorPositions';
+import { sponsorInternalHref } from '@/lib/sponsorLink';
 
 interface AdBannerProps {
   position: string;
@@ -86,6 +88,19 @@ const AdBanner = React.forwardRef<HTMLDivElement, AdBannerProps>(({ position, cl
             </div>
           )}
         </a>
+        {(() => {
+          const internalHref = sponsorInternalHref((current as any).slug);
+          return internalHref ? (
+            <div className="absolute left-2 bottom-1.5 z-20">
+              <Link
+                to={internalHref}
+                className="rounded-md bg-background/70 px-1.5 py-0.5 text-[9px] font-medium text-foreground/70 backdrop-blur-sm hover:text-accent hover:underline"
+              >
+                {current.title}
+              </Link>
+            </div>
+          ) : null;
+        })()}
         {sponsors.length > 1 && (
           <div className="absolute bottom-1.5 right-2 z-20 flex gap-0.5">
             {sponsors.map((_, i) => (

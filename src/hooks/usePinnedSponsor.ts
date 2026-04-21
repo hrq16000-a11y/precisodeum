@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface PinnedSponsor {
   sponsor_id: string;
+  slug?: string | null;
   title: string;
   company_name: string;
   image_url: string | null;

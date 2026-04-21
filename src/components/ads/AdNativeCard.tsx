@@ -1,9 +1,11 @@
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import { useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Megaphone } from 'lucide-react';
 import SponsorImage from '@/components/SponsorImage';
 import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
 import { getPositionConfig } from '@/config/sponsorPositions';
+import { sponsorInternalHref } from '@/lib/sponsorLink';
 
 interface AdNativeCardProps {
   sponsorIndex?: number;
@@ -30,6 +32,8 @@ const AdNativeCard = ({ sponsorIndex = 0, className = '' }: AdNativeCardProps) =
 
   if (!sponsor) return null;
 
+  const internalHref = sponsorInternalHref(sponsor.slug);
+
   return (
     <a
       href={sponsor.link_url || '#'}
@@ -42,15 +46,40 @@ const AdNativeCard = ({ sponsorIndex = 0, className = '' }: AdNativeCardProps) =
         <Megaphone className="h-3 w-3" /> Patrocinado
       </span>
       {visualSrc && (
-        <SponsorImage
-          src={visualSrc}
-          alt={sponsor.title}
-          containerClassName="mb-3 rounded-lg"
-        />
+        internalHref ? (
+          <Link
+            to={internalHref}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Ver página de ${sponsor.title}`}
+            className="block"
+          >
+            <SponsorImage
+              src={visualSrc}
+              alt={sponsor.title}
+              containerClassName="mb-3 rounded-lg"
+            />
+          </Link>
+        ) : (
+          <SponsorImage
+            src={visualSrc}
+            alt={sponsor.title}
+            containerClassName="mb-3 rounded-lg"
+          />
+        )
       )}
-      <h3 className="font-display text-sm font-bold text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words">
-        {sponsor.title}
-      </h3>
+      {internalHref ? (
+        <Link
+          to={internalHref}
+          onClick={(e) => e.stopPropagation()}
+          className="font-display text-sm font-bold text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words hover:underline"
+        >
+          {sponsor.title}
+        </Link>
+      ) : (
+        <h3 className="font-display text-sm font-bold text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words">
+          {sponsor.title}
+        </h3>
+      )}
     </a>
   );
 };
