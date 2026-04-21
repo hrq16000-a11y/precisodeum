@@ -426,7 +426,7 @@ const BasicOnboardingWizard = () => {
               </div>
               <h2 className="font-display text-lg font-bold text-foreground">Perfil validado!</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Agora descreva seu primeiro serviço para aparecer na busca.
+                Você pode cadastrar seu primeiro serviço agora ou seguir para a etapa de portfólio.
               </p>
             </div>
           )}
@@ -440,7 +440,7 @@ const BasicOnboardingWizard = () => {
                 {servicesCreated === 1 ? 'Primeiro serviço publicado!' : `${servicesCreated} serviços publicados!`}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Quer cadastrar mais um serviço ou já podemos liberar sua página?
+                Quer cadastrar mais um serviço ou seguir para a etapa opcional de portfólio?
               </p>
 
               {/* Confidence Level Bar */}
@@ -471,8 +471,8 @@ const BasicOnboardingWizard = () => {
                 >
                   + Novo serviço
                 </Button>
-                <Button variant="accent" onClick={finishToPublicProfile}>
-                  Ver minha página
+                <Button variant="accent" onClick={goToPortfolioStep}>
+                  Ir para portfólio
                 </Button>
               </div>
             </div>
@@ -486,15 +486,54 @@ const BasicOnboardingWizard = () => {
               provider={savedProvider}
               categories={categoriesData}
               onComplete={handleServiceCreated}
-              onCancel={() => {
-                if (servicesCreated > 0) {
-                  finishToPublicProfile();
-                } else {
-                  toast.info('Você precisa publicar pelo menos 1 serviço.');
-                }
-              }}
+              onCancel={goToPortfolioStep}
             />
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 5) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-2xl my-auto">
+          <button
+            onClick={() => setStep(4)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+          </button>
+
+          <div className="flex justify-center mb-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+              <PartyPopper className="h-7 w-7" />
+            </div>
+          </div>
+
+          <h1 className="text-center font-display text-xl font-bold text-foreground">
+            Portfólio é opcional
+          </h1>
+          <p className="mt-2 text-center text-sm text-muted-foreground">
+            Você pode ir ao dashboard agora ou abrir a área de portfólio para cadastrar seus trabalhos.
+          </p>
+
+          <div className="mt-6 grid gap-3">
+            <Button variant="accent" className="w-full" onClick={() => finishOnboardingToDashboard('/dashboard/portfolio')}>
+              Cadastrar portfólio agora
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => finishOnboardingToDashboard('/dashboard')}>
+              Ir para o dashboard
+            </Button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => finishOnboardingToDashboard('/dashboard')}
+            className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Pular esta etapa
+          </button>
         </div>
       </div>
     );
