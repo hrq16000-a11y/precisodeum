@@ -305,8 +305,9 @@ const DashboardPortfolioPage = () => {
     setUploading(false);
     if (successCount > 0) {
       toast.success(`${successCount} foto${successCount > 1 ? 's' : ''} enviada${successCount > 1 ? 's' : ''} com sucesso!`, {
-        description: failCount > 0 ? `${failCount} falharam — verifique os erros acima.` : '🏆 +5 pontos por foto adicionada!',
+        description: failCount > 0 ? `${failCount} falharam — verifique os erros acima.` : '+5 pontos por foto adicionada!',
       });
+      setNextStep('photo');
     } else if (failCount > 0) {
       toast.error('Nenhuma foto foi enviada. Verifique os erros acima.');
     }
