@@ -9,19 +9,20 @@ import { toast } from 'sonner';
 import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import { useSeoHead } from '@/hooks/useSeoHead';
-import { Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Mail, Lock, Eye, EyeOff, User, Briefcase } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [profileType, setProfileType] = useState<'client' | 'provider'>('client');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const refCode = searchParams.get('ref');
-  const { user: authUser, loading: authLoading } = useAuth();
+  const { user: authUser, profile, needsTypeSelection, loading: authLoading } = useAuth();
 
   // Persist referral code so it survives OAuth redirect / email confirmation
   useEffect(() => {
@@ -30,13 +31,20 @@ const SignupPage = () => {
     }
   }, [refCode]);
 
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('pending_signup_profile_type', profileType);
+    } catch {}
+  }, [profileType]);
+
   useSeoHead({ title: 'Criar Conta', description: 'Crie sua conta gratuita em segundos.', noindex: true });
 
   // Redirect already-authenticated users straight to dashboard (triagem decide o resto)
   useEffect(() => {
     if (authLoading || !authUser) return;
+    if (!profile && !needsTypeSelection) return;
     navigate('/dashboard', { replace: true });
-  }, [authUser, authLoading, navigate]);
+  }, [authUser, authLoading, navigate, profile, needsTypeSelection]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +63,10 @@ const SignupPage = () => {
       password,
       options: {
         emailRedirectTo: window.location.origin,
+        data: {
+          profile_type: profileType,
+          profile_type_chosen: true,
+        },
       },
     });
     if (error) {
@@ -109,6 +121,39 @@ const SignupPage = () => {
             <p className="mt-2 text-center text-sm text-muted-foreground">
               É grátis e leva menos de 30 segundos
             </p>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setProfileType('client')}
+                className={`rounded-xl border p-4 text-left transition-all ${profileType === 'client' ? 'border-accent bg-accent/10 shadow-sm' : 'border-border bg-background hover:border-accent/40'}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-foreground">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Cliente</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Buscar e salvar profissionais.</p>
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setProfileType('provider')}
+                className={`rounded-xl border p-4 text-left transition-all ${profileType === 'provider' ? 'border-accent bg-accent/10 shadow-sm' : 'border-border bg-background hover:border-accent/40'}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-foreground">
+                    <Briefcase className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Profissional</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Divulgar serviços e receber clientes.</p>
+                  </div>
+                </div>
+              </button>
+            </div>
 
             {/* Google */}
             <button
