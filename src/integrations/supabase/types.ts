@@ -2039,6 +2039,7 @@ export type Database = {
           id: string
           is_suspicious: boolean
           level_id: string | null
+          onboarding_checklist_completed_at: string | null
           onboarding_completed: boolean
           permissions: Json
           phone: string | null
@@ -2052,6 +2053,7 @@ export type Database = {
           suspicious_at: string | null
           suspicious_ip: string | null
           suspicious_reason: string | null
+          trial_boost_until: string | null
           updated_at: string
           user_ref: string
           whatsapp: string | null
@@ -2068,6 +2070,7 @@ export type Database = {
           id: string
           is_suspicious?: boolean
           level_id?: string | null
+          onboarding_checklist_completed_at?: string | null
           onboarding_completed?: boolean
           permissions?: Json
           phone?: string | null
@@ -2081,6 +2084,7 @@ export type Database = {
           suspicious_at?: string | null
           suspicious_ip?: string | null
           suspicious_reason?: string | null
+          trial_boost_until?: string | null
           updated_at?: string
           user_ref: string
           whatsapp?: string | null
@@ -2097,6 +2101,7 @@ export type Database = {
           id?: string
           is_suspicious?: boolean
           level_id?: string | null
+          onboarding_checklist_completed_at?: string | null
           onboarding_completed?: boolean
           permissions?: Json
           phone?: string | null
@@ -2110,6 +2115,7 @@ export type Database = {
           suspicious_at?: string | null
           suspicious_ip?: string | null
           suspicious_reason?: string | null
+          trial_boost_until?: string | null
           updated_at?: string
           user_ref?: string
           whatsapp?: string | null
@@ -2289,6 +2295,7 @@ export type Database = {
       }
       providers: {
         Row: {
+          avg_response_minutes: number | null
           birth_date: string | null
           business_name: string | null
           category_custom: string | null
@@ -2304,6 +2311,7 @@ export type Database = {
           geog: unknown
           ibge_code: string | null
           id: string
+          last_response_calc_at: string | null
           latitude: number | null
           longitude: number | null
           meta_description: string | null
@@ -2332,6 +2340,7 @@ export type Database = {
           years_experience: number
         }
         Insert: {
+          avg_response_minutes?: number | null
           birth_date?: string | null
           business_name?: string | null
           category_custom?: string | null
@@ -2347,6 +2356,7 @@ export type Database = {
           geog?: unknown
           ibge_code?: string | null
           id?: string
+          last_response_calc_at?: string | null
           latitude?: number | null
           longitude?: number | null
           meta_description?: string | null
@@ -2375,6 +2385,7 @@ export type Database = {
           years_experience?: number
         }
         Update: {
+          avg_response_minutes?: number | null
           birth_date?: string | null
           business_name?: string | null
           category_custom?: string | null
@@ -2390,6 +2401,7 @@ export type Database = {
           geog?: unknown
           ibge_code?: string | null
           id?: string
+          last_response_calc_at?: string | null
           latitude?: number | null
           longitude?: number | null
           meta_description?: string | null
@@ -4744,6 +4756,10 @@ export type Database = {
         Args: { _action_key: string; _metadata?: Json; _user_id: string }
         Returns: number
       }
+      calc_provider_avg_response: {
+        Args: { _provider_id: string }
+        Returns: number
+      }
       calculate_user_level: { Args: { _user_id: string }; Returns: string }
       check_rate_limit: {
         Args: {
@@ -4754,6 +4770,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      complete_onboarding_checklist: { Args: never; Returns: Json }
       effective_user_permissions: { Args: { _user_id: string }; Returns: Json }
       find_orphan_media: {
         Args: { _min_age_hours?: number }
@@ -4847,6 +4864,21 @@ export type Database = {
       get_neighborhood_by_point: {
         Args: { _lat: number; _lng: number }
         Returns: string
+      }
+      get_pinned_sponsor_for_search: {
+        Args: { _category_slug?: string; _city?: string; _state?: string }
+        Returns: {
+          assignment_id: string
+          company_name: string
+          image_url: string
+          link_url: string
+          logo_url: string
+          phone: string
+          short_description: string
+          sponsor_id: string
+          title: string
+          whatsapp: string
+        }[]
       }
       get_rss_import_headers: { Args: never; Returns: Json }
       get_staff_permissions: { Args: { _user_id: string }; Returns: Json }
