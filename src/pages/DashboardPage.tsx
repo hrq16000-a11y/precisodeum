@@ -41,6 +41,7 @@ const WelcomeOnboardingModal = lazy(() => import('@/components/dashboard/Welcome
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 import FirstLeadChecklist from '@/components/dashboard/FirstLeadChecklist';
+import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
@@ -437,8 +438,9 @@ const DashboardPage = () => {
       />
 
       {/* "Primeiro Lead Garantido" — checklist motivador + boost 7d */}
-      <div className="mt-4">
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
         <FirstLeadChecklist />
+        <CommunityVerifiedStatus />
       </div>
 
       {/* Profile Strength — Gamification Progress */}
