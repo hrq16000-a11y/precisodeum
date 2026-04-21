@@ -173,6 +173,9 @@ const DashboardPage = () => {
     }).eq('id', provider.id);
   }, [provider?.id, profileDone, servicesDone, portfolioDone]);
 
+  // Modal legado de triagem: só pode abrir se ainda não existir tipo definido.
+  const showWelcomeOnboarding = !!profile && !profile.profile_type;
+
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
   if (profile && !profileType) {
@@ -201,9 +204,6 @@ const DashboardPage = () => {
       </Button>
     </div>
   );
-
-  // Modal legado de triagem: só pode abrir se ainda não existir tipo definido.
-  const showWelcomeOnboarding = !!profile && !profile.profile_type;
 
   // Profile check-up modal (providers only)
   const showCheckup = isProvider || isRH;
