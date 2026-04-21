@@ -54,6 +54,40 @@ const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone'
       visitor_id: crypto.randomUUID?.() || Math.random().toString(36).slice(2),
     }).then(() => {});
   } catch { /* silent */ }
+
+  // Also log to audit_log so the provider's dashboard LeadAnalytics can show it.
+  // Best-effort: only logs if visitor is authenticated (RLS forces user_id = auth.uid()).
+  try {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data?.user) return;
+      supabase.from('audit_log' as any).insert({
+        user_id: data.user.id,
+        action: contactType === 'whatsapp' ? 'whatsapp_click' : 'phone_click',
+        resource_type: 'provider',
+        resource_id: providerId,
+        details: { page_path: pagePath },
+      }).then(() => {});
+    });
+  } catch { /* silent */ }
+};
+
+/** Fire-and-forget profile view tracker (one entry per session per provider). */
+const trackProfileView = (providerId: string) => {
+  try {
+    const key = `pv_logged:${providerId}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data?.user) return;
+      supabase.from('audit_log' as any).insert({
+        user_id: data.user.id,
+        action: 'profile_view',
+        resource_type: 'provider',
+        resource_id: providerId,
+        details: { page_path: window.location.pathname },
+      }).then(() => {});
+    });
+  } catch { /* silent */ }
 };
 
 interface PageSettings {
@@ -502,6 +536,8 @@ const ProviderProfile = () => {
   // ── Realtime sync for provider stats ──
   useEffect(() => {
     if (!provider?.id) return;
+    // Track a profile_view (debounced via sessionStorage in the helper)
+    trackProfileView(provider.id);
     const channel = supabase
       .channel(`profile-realtime-${provider.id}`)
       .on('postgres_changes', {
