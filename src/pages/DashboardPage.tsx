@@ -647,7 +647,9 @@ const DashboardPage = () => {
             <CelebrationMuteToggle />
           </div>
 
-          <AchievementHistory providerSlug={provider?.slug ?? null} />
+          <LeadAnalytics providerId={provider?.id ?? null} />
+
+          <AchievementHistory providerSlug={provider?.slug ?? null} levelName={(profile as any)?.levelInfo?.name ?? null} />
         </div>
       </div>
 
