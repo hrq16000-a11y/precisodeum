@@ -11,6 +11,7 @@ import { usePermissions, ADMIN_ROUTE_PERMISSIONS, type UserPermissions } from '@
 import TopLoadingBar from '@/components/ui/TopLoadingBar';
 import AdminFlashSummary from '@/components/admin/AdminFlashSummary';
 import AdminRealtimeToasts from '@/components/admin/AdminRealtimeToasts';
+import { runPostDeployAudit } from '@/lib/postDeployAudit';
 
 const normalizeAdminSearch = (value: string) =>
   value
@@ -152,6 +153,12 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       });
     });
   }, []);
+
+  // Post-deploy audit (once per admin session): validates create_service_atomic + DNA integrity
+  useEffect(() => {
+    if (!isAdmin) return;
+    void runPostDeployAudit();
+  }, [isAdmin]);
 
   const toggleFavorite = (path: string) => {
     setFavorites(prev => {
