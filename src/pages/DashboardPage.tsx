@@ -639,6 +639,8 @@ const DashboardPage = () => {
               </div>
             </GlassCard>
           )}
+
+          <AchievementHistory providerSlug={provider?.slug ?? null} />
         </div>
       </div>
 

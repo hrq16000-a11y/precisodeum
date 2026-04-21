@@ -1,10 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Briefcase, Image as ImageIcon, User, X, ArrowRight, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
 import { useAuth } from '@/hooks/useAuth';
+import { celebrate } from '@/lib/celebrate';
+
+/** Persistent flag to ensure the Diamante celebration fires EXACTLY once per user. */
+const DIAMOND_CELEBRATED_KEY = 'diamante_celebrated_v1';
 
 /**
  * EngagementLoop — orchestrates the "infinite engagement circuit".
@@ -30,7 +34,7 @@ interface NextAction {
 
 const EngagementLoop = () => {
   const navigate = useNavigate();
-  const { profile, provider } = useAuth();
+  const { profile, provider, user } = useAuth();
   const { data } = useProfileCompleteness();
   const [dismissed, setDismissed] = useState(false);
 
@@ -100,6 +104,19 @@ const EngagementLoop = () => {
   }, [data, profile, provider]);
 
   const circuitComplete = !next && data && data.percentage >= 90;
+
+  // Dopamine bomb 💎 — fires confetti + "Ebá!" sound EXACTLY once when user first crosses 90%.
+  useEffect(() => {
+    if (!data || !user?.id) return;
+    if (data.percentage < 90) return;
+    try {
+      const key = `${DIAMOND_CELEBRATED_KEY}:${user.id}`;
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, String(Date.now()));
+      // Big celebration synchronized with confetti rain (handled inside celebrate())
+      celebrate({ intensity: 'big' });
+    } catch { /* localStorage may be unavailable in private mode */ }
+  }, [data?.percentage, user?.id]);
 
   if (dismissed) return null;
   if (!data) return null;

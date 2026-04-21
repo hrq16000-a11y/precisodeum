@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Briefcase, Image as ImageIcon, User, Sparkles, Star } from 'lucide-react';
+import { Trophy, Briefcase, Image as ImageIcon, User, Sparkles, Star, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -24,7 +24,7 @@ const ACTION_MAP: Record<string, { title: string; icon: typeof Trophy; cls: stri
  * AchievementHistory — "Mural de Conquistas".
  * Lists the user's last 5 wins so they SEE the platform recording their effort.
  */
-const AchievementHistory = () => {
+const AchievementHistory = ({ providerSlug }: { providerSlug?: string | null } = {}) => {
   const { user } = useAuth();
   const [items, setItems] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,6 +119,19 @@ const AchievementHistory = () => {
           );
         })}
       </ul>
+
+      {providerSlug && (
+        <a
+          href={`/profissional/${providerSlug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-gradient-to-r from-primary/10 to-accent/10 px-3 py-2 text-xs font-bold text-primary transition hover:border-primary/60 hover:from-primary/20 hover:to-accent/20"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          Ver como o cliente me vê
+          <ExternalLink className="h-3 w-3 opacity-70" />
+        </a>
+      )}
     </div>
   );
 };
