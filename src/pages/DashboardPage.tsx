@@ -377,6 +377,8 @@ const DashboardPage = () => {
     );
   }
 
+  // Helper component declared inline below the file for RH public link
+
   // ---- PROVIDER DASHBOARD ----
   const providerSteps = [
     {
