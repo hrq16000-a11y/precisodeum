@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Briefcase, Image as ImageIcon, Eye, Sparkles, X } from 'lucide-react';
@@ -10,6 +11,29 @@ interface NextStepPromptProps {
   /** Context that just completed, used to bias suggested next step. */
   context: 'service' | 'album' | 'photo' | 'profile';
   providerSlug?: string | null;
+}
+
+const SESSION_KEY = 'nextstep_prompt_shown_v1';
+const COOLDOWN_MS = 60_000; // 1 minute window — survives F5 but allows new actions
+
+/** Returns true if the same context was shown recently (avoids re-opening on F5). */
+function wasRecentlyShown(context: string) {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as { context: string; ts: number };
+    return parsed.context === context && Date.now() - parsed.ts < COOLDOWN_MS;
+  } catch {
+    return false;
+  }
+}
+
+function markShown(context: string) {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ context, ts: Date.now() }));
+  } catch {
+    // ignore
+  }
 }
 
 /**
