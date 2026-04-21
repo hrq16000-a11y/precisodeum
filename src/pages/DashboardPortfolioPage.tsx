@@ -14,6 +14,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
+import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
+import { celebrate } from '@/lib/celebrate';
 
 // Defaults — overridden by site_settings (`portfolio_max_albums`, `portfolio_max_photos_per_album`)
 const DEFAULT_MAX_ALBUMS = 4;
@@ -160,7 +162,15 @@ const DashboardPortfolioPage = () => {
           await showSaveError({ actionContext: 'Criar álbum', componentName: 'DashboardPortfolioPage', errorMessage: error.message, retryFn: handleSaveAlbum });
           setAlbumSaving(false); return;
         }
-        toast.success('Álbum criado!');
+        const newCount = albums.length + 1;
+        const unlockedNext = newCount < MAX_ALBUMS;
+        celebrate({ intensity: 'mini' });
+        toast.success('🎉 VOCÊ DESBLOQUEOU MAIS PODER!', {
+          description: unlockedNext
+            ? `Seu ${newCount + 1}º slot de álbum está disponível.`
+            : 'Você atingiu o limite máximo de álbuns. Que portfólio! 🚀',
+          duration: 5000,
+        });
         setNextStep('album');
       }
 
@@ -304,8 +314,14 @@ const DashboardPortfolioPage = () => {
     await loadAlbums();
     setUploading(false);
     if (successCount > 0) {
-      toast.success(`${successCount} foto${successCount > 1 ? 's' : ''} enviada${successCount > 1 ? 's' : ''} com sucesso!`, {
-        description: failCount > 0 ? `${failCount} falharam — verifique os erros acima.` : '+5 pontos por foto adicionada!',
+      const newPhotoTotal = photos.length + successCount;
+      const unlockedNext = newPhotoTotal < MAX_PHOTOS_PER_ALBUM;
+      celebrate({ intensity: 'mini' });
+      toast.success(`🎉 ${successCount} foto${successCount > 1 ? 's' : ''} desbloqueada${successCount > 1 ? 's' : ''}!`, {
+        description: unlockedNext
+          ? `Você tem mais ${MAX_PHOTOS_PER_ALBUM - newPhotoTotal} slots disponíveis neste álbum.`
+          : 'Álbum no limite máximo. Visual matador!',
+        duration: 5000,
       });
       setNextStep('photo');
     } else if (failCount > 0) {
