@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Briefcase, Image as ImageIcon, User, Sparkles, Star, ExternalLink } from 'lucide-react';
+import { Trophy, Briefcase, Image as ImageIcon, User, Sparkles, Star, ExternalLink, Share2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuditAction } from '@/hooks/useAuditLog';
+import { whatsappLink } from '@/lib/whatsapp';
+import { SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 interface Achievement {
   id: string;
