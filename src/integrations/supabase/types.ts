@@ -5029,7 +5029,7 @@ export type Database = {
       }
       complete_onboarding_checklist: { Args: never; Returns: Json }
       complete_referral: { Args: { _referred_id: string }; Returns: boolean }
-      derive_user_ref: { Args: { _user_id: string }; Returns: string }
+      derive_user_ref: { Args: { _uuid: string }; Returns: string }
       distribute_open_lead: { Args: { _open_lead_id: string }; Returns: number }
       effective_user_permissions: { Args: { _user_id: string }; Returns: Json }
       find_orphan_media: {
