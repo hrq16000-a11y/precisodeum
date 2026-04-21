@@ -66,6 +66,10 @@ const GamificationLevelBadge = ({ levelName, levelColor, size = 'md', showShine 
         background: gradient,
         color: isMestre ? '#fff' : '#1a1a1a',
         boxShadow: diamanteGlow,
+        // GPU-accelerate the diamante glow loop so it stays buttery on older Android devices.
+        willChange: isDiamante ? 'transform, box-shadow, opacity' : undefined,
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden' as const,
       }}
       initial={{ scale: 0.8, opacity: 0 }}
       animate={
