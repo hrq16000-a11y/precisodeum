@@ -675,10 +675,21 @@ const BasicOnboardingWizard = () => {
                   <Button variant="outline" onClick={() => setEditingCity(true)}>
                     Outra cidade
                   </Button>
-                  <Button variant="accent" onClick={() => setStep(3)}>
+                  <Button
+                    variant="accent"
+                    onClick={async () => { await persistPartialProgress(); setStep(3); }}
+                  >
                     SIM, está certo
                   </Button>
                 </div>
+                {/* Skip → avança para o próximo passo do wizard, NÃO para o dashboard. */}
+                <button
+                  type="button"
+                  onClick={async () => { await persistPartialProgress(); setStep(3); }}
+                  className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Pular esta etapa
+                </button>
               </>
             ) : (
               <>
@@ -689,15 +700,9 @@ const BasicOnboardingWizard = () => {
                   <CityAutocomplete
                     value={{ city, state }}
                     onChange={({ city: c, state: s }) => {
+                      // Apenas atualiza estado local — usuário decide quando avançar.
                       setCity(c);
                       setState(s);
-                      // Auto-avanço: se a seleção veio com cidade + UF da lista oficial, pula para o Step 3
-                      if (c.trim() && s.trim()) {
-                        setTimeout(() => {
-                          setEditingCity(false);
-                          setStep(3);
-                        }, 350);
-                      }
                     }}
                   />
                 </div>
@@ -705,10 +710,17 @@ const BasicOnboardingWizard = () => {
                   variant="accent"
                   className="mt-4 w-full"
                   disabled={!city.trim()}
-                  onClick={() => { setEditingCity(false); setStep(3); }}
+                  onClick={async () => { await persistPartialProgress(); setEditingCity(false); setStep(3); }}
                 >
                   Confirmar e continuar
                 </Button>
+                <button
+                  type="button"
+                  onClick={async () => { await persistPartialProgress(); setEditingCity(false); setStep(3); }}
+                  className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Pular esta etapa
+                </button>
               </>
             )}
           </>
