@@ -16,11 +16,12 @@
  *   4. Primeiro serviço (apenas provider — outros tipos pulam direto p/ 5)
  *   5. Conclusão + ganho de pontos
  */
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useRef, useState } from 'react';
 import {
   Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2,
   PartyPopper, Building2, Megaphone, Camera, Phone,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -333,12 +334,32 @@ const BasicOnboardingWizard = () => {
       )}
 
       <div className="relative my-6 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl sm:p-8">
-        {/* Stepper */}
-        <div className="mb-2 flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
-          <span>Passo {step} de {TOTAL_STEPS}</span>
-          <span>{Math.round((step / TOTAL_STEPS) * 100)}%</span>
+        {/* Stepper animado */}
+        <div className="mb-2 flex items-center justify-between text-[11px] font-semibold">
+          <span className="text-muted-foreground">Passo {step} de {TOTAL_STEPS}</span>
+          <motion.span
+            key={step}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-accent"
+          >
+            +{step * 10} pts de confiança
+          </motion.span>
         </div>
-        <Progress value={(step / TOTAL_STEPS) * 100} className="mb-6 h-1.5" />
+        <div className="mb-6 h-2 w-full overflow-hidden rounded-full bg-muted">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-accent via-amber-400 to-accent bg-[length:200%_100%]"
+            initial={{ width: 0 }}
+            animate={{
+              width: `${(step / TOTAL_STEPS) * 100}%`,
+              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+            }}
+            transition={{
+              width: { type: 'spring', stiffness: 90, damping: 18 },
+              backgroundPosition: { duration: 3, repeat: Infinity, ease: 'linear' },
+            }}
+          />
+        </div>
 
         {/* ─── PASSO 1 ─── */}
         {step === 1 && !showSubtypeStep && (
@@ -444,12 +465,12 @@ const BasicOnboardingWizard = () => {
 
 const Step1Identity = ({ onSelectType }: { onSelectType: (t: ProfileType) => void }) => (
   <>
-    <h1 className="text-center font-display text-2xl font-bold text-foreground">Bem-vindo!</h1>
-    <p className="mt-2 text-center text-sm text-muted-foreground">Como você vai usar a plataforma?</p>
+    <h1 className="text-center font-display text-2xl font-bold text-foreground">Seu talento merece brilhar</h1>
+    <p className="mt-2 text-center text-sm text-muted-foreground">Em 5 passos rápidos a gente coloca você no mapa.</p>
 
     <div className="mt-6 grid gap-3">
-      <TypeButton onClick={() => onSelectType('provider')} icon={Briefcase} title="Sou Profissional" desc="Quero divulgar meu serviço" tone="accent" />
-      <TypeButton onClick={() => onSelectType('client')} icon={UserRound} title="Sou Cliente" desc="Quero contratar profissionais" tone="blue" />
+      <TypeButton onClick={() => onSelectType('provider')} icon={Briefcase} title="Sou Profissional" desc="Quero ser encontrado por novos clientes" tone="accent" />
+      <TypeButton onClick={() => onSelectType('client')} icon={UserRound} title="Sou Cliente" desc="Procuro um profissional de confiança" tone="blue" />
       <TypeButton onClick={() => onSelectType('rh')} icon={Building2} title="Agência de RH" desc="Recruto talentos para empresas" tone="purple" />
       <TypeButton onClick={() => onSelectType('sponsor')} icon={Megaphone} title="Sou Patrocinador" desc="Quero anunciar minha marca" tone="secondary" />
     </div>
@@ -471,9 +492,13 @@ const SubtypeChoice = ({
   </>
 );
 
-const TypeButton = ({
-  onClick, icon: Icon, title, desc, tone,
-}: { onClick: () => void; icon: any; title: string; desc: string; tone: 'accent' | 'blue' | 'purple' | 'secondary' | 'primary' }) => {
+const TypeButton = forwardRef<HTMLButtonElement, {
+  onClick: () => void;
+  icon: any;
+  title: string;
+  desc: string;
+  tone: 'accent' | 'blue' | 'purple' | 'secondary' | 'primary';
+}>(({ onClick, icon: Icon, title, desc, tone }, ref) => {
   const toneClass = {
     accent: 'border-accent/30 bg-accent/5 hover:border-accent',
     blue: 'border-blue-500/30 bg-blue-500/5 hover:border-blue-500',
@@ -489,7 +514,15 @@ const TypeButton = ({
     primary: 'bg-primary text-primary-foreground',
   }[tone];
   return (
-    <button onClick={onClick} className={`group rounded-2xl border-2 p-5 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg ${toneClass}`}>
+    <motion.button
+      ref={ref}
+      type="button"
+      onClick={onClick}
+      whileHover={{ y: -2, scale: 1.01 }}
+      whileTap={{ scale: 0.985 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+      className={`group rounded-2xl border-2 p-5 text-left shadow-sm transition-colors hover:shadow-lg ${toneClass}`}
+    >
       <div className="flex items-center gap-4">
         <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
           <Icon className="h-7 w-7" />
@@ -499,9 +532,10 @@ const TypeButton = ({
           <p className="text-xs text-muted-foreground">{desc}</p>
         </div>
       </div>
-    </button>
+    </motion.button>
   );
-};
+});
+TypeButton.displayName = 'TypeButton';
 
 // ─── Passo 2 ───
 const Step2Location = ({
