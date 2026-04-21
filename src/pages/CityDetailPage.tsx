@@ -185,6 +185,12 @@ const CityDetailPage = () => {
   // JSON-LD
   const jsonLd = useMemo(() => {
     if (!city) return null;
+    const authorityProviders = providers.filter((p: any) => {
+      const level = (p.levelName || '').toLowerCase();
+      return level.includes('diamante') || level.includes('ouro');
+    });
+    const ratingSource = authorityProviders.length > 0 ? authorityProviders : providers;
+    const ratings = ratingSource.map((p: any) => Number(p.rating || 0)).filter((r: number) => r > 0);
     return {
       '@context': 'https://schema.org',
       '@type': 'City',
@@ -195,6 +201,13 @@ const CityDetailPage = () => {
         containedInPlace: { '@type': 'Country', name: 'Brazil' },
       },
       ...(providers.length > 0 && {
+        aggregateRating: ratings.length > 0 ? {
+          '@type': 'AggregateRating',
+          ratingValue: (ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length).toFixed(1),
+          reviewCount: ratingSource.reduce((acc: number, p: any) => acc + (Number(p.reviewCount) || 0), 0) || ratings.length,
+          bestRating: 5,
+          worstRating: 1,
+        } : undefined,
         makesOffer: providers.slice(0, 5).map(p => ({
           '@type': 'Offer',
           itemOffered: {
