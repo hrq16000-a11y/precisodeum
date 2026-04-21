@@ -106,6 +106,19 @@ const SearchPage = () => {
     state: geoState || undefined,
   });
 
+  // Log search intent (powers FOMO demand alerts in provider dashboard)
+  useEffect(() => {
+    if (!selectedCategory && !query) return;
+    const cat = categories.find((c) => c.slug === selectedCategory);
+    logSearchIntent({
+      categorySlug: selectedCategory || null,
+      categoryName: cat?.name || query || null,
+      city: effectiveCity || null,
+      state: geoState || null,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory, query, effectiveCity, geoState]);
+
   const localProviders = grouped?.local || [];
   const nearbyProviders = grouped?.nearby || [];
   const outOfStateProviders = grouped?.outOfState || [];
