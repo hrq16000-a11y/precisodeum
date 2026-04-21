@@ -75,11 +75,11 @@ const NextStepPrompt = ({ open, onClose, context, providerSlug }: NextStepPrompt
   }[context];
 
   const sub = {
-    service: 'Quer continuar evoluindo? Escolha o próximo passo:',
-    album: 'Continue construindo seu portfólio:',
+    service: 'Você ganhou um novo espaço na vitrine! Quer cadastrar mais um serviço agora ou ver como seu perfil está ficando?',
+    album: 'Você ganhou um novo espaço na vitrine! Continue construindo seu portfólio ou veja sua página pública.',
     photo: 'O que você gostaria de fazer agora?',
     profile: 'O que você gostaria de fazer agora?',
-    welcome: 'Vamos juntos? Escolha por onde começar:',
+    welcome: 'Vamos juntos? Escolha por onde começar sua jornada:',
   }[context];
 
   const options = context === 'welcome'
