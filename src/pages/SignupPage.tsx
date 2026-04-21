@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -19,7 +19,16 @@ const SignupPage = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const refCode = searchParams.get('ref');
   const { user: authUser, loading: authLoading } = useAuth();
+
+  // Persist referral code so it survives OAuth redirect / email confirmation
+  useEffect(() => {
+    if (refCode) {
+      try { sessionStorage.setItem('pending_referral_code', refCode.toUpperCase()); } catch {}
+    }
+  }, [refCode]);
 
   useSeoHead({ title: 'Criar Conta', description: 'Crie sua conta gratuita em segundos.', noindex: true });
 
@@ -62,6 +71,17 @@ const SignupPage = () => {
       return;
     }
     setLoading(false);
+
+    // Register P2P referral if a code was provided in URL
+    const code = refCode || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('pending_referral_code') : null);
+    if (code) {
+      const { data: { user: newUser } } = await supabase.auth.getUser();
+      if (newUser?.id) {
+        await (supabase as any).rpc('register_referral', { _referred_id: newUser.id, _referral_code: code });
+        try { sessionStorage.removeItem('pending_referral_code'); } catch {}
+      }
+    }
+
     toast.success('Conta criada! Vamos personalizar sua experiência.', { duration: 4000 });
     navigate('/dashboard', { replace: true });
   };

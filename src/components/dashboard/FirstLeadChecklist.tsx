@@ -67,6 +67,22 @@ const FirstLeadChecklist = ({ className = '' }: Props) => {
       } else if (result?.status === 'already_active') {
         toast.info('Boost já está ativo no seu perfil.');
       }
+
+      // Trigger P2P referral completion (if applicable). Silent on no-op.
+      try {
+        const { data: refResult } = await supabase.rpc('complete_referral' as any, {
+          _referred_id: (profile as any)?.id,
+        });
+        if (refResult === true) {
+          toast.success('Indicação concluída! +100 pontos extras para você.', {
+            description: 'Seu indicador também ganhou 100 pontos.',
+            duration: 5000,
+          });
+        }
+      } catch {
+        // Silent: not all users were referred.
+      }
+
       await refetchProfile();
     } catch (e: any) {
       toast.error(e?.message || 'Não foi possível ativar o boost agora.');
