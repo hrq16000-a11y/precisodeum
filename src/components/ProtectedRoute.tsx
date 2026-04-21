@@ -17,13 +17,17 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
     if (loading) return;
 
     if (requireAuth && !user) {
-      // Save the current URL so login can redirect back
       navigate('/login', { replace: true, state: { from: location.pathname + location.search } });
       return;
     }
 
-    // Se autenticado mas sem profile_type definido, ProfileTypeChooser (renderizado em App)
-    // já cobrirá o bloqueio via needsTypeSelection. Aqui só validamos allowedTypes quando há tipo.
+    // HARD GATE: usuário autenticado SEM profile_type → forçar triagem.
+    // Não importa se chegou aqui via deep-link, refresh ou OAuth callback.
+    if (user && profile && !profile.profile_type && location.pathname !== '/triagem') {
+      navigate('/triagem', { replace: true });
+      return;
+    }
+
     if (allowedTypes && profile?.profile_type) {
       if (!allowedTypes.includes(profile.profile_type)) {
         navigate('/dashboard', { replace: true });
@@ -43,6 +47,9 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
   }
 
   if (requireAuth && !user) return null;
+
+  // Bloqueia render enquanto a triagem não acontece (evita flash de conteúdo).
+  if (user && profile && !profile.profile_type) return null;
 
   if (allowedTypes && profile?.profile_type) {
     if (!allowedTypes.includes(profile.profile_type)) return null;

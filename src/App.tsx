@@ -16,7 +16,6 @@ import ErrorGuard from "./components/ErrorGuard";
 const MobileBottomNav = reactLazy(() => importWithRetry(() => import("./components/MobileBottomNav")));
 const BackToTopButton = reactLazy(() => importWithRetry(() => import("./components/BackToTopButton")));
 const ScrollProgressBar = reactLazy(() => importWithRetry(() => import("./components/ui/ScrollProgressBar")));
-const SmartOnboardingWizard = reactLazy(() => importWithRetry(() => import("./components/onboarding/SmartOnboardingWizard")));
 import { useAuth } from "@/hooks/useAuth";
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
@@ -145,6 +144,7 @@ const AgencyPublicPage = lazy(() => import("./pages/AgencyPublicPage"));
 const DashboardAgencyDataPage = lazy(() => import("./pages/DashboardAgencyDataPage"));
 const SponsorPublicPage = lazy(() => import("./pages/SponsorPublicPage"));
 const SponsorPublicProfilePage = lazy(() => import("./pages/sponsor/SponsorPublicProfilePage"));
+const TriagePage = lazy(() => import("./pages/TriagePage"));
 
 const CookieConsent = reactLazy(() => importWithRetry(() => import("./components/CookieConsent")));
 const PwaInstallBanner = reactLazy(() => importWithRetry(() => import("./components/PwaInstallBanner")));
@@ -185,14 +185,6 @@ const queryClient = new QueryClient({
   },
 });
 
-/** Shows profile type chooser overlay for social login users who haven't picked a type */
-const TypeSelectionGate = () => {
-  const { needsTypeSelection, loading, profile } = useAuth();
-  const shouldResumeWizard = !!profile && profile.onboarding_completed === false && (profile.profile_type === 'provider' || profile.profile_type === 'rh');
-  if (loading || (!needsTypeSelection && !shouldResumeWizard)) return null;
-  return <SmartOnboardingWizard />;
-};
-
 /** Deferred UI shell — renders floating components only after initial paint to reduce TTI */
 const DeferredShell = () => {
   const [ready, setReady] = useState(false);
@@ -214,7 +206,6 @@ const DeferredShell = () => {
       <BackToTopButton />
       <CookieConsent />
       <PwaInstallBanner />
-      <TypeSelectionGate />
     </Suspense>
   );
 };
@@ -285,8 +276,9 @@ const App = () => {
                 <Route path="/espacos-patrocinio" element={<SponsorSlotsPage />} />
                 <Route path="/contrato-patrocinio" element={<SponsorContractPage />} />
                 <Route path="/vaga/:slug" element={<JobDetailPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/dashboard/perfil" element={<ErrorGuard componentName="DashboardProfilePage"><DashboardProfilePage /></ErrorGuard>} />
+                <Route path="/triagem" element={<TriagePage />} />
+                <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                <Route path="/dashboard/perfil" element={<ProtectedRoute><ErrorGuard componentName="DashboardProfilePage"><DashboardProfilePage /></ErrorGuard></ProtectedRoute>} />
                 <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><ErrorGuard componentName="DashboardServicesPage"><DashboardServicesPage /></ErrorGuard></ProtectedRoute>} />
                 <Route path="/dashboard/portfolio" element={<ProtectedRoute allowedTypes={['provider']}><ErrorGuard componentName="DashboardPortfolioPage"><DashboardPortfolioPage /></ErrorGuard></ProtectedRoute>} />
                 <Route path="/dashboard/avaliacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReviewsPage /></ProtectedRoute>} />
@@ -296,10 +288,10 @@ const App = () => {
                 <Route path="/dashboard/minha-pagina" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMyPagePage /></ProtectedRoute>} />
                 <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/agencia" element={<ProtectedRoute allowedTypes={['rh']}><DashboardAgencyDataPage /></ProtectedRoute>} />
-                <Route path="/dashboard/comunidade" element={<DashboardCommunityPage />} />
-                <Route path="/dashboard/notificacoes" element={<DashboardNotificationsPage />} />
+                <Route path="/dashboard/comunidade" element={<ProtectedRoute><DashboardCommunityPage /></ProtectedRoute>} />
+                <Route path="/dashboard/notificacoes" element={<ProtectedRoute><DashboardNotificationsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/indicacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReferralsPage /></ProtectedRoute>} />
-                <Route path="/dashboard/chat" element={<DashboardChatPage />} />
+                <Route path="/dashboard/chat" element={<ProtectedRoute><DashboardChatPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
                 <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
