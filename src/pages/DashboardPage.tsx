@@ -43,6 +43,8 @@ import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 import FirstLeadChecklist from '@/components/dashboard/FirstLeadChecklist';
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
 import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
+import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
+import WeeklySummary from '@/components/dashboard/WeeklySummary';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
@@ -449,8 +451,14 @@ const DashboardPage = () => {
         <DemandSignalAlert />
       </div>
 
-      {/* Profile Strength — Gamification Progress */}
-      <div className="mt-4" data-tour="profile-strength">
+      {/* Resumo Semanal (FOMO comparativo + métricas 7d) */}
+      <div className="mt-4">
+        <WeeklySummary />
+      </div>
+
+      {/* Saúde do Perfil + Força do Perfil (lado a lado em desktop) */}
+      <div className="mt-4 grid gap-4 md:grid-cols-2" data-tour="profile-strength">
+        <ProfileHealthScore />
         <ProfileStrength />
       </div>
 
