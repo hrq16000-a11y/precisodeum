@@ -223,12 +223,14 @@ async function fetchProvidersLightweight(query: any) {
   });
 
   // Engagement/meritocracy aggregation (+ trial boost flag)
-  const engagementMap: Record<string, { points: number; priority: number; trialBoostUntil: string | null }> = {};
+  const engagementMap: Record<string, { points: number; priority: number; levelName: string | null; trialBoostUntil: string | null }> = {};
   ((engagementRes as any)?.data || []).forEach((e: any) => {
     const lvl = e.gamification_levels;
+    const levelRow = Array.isArray(lvl) ? lvl[0] : lvl;
     engagementMap[e.id] = {
       points: e.engagement_points || 0,
-      priority: (Array.isArray(lvl) ? lvl[0]?.priority : lvl?.priority) || 0,
+      priority: levelRow?.priority || 0,
+      levelName: levelRow?.name || null,
       trialBoostUntil: e.trial_boost_until || null,
     };
   });
@@ -337,6 +339,8 @@ async function fetchProvidersLightweight(query: any) {
     (mapped as any)._contentScore = contentScore;
     (mapped as any)._finalScore = finalScore;
     (mapped as any)._boostScore = boostScore;
+    mapped.levelPriority = levelPriority;
+    mapped.levelName = engData?.levelName || null;
     mapped.trialBoostUntil = trialBoostUntil;
     return mapped;
   }).filter(p => !hideIncomplete || !(p as any)._isIncomplete);
