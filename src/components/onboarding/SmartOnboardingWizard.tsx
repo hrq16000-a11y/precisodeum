@@ -496,8 +496,56 @@ const BasicOnboardingWizard = () => {
           ))}
         </div>
 
+        {/* SUBTYPE STEP — only after choosing Profissional */}
+        {showSubtypeStep && profileType === 'provider' && (
+          <>
+            <button
+              onClick={() => { setShowSubtypeStep(false); setProfileType(null); setProviderSubtype(null); }}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+            </button>
+            <h1 className="text-center font-display text-xl font-bold text-foreground">
+              Você atua como…
+            </h1>
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              Escolha o formato que melhor descreve seu trabalho.
+            </p>
+            <div className="mt-6 grid gap-3">
+              <button
+                onClick={() => { setProviderSubtype('autonomous'); setShowSubtypeStep(false); setStep(2); }}
+                className="group rounded-2xl border-2 border-accent/30 bg-accent/5 p-5 text-left transition-all hover:border-accent hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                    <UserRound className="h-7 w-7" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-display text-base font-bold text-foreground">Profissional Autônomo (PF)</h3>
+                    <p className="text-xs text-muted-foreground">Trabalho por conta própria, sem CNPJ obrigatório.</p>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => { setProviderSubtype('company'); setShowSubtypeStep(false); setStep(2); }}
+                className="group rounded-2xl border-2 border-primary/30 bg-primary/5 p-5 text-left transition-all hover:border-primary hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                    <Building2 className="h-7 w-7" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-display text-base font-bold text-foreground">Empresa / MEI (PJ)</h3>
+                    <p className="text-xs text-muted-foreground">Tenho CNPJ e razão social — vou pedir esses dados a seguir.</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </>
+        )}
+
         {/* STEP 1 — Identidade */}
-        {step === 1 && (
+        {step === 1 && !showSubtypeStep && (
           <>
             <h1 className="text-center font-display text-2xl font-bold text-foreground">
               Bem-vindo!
