@@ -346,6 +346,7 @@ const DashboardPage = () => {
         <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {[
             { icon: Megaphone, title: 'Minhas Vagas', desc: 'Gerencie suas vagas publicadas', path: '/dashboard/vagas', count: jobsCount, countLabel: 'vaga', action: 'Publicar nova vaga' },
+            { icon: Layout, title: 'Dados da Agência', desc: 'Edite a página pública da sua agência', path: '/dashboard/agencia' },
             { icon: Eye, title: 'Buscar Profissionais', desc: 'Encontre profissionais para suas vagas', path: '/buscar' },
             { icon: Users, title: 'Comunidade', desc: 'Conecte-se com a comunidade', path: '/dashboard/comunidade' },
           ].map((item, i) => (
@@ -369,6 +370,9 @@ const DashboardPage = () => {
             </GlassCard>
           ))}
         </div>
+
+        {/* Botão "Ver minha página pública" */}
+        <RhPublicPageLink userId={user?.id} />
       </DashboardLayout>
     );
   }
