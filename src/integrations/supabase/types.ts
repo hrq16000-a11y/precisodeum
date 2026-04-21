@@ -2302,6 +2302,8 @@ export type Database = {
           category_id: string | null
           city: string
           cnpj: string | null
+          community_verified: boolean
+          community_verified_at: string | null
           content_flags: Json | null
           cpf: string | null
           created_at: string
@@ -2347,6 +2349,8 @@ export type Database = {
           category_id?: string | null
           city?: string
           cnpj?: string | null
+          community_verified?: boolean
+          community_verified_at?: string | null
           content_flags?: Json | null
           cpf?: string | null
           created_at?: string
@@ -2392,6 +2396,8 @@ export type Database = {
           category_id?: string | null
           city?: string
           cnpj?: string | null
+          community_verified?: boolean
+          community_verified_at?: string | null
           content_flags?: Json | null
           cpf?: string | null
           created_at?: string
@@ -4880,6 +4886,17 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      get_provider_verification_status: {
+        Args: { _user_id: string }
+        Returns: {
+          account_age_days: number
+          account_age_ok: boolean
+          conversion_ok: boolean
+          is_verified: boolean
+          onboarding_ok: boolean
+          verified_since: string
+        }[]
+      }
       get_rss_import_headers: { Args: never; Returns: Json }
       get_staff_permissions: { Args: { _user_id: string }; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
@@ -4949,6 +4966,10 @@ export type Database = {
           whatsapp: string
           years_experience: number
         }[]
+      }
+      recalc_provider_community_verified: {
+        Args: { _provider_id: string }
+        Returns: boolean
       }
       recalculate_engagement_points: {
         Args: { target_user_id: string }

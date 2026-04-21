@@ -32,7 +32,12 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const ProvidersMap = lazy(() => import('@/components/ProvidersMap'));
 const SponsorAdSlot = lazy(() => import('@/components/ads/SponsorAdSlot'));
 import PinnedSponsorCard from '@/components/sponsors/PinnedSponsorCard';
+import PinnedSponsorSkeleton from '@/components/sponsors/PinnedSponsorSkeleton';
+import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import { usePinnedSponsor } from '@/hooks/usePinnedSponsor';
+import UrgencyToggle from '@/components/home/UrgencyToggle';
+import { useUrgencyMode } from '@/hooks/useUrgencyMode';
+import { useOnlineProviders } from '@/hooks/useOnlinePresence';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -71,6 +76,8 @@ const SearchPage = () => {
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
+  const onlineSet = useOnlineProviders();
 
   const effectiveCity = selectedCity || cityParam || geoCity || '';
 
@@ -155,8 +162,16 @@ const SearchPage = () => {
       });
     }
 
+    // Urgency mode — prioritize online providers (stable sort within current order)
+    if (urgencyMode && onlineSet.size > 0) {
+      results = [
+        ...results.filter(p => onlineSet.has(p.userId)),
+        ...results.filter(p => !onlineSet.has(p.userId)),
+      ];
+    }
+
     return results;
-  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor]);
+  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet]);
 
   const filteredLocal = useMemo(() => applyClientFilters(localProviders), [applyClientFilters, localProviders]);
   const filteredNearby = useMemo(() => applyClientFilters(nearbyProviders), [applyClientFilters, nearbyProviders]);
@@ -377,6 +392,16 @@ const SearchPage = () => {
             <div className="flex-1"><SearchBar variant="compact" /></div>
             <GeoLocationChip />
           </motion.div>
+
+          {/* Modo Urgência — só renderiza se houver online na região */}
+          <div className="mb-3 sm:mb-4">
+            <UrgencyToggle
+              enabled={urgencyMode}
+              onToggle={setUrgencyMode}
+              cityOverride={effectiveCity}
+              variant="inline"
+            />
+          </div>
 
         {/* Quick category chips */}
         {!query && suggestionChips.length > 0 && (
@@ -640,29 +665,12 @@ const SearchPage = () => {
             )}
 
             {isLoading ? (
-              <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="h-56 sm:h-64 rounded-xl bg-muted overflow-hidden relative"
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_1.5s_infinite] translate-x-[-200%]" style={{ animation: 'shimmer 1.5s infinite' }} />
-                    <div className="p-3 sm:p-4 space-y-3">
-                      <Skeleton className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl" />
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-3 w-1/2" />
-                      <Skeleton className="h-3 w-full" />
-                      <div className="flex gap-2 mt-4">
-                        <Skeleton className="h-8 w-24 rounded-lg" />
-                        <Skeleton className="h-8 w-24 rounded-lg" />
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              <>
+                <PinnedSponsorSkeleton />
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
+                  <ProviderCardSkeleton count={4} />
+                </div>
+              </>
             ) : (
               <>
                 {/* Pinned (Categoria Exclusiva) — primeiro resultado, identificado como Patrocinado */}

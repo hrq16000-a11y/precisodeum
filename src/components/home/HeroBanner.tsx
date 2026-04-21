@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react
 import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
+import UrgencyToggle from '@/components/home/UrgencyToggle';
+import { useUrgencyMode } from '@/hooks/useUrgencyMode';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { importWithRetry } from '@/lib/lazyWithRetry';
@@ -56,6 +58,7 @@ const HeroBanner = () => {
   const [displayedImage, setDisplayedImage] = useState(CATEGORY_IMAGES.instalacoes);
   const [nextImage, setNextImage] = useState<string | null>(null);
   const { city: geoCity } = useGeoCity();
+  const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
 
   const prefixesRaw = useSettingValue('hero_prefixes');
   const ctaPrimaryLinkText = useSettingValue('hero_cta_primary_link_text');
@@ -154,9 +157,16 @@ const HeroBanner = () => {
               <SearchBar />
             </div>
           </Suspense>
-          <div className="mt-3 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">
-            <MapPin className="h-3.5 w-3.5 text-secondary" />
-            <span>{geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
+          <div className="mt-3 flex flex-col items-center justify-center gap-2 text-xs text-primary-foreground/70 sm:flex-row sm:gap-3">
+            <span className="inline-flex items-center gap-2">
+              <MapPin className="h-3.5 w-3.5 text-secondary" />
+              <span>{geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
+            </span>
+            <UrgencyToggle
+              enabled={urgencyMode}
+              onToggle={setUrgencyMode}
+              variant="hero"
+            />
           </div>
         </div>
 

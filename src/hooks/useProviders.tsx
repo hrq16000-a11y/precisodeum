@@ -50,6 +50,8 @@ export interface DbProvider {
   avgResponseMinutes?: number | null;
   /** When the trial visibility boost (7 days after onboarding checklist) expires */
   trialBoostUntil?: string | null;
+  /** "Verificado pela Comunidade" — auto-granted when 3 requirements are met */
+  communityVerified?: boolean;
 }
 
 interface ServiceFallback {
@@ -116,10 +118,11 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
     portfolioAlbumCount: p.portfolio_album_count || 0,
     portfolioPhotoCount: p.portfolio_photo_count || 0,
     avgResponseMinutes: p.avg_response_minutes ?? null,
+    communityVerified: !!p.community_verified,
   };
 }
 
-const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, categories(name, slug, icon)';
+const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, categories(name, slug, icon)';
 
 // --- Ranking config cache ---
 let _rankingConfig: { boostMul: number; fairnessPen: number; randomMax: number } | null = null;
