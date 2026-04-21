@@ -229,7 +229,7 @@ const BasicOnboardingWizard = () => {
       return;
     }
     // CNPJ é OPCIONAL — mas se preenchido, precisa ser real (mod11).
-    if (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim() && !isValidCnpj(cnpj)) {
+    if (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim() && !isValidCpfCnpj(cnpj)) {
       toast.error('CNPJ inválido. Confira os dígitos ou deixe em branco.');
       return;
     }
@@ -828,11 +828,11 @@ const BasicOnboardingWizard = () => {
                       placeholder="00.000.000/0000-00"
                       value={cnpj}
                       onChange={e => setCnpj(e.target.value)}
-                      aria-invalid={cnpj.trim().length > 0 && !isValidCnpj(cnpj)}
+                      aria-invalid={cnpj.trim().length > 0 && !isValidCpfCnpj(cnpj)}
                     />
-                    {cnpj.trim().length > 0 && !isValidCnpj(cnpj) && (
+                    {cnpj.trim().length > 0 && !isValidCpfCnpj(cnpj) && (
                       <p className="mt-1 text-[11px] text-destructive">
-                        CNPJ inválido. Verifique os dígitos ou deixe em branco.
+                        CPF/CNPJ inválido. Verifique os dígitos ou deixe em branco.
                       </p>
                     )}
                   </div>
@@ -898,7 +898,7 @@ const BasicOnboardingWizard = () => {
                 !fullName.trim() ||
                 (profileType === 'provider' && selectedCategoryIds.length === 0) ||
                 (profileType === 'rh' && !agencyName.trim()) ||
-                (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim().length > 0 && !isValidCnpj(cnpj))
+                (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim().length > 0 && !isValidCpfCnpj(cnpj))
               }
               onClick={handleConfirm}
             >
