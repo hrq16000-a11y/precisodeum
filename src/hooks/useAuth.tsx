@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const pendingSignupType = (() => {
       try {
         const raw = sessionStorage.getItem('pending_signup_profile_type');
-        return raw === 'client' || raw === 'provider' ? raw : null;
+        return raw === 'client' || raw === 'provider' || raw === 'rh' ? raw : null;
       } catch {
         return null;
       }

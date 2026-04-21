@@ -66,10 +66,11 @@ const DashboardPage = () => {
       if (profErr || metaErr) throw profErr || metaErr;
       // Limpeza completa de cache local relacionado ao fluxo de cadastro/triagem
       try {
-        const keysToRemove = ['onboarding_wizard_state', 'pending_referral_code', 'auth_redirect'];
+        const keysToRemove = ['onboarding_wizard_state', 'pending_referral_code', 'auth_redirect', 'pending_signup_profile_type'];
         keysToRemove.forEach((k) => { localStorage.removeItem(k); sessionStorage.removeItem(k); });
         // Limpa qualquer chave residual com prefixo de onboarding
         Object.keys(localStorage).filter(k => k.startsWith('onboarding_') || k.startsWith('wizard_')).forEach(k => localStorage.removeItem(k));
+        Object.keys(sessionStorage).filter(k => k.startsWith('onboarding_') || k.startsWith('wizard_') || k.startsWith('pending_')).forEach(k => sessionStorage.removeItem(k));
       } catch {}
       await refetchProfile();
       toast.success('Assistente reiniciado. Recarregando...');

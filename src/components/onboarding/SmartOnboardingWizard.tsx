@@ -505,7 +505,7 @@ const BasicOnboardingWizard = () => {
 
             <div className="mt-6 pt-4 border-t border-border text-center">
               <button
-                onClick={() => navigate('/anuncie')}
+                onClick={() => navigate('/sponsor-panel')}
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Megaphone className="h-3.5 w-3.5" />
