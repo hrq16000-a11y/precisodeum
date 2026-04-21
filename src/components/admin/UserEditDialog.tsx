@@ -192,7 +192,7 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
                     : <>
                         <SelectItem value="client">Cliente</SelectItem>
                         <SelectItem value="provider">Profissional</SelectItem>
-                        <SelectItem value="rh">Agência / RH</SelectItem>
+                        <SelectItem value="rh">Agência de RH / Recrutamento</SelectItem>
                       </>
                   }
                 </SelectContent>

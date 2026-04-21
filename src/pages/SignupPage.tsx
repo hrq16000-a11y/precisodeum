@@ -164,8 +164,8 @@ const SignupPage = () => {
                     <Building2 className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">Agência / RH</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Publicar vagas e contratar talentos.</p>
+                    <p className="text-sm font-semibold text-foreground">Agência de RH / Recrutamento</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Recrutar e contratar talentos.</p>
                   </div>
                 </div>
               </button>

@@ -51,7 +51,7 @@ const STATUS_OPTIONS = [
 const PROFILE_TYPE_OPTIONS = [
   { value: 'client', label: 'Cliente' },
   { value: 'provider', label: 'Profissional' },
-  { value: 'rh', label: 'Agência / RH' },
+  { value: 'rh', label: 'Agência de RH / Recrutamento' },
 ];
 
 const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetProps) => {

@@ -308,8 +308,8 @@ const DashboardPage = () => {
             <Megaphone className="h-5 w-5 text-indigo-600" />
           </motion.div>
           <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">Painel RH Elite</h1>
-            <p className="text-sm text-muted-foreground">Gerencie suas vagas e seu time corporativo</p>
+            <h1 className="font-display text-2xl font-bold text-foreground">Painel Agência de RH</h1>
+            <p className="text-sm text-muted-foreground">Gerencie vagas e candidatos da sua agência de recrutamento</p>
           </div>
         </motion.div>
 
@@ -319,7 +319,7 @@ const DashboardPage = () => {
               <Megaphone className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="font-display text-base font-bold text-foreground">Conta Agência / RH</h2>
+              <h2 className="font-display text-base font-bold text-foreground">Conta Agência de RH / Recrutamento</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Publique vagas com auto-aprovação, acesse perfis qualificados e gerencie processos seletivos.
               </p>

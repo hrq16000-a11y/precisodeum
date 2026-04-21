@@ -17,6 +17,7 @@ import { useCategoriesWithCount } from '@/hooks/useProviders';
 
 type ProfileType = 'provider' | 'client' | 'rh';
 type WizardStep = 1 | 2 | 3 | 4;
+type ProviderSubtype = 'autonomous' | 'company';
 
 const STORAGE_KEY = 'onboarding_wizard_state';
 
@@ -52,6 +53,10 @@ const slugify = (s: string) =>
 interface PersistedState {
   step: WizardStep;
   profileType: ProfileType | null;
+  providerSubtype: ProviderSubtype | null;
+  legalName: string;
+  cnpj: string;
+  agencyName: string;
   city: string;
   state: string;
   fullName: string;
@@ -106,6 +111,11 @@ const BasicOnboardingWizard = () => {
 
   const [step, setStep] = useState<WizardStep>((persisted.current.step as WizardStep) || 1);
   const [profileType, setProfileType] = useState<ProfileType | null>(persisted.current.profileType ?? null);
+  const [providerSubtype, setProviderSubtype] = useState<ProviderSubtype | null>(persisted.current.providerSubtype ?? null);
+  const [showSubtypeStep, setShowSubtypeStep] = useState(false);
+  const [legalName, setLegalName] = useState(persisted.current.legalName ?? '');
+  const [cnpj, setCnpj] = useState(persisted.current.cnpj ?? '');
+  const [agencyName, setAgencyName] = useState(persisted.current.agencyName ?? '');
   const [city, setCity] = useState(persisted.current.city ?? (geoCity || ''));
   const [state, setState] = useState(persisted.current.state ?? (geoState || ''));
   const [editingCity, setEditingCity] = useState(false);
@@ -127,10 +137,10 @@ const BasicOnboardingWizard = () => {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        step, profileType, city, state, fullName, selectedCategoryIds,
+        step, profileType, providerSubtype, legalName, cnpj, agencyName, city, state, fullName, selectedCategoryIds,
       } satisfies PersistedState));
     } catch {}
-  }, [step, profileType, city, state, fullName, selectedCategoryIds]);
+  }, [step, profileType, providerSubtype, legalName, cnpj, agencyName, city, state, fullName, selectedCategoryIds]);
 
   // Sync geo on first load only
   useEffect(() => {
@@ -168,11 +178,13 @@ const BasicOnboardingWizard = () => {
     if (step !== 3 || saving || autoAdvancedRef.current) return;
     if (!fullName.trim()) return;
     if (profileType === 'provider' && selectedCategoryIds.length === 0) return;
+    if (profileType === 'provider' && providerSubtype === 'company' && (!legalName.trim() || !cnpj.trim())) return;
+    if (profileType === 'rh' && !agencyName.trim()) return;
     autoAdvancedRef.current = true;
     const t = setTimeout(() => { handleConfirm(); }, 650);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, selectedCategoryIds, fullName, profileType, saving]);
+  }, [step, selectedCategoryIds, fullName, profileType, providerSubtype, legalName, cnpj, agencyName, saving]);
 
   // Reset auto-advance guard quando voltar de step
   useEffect(() => {
@@ -221,6 +233,11 @@ const BasicOnboardingWizard = () => {
           .select('*')
           .eq('user_id', user.id)
           .limit(1);
+        const subtypePatch: any = {
+          account_type: providerSubtype || 'autonomous',
+          legal_name: providerSubtype === 'company' ? (legalName.trim() || null) : null,
+          cnpj: providerSubtype === 'company' ? (cnpj.trim() || null) : null,
+        };
         if (existing && existing.length > 0) {
           providerRow = existing[0];
           // Patch city/category if missing
@@ -228,8 +245,9 @@ const BasicOnboardingWizard = () => {
             city: city || providerRow.city,
             state: state || providerRow.state,
             category_id: selectedCategoryIds[0] || providerRow.category_id,
+            ...subtypePatch,
           }).eq('id', providerRow.id);
-          providerRow = { ...providerRow, city, state, category_id: selectedCategoryIds[0] || providerRow.category_id };
+          providerRow = { ...providerRow, city, state, category_id: selectedCategoryIds[0] || providerRow.category_id, ...subtypePatch };
         } else {
           const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'profissional');
           const uniqueSlug = `${baseSlug}-${user.id.slice(0, 6)}`;
@@ -240,9 +258,37 @@ const BasicOnboardingWizard = () => {
             state: state || null,
             category_id: selectedCategoryIds[0] || null,
             status: 'pending',
+            ...subtypePatch,
           }).select('*').single();
           if (provErr) throw provErr;
           providerRow = created;
+        }
+      }
+
+      if (profileType === 'rh') {
+        const { data: existingAgencyRaw } = await (supabase as any)
+          .from('agencies')
+          .select('*')
+          .eq('user_id', user.id)
+          .limit(1);
+        const existingAgency = existingAgencyRaw as any[] | null;
+        if (!existingAgency || existingAgency.length === 0) {
+          const baseSlug = slugify(agencyName || fullName || user.email?.split('@')[0] || 'agencia');
+          const uniqueSlug = `${baseSlug}-${user.id.slice(0, 6)}`;
+          await (supabase as any).from('agencies').insert({
+            user_id: user.id,
+            slug: uniqueSlug,
+            name: agencyName.trim() || fullName.trim() || 'Minha Agência',
+            city: city || null,
+            state: state || null,
+            status: 'pending',
+          });
+        } else {
+          await (supabase as any).from('agencies').update({
+            name: agencyName.trim() || existingAgency[0].name,
+            city: city || existingAgency[0].city,
+            state: state || existingAgency[0].state,
+          }).eq('id', existingAgency[0].id);
         }
       }
 
@@ -452,8 +498,56 @@ const BasicOnboardingWizard = () => {
           ))}
         </div>
 
+        {/* SUBTYPE STEP — only after choosing Profissional */}
+        {showSubtypeStep && profileType === 'provider' && (
+          <>
+            <button
+              onClick={() => { setShowSubtypeStep(false); setProfileType(null); setProviderSubtype(null); }}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+            </button>
+            <h1 className="text-center font-display text-xl font-bold text-foreground">
+              Você atua como…
+            </h1>
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              Escolha o formato que melhor descreve seu trabalho.
+            </p>
+            <div className="mt-6 grid gap-3">
+              <button
+                onClick={() => { setProviderSubtype('autonomous'); setShowSubtypeStep(false); setStep(2); }}
+                className="group rounded-2xl border-2 border-accent/30 bg-accent/5 p-5 text-left transition-all hover:border-accent hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                    <UserRound className="h-7 w-7" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-display text-base font-bold text-foreground">Profissional Autônomo (PF)</h3>
+                    <p className="text-xs text-muted-foreground">Trabalho por conta própria, sem CNPJ obrigatório.</p>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => { setProviderSubtype('company'); setShowSubtypeStep(false); setStep(2); }}
+                className="group rounded-2xl border-2 border-primary/30 bg-primary/5 p-5 text-left transition-all hover:border-primary hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                    <Building2 className="h-7 w-7" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-display text-base font-bold text-foreground">Empresa / MEI (PJ)</h3>
+                    <p className="text-xs text-muted-foreground">Tenho CNPJ e razão social — vou pedir esses dados a seguir.</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </>
+        )}
+
         {/* STEP 1 — Identidade */}
-        {step === 1 && (
+        {step === 1 && !showSubtypeStep && (
           <>
             <h1 className="text-center font-display text-2xl font-bold text-foreground">
               Bem-vindo!
@@ -464,7 +558,7 @@ const BasicOnboardingWizard = () => {
 
             <div className="mt-6 grid gap-3">
               <button
-                onClick={() => { setProfileType('provider'); setStep(2); }}
+                onClick={() => { setProfileType('provider'); setShowSubtypeStep(true); }}
                 className="group rounded-2xl border-2 border-accent/30 bg-accent/5 p-5 text-left transition-all hover:border-accent hover:shadow-lg hover:-translate-y-0.5"
               >
                 <div className="flex items-center gap-4">
@@ -504,8 +598,8 @@ const BasicOnboardingWizard = () => {
                     <Building2 className="h-7 w-7" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-display text-lg font-bold text-foreground">Sou Empresa / RH</h3>
-                    <p className="text-xs text-muted-foreground">Quero publicar vagas e contratar talentos</p>
+                    <h3 className="font-display text-lg font-bold text-foreground">Sou Agência de RH / Recrutamento</h3>
+                    <p className="text-xs text-muted-foreground">Recruto e contrato talentos para empresas</p>
                   </div>
                 </div>
               </button>
@@ -617,7 +711,7 @@ const BasicOnboardingWizard = () => {
             <div className="mt-5 space-y-4">
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1 block">
-                  Seu nome completo
+                  {profileType === 'rh' ? 'Seu nome (responsável)' : 'Seu nome completo'}
                 </label>
                 <Input
                   placeholder="Ex: João Silva"
@@ -625,6 +719,44 @@ const BasicOnboardingWizard = () => {
                   onChange={e => setFullName(e.target.value)}
                 />
               </div>
+
+              {profileType === 'provider' && providerSubtype === 'company' && (
+                <>
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-1 block">
+                      Razão Social
+                    </label>
+                    <Input
+                      placeholder="Ex: João Silva Serviços LTDA"
+                      value={legalName}
+                      onChange={e => setLegalName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-1 block">
+                      CNPJ
+                    </label>
+                    <Input
+                      placeholder="00.000.000/0000-00"
+                      value={cnpj}
+                      onChange={e => setCnpj(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+
+              {profileType === 'rh' && (
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">
+                    Nome da Agência
+                  </label>
+                  <Input
+                    placeholder="Ex: Talentos RH Curitiba"
+                    value={agencyName}
+                    onChange={e => setAgencyName(e.target.value)}
+                  />
+                </div>
+              )}
 
               {profileType === 'provider' && (
                 <div>
@@ -667,7 +799,13 @@ const BasicOnboardingWizard = () => {
               ref={nextBtnRef}
               variant="accent"
               className={`mt-5 w-full transition-shadow ${pulseNext ? 'animate-pulse ring-4 ring-accent/40 shadow-lg shadow-accent/30' : ''}`}
-              disabled={saving || !fullName.trim() || (profileType === 'provider' && selectedCategoryIds.length === 0)}
+              disabled={
+                saving ||
+                !fullName.trim() ||
+                (profileType === 'provider' && selectedCategoryIds.length === 0) ||
+                (profileType === 'provider' && providerSubtype === 'company' && (!legalName.trim() || !cnpj.trim())) ||
+                (profileType === 'rh' && !agencyName.trim())
+              }
               onClick={handleConfirm}
             >
               {saving ? 'Salvando seu perfil...' : profileType === 'provider' ? 'Avançando automaticamente...' : 'Concluir cadastro'}
