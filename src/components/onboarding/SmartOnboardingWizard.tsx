@@ -15,7 +15,7 @@ import CityAutocomplete from '@/components/CityAutocomplete';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
 
-type ProfileType = 'provider' | 'client' | 'rh';
+type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
 type WizardStep = 1 | 2 | 3 | 4;
 type ProviderSubtype = 'autonomous' | 'company';
 
@@ -343,7 +343,7 @@ const BasicOnboardingWizard = () => {
         setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { y: 0.5 } }), 250);
       } catch {/* noop */}
 
-      // Roteamento por tipo: Cliente → home; RH → painel de vagas; Provider → Step 4.
+      // Roteamento por tipo: Cliente → home; RH → painel de vagas; Sponsor → landing; Provider → Step 4.
       if (confirmedProfileType === 'client') {
         toast.success('Tudo pronto! Bem-vindo(a).');
         clearPersisted();
@@ -357,6 +357,14 @@ const BasicOnboardingWizard = () => {
         clearPersisted();
         if (import.meta.env.DEV) console.log('[Redirect Debug] Usuário tipo rh indo para /dashboard/vagas');
         navigate('/dashboard/vagas', { replace: true });
+        return;
+      }
+
+      if (confirmedProfileType === 'sponsor') {
+        toast.success('Perfil de patrocinador definido!');
+        clearPersisted();
+        if (import.meta.env.DEV) console.log('[Redirect Debug] Usuário tipo sponsor indo para /quero-ser-patrocinador');
+        navigate('/quero-ser-patrocinador', { replace: true });
         return;
       }
 
@@ -632,13 +640,20 @@ const BasicOnboardingWizard = () => {
               </button>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-border text-center">
+            <div className="mt-3 grid gap-3">
               <button
-                onClick={() => navigate('/sponsor-panel')}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => { setProfileType('sponsor'); setStep(2); }}
+                className="group rounded-2xl border-2 border-secondary/30 bg-secondary/5 p-5 text-left transition-all hover:border-secondary hover:shadow-lg hover:-translate-y-0.5"
               >
-                <Megaphone className="h-3.5 w-3.5" />
-                Sou Patrocinador — quero anunciar minha marca →
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+                    <Megaphone className="h-7 w-7" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-display text-lg font-bold text-foreground">Sou Patrocinador</h3>
+                    <p className="text-xs text-muted-foreground">Quero anunciar minha marca e conhecer os espaços de mídia</p>
+                  </div>
+                </div>
               </button>
             </div>
           </>
@@ -750,7 +765,7 @@ const BasicOnboardingWizard = () => {
             <div className="mt-5 space-y-4">
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1 block">
-                  {profileType === 'rh' ? 'Seu nome (responsável)' : 'Seu nome completo'}
+                  {profileType === 'rh' || profileType === 'sponsor' ? 'Seu nome (responsável)' : 'Seu nome completo'}
                 </label>
                 <Input
                   placeholder="Ex: João Silva"

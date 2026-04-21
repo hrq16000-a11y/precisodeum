@@ -9,19 +9,28 @@ interface SponsorProtectedRouteProps {
 
 /**
  * Protects /sponsor-panel/* routes.
- * Only allows access if the logged-in user has an active sponsor_contacts record OR is an admin.
+ * Hard gate: usuário autenticado sem profile_type volta para /triagem.
+ * Depois disso, só entra quem é sponsor/admin via regra já existente.
  */
 const SponsorProtectedRoute = ({ children }: SponsorProtectedRouteProps) => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [allowed, setAllowed] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
+
     if (!user) {
       navigate('/login', { replace: true });
       return;
     }
+
+    if (profile && !profile.profile_type) {
+      navigate('/triagem', { replace: true });
+      return;
+    }
+
+    if (!profile) return;
 
     Promise.all([
       supabase.from('sponsor_contacts' as any).select('id').eq('user_id', user.id).limit(1).maybeSingle(),
@@ -36,7 +45,7 @@ const SponsorProtectedRoute = ({ children }: SponsorProtectedRouteProps) => {
         navigate('/dashboard', { replace: true });
       }
     });
-  }, [user, authLoading, navigate]);
+  }, [user, profile, authLoading, navigate]);
 
   if (authLoading || allowed === null) {
     return (

@@ -21,9 +21,13 @@ const TriagePage = () => {
       navigate('/login', { replace: true });
       return;
     }
-    // Se já tem tipo definido, sair da triagem.
     if (profile?.profile_type) {
-      navigate('/dashboard', { replace: true });
+      const target = profile.profile_type === 'rh'
+        ? '/dashboard/vagas'
+        : profile.profile_type === 'sponsor'
+          ? '/quero-ser-patrocinador'
+          : '/dashboard';
+      navigate(target, { replace: true });
     }
   }, [loading, user, profile, navigate]);
 

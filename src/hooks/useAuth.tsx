@@ -53,38 +53,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await new Promise(resolve => setTimeout(resolve, 150 * Math.pow(2, attempt)));
     }
 
-    const pendingSignupType = (() => {
-      try {
-        const raw = sessionStorage.getItem('pending_signup_profile_type');
-        return raw === 'client' || raw === 'provider' || raw === 'rh' ? raw : null;
-      } catch {
-        return null;
-      }
-    })();
-
-    const shouldForcePendingType = !!profileData && !!pendingSignupType && (
-      !profileData.profile_type || profileData.profile_type !== pendingSignupType
-    );
-
-    if (shouldForcePendingType) {
-      const nextProfile = {
-        profile_type: pendingSignupType,
-        role: pendingSignupType,
-        onboarding_completed: false,
-      };
-
-      const { error: syncProfileError } = await supabase
-        .from('profiles')
-        .update(nextProfile as any)
-        .eq('id', userId);
-
-      if (!syncProfileError) {
-        await supabase.auth.updateUser({ data: { profile_type_chosen: true, profile_type: pendingSignupType } }).catch(() => {});
-        profileData = { ...profileData, ...nextProfile };
-        try { sessionStorage.removeItem('pending_signup_profile_type'); } catch {}
-      }
-    }
-
     setProfile(profileData);
 
     const metaChosen = authUser?.user_metadata?.profile_type_chosen === true;
