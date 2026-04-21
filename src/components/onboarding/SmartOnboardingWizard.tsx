@@ -231,6 +231,11 @@ const BasicOnboardingWizard = () => {
           .select('*')
           .eq('user_id', user.id)
           .limit(1);
+        const subtypePatch: any = {
+          account_type: providerSubtype || 'autonomous',
+          legal_name: providerSubtype === 'company' ? (legalName.trim() || null) : null,
+          cnpj: providerSubtype === 'company' ? (cnpj.trim() || null) : null,
+        };
         if (existing && existing.length > 0) {
           providerRow = existing[0];
           // Patch city/category if missing
@@ -238,8 +243,9 @@ const BasicOnboardingWizard = () => {
             city: city || providerRow.city,
             state: state || providerRow.state,
             category_id: selectedCategoryIds[0] || providerRow.category_id,
+            ...subtypePatch,
           }).eq('id', providerRow.id);
-          providerRow = { ...providerRow, city, state, category_id: selectedCategoryIds[0] || providerRow.category_id };
+          providerRow = { ...providerRow, city, state, category_id: selectedCategoryIds[0] || providerRow.category_id, ...subtypePatch };
         } else {
           const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'profissional');
           const uniqueSlug = `${baseSlug}-${user.id.slice(0, 6)}`;
@@ -250,9 +256,36 @@ const BasicOnboardingWizard = () => {
             state: state || null,
             category_id: selectedCategoryIds[0] || null,
             status: 'pending',
+            ...subtypePatch,
           }).select('*').single();
           if (provErr) throw provErr;
           providerRow = created;
+        }
+      }
+
+      if (profileType === 'rh') {
+        const { data: existingAgency } = await supabase
+          .from('agencies' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .limit(1);
+        if (!existingAgency || existingAgency.length === 0) {
+          const baseSlug = slugify(agencyName || fullName || user.email?.split('@')[0] || 'agencia');
+          const uniqueSlug = `${baseSlug}-${user.id.slice(0, 6)}`;
+          await supabase.from('agencies' as any).insert({
+            user_id: user.id,
+            slug: uniqueSlug,
+            name: agencyName.trim() || fullName.trim() || 'Minha Agência',
+            city: city || null,
+            state: state || null,
+            status: 'pending',
+          });
+        } else {
+          await supabase.from('agencies' as any).update({
+            name: agencyName.trim() || existingAgency[0].name,
+            city: city || existingAgency[0].city,
+            state: state || existingAgency[0].state,
+          }).eq('id', existingAgency[0].id);
         }
       }
 
