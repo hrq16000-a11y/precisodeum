@@ -14,6 +14,8 @@ import SmartCategoryPicker from '@/components/SmartCategoryPicker';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
+import LevelProgressBar from '@/components/onboarding/LevelProgressBar';
+import { isValidCpfCnpj } from '@/lib/cpfCnpj';
 
 type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
 type WizardStep = 1 | 2 | 3 | 4 | 5;
@@ -50,22 +52,7 @@ const slugify = (s: string) =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-/** Valida CNPJ via algoritmo mod11 (dígitos verificadores reais). */
-function isValidCnpj(raw: string): boolean {
-  const cnpj = (raw || '').replace(/\D/g, '');
-  if (cnpj.length !== 14) return false;
-  if (/^(\d)\1{13}$/.test(cnpj)) return false; // todos iguais
-  const calc = (base: string, weights: number[]) => {
-    const sum = base.split('').reduce((acc, d, i) => acc + parseInt(d, 10) * weights[i], 0);
-    const mod = sum % 11;
-    return mod < 2 ? 0 : 11 - mod;
-  };
-  const w1 = [5,4,3,2,9,8,7,6,5,4,3,2];
-  const w2 = [6,5,4,3,2,9,8,7,6,5,4,3,2];
-  const d1 = calc(cnpj.slice(0, 12), w1);
-  const d2 = calc(cnpj.slice(0, 12) + d1, w2);
-  return d1 === parseInt(cnpj[12], 10) && d2 === parseInt(cnpj[13], 10);
-}
+// Validação CPF/CNPJ centralizada em src/lib/cpfCnpj.ts (isValidCpfCnpj)
 
 interface PersistedState {
   step: WizardStep;
@@ -242,7 +229,7 @@ const BasicOnboardingWizard = () => {
       return;
     }
     // CNPJ é OPCIONAL — mas se preenchido, precisa ser real (mod11).
-    if (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim() && !isValidCnpj(cnpj)) {
+    if (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim() && !isValidCpfCnpj(cnpj)) {
       toast.error('CNPJ inválido. Confira os dígitos ou deixe em branco.');
       return;
     }
@@ -331,6 +318,32 @@ const BasicOnboardingWizard = () => {
           }).eq('id', existingAgency[0].id);
         }
       }
+
+      if (profileType === 'sponsor') {
+        const { data: existingSponsor } = await (supabase as any)
+          .from('sponsors')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+        if (!existingSponsor || existingSponsor.length === 0) {
+          const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'patrocinador');
+          await (supabase as any).from('sponsors').insert({
+            user_id: user.id,
+            slug: `${baseSlug}-${user.id.slice(0, 6)}`,
+            name: fullName.trim() || 'Novo Patrocinador',
+            status: 'pending_approval',
+          });
+        }
+      }
+
+      // +50 pts pela conclusão do cadastro básico (idempotente — max_per_day=1)
+      try {
+        await (supabase as any).rpc('award_engagement_points', {
+          _user_id: user.id,
+          _action_key: 'onboarding_basic_complete',
+          _metadata: { profile_type: profileType },
+        });
+      } catch { /* silencioso */ }
 
       const firstName = (fullName.trim().split(' ')[0] || 'Profissional');
       const initial = firstName.charAt(0).toUpperCase();
@@ -841,11 +854,11 @@ const BasicOnboardingWizard = () => {
                       placeholder="00.000.000/0000-00"
                       value={cnpj}
                       onChange={e => setCnpj(e.target.value)}
-                      aria-invalid={cnpj.trim().length > 0 && !isValidCnpj(cnpj)}
+                      aria-invalid={cnpj.trim().length > 0 && !isValidCpfCnpj(cnpj)}
                     />
-                    {cnpj.trim().length > 0 && !isValidCnpj(cnpj) && (
+                    {cnpj.trim().length > 0 && !isValidCpfCnpj(cnpj) && (
                       <p className="mt-1 text-[11px] text-destructive">
-                        CNPJ inválido. Verifique os dígitos ou deixe em branco.
+                        CPF/CNPJ inválido. Verifique os dígitos ou deixe em branco.
                       </p>
                     )}
                   </div>
@@ -911,7 +924,7 @@ const BasicOnboardingWizard = () => {
                 !fullName.trim() ||
                 (profileType === 'provider' && selectedCategoryIds.length === 0) ||
                 (profileType === 'rh' && !agencyName.trim()) ||
-                (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim().length > 0 && !isValidCnpj(cnpj))
+                (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim().length > 0 && !isValidCpfCnpj(cnpj))
               }
               onClick={handleConfirm}
             >
