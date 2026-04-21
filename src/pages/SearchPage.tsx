@@ -32,7 +32,12 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const ProvidersMap = lazy(() => import('@/components/ProvidersMap'));
 const SponsorAdSlot = lazy(() => import('@/components/ads/SponsorAdSlot'));
 import PinnedSponsorCard from '@/components/sponsors/PinnedSponsorCard';
+import PinnedSponsorSkeleton from '@/components/sponsors/PinnedSponsorSkeleton';
+import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import { usePinnedSponsor } from '@/hooks/usePinnedSponsor';
+import UrgencyToggle from '@/components/home/UrgencyToggle';
+import { useUrgencyMode } from '@/hooks/useUrgencyMode';
+import { useOnlineProviders } from '@/hooks/useOnlinePresence';
 
 const ITEMS_PER_PAGE = 12;
 
