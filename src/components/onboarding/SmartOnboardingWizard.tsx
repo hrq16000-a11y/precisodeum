@@ -196,12 +196,14 @@ const BasicOnboardingWizard = () => {
     }
     setSaving(true);
     try {
+      const shouldKeepWizardOpen = profileType === 'provider' || profileType === 'rh';
+
       const { error: profErr } = await supabase
         .from('profiles')
         .update({
           profile_type: profileType,
           role: profileType,
-          onboarding_completed: true,
+          onboarding_completed: shouldKeepWizardOpen ? false : true,
           full_name: fullName.trim() || undefined,
         } as any)
         .eq('id', user.id);
