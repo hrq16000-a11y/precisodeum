@@ -1043,6 +1043,13 @@ const DashboardServicesPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <NextStepPrompt
+        open={showNextStepPrompt}
+        onClose={() => setShowNextStepPrompt(false)}
+        context="service"
+        providerSlug={provider?.slug ?? null}
+      />
     </DashboardLayout>
   );
 };
