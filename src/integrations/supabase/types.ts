@@ -5347,6 +5347,10 @@ export type Database = {
       }
       is_caller_admin: { Args: never; Returns: boolean }
       is_sponsor: { Args: { _user_id: string }; Returns: boolean }
+      log_provider_public_event: {
+        Args: { event_action: string; page_path?: string; provider_id: string }
+        Returns: undefined
+      }
       nearby_providers: {
         Args: {
           _category_slug?: string
