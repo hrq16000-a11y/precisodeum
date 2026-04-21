@@ -25,7 +25,12 @@ const ACTION_MAP: Record<string, { title: string; icon: typeof Trophy; cls: stri
  * AchievementHistory — "Mural de Conquistas".
  * Lists the user's last 5 wins so they SEE the platform recording their effort.
  */
-const AchievementHistory = ({ providerSlug }: { providerSlug?: string | null } = {}) => {
+interface AchievementHistoryProps {
+  providerSlug?: string | null;
+  levelName?: string | null;
+}
+
+const AchievementHistory = ({ providerSlug, levelName }: AchievementHistoryProps = {}) => {
   const { user } = useAuth();
   const [items, setItems] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
