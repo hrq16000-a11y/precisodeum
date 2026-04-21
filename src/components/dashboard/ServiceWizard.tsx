@@ -8,7 +8,7 @@ import ServiceImageDragUploader from '@/components/dashboard/ServiceImageDragUpl
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import {
   ArrowRight, ArrowLeft, Store, Phone, ImagePlus,
-  CheckCircle2, Copy, ExternalLink, Share2, Sparkles, X,
+  CheckCircle2, Copy, ExternalLink, Share2, Sparkles,
 } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -106,6 +106,8 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           instagram_url: instagramUrl,
           facebook_url: facebookUrl,
           youtube_url: youtubeUrl,
+          category_id: selectedCategoryIds[0] || null,
+          user_ref: provider?.user_ref || null,
         })
         .select('id')
         .single();
@@ -171,9 +173,6 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           <Store className="h-5 w-5 text-accent" />
           <span className="font-display text-sm font-bold text-foreground">Cadastro Express</span>
         </div>
-        <button onClick={onCancel} className="text-muted-foreground hover:text-foreground transition-colors">
-          <X className="h-5 w-5" />
-        </button>
       </div>
 
       <div className="text-center">
@@ -442,10 +441,10 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           <>
             <Button
               variant="outline"
-              onClick={() => step === 0 ? onCancel() : setStep(step - 1)}
+              onClick={() => step === 0 ? window.history.back() : setStep(step - 1)}
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
-              {step === 0 ? 'Cancelar' : 'Voltar'}
+              Voltar
             </Button>
 
             <Button
