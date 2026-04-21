@@ -267,14 +267,14 @@ const DashboardPortfolioPage = () => {
           toast.success(`Imagem otimizada: ${origLabel} → ${optLabel} (-${data.savings_percent}%)`);
         }
 
-        await supabase.from('portfolio_photos').insert({
-          album_id: selectedAlbum.id,
-          user_id: user.id,
-          image_url: publicUrl,
-          storage_path: storagePath,
-          original_name: file.name,
-          display_order: photos.length,
+        // Atomic insert — guarantees user_ref alignment with the album's provider
+        const { error: rpcErr } = await supabase.rpc('add_portfolio_photo_atomic' as any, {
+          _album_id: selectedAlbum.id,
+          _image_url: publicUrl,
+          _storage_path: storagePath,
+          _original_name: file.name,
         });
+        if (rpcErr) throw rpcErr;
 
         if (userRef) {
           await upsertMedia({
@@ -289,10 +289,6 @@ const DashboardPortfolioPage = () => {
           });
         }
 
-        // Set first photo as cover if no cover
-        if (!selectedAlbum.cover_image_url && photos.length === 0) {
-          await supabase.from('portfolio_albums').update({ cover_image_url: publicUrl }).eq('id', selectedAlbum.id);
-        }
         successCount++;
       } catch (err: any) {
         failCount++;
