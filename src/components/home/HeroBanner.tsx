@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react
 import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
+import UrgencyToggle from '@/components/home/UrgencyToggle';
+import { useUrgencyMode } from '@/hooks/useUrgencyMode';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { importWithRetry } from '@/lib/lazyWithRetry';
