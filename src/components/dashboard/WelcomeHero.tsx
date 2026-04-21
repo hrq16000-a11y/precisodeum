@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ArrowRight, Sparkles, Crown, Shield, Flame, Sun, Moon, CloudSun, Zap, Target } from 'lucide-react';
+import { ArrowRight, Sparkles, Flame, Sun, Moon, CloudSun, Target } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -10,10 +10,7 @@ interface WelcomeHeroProps {
   pendingLeads: number;
   levelName?: string;
   levelColor?: string;
-  accountTypeName?: string;
-  accountTypeColor?: string;
   memberSince?: string;
-  plan?: string;
   avatarUrl?: string;
 }
 
@@ -29,8 +26,7 @@ const motivationalPhrases = [
 const WelcomeHero = ({
   greeting, name, pendingLeads,
   levelName, levelColor,
-  accountTypeName, accountTypeColor,
-  memberSince, plan, avatarUrl,
+  memberSince, avatarUrl,
 }: WelcomeHeroProps) => {
   const navigate = useNavigate();
   const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
@@ -96,16 +92,6 @@ const WelcomeHero = ({
                 {m.icon} {m.label}
               </motion.span>
             ))}
-            {plan === 'premium' && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 }}
-                className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/20"
-              >
-                <Crown className="h-2.5 w-2.5" /> Premium
-              </motion.span>
-            )}
             {levelName && (
               <motion.span
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -116,17 +102,6 @@ const WelcomeHero = ({
               >
                 <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: levelColor }} />
                 {levelName}
-              </motion.span>
-            )}
-            {accountTypeName && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4 }}
-                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold"
-                style={{ borderColor: `${accountTypeColor}30`, color: accountTypeColor }}
-              >
-                {accountTypeName}
               </motion.span>
             )}
           </div>

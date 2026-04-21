@@ -82,7 +82,7 @@ const DashboardPage = () => {
   };
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const wizardEnabled = useFeatureEnabled('enable_service_wizard_onboarding');
-  const { levelName, levelColor, accountTypeName, accountTypeColor } = usePermissions();
+  const { levelName, levelColor } = usePermissions();
   const [servicesCount, setServicesCount] = useState<number | null>(null);
   const [leadsCount, setLeadsCount] = useState<number>(0);
   const [jobsCount, setJobsCount] = useState<number>(0);
@@ -449,10 +449,7 @@ const DashboardPage = () => {
         pendingLeads={pendingLeads}
         levelName={levelName}
         levelColor={levelColor}
-        accountTypeName={accountTypeName}
-        accountTypeColor={accountTypeColor}
         memberSince={profile?.created_at}
-        plan={provider?.plan}
         avatarUrl={profile?.avatar_url || undefined}
       />
 
