@@ -421,6 +421,13 @@ const DashboardPortfolioPage = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        <NextStepPrompt
+          open={!!nextStep}
+          onClose={() => setNextStep(null)}
+          context={nextStep === 'photo' ? 'photo' : 'album'}
+          providerSlug={provider?.slug ?? null}
+        />
       </DashboardLayout>
     );
   }
@@ -524,6 +531,13 @@ const DashboardPortfolioPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <NextStepPrompt
+        open={!!nextStep}
+        onClose={() => setNextStep(null)}
+        context={nextStep === 'photo' ? 'photo' : 'album'}
+        providerSlug={provider?.slug ?? null}
+      />
     </DashboardLayout>
   );
 };

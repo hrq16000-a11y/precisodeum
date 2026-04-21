@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
+import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 import { handleImageError } from '@/lib/imageResolver';
 
 // Heavy editor sub-components — only loaded when the edit Dialog opens
@@ -179,6 +180,7 @@ const DashboardServicesPage = () => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [newServicePhoto, setNewServicePhoto] = useState<File | null>(null);
   const [newServicePhotoPreview, setNewServicePhotoPreview] = useState<string | null>(null);
+  const [showNextStepPrompt, setShowNextStepPrompt] = useState(false);
 
   // New professional fields
   const [isEmergency, setIsEmergency] = useState(false);
@@ -452,6 +454,8 @@ const DashboardServicesPage = () => {
         });
         setEditId(serviceId!);
         setWizardStep('photos');
+        // Trigger "hand-holding" next-step prompt after a short delay
+        setTimeout(() => setShowNextStepPrompt(true), 1200);
       }
       await fetchServices();
       refetchLimits();
@@ -1039,6 +1043,13 @@ const DashboardServicesPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <NextStepPrompt
+        open={showNextStepPrompt}
+        onClose={() => setShowNextStepPrompt(false)}
+        context="service"
+        providerSlug={provider?.slug ?? null}
+      />
     </DashboardLayout>
   );
 };
