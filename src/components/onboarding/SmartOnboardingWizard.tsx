@@ -264,15 +264,16 @@ const BasicOnboardingWizard = () => {
       }
 
       if (profileType === 'rh') {
-        const { data: existingAgency } = await supabase
-          .from('agencies' as any)
+        const { data: existingAgencyRaw } = await (supabase as any)
+          .from('agencies')
           .select('*')
           .eq('user_id', user.id)
           .limit(1);
+        const existingAgency = existingAgencyRaw as any[] | null;
         if (!existingAgency || existingAgency.length === 0) {
           const baseSlug = slugify(agencyName || fullName || user.email?.split('@')[0] || 'agencia');
           const uniqueSlug = `${baseSlug}-${user.id.slice(0, 6)}`;
-          await supabase.from('agencies' as any).insert({
+          await (supabase as any).from('agencies').insert({
             user_id: user.id,
             slug: uniqueSlug,
             name: agencyName.trim() || fullName.trim() || 'Minha Agência',
@@ -281,7 +282,7 @@ const BasicOnboardingWizard = () => {
             status: 'pending',
           });
         } else {
-          await supabase.from('agencies' as any).update({
+          await (supabase as any).from('agencies').update({
             name: agencyName.trim() || existingAgency[0].name,
             city: city || existingAgency[0].city,
             state: state || existingAgency[0].state,
