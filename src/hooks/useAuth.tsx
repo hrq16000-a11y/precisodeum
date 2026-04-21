@@ -36,18 +36,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [needsTypeSelection, setNeedsTypeSelection] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string, authUser?: User | null) => {
-    let [{ data: profileData }, { data: providerRows }] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single(),
-      supabase
-        .from('providers')
-        .select('*, categories(name, slug, icon)')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: true }),
-    ]);
+    // Retry/polling: o trigger handle_new_user pode levar alguns ms após o signup.
+    // Evita a race condition que deixa o usuário "preso" sem profile carregado.
+    let profileData: any = null;
+    let providerRows: any[] | null = null;
+    const MAX_ATTEMPTS = 5;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      const [{ data: pData }, { data: pvRows }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+        supabase.from('providers').select('*, categories(name, slug, icon)').eq('user_id', userId).order('created_at', { ascending: true }),
+      ]);
+      profileData = pData;
+      providerRows = pvRows;
+      if (profileData) break;
+      // Backoff: 150ms, 300ms, 600ms, 1200ms
+      await new Promise(resolve => setTimeout(resolve, 150 * Math.pow(2, attempt)));
+    }
 
     const pendingSignupType = (() => {
       try {
