@@ -8,6 +8,11 @@ interface ProtectedRouteProps {
   requireAuth?: boolean;
 }
 
+/**
+ * ProtectedRoute — handles AUTH and ROLE checks only.
+ * The onboarding redirect (must-complete-triage) is owned by `OnboardingGate` in App.tsx.
+ * This is the single source of truth strategy from the audit (`auditoria-360-completa-v2`).
+ */
 const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: ProtectedRouteProps) => {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
@@ -21,21 +26,7 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
       return;
     }
 
-    if (user && !profile) {
-      return;
-    }
-
-    const onboardingStep = Number(profile?.onboarding_step ?? 0);
-    const mustCompleteOnboarding = !!user && !!profile && (
-      !profile.profile_type ||
-      profile.onboarding_completed !== true ||
-      onboardingStep < 5
-    );
-
-    if (mustCompleteOnboarding && location.pathname !== '/triagem') {
-      navigate('/triagem', { replace: true });
-      return;
-    }
+    if (user && !profile) return;
 
     if (allowedTypes && profile?.profile_type) {
       if (!allowedTypes.includes(profile.profile_type)) {
@@ -56,17 +47,7 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
   }
 
   if (requireAuth && !user) return null;
-
-   if (user && !profile) return null;
-
-  const onboardingStep = Number(profile?.onboarding_step ?? 0);
-  const mustCompleteOnboarding = !!user && !!profile && (
-    !profile.profile_type ||
-    profile.onboarding_completed !== true ||
-    onboardingStep < 5
-  );
-
-  if (mustCompleteOnboarding && location.pathname !== '/triagem') return null;
+  if (user && !profile) return null;
 
   if (allowedTypes && profile?.profile_type) {
     if (!allowedTypes.includes(profile.profile_type)) return null;

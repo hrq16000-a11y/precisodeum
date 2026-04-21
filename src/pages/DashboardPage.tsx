@@ -151,8 +151,9 @@ const DashboardPage = () => {
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
+  // Onboarding redirect is owned exclusively by `OnboardingGate` in App.tsx.
+  // We only guard against the brief instant where `profile_type` hasn't loaded yet.
   if (profile && !profileType) return null;
-  if (profile && (profile.onboarding_completed !== true || Number(profile.onboarding_step ?? 0) < 5)) return null;
 
   const debugResetBar = (
     <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2">
