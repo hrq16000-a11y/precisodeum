@@ -141,15 +141,17 @@ const AdminAuditLogPage = () => {
   }, [isAdmin, page, filterAction, filterResource, quickFilter, dateFrom, dateTo, userRefSearch]);
 
   const handleExportCsv = async () => {
-    // Confirmation preview — show how many records will be exported with current filters
+    // Confirmation preview — show how many records AND which columns will be exported
     const visibleCount = totalCount;
     if (visibleCount === 0) {
       toast.info('Nenhum registro para exportar com esses filtros.');
       return;
     }
     const cap = Math.min(visibleCount, 5000);
+    const columns = ['data', 'usuario', 'user_ref', 'acao', 'recurso', 'recurso_id', 'detalhes'];
     const ok = window.confirm(
-      `🗂️ Você está prestes a exportar ${cap} registro(s)${visibleCount > 5000 ? ` (limite de 5.000 — ${visibleCount} encontrados no total)` : ''}.\n\nDeseja continuar?`
+      `🗂️ Você está prestes a exportar ${cap} registro(s)${visibleCount > 5000 ? ` (limite de 5.000 — ${visibleCount} encontrados no total)` : ''}.\n\n` +
+      `Colunas incluídas no CSV:\n  • ${columns.join('\n  • ')}\n\nDeseja continuar?`
     );
     if (!ok) return;
 

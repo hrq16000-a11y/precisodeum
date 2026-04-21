@@ -45,6 +45,7 @@ import WeeklySummary from '@/components/dashboard/WeeklySummary';
 import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
 import EngagementLoop from '@/components/dashboard/EngagementLoop';
 import AchievementHistory from '@/components/dashboard/AchievementHistory';
+import CelebrationMuteToggle from '@/components/dashboard/CelebrationMuteToggle';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();

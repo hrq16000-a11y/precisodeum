@@ -17,6 +17,8 @@ import TrustGuarantee from '@/components/TrustGuarantee';
 import TestimonialsCarousel from '@/components/TestimonialsCarousel';
 import SponsorAd from '@/components/SponsorAd';
 import GamificationLevelBadge from '@/components/dashboard/GamificationLevelBadge';
+import PublicAchievementsStrip from '@/components/PublicAchievementsStrip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { lazy, Suspense } from 'react';
 import ErrorGuard from '@/components/ErrorGuard';
 import { importWithRetry } from '@/lib/lazyWithRetry';
@@ -1140,15 +1142,47 @@ const ProviderProfile = () => {
 
                 {/* ── PROMINENT LEVEL BADGE (Metallic Design) — hidden for admins and generic "Usuário" level ── */}
                 {provider.levelInfo && !(provider.accTypeInfo?.name || '').toLowerCase().includes('admin') && !['usuário', 'usuario', 'user'].includes((provider.levelInfo.name || '').toLowerCase()) && (
-                  <div className="mt-2">
-                    <GamificationLevelBadge
-                      levelName={provider.levelInfo.name}
-                      levelColor={provider.levelInfo.color}
-                      size="lg"
-                      showShine={true}
-                    />
+                  <div className="mt-2 flex justify-center sm:justify-start">
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="inline-flex" aria-label={`Profissional Nível ${provider.levelInfo.name}`}>
+                            <GamificationLevelBadge
+                              levelName={provider.levelInfo.name}
+                              levelColor={provider.levelInfo.color}
+                              size="lg"
+                              showShine={true}
+                            />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-xs text-center">
+                          <strong>Profissional Nível {provider.levelInfo.name}:</strong>{' '}
+                          {(() => {
+                            const lvl = (provider.levelInfo.name || '').toLowerCase();
+                            if (lvl.includes('mestre')) return 'Topo absoluto da plataforma — entrega impecável e reputação consolidada.';
+                            if (lvl.includes('diamante')) return '100% de compromisso com a qualidade e dados verificados.';
+                            if (lvl.includes('platina')) return 'Alta consistência e perfil completo verificado.';
+                            if (lvl.includes('ouro')) return 'Profissional ativo e com histórico sólido na plataforma.';
+                            if (lvl.includes('engajado')) return 'Mantém perfil atualizado e responde rápido.';
+                            return 'Profissional ativo na plataforma.';
+                          })()}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 )}
+
+                {/* ── MURAL DE VITRINES (Social Proof) ── */}
+                <PublicAchievementsStrip
+                  userId={provider.user_id}
+                  servicesCount={services.length}
+                  portfolioPhotoCount={Number(provider.portfolio_photo_count || 0)}
+                  ratingAvg={Number(provider.rating_avg || 0)}
+                  reviewCount={Number(provider.review_count || 0)}
+                  city={provider.city}
+                  state={provider.state}
+                  levelName={provider.levelInfo?.name ?? null}
+                />
                 {provider.business_name && <p className="text-sm text-muted-foreground mt-1">{provider.business_name}</p>}
                 <p className="mt-1 text-sm font-semibold flex items-center justify-center sm:justify-start gap-1" style={accentBg ? { color: accentBg } : undefined}>
                   <CategoryIcon icon={categoryIcon} size={16} className="text-accent" />

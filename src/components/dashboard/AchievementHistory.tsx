@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Trophy, Briefcase, Image as ImageIcon, User, Sparkles, Star, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { logAuditAction } from '@/hooks/useAuditLog';
 
 interface Achievement {
   id: string;
@@ -125,6 +126,32 @@ const AchievementHistory = ({ providerSlug }: { providerSlug?: string | null } =
           href={`/profissional/${providerSlug}`}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={async () => {
+            // Track conversion of pride: which categories most frequently
+            // peek at their public profile after a win.
+            try {
+              if (user?.id) {
+                const { data: prov } = await supabase
+                  .from('providers')
+                  .select('id, category_id, categories(slug, name)')
+                  .eq('user_id', user.id)
+                  .maybeSingle();
+                void logAuditAction({
+                  action: 'next_step_chosen',
+                  resource_type: 'public_profile_preview',
+                  resource_id: prov?.id ?? undefined,
+                  details: {
+                    source: 'achievement_history',
+                    category_slug: (prov?.categories as any)?.slug ?? null,
+                    category_name: (prov?.categories as any)?.name ?? null,
+                    slug: providerSlug,
+                  },
+                });
+              }
+            } catch {
+              /* tracking is best-effort */
+            }
+          }}
           className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-gradient-to-r from-primary/10 to-accent/10 px-3 py-2 text-xs font-bold text-primary transition hover:border-primary/60 hover:from-primary/20 hover:to-accent/20"
         >
           <Sparkles className="h-3.5 w-3.5" />
