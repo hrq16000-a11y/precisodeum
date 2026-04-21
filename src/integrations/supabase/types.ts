@@ -3861,6 +3861,7 @@ export type Database = {
           id: string
           image_url: string | null
           impressions: number
+          last_viewed_status: string | null
           link_url: string | null
           linked_category: string | null
           linked_city: string | null
@@ -3910,6 +3911,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           impressions?: number
+          last_viewed_status?: string | null
           link_url?: string | null
           linked_category?: string | null
           linked_city?: string | null
@@ -3959,6 +3961,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           impressions?: number
+          last_viewed_status?: string | null
           link_url?: string | null
           linked_category?: string | null
           linked_city?: string | null
