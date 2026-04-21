@@ -75,6 +75,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
     label: 'Comercial',
     items: [
       { label: 'Patrocinadores', icon: 'Megaphone', path: '/admin/patrocinadores' },
+      { label: 'Aprovação Anúncios', icon: 'ShieldCheck', path: '/admin/patrocinadores/aprovacoes' },
       { label: 'CRM Comercial', icon: 'HandshakeIcon', path: '/admin/crm-patrocinadores' },
       { label: 'Leads Comerciais', icon: 'FileText', path: '/admin/leads-patrocinadores' },
       { label: 'Cidades', icon: 'MapPin', path: '/admin/cidades' },

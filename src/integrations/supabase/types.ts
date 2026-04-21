@@ -3841,6 +3841,8 @@ export type Database = {
         Row: {
           active: boolean
           ad_format: string
+          approved_at: string | null
+          approved_by: string | null
           badge_type: string
           campaign_end: string | null
           campaign_start: string | null
@@ -3870,6 +3872,9 @@ export type Database = {
           plan: string
           plan_tier: string
           position: string
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
           short_description: string
           slug: string | null
           sponsor_type: string
@@ -3885,6 +3890,8 @@ export type Database = {
         Insert: {
           active?: boolean
           ad_format?: string
+          approved_at?: string | null
+          approved_by?: string | null
           badge_type?: string
           campaign_end?: string | null
           campaign_start?: string | null
@@ -3914,6 +3921,9 @@ export type Database = {
           plan?: string
           plan_tier?: string
           position?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           short_description?: string
           slug?: string | null
           sponsor_type?: string
@@ -3929,6 +3939,8 @@ export type Database = {
         Update: {
           active?: boolean
           ad_format?: string
+          approved_at?: string | null
+          approved_by?: string | null
           badge_type?: string
           campaign_end?: string | null
           campaign_start?: string | null
@@ -3958,6 +3970,9 @@ export type Database = {
           plan?: string
           plan_tier?: string
           position?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           short_description?: string
           slug?: string | null
           sponsor_type?: string
@@ -5070,6 +5085,14 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: undefined
+      }
+      admin_sponsor_metrics_summary: {
+        Args: { _sponsor_ids: string[] }
+        Returns: {
+          sponsor_id: string
+          total_clicks: number
+          total_impressions: number
+        }[]
       }
       admin_suspicious_summary: { Args: { _limit?: number }; Returns: Json }
       admin_system_health: { Args: { _limit?: number }; Returns: Json }
