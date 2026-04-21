@@ -10,7 +10,32 @@
  *
  * Os disparos são best-effort: qualquer falha (ex: contexto suspenso por
  * autoplay policy) é silenciosamente ignorada, sem quebrar o fluxo da UI.
+ *
+ * Preferência de áudio: o usuário pode silenciar via localStorage
+ * (`pdu_celebrate_muted` = '1'). O confete continua disparando.
  */
+
+const MUTE_KEY = 'pdu_celebrate_muted';
+
+export function isCelebrationMuted(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem(MUTE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function setCelebrationMuted(muted: boolean) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (muted) localStorage.setItem(MUTE_KEY, '1');
+    else localStorage.removeItem(MUTE_KEY);
+    window.dispatchEvent(new CustomEvent('pdu:celebrate-muted-change', { detail: { muted } }));
+  } catch {
+    /* noop */
+  }
+}
 
 let audioCtx: AudioContext | null = null;
 
@@ -33,6 +58,7 @@ function getAudioContext(): AudioContext | null {
 
 /** Plays a short happy "pling/ebá" arpeggio. Safe to call repeatedly. */
 export function playAchievementSound(volume = 0.18) {
+  if (isCelebrationMuted()) return;
   const ctx = getAudioContext();
   if (!ctx) return;
 
