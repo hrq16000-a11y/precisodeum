@@ -196,12 +196,14 @@ const BasicOnboardingWizard = () => {
     }
     setSaving(true);
     try {
+      const shouldKeepWizardOpen = profileType === 'provider' || profileType === 'rh';
+
       const { error: profErr } = await supabase
         .from('profiles')
         .update({
           profile_type: profileType,
           role: profileType,
-          onboarding_completed: true,
+          onboarding_completed: shouldKeepWizardOpen ? false : true,
           full_name: fullName.trim() || undefined,
         } as any)
         .eq('id', user.id);
@@ -302,11 +304,17 @@ const BasicOnboardingWizard = () => {
     // ServiceWizard agora exige ≥1 foto antes de habilitar "Concluir",
     // portanto qualquer chamada aqui já garante hasImage=true.
     setServicesCreated(c => c + 1);
+    if (user?.id) {
+      void supabase.from('profiles').update({ onboarding_completed: true } as any).eq('id', user.id);
+    }
   };
 
 
   const finishToPublicProfile = () => {
     clearPersisted();
+    if (user?.id) {
+      void supabase.from('profiles').update({ onboarding_completed: true } as any).eq('id', user.id);
+    }
     const slug = savedProvider?.slug;
     const target = slug ? `/profissional/${slug}` : '/dashboard';
     if (import.meta.env.DEV) console.log(`[Redirect Debug] Usuário tipo provider indo para rota ${target}`);
