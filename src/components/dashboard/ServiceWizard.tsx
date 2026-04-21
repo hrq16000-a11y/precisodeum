@@ -8,7 +8,7 @@ import ServiceImageDragUploader from '@/components/dashboard/ServiceImageDragUpl
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import {
   ArrowRight, ArrowLeft, Store, Phone, ImagePlus,
-  CheckCircle2, Copy, ExternalLink, Share2, Sparkles,
+  CheckCircle2, Copy, ExternalLink, Share2, Sparkles, X,
 } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -441,7 +441,10 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           <>
             <Button
               variant="outline"
-              onClick={() => step === 0 ? window.history.back() : setStep(step - 1)}
+              onClick={() => {
+                if (step > 0) setStep(step - 1);
+              }}
+              disabled={step === 0}
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Voltar
