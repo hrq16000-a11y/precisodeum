@@ -168,13 +168,18 @@ const CategoryPage = () => {
   const serviceLd = useMemo(() => {
     if (!category) return null;
     const topProviders = [...localProviders, ...nearbyProviders].slice(0, 10);
-    const ratings = topProviders.map(p => Number(p.rating || 0)).filter(r => r > 0);
+    const authorityProviders = topProviders.filter((p) => {
+      const level = (p.levelName || '').toLowerCase();
+      return level.includes('diamante') || level.includes('ouro');
+    });
+    const ratingSource = authorityProviders.length > 0 ? authorityProviders : topProviders;
+    const ratings = ratingSource.map(p => Number(p.rating || 0)).filter(r => r > 0);
     const aggregate = ratings.length > 0
       ? {
           aggregateRating: {
             '@type': 'AggregateRating',
             ratingValue: (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1),
-            reviewCount: topProviders.reduce((acc, p) => acc + (Number(p.reviewCount) || 0), 0) || ratings.length,
+            reviewCount: ratingSource.reduce((acc, p) => acc + (Number(p.reviewCount) || 0), 0) || ratings.length,
             bestRating: 5,
             worstRating: 1,
           },

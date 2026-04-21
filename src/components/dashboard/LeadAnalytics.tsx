@@ -12,6 +12,7 @@ interface DayBucket {
   label: string;
   views: number;
   clicks: number;
+  phoneClicks: number;
 }
 
 /**
@@ -20,13 +21,13 @@ interface DayBucket {
  *  • profile_view  — how many people opened the public page
  *  • whatsapp_click — how many tapped the WhatsApp CTA
  *
- * Reads from audit_log filtered by resource_type='provider' + resource_id=providerId,
- * keeping it cheap (single query, ≤500 rows) and consistent with the AchievementHistory
- * source-of-truth pattern.
+ * Reads aggregated stats from get_lead_stats(provider_id), keeping heavy audit_log
+ * grouping on the backend instead of processing raw logs in the browser.
  */
 const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
   const [views, setViews] = useState(0);
   const [clicks, setClicks] = useState(0);
+  const [phoneClicks, setPhoneClicks] = useState(0);
   const [series, setSeries] = useState<DayBucket[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,46 +39,22 @@ const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
     let active = true;
     (async () => {
       setLoading(true);
-      const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
-      const { data } = await supabase
-        .from('audit_log')
-        .select('action, created_at')
-        .eq('resource_type', 'provider')
-        .eq('resource_id', providerId)
-        .in('action', ['profile_view', 'whatsapp_click'])
-        .gte('created_at', since)
-        .order('created_at', { ascending: true })
-        .limit(500);
+      const { data } = await (supabase.rpc as any)('get_lead_stats', { provider_id: providerId });
 
       if (!active) return;
 
-      const buckets = new Map<string, DayBucket>();
-      // Pre-fill last 14 days so the sparkline always has shape
-      for (let i = 13; i >= 0; i--) {
-        const d = new Date(Date.now() - i * 86_400_000);
-        const key = d.toISOString().slice(0, 10);
-        buckets.set(key, {
-          label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-          views: 0,
-          clicks: 0,
-        });
-      }
-      let totalViews = 0;
-      let totalClicks = 0;
-      (data || []).forEach((row: any) => {
-        if (row.action === 'profile_view') totalViews += 1;
-        else if (row.action === 'whatsapp_click') totalClicks += 1;
-        const key = String(row.created_at).slice(0, 10);
-        const bucket = buckets.get(key);
-        if (bucket) {
-          if (row.action === 'profile_view') bucket.views += 1;
-          else if (row.action === 'whatsapp_click') bucket.clicks += 1;
-        }
-      });
+      const stats = (data || {}) as any;
+      const buckets = (stats.series || []).slice(-14).map((row: any) => ({
+        label: row.label,
+        views: Number(row.views) || 0,
+        clicks: Number(row.whatsapp_clicks) || 0,
+        phoneClicks: Number(row.phone_clicks) || 0,
+      }));
 
-      setViews(totalViews);
-      setClicks(totalClicks);
-      setSeries(Array.from(buckets.values()));
+      setViews(Number(stats.views) || 0);
+      setClicks(Number(stats.whatsapp_clicks) || 0);
+      setPhoneClicks(Number(stats.phone_clicks) || 0);
+      setSeries(buckets);
       setLoading(false);
     })();
     return () => {
@@ -87,11 +64,11 @@ const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
 
   const conversion = useMemo(() => {
     if (views === 0) return 0;
-    return Math.round((clicks / views) * 100);
-  }, [views, clicks]);
+    return Math.round(((clicks + phoneClicks) / views) * 100);
+  }, [views, clicks, phoneClicks]);
 
   const peak = useMemo(
-    () => Math.max(1, ...series.map((s) => Math.max(s.views, s.clicks))),
+    () => Math.max(1, ...series.map((s) => Math.max(s.views, s.clicks + s.phoneClicks))),
     [series],
   );
 
@@ -128,11 +105,11 @@ const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
 
       <div className="grid grid-cols-2 gap-2.5">
         <Metric icon={Eye} label="Visualizações" value={views} accent="hsl(217 91% 60%)" />
-        <Metric icon={MessageCircle} label="Cliques no WhatsApp" value={clicks} accent="hsl(142 71% 45%)" />
+        <Metric icon={MessageCircle} label="WhatsApp/Telefone" value={clicks + phoneClicks} accent="hsl(142 71% 45%)" />
       </div>
 
       {/* Mini sparkline (last 14 days) */}
-      {series.length > 0 && (views > 0 || clicks > 0) && (
+      {series.length > 0 && (views > 0 || clicks > 0 || phoneClicks > 0) && (
         <div className="mt-4">
           <div className="flex items-end gap-[3px] h-14">
             {series.map((b, i) => (
@@ -144,8 +121,8 @@ const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
                 />
                 <div
                   className="w-full rounded-sm bg-emerald-500/70"
-                  style={{ height: `${Math.max(2, (b.clicks / peak) * 16)}px` }}
-                  title={`${b.label} • ${b.clicks} cliques`}
+                   style={{ height: `${Math.max(2, ((b.clicks + b.phoneClicks) / peak) * 16)}px` }}
+                   title={`${b.label} • ${b.clicks + b.phoneClicks} contatos`}
                 />
               </div>
             ))}
@@ -157,7 +134,7 @@ const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
                 <span className="h-1.5 w-1.5 rounded-sm bg-primary/70" /> Views
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-sm bg-emerald-500/70" /> Cliques
+                <span className="h-1.5 w-1.5 rounded-sm bg-emerald-500/70" /> Contatos
               </span>
             </span>
             <span>{series[series.length - 1]?.label}</span>
@@ -165,7 +142,7 @@ const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
         </div>
       )}
 
-      {views === 0 && clicks === 0 && (
+      {views === 0 && clicks === 0 && phoneClicks === 0 && (
         <p className="mt-3 text-center text-[11px] text-muted-foreground">
           Compartilhe seu perfil para começar a registrar resultados.
         </p>

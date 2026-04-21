@@ -55,19 +55,14 @@ const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone'
     }).then(() => {});
   } catch { /* silent */ }
 
-  // Also log to audit_log so the provider's dashboard LeadAnalytics can show it.
-  // Best-effort: only logs if visitor is authenticated (RLS forces user_id = auth.uid()).
+  // Also log to audit_log via RPC so the provider's dashboard LeadAnalytics can show it,
+  // including visits from anonymous clients.
   try {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data?.user) return;
-      supabase.from('audit_log' as any).insert({
-        user_id: data.user.id,
-        action: contactType === 'whatsapp' ? 'whatsapp_click' : 'phone_click',
-        resource_type: 'provider',
-        resource_id: providerId,
-        details: { page_path: pagePath },
-      }).then(() => {});
-    });
+    (supabase.rpc as any)('log_provider_public_event', {
+      provider_id: providerId,
+      event_action: contactType === 'whatsapp' ? 'whatsapp_click' : 'phone_click',
+      page_path: pagePath,
+    }).then(() => {});
   } catch { /* silent */ }
 };
 
@@ -77,16 +72,11 @@ const trackProfileView = (providerId: string) => {
     const key = `pv_logged:${providerId}`;
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, '1');
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data?.user) return;
-      supabase.from('audit_log' as any).insert({
-        user_id: data.user.id,
-        action: 'profile_view',
-        resource_type: 'provider',
-        resource_id: providerId,
-        details: { page_path: window.location.pathname },
-      }).then(() => {});
-    });
+    (supabase.rpc as any)('log_provider_public_event', {
+      provider_id: providerId,
+      event_action: 'profile_view',
+      page_path: window.location.pathname,
+    }).then(() => {});
   } catch { /* silent */ }
 };
 

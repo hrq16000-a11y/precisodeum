@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Briefcase, Image as ImageIcon, User, Sparkles, Star, ExternalLink, Share2 } from 'lucide-react';
+import { Trophy, Briefcase, Image as ImageIcon, User, Sparkles, Star, ExternalLink, Share2, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { logAuditAction } from '@/hooks/useAuditLog';
-import { whatsappLink } from '@/lib/whatsapp';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 interface Achievement {
@@ -21,6 +20,27 @@ const ACTION_MAP: Record<string, { title: string; icon: typeof Trophy; cls: stri
   portfolio_photo_atomic: { title: 'Foto adicionada ao portfólio', icon: ImageIcon, cls: 'text-pink-600 bg-pink-500/10' },
   profile_update: { title: 'Perfil atualizado', icon: User, cls: 'text-emerald-600 bg-emerald-500/10' },
   level_up: { title: 'Novo nível alcançado', icon: Star, cls: 'text-amber-600 bg-amber-500/10' },
+};
+
+const buildShareUrl = (message: string) => `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+const buildAchievementSvg = (levelName: string, profileUrl: string) => {
+  const safeLevel = levelName.replace(/[<>&]/g, '');
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0f172a"/><stop offset="1" stop-color="#155e75"/></linearGradient>
+        <linearGradient id="seal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fef3c7"/><stop offset="0.45" stop-color="#67e8f9"/><stop offset="1" stop-color="#f59e0b"/></linearGradient>
+      </defs>
+      <rect width="1080" height="1080" rx="72" fill="url(#bg)"/>
+      <circle cx="540" cy="390" r="190" fill="url(#seal)" opacity="0.95"/>
+      <circle cx="540" cy="390" r="144" fill="#0f172a" opacity="0.92"/>
+      <path d="M540 268l39 82 90 13-65 64 15 89-79-42-80 42 16-89-66-64 91-13 39-82z" fill="#f8fafc"/>
+      <text x="540" y="680" text-anchor="middle" fill="#f8fafc" font-family="Arial, sans-serif" font-size="54" font-weight="700">Profissional ${safeLevel}</text>
+      <text x="540" y="748" text-anchor="middle" fill="#bae6fd" font-family="Arial, sans-serif" font-size="32">Selo de Elite no Preciso de Um</text>
+      <text x="540" y="830" text-anchor="middle" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="24">${profileUrl}</text>
+    </svg>
+  `)}`;
 };
 
 /**
@@ -91,6 +111,11 @@ const AchievementHistory = ({ providerSlug, levelName }: AchievementHistoryProps
     if (days < 7) return `${days}d atrás`;
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
   };
+
+  const profileUrl = providerSlug ? `${SITE_BASE_URL}/profissional/${providerSlug}` : '';
+  const shareMessage = levelName
+    ? `Confira meu selo de Profissional ${levelName} no Preciso de Um! ${profileUrl}`
+    : `Confira meu perfil profissional no Preciso de Um! ${profileUrl}`;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
@@ -167,12 +192,7 @@ const AchievementHistory = ({ providerSlug, levelName }: AchievementHistoryProps
 
           {/* Share level on WhatsApp — pride amplifier (Selo de Elite) */}
           <a
-            href={whatsappLink(
-              '',
-              levelName
-                ? `Sou Profissional Nivel ${levelName} no Preciso de Um — confira meu perfil verificado: ${SITE_BASE_URL}/profissional/${providerSlug}`
-                : `Confira meu perfil de profissional verificado no Preciso de Um: ${SITE_BASE_URL}/profissional/${providerSlug}`,
-            )}
+            href={buildShareUrl(shareMessage)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => {
@@ -191,6 +211,17 @@ const AchievementHistory = ({ providerSlug, levelName }: AchievementHistoryProps
             <Share2 className="h-3.5 w-3.5" />
             {levelName ? `Compartilhar meu Nivel ${levelName}` : 'Compartilhar meu Nivel'}
           </a>
+
+          {levelName && (
+            <a
+              href={buildAchievementSvg(levelName, profileUrl)}
+              download={`selo-${levelName.toLowerCase()}-preciso-de-um.svg`}
+              className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-bold text-foreground transition hover:bg-accent hover:text-accent-foreground"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Baixar Card de Conquista
+            </a>
+          )}
         </>
       )}
     </div>

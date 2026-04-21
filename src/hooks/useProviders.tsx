@@ -20,6 +20,7 @@ export function trackProviderImpressions(providerIds: string[]) {
 export interface DbProvider {
   id: string;
   userId: string;
+  createdAt?: string | null;
   name: string;
   businessName?: string;
   category: string;
@@ -52,6 +53,8 @@ export interface DbProvider {
   trialBoostUntil?: string | null;
   /** "Verificado pela Comunidade" — auto-granted when 3 requirements are met */
   communityVerified?: boolean;
+  levelName?: string | null;
+  levelPriority?: number;
 }
 
 interface ServiceFallback {
@@ -92,6 +95,7 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
   return {
     userId: p.user_id,
     id: p.id,
+    createdAt: p.created_at || null,
     name: profileName || p.business_name || serviceFallback?.serviceName || 'Profissional',
     businessName: p.business_name || undefined,
     category: catName || serviceFallback?.serviceName || '',
@@ -122,7 +126,20 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
   };
 }
 
-const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, categories(name, slug, icon)';
+const providerSelect = 'id, user_id, created_at, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, categories(name, slug, icon)';
+
+function compareEliteMerit(a: DbProvider, b: DbProvider): number {
+  const levelDiff = (b.levelPriority || 0) - (a.levelPriority || 0);
+  if (levelDiff !== 0) return levelDiff;
+  const ratingDiff = (b.rating || 0) - (a.rating || 0);
+  if (Math.abs(ratingDiff) > 0.001) return ratingDiff;
+  const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+  const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+  if (aCreated !== bCreated) return aCreated - bCreated;
+  const photoDiff = (b.portfolioPhotoCount || 0) - (a.portfolioPhotoCount || 0);
+  if (photoDiff !== 0) return photoDiff;
+  return (b.reviewCount || 0) - (a.reviewCount || 0);
+}
 
 // --- Ranking config cache ---
 let _rankingConfig: { boostMul: number; fairnessPen: number; randomMax: number } | null = null;
@@ -184,7 +201,7 @@ async function fetchProvidersLightweight(query: any) {
     // Fetch engagement points + level priority + trial boost for meritocracy scoring
     supabase
       .from('profiles')
-      .select('id, engagement_points, level_id, trial_boost_until, gamification_levels!profiles_level_id_fkey(priority)')
+      .select('id, engagement_points, level_id, trial_boost_until, gamification_levels!profiles_level_id_fkey(name, priority)')
       .in('id', userIds) as any,
   ]);
 
@@ -206,12 +223,14 @@ async function fetchProvidersLightweight(query: any) {
   });
 
   // Engagement/meritocracy aggregation (+ trial boost flag)
-  const engagementMap: Record<string, { points: number; priority: number; trialBoostUntil: string | null }> = {};
+  const engagementMap: Record<string, { points: number; priority: number; levelName: string | null; trialBoostUntil: string | null }> = {};
   ((engagementRes as any)?.data || []).forEach((e: any) => {
     const lvl = e.gamification_levels;
+    const levelRow = Array.isArray(lvl) ? lvl[0] : lvl;
     engagementMap[e.id] = {
       points: e.engagement_points || 0,
-      priority: (Array.isArray(lvl) ? lvl[0]?.priority : lvl?.priority) || 0,
+      priority: levelRow?.priority || 0,
+      levelName: levelRow?.name || null,
       trialBoostUntil: e.trial_boost_until || null,
     };
   });
@@ -320,6 +339,8 @@ async function fetchProvidersLightweight(query: any) {
     (mapped as any)._contentScore = contentScore;
     (mapped as any)._finalScore = finalScore;
     (mapped as any)._boostScore = boostScore;
+    mapped.levelPriority = levelPriority;
+    mapped.levelName = engData?.levelName || null;
     mapped.trialBoostUntil = trialBoostUntil;
     return mapped;
   }).filter(p => !hideIncomplete || !(p as any)._isIncomplete);
@@ -535,8 +556,7 @@ export function filterAndRankProviders(
       const aScore = (a.p as any)._finalScore || (a.p as any)._contentScore || 0;
       const bScore = (b.p as any)._finalScore || (b.p as any)._contentScore || 0;
       if (aScore !== bScore) return bScore - aScore;
-      if (b.p.rating !== a.p.rating) return b.p.rating - a.p.rating;
-      return b.p.reviewCount - a.p.reviewCount;
+      return compareEliteMerit(a.p, b.p);
     });
 
     SearchIntelligence.trackFinalScore(query, intent, final.length);
@@ -548,8 +568,7 @@ export function filterAndRankProviders(
     const aScore = (a as any)._finalScore || (a as any)._contentScore || 0;
     const bScore = (b as any)._finalScore || (b as any)._contentScore || 0;
     if (aScore !== bScore) return bScore - aScore;
-    if (b.rating !== a.rating) return b.rating - a.rating;
-    return b.reviewCount - a.reviewCount;
+    return compareEliteMerit(a, b);
   });
 
   SearchIntelligence.trackFinalScore(query, intent, results.length);
@@ -653,7 +672,7 @@ export function filterAndRankProvidersGrouped(
     const aS = (a.p as any)._finalScore || 0;
     const bS = (b.p as any)._finalScore || 0;
     if (aS !== bS) return bS - aS;
-    return b.p.rating - a.p.rating;
+    return compareEliteMerit(a.p, b.p);
   });
 
   // Sort other by distance first when available, then by score
@@ -664,7 +683,7 @@ export function filterAndRankProvidersGrouped(
     }
     if (a.distanceKm === Infinity && b.distanceKm !== Infinity) return 1;
     if (b.distanceKm === Infinity && a.distanceKm !== Infinity) return -1;
-    return b.p.rating - a.p.rating;
+    return compareEliteMerit(a.p, b.p);
   });
 
   const isFallback = hasGeoContext && localArr.length === 0;
@@ -694,7 +713,7 @@ export function filterAndRankProvidersGrouped(
       }
       if (a.distanceKm === Infinity && b.distanceKm !== Infinity) return 1;
       if (b.distanceKm === Infinity && a.distanceKm !== Infinity) return -1;
-      return b.p.rating - a.p.rating;
+      return compareEliteMerit(a.p, b.p);
     });
     const { nearbyArr, outOfStateArr } = splitOther(combined);
     const toProvider = (e: typeof combined[0]) => ({

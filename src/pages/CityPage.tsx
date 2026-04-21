@@ -14,6 +14,7 @@ import GeoPromptBanner from '@/components/GeoPromptBanner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { importWithRetry } from '@/lib/lazyWithRetry';
@@ -26,6 +27,17 @@ const ITEMS_PER_PAGE = 12;
 
 const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) =>
   calculateDistanceKm({ latitude: lat1, longitude: lon1 }, { latitude: lat2, longitude: lon2 });
+
+const compareCityMerit = (a: any, b: any) => {
+  const levelDiff = (b.levelPriority || 0) - (a.levelPriority || 0);
+  if (levelDiff !== 0) return levelDiff;
+  const ratingDiff = (b.rating || 0) - (a.rating || 0);
+  if (Math.abs(ratingDiff) > 0.001) return ratingDiff;
+  const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+  const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+  if (aCreated !== bCreated) return aCreated - bCreated;
+  return (b.portfolioPhotoCount || 0) - (a.portfolioPhotoCount || 0);
+};
 
 const CityPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -51,23 +63,24 @@ const CityPage = () => {
         .order('rating_avg', { ascending: false });
 
       const userIds = [...new Set((provs || []).map((p) => p.user_id))];
-      let profileMap: Record<string, string> = {};
+      let profileMap: Record<string, any> = {};
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('public_profiles' as any)
-          .select('id, full_name')
+          .from('profiles')
+          .select('id, full_name, gamification_levels!profiles_level_id_fkey(name, priority)')
           .in('id', userIds) as { data: { id: string; full_name: string }[] | null };
-        (profiles || []).forEach((p: any) => { profileMap[p.id] = p.full_name; });
+        (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
       }
 
       const providers = (provs || []).map((p) => ({
         id: p.id,
         userId: p.user_id,
-        name: profileMap[p.user_id] || p.business_name || 'Profissional',
+        createdAt: p.created_at || null,
+        name: profileMap[p.user_id]?.full_name || p.business_name || 'Profissional',
         businessName: p.business_name || undefined,
         category: (p.categories as any)?.name || '',
         categorySlug: (p.categories as any)?.slug || '',
-        categoryIcon: (p.categories as any)?.icon || '🔧',
+        categoryIcon: (p.categories as any)?.icon || 'Wrench',
         city: p.city,
         state: p.state,
         neighborhood: p.neighborhood,
@@ -86,6 +99,8 @@ const CityPage = () => {
         servicesCount: p.services_count || 0,
         portfolioAlbumCount: p.portfolio_album_count || 0,
         portfolioPhotoCount: p.portfolio_photo_count || 0,
+        levelName: (Array.isArray(profileMap[p.user_id]?.gamification_levels) ? profileMap[p.user_id]?.gamification_levels?.[0]?.name : profileMap[p.user_id]?.gamification_levels?.name) || null,
+        levelPriority: (Array.isArray(profileMap[p.user_id]?.gamification_levels) ? profileMap[p.user_id]?.gamification_levels?.[0]?.priority : profileMap[p.user_id]?.gamification_levels?.priority) || 0,
       }));
 
       return { city, providers };
@@ -128,7 +143,7 @@ const CityPage = () => {
         const dB = b.distanceKm ?? Infinity;
         if (dA !== dB) return dA - dB;
       }
-      return b.rating - a.rating;
+      return compareCityMerit(a, b);
     });
   }, [rawProviders, userLat, userLon, city]);
 
@@ -139,6 +154,34 @@ const CityPage = () => {
       : 'Encontre profissionais na sua cidade.',
     canonical: slug ? `${SITE_BASE_URL}/cidade/${slug}` : undefined,
   });
+
+  const cityAuthorityLd = useMemo(() => {
+    if (!city) return null;
+    const authorityProviders = providers.filter((p: any) => {
+      const level = (p.levelName || '').toLowerCase();
+      return level.includes('diamante') || level.includes('ouro');
+    });
+    const ratingSource = authorityProviders.length > 0 ? authorityProviders : providers;
+    const ratings = ratingSource.map((p: any) => Number(p.rating || 0)).filter((r: number) => r > 0);
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Service',
+      name: `Profissionais em ${city.name}`,
+      areaServed: { '@type': 'City', name: city.name },
+      provider: { '@type': 'Organization', name: 'Preciso de um', url: SITE_BASE_URL },
+      url: `${SITE_BASE_URL}/cidade/${slug}`,
+      ...(ratings.length > 0 && {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: (ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length).toFixed(1),
+          reviewCount: ratingSource.reduce((acc: number, p: any) => acc + (Number(p.reviewCount) || 0), 0) || ratings.length,
+          bestRating: 5,
+          worstRating: 1,
+        },
+      }),
+    };
+  }, [city, providers, slug]);
+  useJsonLd(cityAuthorityLd);
 
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
