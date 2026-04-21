@@ -454,9 +454,9 @@ const DashboardServicesPage = () => {
         const SERVICES_CAP = 5;
         const unlockedNext = newCount < SERVICES_CAP;
         celebrate({ intensity: 'mini' });
-        toast.success('🎉 VOCÊ DESBLOQUEOU MAIS PODER!', {
+        toast.success('🎉 Você ganhou um novo slot!', {
           description: unlockedNext
-            ? `Seu ${newCount + 1}º slot de serviço já está disponível. Continue subindo!`
+            ? `Seu ${newCount + 1}º espaço na vitrine já está liberado. Continue subindo!`
             : 'Você atingiu o nível máximo de serviços. Que máquina! 🚀',
           duration: 5000,
         });

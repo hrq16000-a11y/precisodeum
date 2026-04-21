@@ -49,8 +49,15 @@ const iconSizes = { sm: 12, md: 14, lg: 16 };
 
 const GamificationLevelBadge = ({ levelName, levelColor, size = 'md', showShine = true }: GamificationLevelBadgeProps) => {
   const gradient = getMetallicGradient(levelName);
-  const isMestre = levelName.toLowerCase().includes('mestre') || levelName.toLowerCase().includes('master');
+  const lower = levelName.toLowerCase();
+  const isMestre = lower.includes('mestre') || lower.includes('master');
+  const isDiamante = lower.includes('diamante') || lower.includes('diamond');
   const IconComp = getLevelIcon(levelName);
+
+  // Diamante = "máximo prestígio": glow pulsante cyan + shine acelerado.
+  const diamanteGlow = isDiamante
+    ? '0 0 0 2px rgba(185,242,255,0.6), 0 0 18px 4px rgba(77,208,225,0.55), 0 0 32px 8px rgba(0,172,193,0.35), inset 0 1px 2px rgba(255,255,255,0.5)'
+    : `0 2px 12px ${levelColor}40, inset 0 1px 2px rgba(255,255,255,0.3)`;
 
   return (
     <motion.span
@@ -58,24 +65,51 @@ const GamificationLevelBadge = ({ levelName, levelColor, size = 'md', showShine 
       style={{
         background: gradient,
         color: isMestre ? '#fff' : '#1a1a1a',
-        boxShadow: `0 2px 12px ${levelColor}40, inset 0 1px 2px rgba(255,255,255,0.3)`,
+        boxShadow: diamanteGlow,
       }}
       initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      whileHover={{ scale: 1.05, boxShadow: `0 4px 20px ${levelColor}60` }}
+      animate={
+        isDiamante
+          ? {
+              scale: [1, 1.04, 1],
+              boxShadow: [
+                '0 0 0 2px rgba(185,242,255,0.45), 0 0 14px 3px rgba(77,208,225,0.4), 0 0 26px 6px rgba(0,172,193,0.25), inset 0 1px 2px rgba(255,255,255,0.5)',
+                '0 0 0 3px rgba(185,242,255,0.75), 0 0 22px 6px rgba(77,208,225,0.7), 0 0 38px 10px rgba(0,172,193,0.45), inset 0 1px 2px rgba(255,255,255,0.6)',
+                '0 0 0 2px rgba(185,242,255,0.45), 0 0 14px 3px rgba(77,208,225,0.4), 0 0 26px 6px rgba(0,172,193,0.25), inset 0 1px 2px rgba(255,255,255,0.5)',
+              ],
+            }
+          : { scale: 1, opacity: 1 }
+      }
+      transition={
+        isDiamante
+          ? { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }
+          : { type: 'spring', stiffness: 300, damping: 20 }
+      }
+      whileHover={{ scale: 1.06 }}
     >
       {showShine && (
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%)',
+            background: isDiamante
+              ? 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.7) 50%, transparent 65%)'
+              : 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%)',
           }}
           animate={{ x: ['-100%', '200%'] }}
-          transition={{ duration: 3, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' }}
+          transition={{
+            duration: isDiamante ? 1.8 : 3,
+            repeat: Infinity,
+            repeatDelay: isDiamante ? 1.2 : 4,
+            ease: 'easeInOut',
+          }}
         />
       )}
-      <IconComp className="relative z-10 shrink-0" size={iconSizes[size]} strokeWidth={1.75} />
+      <IconComp
+        className="relative z-10 shrink-0"
+        size={iconSizes[size]}
+        strokeWidth={1.75}
+        style={isDiamante ? { filter: 'drop-shadow(0 0 4px rgba(185,242,255,0.9))' } : undefined}
+      />
       <span className="relative z-10 tracking-wide">{levelName}</span>
     </motion.span>
   );

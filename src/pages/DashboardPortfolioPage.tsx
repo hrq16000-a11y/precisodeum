@@ -165,9 +165,9 @@ const DashboardPortfolioPage = () => {
         const newCount = albums.length + 1;
         const unlockedNext = newCount < MAX_ALBUMS;
         celebrate({ intensity: 'mini' });
-        toast.success('🎉 VOCÊ DESBLOQUEOU MAIS PODER!', {
+        toast.success('🎉 Você ganhou um novo slot!', {
           description: unlockedNext
-            ? `Seu ${newCount + 1}º slot de álbum está disponível.`
+            ? `Seu ${newCount + 1}º álbum já está liberado na vitrine.`
             : 'Você atingiu o limite máximo de álbuns. Que portfólio! 🚀',
           duration: 5000,
         });
