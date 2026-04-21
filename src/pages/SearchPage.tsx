@@ -38,6 +38,8 @@ import { usePinnedSponsor } from '@/hooks/usePinnedSponsor';
 import UrgencyToggle from '@/components/home/UrgencyToggle';
 import { useUrgencyMode } from '@/hooks/useUrgencyMode';
 import { useOnlineProviders } from '@/hooks/useOnlinePresence';
+import AskSystemDialog from '@/components/search/AskSystemDialog';
+import { logSearchIntent } from '@/lib/searchIntent';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -826,6 +828,14 @@ const SearchPage = () => {
                     message="Tente alterar os filtros ou buscar por outro termo."
                   />
                 )}
+
+                {/* "Pergunte e Compare" — sem leilão */}
+                <div className="mt-6 flex justify-center">
+                  <AskSystemDialog
+                    defaultService={query}
+                    defaultCategory={selectedCategory}
+                  />
+                </div>
                 <PaginationControls currentPage={page} totalItems={totalDisplay} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
               </>
             )}
