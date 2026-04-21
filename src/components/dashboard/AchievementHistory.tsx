@@ -112,6 +112,11 @@ const AchievementHistory = ({ providerSlug, levelName }: AchievementHistoryProps
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
   };
 
+  const profileUrl = providerSlug ? `${SITE_BASE_URL}/profissional/${providerSlug}` : '';
+  const shareMessage = levelName
+    ? `Confira meu selo de Profissional ${levelName} no Preciso de Um! ${profileUrl}`
+    : `Confira meu perfil profissional no Preciso de Um! ${profileUrl}`;
+
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center gap-2">
@@ -187,12 +192,7 @@ const AchievementHistory = ({ providerSlug, levelName }: AchievementHistoryProps
 
           {/* Share level on WhatsApp — pride amplifier (Selo de Elite) */}
           <a
-            href={whatsappLink(
-              '',
-              levelName
-                ? `Sou Profissional Nivel ${levelName} no Preciso de Um — confira meu perfil verificado: ${SITE_BASE_URL}/profissional/${providerSlug}`
-                : `Confira meu perfil de profissional verificado no Preciso de Um: ${SITE_BASE_URL}/profissional/${providerSlug}`,
-            )}
+            href={buildShareUrl(shareMessage)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => {
@@ -211,6 +211,17 @@ const AchievementHistory = ({ providerSlug, levelName }: AchievementHistoryProps
             <Share2 className="h-3.5 w-3.5" />
             {levelName ? `Compartilhar meu Nivel ${levelName}` : 'Compartilhar meu Nivel'}
           </a>
+
+          {levelName && (
+            <a
+              href={buildAchievementSvg(levelName, profileUrl)}
+              download={`selo-${levelName.toLowerCase()}-preciso-de-um.svg`}
+              className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-bold text-foreground transition hover:bg-accent hover:text-accent-foreground"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Baixar Card de Conquista
+            </a>
+          )}
         </>
       )}
     </div>
