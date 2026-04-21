@@ -262,10 +262,11 @@ export default function AdminSponsorApprovalsPage() {
         })
         .eq('id', s.id);
       if (error) throw error;
-      await logAuditAction('sponsor_approved', 'sponsor', s.id, {
-        sponsor_user_ref: s.user_ref,
-        admin_user_ref: profile?.user_ref,
-        position: s.position,
+      await logAuditAction({
+        action: 'approve',
+        resource_type: 'sponsor',
+        resource_id: s.id,
+        details: { sponsor_user_ref: s.user_ref, admin_user_ref: profile?.user_ref, position: s.position },
       });
     },
     onSuccess: () => {
@@ -289,10 +290,11 @@ export default function AdminSponsorApprovalsPage() {
         })
         .eq('id', s.id);
       if (error) throw error;
-      await logAuditAction('sponsor_rejected', 'sponsor', s.id, {
-        sponsor_user_ref: s.user_ref,
-        admin_user_ref: profile?.user_ref,
-        reason: motive,
+      await logAuditAction({
+        action: 'reject',
+        resource_type: 'sponsor',
+        resource_id: s.id,
+        details: { sponsor_user_ref: s.user_ref, admin_user_ref: profile?.user_ref, reason: motive },
       });
     },
     onSuccess: () => {
