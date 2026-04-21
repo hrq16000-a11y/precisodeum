@@ -58,11 +58,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     })();
 
-    if (profileData && pendingSignupType && profileData.profile_type !== pendingSignupType) {
+    const shouldForcePendingType = !!profileData && !!pendingSignupType && (
+      !profileData.profile_type || profileData.profile_type !== pendingSignupType
+    );
+
+    if (shouldForcePendingType) {
       const nextProfile = {
         profile_type: pendingSignupType,
         role: pendingSignupType,
-        onboarding_completed: true,
+        onboarding_completed: false,
       };
 
       const { error: syncProfileError } = await supabase
