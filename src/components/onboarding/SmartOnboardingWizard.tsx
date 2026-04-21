@@ -213,10 +213,6 @@ const BasicOnboardingWizard = () => {
     }
   };
 
-  const clearPersisted = () => {
-    try { localStorage.removeItem(STORAGE_KEY); } catch {}
-  };
-
   const handleConfirm = async () => {
     if (!user?.id) {
       toast.error('Sessão expirada. Faça login novamente.');
@@ -226,6 +222,11 @@ const BasicOnboardingWizard = () => {
     if (!city.trim()) {
       toast.error('Selecione sua cidade.');
       setStep(2);
+      return;
+    }
+    // CNPJ é OPCIONAL — mas se preenchido, precisa ser real (mod11).
+    if (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim() && !isValidCnpj(cnpj)) {
+      toast.error('CNPJ inválido. Confira os dígitos ou deixe em branco.');
       return;
     }
     setSaving(true);
