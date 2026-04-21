@@ -16,7 +16,7 @@ import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
 
 type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
-type WizardStep = 1 | 2 | 3 | 4;
+type WizardStep = 1 | 2 | 3 | 4 | 5;
 type ProviderSubtype = 'autonomous' | 'company';
 
 const STORAGE_KEY = 'onboarding_wizard_state';
@@ -149,6 +149,19 @@ const BasicOnboardingWizard = () => {
   const [savedProvider, setSavedProvider] = useState<any | null>(null);
   const [servicesCreated, setServicesCreated] = useState(0);
   const [showStep4Intro, setShowStep4Intro] = useState(false);
+
+  const finishOnboardingToDashboard = (target: string = '/dashboard') => {
+    clearPersisted();
+    if (user?.id) {
+      void supabase.from('profiles').update({ onboarding_completed: true } as any).eq('id', user.id);
+    }
+    navigate(target, { replace: true });
+  };
+
+  const goToPortfolioStep = () => {
+    setShowStep4Intro(false);
+    setStep(5);
+  };
 
   // Persist progress
   useEffect(() => {
@@ -382,12 +395,7 @@ const BasicOnboardingWizard = () => {
   };
 
   const handleServiceCreated = (_serviceId: string) => {
-    // ServiceWizard agora exige ≥1 foto antes de habilitar "Concluir",
-    // portanto qualquer chamada aqui já garante hasImage=true.
     setServicesCreated(c => c + 1);
-    if (user?.id) {
-      void supabase.from('profiles').update({ onboarding_completed: true } as any).eq('id', user.id);
-    }
   };
 
 
