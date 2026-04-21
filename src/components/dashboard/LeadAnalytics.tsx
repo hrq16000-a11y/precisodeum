@@ -68,7 +68,7 @@ const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
   }, [views, clicks, phoneClicks]);
 
   const peak = useMemo(
-    () => Math.max(1, ...series.map((s) => Math.max(s.views, s.clicks))),
+    () => Math.max(1, ...series.map((s) => Math.max(s.views, s.clicks + s.phoneClicks))),
     [series],
   );
 
