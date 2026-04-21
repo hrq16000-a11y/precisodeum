@@ -45,6 +45,7 @@ import WeeklySummary from '@/components/dashboard/WeeklySummary';
 import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
 import EngagementLoop from '@/components/dashboard/EngagementLoop';
 import AchievementHistory from '@/components/dashboard/AchievementHistory';
+import CelebrationMuteToggle from '@/components/dashboard/CelebrationMuteToggle';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
@@ -639,6 +640,11 @@ const DashboardPage = () => {
               </div>
             </GlassCard>
           )}
+
+          <div className="flex items-center justify-between gap-2 px-1">
+            <span className="text-[11px] text-muted-foreground">Som de conquistas</span>
+            <CelebrationMuteToggle />
+          </div>
 
           <AchievementHistory providerSlug={provider?.slug ?? null} />
         </div>
