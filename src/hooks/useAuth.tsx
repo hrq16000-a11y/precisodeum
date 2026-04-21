@@ -93,8 +93,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const freshUser = authData.user ?? user;
     if (freshUser !== user) setUser(freshUser);
 
+    // fetchProfile já recalcula needsTypeSelection com base no banco — não forçar false aqui.
     const freshProfile = await fetchProfile(user.id, freshUser);
-    setNeedsTypeSelection(false);
     return freshProfile ?? null;
   }, [user, fetchProfile]);
 
