@@ -139,13 +139,13 @@ const CategoryPage = () => {
   const cityForSeo = geoCity ? geoCity.trim() : '';
   const dynamicTitle = category
     ? (cityForSeo
-        ? `Melhor ${category.name} em ${cityForSeo} | Preciso de um`
-        : `${category.name} no Brasil | Preciso de um`)
+        ? `${category.name} em ${cityForSeo} - Profissionais Verificados | Preciso de Um`
+        : `${category.name} no Brasil - Profissionais Verificados | Preciso de Um`)
     : 'Categoria';
   const dynamicDescription = category
     ? (cityForSeo
-        ? `Os melhores profissionais de ${category.name} em ${cityForSeo}. ${allProviders.length} prestadores avaliados, orçamento grátis pelo WhatsApp.`
-        : `Encontre os melhores profissionais de ${category.name} no Brasil. ${allProviders.length} prestadores cadastrados com avaliações reais.`)
+        ? `Os melhores profissionais de ${category.name} em ${cityForSeo}. ${allProviders.length} prestadores verificados, avaliados pela comunidade. Orçamento grátis pelo WhatsApp.`
+        : `Encontre os melhores profissionais verificados de ${category.name} no Brasil. ${allProviders.length} prestadores cadastrados com avaliações reais.`)
     : 'Encontre profissionais por categoria.';
 
   useSeoHead({
