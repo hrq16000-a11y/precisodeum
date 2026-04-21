@@ -162,8 +162,16 @@ const SearchPage = () => {
       });
     }
 
+    // Urgency mode — prioritize online providers (stable sort within current order)
+    if (urgencyMode && onlineSet.size > 0) {
+      results = [
+        ...results.filter(p => onlineSet.has(p.userId)),
+        ...results.filter(p => !onlineSet.has(p.userId)),
+      ];
+    }
+
     return results;
-  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor]);
+  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet]);
 
   const filteredLocal = useMemo(() => applyClientFilters(localProviders), [applyClientFilters, localProviders]);
   const filteredNearby = useMemo(() => applyClientFilters(nearbyProviders), [applyClientFilters, nearbyProviders]);
