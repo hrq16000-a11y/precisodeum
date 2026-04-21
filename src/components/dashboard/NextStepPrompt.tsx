@@ -42,8 +42,20 @@ function markShown(context: string) {
  */
 const NextStepPrompt = ({ open, onClose, context, providerSlug }: NextStepPromptProps) => {
   const navigate = useNavigate();
+  const skippedRef = useRef(false);
 
-  const headline = {
+  // If recently shown for the same context, auto-close and skip render
+  useEffect(() => {
+    if (open && wasRecentlyShown(context) && !skippedRef.current) {
+      skippedRef.current = true;
+      onClose();
+      return;
+    }
+    if (open) markShown(context);
+  }, [open, context, onClose]);
+
+  if (open && wasRecentlyShown(context) && skippedRef.current) return null;
+
     service: 'Parabéns! Seu serviço está no ar.',
     album: 'Álbum criado com sucesso!',
     photo: 'Foto adicionada ao portfólio!',
