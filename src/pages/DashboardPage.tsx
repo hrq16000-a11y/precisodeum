@@ -145,8 +145,8 @@ const DashboardPage = () => {
       .then(({ data }) => setCategories(data || []));
   }, []);
 
-  const profileType = profile?.profile_type || 'client';
-  const tour = useOnboardingTour(profileType, !!profile?.onboarding_completed);
+  const profileType = profile?.profile_type ?? null;
+  const tour = useOnboardingTour(profileType || 'client', !!profile?.onboarding_completed);
   const isClient = profileType === 'client';
   const isProvider = profileType === 'provider';
   const isRH = profileType === 'rh';
@@ -174,6 +174,15 @@ const DashboardPage = () => {
   }, [provider?.id, profileDone, servicesDone, portfolioDone]);
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
+
+  if (profile && !profileType) {
+    return (
+      <DashboardLayout>
+        {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
+        <p className="text-muted-foreground">Preparando seu tipo de conta...</p>
+      </DashboardLayout>
+    );
+  }
 
   const debugResetBar = (
     <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2">
