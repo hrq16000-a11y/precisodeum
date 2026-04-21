@@ -44,6 +44,7 @@ function markShown(context: string) {
 const NextStepPrompt = ({ open, onClose, context, providerSlug }: NextStepPromptProps) => {
   const navigate = useNavigate();
   const skippedRef = useRef(false);
+  const openedAtRef = useRef<number | null>(null);
 
   // If recently shown for the same context, auto-close and skip render
   useEffect(() => {
@@ -52,8 +53,16 @@ const NextStepPrompt = ({ open, onClose, context, providerSlug }: NextStepPrompt
       onClose();
       return;
     }
-    if (open) markShown(context);
+    if (open) {
+      markShown(context);
+      openedAtRef.current = Date.now();
+    } else {
+      openedAtRef.current = null;
+    }
   }, [open, context, onClose]);
+
+  /** ms since the dialog opened — used to track "decision time" in audit_log */
+  const decisionMs = () => (openedAtRef.current ? Date.now() - openedAtRef.current : null);
 
   if (open && wasRecentlyShown(context) && skippedRef.current) return null;
 
@@ -88,7 +97,7 @@ const NextStepPrompt = ({ open, onClose, context, providerSlug }: NextStepPrompt
     void logAuditAction({
       action: 'next_step_chosen',
       resource_type: 'next_step_prompt',
-      details: { context, choice: opt.title, target: opt.to },
+      details: { context, choice: opt.title, target: opt.to, decision_ms: decisionMs() },
     });
     onClose();
     navigate(opt.to);
@@ -98,7 +107,7 @@ const NextStepPrompt = ({ open, onClose, context, providerSlug }: NextStepPrompt
     void logAuditAction({
       action: 'next_step_dismissed',
       resource_type: 'next_step_prompt',
-      details: { context },
+      details: { context, decision_ms: decisionMs() },
     });
     onClose();
   };

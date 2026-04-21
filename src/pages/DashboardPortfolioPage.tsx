@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Loader2, FolderOpen, ArrowLeft, ImagePlus, Pencil } from 'lucide-react';
+import { Plus, Trash2, Loader2, FolderOpen, ArrowLeft, ImagePlus, Pencil, AlertTriangle } from 'lucide-react';
 import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -351,8 +351,16 @@ const DashboardPortfolioPage = () => {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-5 shadow-card space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">{photos.length}/{MAX_PHOTOS_PER_ALBUM} fotos</p>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col">
+                <p className="text-sm font-medium text-foreground">{photos.length}/{MAX_PHOTOS_PER_ALBUM} fotos usadas</p>
+                <div className="mt-1 h-1.5 w-32 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full transition-all ${photos.length >= MAX_PHOTOS_PER_ALBUM ? 'bg-destructive' : photos.length / MAX_PHOTOS_PER_ALBUM >= 0.8 ? 'bg-amber-500' : 'bg-primary'}`}
+                    style={{ width: `${Math.min(100, (photos.length / MAX_PHOTOS_PER_ALBUM) * 100)}%` }}
+                  />
+                </div>
+              </div>
               <label className="cursor-pointer">
                 <Button variant="accent" size="sm" asChild disabled={uploading || photos.length >= MAX_PHOTOS_PER_ALBUM}>
                   <span>
@@ -360,9 +368,16 @@ const DashboardPortfolioPage = () => {
                     Adicionar fotos
                   </span>
                 </Button>
-                <input type="file" accept="image/*" multiple className="hidden" onChange={handleUploadPhotos} disabled={photos.length >= MAX_PHOTOS_PER_ALBUM} />
+                <input type="file" accept="image/*" multiple className="hidden" onChange={handleUploadPhotos} disabled={uploading || photos.length >= MAX_PHOTOS_PER_ALBUM} />
               </label>
             </div>
+
+            {photos.length >= MAX_PHOTOS_PER_ALBUM && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>Álbum cheio! Remova uma foto antiga para adicionar novas.</span>
+              </div>
+            )}
 
             {photosLoading ? (
               <div className="flex justify-center py-8">
