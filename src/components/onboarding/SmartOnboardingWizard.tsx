@@ -138,6 +138,13 @@ const BasicOnboardingWizard = () => {
   const [showStep4Intro, setShowStep4Intro] = useState(false);
 
   const finishOnboardingToDashboard = (target: string = '/dashboard') => {
+    if (profileType === 'provider' && servicesCreated === 0) {
+      toast.error('Cadastre seu primeiro serviço antes de liberar o dashboard.');
+      setShowStep4Intro(false);
+      setStep(4);
+      return;
+    }
+
     clearPersisted();
     if (user?.id) {
       void supabase.from('profiles').update({ onboarding_completed: true } as any).eq('id', user.id);
@@ -146,6 +153,11 @@ const BasicOnboardingWizard = () => {
   };
 
   const goToPortfolioStep = () => {
+    if (servicesCreated === 0) {
+      toast.error('Cadastre seu primeiro serviço antes de avançar.');
+      return;
+    }
+
     setShowStep4Intro(false);
     setStep(5);
   };
@@ -439,7 +451,7 @@ const BasicOnboardingWizard = () => {
               </div>
               <h2 className="font-display text-lg font-bold text-foreground">Perfil validado!</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Você pode cadastrar seu primeiro serviço agora ou seguir para a etapa de portfólio.
+                Cadastre seu primeiro serviço para liberar o dashboard e as próximas etapas.
               </p>
             </div>
           )}
@@ -499,7 +511,10 @@ const BasicOnboardingWizard = () => {
               provider={savedProvider}
               categories={categoriesData}
               onComplete={handleServiceCreated}
-              onCancel={goToPortfolioStep}
+              onCancel={() => {
+                setShowStep4Intro(false);
+                setStep(3);
+              }}
             />
           </div>
         </div>
@@ -931,27 +946,7 @@ const BasicOnboardingWizard = () => {
               {saving ? 'Salvando seu perfil...' : profileType === 'provider' ? 'Salvar e avançar' : 'Concluir cadastro'}
             </Button>
 
-            {/* Pular esta etapa — só faz sentido para provider (avança para Step 4 sem categoria).
-                Cliente/RH não tem próximo passo neste wizard, então o botão fica oculto. */}
-            {profileType === 'provider' && (
-              <button
-                type="button"
-                disabled={saving}
-                onClick={async () => {
-                  // Garante que pelo menos o nome (se digitado) seja salvo antes de avançar
-                  await persistPartialProgress();
-                  // Mesmo sem categoria, criamos o provider e seguimos para Step 4 (cadastro de serviço opcional)
-                  if (!fullName.trim()) {
-                    toast.info('Informe ao menos seu nome para continuar.');
-                    return;
-                  }
-                  handleConfirm();
-                }}
-                className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-              >
-                Pular esta etapa
-              </button>
-            )}
+
           </>
         )}
       </div>

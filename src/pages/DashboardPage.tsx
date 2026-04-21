@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap, Camera, FileText, RotateCcw } from 'lucide-react';
@@ -36,7 +36,6 @@ import UpsellBanner from '@/components/dashboard/UpsellBanner';
 import CoursesBanner from '@/components/dashboard/CoursesBanner';
 import OurStoryBanner from '@/components/OurStoryBanner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-const ProfileCheckupModal = lazy(() => import('@/components/dashboard/ProfileCheckupModal'));
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 import FirstLeadChecklist from '@/components/dashboard/FirstLeadChecklist';
@@ -198,8 +197,6 @@ const DashboardPage = () => {
     </div>
   );
 
-  // Profile check-up modal (providers only)
-  const showCheckup = isProvider || isRH;
 
   // ---- CLIENT DASHBOARD ----
   if (isClient) {
@@ -432,8 +429,6 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout>
-      {/* Profile check-up modal for incomplete providers */}
-      {showCheckup && <Suspense fallback={null}><ProfileCheckupModal /></Suspense>}
       {debugResetBar}
       <RealtimeEngagementToast />
       <OnboardingTour active={tour.active} step={tour.step} steps={tour.steps} onNext={tour.next} onPrev={tour.prev} onDismiss={tour.dismiss} />

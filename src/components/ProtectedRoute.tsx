@@ -25,9 +25,9 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
       return;
     }
 
-    // HARD GATE: usuário autenticado SEM profile_type → forçar triagem.
-    // Não importa se chegou aqui via deep-link, refresh ou OAuth callback.
-    if (user && profile && !profile.profile_type && location.pathname !== '/triagem') {
+    const mustCompleteOnboarding = !!user && !!profile && (!profile.profile_type || profile.onboarding_completed === false);
+
+    if (mustCompleteOnboarding && location.pathname !== '/triagem') {
       navigate('/triagem', { replace: true });
       return;
     }
@@ -54,8 +54,9 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
 
    if (user && !profile) return null;
 
-  // Bloqueia render enquanto a triagem não acontece (evita flash de conteúdo).
-  if (user && profile && !profile.profile_type) return null;
+  const mustCompleteOnboarding = !!user && !!profile && (!profile.profile_type || profile.onboarding_completed === false);
+
+  if (mustCompleteOnboarding && location.pathname !== '/triagem') return null;
 
   if (allowedTypes && profile?.profile_type) {
     if (!allowedTypes.includes(profile.profile_type)) return null;
