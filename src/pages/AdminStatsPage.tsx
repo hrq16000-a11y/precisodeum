@@ -14,6 +14,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, CartesianGrid
 } from 'recharts';
+import AdminDataDnaHealth from '@/components/admin/AdminDataDnaHealth';
 
 interface HealthStats {
   totalProviders: number;
@@ -249,6 +250,11 @@ const AdminStatsPage = () => {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* ===== DATA DNA HEALTH (provider_id + user_ref + freeze + triggers) ===== */}
+          <div className="mt-6">
+            <AdminDataDnaHealth />
           </div>
 
           {/* ===== DATA HEALTH DASHBOARD ===== */}
