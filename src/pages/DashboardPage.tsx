@@ -45,6 +45,7 @@ import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedSta
 import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
 import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
+import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
