@@ -118,6 +118,29 @@ const GhostSlot: React.FC<{ locationKey: string; layout: string }> = ({ location
   );
 };
 
+/* ─── Public "Sua marca aqui" — vendedor automático ─── */
+const SaleInviteSlot: React.FC<{ locationKey: string; layout: string }> = ({ locationKey, layout }) => {
+  const ar = ASPECT_RATIOS[layout] || ASPECT_RATIOS.banner;
+  const href = `/quero-ser-patrocinador?slot=${encodeURIComponent(locationKey)}`;
+  return (
+    <a
+      href={href}
+      className="group relative flex flex-col items-center justify-center rounded-xl border border-dashed border-primary/40 bg-gradient-to-br from-primary/5 to-accent/5 px-4 py-3 text-center shadow-sm transition-all hover:border-primary/70 hover:shadow-md"
+      style={{ aspectRatio: ar === 'auto' ? '16 / 3' : ar, minHeight: layout === 'inline' ? 56 : 80 }}
+    >
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Espaço publicitário
+      </span>
+      <span className="mt-1 text-sm font-bold text-foreground sm:text-base">
+        Sua marca aqui
+      </span>
+      <span className="mt-0.5 text-[11px] text-primary opacity-80 group-hover:opacity-100">
+        Anuncie nesta posição →
+      </span>
+    </a>
+  );
+};
+
 /* ─── Skeleton loader ─── */
 const AdSkeleton: React.FC<{ layout: string }> = ({ layout }) => {
   const ar = ASPECT_RATIOS[layout] || ASPECT_RATIOS.banner;
@@ -194,10 +217,10 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
   // Loading state
   if (isLoading) return <AdSkeleton layout={layout} />;
 
-  // Ghost mode for admins when no ads (non-X-Ray)
+  // Empty slot — show invite card to visitors / ghost to admins
   if (displayAds.length === 0) {
-    if (isAdmin) return <GhostSlot locationKey={locationKey} layout={layout} />;
-    return null;
+    if (isAdmin) return <div className={className}><GhostSlot locationKey={locationKey} layout={layout} /></div>;
+    return <div className={className}><SaleInviteSlot locationKey={locationKey} layout={layout} /></div>;
   }
 
   const handleClick = (ad: SponsorAd) => trackAdMetric(ad.id, locationKey, 'click');
