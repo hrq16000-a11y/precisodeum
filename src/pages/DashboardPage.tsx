@@ -37,7 +37,6 @@ import CoursesBanner from '@/components/dashboard/CoursesBanner';
 import OurStoryBanner from '@/components/OurStoryBanner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 const ProfileCheckupModal = lazy(() => import('@/components/dashboard/ProfileCheckupModal'));
-const WelcomeOnboardingModal = lazy(() => import('@/components/dashboard/WelcomeOnboardingModal'));
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 import FirstLeadChecklist from '@/components/dashboard/FirstLeadChecklist';
@@ -175,19 +174,9 @@ const DashboardPage = () => {
     }).eq('id', provider.id);
   }, [provider?.id, profileDone, servicesDone, portfolioDone]);
 
-  // Modal legado de triagem: só pode abrir se ainda não existir tipo definido.
-  const showWelcomeOnboarding = !!profile && !profile.profile_type;
-
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
-  if (profile && !profileType) {
-    return (
-      <DashboardLayout>
-        {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
-        <p className="text-muted-foreground">Preparando seu tipo de conta...</p>
-      </DashboardLayout>
-    );
-  }
+  if (profile && !profileType) return null;
 
   const debugResetBar = (
     <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2">
@@ -214,7 +203,6 @@ const DashboardPage = () => {
   if (isClient) {
     return (
       <DashboardLayout>
-        {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
         {debugResetBar}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
           <motion.div
@@ -298,7 +286,6 @@ const DashboardPage = () => {
   if (isRH) {
     return (
       <DashboardLayout>
-        {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
         {debugResetBar}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
           <motion.div
@@ -443,9 +430,8 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout>
-      {showWelcomeOnboarding && <Suspense fallback={null}><WelcomeOnboardingModal /></Suspense>}
       {/* Profile check-up modal for incomplete providers */}
-      {showCheckup && !showWelcomeOnboarding && <Suspense fallback={null}><ProfileCheckupModal /></Suspense>}
+      {showCheckup && <Suspense fallback={null}><ProfileCheckupModal /></Suspense>}
       {debugResetBar}
       <RealtimeEngagementToast />
       <OnboardingTour active={tour.active} step={tour.step} steps={tour.steps} onNext={tour.next} onPrev={tour.prev} onDismiss={tour.dismiss} />
