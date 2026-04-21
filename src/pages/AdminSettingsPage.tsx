@@ -119,6 +119,9 @@ const AdminSettingsPage = () => {
 
       {/* 'Selo Verificado' removed — destaque agora é exclusivamente o Ranking de Gamificação (vide /admin/rankings) */}
 
+      {/* ====== Limites da Plataforma (Portfólio) ====== */}
+      <PlatformLimitsSection settings={settings} onSaveText={updateTextSetting} />
+
       {/* ====== Regras de Perfil / DESTAQUE Section ====== */}
       <ProfileRulesSection settings={settings} onToggle={toggleSetting} onSaveText={updateTextSetting} />
 

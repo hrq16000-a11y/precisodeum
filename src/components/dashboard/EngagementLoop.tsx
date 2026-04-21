@@ -164,7 +164,7 @@ const EngagementLoop = () => {
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-bold text-foreground">{next.title}</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">{next.description}</p>
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
               <Button size="sm" onClick={() => navigate(next.to)} className="gap-1.5">
                 {next.cta}
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -172,11 +172,31 @@ const EngagementLoop = () => {
               <span className="text-[11px] text-muted-foreground">
                 Perfil {data.percentage}% completo
               </span>
+              <LevelBadge percentage={data.percentage} />
             </div>
           </div>
         </div>
       </motion.div>
     </AnimatePresence>
+  );
+};
+
+/** Visual progress badge — Bronze/Prata/Ouro/Diamante based on completeness. */
+const LevelBadge = ({ percentage }: { percentage: number }) => {
+  const tier =
+    percentage >= 90 ? { label: 'Diamante', cls: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30' } :
+    percentage >= 70 ? { label: 'Ouro', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' } :
+    percentage >= 40 ? { label: 'Prata', cls: 'bg-slate-400/20 text-slate-700 dark:text-slate-200 border-slate-400/40' } :
+                       { label: 'Bronze', cls: 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30' };
+  return (
+    <motion.span
+      initial={{ scale: 0.85, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wide ${tier.cls}`}
+    >
+      <Trophy className="h-2.5 w-2.5" />
+      Nível {tier.label}
+    </motion.span>
   );
 };
 
