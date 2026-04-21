@@ -164,6 +164,66 @@ export type Database = {
         }
         Relationships: []
       }
+      agencies: {
+        Row: {
+          city: string | null
+          cnpj: string | null
+          cover_image_url: string | null
+          created_at: string
+          description: string
+          email: string | null
+          id: string
+          legal_name: string | null
+          logo_url: string | null
+          name: string
+          slug: string
+          state: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          website: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          city?: string | null
+          cnpj?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string
+          email?: string | null
+          id?: string
+          legal_name?: string | null
+          logo_url?: string | null
+          name: string
+          slug: string
+          state?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          city?: string | null
+          cnpj?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string
+          email?: string | null
+          id?: string
+          legal_name?: string | null
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          state?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -2381,6 +2441,7 @@ export type Database = {
       }
       providers: {
         Row: {
+          account_type: string
           avg_response_minutes: number | null
           birth_date: string | null
           business_name: string | null
@@ -2401,6 +2462,7 @@ export type Database = {
           id: string
           last_response_calc_at: string | null
           latitude: number | null
+          legal_name: string | null
           longitude: number | null
           meta_description: string | null
           meta_title: string | null
@@ -2428,6 +2490,7 @@ export type Database = {
           years_experience: number
         }
         Insert: {
+          account_type?: string
           avg_response_minutes?: number | null
           birth_date?: string | null
           business_name?: string | null
@@ -2448,6 +2511,7 @@ export type Database = {
           id?: string
           last_response_calc_at?: string | null
           latitude?: number | null
+          legal_name?: string | null
           longitude?: number | null
           meta_description?: string | null
           meta_title?: string | null
@@ -2475,6 +2539,7 @@ export type Database = {
           years_experience?: number
         }
         Update: {
+          account_type?: string
           avg_response_minutes?: number | null
           birth_date?: string | null
           business_name?: string | null
@@ -2495,6 +2560,7 @@ export type Database = {
           id?: string
           last_response_calc_at?: string | null
           latitude?: number | null
+          legal_name?: string | null
           longitude?: number | null
           meta_description?: string | null
           meta_title?: string | null
