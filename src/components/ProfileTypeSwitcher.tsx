@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 const TYPES = [
   { value: 'client', label: 'Cliente', icon: User, color: 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
   { value: 'provider', label: 'Profissional', icon: Briefcase, color: 'border-accent/40 bg-accent/10 text-accent' },
-  { value: 'rh', label: 'Agência / RH', icon: Building2, color: 'border-purple-300 bg-purple-50 text-purple-700 dark:border-purple-700 dark:bg-purple-900/30 dark:text-purple-300' },
+  { value: 'rh', label: 'Agência de RH / Recrutamento', icon: Building2, color: 'border-purple-300 bg-purple-50 text-purple-700 dark:border-purple-700 dark:bg-purple-900/30 dark:text-purple-300' },
 ];
 
 const ProfileTypeSwitcher = () => {
