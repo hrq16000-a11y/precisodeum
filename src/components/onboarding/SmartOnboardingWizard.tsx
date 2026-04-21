@@ -178,11 +178,13 @@ const BasicOnboardingWizard = () => {
     if (step !== 3 || saving || autoAdvancedRef.current) return;
     if (!fullName.trim()) return;
     if (profileType === 'provider' && selectedCategoryIds.length === 0) return;
+    if (profileType === 'provider' && providerSubtype === 'company' && (!legalName.trim() || !cnpj.trim())) return;
+    if (profileType === 'rh' && !agencyName.trim()) return;
     autoAdvancedRef.current = true;
     const t = setTimeout(() => { handleConfirm(); }, 650);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, selectedCategoryIds, fullName, profileType, saving]);
+  }, [step, selectedCategoryIds, fullName, profileType, providerSubtype, legalName, cnpj, agencyName, saving]);
 
   // Reset auto-advance guard quando voltar de step
   useEffect(() => {
@@ -797,7 +799,13 @@ const BasicOnboardingWizard = () => {
               ref={nextBtnRef}
               variant="accent"
               className={`mt-5 w-full transition-shadow ${pulseNext ? 'animate-pulse ring-4 ring-accent/40 shadow-lg shadow-accent/30' : ''}`}
-              disabled={saving || !fullName.trim() || (profileType === 'provider' && selectedCategoryIds.length === 0)}
+              disabled={
+                saving ||
+                !fullName.trim() ||
+                (profileType === 'provider' && selectedCategoryIds.length === 0) ||
+                (profileType === 'provider' && providerSubtype === 'company' && (!legalName.trim() || !cnpj.trim())) ||
+                (profileType === 'rh' && !agencyName.trim())
+              }
               onClick={handleConfirm}
             >
               {saving ? 'Salvando seu perfil...' : profileType === 'provider' ? 'Avançando automaticamente...' : 'Concluir cadastro'}
