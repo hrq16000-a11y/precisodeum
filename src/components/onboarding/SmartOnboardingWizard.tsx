@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2, RotateCcw, PartyPopper, AlertCircle, TrendingUp } from 'lucide-react';
+import { Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2, RotateCcw, PartyPopper, AlertCircle, TrendingUp, Building2, Megaphone } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
@@ -15,7 +15,7 @@ import CityAutocomplete from '@/components/CityAutocomplete';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
 
-type ProfileType = 'provider' | 'client';
+type ProfileType = 'provider' | 'client' | 'rh';
 type WizardStep = 1 | 2 | 3 | 4;
 
 const STORAGE_KEY = 'onboarding_wizard_state';
@@ -268,12 +268,20 @@ const BasicOnboardingWizard = () => {
         setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { y: 0.5 } }), 250);
       } catch {/* noop */}
 
-      // Client → home immediately. Provider → Step 4 (integrated ServiceWizard).
-      if (confirmedProfileType !== 'provider') {
+      // Roteamento por tipo: Cliente → home; RH → painel de vagas; Provider → Step 4.
+      if (confirmedProfileType === 'client') {
         toast.success('Tudo pronto! Bem-vindo(a).');
         clearPersisted();
         if (import.meta.env.DEV) console.log('[Redirect Debug] Usuário tipo client indo para rota /');
         navigate('/', { replace: true });
+        return;
+      }
+
+      if (confirmedProfileType === 'rh') {
+        toast.success('Painel RH liberado!');
+        clearPersisted();
+        if (import.meta.env.DEV) console.log('[Redirect Debug] Usuário tipo rh indo para /dashboard/vagas');
+        navigate('/dashboard/vagas', { replace: true });
         return;
       }
 
@@ -478,18 +486,30 @@ const BasicOnboardingWizard = () => {
               </button>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-border space-y-2 text-center">
+            <div className="mt-3 grid gap-3">
               <button
-                onClick={() => navigate('/cadastro/rh')}
-                className="block w-full text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => { setProfileType('rh'); setStep(2); }}
+                className="group rounded-2xl border-2 border-purple-500/30 bg-purple-500/5 p-5 text-left transition-all hover:border-purple-500 hover:shadow-lg hover:-translate-y-0.5"
               >
-                Sou empresa / RH e quero publicar vagas →
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white">
+                    <Building2 className="h-7 w-7" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-display text-lg font-bold text-foreground">Sou Empresa / RH</h3>
+                    <p className="text-xs text-muted-foreground">Quero publicar vagas e contratar talentos</p>
+                  </div>
+                </div>
               </button>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-border text-center">
               <button
                 onClick={() => navigate('/anuncie')}
-                className="block w-full text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
-                Quero anunciar minha marca na plataforma →
+                <Megaphone className="h-3.5 w-3.5" />
+                Sou Patrocinador — quero anunciar minha marca →
               </button>
             </div>
           </>
