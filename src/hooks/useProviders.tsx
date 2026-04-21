@@ -20,6 +20,7 @@ export function trackProviderImpressions(providerIds: string[]) {
 export interface DbProvider {
   id: string;
   userId: string;
+  createdAt?: string | null;
   name: string;
   businessName?: string;
   category: string;
@@ -52,6 +53,8 @@ export interface DbProvider {
   trialBoostUntil?: string | null;
   /** "Verificado pela Comunidade" — auto-granted when 3 requirements are met */
   communityVerified?: boolean;
+  levelName?: string | null;
+  levelPriority?: number;
 }
 
 interface ServiceFallback {
@@ -92,6 +95,7 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
   return {
     userId: p.user_id,
     id: p.id,
+    createdAt: p.created_at || null,
     name: profileName || p.business_name || serviceFallback?.serviceName || 'Profissional',
     businessName: p.business_name || undefined,
     category: catName || serviceFallback?.serviceName || '',
@@ -122,7 +126,20 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
   };
 }
 
-const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, categories(name, slug, icon)';
+const providerSelect = 'id, user_id, created_at, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, categories(name, slug, icon)';
+
+function compareEliteMerit(a: DbProvider, b: DbProvider): number {
+  const levelDiff = (b.levelPriority || 0) - (a.levelPriority || 0);
+  if (levelDiff !== 0) return levelDiff;
+  const ratingDiff = (b.rating || 0) - (a.rating || 0);
+  if (Math.abs(ratingDiff) > 0.001) return ratingDiff;
+  const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+  const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+  if (aCreated !== bCreated) return aCreated - bCreated;
+  const photoDiff = (b.portfolioPhotoCount || 0) - (a.portfolioPhotoCount || 0);
+  if (photoDiff !== 0) return photoDiff;
+  return (b.reviewCount || 0) - (a.reviewCount || 0);
+}
 
 // --- Ranking config cache ---
 let _rankingConfig: { boostMul: number; fairnessPen: number; randomMax: number } | null = null;
