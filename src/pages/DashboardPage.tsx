@@ -35,7 +35,6 @@ import UpsellBanner from '@/components/dashboard/UpsellBanner';
 import CoursesBanner from '@/components/dashboard/CoursesBanner';
 import OurStoryBanner from '@/components/OurStoryBanner';
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
-import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 import FirstLeadChecklist from '@/components/dashboard/FirstLeadChecklist';
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
 import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
@@ -124,7 +123,6 @@ const DashboardPage = () => {
   }, [user]);
 
   const profileType = profile?.profile_type ?? null;
-  const tour = useOnboardingTour(profileType || 'client', !!profile?.onboarding_completed);
   const isClient = profileType === 'client';
   const isProvider = profileType === 'provider';
   const isRH = profileType === 'rh';
@@ -407,7 +405,6 @@ const DashboardPage = () => {
     <DashboardLayout>
       {debugResetBar}
       <RealtimeEngagementToast />
-      <OnboardingTour active={tour.active} step={tour.step} steps={tour.steps} onNext={tour.next} onPrev={tour.prev} onDismiss={tour.dismiss} />
       {/* Enhanced Welcome Hero */}
       <WelcomeHero
         greeting={greeting}
