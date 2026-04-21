@@ -285,7 +285,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       </AnimatePresence>
 
       {/* Main content */}
-      <main className="flex-1 pt-14 lg:ml-60 lg:pt-0">
+      <main data-dashboard-main="true" className="flex-1 pt-14 lg:ml-60 lg:pt-0">
         {/* Profile status strip for providers with incomplete profiles */}
         {!isClient && !isRH && profile && (() => {
           const items = [

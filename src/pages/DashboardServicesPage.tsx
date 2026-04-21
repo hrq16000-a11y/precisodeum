@@ -371,6 +371,7 @@ const DashboardServicesPage = () => {
       const providerId = await ensureProvider();
       if (!providerId) return;
 
+      const categoryId = selectedCategoryIds[0] || null;
       const payload = {
         service_name: form.service_name,
         description: form.description,
@@ -386,6 +387,8 @@ const DashboardServicesPage = () => {
         is_emergency: isEmergency,
         service_radius: serviceRadius,
         seo_tags: seoTags,
+        category_id: categoryId,
+        user_ref: provider?.user_ref || null,
       } as any;
 
       let serviceId = editId;
@@ -397,16 +400,26 @@ const DashboardServicesPage = () => {
           return;
         }
       } else {
-        const { data, error } = await supabase
-          .from('services')
-          .insert({ ...payload, provider_id: providerId })
-          .select('id')
-          .single();
-        if (error) {
-          await showSaveError({ actionContext: 'Criar novo serviço', componentName: 'DashboardServicesPage', errorMessage: error.message, retryFn: handleSave });
+        const { data, error } = await (supabase as any).rpc('create_service_atomic', {
+          _provider_id: providerId,
+          _service_name: payload.service_name,
+          _description: payload.description,
+          _whatsapp: payload.whatsapp,
+          _service_area: payload.service_area,
+          _address: payload.address,
+          _working_hours: payload.working_hours,
+          _website: payload.website,
+          _instagram_url: payload.instagram_url,
+          _facebook_url: payload.facebook_url,
+          _youtube_url: payload.youtube_url,
+          _category_id: categoryId,
+          _category_ids: selectedCategoryIds,
+        });
+        if (error || !data?.success) {
+          await showSaveError({ actionContext: 'Criar novo serviço', componentName: 'DashboardServicesPage', errorMessage: error?.message || data?.error || 'Falha ao salvar serviço', retryFn: handleSave });
           return;
         }
-        serviceId = data.id;
+        serviceId = data.service_id;
       }
 
       if (serviceId) {
