@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Megaphone, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeoCity } from '@/hooks/useGeoCity';
@@ -118,25 +119,50 @@ const GhostSlot: React.FC<{ locationKey: string; layout: string }> = ({ location
   );
 };
 
-/* ─── Public "Sua marca aqui" — vendedor automático ─── */
+/* ─── Public "Sua marca aqui" — vendedor automático premium ─── */
 const SaleInviteSlot: React.FC<{ locationKey: string; layout: string }> = ({ locationKey, layout }) => {
   const ar = ASPECT_RATIOS[layout] || ASPECT_RATIOS.banner;
   const href = `/quero-ser-patrocinador?slot=${encodeURIComponent(locationKey)}`;
+  const isCompact = layout === 'inline' || layout === 'banner';
+
   return (
     <a
       href={href}
-      className="group relative flex flex-col items-center justify-center rounded-xl border border-dashed border-primary/40 bg-gradient-to-br from-primary/5 to-accent/5 px-4 py-3 text-center shadow-sm transition-all hover:border-primary/70 hover:shadow-md"
-      style={{ aspectRatio: ar === 'auto' ? '16 / 3' : ar, minHeight: layout === 'inline' ? 56 : 80 }}
+      aria-label="Anuncie sua marca nesta posição"
+      className="group relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-primary/30 shadow-sm transition-all duration-300 hover:border-primary/60 hover:shadow-md"
+      style={{
+        aspectRatio: ar === 'auto' ? '16 / 3' : ar,
+        minHeight: layout === 'inline' ? 56 : 80,
+        backgroundImage: `
+          radial-gradient(ellipse at top left, hsl(var(--primary) / 0.08), transparent 60%),
+          radial-gradient(ellipse at bottom right, hsl(var(--accent) / 0.07), transparent 60%),
+          radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.06) 1px, transparent 0)
+        `,
+        backgroundSize: 'auto, auto, 18px 18px',
+        backgroundColor: 'hsl(var(--background))',
+      }}
     >
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Espaço publicitário
-      </span>
-      <span className="mt-1 text-sm font-bold text-foreground sm:text-base">
-        Sua marca aqui
-      </span>
-      <span className="mt-0.5 text-[11px] text-primary opacity-80 group-hover:opacity-100">
-        Anuncie nesta posição →
-      </span>
+      {/* Subtle shine on hover */}
+      <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-primary/5 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+
+      <div className={`relative z-10 flex ${isCompact ? 'flex-row items-center gap-3 px-5' : 'flex-col items-center gap-1.5 px-4'} text-center`}>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-500/10 ring-1 ring-orange-500/20 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-6deg]">
+          <Megaphone className="h-4.5 w-4.5 text-orange-500" strokeWidth={2.25} />
+        </div>
+
+        <div className={`flex ${isCompact ? 'flex-col items-start' : 'flex-col items-center'}`}>
+          <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/80">
+            Espaço VIP disponível
+          </span>
+          <span className="text-sm font-bold tracking-tight text-foreground sm:text-base">
+            Sua marca aqui
+          </span>
+          <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary/80 transition-colors group-hover:text-primary">
+            Anunciar nesta posição
+            <ArrowRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
+          </span>
+        </div>
+      </div>
     </a>
   );
 };
