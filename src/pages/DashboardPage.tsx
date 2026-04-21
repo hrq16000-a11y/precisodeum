@@ -270,6 +270,7 @@ const DashboardPage = () => {
         <div className="mt-4">
           <CoursesBanner />
         </div>
+        <NextStepPrompt open={welcomeOpen} onClose={() => setWelcomeOpen(false)} context="welcome" providerSlug={provider?.slug ?? null} />
       </DashboardLayout>
     );
   }
@@ -353,6 +354,7 @@ const DashboardPage = () => {
 
         {/* Botão "Ver minha página pública" */}
         <RhPublicPageLink userId={user?.id} />
+        <NextStepPrompt open={welcomeOpen} onClose={() => setWelcomeOpen(false)} context="welcome" providerSlug={provider?.slug ?? null} />
       </DashboardLayout>
     );
   }
@@ -747,6 +749,7 @@ const DashboardPage = () => {
       {/* Nossa história — referência à luta */}
       <OurStoryBanner variant="compact" />
 
+      <NextStepPrompt open={welcomeOpen} onClose={() => setWelcomeOpen(false)} context="welcome" providerSlug={provider?.slug ?? null} />
     </DashboardLayout>
   );
 };
