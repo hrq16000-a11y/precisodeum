@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS onboarding_step smallint NOT NULL DEFAULT 1;

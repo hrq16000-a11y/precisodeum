@@ -2244,6 +2244,7 @@ export type Database = {
           level_id: string | null
           onboarding_checklist_completed_at: string | null
           onboarding_completed: boolean
+          onboarding_step: number
           permissions: Json
           phone: string | null
           profile_type: string | null
@@ -2276,6 +2277,7 @@ export type Database = {
           level_id?: string | null
           onboarding_checklist_completed_at?: string | null
           onboarding_completed?: boolean
+          onboarding_step?: number
           permissions?: Json
           phone?: string | null
           profile_type?: string | null
@@ -2308,6 +2310,7 @@ export type Database = {
           level_id?: string | null
           onboarding_checklist_completed_at?: string | null
           onboarding_completed?: boolean
+          onboarding_step?: number
           permissions?: Json
           phone?: string | null
           profile_type?: string | null

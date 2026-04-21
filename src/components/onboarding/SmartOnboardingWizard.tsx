@@ -1,6 +1,26 @@
+/**
+ * SmartOnboardingWizard — Esteira linear obrigatória (5 passos).
+ *
+ * Regras inegociáveis:
+ *  1. Não há botão "X" / "fechar". O wizard ocupa a tela inteira.
+ *  2. Cada passo persiste no banco (`profiles.onboarding_step`) ao avançar.
+ *     Refresh (F5) volta exatamente para o passo atual.
+ *  3. `onboarding_completed = true` SÓ é gravado no Passo 5 (conclusão).
+ *  4. "Pular" sempre vai para o próximo passo. Nunca fecha o wizard.
+ *  5. Provider precisa criar 1 serviço no Passo 4 antes de liberar o Passo 5.
+ *
+ * Passos:
+ *   1. Identidade (tipo de perfil)
+ *   2. Localização + Foto
+ *   3. Dados de contato (WhatsApp + bio curta)
+ *   4. Primeiro serviço (apenas provider — outros tipos pulam direto p/ 5)
+ *   5. Conclusão + ganho de pontos
+ */
 import { useEffect, useRef, useState } from 'react';
-import { Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2, RotateCcw, PartyPopper, AlertCircle, TrendingUp, Building2, Megaphone } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import {
+  Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2,
+  PartyPopper, Building2, Megaphone, Camera, Phone,
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -10,168 +30,102 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
 import SmartCategoryPicker from '@/components/SmartCategoryPicker';
 import CityAutocomplete from '@/components/CityAutocomplete';
+import AvatarUpload from '@/components/AvatarUpload';
+import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
-import LevelProgressBar from '@/components/onboarding/LevelProgressBar';
-import { isValidCpfCnpj } from '@/lib/cpfCnpj';
 
 type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
-type WizardStep = 1 | 2 | 3 | 4 | 5;
 type ProviderSubtype = 'autonomous' | 'company';
+type WizardStep = 1 | 2 | 3 | 4 | 5;
 
-const STORAGE_KEY = 'onboarding_wizard_state';
-
-const CATEGORY_ICON_MAP: Record<string, string> = {
-  eletricista: 'Zap', eletrica: 'Zap',
-  encanador: 'Wrench', hidraulica: 'Wrench', encanamento: 'Wrench',
-  pintor: 'Paintbrush', pintura: 'Paintbrush',
-  pedreiro: 'Hammer', alvenaria: 'Hammer', construcao: 'Hammer',
-  marceneiro: 'Hammer', marcenaria: 'Hammer',
-  mecanico: 'Car', automotivo: 'Car',
-  diarista: 'Sparkles', limpeza: 'Sparkles', faxina: 'Sparkles',
-  cabeleireiro: 'Scissors', barbeiro: 'Scissors',
-  jardineiro: 'Briefcase', jardinagem: 'Briefcase',
-  frete: 'Truck', mudanca: 'Truck',
-  ar: 'Snowflake', refrigeracao: 'Snowflake',
-  dedetizador: 'Bug', dedetizacao: 'Bug',
-  chaveiro: 'KeyRound',
-};
-
-function pickIconForCategory(name?: string | null): string {
-  if (!name) return 'Sparkles';
-  const norm = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  for (const key of Object.keys(CATEGORY_ICON_MAP)) {
-    if (norm.includes(key)) return CATEGORY_ICON_MAP[key];
-  }
-  return 'Briefcase';
-}
+const TOTAL_STEPS = 5;
 
 const slugify = (s: string) =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-// Validação CPF/CNPJ centralizada em src/lib/cpfCnpj.ts (isValidCpfCnpj)
-
-interface PersistedState {
-  step: WizardStep;
-  profileType: ProfileType | null;
-  providerSubtype: ProviderSubtype | null;
-  legalName: string;
-  cnpj: string;
-  agencyName: string;
-  city: string;
-  state: string;
-  fullName: string;
-  selectedCategoryIds: string[];
-}
-
-const loadPersistedState = (): Partial<PersistedState> => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch { return {}; }
-};
-
-export type WizardMode = 'basic' | 'complete' | 'portfolio' | 'affiliate';
+export type WizardMode = 'basic';
 
 interface SmartOnboardingWizardProps {
-  /**
-   * Modo de operação do Wizard.
-   * - basic (default): cadastro inicial completo (steps 1→4)
-   * - complete: usuário voltou para preencher dados que faltam (CPF, links sociais) — TODO UI
-   * - portfolio: criação de álbuns de fotos de trabalhos realizados — TODO UI
-   * - affiliate: acompanhamento de código/link de indicação — TODO UI
-   */
   mode?: WizardMode;
 }
 
-/* Placeholder centralizado para os 3 modos extras (UI completa virá em iterações futuras). */
-const PlaceholderModeShell = ({ title, body }: { title: string; body: string }) => (
-  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm p-4">
-    <div className="max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-2xl">
-      <h2 className="font-display text-lg font-bold text-foreground">{title}</h2>
-      <p className="mt-2 text-sm text-muted-foreground">{body}</p>
-    </div>
-  </div>
-);
-
-const SmartOnboardingWizard = ({ mode = 'basic' }: SmartOnboardingWizardProps = {}) => {
-  // ─── Modos extras: placeholders. Só "basic" monta hooks reais. ───
-  if (mode === 'complete') return <PlaceholderModeShell title="Complete seu perfil" body="Em breve você poderá adicionar CPF, links sociais e outros dados aqui." />;
-  if (mode === 'portfolio') return <PlaceholderModeShell title="Criar álbum de portfólio" body="Em breve você poderá organizar fotos de trabalhos realizados em álbuns temáticos aqui." />;
-  if (mode === 'affiliate') return <PlaceholderModeShell title="Programa de Afiliados" body="Em breve você acompanhará seu código de indicação e ganhos aqui." />;
-  return <BasicOnboardingWizard />;
-};
+const SmartOnboardingWizard = (_: SmartOnboardingWizardProps = {}) => <BasicOnboardingWizard />;
 
 const BasicOnboardingWizard = () => {
-  const { user, refetchProfile } = useAuth();
+  const { user, profile, refetchProfile } = useAuth();
   const { city: geoCity, state: geoState } = useGeoCity();
   const { data: categoriesData = [] } = useCategoriesWithCount();
   const navigate = useNavigate();
 
-  const persisted = useRef<Partial<PersistedState>>(loadPersistedState());
+  // ─── Estado persistido por banco (onboarding_step controla a esteira) ───
+  const initialStep = (profile?.onboarding_step as WizardStep) || 1;
+  const [step, setStep] = useState<WizardStep>(initialStep);
 
-  const [step, setStep] = useState<WizardStep>((persisted.current.step as WizardStep) || 1);
-  const [profileType, setProfileType] = useState<ProfileType | null>(persisted.current.profileType ?? null);
-  const [providerSubtype, setProviderSubtype] = useState<ProviderSubtype | null>(persisted.current.providerSubtype ?? null);
+  // Tipo de perfil
+  const [profileType, setProfileType] = useState<ProfileType | null>(profile?.profile_type ?? null);
+  const [providerSubtype, setProviderSubtype] = useState<ProviderSubtype | null>(null);
   const [showSubtypeStep, setShowSubtypeStep] = useState(false);
-  const [legalName, setLegalName] = useState(persisted.current.legalName ?? '');
-  const [cnpj, setCnpj] = useState(persisted.current.cnpj ?? '');
-  const [agencyName, setAgencyName] = useState(persisted.current.agencyName ?? '');
-  const [city, setCity] = useState(persisted.current.city ?? (geoCity || ''));
-  const [state, setState] = useState(persisted.current.state ?? (geoState || ''));
-  const [editingCity, setEditingCity] = useState(false);
-  const [fullName, setFullName] = useState(
-    persisted.current.fullName ??
-    ((user?.user_metadata?.full_name as string) || user?.email?.split('@')[0] || '')
-  );
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
-    persisted.current.selectedCategoryIds ?? []
-  );
-  const [saving, setSaving] = useState(false);
 
-  // After confirm: store provider so we can render the integrated ServiceWizard at Step 4
+  // Identidade
+  const [fullName, setFullName] = useState(
+    (profile?.full_name as string) ||
+    (user?.user_metadata?.full_name as string) ||
+    user?.email?.split('@')[0] || ''
+  );
+  const [agencyName, setAgencyName] = useState('');
+
+  // Localização + foto (Passo 2)
+  const [city, setCity] = useState((profile?.city as string) || geoCity || '');
+  const [state, setState] = useState((profile?.state as string) || geoState || '');
+  const [editingCity, setEditingCity] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url ?? null);
+
+  // Contato + bio (Passo 3)
+  const [whatsapp, setWhatsapp] = useState(profile?.whatsapp || profile?.phone || '');
+  const [bio, setBio] = useState('');
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+
+  // Provider data
   const [savedProvider, setSavedProvider] = useState<any | null>(null);
   const [servicesCreated, setServicesCreated] = useState(0);
-  const [showStep4Intro, setShowStep4Intro] = useState(false);
 
-  const finishOnboardingToDashboard = (target: string = '/dashboard') => {
-    if (profileType === 'provider' && servicesCreated === 0) {
-      toast.error('Cadastre seu primeiro serviço antes de liberar o dashboard.');
-      setShowStep4Intro(false);
-      setStep(4);
-      return;
-    }
+  const [saving, setSaving] = useState(false);
 
-    clearPersisted();
-    if (user?.id) {
-      void supabase.from('profiles').update({ onboarding_completed: true } as any).eq('id', user.id);
-    }
-    navigate(target, { replace: true });
-  };
-
-  const goToPortfolioStep = () => {
-    if (servicesCreated === 0) {
-      toast.error('Cadastre seu primeiro serviço antes de avançar.');
-      return;
-    }
-
-    setShowStep4Intro(false);
-    setStep(5);
-  };
-
-  // Persist progress
+  // ─── Sync inicial: se profile carrega DEPOIS do mount, atualiza step ───
+  const syncedRef = useRef(false);
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        step, profileType, providerSubtype, legalName, cnpj, agencyName, city, state, fullName, selectedCategoryIds,
-      } satisfies PersistedState));
-    } catch {}
-  }, [step, profileType, providerSubtype, legalName, cnpj, agencyName, city, state, fullName, selectedCategoryIds]);
+    if (syncedRef.current || !profile) return;
+    syncedRef.current = true;
+    if (profile.onboarding_step) setStep(profile.onboarding_step as WizardStep);
+    if (profile.profile_type) setProfileType(profile.profile_type as ProfileType);
+    if (profile.full_name) setFullName(profile.full_name);
+    if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
+    if (profile.whatsapp || profile.phone) setWhatsapp(profile.whatsapp || profile.phone || '');
+  }, [profile]);
 
-  // Sync geo on first load only
+  // ─── Carrega provider salvo (caso volte ao Passo 4 após F5) ───
+  useEffect(() => {
+    if (!user?.id || profileType !== 'provider' || savedProvider) return;
+    void supabase.from('providers').select('*').eq('user_id', user.id).limit(1)
+      .then(({ data }) => {
+        if (data && data[0]) {
+          setSavedProvider(data[0]);
+          if (data[0].id) {
+            void supabase.from('services').select('id', { count: 'exact', head: true })
+              .eq('provider_id', data[0].id)
+              .then(({ count }) => setServicesCreated(count ?? 0));
+          }
+        }
+      });
+  }, [user?.id, profileType, savedProvider]);
+
+  // ─── Sync geo somente se ainda vazio ───
   useEffect(() => {
     if (!editingCity && geoCity && !city) setCity(geoCity);
     if (geoState && !state) setState(geoState);
@@ -181,776 +135,597 @@ const BasicOnboardingWizard = () => {
     id: c.id, name: c.name, icon: c.icon, slug: c.slug, parent_id: c.parent_id,
   }));
 
-  const selectedCategory = categoriesForPicker.find(c => c.id === selectedCategoryIds[0]);
+  // ─── Persistência segura ao avançar ───
+  const persistStep = async (nextStep: WizardStep, extraPatch: Record<string, any> = {}) => {
+    if (!user?.id) return;
+    try {
+      await supabase.from('profiles').update({
+        onboarding_step: nextStep,
+        onboarding_completed: false,
+        ...extraPatch,
+      } as any).eq('id', user.id);
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('[Wizard] persistStep falhou', err);
+    }
+  };
 
-  const nextBtnRef = useRef<HTMLButtonElement>(null);
-  const [pulseNext, setPulseNext] = useState(false);
-  const autoAdvancedRef = useRef(false);
+  const advanceTo = async (nextStep: WizardStep, extraPatch: Record<string, any> = {}) => {
+    setStep(nextStep);
+    await persistStep(nextStep, extraPatch);
+  };
 
-  const handleToggleCategory = (id: string) => {
-    setSelectedCategoryIds(prev => {
-      const next = prev.includes(id) ? [] : [id];
-      if (next.length === 1) {
-        setTimeout(() => {
-          nextBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setPulseNext(true);
-          setTimeout(() => setPulseNext(false), 2400);
-        }, 150);
-      }
-      return next;
+  // Quando provider termina o wizard de serviços, marcamos +1 e avançamos
+  const handleServiceCreated = async (_id: string) => {
+    setServicesCreated(c => c + 1);
+    toast.success('Serviço cadastrado!');
+    await advanceTo(5);
+  };
+
+  // ─── Passo 1: Identidade ───
+  const handleSelectType = async (type: ProfileType) => {
+    setProfileType(type);
+    if (type === 'provider') {
+      setShowSubtypeStep(true);
+      return;
+    }
+    await advanceTo(2, { profile_type: type, role: type });
+  };
+
+  const handleSelectSubtype = async (sub: ProviderSubtype) => {
+    setProviderSubtype(sub);
+    setShowSubtypeStep(false);
+    await advanceTo(2, { profile_type: 'provider', role: 'provider' });
+  };
+
+  // ─── Passo 2: Localização + Foto ───
+  const canAdvanceFromStep2 = !!city.trim();
+  const handleStep2Next = async () => {
+    if (!canAdvanceFromStep2) {
+      toast.error('Informe sua cidade para continuar.');
+      return;
+    }
+    await advanceTo(3, {
+      city: city || null,
+      state: state || null,
+      avatar_url: avatarUrl,
     });
   };
 
-  // Auto-advance removido: a esteira deve ser controlada ATIVAMENTE pelo usuário.
-  // Mantemos apenas o reset de qualquer guard antigo ao trocar de step.
-  useEffect(() => {
-    if (step !== 3) autoAdvancedRef.current = false;
-  }, [step]);
+  // ─── Passo 3: Dados de contato + bio + (provider) categoria ───
+  const canAdvanceFromStep3 =
+    !!fullName.trim() &&
+    !!whatsapp.trim() &&
+    (profileType !== 'provider' || selectedCategoryIds.length > 0) &&
+    (profileType !== 'rh' || !!agencyName.trim());
 
-  /**
-   * Salvamento incremental — sempre que o usuário avança (clicando em "Salvar e avançar"
-   * OU em "Pular esta etapa"), persistimos o que já foi digitado em profiles/providers.
-   * Nunca perdemos dados parciais.
-   */
-  const persistPartialProgress = async () => {
+  const handleStep3Next = async () => {
+    if (!canAdvanceFromStep3) {
+      toast.error('Preencha os campos obrigatórios para continuar.');
+      return;
+    }
     if (!user?.id) return;
-    try {
-      const profilePatch: Record<string, any> = { onboarding_completed: false };
-      if (profileType) { profilePatch.profile_type = profileType; profilePatch.role = profileType; }
-      if (fullName.trim()) profilePatch.full_name = fullName.trim();
-      await supabase.from('profiles').update(profilePatch as any).eq('id', user.id);
-    } catch (err) {
-      // silencioso — não bloqueia avanço se houver glitch de rede
-      if (import.meta.env.DEV) console.warn('[Onboarding] persistPartialProgress falhou:', err);
-    }
-  };
-
-  const clearPersisted = () => {
-    try { localStorage.removeItem(STORAGE_KEY); } catch {}
-  };
-
-  const handleConfirm = async () => {
-    if (!user?.id) {
-      toast.error('Sessão expirada. Faça login novamente.');
-      return;
-    }
-    if (!profileType) return;
-    if (!city.trim()) {
-      toast.error('Selecione sua cidade.');
-      setStep(2);
-      return;
-    }
-    // CNPJ é OPCIONAL — mas se preenchido, precisa ser real (mod11).
-    if (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim() && !isValidCpfCnpj(cnpj)) {
-      toast.error('CNPJ inválido. Confira os dígitos ou deixe em branco.');
-      return;
-    }
     setSaving(true);
     try {
-      const shouldKeepWizardOpen = profileType === 'provider' || profileType === 'rh';
+      // Salva profile
+      await supabase.from('profiles').update({
+        full_name: fullName.trim(),
+        whatsapp,
+        phone: whatsapp,
+        profile_type: profileType,
+        role: profileType,
+        onboarding_step: 4,
+      } as any).eq('id', user.id);
 
-      const { error: profErr } = await supabase
-        .from('profiles')
-        .update({
-          profile_type: profileType,
-          role: profileType,
-          onboarding_completed: shouldKeepWizardOpen ? false : true,
-          full_name: fullName.trim() || undefined,
-        } as any)
-        .eq('id', user.id);
-      if (profErr) throw profErr;
-
-      const { error: metaErr } = await supabase.auth.updateUser({
-        data: { profile_type_chosen: true, profile_type: profileType },
-      });
-      if (metaErr) throw metaErr;
-
-      let providerRow: any = null;
+      // Garante registro provider/agency conforme tipo
       if (profileType === 'provider') {
-        const { data: existing } = await supabase
-          .from('providers')
-          .select('*')
-          .eq('user_id', user.id)
-          .limit(1);
-        const subtypePatch: any = {
-          account_type: providerSubtype || 'autonomous',
-          legal_name: providerSubtype === 'company' ? (legalName.trim() || null) : null,
-          cnpj: providerSubtype === 'company' ? (cnpj.trim() || null) : null,
-        };
-        if (existing && existing.length > 0) {
-          providerRow = existing[0];
-          // Patch city/category if missing
+        const { data: existing } = await supabase.from('providers').select('*').eq('user_id', user.id).limit(1);
+        if (existing && existing[0]) {
           await supabase.from('providers').update({
-            city: city || providerRow.city,
-            state: state || providerRow.state,
-            category_id: selectedCategoryIds[0] || providerRow.category_id,
-            ...subtypePatch,
-          }).eq('id', providerRow.id);
-          providerRow = { ...providerRow, city, state, category_id: selectedCategoryIds[0] || providerRow.category_id, ...subtypePatch };
+            city: city || existing[0].city,
+            state: state || existing[0].state,
+            description: bio || existing[0].description,
+            whatsapp: whatsapp || existing[0].whatsapp,
+            category_id: selectedCategoryIds[0] || existing[0].category_id,
+            account_type: providerSubtype || existing[0].account_type || 'autonomous',
+          } as any).eq('id', existing[0].id);
+          setSavedProvider({ ...existing[0], city, state, description: bio, whatsapp, category_id: selectedCategoryIds[0], account_type: providerSubtype || 'autonomous' });
         } else {
           const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'profissional');
-          const uniqueSlug = `${baseSlug}-${user.id.slice(0, 6)}`;
-          const { data: created, error: provErr } = await supabase.from('providers').insert({
+          const { data: created, error } = await supabase.from('providers').insert({
             user_id: user.id,
-            slug: uniqueSlug,
+            slug: `${baseSlug}-${user.id.slice(0, 6)}`,
             city: city || null,
             state: state || null,
+            description: bio || null,
+            whatsapp: whatsapp || null,
             category_id: selectedCategoryIds[0] || null,
+            account_type: providerSubtype || 'autonomous',
             status: 'pending',
-            ...subtypePatch,
-          }).select('*').single();
-          if (provErr) throw provErr;
-          providerRow = created;
+          } as any).select('*').single();
+          if (error) throw error;
+          setSavedProvider(created);
         }
-      }
-
-      if (profileType === 'rh') {
-        const { data: existingAgencyRaw } = await (supabase as any)
-          .from('agencies')
-          .select('*')
-          .eq('user_id', user.id)
-          .limit(1);
-        const existingAgency = existingAgencyRaw as any[] | null;
-        if (!existingAgency || existingAgency.length === 0) {
-          const baseSlug = slugify(agencyName || fullName || user.email?.split('@')[0] || 'agencia');
-          const uniqueSlug = `${baseSlug}-${user.id.slice(0, 6)}`;
+      } else if (profileType === 'rh') {
+        const { data: existing } = await (supabase as any).from('agencies').select('*').eq('user_id', user.id).limit(1);
+        if (!existing || existing.length === 0) {
+          const baseSlug = slugify(agencyName || fullName || 'agencia');
           await (supabase as any).from('agencies').insert({
             user_id: user.id,
-            slug: uniqueSlug,
+            slug: `${baseSlug}-${user.id.slice(0, 6)}`,
             name: agencyName.trim() || fullName.trim() || 'Minha Agência',
             city: city || null,
             state: state || null,
             status: 'pending',
           });
-        } else {
-          await (supabase as any).from('agencies').update({
-            name: agencyName.trim() || existingAgency[0].name,
-            city: city || existingAgency[0].city,
-            state: state || existingAgency[0].state,
-          }).eq('id', existingAgency[0].id);
         }
       }
 
-      if (profileType === 'sponsor') {
-        const { data: existingSponsor } = await (supabase as any)
-          .from('sponsors')
-          .select('id')
-          .eq('user_id', user.id)
-          .limit(1);
-        if (!existingSponsor || existingSponsor.length === 0) {
-          const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'patrocinador');
-          await (supabase as any).from('sponsors').insert({
-            user_id: user.id,
-            slug: `${baseSlug}-${user.id.slice(0, 6)}`,
-            name: fullName.trim() || 'Novo Patrocinador',
-            status: 'pending_approval',
-          });
-        }
-      }
+      await refetchProfile();
 
-      // +50 pts pela conclusão do cadastro básico (idempotente — max_per_day=1)
+      // Provider passa pelo Passo 4 obrigatoriamente. Demais tipos vão direto p/ 5.
+      if (profileType === 'provider') {
+        setStep(4);
+      } else {
+        await finishOnboarding();
+      }
+    } catch (err: any) {
+      console.error('[Wizard step 3]', err);
+      toast.error('Não foi possível salvar. Tente novamente.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ─── Passo 4: Primeiro serviço (provider apenas) ───
+  // Botão "Pular" no passo 4 NÃO fecha o wizard — apenas mostra aviso.
+  const handleSkipStep4 = () => {
+    toast.info('Cadastre pelo menos 1 serviço para concluir o cadastro.');
+  };
+
+  // ─── Passo 5: Conclusão ───
+  const finishOnboarding = async () => {
+    if (!user?.id) return;
+    setSaving(true);
+    try {
+      await supabase.from('profiles').update({
+        onboarding_completed: true,
+        onboarding_step: 5,
+      } as any).eq('id', user.id);
+
       try {
         await (supabase as any).rpc('award_engagement_points', {
           _user_id: user.id,
           _action_key: 'onboarding_basic_complete',
           _metadata: { profile_type: profileType },
         });
-      } catch { /* silencioso */ }
-
-      const firstName = (fullName.trim().split(' ')[0] || 'Profissional');
-      const initial = firstName.charAt(0).toUpperCase();
-      const alias = `${firstName} ${initial}.`;
-      await supabase.from('public_activities').insert({
-        actor_alias: alias,
-        action_text: 'acaba de se cadastrar',
-        icon: pickIconForCategory(selectedCategory?.name),
-        city: city || null,
-        profile_type: profileType,
-        category_name: selectedCategory?.name || null,
-        is_seed: false,
-      });
-
-      const refreshedProfile = await refetchProfile();
-      const confirmedProfileType = refreshedProfile?.profile_type ?? profileType;
-      if (confirmedProfileType !== profileType) {
-        throw new Error(`Profile type mismatch: expected ${profileType}, got ${confirmedProfileType ?? 'null'}`);
-      }
+      } catch { /* silent */ }
 
       try {
         confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
         setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { y: 0.5 } }), 250);
-      } catch {/* noop */}
+      } catch { /* noop */ }
 
-      // Roteamento por tipo: Cliente → home; RH → painel de vagas; Sponsor → landing; Provider → Step 4.
-      if (confirmedProfileType === 'client') {
-        toast.success('Tudo pronto! Bem-vindo(a).');
-        clearPersisted();
-        if (import.meta.env.DEV) console.log('[Redirect Debug] Usuário tipo client indo para rota /');
-        navigate('/', { replace: true });
-        return;
-      }
+      await refetchProfile();
 
-      if (confirmedProfileType === 'rh') {
-        toast.success('Painel RH liberado!');
-        clearPersisted();
-        if (import.meta.env.DEV) console.log('[Redirect Debug] Usuário tipo rh indo para /dashboard/vagas');
-        navigate('/dashboard/vagas', { replace: true });
-        return;
-      }
-
-      if (confirmedProfileType === 'sponsor') {
-        toast.success('Perfil de patrocinador definido!');
-        clearPersisted();
-        if (import.meta.env.DEV) console.log('[Redirect Debug] Usuário tipo sponsor indo para /quero-ser-patrocinador');
-        navigate('/quero-ser-patrocinador', { replace: true });
-        return;
-      }
-
-      // Provider flow continues inside the wizard
-      toast.success('Perfil validado! Vamos criar seu primeiro serviço.');
-      setSavedProvider(providerRow);
-      setShowStep4Intro(true);
-      setStep(4);
+      const target = profileType === 'rh' ? '/dashboard/vagas'
+        : profileType === 'sponsor' ? '/quero-ser-patrocinador'
+        : profileType === 'client' ? '/'
+        : '/dashboard';
+      navigate(target, { replace: true });
     } catch (err) {
-      console.error('[Onboarding]', err);
-      toast.error('Não conseguimos salvar. Tente novamente em instantes.');
+      console.error('[Wizard finish]', err);
+      toast.error('Erro ao concluir cadastro.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleServiceCreated = (_serviceId: string) => {
-    setServicesCreated(c => c + 1);
-  };
-
-
-  const finishToPublicProfile = () => {
-    clearPersisted();
-    if (user?.id) {
-      void supabase.from('profiles').update({ onboarding_completed: true } as any).eq('id', user.id);
-    }
-    const slug = savedProvider?.slug;
-    const target = slug ? `/profissional/${slug}` : '/dashboard';
-    if (import.meta.env.DEV) console.log(`[Redirect Debug] Usuário tipo provider indo para rota ${target}`);
-    navigate(target, { replace: true });
-  };
-
-  // ========================================
-  // STEP 4 — Integrated Service Creation
-  // ========================================
-  if (step === 4 && savedProvider) {
-    return (
-      <div className="fixed inset-0 z-[100] flex items-start justify-center bg-background/95 backdrop-blur-sm p-4 overflow-y-auto">
-        <div className="relative w-full max-w-lg my-6">
-          {showStep4Intro && servicesCreated === 0 && (
-            <div className="mb-4 rounded-2xl border-2 border-accent bg-gradient-to-br from-accent/10 to-transparent p-5 text-center animate-in fade-in slide-in-from-top-2">
-              <div className="flex justify-center mb-2">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                  <PartyPopper className="h-6 w-6" />
-                </div>
-              </div>
-              <h2 className="font-display text-lg font-bold text-foreground">Perfil validado!</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Cadastre seu primeiro serviço para liberar o dashboard e as próximas etapas.
-              </p>
-            </div>
-          )}
-
-          {servicesCreated > 0 && (
-            <div className="mb-4 rounded-2xl border border-border bg-card p-5 text-center">
-              <div className="flex justify-center mb-2">
-                <CheckCircle2 className="h-10 w-10 text-accent" />
-              </div>
-              <h2 className="font-display text-lg font-bold text-foreground">
-                {servicesCreated === 1 ? 'Primeiro serviço publicado!' : `${servicesCreated} serviços publicados!`}
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Quer cadastrar mais um serviço ou seguir para a etapa opcional de portfólio?
-              </p>
-
-              {/* Confidence Level Bar */}
-              <div className="mt-4 text-left">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground">
-                    <TrendingUp className="h-3 w-3 text-accent" /> Nível de confiança
-                  </span>
-                  <span className="text-[11px] font-bold text-accent">
-                    {servicesCreated >= 3 ? '100% — Portfólio Forte' : servicesCreated === 2 ? '80% — Engajado' : '60% — Iniciante consolidado'}
-                  </span>
-                </div>
-                <Progress
-                  value={servicesCreated >= 3 ? 100 : servicesCreated === 2 ? 80 : 60}
-                  className="h-2"
-                />
-                {servicesCreated < 3 && (
-                  <p className="mt-1.5 text-[10px] text-muted-foreground">
-                    Cadastre mais {3 - servicesCreated} {3 - servicesCreated === 1 ? 'serviço' : 'serviços'} para chegar ao topo.
-                  </p>
-                )}
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => { setShowStep4Intro(false); /* re-renders ServiceWizard for new entry */ window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                >
-                  + Novo serviço
-                </Button>
-                <Button variant="accent" onClick={goToPortfolioStep}>
-                  Ir para portfólio
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-2xl">
-            <ServiceWizard
-              key={`sw-${servicesCreated}`}
-              providerId={savedProvider.id}
-              userId={user!.id}
-              provider={savedProvider}
-              categories={categoriesData}
-              onComplete={handleServiceCreated}
-              onCancel={() => {
-                setShowStep4Intro(false);
-                setStep(3);
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (step === 5) {
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm p-4 overflow-y-auto">
-        <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-2xl my-auto">
-          <button
-            onClick={() => setStep(4)}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-          </button>
-
-          <div className="flex justify-center mb-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-              <PartyPopper className="h-7 w-7" />
-            </div>
-          </div>
-
-          <h1 className="text-center font-display text-xl font-bold text-foreground">
-            Portfólio é opcional
-          </h1>
-          <p className="mt-2 text-center text-sm text-muted-foreground">
-            Você pode ir ao dashboard agora ou abrir a área de portfólio para cadastrar seus trabalhos.
-          </p>
-
-          <div className="mt-6 grid gap-3">
-            <Button variant="accent" className="w-full" onClick={() => finishOnboardingToDashboard('/dashboard/portfolio')}>
-              Cadastrar portfólio agora
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => finishOnboardingToDashboard('/dashboard')}>
-              Ir para o dashboard
-            </Button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => finishOnboardingToDashboard('/dashboard')}
-            className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Pular esta etapa
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+  // ═══════════════════════════════════════════════════════════════════
+  // RENDER — único container fullscreen, sem botão de fechar
+  // ═══════════════════════════════════════════════════════════════════
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-background p-4">
       {saving && (
-        <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-background/90 backdrop-blur-md gap-4">
+        <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center gap-4 bg-background/90 backdrop-blur-md">
           <Loader2 className="h-12 w-12 animate-spin text-accent" />
-          <p className="text-base font-bold text-foreground text-center px-6">
-            Segura as ferramentas!
-          </p>
-          <p className="text-sm text-muted-foreground text-center px-6 max-w-sm">
-            Estamos preparando seu espaço na vitrine...
-          </p>
+          <p className="text-base font-bold text-foreground">Salvando…</p>
         </div>
       )}
 
-      <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-300 my-auto">
-        {step > 1 && (
-          <button
-            type="button"
-            onClick={() => {
-              setStep(1);
-              setProfileType(null);
-              setSelectedCategoryIds([]);
-            }}
-            className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-border bg-background/80 px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:border-accent transition-colors"
-            title="Recomeçar do zero"
-            aria-label="Recomeçar onboarding"
-          >
-            <RotateCcw className="h-3 w-3" /> Recomeçar
-          </button>
-        )}
-        <div className="flex items-center justify-center gap-2 mb-5">
-          {[1, 2, 3].map(n => (
-            <span
-              key={n}
-              className={`h-1.5 rounded-full transition-all ${
-                step === n ? 'w-8 bg-accent' : step > n ? 'w-4 bg-accent/60' : 'w-4 bg-muted'
-              }`}
-            />
-          ))}
+      <div className="relative my-6 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl sm:p-8">
+        {/* Stepper */}
+        <div className="mb-2 flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+          <span>Passo {step} de {TOTAL_STEPS}</span>
+          <span>{Math.round((step / TOTAL_STEPS) * 100)}%</span>
         </div>
+        <Progress value={(step / TOTAL_STEPS) * 100} className="mb-6 h-1.5" />
 
-        {/* SUBTYPE STEP — only after choosing Profissional */}
-        {showSubtypeStep && profileType === 'provider' && (
-          <>
-            <button
-              onClick={() => { setShowSubtypeStep(false); setProfileType(null); setProviderSubtype(null); }}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-            </button>
-            <h1 className="text-center font-display text-xl font-bold text-foreground">
-              Você atua como…
-            </h1>
-            <p className="mt-2 text-center text-sm text-muted-foreground">
-              Escolha o formato que melhor descreve seu trabalho.
-            </p>
-            <div className="mt-6 grid gap-3">
-              <button
-                onClick={() => { setProviderSubtype('autonomous'); setShowSubtypeStep(false); setStep(2); }}
-                className="group rounded-2xl border-2 border-accent/30 bg-accent/5 p-5 text-left transition-all hover:border-accent hover:shadow-lg hover:-translate-y-0.5"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                    <UserRound className="h-7 w-7" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-base font-bold text-foreground">Profissional Autônomo (PF)</h3>
-                    <p className="text-xs text-muted-foreground">Trabalho por conta própria, sem CNPJ obrigatório.</p>
-                  </div>
-                </div>
-              </button>
-              <button
-                onClick={() => { setProviderSubtype('company'); setShowSubtypeStep(false); setStep(2); }}
-                className="group rounded-2xl border-2 border-primary/30 bg-primary/5 p-5 text-left transition-all hover:border-primary hover:shadow-lg hover:-translate-y-0.5"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                    <Building2 className="h-7 w-7" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-base font-bold text-foreground">Empresa / MEI (PJ)</h3>
-                    <p className="text-xs text-muted-foreground">Tenho CNPJ e razão social — vou pedir esses dados a seguir.</p>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* STEP 1 — Identidade */}
+        {/* ─── PASSO 1 ─── */}
         {step === 1 && !showSubtypeStep && (
-          <>
-            <h1 className="text-center font-display text-2xl font-bold text-foreground">
-              Bem-vindo!
-            </h1>
-            <p className="mt-2 text-center text-sm text-muted-foreground">
-              Como você vai usar a plataforma?
-            </p>
-
-            <div className="mt-6 grid gap-3">
-              <button
-                onClick={() => { setProfileType('provider'); setShowSubtypeStep(true); }}
-                className="group rounded-2xl border-2 border-accent/30 bg-accent/5 p-5 text-left transition-all hover:border-accent hover:shadow-lg hover:-translate-y-0.5"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                    <Briefcase className="h-7 w-7" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-lg font-bold text-foreground">Sou Profissional</h3>
-                    <p className="text-xs text-muted-foreground">Quero divulgar meu serviço e receber clientes</p>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => { setProfileType('client'); setStep(2); }}
-                className="group rounded-2xl border-2 border-blue-500/30 bg-blue-500/5 p-5 text-left transition-all hover:border-blue-500 hover:shadow-lg hover:-translate-y-0.5"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
-                    <UserRound className="h-7 w-7" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-lg font-bold text-foreground">Sou Cliente</h3>
-                    <p className="text-xs text-muted-foreground">Quero contratar um profissional</p>
-                  </div>
-                </div>
-              </button>
-            </div>
-
-            <div className="mt-3 grid gap-3">
-              <button
-                onClick={() => { setProfileType('rh'); setStep(2); }}
-                className="group rounded-2xl border-2 border-purple-500/30 bg-purple-500/5 p-5 text-left transition-all hover:border-purple-500 hover:shadow-lg hover:-translate-y-0.5"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white">
-                    <Building2 className="h-7 w-7" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-lg font-bold text-foreground">Sou Agência de RH / Recrutamento</h3>
-                    <p className="text-xs text-muted-foreground">Recruto e contrato talentos para empresas</p>
-                  </div>
-                </div>
-              </button>
-            </div>
-
-            <div className="mt-3 grid gap-3">
-              <button
-                onClick={() => { setProfileType('sponsor'); setStep(2); }}
-                className="group rounded-2xl border-2 border-secondary/30 bg-secondary/5 p-5 text-left transition-all hover:border-secondary hover:shadow-lg hover:-translate-y-0.5"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-                    <Megaphone className="h-7 w-7" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-lg font-bold text-foreground">Sou Patrocinador</h3>
-                    <p className="text-xs text-muted-foreground">Quero anunciar minha marca e conhecer os espaços de mídia</p>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </>
+          <Step1Identity onSelectType={handleSelectType} />
         )}
 
-        {/* STEP 2 — Geo via CityAutocomplete */}
+        {step === 1 && showSubtypeStep && profileType === 'provider' && (
+          <SubtypeChoice
+            onBack={() => { setShowSubtypeStep(false); setProfileType(null); }}
+            onSelect={handleSelectSubtype}
+          />
+        )}
+
+        {/* ─── PASSO 2 ─── */}
         {step === 2 && (
-          <>
-            <button
-              onClick={() => setStep(1)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-            </button>
-            <div className="flex justify-center mb-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
-                <MapPin className="h-7 w-7 text-accent" />
-              </div>
-            </div>
-            <h1 className="text-center font-display text-xl font-bold text-foreground">
-              Onde você atua?
-            </h1>
-
-            {!editingCity && city ? (
-              <>
-                <p className="mt-3 text-center text-sm text-muted-foreground">
-                  Detectamos que você está em
-                </p>
-                <p className="mt-1 text-center text-2xl font-bold text-accent">
-                  {city}{state ? ` • ${state}` : ''}
-                </p>
-                <p className="mt-2 text-center text-xs text-muted-foreground">Está correto?</p>
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <Button variant="outline" onClick={() => setEditingCity(true)}>
-                    Outra cidade
-                  </Button>
-                  <Button
-                    variant="accent"
-                    onClick={async () => { await persistPartialProgress(); setStep(3); }}
-                  >
-                    SIM, está certo
-                  </Button>
-                </div>
-                {/* Skip → avança para o próximo passo do wizard, NÃO para o dashboard. */}
-                <button
-                  type="button"
-                  onClick={async () => { await persistPartialProgress(); setStep(3); }}
-                  className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Pular esta etapa
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="mt-3 text-center text-sm text-muted-foreground">
-                  Selecione sua cidade na lista oficial:
-                </p>
-                <div className="mt-4">
-                  <CityAutocomplete
-                    value={{ city, state }}
-                    onChange={({ city: c, state: s }) => {
-                      // Apenas atualiza estado local — usuário decide quando avançar.
-                      setCity(c);
-                      setState(s);
-                    }}
-                  />
-                </div>
-                <Button
-                  variant="accent"
-                  className="mt-4 w-full"
-                  disabled={!city.trim()}
-                  onClick={async () => { await persistPartialProgress(); setEditingCity(false); setStep(3); }}
-                >
-                  Confirmar e continuar
-                </Button>
-                <button
-                  type="button"
-                  onClick={async () => { await persistPartialProgress(); setEditingCity(false); setStep(3); }}
-                  className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Pular esta etapa
-                </button>
-              </>
-            )}
-          </>
+          <Step2Location
+            city={city}
+            state={state}
+            avatarUrl={avatarUrl}
+            editingCity={editingCity}
+            onEditCity={() => setEditingCity(true)}
+            onCityChange={(c, s) => { setCity(c); setState(s); }}
+            onAvatarChange={setAvatarUrl}
+            userId={user?.id}
+            onBack={() => advanceTo(1)}
+            onNext={handleStep2Next}
+            onSkip={() => advanceTo(3)}
+            canAdvance={canAdvanceFromStep2}
+          />
         )}
 
-        {/* STEP 3 — Nome + categoria única */}
+        {/* ─── PASSO 3 ─── */}
         {step === 3 && (
-          <>
-            <button
-              onClick={() => setStep(2)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-            </button>
-            <div className="flex justify-center mb-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-amber-500 text-white">
-                <Sparkles className="h-7 w-7" />
-              </div>
-            </div>
-            <h1 className="text-center font-display text-xl font-bold text-foreground">
-              Quase lá!
-            </h1>
-            <p className="mt-1 text-center text-xs text-muted-foreground">
-              Só faltam estas informações:
-            </p>
-
-            <div className="mt-5 space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">
-                  {profileType === 'rh' || profileType === 'sponsor' ? 'Seu nome (responsável)' : 'Seu nome completo'}
-                </label>
-                <Input
-                  placeholder="Ex: João Silva"
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
-                />
-              </div>
-
-              {profileType === 'provider' && providerSubtype === 'company' && (
-                <>
-                  <div>
-                    <label className="text-xs font-semibold text-foreground mb-1 block">
-                      Razão Social <span className="font-normal text-muted-foreground">(opcional)</span>
-                    </label>
-                    <Input
-                      placeholder="Ex: João Silva Serviços LTDA"
-                      value={legalName}
-                      onChange={e => setLegalName(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-foreground mb-1 block">
-                      CNPJ <span className="font-normal text-muted-foreground">(opcional)</span>
-                    </label>
-                    <Input
-                      placeholder="00.000.000/0000-00"
-                      value={cnpj}
-                      onChange={e => setCnpj(e.target.value)}
-                      aria-invalid={cnpj.trim().length > 0 && !isValidCpfCnpj(cnpj)}
-                    />
-                    {cnpj.trim().length > 0 && !isValidCpfCnpj(cnpj) && (
-                      <p className="mt-1 text-[11px] text-destructive">
-                        CPF/CNPJ inválido. Verifique os dígitos ou deixe em branco.
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {profileType === 'rh' && (
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">
-                    Nome da Agência
-                  </label>
-                  <Input
-                    placeholder="Ex: Talentos RH Curitiba"
-                    value={agencyName}
-                    onChange={e => setAgencyName(e.target.value)}
-                  />
-                </div>
-              )}
-
-              {profileType === 'provider' && (
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-2 block">
-                    Sua especialidade principal
-                  </label>
-                  <div className="mb-3 flex items-start gap-2 rounded-xl border-2 border-amber-400/60 bg-amber-50 dark:bg-amber-950/30 p-3 animate-in fade-in slide-in-from-top-1">
-                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                    <p className="text-[11px] leading-relaxed text-amber-900 dark:text-amber-100">
-                      Escolha sua <strong>especialidade principal</strong> agora. Você poderá adicionar outras categorias e serviços depois, dentro do seu painel.
-                    </p>
-                  </div>
-                  <SmartCategoryPicker
-                    categories={categoriesForPicker}
-                    selectedIds={selectedCategoryIds}
-                    onToggle={handleToggleCategory}
-                    maxSelections={1}
-                    placeholder="Ex: Eletricista, Pintor, Diarista..."
-                  />
-                  {selectedCategoryIds.length > 0 && selectedCategory && (
-                    <div className="mt-2 flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 animate-in fade-in slide-in-from-top-1">
-                      <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
-                      <span className="text-xs font-medium text-foreground">
-                        Selecionado: <strong>{selectedCategory.name}</strong>
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 p-3">
-                <CheckCircle2 className="h-5 w-5 text-accent shrink-0" />
-                <p className="text-xs text-foreground">
-                  Você ganhou <span className="font-bold text-accent">+20 pontos de confiança!</span>
-                </p>
-              </div>
-            </div>
-
-            <Button
-              ref={nextBtnRef}
-              variant="accent"
-              className={`mt-5 w-full transition-shadow ${pulseNext ? 'animate-pulse ring-4 ring-accent/40 shadow-lg shadow-accent/30' : ''}`}
-              disabled={
-                saving ||
-                !fullName.trim() ||
-                (profileType === 'provider' && selectedCategoryIds.length === 0) ||
-                (profileType === 'rh' && !agencyName.trim()) ||
-                (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim().length > 0 && !isValidCpfCnpj(cnpj))
+          <Step3Contact
+            profileType={profileType}
+            fullName={fullName}
+            setFullName={setFullName}
+            agencyName={agencyName}
+            setAgencyName={setAgencyName}
+            whatsapp={whatsapp}
+            setWhatsapp={setWhatsapp}
+            bio={bio}
+            setBio={setBio}
+            categoriesForPicker={categoriesForPicker}
+            selectedCategoryIds={selectedCategoryIds}
+            onToggleCategory={(id) => setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id])}
+            saving={saving}
+            canAdvance={canAdvanceFromStep3}
+            onBack={() => advanceTo(2)}
+            onNext={handleStep3Next}
+            onSkip={() => {
+              // Skip salva o que tem e avança. Mas mantém o passo 3 obrigatório p/ campos mínimos.
+              if (!fullName.trim()) {
+                toast.error('Informe ao menos seu nome para avançar.');
+                return;
               }
-              onClick={handleConfirm}
-            >
-              {saving ? 'Salvando seu perfil...' : profileType === 'provider' ? 'Salvar e avançar' : 'Concluir cadastro'}
-            </Button>
+              handleStep3Next();
+            }}
+          />
+        )}
 
+        {/* ─── PASSO 4 — PROVIDER apenas ─── */}
+        {step === 4 && profileType === 'provider' && (
+          <Step4Service
+            providerReady={!!savedProvider}
+            servicesCreated={servicesCreated}
+            savedProvider={savedProvider}
+            userId={user?.id}
+            categories={categoriesData}
+            onServiceCreated={handleServiceCreated}
+            onContinue={() => advanceTo(5)}
+            onBack={() => advanceTo(3)}
+            onSkip={handleSkipStep4}
+          />
+        )}
 
-          </>
+        {/* Caso provider ainda não tenha provider row (raro), volta ao step 3 */}
+        {step === 4 && profileType !== 'provider' && (
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Avançando…</p>
+            <Button className="mt-4" onClick={finishOnboarding}>Concluir</Button>
+          </div>
+        )}
+
+        {/* ─── PASSO 5 ─── */}
+        {step === 5 && (
+          <Step5Done
+            profileType={profileType}
+            servicesCreated={servicesCreated}
+            saving={saving}
+            onFinish={finishOnboarding}
+            onBack={() => advanceTo(profileType === 'provider' ? 4 : 3)}
+          />
         )}
       </div>
     </div>
+  );
+};
+
+// ════════════════════════════════════════════════════════════════════
+// SUBCOMPONENTES (mantidos no mesmo arquivo p/ rapidez de leitura)
+// ════════════════════════════════════════════════════════════════════
+
+const Step1Identity = ({ onSelectType }: { onSelectType: (t: ProfileType) => void }) => (
+  <>
+    <h1 className="text-center font-display text-2xl font-bold text-foreground">Bem-vindo!</h1>
+    <p className="mt-2 text-center text-sm text-muted-foreground">Como você vai usar a plataforma?</p>
+
+    <div className="mt-6 grid gap-3">
+      <TypeButton onClick={() => onSelectType('provider')} icon={Briefcase} title="Sou Profissional" desc="Quero divulgar meu serviço" tone="accent" />
+      <TypeButton onClick={() => onSelectType('client')} icon={UserRound} title="Sou Cliente" desc="Quero contratar profissionais" tone="blue" />
+      <TypeButton onClick={() => onSelectType('rh')} icon={Building2} title="Agência de RH" desc="Recruto talentos para empresas" tone="purple" />
+      <TypeButton onClick={() => onSelectType('sponsor')} icon={Megaphone} title="Sou Patrocinador" desc="Quero anunciar minha marca" tone="secondary" />
+    </div>
+  </>
+);
+
+const SubtypeChoice = ({
+  onBack, onSelect,
+}: { onBack: () => void; onSelect: (s: ProviderSubtype) => void }) => (
+  <>
+    <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+      <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+    </button>
+    <h1 className="text-center font-display text-xl font-bold text-foreground">Você atua como…</h1>
+    <div className="mt-6 grid gap-3">
+      <TypeButton onClick={() => onSelect('autonomous')} icon={UserRound} title="Profissional Autônomo (PF)" desc="Sem CNPJ obrigatório" tone="accent" />
+      <TypeButton onClick={() => onSelect('company')} icon={Building2} title="Empresa / MEI (PJ)" desc="Tenho CNPJ" tone="primary" />
+    </div>
+  </>
+);
+
+const TypeButton = ({
+  onClick, icon: Icon, title, desc, tone,
+}: { onClick: () => void; icon: any; title: string; desc: string; tone: 'accent' | 'blue' | 'purple' | 'secondary' | 'primary' }) => {
+  const toneClass = {
+    accent: 'border-accent/30 bg-accent/5 hover:border-accent',
+    blue: 'border-blue-500/30 bg-blue-500/5 hover:border-blue-500',
+    purple: 'border-purple-500/30 bg-purple-500/5 hover:border-purple-500',
+    secondary: 'border-secondary/30 bg-secondary/5 hover:border-secondary',
+    primary: 'border-primary/30 bg-primary/5 hover:border-primary',
+  }[tone];
+  const iconBg = {
+    accent: 'bg-accent text-accent-foreground',
+    blue: 'bg-blue-600 text-white',
+    purple: 'bg-purple-600 text-white',
+    secondary: 'bg-secondary text-secondary-foreground',
+    primary: 'bg-primary text-primary-foreground',
+  }[tone];
+  return (
+    <button onClick={onClick} className={`group rounded-2xl border-2 p-5 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg ${toneClass}`}>
+      <div className="flex items-center gap-4">
+        <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
+          <Icon className="h-7 w-7" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-display text-base font-bold text-foreground">{title}</h3>
+          <p className="text-xs text-muted-foreground">{desc}</p>
+        </div>
+      </div>
+    </button>
+  );
+};
+
+// ─── Passo 2 ───
+const Step2Location = ({
+  city, state, avatarUrl, editingCity, onEditCity, onCityChange, onAvatarChange,
+  userId, onBack, onNext, onSkip, canAdvance,
+}: any) => (
+  <>
+    <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+      <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+    </button>
+
+    <div className="mb-3 flex justify-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
+        <MapPin className="h-7 w-7 text-accent" />
+      </div>
+    </div>
+    <h1 className="text-center font-display text-xl font-bold text-foreground">Localização e foto</h1>
+    <p className="mt-1 text-center text-xs text-muted-foreground">Vamos personalizar seu perfil.</p>
+
+    <div className="mt-5 space-y-4">
+      {userId && (
+        <div>
+          <label className="mb-2 block text-xs font-semibold text-foreground">Foto de perfil (opcional)</label>
+          <div className="flex justify-center">
+            <AvatarUpload
+              userId={userId}
+              currentUrl={avatarUrl}
+              initials={(avatarUrl ? '' : 'U')}
+              onUploaded={onAvatarChange}
+            />
+          </div>
+        </div>
+      )}
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-foreground">Cidade</label>
+        {!editingCity && city ? (
+          <div className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-3 py-2">
+            <span className="text-sm font-bold text-foreground">{city}{state ? ` • ${state}` : ''}</span>
+            <button onClick={onEditCity} className="text-xs font-medium text-accent hover:underline">Trocar</button>
+          </div>
+        ) : (
+          <CityAutocomplete value={{ city, state }} onChange={({ city: c, state: s }) => onCityChange(c, s)} />
+        )}
+      </div>
+    </div>
+
+    <Button variant="accent" className="mt-5 w-full" disabled={!canAdvance} onClick={onNext}>
+      Continuar
+    </Button>
+    <button type="button" onClick={onSkip} className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground">
+      Pular esta etapa
+    </button>
+  </>
+);
+
+// ─── Passo 3 ───
+const Step3Contact = ({
+  profileType, fullName, setFullName, agencyName, setAgencyName,
+  whatsapp, setWhatsapp, bio, setBio,
+  categoriesForPicker, selectedCategoryIds, onToggleCategory,
+  saving, canAdvance, onBack, onNext, onSkip,
+}: any) => (
+  <>
+    <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+      <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+    </button>
+
+    <div className="mb-3 flex justify-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
+        <Phone className="h-7 w-7 text-accent" />
+      </div>
+    </div>
+    <h1 className="text-center font-display text-xl font-bold text-foreground">Dados de contato</h1>
+    <p className="mt-1 text-center text-xs text-muted-foreground">Como os clientes vão te encontrar.</p>
+
+    <div className="mt-5 space-y-4">
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-foreground">
+          {profileType === 'rh' ? 'Seu nome (responsável)' : 'Seu nome completo'}
+        </label>
+        <Input placeholder="Ex: João Silva" value={fullName} onChange={e => setFullName(e.target.value)} />
+      </div>
+
+      {profileType === 'rh' && (
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-foreground">Nome da Agência</label>
+          <Input placeholder="Ex: Talentos RH" value={agencyName} onChange={e => setAgencyName(e.target.value)} />
+        </div>
+      )}
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-foreground">WhatsApp</label>
+        <PhoneMaskedInput
+          name="whatsapp"
+          value={whatsapp}
+          onChange={(_n: any, val: string) => setWhatsapp(val)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+        />
+      </div>
+
+      {profileType === 'provider' && (
+        <>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-foreground">Bio curta (opcional)</label>
+            <Textarea
+              placeholder="Conte em 2 linhas o que você faz de melhor."
+              value={bio}
+              onChange={e => setBio(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-xs font-semibold text-foreground">Sua especialidade principal</label>
+            <SmartCategoryPicker
+              categories={categoriesForPicker}
+              selectedIds={selectedCategoryIds}
+              onToggle={onToggleCategory}
+              maxSelections={1}
+              placeholder="Ex: Eletricista, Pintor…"
+            />
+          </div>
+        </>
+      )}
+    </div>
+
+    <Button variant="accent" className="mt-5 w-full" disabled={!canAdvance || saving} onClick={onNext}>
+      {saving ? 'Salvando…' : 'Continuar'}
+    </Button>
+    <button type="button" onClick={onSkip} disabled={saving} className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-50">
+      Pular esta etapa
+    </button>
+  </>
+);
+
+// ─── Passo 4 ───
+const Step4Service = ({
+  providerReady, servicesCreated, savedProvider, userId, categories,
+  onServiceCreated, onContinue, onBack, onSkip,
+}: any) => (
+  <>
+    <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+      <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+    </button>
+
+    <div className="mb-3 flex justify-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+        <Sparkles className="h-7 w-7" />
+      </div>
+    </div>
+    <h1 className="text-center font-display text-xl font-bold text-foreground">Seu primeiro serviço</h1>
+    <p className="mt-1 text-center text-xs text-muted-foreground">Você precisa cadastrar pelo menos 1 serviço.</p>
+
+    <div className="mt-5">
+      {providerReady ? (
+        servicesCreated > 0 ? (
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
+            <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-500" />
+            <p className="text-sm font-bold text-foreground">
+              {servicesCreated === 1 ? '1 serviço cadastrado!' : `${servicesCreated} serviços cadastrados!`}
+            </p>
+            <Button variant="accent" className="mt-4 w-full" onClick={onContinue}>
+              Continuar para o último passo
+            </Button>
+          </div>
+        ) : (
+          <ServiceWizard
+            providerId={savedProvider.id}
+            userId={userId}
+            provider={savedProvider}
+            categories={categories}
+            onComplete={onServiceCreated}
+            onCancel={onSkip}
+          />
+        )
+      ) : (
+        <p className="text-center text-sm text-muted-foreground">Carregando seu perfil profissional…</p>
+      )}
+    </div>
+
+    {servicesCreated === 0 && (
+      <button type="button" onClick={onSkip} className="mt-4 w-full text-xs font-medium text-muted-foreground hover:text-foreground">
+        Não consigo agora
+      </button>
+    )}
+  </>
+);
+
+// ─── Passo 5 ───
+const Step5Done = ({
+  profileType, servicesCreated, saving, onFinish, onBack,
+}: any) => {
+  const canFinish = profileType !== 'provider' || servicesCreated > 0;
+  return (
+    <>
+      <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+      </button>
+
+      <div className="mb-3 flex justify-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-amber-500 text-white">
+          <PartyPopper className="h-8 w-8" />
+        </div>
+      </div>
+      <h1 className="text-center font-display text-2xl font-bold text-foreground">Tudo pronto!</h1>
+      <p className="mt-2 text-center text-sm text-muted-foreground">
+        Você ganhou <span className="font-bold text-accent">+50 pontos</span> de engajamento por concluir seu cadastro.
+      </p>
+
+      {!canFinish && (
+        <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-center text-xs text-amber-700 dark:text-amber-400">
+          Você precisa cadastrar pelo menos 1 serviço no passo anterior antes de concluir.
+        </div>
+      )}
+
+      <Button
+        variant="accent"
+        className="mt-6 w-full"
+        disabled={!canFinish || saving}
+        onClick={onFinish}
+      >
+        {saving ? 'Concluindo…' : 'Entrar no Dashboard'}
+      </Button>
+    </>
   );
 };
 
