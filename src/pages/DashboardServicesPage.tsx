@@ -18,6 +18,8 @@ import { toast } from 'sonner';
 import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
+import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
+import { celebrate } from '@/lib/celebrate';
 import { handleImageError } from '@/lib/imageResolver';
 
 // Heavy editor sub-components — only loaded when the edit Dialog opens
@@ -448,8 +450,14 @@ const DashboardServicesPage = () => {
         setShowDialog(false);
       } else {
         // First publish: enter photos step (Wizard mode) — DO NOT close dialog
-        toast.success('🎉 Serviço publicado!', {
-          description: 'Agora adicione as fotos e escolha a capa para destacar seu anúncio.',
+        const newCount = services.length + 1;
+        const SERVICES_CAP = 5;
+        const unlockedNext = newCount < SERVICES_CAP;
+        celebrate({ intensity: 'mini' });
+        toast.success('🎉 VOCÊ DESBLOQUEOU MAIS PODER!', {
+          description: unlockedNext
+            ? `Seu ${newCount + 1}º slot de serviço já está disponível. Continue subindo!`
+            : 'Você atingiu o nível máximo de serviços. Que máquina! 🚀',
           duration: 5000,
         });
         setEditId(serviceId!);
