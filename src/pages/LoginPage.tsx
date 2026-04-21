@@ -30,20 +30,13 @@ const LoginPage = () => {
   const location = useLocation();
   const { user, profile, loading: authLoading } = useAuth();
 
-  // Get the URL to redirect back to after login
+  // Mantemos a rota salva apenas para jornadas futuras; o pós-auth cai sempre na triagem.
   const from = (location.state as any)?.from || null;
 
-  // Se já autenticado: triagem (sem profile_type) ou destino real.
   useEffect(() => {
     if (authLoading || !user) return;
-    if (profile && !profile.profile_type) {
-      navigate('/triagem', { replace: true });
-      return;
-    }
-    if (profile?.profile_type) {
-      navigate(from || '/dashboard', { replace: true });
-    }
-  }, [user, profile, authLoading, from, navigate]);
+    navigate('/triagem', { replace: true, state: from ? { from } : undefined });
+  }, [user, authLoading, from, navigate]);
 
   useSeoHead({ title: 'Entrar', description: 'Acesse a plataforma Preciso de um.', noindex: true });
 
