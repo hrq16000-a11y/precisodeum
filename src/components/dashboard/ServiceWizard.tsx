@@ -81,7 +81,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   const profileUrl = `${window.location.origin}/profissional/${providerSlug}`;
 
   const canNext = () => {
-    if (step === 0) return serviceName.trim().length > 0;
+    if (step === 0) return serviceName.trim().length > 0 && selectedCategoryIds.length > 0;
     return true;
   };
 
@@ -92,43 +92,29 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
 
     try {
       const address = [provider?.neighborhood, provider?.city, provider?.state].filter(Boolean).join(', ');
-      const { data, error } = await supabase
-        .from('services')
-        .insert({
-          provider_id: providerId,
-          service_name: serviceName,
-          description,
-          whatsapp: whatsapp || provider?.whatsapp || '',
-          service_area: serviceArea,
-          address,
-          working_hours: workingHours,
-          website,
-          instagram_url: instagramUrl,
-          facebook_url: facebookUrl,
-          youtube_url: youtubeUrl,
-          category_id: selectedCategoryIds[0] || null,
-          user_ref: provider?.user_ref || null,
-        })
-        .select('id')
-        .single();
+      const { data, error } = await (supabase as any).rpc('create_service_atomic', {
+        _provider_id: providerId,
+        _service_name: serviceName,
+        _description: description,
+        _whatsapp: whatsapp || provider?.whatsapp || '',
+        _service_area: serviceArea,
+        _address: address,
+        _working_hours: workingHours,
+        _website: website,
+        _instagram_url: instagramUrl,
+        _facebook_url: facebookUrl,
+        _youtube_url: youtubeUrl,
+        _category_id: selectedCategoryIds[0],
+        _category_ids: selectedCategoryIds,
+      });
 
-      if (error) { toast.error('Erro: ' + error.message); setSaving(false); return false; }
-
-      if (selectedCategoryIds.length > 0 && data) {
-        await supabase.from('service_categories').insert(
-          selectedCategoryIds.map(catId => ({ service_id: data.id, category_id: catId }))
-        );
+      if (error || !data?.success) {
+        toast.error('Erro: ' + (error?.message || data?.error || 'falha ao salvar serviço'));
+        setSaving(false);
+        return false;
       }
 
-      setCreatedServiceId(data.id);
-
-      // Persist onboarding progress
-      await supabase.from('providers').update({
-        onboarding_progress: {
-          ...(provider?.onboarding_progress || {}),
-          services: true,
-        },
-      }).eq('id', providerId);
+      setCreatedServiceId(data.service_id);
 
       toast.success('Serviço criado! Agora adicione fotos.');
       return true;

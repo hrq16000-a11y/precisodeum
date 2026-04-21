@@ -25,7 +25,12 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
       return;
     }
 
-    const mustCompleteOnboarding = !!user && !!profile && (!profile.profile_type || profile.onboarding_completed === false);
+    const onboardingStep = Number(profile?.onboarding_step ?? 0);
+    const mustCompleteOnboarding = !!user && !!profile && (
+      !profile.profile_type ||
+      profile.onboarding_completed !== true ||
+      onboardingStep < 5
+    );
 
     if (mustCompleteOnboarding && location.pathname !== '/triagem') {
       navigate('/triagem', { replace: true });
@@ -54,7 +59,12 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
 
    if (user && !profile) return null;
 
-  const mustCompleteOnboarding = !!user && !!profile && (!profile.profile_type || profile.onboarding_completed === false);
+  const onboardingStep = Number(profile?.onboarding_step ?? 0);
+  const mustCompleteOnboarding = !!user && !!profile && (
+    !profile.profile_type ||
+    profile.onboarding_completed !== true ||
+    onboardingStep < 5
+  );
 
   if (mustCompleteOnboarding && location.pathname !== '/triagem') return null;
 

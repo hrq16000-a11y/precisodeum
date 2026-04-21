@@ -6,7 +6,7 @@ import { useSeoHead } from '@/hooks/useSeoHead';
 
 /**
  * Hard Gate: rota obrigatória de triagem.
- * Usuário fica preso aqui até definir seu profile_type.
+ * Usuário fica preso aqui até concluir os 5 passos do onboarding.
  * Sem botão de fechar, sem overlay — é a página inteira.
  */
 const TriagePage = () => {
@@ -21,7 +21,8 @@ const TriagePage = () => {
       navigate('/login', { replace: true });
       return;
     }
-    if (profile?.profile_type && profile.onboarding_completed !== false) {
+    const onboardingStep = Number(profile?.onboarding_step ?? 0);
+    if (profile?.profile_type && profile.onboarding_completed === true && onboardingStep >= 5) {
       const target = profile.profile_type === 'rh'
         ? '/dashboard/vagas'
         : profile.profile_type === 'sponsor'
@@ -31,7 +32,8 @@ const TriagePage = () => {
     }
   }, [loading, user, profile, navigate]);
 
-  if (loading || !user || (profile?.profile_type && profile.onboarding_completed !== false)) {
+  const onboardingStep = Number(profile?.onboarding_step ?? 0);
+  if (loading || !user || (profile?.profile_type && profile.onboarding_completed === true && onboardingStep >= 5)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />

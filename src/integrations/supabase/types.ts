@@ -5131,6 +5131,24 @@ export type Database = {
       }
       complete_onboarding_checklist: { Args: never; Returns: Json }
       complete_referral: { Args: { _referred_id: string }; Returns: boolean }
+      create_service_atomic: {
+        Args: {
+          _address?: string
+          _category_id?: string
+          _category_ids?: string[]
+          _description?: string
+          _facebook_url?: string
+          _instagram_url?: string
+          _provider_id: string
+          _service_area?: string
+          _service_name: string
+          _website?: string
+          _whatsapp?: string
+          _working_hours?: string
+          _youtube_url?: string
+        }
+        Returns: Json
+      }
       derive_user_ref: { Args: { _uuid: string }; Returns: string }
       distribute_open_lead: { Args: { _open_lead_id: string }; Returns: number }
       effective_user_permissions: { Args: { _user_id: string }; Returns: Json }

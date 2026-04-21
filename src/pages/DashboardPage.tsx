@@ -35,7 +35,6 @@ import UpsellBanner from '@/components/dashboard/UpsellBanner';
 import CoursesBanner from '@/components/dashboard/CoursesBanner';
 import OurStoryBanner from '@/components/OurStoryBanner';
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
-import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 import FirstLeadChecklist from '@/components/dashboard/FirstLeadChecklist';
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
 import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
@@ -124,7 +123,6 @@ const DashboardPage = () => {
   }, [user]);
 
   const profileType = profile?.profile_type ?? null;
-  const tour = useOnboardingTour(profileType || 'client', !!profile?.onboarding_completed);
   const isClient = profileType === 'client';
   const isProvider = profileType === 'provider';
   const isRH = profileType === 'rh';
@@ -154,6 +152,7 @@ const DashboardPage = () => {
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
   if (profile && !profileType) return null;
+  if (profile && (profile.onboarding_completed !== true || Number(profile.onboarding_step ?? 0) < 5)) return null;
 
   const debugResetBar = (
     <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2">
@@ -407,7 +406,6 @@ const DashboardPage = () => {
     <DashboardLayout>
       {debugResetBar}
       <RealtimeEngagementToast />
-      <OnboardingTour active={tour.active} step={tour.step} steps={tour.steps} onNext={tour.next} onPrev={tour.prev} onDismiss={tour.dismiss} />
       {/* Enhanced Welcome Hero */}
       <WelcomeHero
         greeting={greeting}

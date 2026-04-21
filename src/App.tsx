@@ -18,6 +18,7 @@ const BackToTopButton = reactLazy(() => importWithRetry(() => import("./componen
 const ScrollProgressBar = reactLazy(() => importWithRetry(() => import("./components/ui/ScrollProgressBar")));
 const ImpersonationBanner = reactLazy(() => importWithRetry(() => import("./components/admin/ImpersonationBanner")));
 import { useAuth } from "@/hooks/useAuth";
+import { initializeUiFreezeMonitor } from "@/lib/uiFreezeMonitor";
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
@@ -218,7 +219,12 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
 
   if (loading) return null;
 
-  const mustCompleteOnboarding = !!user && !!profile && (!profile.profile_type || profile.onboarding_completed === false);
+  const onboardingStep = Number(profile?.onboarding_step ?? 0);
+  const mustCompleteOnboarding = !!user && !!profile && (
+    !profile.profile_type ||
+    profile.onboarding_completed !== true ||
+    onboardingStep < 5
+  );
 
   if (mustCompleteOnboarding && location.pathname !== '/triagem') {
     return <Navigate to="/triagem" replace />;
@@ -229,6 +235,8 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => {
   useEffect(() => {
+    initializeUiFreezeMonitor();
+
     // Invalidate all queries if daily purge just ran
     if ((window as any).__DAILY_PURGE_TRIGGERED__) {
       delete (window as any).__DAILY_PURGE_TRIGGERED__;
