@@ -42,6 +42,7 @@ import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 import FirstLeadChecklist from '@/components/dashboard/FirstLeadChecklist';
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
+import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
@@ -441,6 +442,11 @@ const DashboardPage = () => {
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <FirstLeadChecklist />
         <CommunityVerifiedStatus />
+      </div>
+
+      {/* Sinal de demanda (FOMO) — apenas Engajado+ */}
+      <div className="mt-4">
+        <DemandSignalAlert />
       </div>
 
       {/* Profile Strength — Gamification Progress */}

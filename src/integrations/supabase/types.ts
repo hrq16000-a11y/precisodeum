@@ -1688,6 +1688,89 @@ export type Database = {
         }
         Relationships: []
       }
+      open_lead_responses: {
+        Row: {
+          created_at: string
+          id: string
+          open_lead_id: string
+          provider_id: string
+          provider_user_id: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          open_lead_id: string
+          provider_id: string
+          provider_user_id: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          open_lead_id?: string
+          provider_id?: string
+          provider_user_id?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "open_lead_responses_open_lead_id_fkey"
+            columns: ["open_lead_id"]
+            isOneToOne: false
+            referencedRelation: "open_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      open_leads: {
+        Row: {
+          category_slug: string | null
+          city: string
+          client_name: string
+          client_user_id: string | null
+          client_whatsapp: string
+          created_at: string
+          description: string
+          expires_at: string
+          id: string
+          service_query: string
+          state: string
+          status: string
+        }
+        Insert: {
+          category_slug?: string | null
+          city?: string
+          client_name?: string
+          client_user_id?: string | null
+          client_whatsapp?: string
+          created_at?: string
+          description?: string
+          expires_at?: string
+          id?: string
+          service_query: string
+          state?: string
+          status?: string
+        }
+        Update: {
+          category_slug?: string | null
+          city?: string
+          client_name?: string
+          client_user_id?: string | null
+          client_whatsapp?: string
+          created_at?: string
+          description?: string
+          expires_at?: string
+          id?: string
+          service_query?: string
+          state?: string
+          status?: string
+        }
+        Relationships: []
+      }
       page_blocks: {
         Row: {
           active: boolean
@@ -2853,6 +2936,39 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           query?: string | null
+        }
+        Relationships: []
+      }
+      search_intent_log: {
+        Row: {
+          category_name: string | null
+          category_slug: string | null
+          city: string | null
+          created_at: string
+          id: string
+          state: string | null
+          user_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          category_name?: string | null
+          category_slug?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          state?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          category_name?: string | null
+          category_slug?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          state?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
         }
         Relationships: []
       }
@@ -4203,6 +4319,27 @@ export type Database = {
           },
         ]
       }
+      user_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          provider_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          provider_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          provider_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_levels: {
         Row: {
           color: string
@@ -4777,6 +4914,7 @@ export type Database = {
         Returns: boolean
       }
       complete_onboarding_checklist: { Args: never; Returns: Json }
+      distribute_open_lead: { Args: { _open_lead_id: string }; Returns: number }
       effective_user_permissions: { Args: { _user_id: string }; Returns: Json }
       find_orphan_media: {
         Args: { _min_age_hours?: number }
@@ -4801,6 +4939,14 @@ export type Database = {
           id: string
           is_seed: boolean
           profile_type: string
+        }[]
+      }
+      get_demand_signal: {
+        Args: { _user_id: string }
+        Returns: {
+          category_name: string
+          city: string
+          search_count: number
         }[]
       }
       get_featured_providers: {

@@ -38,6 +38,8 @@ import { usePinnedSponsor } from '@/hooks/usePinnedSponsor';
 import UrgencyToggle from '@/components/home/UrgencyToggle';
 import { useUrgencyMode } from '@/hooks/useUrgencyMode';
 import { useOnlineProviders } from '@/hooks/useOnlinePresence';
+import AskSystemDialog from '@/components/search/AskSystemDialog';
+import { logSearchIntent } from '@/lib/searchIntent';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -103,6 +105,19 @@ const SearchPage = () => {
     city: effectiveCity || undefined,
     state: geoState || undefined,
   });
+
+  // Log search intent (powers FOMO demand alerts in provider dashboard)
+  useEffect(() => {
+    if (!selectedCategory && !query) return;
+    const cat = categories.find((c) => c.slug === selectedCategory);
+    logSearchIntent({
+      categorySlug: selectedCategory || null,
+      categoryName: cat?.name || query || null,
+      city: effectiveCity || null,
+      state: geoState || null,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory, query, effectiveCity, geoState]);
 
   const localProviders = grouped?.local || [];
   const nearbyProviders = grouped?.nearby || [];
@@ -826,6 +841,14 @@ const SearchPage = () => {
                     message="Tente alterar os filtros ou buscar por outro termo."
                   />
                 )}
+
+                {/* "Pergunte e Compare" — sem leilão */}
+                <div className="mt-6 flex justify-center">
+                  <AskSystemDialog
+                    defaultService={query}
+                    defaultCategory={selectedCategory}
+                  />
+                </div>
                 <PaginationControls currentPage={page} totalItems={totalDisplay} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
               </>
             )}

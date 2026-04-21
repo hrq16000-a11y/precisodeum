@@ -20,6 +20,7 @@ import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
 import { useEngagementPoints } from '@/hooks/useEngagementPoints';
 import { getEngagementTier } from '@/lib/engagementTiers';
 import CommunityVerifiedBadge from '@/components/CommunityVerifiedBadge';
+import FavoriteButton from '@/components/FavoriteButton';
 
 interface ProviderCardProps {
   provider: DbProvider;
@@ -166,6 +167,9 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500 rounded-xl" />
       {/* Shine sweep */}
       <div className="card-shine-sweep pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent" style={{ left: '-100%', width: '50%' }} />
+
+      {/* Favorite (heart) — top-right */}
+      <FavoriteButton providerId={provider.id} providerName={displayName} className="absolute right-2 top-2 z-10" />
 
       <div className="relative flex min-w-0 flex-1 flex-col p-4 sm:p-5">
         <div className="flex items-start gap-3 sm:gap-4">
