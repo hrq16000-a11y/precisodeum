@@ -181,6 +181,7 @@ export type Database = {
           status: string
           updated_at: string
           user_id: string
+          user_ref: string | null
           website: string | null
           whatsapp: string | null
         }
@@ -200,6 +201,7 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id: string
+          user_ref?: string | null
           website?: string | null
           whatsapp?: string | null
         }
@@ -219,6 +221,7 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+          user_ref?: string | null
           website?: string | null
           whatsapp?: string | null
         }
@@ -3819,6 +3822,7 @@ export type Database = {
           tier: string
           title: string
           user_id: string | null
+          user_ref: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -3862,6 +3866,7 @@ export type Database = {
           tier?: string
           title: string
           user_id?: string | null
+          user_ref?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -3905,6 +3910,7 @@ export type Database = {
           tier?: string
           title?: string
           user_id?: string | null
+          user_ref?: string | null
           whatsapp?: string | null
         }
         Relationships: []
@@ -5023,6 +5029,7 @@ export type Database = {
       }
       complete_onboarding_checklist: { Args: never; Returns: Json }
       complete_referral: { Args: { _referred_id: string }; Returns: boolean }
+      derive_user_ref: { Args: { _user_id: string }; Returns: string }
       distribute_open_lead: { Args: { _open_lead_id: string }; Returns: number }
       effective_user_permissions: { Args: { _user_id: string }; Returns: Json }
       find_orphan_media: {
