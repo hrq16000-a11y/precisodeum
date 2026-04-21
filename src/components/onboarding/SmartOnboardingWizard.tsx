@@ -50,6 +50,23 @@ const slugify = (s: string) =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+/** Valida CNPJ via algoritmo mod11 (dígitos verificadores reais). */
+function isValidCnpj(raw: string): boolean {
+  const cnpj = (raw || '').replace(/\D/g, '');
+  if (cnpj.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(cnpj)) return false; // todos iguais
+  const calc = (base: string, weights: number[]) => {
+    const sum = base.split('').reduce((acc, d, i) => acc + parseInt(d, 10) * weights[i], 0);
+    const mod = sum % 11;
+    return mod < 2 ? 0 : 11 - mod;
+  };
+  const w1 = [5,4,3,2,9,8,7,6,5,4,3,2];
+  const w2 = [6,5,4,3,2,9,8,7,6,5,4,3,2];
+  const d1 = calc(cnpj.slice(0, 12), w1);
+  const d2 = calc(cnpj.slice(0, 12) + d1, w2);
+  return d1 === parseInt(cnpj[12], 10) && d2 === parseInt(cnpj[13], 10);
+}
+
 interface PersistedState {
   step: WizardStep;
   profileType: ProfileType | null;
@@ -172,24 +189,29 @@ const BasicOnboardingWizard = () => {
     });
   };
 
-  // Auto-advance Step 3 → confirm assim que a categoria for selecionada (provider)
-  // e nome já estiver preenchido. Cliente: dispara assim que nome existir + step 3.
-  useEffect(() => {
-    if (step !== 3 || saving || autoAdvancedRef.current) return;
-    if (!fullName.trim()) return;
-    if (profileType === 'provider' && selectedCategoryIds.length === 0) return;
-    if (profileType === 'provider' && providerSubtype === 'company' && (!legalName.trim() || !cnpj.trim())) return;
-    if (profileType === 'rh' && !agencyName.trim()) return;
-    autoAdvancedRef.current = true;
-    const t = setTimeout(() => { handleConfirm(); }, 650);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, selectedCategoryIds, fullName, profileType, providerSubtype, legalName, cnpj, agencyName, saving]);
-
-  // Reset auto-advance guard quando voltar de step
+  // Auto-advance removido: a esteira deve ser controlada ATIVAMENTE pelo usuário.
+  // Mantemos apenas o reset de qualquer guard antigo ao trocar de step.
   useEffect(() => {
     if (step !== 3) autoAdvancedRef.current = false;
   }, [step]);
+
+  /**
+   * Salvamento incremental — sempre que o usuário avança (clicando em "Salvar e avançar"
+   * OU em "Pular esta etapa"), persistimos o que já foi digitado em profiles/providers.
+   * Nunca perdemos dados parciais.
+   */
+  const persistPartialProgress = async () => {
+    if (!user?.id) return;
+    try {
+      const profilePatch: Record<string, any> = { onboarding_completed: false };
+      if (profileType) { profilePatch.profile_type = profileType; profilePatch.role = profileType; }
+      if (fullName.trim()) profilePatch.full_name = fullName.trim();
+      await supabase.from('profiles').update(profilePatch as any).eq('id', user.id);
+    } catch (err) {
+      // silencioso — não bloqueia avanço se houver glitch de rede
+      if (import.meta.env.DEV) console.warn('[Onboarding] persistPartialProgress falhou:', err);
+    }
+  };
 
   const clearPersisted = () => {
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
@@ -204,6 +226,11 @@ const BasicOnboardingWizard = () => {
     if (!city.trim()) {
       toast.error('Selecione sua cidade.');
       setStep(2);
+      return;
+    }
+    // CNPJ é OPCIONAL — mas se preenchido, precisa ser real (mod11).
+    if (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim() && !isValidCnpj(cnpj)) {
+      toast.error('CNPJ inválido. Confira os dígitos ou deixe em branco.');
       return;
     }
     setSaving(true);
@@ -648,10 +675,21 @@ const BasicOnboardingWizard = () => {
                   <Button variant="outline" onClick={() => setEditingCity(true)}>
                     Outra cidade
                   </Button>
-                  <Button variant="accent" onClick={() => setStep(3)}>
+                  <Button
+                    variant="accent"
+                    onClick={async () => { await persistPartialProgress(); setStep(3); }}
+                  >
                     SIM, está certo
                   </Button>
                 </div>
+                {/* Skip → avança para o próximo passo do wizard, NÃO para o dashboard. */}
+                <button
+                  type="button"
+                  onClick={async () => { await persistPartialProgress(); setStep(3); }}
+                  className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Pular esta etapa
+                </button>
               </>
             ) : (
               <>
@@ -662,15 +700,9 @@ const BasicOnboardingWizard = () => {
                   <CityAutocomplete
                     value={{ city, state }}
                     onChange={({ city: c, state: s }) => {
+                      // Apenas atualiza estado local — usuário decide quando avançar.
                       setCity(c);
                       setState(s);
-                      // Auto-avanço: se a seleção veio com cidade + UF da lista oficial, pula para o Step 3
-                      if (c.trim() && s.trim()) {
-                        setTimeout(() => {
-                          setEditingCity(false);
-                          setStep(3);
-                        }, 350);
-                      }
                     }}
                   />
                 </div>
@@ -678,10 +710,17 @@ const BasicOnboardingWizard = () => {
                   variant="accent"
                   className="mt-4 w-full"
                   disabled={!city.trim()}
-                  onClick={() => { setEditingCity(false); setStep(3); }}
+                  onClick={async () => { await persistPartialProgress(); setEditingCity(false); setStep(3); }}
                 >
                   Confirmar e continuar
                 </Button>
+                <button
+                  type="button"
+                  onClick={async () => { await persistPartialProgress(); setEditingCity(false); setStep(3); }}
+                  className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Pular esta etapa
+                </button>
               </>
             )}
           </>
@@ -724,7 +763,7 @@ const BasicOnboardingWizard = () => {
                 <>
                   <div>
                     <label className="text-xs font-semibold text-foreground mb-1 block">
-                      Razão Social
+                      Razão Social <span className="font-normal text-muted-foreground">(opcional)</span>
                     </label>
                     <Input
                       placeholder="Ex: João Silva Serviços LTDA"
@@ -734,13 +773,19 @@ const BasicOnboardingWizard = () => {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-foreground mb-1 block">
-                      CNPJ
+                      CNPJ <span className="font-normal text-muted-foreground">(opcional)</span>
                     </label>
                     <Input
                       placeholder="00.000.000/0000-00"
                       value={cnpj}
                       onChange={e => setCnpj(e.target.value)}
+                      aria-invalid={cnpj.trim().length > 0 && !isValidCnpj(cnpj)}
                     />
+                    {cnpj.trim().length > 0 && !isValidCnpj(cnpj) && (
+                      <p className="mt-1 text-[11px] text-destructive">
+                        CNPJ inválido. Verifique os dígitos ou deixe em branco.
+                      </p>
+                    )}
                   </div>
                 </>
               )}
@@ -803,13 +848,35 @@ const BasicOnboardingWizard = () => {
                 saving ||
                 !fullName.trim() ||
                 (profileType === 'provider' && selectedCategoryIds.length === 0) ||
-                (profileType === 'provider' && providerSubtype === 'company' && (!legalName.trim() || !cnpj.trim())) ||
-                (profileType === 'rh' && !agencyName.trim())
+                (profileType === 'rh' && !agencyName.trim()) ||
+                (profileType === 'provider' && providerSubtype === 'company' && cnpj.trim().length > 0 && !isValidCnpj(cnpj))
               }
               onClick={handleConfirm}
             >
-              {saving ? 'Salvando seu perfil...' : profileType === 'provider' ? 'Avançando automaticamente...' : 'Concluir cadastro'}
+              {saving ? 'Salvando seu perfil...' : profileType === 'provider' ? 'Salvar e avançar' : 'Concluir cadastro'}
             </Button>
+
+            {/* Pular esta etapa — só faz sentido para provider (avança para Step 4 sem categoria).
+                Cliente/RH não tem próximo passo neste wizard, então o botão fica oculto. */}
+            {profileType === 'provider' && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={async () => {
+                  // Garante que pelo menos o nome (se digitado) seja salvo antes de avançar
+                  await persistPartialProgress();
+                  // Mesmo sem categoria, criamos o provider e seguimos para Step 4 (cadastro de serviço opcional)
+                  if (!fullName.trim()) {
+                    toast.info('Informe ao menos seu nome para continuar.');
+                    return;
+                  }
+                  handleConfirm();
+                }}
+                className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                Pular esta etapa
+              </button>
+            )}
           </>
         )}
       </div>
