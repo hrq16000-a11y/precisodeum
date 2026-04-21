@@ -201,7 +201,7 @@ async function fetchProvidersLightweight(query: any) {
     // Fetch engagement points + level priority + trial boost for meritocracy scoring
     supabase
       .from('profiles')
-      .select('id, engagement_points, level_id, trial_boost_until, gamification_levels!profiles_level_id_fkey(priority)')
+      .select('id, engagement_points, level_id, trial_boost_until, gamification_levels!profiles_level_id_fkey(name, priority)')
       .in('id', userIds) as any,
   ]);
 
