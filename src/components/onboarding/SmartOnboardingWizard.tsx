@@ -709,7 +709,7 @@ const BasicOnboardingWizard = () => {
             <div className="mt-5 space-y-4">
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1 block">
-                  Seu nome completo
+                  {profileType === 'rh' ? 'Seu nome (responsável)' : 'Seu nome completo'}
                 </label>
                 <Input
                   placeholder="Ex: João Silva"
@@ -717,6 +717,44 @@ const BasicOnboardingWizard = () => {
                   onChange={e => setFullName(e.target.value)}
                 />
               </div>
+
+              {profileType === 'provider' && providerSubtype === 'company' && (
+                <>
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-1 block">
+                      Razão Social
+                    </label>
+                    <Input
+                      placeholder="Ex: João Silva Serviços LTDA"
+                      value={legalName}
+                      onChange={e => setLegalName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-1 block">
+                      CNPJ
+                    </label>
+                    <Input
+                      placeholder="00.000.000/0000-00"
+                      value={cnpj}
+                      onChange={e => setCnpj(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+
+              {profileType === 'rh' && (
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">
+                    Nome da Agência
+                  </label>
+                  <Input
+                    placeholder="Ex: Talentos RH Curitiba"
+                    value={agencyName}
+                    onChange={e => setAgencyName(e.target.value)}
+                  />
+                </div>
+              )}
 
               {profileType === 'provider' && (
                 <div>
