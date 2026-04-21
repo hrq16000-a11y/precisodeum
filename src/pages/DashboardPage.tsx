@@ -30,12 +30,10 @@ import QrCodeCard from '@/components/dashboard/QrCodeCard';
 import { usePermissions } from '@/hooks/usePermissions';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
-import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import ActionQueue from '@/components/dashboard/ActionQueue';
 import UpsellBanner from '@/components/dashboard/UpsellBanner';
 import CoursesBanner from '@/components/dashboard/CoursesBanner';
 import OurStoryBanner from '@/components/OurStoryBanner';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 import OnboardingTour, { useOnboardingTour } from '@/components/OnboardingTour';
 import FirstLeadChecklist from '@/components/dashboard/FirstLeadChecklist';
@@ -81,8 +79,6 @@ const DashboardPage = () => {
   };
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   // ServiceWizard ligado por padrão (a flag só serve para desativar explicitamente).
-  const wizardFlagRaw = useSettingValue('enable_service_wizard_onboarding');
-  const wizardEnabled = wizardFlagRaw === '' ? true : wizardFlagRaw === 'true';
   const { levelName, levelColor } = usePermissions();
   const [servicesCount, setServicesCount] = useState<number | null>(null);
   const [leadsCount, setLeadsCount] = useState<number>(0);
@@ -91,8 +87,6 @@ const DashboardPage = () => {
   const [viewsTotal, setViewsTotal] = useState<number>(0);
   const [reviewCount, setReviewCount] = useState<number>(0);
   const [guideOpen, setGuideOpen] = useState(true);
-  const [wizardOpen, setWizardOpen] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -128,24 +122,6 @@ const DashboardPage = () => {
     supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
       .then(({ count }) => setJobsCount(count ?? 0));
   }, [user]);
-
-  // Auto-abre o ServiceWizard quando o usuário acaba de escolher tipo "Profissional"
-  useEffect(() => {
-    if (!provider) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('wizard') === '1') {
-      setWizardOpen(true);
-      params.delete('wizard');
-      const newSearch = params.toString();
-      window.history.replaceState({}, '', window.location.pathname + (newSearch ? '?' + newSearch : ''));
-    }
-  }, [provider]);
-
-  // Fetch categories for ServiceWizard
-  useEffect(() => {
-    supabase.from('categories').select('id, name, slug, icon').order('name')
-      .then(({ data }) => setCategories(data || []));
-  }, []);
 
   const profileType = profile?.profile_type ?? null;
   const tour = useOnboardingTour(profileType || 'client', !!profile?.onboarding_completed);
@@ -381,7 +357,7 @@ const DashboardPage = () => {
       number: '2',
       title: 'Cadastre seus serviços',
       description: 'Adicione os serviços que você oferece, com imagens e descrições.',
-      action: servicesDone ? () => navigate('/dashboard/servicos') : (wizardEnabled ? () => setWizardOpen(true) : () => navigate('/dashboard/servicos')),
+      action: () => navigate('/dashboard/servicos'),
       actionLabel: servicesDone ? 'Meus Serviços' : 'Criar primeiro serviço',
       icon: Briefcase,
       done: servicesDone,
@@ -527,7 +503,7 @@ const DashboardPage = () => {
               <h2 className="text-base font-bold text-foreground">Crie seu primeiro serviço!</h2>
               <p className="text-sm text-muted-foreground mt-0.5">Publique seus serviços para que clientes possam encontrá-lo.</p>
             </div>
-            <Button variant="accent" size="sm" onClick={() => wizardEnabled ? setWizardOpen(true) : navigate('/dashboard/servicos')} className="shrink-0 relative">
+            <Button variant="accent" size="sm" onClick={() => navigate('/dashboard/servicos')} className="shrink-0 relative">
               <PlusCircle className="mr-1 h-4 w-4" /> Criar Serviço
             </Button>
           </motion.div>
@@ -750,26 +726,6 @@ const DashboardPage = () => {
       {/* Nossa história — referência à luta */}
       <OurStoryBanner variant="compact" />
 
-      {/* Service Wizard Modal — onboarding only */}
-      {provider && user && (
-        <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
-          <DialogContent className="max-w-lg p-0 gap-0 overflow-y-auto max-h-[90vh]">
-            <div className="p-5">
-              <ServiceWizard
-                providerId={provider.id}
-                userId={user.id}
-                provider={provider}
-                categories={categories}
-                onComplete={() => {
-                  setWizardOpen(false);
-                  setServicesCount(prev => (prev ?? 0) + 1);
-                }}
-                onCancel={() => setWizardOpen(false)}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </DashboardLayout>
   );
 };
