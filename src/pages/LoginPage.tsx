@@ -33,36 +33,72 @@ const LoginPage = () => {
   // Get the URL to redirect back to after login
   const from = (location.state as any)?.from || null;
 
-  // If already authenticated, redirect to dashboard (triagem cuida do resto)
+  // Se já autenticado: triagem (sem profile_type) ou destino real.
   useEffect(() => {
     if (authLoading || !user) return;
-    navigate(from || '/dashboard', { replace: true });
-  }, [user, authLoading]);
-
-  useSeoHead({ title: 'Entrar', description: 'Faça login na plataforma Preciso de um.', noindex: true });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      toast.error('E-mail ou senha inválidos');
-    } else if (data.session) {
-      toast.success('Login realizado com sucesso!');
+    if (profile && !profile.profile_type) {
+      navigate('/triagem', { replace: true });
+      return;
+    }
+    if (profile?.profile_type) {
       navigate(from || '/dashboard', { replace: true });
     }
+  }, [user, profile, authLoading, from, navigate]);
+
+  useSeoHead({ title: 'Entrar', description: 'Acesse a plataforma Preciso de um.', noindex: true });
+
+  /**
+   * Porta única: tenta login. Se a conta não existir, cria silenciosamente.
+   * Em ambos os casos, o Hard Gate /triagem assume daqui.
+   */
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) return;
+    setLoading(true);
+
+    const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (!signInError && signInData.session) {
+      setLoading(false);
+      toast.success('Bem-vindo(a)!');
+      // Redirect handled by useEffect above (após profile carregar)
+      return;
+    }
+
+    // Conta não existe → cria silenciosamente (porta única).
+    const looksLikeNoAccount =
+      signInError && /invalid login credentials|invalid_grant|user not found/i.test(signInError.message);
+
+    if (looksLikeNoAccount) {
+      const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/triagem` },
+      });
+      setLoading(false);
+      if (signUpError) {
+        toast.error('Não foi possível criar sua conta. Verifique o e-mail/senha.');
+        return;
+      }
+      if (signUpData.session) {
+        toast.success('Conta criada! Vamos configurar seu perfil.');
+        // useEffect redireciona para /triagem automaticamente
+      } else {
+        toast.success('Conta criada! Verifique seu e-mail para confirmar.');
+      }
+      return;
+    }
+
+    setLoading(false);
+    toast.error('E-mail ou senha inválidos.');
   };
 
   const handleGoogleLogin = async () => {
-    // Save intended redirect in sessionStorage so we can use it after OAuth callback
-    if (from) {
-      sessionStorage.setItem('auth_redirect', from);
-    }
+    if (from) sessionStorage.setItem('auth_redirect', from);
     const { error } = await lovable.auth.signInWithOAuth('google', {
       redirect_uri: window.location.origin,
     });
-    if (error) toast.error('Erro ao fazer login com Google');
+    if (error) toast.error('Erro ao continuar com Google');
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
