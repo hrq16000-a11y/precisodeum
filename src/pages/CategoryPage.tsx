@@ -136,11 +136,21 @@ const CategoryPage = () => {
   const nearestCity = nearestProvider?.city;
   const totalDisplay = localProviders.length + nearbyProviders.length + (showOutOfState ? outOfStateProviders.length : 0);
 
+  const cityForSeo = geoCity ? geoCity.trim() : '';
+  const dynamicTitle = category
+    ? (cityForSeo
+        ? `Melhor ${category.name} em ${cityForSeo} | Preciso de um`
+        : `${category.name} no Brasil | Preciso de um`)
+    : 'Categoria';
+  const dynamicDescription = category
+    ? (cityForSeo
+        ? `Os melhores profissionais de ${category.name} em ${cityForSeo}. ${allProviders.length} prestadores avaliados, orçamento grátis pelo WhatsApp.`
+        : `Encontre os melhores profissionais de ${category.name} no Brasil. ${allProviders.length} prestadores cadastrados com avaliações reais.`)
+    : 'Encontre profissionais por categoria.';
+
   useSeoHead({
-    title: category ? `${category.name} - Profissionais` : 'Categoria',
-    description: category
-      ? `Encontre os melhores profissionais de ${category.name}. ${allProviders.length} cadastrados com avaliações reais.`
-      : 'Encontre profissionais por categoria.',
+    title: dynamicTitle,
+    description: dynamicDescription,
     canonical: slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined,
   });
 
@@ -149,11 +159,62 @@ const CategoryPage = () => {
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
-      { '@type': 'ListItem', position: 2, name: category.name },
+      { '@type': 'ListItem', position: 2, name: 'Categorias', item: `${SITE_BASE_URL}/categorias` },
+      { '@type': 'ListItem', position: 3, name: category.name, item: `${SITE_BASE_URL}/categoria/${category.slug}` },
     ],
   }) : null, [category]);
 
+  // Service schema with ItemList of providers and aggregate ratings (Rich Snippets)
+  const serviceLd = useMemo(() => {
+    if (!category) return null;
+    const topProviders = [...localProviders, ...nearbyProviders].slice(0, 10);
+    const ratings = topProviders.map(p => Number(p.rating_avg || 0)).filter(r => r > 0);
+    const aggregate = ratings.length > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1),
+            reviewCount: topProviders.reduce((acc, p) => acc + (Number(p.review_count) || 0), 0) || ratings.length,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {};
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Service',
+      name: cityForSeo ? `${category.name} em ${cityForSeo}` : category.name,
+      serviceType: category.name,
+      areaServed: cityForSeo ? { '@type': 'City', name: cityForSeo } : { '@type': 'Country', name: 'Brasil' },
+      provider: {
+        '@type': 'Organization',
+        name: 'Preciso de um',
+        url: SITE_BASE_URL,
+      },
+      url: `${SITE_BASE_URL}/categoria/${category.slug}`,
+      ...aggregate,
+    };
+  }, [category, localProviders, nearbyProviders, cityForSeo]);
+
+  const itemListLd = useMemo(() => {
+    if (!category) return null;
+    const topProviders = [...localProviders, ...nearbyProviders].slice(0, 10);
+    if (topProviders.length === 0) return null;
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      itemListElement: topProviders.map((p, idx) => ({
+        '@type': 'ListItem',
+        position: idx + 1,
+        url: `${SITE_BASE_URL}/profissional/${p.slug}`,
+        name: p.business_name || (p.profiles as any)?.full_name || 'Profissional',
+      })),
+    };
+  }, [category, localProviders, nearbyProviders]);
+
   useJsonLd(breadcrumbLd);
+  useJsonLd(serviceLd);
+  useJsonLd(itemListLd);
 
   const paginatedLocal = localProviders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
   const paginatedNearby = nearbyProviders;
