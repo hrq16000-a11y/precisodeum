@@ -393,6 +393,16 @@ const SearchPage = () => {
             <GeoLocationChip />
           </motion.div>
 
+          {/* Modo Urgência — só renderiza se houver online na região */}
+          <div className="mb-3 sm:mb-4">
+            <UrgencyToggle
+              enabled={urgencyMode}
+              onToggle={setUrgencyMode}
+              cityOverride={effectiveCity}
+              variant="inline"
+            />
+          </div>
+
         {/* Quick category chips */}
         {!query && suggestionChips.length > 0 && (
           <div className="mb-3 sm:mb-4 flex flex-wrap gap-1.5 sm:gap-2">
