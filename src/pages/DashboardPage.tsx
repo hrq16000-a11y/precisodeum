@@ -641,6 +641,11 @@ const DashboardPage = () => {
             </GlassCard>
           )}
 
+          <div className="flex items-center justify-between gap-2 px-1">
+            <span className="text-[11px] text-muted-foreground">Som de conquistas</span>
+            <CelebrationMuteToggle />
+          </div>
+
           <AchievementHistory providerSlug={provider?.slug ?? null} />
         </div>
       </div>
