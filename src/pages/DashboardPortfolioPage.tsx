@@ -151,20 +151,17 @@ const DashboardPortfolioPage = () => {
         }
         toast.success('Álbum atualizado!');
       } else {
-        const { error } = await supabase
-          .from('portfolio_albums')
-          .insert({
-            provider_id: provider.id,
-            user_id: user.id,
-            name: albumName.trim(),
-            description: albumDesc.trim(),
-            display_order: albums.length,
-          });
+        // Atomic RPC — guarantees provider_id + user_ref are written together
+        const { error } = await supabase.rpc('create_album_atomic' as any, {
+          _name: albumName.trim(),
+          _description: albumDesc.trim(),
+        });
         if (error) {
           await showSaveError({ actionContext: 'Criar álbum', componentName: 'DashboardPortfolioPage', errorMessage: error.message, retryFn: handleSaveAlbum });
           setAlbumSaving(false); return;
         }
         toast.success('Álbum criado!');
+        setNextStep('album');
       }
 
       trackAction('album_save_success', 'Álbum salvo');
