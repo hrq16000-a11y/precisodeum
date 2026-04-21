@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [needsTypeSelection, setNeedsTypeSelection] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string, authUser?: User | null) => {
-    const [{ data: profileData }, { data: providerRows }] = await Promise.all([
+    let [{ data: profileData }, { data: providerRows }] = await Promise.all([
       supabase
         .from('profiles')
         .select('*')
@@ -48,6 +48,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('user_id', userId)
         .order('created_at', { ascending: true }),
     ]);
+
+    const pendingSignupType = (() => {
+      try {
+        const raw = sessionStorage.getItem('pending_signup_profile_type');
+        return raw === 'client' || raw === 'provider' ? raw : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    if (profileData && pendingSignupType && profileData.profile_type !== pendingSignupType) {
+      const nextProfile = {
+        profile_type: pendingSignupType,
+        role: pendingSignupType,
+        onboarding_completed: true,
+      };
+
+      const { error: syncProfileError } = await supabase
+        .from('profiles')
+        .update(nextProfile as any)
+        .eq('id', userId);
+
+      if (!syncProfileError) {
+        await supabase.auth.updateUser({ data: { profile_type_chosen: true, profile_type: pendingSignupType } }).catch(() => {});
+        profileData = { ...profileData, ...nextProfile };
+        try { sessionStorage.removeItem('pending_signup_profile_type'); } catch {}
+      }
+    }
 
     setProfile(profileData);
 
