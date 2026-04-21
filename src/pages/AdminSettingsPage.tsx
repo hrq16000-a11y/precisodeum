@@ -394,3 +394,89 @@ const ProfileRulesSection = ({ settings, onToggle, onSaveText }: {
     </div>
   );
 };
+
+/* ====== Limites da Plataforma (Portfólio) ====== */
+const PLATFORM_LIMIT_KEYS: { key: string; label: string; description: string; defaultValue: string }[] = [
+  { key: 'portfolio_max_albums', label: 'Máx. álbuns por profissional', description: 'Quantos álbuns cada profissional pode criar no portfólio.', defaultValue: '4' },
+  { key: 'portfolio_max_photos_per_album', label: 'Máx. fotos por álbum', description: 'Quantas fotos cabem em cada álbum.', defaultValue: '20' },
+];
+
+const PlatformLimitsSection = ({ settings, onSaveText }: {
+  settings: any[];
+  onSaveText: (key: string, value: string) => Promise<void>;
+}) => {
+  const map = useMemo(() => {
+    const m: Record<string, string> = {};
+    settings.forEach((s: any) => { m[s.key] = s.value; });
+    return m;
+  }, [settings]);
+
+  const [local, setLocal] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const init: Record<string, string> = {};
+    PLATFORM_LIMIT_KEYS.forEach(b => { init[b.key] = map[b.key] ?? b.defaultValue; });
+    setLocal(init);
+  }, [map]);
+
+  const handleSave = async (key: string) => {
+    const value = String(Number(local[key] || '0'));
+    if (Number(value) <= 0) { toast.error('Valor inválido'); return; }
+    // If setting doesn't exist yet, insert it; otherwise update via onSaveText
+    if (map[key] === undefined) {
+      const meta = PLATFORM_LIMIT_KEYS.find(p => p.key === key)!;
+      const { error } = await (supabase.from('site_settings' as any) as any).insert({
+        key, label: meta.label, description: meta.description, value, is_public: false,
+      });
+      if (error) toast.error('Erro: ' + error.message);
+      else toast.success('Limite criado!');
+    } else {
+      await onSaveText(key, value);
+    }
+  };
+
+  return (
+    <div className="mt-6 rounded-xl border-2 border-accent/30 bg-accent/5 p-5">
+      <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+        <Settings className="h-5 w-5 text-accent" /> Limites da Plataforma
+      </h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        Ajuste os limites globais de portfólio. As mudanças refletem imediatamente para todos os profissionais.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {PLATFORM_LIMIT_KEYS.map(({ key, label, description, defaultValue }) => {
+          const stored = map[key];
+          const value = local[key] ?? stored ?? defaultValue;
+          const changed = String(value) !== String(stored ?? defaultValue);
+          return (
+            <div key={key} className="rounded-lg border border-border bg-card p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{label}</p>
+                  <p className="text-[11px] text-muted-foreground">{description}</p>
+                </div>
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  className="w-24 text-center"
+                  value={value}
+                  onChange={(e) => setLocal(p => ({ ...p, [key]: e.target.value }))}
+                />
+                {changed && (
+                  <Button variant="accent" size="sm" onClick={() => handleSave(key)}>
+                    <Save className="mr-1 h-3 w-3" /> Salvar
+                  </Button>
+                )}
+                {stored === undefined && (
+                  <span className="text-[10px] text-muted-foreground">(usando padrão: {defaultValue})</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
