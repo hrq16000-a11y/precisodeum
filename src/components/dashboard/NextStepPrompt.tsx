@@ -10,7 +10,7 @@ interface NextStepPromptProps {
   open: boolean;
   onClose: () => void;
   /** Context that just completed, used to bias suggested next step. */
-  context: 'service' | 'album' | 'photo' | 'profile';
+  context: 'service' | 'album' | 'photo' | 'profile' | 'welcome';
   providerSlug?: string | null;
 }
 
@@ -71,6 +71,7 @@ const NextStepPrompt = ({ open, onClose, context, providerSlug }: NextStepPrompt
     album: 'Álbum criado com sucesso!',
     photo: 'Foto adicionada ao portfólio!',
     profile: 'Perfil atualizado!',
+    welcome: 'Bem-vindo(a)! Sua conta foi criada 🎉',
   }[context];
 
   const sub = {
@@ -78,20 +79,28 @@ const NextStepPrompt = ({ open, onClose, context, providerSlug }: NextStepPrompt
     album: 'Continue construindo seu portfólio:',
     photo: 'O que você gostaria de fazer agora?',
     profile: 'O que você gostaria de fazer agora?',
+    welcome: 'Vamos juntos? Escolha por onde começar:',
   }[context];
 
-  const options = [
-    context === 'service'
-      ? { icon: Briefcase, title: 'Adicionar mais um serviço', desc: 'Cada serviço amplia seu alcance.', to: '/dashboard/servicos' }
-      : { icon: Briefcase, title: 'Cadastrar um serviço', desc: 'Serviços ativos aparecem em buscas.', to: '/dashboard/servicos' },
-    { icon: ImageIcon, title: 'Adicionar fotos ao portfólio', desc: 'Imagens convertem 5x mais.', to: '/dashboard/portfolio' },
-    {
-      icon: Eye,
-      title: 'Ver minha página pública',
-      desc: 'Veja como o cliente está te enxergando.',
-      to: providerSlug ? `/profissional/${providerSlug}` : '/dashboard/minha-pagina',
-    },
-  ];
+  const options = context === 'welcome'
+    ? [
+        { icon: Sparkles, title: 'Completar meu perfil', desc: 'Preencha os dados básicos para destacar sua marca.', to: '/dashboard/perfil' },
+        { icon: Briefcase, title: 'Cadastrar 1º serviço', desc: 'Comece a aparecer nas buscas hoje.', to: '/dashboard/servicos' },
+        { icon: ImageIcon, title: 'Criar meu portfólio', desc: 'Suba fotos dos seus trabalhos — converte 5x mais.', to: '/dashboard/portfolio' },
+        { icon: Eye, title: 'Ir para o painel', desc: 'Explore o dashboard com calma.', to: '/dashboard' },
+      ]
+    : [
+        context === 'service'
+          ? { icon: Briefcase, title: 'Adicionar mais um serviço', desc: 'Cada serviço amplia seu alcance.', to: '/dashboard/servicos' }
+          : { icon: Briefcase, title: 'Cadastrar um serviço', desc: 'Serviços ativos aparecem em buscas.', to: '/dashboard/servicos' },
+        { icon: ImageIcon, title: 'Adicionar fotos ao portfólio', desc: 'Imagens convertem 5x mais.', to: '/dashboard/portfolio' },
+        {
+          icon: Eye,
+          title: 'Ver minha página pública',
+          desc: 'Veja como o cliente está te enxergando.',
+          to: providerSlug ? `/profissional/${providerSlug}` : '/dashboard/minha-pagina',
+        },
+      ];
 
   const handleChoice = (opt: { title: string; to: string }) => {
     void logAuditAction({

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
+import { celebrate } from '@/lib/celebrate';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap, Camera, FileText, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -47,6 +49,19 @@ import AchievementHistory from '@/components/dashboard/AchievementHistory';
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+
+  // Welcome celebration: triggered once when redirected from wizard with ?welcome=1
+  useEffect(() => {
+    if (searchParams.get('welcome') === '1') {
+      setWelcomeOpen(true);
+      celebrate({ intensity: 'big' });
+      const params = new URLSearchParams(searchParams);
+      params.delete('welcome');
+      setSearchParams(params, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleResetOnboarding = async () => {
     if (!user?.id) return;
@@ -255,6 +270,7 @@ const DashboardPage = () => {
         <div className="mt-4">
           <CoursesBanner />
         </div>
+        <NextStepPrompt open={welcomeOpen} onClose={() => setWelcomeOpen(false)} context="welcome" providerSlug={provider?.slug ?? null} />
       </DashboardLayout>
     );
   }
@@ -338,6 +354,7 @@ const DashboardPage = () => {
 
         {/* Botão "Ver minha página pública" */}
         <RhPublicPageLink userId={user?.id} />
+        <NextStepPrompt open={welcomeOpen} onClose={() => setWelcomeOpen(false)} context="welcome" providerSlug={provider?.slug ?? null} />
       </DashboardLayout>
     );
   }
@@ -732,6 +749,7 @@ const DashboardPage = () => {
       {/* Nossa história — referência à luta */}
       <OurStoryBanner variant="compact" />
 
+      <NextStepPrompt open={welcomeOpen} onClose={() => setWelcomeOpen(false)} context="welcome" providerSlug={provider?.slug ?? null} />
     </DashboardLayout>
   );
 };

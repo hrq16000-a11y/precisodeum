@@ -1,0 +1,92 @@
+/**
+ * celebrate.ts — Unified achievement feedback (confetti + sound).
+ *
+ * Centraliza o "Ebá!" da plataforma para garantir consistência sensorial
+ * em todas as conquistas (signup, novo serviço, novo álbum, level up, etc.).
+ *
+ * - Confete: dynamic-import de canvas-confetti (já é dependência do projeto).
+ * - Som: Web Audio API (sem assets externos), funciona em mobile e desktop.
+ *   Usa um arpejo curto (Mi → Sol# → Si → Mi8va) que soa como "pling/ebá".
+ *
+ * Os disparos são best-effort: qualquer falha (ex: contexto suspenso por
+ * autoplay policy) é silenciosamente ignorada, sem quebrar o fluxo da UI.
+ */
+
+let audioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    if (!audioCtx) {
+      const Ctor = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext | undefined;
+      if (!Ctor) return null;
+      audioCtx = new Ctor();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
+    }
+    return audioCtx;
+  } catch {
+    return null;
+  }
+}
+
+/** Plays a short happy "pling/ebá" arpeggio. Safe to call repeatedly. */
+export function playAchievementSound(volume = 0.18) {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  // Mi5, Sol#5, Si5, Mi6 — arpeggio maior alegre
+  const notes = [659.25, 830.61, 987.77, 1318.51];
+  const now = ctx.currentTime;
+  const noteDur = 0.12;
+
+  notes.forEach((freq, i) => {
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      const start = now + i * 0.07;
+      const end = start + noteDur;
+      // Envelope ADSR rápido para evitar "click"
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(volume, start + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.001, end);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);
+      osc.stop(end + 0.02);
+    } catch {
+      /* noop */
+    }
+  });
+}
+
+interface ConfettiOptions {
+  /** "big" = boas-vindas / level up. "mini" = item desbloqueado. */
+  intensity?: 'big' | 'mini';
+}
+
+/** Fires confetti. Falls back to noop if dependency unavailable. */
+export async function fireConfetti(opts: ConfettiOptions = {}) {
+  try {
+    const confetti = (await import('canvas-confetti')).default;
+    if (opts.intensity === 'mini') {
+      confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
+      return;
+    }
+    // Big celebration: two bursts
+    confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+    setTimeout(() => {
+      confetti({ particleCount: 80, spread: 120, origin: { y: 0.5 } });
+    }, 220);
+  } catch {
+    /* noop */
+  }
+}
+
+/** Combined helper: confetti + sound. Use for any "win" moment. */
+export function celebrate(opts: ConfettiOptions = {}) {
+  void fireConfetti(opts);
+  playAchievementSound(opts.intensity === 'mini' ? 0.14 : 0.2);
+}
