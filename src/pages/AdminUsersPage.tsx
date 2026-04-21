@@ -1306,7 +1306,7 @@ const AdminUsersPage = () => {
                   <SelectContent>
                     <SelectItem value="client">Cliente (busca serviços)</SelectItem>
                     <SelectItem value="provider">Profissional (oferece serviços)</SelectItem>
-                    <SelectItem value="rh">Agência / RH (publica vagas)</SelectItem>
+                    <SelectItem value="rh">Agência de RH / Recrutamento</SelectItem>
                     <SelectItem value="sponsor">Patrocinador (gerencia campanhas)</SelectItem>
                   </SelectContent>
                 </Select>
