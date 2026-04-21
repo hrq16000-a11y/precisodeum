@@ -141,6 +141,7 @@ const SponsorContractPage = lazy(() => import("./pages/SponsorContractPage"));
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
 const AdminCoursesPage = lazy(() => import("./pages/AdminCoursesPage"));
 const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage"));
+const AgencyPublicPage = lazy(() => import("./pages/AgencyPublicPage"));
 
 const CookieConsent = reactLazy(() => importWithRetry(() => import("./components/CookieConsent")));
 const PwaInstallBanner = reactLazy(() => importWithRetry(() => import("./components/PwaInstallBanner")));
@@ -270,6 +271,7 @@ const App = () => {
                 <Route path="/buscar" element={<SearchPage />} />
                 <Route path="/categoria/:slug" element={<CategoryPage />} />
                 <Route path="/profissional/:slug" element={<ProviderProfile />} />
+                <Route path="/agencia/:slug" element={<AgencyPublicPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/cadastro" element={<SignupPage />} />
                 <Route path="/cadastro/rh" element={<SignupPage />} />
