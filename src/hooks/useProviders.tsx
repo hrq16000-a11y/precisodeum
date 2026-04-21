@@ -556,8 +556,7 @@ export function filterAndRankProviders(
       const aScore = (a.p as any)._finalScore || (a.p as any)._contentScore || 0;
       const bScore = (b.p as any)._finalScore || (b.p as any)._contentScore || 0;
       if (aScore !== bScore) return bScore - aScore;
-      if (b.p.rating !== a.p.rating) return b.p.rating - a.p.rating;
-      return b.p.reviewCount - a.p.reviewCount;
+      return compareEliteMerit(a.p, b.p);
     });
 
     SearchIntelligence.trackFinalScore(query, intent, final.length);
@@ -569,8 +568,7 @@ export function filterAndRankProviders(
     const aScore = (a as any)._finalScore || (a as any)._contentScore || 0;
     const bScore = (b as any)._finalScore || (b as any)._contentScore || 0;
     if (aScore !== bScore) return bScore - aScore;
-    if (b.rating !== a.rating) return b.rating - a.rating;
-    return b.reviewCount - a.reviewCount;
+    return compareEliteMerit(a, b);
   });
 
   SearchIntelligence.trackFinalScore(query, intent, results.length);
