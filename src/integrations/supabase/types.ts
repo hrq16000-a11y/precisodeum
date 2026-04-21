@@ -3811,12 +3811,14 @@ export type Database = {
           plan_tier: string
           position: string
           short_description: string
+          slug: string | null
           sponsor_type: string
           start_date: string | null
           status: string
           target_pages: string
           tier: string
           title: string
+          user_id: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -3852,12 +3854,14 @@ export type Database = {
           plan_tier?: string
           position?: string
           short_description?: string
+          slug?: string | null
           sponsor_type?: string
           start_date?: string | null
           status?: string
           target_pages?: string
           tier?: string
           title: string
+          user_id?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -3893,12 +3897,14 @@ export type Database = {
           plan_tier?: string
           position?: string
           short_description?: string
+          slug?: string | null
           sponsor_type?: string
           start_date?: string | null
           status?: string
           target_pages?: string
           tier?: string
           title?: string
+          user_id?: string | null
           whatsapp?: string | null
         }
         Relationships: []

@@ -142,6 +142,9 @@ const CoursesPage = lazy(() => import("./pages/CoursesPage"));
 const AdminCoursesPage = lazy(() => import("./pages/AdminCoursesPage"));
 const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage"));
 const AgencyPublicPage = lazy(() => import("./pages/AgencyPublicPage"));
+const DashboardAgencyDataPage = lazy(() => import("./pages/DashboardAgencyDataPage"));
+const SponsorPublicPage = lazy(() => import("./pages/SponsorPublicPage"));
+const SponsorPublicProfilePage = lazy(() => import("./pages/sponsor/SponsorPublicProfilePage"));
 
 const CookieConsent = reactLazy(() => importWithRetry(() => import("./components/CookieConsent")));
 const PwaInstallBanner = reactLazy(() => importWithRetry(() => import("./components/PwaInstallBanner")));
@@ -272,6 +275,7 @@ const App = () => {
                 <Route path="/categoria/:slug" element={<CategoryPage />} />
                 <Route path="/profissional/:slug" element={<ProviderProfile />} />
                 <Route path="/agencia/:slug" element={<AgencyPublicPage />} />
+                <Route path="/patrocinador/:slug" element={<SponsorPublicPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/cadastro" element={<SignupPage />} />
                 <Route path="/cadastro/rh" element={<SignupPage />} />
@@ -291,6 +295,7 @@ const App = () => {
                 <Route path="/dashboard/plano" element={<ProtectedRoute allowedTypes={['provider']}><DashboardPlanPage /></ProtectedRoute>} />
                 <Route path="/dashboard/minha-pagina" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMyPagePage /></ProtectedRoute>} />
                 <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/agencia" element={<ProtectedRoute allowedTypes={['rh']}><DashboardAgencyDataPage /></ProtectedRoute>} />
                 <Route path="/dashboard/comunidade" element={<DashboardCommunityPage />} />
                 <Route path="/dashboard/notificacoes" element={<DashboardNotificationsPage />} />
                 <Route path="/dashboard/indicacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReferralsPage /></ProtectedRoute>} />
@@ -379,6 +384,7 @@ const App = () => {
                 <Route path="/sponsor-panel/contratos" element={<SponsorProtectedRoute><SponsorContractsPage /></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/notificacoes" element={<SponsorProtectedRoute><SponsorNotificationsPage /></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/dados" element={<SponsorProtectedRoute><SponsorDataPage /></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/pagina" element={<SponsorProtectedRoute><SponsorPublicProfilePage /></SponsorProtectedRoute>} />
                 <Route path="/p/:slug" element={<InstitutionalPage />} />
                 <Route path="/:slug" element={<SeoPage />} />
                 <Route path="*" element={<NotFound />} />
