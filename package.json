@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "check": "npm run health:ui && npm run test && npm run build",
+    "health:ui": "node scripts/health-check-ui.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
