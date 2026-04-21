@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,9 +12,12 @@ import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils';
+import { useSettingValue } from '@/hooks/useSiteSettings';
+import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 
-const MAX_ALBUMS = 4;
-const MAX_PHOTOS_PER_ALBUM = 20;
+// Defaults — overridden by site_settings (`portfolio_max_albums`, `portfolio_max_photos_per_album`)
+const DEFAULT_MAX_ALBUMS = 4;
+const DEFAULT_MAX_PHOTOS_PER_ALBUM = 20;
 
 interface Album {
   id: string;
