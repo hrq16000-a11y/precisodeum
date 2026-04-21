@@ -31,6 +31,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const ProvidersMap = lazy(() => import('@/components/ProvidersMap'));
 const SponsorAdSlot = lazy(() => import('@/components/ads/SponsorAdSlot'));
+import PinnedSponsorCard from '@/components/sponsors/PinnedSponsorCard';
+import { usePinnedSponsor } from '@/hooks/usePinnedSponsor';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -87,6 +89,13 @@ const SearchPage = () => {
     isError: searchError,
     refetch,
   } = useSearchProvidersGrouped(query, effectiveCity, selectedCategory, minRating, geoState || '', userLat, userLon, radiusKm);
+
+  // Pinned (Categoria Exclusiva) sponsor — fica acima dos resultados
+  const { data: pinnedSponsor, trackImpression: trackPinnedImpression, trackClick: trackPinnedClick } = usePinnedSponsor({
+    categorySlug: selectedCategory || undefined,
+    city: effectiveCity || undefined,
+    state: geoState || undefined,
+  });
 
   const localProviders = grouped?.local || [];
   const nearbyProviders = grouped?.nearby || [];
@@ -656,6 +665,15 @@ const SearchPage = () => {
               </div>
             ) : (
               <>
+                {/* Pinned (Categoria Exclusiva) — primeiro resultado, identificado como Patrocinado */}
+                {pinnedSponsor && (
+                  <PinnedSponsorCard
+                    sponsor={pinnedSponsor}
+                    onImpression={trackPinnedImpression}
+                    onClick={trackPinnedClick}
+                  />
+                )}
+
                 {/* Local results grid */}
                 {paginatedLocal.length > 0 && (
                   <>

@@ -46,6 +46,10 @@ export interface DbProvider {
   portfolioAlbumCount: number;
   portfolioPhotoCount: number;
   distanceKm?: number;
+  /** Cached avg minutes between lead arrival and provider's first chat reply */
+  avgResponseMinutes?: number | null;
+  /** When the trial visibility boost (7 days after onboarding checklist) expires */
+  trialBoostUntil?: string | null;
 }
 
 interface ServiceFallback {
@@ -111,10 +115,11 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
     servicesCount: p.services_count || 0,
     portfolioAlbumCount: p.portfolio_album_count || 0,
     portfolioPhotoCount: p.portfolio_photo_count || 0,
+    avgResponseMinutes: p.avg_response_minutes ?? null,
   };
 }
 
-const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, categories(name, slug, icon)';
+const providerSelect = 'id, user_id, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, plan, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, categories(name, slug, icon)';
 
 // --- Ranking config cache ---
 let _rankingConfig: { boostMul: number; fairnessPen: number; randomMax: number } | null = null;
@@ -173,10 +178,10 @@ async function fetchProvidersLightweight(query: any) {
       .in('provider_id', providerIds)
       .gte('date', new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)) as any,
     getRankingConfig(),
-    // Fetch engagement points + level priority for meritocracy scoring
+    // Fetch engagement points + level priority + trial boost for meritocracy scoring
     supabase
       .from('profiles')
-      .select('id, engagement_points, level_id, gamification_levels!profiles_level_id_fkey(priority)')
+      .select('id, engagement_points, level_id, trial_boost_until, gamification_levels!profiles_level_id_fkey(priority)')
       .in('id', userIds) as any,
   ]);
 
@@ -197,13 +202,14 @@ async function fetchProvidersLightweight(query: any) {
     impressionMap[i.provider_id] = (impressionMap[i.provider_id] || 0) + (i.impressions || 0);
   });
 
-  // Engagement/meritocracy aggregation
-  const engagementMap: Record<string, { points: number; priority: number }> = {};
+  // Engagement/meritocracy aggregation (+ trial boost flag)
+  const engagementMap: Record<string, { points: number; priority: number; trialBoostUntil: string | null }> = {};
   ((engagementRes as any)?.data || []).forEach((e: any) => {
     const lvl = e.gamification_levels;
     engagementMap[e.id] = {
       points: e.engagement_points || 0,
       priority: (Array.isArray(lvl) ? lvl[0]?.priority : lvl?.priority) || 0,
+      trialBoostUntil: e.trial_boost_until || null,
     };
   });
 
@@ -300,11 +306,18 @@ async function fetchProvidersLightweight(query: any) {
     const engagementPts = engData?.points || 0;
     const meritScore = (levelPriority * 15) + Math.min(engagementPts, 200) * 0.3;
 
-    const finalScore = contentScore + meritScore + (boostScore * rankConfig.boostMul) - fairnessPenalty + randomFactor;
+    // TRIAL BOOST: dedicated flag — gives a real but bounded push (≈ tier 'engajado')
+    // without overriding meritocracy of established providers
+    const trialBoostUntil = engData?.trialBoostUntil;
+    const trialBoostActive = !!trialBoostUntil && new Date(trialBoostUntil).getTime() > Date.now();
+    const trialBoostScore = trialBoostActive ? 25 : 0;
+
+    const finalScore = contentScore + meritScore + trialBoostScore + (boostScore * rankConfig.boostMul) - fairnessPenalty + randomFactor;
 
     (mapped as any)._contentScore = contentScore;
     (mapped as any)._finalScore = finalScore;
     (mapped as any)._boostScore = boostScore;
+    mapped.trialBoostUntil = trialBoostUntil;
     return mapped;
   }).filter(p => !hideIncomplete || !(p as any)._isIncomplete);
 }

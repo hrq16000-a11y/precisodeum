@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Crown, Clock, Circle, ArrowRight, Trophy, Sparkles } from 'lucide-react';
+import { MapPin, Crown, Clock, Circle, ArrowRight, Trophy, Sparkles, Zap, Rocket } from 'lucide-react';
 import { usePrefetchProvider, usePrefetchHandlers } from '@/hooks/usePrefetch';
 import { Button } from '@/components/ui/button';
 import ProfileBadge from '@/components/ProfileBadge';
@@ -110,7 +110,36 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       </span>
     );
   }
-  if (isOnline) {
+  // Trial boost — "Novo Profissional em Destaque" (7 dias após completar checklist)
+  const trialBoostActive = !!provider.trialBoostUntil && new Date(provider.trialBoostUntil).getTime() > Date.now();
+  if (trialBoostActive) {
+    badges.push(
+      <motion.span
+        key="trial-boost"
+        animate={{ scale: [1, 1.06, 1] }}
+        transition={{ duration: 2.4, repeat: Infinity }}
+        className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent to-primary px-2 py-0.5 text-[11px] font-bold text-white shadow-sm"
+      >
+        <Rocket className="h-3 w-3" /> Novo em Destaque
+      </motion.span>
+    );
+  }
+  // Resposta Rápida — híbrido: online agora OU média < 30min
+  const fastByPresence = isOnline;
+  const fastByChat = provider.avgResponseMinutes != null && provider.avgResponseMinutes > 0 && provider.avgResponseMinutes < 30;
+  if (fastByPresence) {
+    badges.push(
+      <span key="fast-online" className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+        <Zap className="h-3 w-3" /> Disponível agora
+      </span>
+    );
+  } else if (fastByChat) {
+    badges.push(
+      <span key="fast-chat" className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+        <Zap className="h-3 w-3" /> Responde em ~{provider.avgResponseMinutes}min
+      </span>
+    );
+  } else if (isOnline) {
     badges.push(
       <span key="online" className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
         <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online
