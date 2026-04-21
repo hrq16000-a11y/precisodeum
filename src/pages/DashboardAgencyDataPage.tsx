@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import AvatarUpload from '@/components/AvatarUpload';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const schema = z.object({
   name: z.string().trim().min(2, 'Informe o nome da agência').max(120),
@@ -148,11 +149,18 @@ const DashboardAgencyDataPage = () => {
           </div>
         ) : (
           <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5">
-            {/* Logo (avatar) — usa o avatar do profile como logo da agência */}
+            {/* Logo (avatar) — reaproveita o avatar do profile como logo da agência */}
             <div>
               <Label className="text-xs font-semibold text-foreground">Logo da agência</Label>
-              <p className="text-[11px] text-muted-foreground mb-2">Use uma imagem quadrada (mínimo 256x256px).</p>
-              <AvatarUpload />
+              <p className="text-[11px] text-muted-foreground mb-2">Use uma imagem quadrada (mínimo 256x256px). É o mesmo avatar exibido no seu perfil.</p>
+              {user && (
+                <AvatarUpload
+                  userId={user.id}
+                  currentUrl={profile?.avatar_url}
+                  initials={(form.name || profile?.full_name || 'A').slice(0, 2).toUpperCase()}
+                  onUploaded={() => toast.success('Logo atualizada')}
+                />
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
