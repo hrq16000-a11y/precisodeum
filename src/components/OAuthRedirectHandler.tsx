@@ -3,11 +3,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 /**
- * After OAuth login (Google), redireciona para o /dashboard (triagem decide o destino final)
- * — exceto quando o usuário já está numa rota interna válida.
+ * After OAuth login (Google), decide o destino:
+ *  - Sem profile_type → /triagem (Hard Gate)
+ *  - Com profile_type → rota salva ou /dashboard
  */
 const OAuthRedirectHandler = () => {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const handled = useRef(false);
@@ -16,7 +17,20 @@ const OAuthRedirectHandler = () => {
     if (loading || handled.current) return;
     if (!user) return;
 
+    // Aguarda o profile carregar para decidir entre /triagem e destino real.
+    if (!profile) return;
+
+    const path = location.pathname;
+    const isEntryPath = path === '/' || path === '/login' || path === '/cadastro';
     const saved = sessionStorage.getItem('auth_redirect');
+
+    // Sem tipo definido: força triagem.
+    if (!profile.profile_type) {
+      handled.current = true;
+      if (path !== '/triagem') navigate('/triagem', { replace: true });
+      return;
+    }
+
     if (saved) {
       handled.current = true;
       sessionStorage.removeItem('auth_redirect');
@@ -24,13 +38,11 @@ const OAuthRedirectHandler = () => {
       return;
     }
 
-    // Após OAuth, o Google retorna para "/" ou "/login" — encaminhar para /dashboard.
-    const path = location.pathname;
-    if (path === '/' || path === '/login' || path === '/cadastro') {
+    if (isEntryPath) {
       handled.current = true;
       navigate('/dashboard', { replace: true });
     }
-  }, [user, loading, navigate, location.pathname]);
+  }, [user, profile, loading, navigate, location.pathname]);
 
   return null;
 };
