@@ -213,6 +213,10 @@ const BasicOnboardingWizard = () => {
     }
   };
 
+  const clearPersisted = () => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  };
+
   const handleConfirm = async () => {
     if (!user?.id) {
       toast.error('Sessão expirada. Faça login novamente.');
