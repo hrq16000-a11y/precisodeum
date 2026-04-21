@@ -20,24 +20,12 @@ const ProfileCheckupModal = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
+  // Auto-abertura desativada — o modal cobria a tela e bloqueava interações.
+  // O check-up agora aparece apenas via FirstLeadChecklist / ProfileStrength inline.
   useEffect(() => {
     if (!user || !profile) return;
-    if (profile.profile_type !== 'provider' && profile.profile_type !== 'rh') return;
-    if (profile.role === 'admin') return;
-
-    // Only show once per session
-    const dismissed = sessionStorage.getItem(SESSION_KEY);
-    if (dismissed === '1') return;
-
-    // Check if provider has issues
-    const isPending = provider?.status === 'pending';
-    const checks = getChecks(profile, provider);
-    const incomplete = checks.filter(c => !c.ok).length;
-
-    if (isPending || incomplete >= 2) {
-      const timer = setTimeout(() => setOpen(true), 1500);
-      return () => clearTimeout(timer);
-    }
+    // Nunca abrir automaticamente. Mantemos o componente apenas para uso manual futuro.
+    sessionStorage.setItem(SESSION_KEY, '1');
   }, [user, profile, provider]);
 
   const handleDismiss = () => {

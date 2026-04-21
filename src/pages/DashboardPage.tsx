@@ -8,7 +8,7 @@ import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
 import AvatarReminder from '@/components/dashboard/AvatarReminder';
@@ -81,7 +81,9 @@ const DashboardPage = () => {
     }
   };
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
-  const wizardEnabled = useFeatureEnabled('enable_service_wizard_onboarding');
+  // ServiceWizard ligado por padrão (a flag só serve para desativar explicitamente).
+  const wizardFlagRaw = useSettingValue('enable_service_wizard_onboarding');
+  const wizardEnabled = wizardFlagRaw === '' ? true : wizardFlagRaw === 'true';
   const { levelName, levelColor } = usePermissions();
   const [servicesCount, setServicesCount] = useState<number | null>(null);
   const [leadsCount, setLeadsCount] = useState<number>(0);
