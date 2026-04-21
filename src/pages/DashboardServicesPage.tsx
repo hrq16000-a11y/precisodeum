@@ -173,6 +173,7 @@ const DashboardServicesPage = () => {
   const [editId, setEditId] = useState<string | null>(null);
   // Wizard step inside the create/edit dialog: 'form' (fields) | 'photos' (post-publish photo step)
   const [wizardStep, setWizardStep] = useState<'form' | 'photos'>('form');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // Sub-step inside the 'form' wizard for NEW services (1=Básico, 2=Localização, 3=Contato). Editing skips this and shows everything.
   const [formStep, setFormStep] = useState<1 | 2 | 3>(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -356,6 +357,11 @@ const DashboardServicesPage = () => {
   const removeTag = (tag: string) => setSeoTags(prev => prev.filter(t => t !== tag));
 
   const handleSave = async () => {
+    // Friendly anti double-click: warn but don't crash
+    if (isSubmitting) {
+      toast.info('🚀 Calma, mestre! Já estamos salvando seu talento, só um segundo...', { duration: 2500 });
+      return;
+    }
     if (isRH) { toast.error('Agências RH não podem cadastrar serviços.'); return; }
     if (!editId && !canCreateService) {
       toast.error(limits?.can_create_services === false
@@ -368,6 +374,7 @@ const DashboardServicesPage = () => {
     if (!form.service_area.trim()) errors.service_area = 'Cidade é obrigatória';
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
     setFormErrors({});
+    setIsSubmitting(true);
 
     trackAction('service_save_start', editId ? 'Editando serviço' : 'Criando serviço');
 
