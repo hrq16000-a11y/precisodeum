@@ -532,6 +532,9 @@ const DashboardPortfolioPage = () => {
                 </motion.div>
               ))}
             </AnimatePresence>
+            {albums.length > 0 && albums.length < MAX_ALBUMS && (
+              <LockedSlotCard label={`Álbum ${albums.length + 1}`} />
+            )}
           </div>
         )}
 
