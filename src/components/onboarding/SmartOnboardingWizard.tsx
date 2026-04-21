@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { celebrate } from '@/lib/celebrate';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -302,8 +303,7 @@ const BasicOnboardingWizard = () => {
       } catch { /* silent */ }
 
       try {
-        confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
-        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { y: 0.5 } }), 250);
+        celebrate({ intensity: 'big' });
       } catch { /* noop */ }
 
       await refetchProfile();
@@ -311,7 +311,7 @@ const BasicOnboardingWizard = () => {
       const target = profileType === 'rh' ? '/dashboard/vagas'
         : profileType === 'sponsor' ? '/quero-ser-patrocinador'
         : profileType === 'client' ? '/'
-        : '/dashboard';
+        : '/dashboard?welcome=1';
       navigate(target, { replace: true });
     } catch (err) {
       console.error('[Wizard finish]', err);
