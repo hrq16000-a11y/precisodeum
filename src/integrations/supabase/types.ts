@@ -4992,6 +4992,15 @@ export type Database = {
       }
     }
     Functions: {
+      add_portfolio_photo_atomic: {
+        Args: {
+          _album_id: string
+          _image_url: string
+          _original_name?: string
+          _storage_path: string
+        }
+        Returns: Json
+      }
       admin_adjust_points: {
         Args: {
           point_delta: number
@@ -5131,6 +5140,10 @@ export type Database = {
       }
       complete_onboarding_checklist: { Args: never; Returns: Json }
       complete_referral: { Args: { _referred_id: string }; Returns: boolean }
+      create_album_atomic: {
+        Args: { _description?: string; _name: string }
+        Returns: Json
+      }
       create_service_atomic: {
         Args: {
           _address?: string
@@ -5269,6 +5282,7 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      get_profile_completeness: { Args: { _user_id: string }; Returns: Json }
       get_profile_health_score: { Args: { _user_id: string }; Returns: Json }
       get_provider_verification_status: {
         Args: { _user_id: string }
