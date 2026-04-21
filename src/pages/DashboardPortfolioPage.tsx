@@ -136,6 +136,10 @@ const DashboardPortfolioPage = () => {
   };
 
   const handleSaveAlbum = async () => {
+    if (albumSaving) {
+      toast.info('🚀 Calma, mestre! Já estamos salvando seu talento, só um segundo...', { duration: 2500 });
+      return;
+    }
     if (!albumName.trim()) { toast.error('Nome do álbum é obrigatório'); return; }
     if (!provider || !user) return;
     setAlbumSaving(true);

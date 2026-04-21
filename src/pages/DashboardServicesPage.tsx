@@ -482,6 +482,8 @@ const DashboardServicesPage = () => {
         errorStack: err.stack,
         retryFn: handleSave,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1057,8 +1059,8 @@ const DashboardServicesPage = () => {
                     Avançar →
                   </Button>
                 ) : (
-                  <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={handleSave}>
-                    📢 {editId ? 'Salvar' : 'Publicar'}
+                  <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={handleSave} disabled={isSubmitting}>
+                    {isSubmitting ? '⏳ Salvando...' : `📢 ${editId ? 'Salvar' : 'Publicar'}`}
                   </Button>
                 )}
               </>
