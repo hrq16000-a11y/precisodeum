@@ -1,6 +1,6 @@
 import { lazy as reactLazy, Suspense, useEffect, useState, type ComponentType } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 const Sonner = reactLazy(() => importWithRetry(() => import("@/components/ui/sonner").then(m => ({ default: m.Toaster }))));
 const Toaster = reactLazy(() => importWithRetry(() => import("@/components/ui/toaster").then(m => ({ default: m.Toaster }))));
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -212,6 +212,21 @@ const DeferredShell = () => {
   );
 };
 
+const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
+  const { user, profile, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) return null;
+
+  const mustCompleteOnboarding = !!user && !!profile && (!profile.profile_type || profile.onboarding_completed === false);
+
+  if (mustCompleteOnboarding && location.pathname !== '/triagem') {
+    return <Navigate to="/triagem" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 const App = () => {
   useEffect(() => {
     // Invalidate all queries if daily purge just ran
@@ -256,7 +271,8 @@ const App = () => {
             <Suspense fallback={null}><OAuthRedirectHandler /></Suspense>
             <Suspense fallback={null}><ImpersonationBanner /></Suspense>
             <Suspense fallback={<PageFallback />}>
-              <Routes>
+              <OnboardingGate>
+                <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/index" element={<Index />} />
                 <Route path="/index02" element={<Index02 />} />
@@ -384,7 +400,8 @@ const App = () => {
                 <Route path="/p/:slug" element={<InstitutionalPage />} />
                 <Route path="/:slug" element={<SeoPage />} />
                 <Route path="*" element={<NotFound />} />
-              </Routes>
+                </Routes>
+              </OnboardingGate>
             </Suspense>
             <DeferredShell />
             </WhatsAppGateProvider>

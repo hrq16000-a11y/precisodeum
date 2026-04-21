@@ -21,7 +21,7 @@ const TriagePage = () => {
       navigate('/login', { replace: true });
       return;
     }
-    if (profile?.profile_type) {
+    if (profile?.profile_type && profile.onboarding_completed !== false) {
       const target = profile.profile_type === 'rh'
         ? '/dashboard/vagas'
         : profile.profile_type === 'sponsor'
@@ -31,7 +31,7 @@ const TriagePage = () => {
     }
   }, [loading, user, profile, navigate]);
 
-  if (loading || !user || profile?.profile_type) {
+  if (loading || !user || (profile?.profile_type && profile.onboarding_completed !== false)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
