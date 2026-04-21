@@ -1,10 +1,13 @@
 import { useEffect, useState, memo, useCallback, useRef, forwardRef } from 'react';
+import { Link } from 'react-router-dom';
 import { X, ExternalLink } from 'lucide-react';
 import { handleImageError } from '@/lib/imageResolver';
 import { optimizedImageUrl } from '@/lib/imageOptimizer';
+import { sponsorInternalHref } from '@/lib/sponsorLink';
 
 interface LeaderSponsorData {
   id: string;
+  slug?: string | null;
   title: string;
   company_name?: string;
   image_url: string | null;
@@ -95,9 +98,21 @@ const LeaderSponsor = memo(forwardRef<HTMLElement, Props>(({ sponsors, onClickTr
           <span className="text-[7px] sm:text-[8px] font-semibold tracking-widest uppercase text-muted-foreground/50 shrink-0">
             Patrocinado
           </span>
-          <span className="text-[10px] sm:text-xs font-medium text-foreground/60 truncate">
-            {displayName}
-          </span>
+          {(() => {
+            const internalHref = sponsorInternalHref(current.slug);
+            return internalHref ? (
+              <Link
+                to={internalHref}
+                className="text-[10px] sm:text-xs font-medium text-foreground/60 truncate hover:text-accent hover:underline"
+              >
+                {displayName}
+              </Link>
+            ) : (
+              <span className="text-[10px] sm:text-xs font-medium text-foreground/60 truncate">
+                {displayName}
+              </span>
+            );
+          })()}
           {current.short_description && (
             <span className="hidden sm:inline text-[10px] text-muted-foreground/50 truncate">
               — {current.short_description}
