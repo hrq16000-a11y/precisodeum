@@ -33,15 +33,16 @@ const SponsorPublicProfilePage = () => {
 
   useEffect(() => {
     if (!sponsor) return;
+    const sp: any = sponsor;
     setForm({
-      company_name: sponsor.company_name || sponsor.title || '',
-      slug: (sponsor as any).slug || '',
-      full_description: sponsor.full_description || '',
-      short_description: sponsor.short_description || '',
-      logo_url: sponsor.logo_url || '',
-      external_link: (sponsor as any).external_link || sponsor.link_url || '',
-      whatsapp: (sponsor as any).whatsapp || '',
-      email: (sponsor as any).email || '',
+      company_name: sp.company_name || sp.title || '',
+      slug: sp.slug || '',
+      full_description: sp.full_description || '',
+      short_description: sp.short_description || '',
+      logo_url: sp.logo_url || '',
+      external_link: sp.external_link || sp.link_url || '',
+      whatsapp: sp.whatsapp || '',
+      email: sp.email || '',
     });
   }, [sponsor]);
 
