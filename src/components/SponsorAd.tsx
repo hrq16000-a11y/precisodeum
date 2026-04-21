@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
 import { getPositionConfig } from '@/config/sponsorPositions';
 import SponsorImage from '@/components/SponsorImage';
+import { sponsorInternalHref } from '@/lib/sponsorLink';
 
 interface SponsorAdProps {
   position: string;
@@ -52,21 +54,29 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
       <div className={`space-y-3 ${className}`}>
         {sponsors.map((s) => {
           const visualSrc = s.logo_url || s.image_url;
+          const internalHref = sponsorInternalHref(s.slug);
           return (
-            <a
-              key={s.id}
-              href={s.link_url || '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackClick(s.id)}
-              className="block rounded-xl bg-card p-3 shadow-card transition-all hover:shadow-card-hover"
-            >
-              <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
-              {visualSrc && (
-                <SponsorImage src={visualSrc} alt={s.title} containerClassName="mt-2 rounded-lg" />
+            <div key={s.id} className="rounded-xl bg-card p-3 shadow-card transition-all hover:shadow-card-hover">
+              <a
+                href={s.link_url || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackClick(s.id)}
+                className="block"
+              >
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
+                {visualSrc && (
+                  <SponsorImage src={visualSrc} alt={s.title} containerClassName="mt-2 rounded-lg" />
+                )}
+              </a>
+              {internalHref ? (
+                <Link to={internalHref} className="mt-2 block text-xs font-medium text-foreground hover:text-accent hover:underline">
+                  {s.title}
+                </Link>
+              ) : (
+                <p className="mt-2 text-xs font-medium text-foreground">{s.title}</p>
               )}
-              <p className="mt-2 text-xs font-medium text-foreground">{s.title}</p>
-            </a>
+            </div>
           );
         })}
       </div>
@@ -102,6 +112,7 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
 
   const current = sponsors[currentIndex] || sponsors[0];
   const currentVisualSrc = current.logo_url || current.image_url;
+  const currentInternalHref = sponsorInternalHref(current.slug);
 
   return (
     <section className={`py-6 ${className}`}>
@@ -132,6 +143,16 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
               </div>
             )}
           </a>
+          {currentInternalHref && (
+            <div className="mt-2 text-center">
+              <Link
+                to={currentInternalHref}
+                className="text-xs font-medium text-muted-foreground hover:text-accent hover:underline"
+              >
+                {current.title}
+              </Link>
+            </div>
+          )}
           {sponsors.length > 1 && (
             <div className="mt-2 flex justify-center gap-1">
               {sponsors.map((_, i) => (
