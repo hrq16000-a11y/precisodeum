@@ -14,6 +14,8 @@ import SmartCategoryPicker from '@/components/SmartCategoryPicker';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
+import LevelProgressBar from '@/components/onboarding/LevelProgressBar';
+import { isValidCpfCnpj } from '@/lib/cpfCnpj';
 
 type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
 type WizardStep = 1 | 2 | 3 | 4 | 5;
