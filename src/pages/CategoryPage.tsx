@@ -168,13 +168,13 @@ const CategoryPage = () => {
   const serviceLd = useMemo(() => {
     if (!category) return null;
     const topProviders = [...localProviders, ...nearbyProviders].slice(0, 10);
-    const ratings = topProviders.map(p => Number(p.rating_avg || 0)).filter(r => r > 0);
+    const ratings = topProviders.map(p => Number(p.rating || 0)).filter(r => r > 0);
     const aggregate = ratings.length > 0
       ? {
           aggregateRating: {
             '@type': 'AggregateRating',
             ratingValue: (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1),
-            reviewCount: topProviders.reduce((acc, p) => acc + (Number(p.review_count) || 0), 0) || ratings.length,
+            reviewCount: topProviders.reduce((acc, p) => acc + (Number(p.reviewCount) || 0), 0) || ratings.length,
             bestRating: 5,
             worstRating: 1,
           },
@@ -207,7 +207,7 @@ const CategoryPage = () => {
         '@type': 'ListItem',
         position: idx + 1,
         url: `${SITE_BASE_URL}/profissional/${p.slug}`,
-        name: p.business_name || (p.profiles as any)?.full_name || 'Profissional',
+        name: p.businessName || p.name || 'Profissional',
       })),
     };
   }, [category, localProviders, nearbyProviders]);
