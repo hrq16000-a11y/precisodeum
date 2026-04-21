@@ -665,6 +665,15 @@ const SearchPage = () => {
               </div>
             ) : (
               <>
+                {/* Pinned (Categoria Exclusiva) — primeiro resultado, identificado como Patrocinado */}
+                {pinnedSponsor && (
+                  <PinnedSponsorCard
+                    sponsor={pinnedSponsor}
+                    onImpression={trackPinnedImpression}
+                    onClick={trackPinnedClick}
+                  />
+                )}
+
                 {/* Local results grid */}
                 {paginatedLocal.length > 0 && (
                   <>
