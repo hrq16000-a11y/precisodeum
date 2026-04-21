@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { exportSponsorPdf } from '@/lib/exportSponsorPdf';
 import { SponsorImage } from '@/components/SponsorImage';
+import SponsorApprovalCelebration from '@/components/sponsor/SponsorApprovalCelebration';
 import { motion } from 'framer-motion';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
