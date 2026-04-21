@@ -675,6 +675,14 @@ const DashboardServicesPage = () => {
             </div>
           );
         })}
+        {/* Progressive unlock — show 1 locked "next slot" if user is below cap and has at least 1 service */}
+        {(() => {
+          const SERVICES_CAP = Math.min(5, limits?.max_services ?? 5);
+          const used = services.length;
+          if (used === 0 || used >= SERVICES_CAP) return null;
+          const nextSlotNumber = used + 1;
+          return <LockedSlotCard label={`${nextSlotNumber}º slot — bloqueado`} />;
+        })()}
       </div>
 
       {/* ─── New/Edit Dialog ─── */}
