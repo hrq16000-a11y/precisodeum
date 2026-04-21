@@ -319,6 +319,32 @@ const BasicOnboardingWizard = () => {
         }
       }
 
+      if (profileType === 'sponsor') {
+        const { data: existingSponsor } = await (supabase as any)
+          .from('sponsors')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+        if (!existingSponsor || existingSponsor.length === 0) {
+          const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'patrocinador');
+          await (supabase as any).from('sponsors').insert({
+            user_id: user.id,
+            slug: `${baseSlug}-${user.id.slice(0, 6)}`,
+            name: fullName.trim() || 'Novo Patrocinador',
+            status: 'pending_approval',
+          });
+        }
+      }
+
+      // +50 pts pela conclusão do cadastro básico (idempotente — max_per_day=1)
+      try {
+        await (supabase as any).rpc('award_engagement_points', {
+          _user_id: user.id,
+          _action_key: 'onboarding_basic_complete',
+          _metadata: { profile_type: profileType },
+        });
+      } catch { /* silencioso */ }
+
       const firstName = (fullName.trim().split(' ')[0] || 'Profissional');
       const initial = firstName.charAt(0).toUpperCase();
       const alias = `${firstName} ${initial}.`;
