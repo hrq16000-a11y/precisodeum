@@ -141,8 +141,8 @@ const LoginPage = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-            >Entrar</motion.h1>
-            <p className="mt-2 text-center text-sm text-muted-foreground">Acesse sua conta</p>
+            >Acessar a plataforma</motion.h1>
+            <p className="mt-2 text-center text-sm text-muted-foreground">Entre ou crie sua conta em segundos</p>
 
             {/* Google as primary CTA */}
             <Button
@@ -176,7 +176,7 @@ const LoginPage = () => {
                 </Button>
                 <button type="button" onClick={() => setShowForgot(false)}
                   className="w-full text-center text-sm text-accent hover:underline">
-                  Voltar ao login
+                  Voltar
                 </button>
               </form>
             ) : (
@@ -189,7 +189,7 @@ const LoginPage = () => {
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">Senha</label>
-                    <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                    <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
                   </div>
                   <div className="text-right">
@@ -199,13 +199,12 @@ const LoginPage = () => {
                     </button>
                   </div>
                   <Button type="submit" variant="outline" className="w-full" disabled={loading}>
-                    {loading ? 'Entrando...' : 'Entrar com e-mail'}
+                    {loading ? 'Processando...' : 'Continuar'}
                   </Button>
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    Se você ainda não tem conta, criamos uma automaticamente.
+                  </p>
                 </form>
-
-                <p className="mt-4 text-center text-sm text-muted-foreground">
-                  Não tem conta? <Link to="/cadastro" className="font-medium text-accent hover:underline">Cadastre-se</Link>
-                </p>
               </>
             )}
           </div>
