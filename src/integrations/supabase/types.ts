@@ -2127,6 +2127,7 @@ export type Database = {
           permissions: Json
           phone: string | null
           profile_type: string | null
+          referral_code: string | null
           role: string | null
           staff_role: Database["public"]["Enums"]["app_role"] | null
           status: string
@@ -2158,6 +2159,7 @@ export type Database = {
           permissions?: Json
           phone?: string | null
           profile_type?: string | null
+          referral_code?: string | null
           role?: string | null
           staff_role?: Database["public"]["Enums"]["app_role"] | null
           status?: string
@@ -2189,6 +2191,7 @@ export type Database = {
           permissions?: Json
           phone?: string | null
           profile_type?: string | null
+          referral_code?: string | null
           role?: string | null
           staff_role?: Database["public"]["Enums"]["app_role"] | null
           status?: string
@@ -2723,6 +2726,39 @@ export type Database = {
           created_at?: string
           id?: string
           identifier?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          points_awarded: number
+          referral_code: string
+          referred_id: string
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          points_awarded?: number
+          referral_code: string
+          referred_id: string
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          points_awarded?: number
+          referral_code?: string
+          referred_id?: string
+          referrer_id?: string
+          status?: string
         }
         Relationships: []
       }
@@ -4914,6 +4950,7 @@ export type Database = {
         Returns: boolean
       }
       complete_onboarding_checklist: { Args: never; Returns: Json }
+      complete_referral: { Args: { _referred_id: string }; Returns: boolean }
       distribute_open_lead: { Args: { _open_lead_id: string }; Returns: number }
       effective_user_permissions: { Args: { _user_id: string }; Returns: Json }
       find_orphan_media: {
@@ -4927,6 +4964,7 @@ export type Database = {
           user_ref: string
         }[]
       }
+      generate_referral_code: { Args: never; Returns: string }
       get_community_feed: {
         Args: { _limit?: number }
         Returns: {
@@ -5032,6 +5070,7 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      get_profile_health_score: { Args: { _user_id: string }; Returns: Json }
       get_provider_verification_status: {
         Args: { _user_id: string }
         Returns: {
@@ -5047,6 +5086,7 @@ export type Database = {
       get_staff_permissions: { Args: { _user_id: string }; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       get_user_storage_usage: { Args: { _user_ref: string }; Returns: number }
+      get_weekly_summary: { Args: { _user_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -5122,6 +5162,10 @@ export type Database = {
         Returns: number
       }
       refresh_featured_providers_mv: { Args: never; Returns: undefined }
+      register_referral: {
+        Args: { _referral_code: string; _referred_id: string }
+        Returns: boolean
+      }
       track_sponsor_metric: {
         Args: {
           _event_type: string
