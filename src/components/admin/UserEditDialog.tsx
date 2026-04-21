@@ -101,7 +101,7 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
       full_name: form.full_name,
       phone: form.phone,
       whatsapp: sanitizedWhatsapp,
-      role: form.profile_type === 'rh' ? 'client' : form.profile_type,
+      role: form.profile_type,
       profile_type: form.profile_type,
       status: form.status,
       department: form.department || '',

@@ -44,12 +44,10 @@ export default function WelcomeOnboardingModal() {
 
   const choose = async (profileType: string) => {
     if (!user) return;
-    // Blindagem: signup público nunca pode gravar 'rh'. Apenas admin atribui esse tipo.
-    const safeType = profileType === 'rh' ? 'client' : profileType;
-    setSubmitting(safeType);
+    setSubmitting(profileType);
     const { error } = await supabase.from('profiles').update({
-      profile_type: safeType,
-      role: safeType,
+      profile_type: profileType,
+      role: profileType,
       onboarding_completed: true,
       updated_at: new Date().toISOString(),
     } as any).eq('id', user.id);

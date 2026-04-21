@@ -385,7 +385,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     const updateData: any = { [field]: value };
     // If changing profile_type, also sync role
     if (field === 'profile_type') {
-      updateData.role = value === 'rh' ? 'client' : value;
+      updateData.role = value;
     }
     const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id);
     if (error) { toast.error('Erro: ' + error.message); return; }
@@ -402,7 +402,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       phone: profileForm.phone,
       whatsapp: sanitizePhone(profileForm.whatsapp || ''),
       profile_type: profileForm.profile_type,
-      role: profileForm.profile_type === 'rh' ? 'client' : profileForm.profile_type,
+      role: profileForm.profile_type,
       status: profileForm.status,
       level_id: profileForm.level_id || null,
       account_type_id: profileForm.account_type_id || null,
