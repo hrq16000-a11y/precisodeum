@@ -672,7 +672,7 @@ export function filterAndRankProvidersGrouped(
     const aS = (a.p as any)._finalScore || 0;
     const bS = (b.p as any)._finalScore || 0;
     if (aS !== bS) return bS - aS;
-    return b.p.rating - a.p.rating;
+    return compareEliteMerit(a.p, b.p);
   });
 
   // Sort other by distance first when available, then by score
@@ -683,7 +683,7 @@ export function filterAndRankProvidersGrouped(
     }
     if (a.distanceKm === Infinity && b.distanceKm !== Infinity) return 1;
     if (b.distanceKm === Infinity && a.distanceKm !== Infinity) return -1;
-    return b.p.rating - a.p.rating;
+    return compareEliteMerit(a.p, b.p);
   });
 
   const isFallback = hasGeoContext && localArr.length === 0;
@@ -713,7 +713,7 @@ export function filterAndRankProvidersGrouped(
       }
       if (a.distanceKm === Infinity && b.distanceKm !== Infinity) return 1;
       if (b.distanceKm === Infinity && a.distanceKm !== Infinity) return -1;
-      return b.p.rating - a.p.rating;
+      return compareEliteMerit(a.p, b.p);
     });
     const { nearbyArr, outOfStateArr } = splitOther(combined);
     const toProvider = (e: typeof combined[0]) => ({
