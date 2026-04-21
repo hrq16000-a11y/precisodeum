@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Megaphone, Settings, Shield } from 'lucide-react';
+import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Megaphone, Settings, Shield, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { useSponsorAuth, type SponsorPermissionKey } from '@/hooks/useSponsorAut
 
 const sponsorMenu: { label: string; icon: any; path: string; permKey?: SponsorPermissionKey }[] = [
   { label: 'Visão Geral', icon: LayoutDashboard, path: '/sponsor-panel' },
+  { label: 'Personalizar Página', icon: Globe, path: '/sponsor-panel/pagina' },
   { label: 'Meus Banners', icon: Image, path: '/sponsor-panel/banners', permKey: 'banners' },
   { label: 'Campanhas', icon: Megaphone, path: '/sponsor-panel/campanhas', permKey: 'campanhas' },
   { label: 'Métricas', icon: BarChart3, path: '/sponsor-panel/metricas', permKey: 'metricas' },
