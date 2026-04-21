@@ -211,6 +211,17 @@ const SponsorDashboardPage = () => {
           </div>
         </motion.div>
 
+        {/* Approval celebration (fires once when status flips to active) */}
+        {sponsor?.id && (
+          <SponsorApprovalCelebration
+            sponsorId={sponsor.id}
+            currentStatus={(sponsor as any)?.status}
+            lastViewedStatus={(sponsor as any)?.last_viewed_status}
+            slotName={sponsor?.position}
+            userRef={(sponsor as any)?.user_ref || (sponsorContact as any)?.user_id}
+          />
+        )}
+
         {/* Alerts */}
         {alerts.length > 0 && (
           <div className="space-y-2">
