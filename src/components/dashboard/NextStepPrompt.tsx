@@ -84,8 +84,27 @@ const NextStepPrompt = ({ open, onClose, context, providerSlug }: NextStepPrompt
     },
   ];
 
+  const handleChoice = (opt: { title: string; to: string }) => {
+    void logAuditAction({
+      action: 'next_step_chosen',
+      resource_type: 'next_step_prompt',
+      details: { context, choice: opt.title, target: opt.to },
+    });
+    onClose();
+    navigate(opt.to);
+  };
+
+  const handleDismiss = () => {
+    void logAuditAction({
+      action: 'next_step_dismissed',
+      resource_type: 'next_step_prompt',
+      details: { context },
+    });
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open} onOpenChange={(o) => !o && handleDismiss()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20">
@@ -104,7 +123,7 @@ const NextStepPrompt = ({ open, onClose, context, providerSlug }: NextStepPrompt
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }}
-                onClick={() => { onClose(); navigate(opt.to); }}
+                onClick={() => handleChoice(opt)}
                 className="group flex w-full items-start gap-3 rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary/40 hover:bg-primary/5"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform">
@@ -119,7 +138,7 @@ const NextStepPrompt = ({ open, onClose, context, providerSlug }: NextStepPrompt
           })}
         </div>
 
-        <Button variant="ghost" size="sm" onClick={onClose} className="mt-2 gap-1.5">
+        <Button variant="ghost" size="sm" onClick={handleDismiss} className="mt-2 gap-1.5">
           <X className="h-3.5 w-3.5" /> Continuar no painel
         </Button>
       </DialogContent>
