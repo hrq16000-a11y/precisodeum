@@ -300,10 +300,22 @@ const SponsorDashboardPage = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Ativo</span>
-                  <Badge variant={sponsor?.active ? 'default' : 'secondary'}>
-                    {sponsor?.active ? 'Sim' : 'Não'}
-                  </Badge>
+                  <span className="text-sm text-muted-foreground">Status</span>
+                  {(sponsor as any)?.status === 'active' || sponsor?.active ? (
+                    <span className="relative inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30">
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_hsl(142_71%_45%/0.8)]" />
+                      </span>
+                      Ativo no site
+                    </span>
+                  ) : (sponsor as any)?.status === 'pending_approval' ? (
+                    <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500/30">
+                      Pendente
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Inativo</Badge>
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Posição</span>
