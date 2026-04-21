@@ -5263,6 +5263,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_lead_stats: { Args: { provider_id: string }; Returns: Json }
       get_neighborhood_by_point: {
         Args: { _lat: number; _lng: number }
         Returns: string
