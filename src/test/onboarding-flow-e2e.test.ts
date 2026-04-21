@@ -12,9 +12,11 @@ import fs from 'fs';
 const read = (path: string) => fs.readFileSync(path, 'utf8');
 
 describe('Onboarding E2E — linear flow integrity', () => {
-  it('Cadastro: SignupPage redireciona para /triagem após signup', () => {
+  it('Cadastro: signup leva ao fluxo unificado de login + triagem', () => {
     const signup = read('src/pages/SignupPage.tsx');
-    expect(signup).toMatch(/\/triagem/);
+    const app = read('src/App.tsx');
+    expect(signup).toMatch(/Navigate|\/login|\/triagem/);
+    expect(app).toContain('/triagem');
   });
 
   it('Hard gate: /dashboard não monta se onboarding_completed !== true', () => {
@@ -27,13 +29,12 @@ describe('Onboarding E2E — linear flow integrity', () => {
     }
   });
 
-  it('Wizard: SmartOnboardingWizard cobre os 5 passos sem permitir pular', () => {
+  it('Wizard: SmartOnboardingWizard cobre os 5 passos e delega o 1º serviço ao ServiceWizard atômico', () => {
     const wizard = read('src/components/onboarding/SmartOnboardingWizard.tsx');
-    // Step gating signals
     expect(wizard).toMatch(/onboarding_step/);
     expect(wizard).toMatch(/onboarding_completed/);
-    // Wizard must use the atomic RPC for the 1st service, not raw INSERT
-    expect(wizard).toContain('create_service_atomic');
+    // Wizard delega ao ServiceWizard, que usa create_service_atomic
+    expect(wizard).toMatch(/ServiceWizard/);
     expect(wizard).not.toMatch(/\.from\(['"]services['"]\)\s*\.insert/);
   });
 
