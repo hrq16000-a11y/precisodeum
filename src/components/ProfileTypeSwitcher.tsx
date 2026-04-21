@@ -21,10 +21,9 @@ const ProfileTypeSwitcher = () => {
     if (!user || newType === currentType || switching) return;
     setSwitching(true);
     try {
-      const profileRole = newType === 'rh' ? 'client' : newType;
       const { error } = await supabase
         .from('profiles')
-        .update({ profile_type: newType, role: profileRole } as any)
+        .update({ profile_type: newType, role: newType } as any)
         .eq('id', user.id);
       if (error) throw error;
 

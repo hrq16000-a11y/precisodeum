@@ -9,13 +9,13 @@ import { toast } from 'sonner';
 import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import { useSeoHead } from '@/hooks/useSeoHead';
-import { Loader2, Mail, Lock, Eye, EyeOff, User, Briefcase } from 'lucide-react';
+import { Loader2, Mail, Lock, Eye, EyeOff, User, Briefcase, Building2, Megaphone } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [profileType, setProfileType] = useState<'client' | 'provider'>('client');
+  const [profileType, setProfileType] = useState<'client' | 'provider' | 'rh'>('client');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -122,7 +122,8 @@ const SignupPage = () => {
               É grátis e leva menos de 30 segundos
             </p>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="mt-6 grid gap-3">
+              <div className="grid gap-3 sm:grid-cols-3">
               <button
                 type="button"
                 onClick={() => setProfileType('client')}
@@ -150,6 +151,38 @@ const SignupPage = () => {
                   <div>
                     <p className="text-sm font-semibold text-foreground">Profissional</p>
                     <p className="mt-1 text-xs text-muted-foreground">Divulgar serviços e receber clientes.</p>
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setProfileType('rh')}
+                className={`rounded-xl border p-4 text-left transition-all ${profileType === 'rh' ? 'border-accent bg-accent/10 shadow-sm' : 'border-border bg-background hover:border-accent/40'}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-foreground">
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Agência / RH</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Publicar vagas e contratar talentos.</p>
+                  </div>
+                </div>
+              </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => navigate('/sponsor-panel')}
+                className="rounded-xl border border-border bg-background p-4 text-left transition-all hover:border-accent/40"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-foreground">
+                    <Megaphone className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Patrocinador</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Entrar no painel de campanhas e mídia.</p>
                   </div>
                 </div>
               </button>
