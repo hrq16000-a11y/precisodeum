@@ -453,7 +453,7 @@ const AdminUsersPage = () => {
     if (selectedIds.size === 0 || !profileType) return;
     setBulkLoading(true);
     const ids = Array.from(selectedIds);
-    const role = profileType === 'rh' ? 'client' : profileType;
+    const role = profileType;
     const { error } = await supabase.from('profiles').update({ profile_type: profileType, role }).in('id', ids);
     if (error) toast.error('Erro: ' + error.message);
     else {
