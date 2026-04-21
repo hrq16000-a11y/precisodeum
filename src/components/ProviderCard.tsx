@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
 import { useEngagementPoints } from '@/hooks/useEngagementPoints';
 import { getEngagementTier } from '@/lib/engagementTiers';
+import CommunityVerifiedBadge from '@/components/CommunityVerifiedBadge';
 
 interface ProviderCardProps {
   provider: DbProvider;
@@ -190,7 +191,12 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
             >
               <div className="flex min-w-0 items-start justify-between gap-2 overflow-hidden">
                 <h3 className="min-w-0 flex-1 truncate font-display text-sm font-bold leading-tight text-foreground transition-colors group-hover:text-accent sm:text-base">
-                  {displayName}
+                  <span className="inline-flex items-center gap-1 max-w-full">
+                    <span className="truncate">{displayName}</span>
+                    {provider.communityVerified && (
+                      <CommunityVerifiedBadge size="sm" />
+                    )}
+                  </span>
                 </h3>
                 {engTier.showCrown && (
                   <motion.div animate={{ rotate: [0, 12, -12, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}>
