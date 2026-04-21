@@ -669,6 +669,30 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_checkins: {
+        Row: {
+          checkin_date: string
+          created_at: string
+          id: string
+          streak_count: number
+          user_id: string
+        }
+        Insert: {
+          checkin_date?: string
+          created_at?: string
+          id?: string
+          streak_count?: number
+          user_id: string
+        }
+        Update: {
+          checkin_date?: string
+          created_at?: string
+          id?: string
+          streak_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       engagement_log: {
         Row: {
           action_key: string
@@ -5241,6 +5265,7 @@ export type Database = {
         Returns: number
       }
       refresh_featured_providers_mv: { Args: never; Returns: undefined }
+      register_daily_checkin: { Args: never; Returns: Json }
       register_referral: {
         Args: { _referral_code: string; _referred_id: string }
         Returns: boolean
