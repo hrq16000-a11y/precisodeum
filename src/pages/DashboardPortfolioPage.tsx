@@ -422,6 +422,11 @@ const DashboardPortfolioPage = () => {
                     </button>
                   </motion.div>
                 ))}
+                {photos.length > 0 && photos.length < MAX_PHOTOS_PER_ALBUM && (
+                  <div className="aspect-square">
+                    <LockedSlotCard label={`Foto ${photos.length + 1}`} variant="compact" />
+                  </div>
+                )}
               </div>
             )}
           </div>
