@@ -8,7 +8,7 @@ import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
 import AvatarReminder from '@/components/dashboard/AvatarReminder';
