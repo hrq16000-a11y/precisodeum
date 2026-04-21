@@ -141,6 +141,18 @@ const AdminAuditLogPage = () => {
   }, [isAdmin, page, filterAction, filterResource, quickFilter, dateFrom, dateTo, userRefSearch]);
 
   const handleExportCsv = async () => {
+    // Confirmation preview — show how many records will be exported with current filters
+    const visibleCount = totalCount;
+    if (visibleCount === 0) {
+      toast.info('Nenhum registro para exportar com esses filtros.');
+      return;
+    }
+    const cap = Math.min(visibleCount, 5000);
+    const ok = window.confirm(
+      `🗂️ Você está prestes a exportar ${cap} registro(s)${visibleCount > 5000 ? ` (limite de 5.000 — ${visibleCount} encontrados no total)` : ''}.\n\nDeseja continuar?`
+    );
+    if (!ok) return;
+
     setExporting(true);
     try {
       // Pull up to 5000 rows respecting current filters (no pagination)
@@ -313,7 +325,14 @@ const AdminAuditLogPage = () => {
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-muted-foreground">{totalCount} registro(s) encontrado(s)</p>
+      <p className="mt-3 text-xs text-muted-foreground">
+        <strong className="font-semibold text-foreground">{totalCount}</strong> registro(s) encontrado(s)
+        {totalCount > 0 && (
+          <span className="ml-2 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+            Pronto para exportar até {Math.min(totalCount, 5000)} linhas
+          </span>
+        )}
+      </p>
 
       <div className="mt-2 space-y-2">
         {filtered.length === 0 && (
