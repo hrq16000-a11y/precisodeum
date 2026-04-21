@@ -127,42 +127,69 @@ const AchievementHistory = ({ providerSlug, levelName }: AchievementHistoryProps
       </ul>
 
       {providerSlug && (
-        <a
-          href={`/profissional/${providerSlug}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={async () => {
-            // Track conversion of pride: which categories most frequently
-            // peek at their public profile after a win.
-            try {
-              if (user?.id) {
-                const { data: prov } = await supabase
-                  .from('providers')
-                  .select('id, category_id, categories(slug, name)')
-                  .eq('user_id', user.id)
-                  .maybeSingle();
-                void logAuditAction({
-                  action: 'next_step_chosen',
-                  resource_type: 'public_profile_preview',
-                  resource_id: prov?.id ?? undefined,
-                  details: {
-                    source: 'achievement_history',
-                    category_slug: (prov?.categories as any)?.slug ?? null,
-                    category_name: (prov?.categories as any)?.name ?? null,
-                    slug: providerSlug,
-                  },
-                });
+        <>
+          <a
+            href={`/profissional/${providerSlug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={async () => {
+              try {
+                if (user?.id) {
+                  const { data: prov } = await supabase
+                    .from('providers')
+                    .select('id, category_id, categories(slug, name)')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                  void logAuditAction({
+                    action: 'next_step_chosen',
+                    resource_type: 'public_profile_preview',
+                    resource_id: prov?.id ?? undefined,
+                    details: {
+                      source: 'achievement_history',
+                      category_slug: (prov?.categories as any)?.slug ?? null,
+                      category_name: (prov?.categories as any)?.name ?? null,
+                      slug: providerSlug,
+                    },
+                  });
+                }
+              } catch {
+                /* tracking is best-effort */
               }
-            } catch {
-              /* tracking is best-effort */
-            }
-          }}
-          className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-gradient-to-r from-primary/10 to-accent/10 px-3 py-2 text-xs font-bold text-primary transition hover:border-primary/60 hover:from-primary/20 hover:to-accent/20"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          Ver como o cliente me vê
-          <ExternalLink className="h-3 w-3 opacity-70" />
-        </a>
+            }}
+            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-gradient-to-r from-primary/10 to-accent/10 px-3 py-2 text-xs font-bold text-primary transition hover:border-primary/60 hover:from-primary/20 hover:to-accent/20"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Ver como o cliente me vê
+            <ExternalLink className="h-3 w-3 opacity-70" />
+          </a>
+
+          {/* Share level on WhatsApp — pride amplifier (Selo de Elite) */}
+          <a
+            href={whatsappLink(
+              '',
+              levelName
+                ? `Sou Profissional Nivel ${levelName} no Preciso de Um — confira meu perfil verificado: ${SITE_BASE_URL}/profissional/${providerSlug}`
+                : `Confira meu perfil de profissional verificado no Preciso de Um: ${SITE_BASE_URL}/profissional/${providerSlug}`,
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => {
+              void logAuditAction({
+                action: 'level_share',
+                resource_type: 'achievement_history',
+                details: {
+                  channel: 'whatsapp',
+                  level_name: levelName ?? null,
+                  slug: providerSlug,
+                },
+              });
+            }}
+            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-success/30 bg-success/5 px-3 py-2 text-xs font-bold text-success transition hover:border-success/60 hover:bg-success/10"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            {levelName ? `Compartilhar meu Nivel ${levelName}` : 'Compartilhar meu Nivel'}
+          </a>
+        </>
       )}
     </div>
   );
