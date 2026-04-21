@@ -1219,6 +1219,39 @@ export type Database = {
         }
         Relationships: []
       }
+      impersonation_sessions: {
+        Row: {
+          admin_id: string
+          ended_at: string | null
+          id: string
+          ip_address: string | null
+          reason: string | null
+          started_at: string
+          target_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          admin_id: string
+          ended_at?: string | null
+          id?: string
+          ip_address?: string | null
+          reason?: string | null
+          started_at?: string
+          target_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          admin_id?: string
+          ended_at?: string | null
+          id?: string
+          ip_address?: string | null
+          reason?: string | null
+          started_at?: string
+          target_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       institutional_pages: {
         Row: {
           content: string
@@ -4071,6 +4104,7 @@ export type Database = {
       }
       system_audit_logs: {
         Row: {
+          acted_as_admin_id: string | null
           action: string
           context_metadata: Json | null
           created_at: string
@@ -4084,6 +4118,7 @@ export type Database = {
           target_user_id: string | null
         }
         Insert: {
+          acted_as_admin_id?: string | null
           action: string
           context_metadata?: Json | null
           created_at?: string
@@ -4097,6 +4132,7 @@ export type Database = {
           target_user_id?: string | null
         }
         Update: {
+          acted_as_admin_id?: string | null
           action?: string
           context_metadata?: Json | null
           created_at?: string
@@ -4973,6 +5009,19 @@ export type Database = {
           min_points: number
           user_count: number
         }[]
+      }
+      admin_log_impersonation_end: {
+        Args: { _session_id: string }
+        Returns: undefined
+      }
+      admin_log_impersonation_start: {
+        Args: {
+          _ip?: string
+          _reason?: string
+          _target_user_id: string
+          _ua?: string
+        }
+        Returns: string
       }
       admin_notify_users: {
         Args: {

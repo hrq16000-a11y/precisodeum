@@ -2,8 +2,9 @@ import { useState } from 'react';
 import {
   Edit2, Key, Ban, Shield, Trash2, Eye, MoreHorizontal, Mail, Calendar,
   Briefcase, MapPin, ExternalLink, Zap, RotateCcw, Plus, Minus, Camera,
-  User, Building2, Wifi, ArrowUp, ArrowDown, ArrowUpDown
+  User, Building2, Wifi, ArrowUp, ArrowDown, ArrowUpDown, EyeOff
 } from 'lucide-react';
+import { startImpersonation } from '@/hooks/useImpersonation';
 import SuspiciousBadge from '@/components/admin/SuspiciousBadge';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -302,6 +303,15 @@ const UserTable = ({
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onResetPassword(p)}>
                       <Key className="h-3.5 w-3.5 mr-2" /> Redefinir senha
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => startImpersonation({
+                        targetUserId: p.id,
+                        targetEmail: p.email,
+                        targetName: p.full_name,
+                      })}
+                    >
+                      <EyeOff className="h-3.5 w-3.5 mr-2 text-amber-600" /> Acessar como
                     </DropdownMenuItem>
                     {provider && (
                       <DropdownMenuItem asChild>
