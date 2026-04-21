@@ -42,6 +42,7 @@ import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
 import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
 import EngagementLoop from '@/components/dashboard/EngagementLoop';
+import AchievementHistory from '@/components/dashboard/AchievementHistory';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();

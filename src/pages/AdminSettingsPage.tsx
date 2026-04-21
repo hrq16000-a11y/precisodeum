@@ -3,7 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Settings, Save, Plus, Trash2, X, Crown, FolderSync, Loader2 } from 'lucide-react';
+import { Settings, Save, Plus, Trash2, X, Crown, FolderSync, Loader2, Info, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import ImageUploadField from '@/components/ImageUploadField';
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const AdminSettingsPage = () => {
   const { isAdmin, loading } = useAdmin();
@@ -396,9 +397,21 @@ const ProfileRulesSection = ({ settings, onToggle, onSaveText }: {
 };
 
 /* ====== Limites da Plataforma (Portfólio) ====== */
-const PLATFORM_LIMIT_KEYS: { key: string; label: string; description: string; defaultValue: string }[] = [
-  { key: 'portfolio_max_albums', label: 'Máx. álbuns por profissional', description: 'Quantos álbuns cada profissional pode criar no portfólio.', defaultValue: '4' },
-  { key: 'portfolio_max_photos_per_album', label: 'Máx. fotos por álbum', description: 'Quantas fotos cabem em cada álbum.', defaultValue: '20' },
+const PLATFORM_LIMIT_KEYS: { key: string; label: string; description: string; defaultValue: string; tip: string }[] = [
+  {
+    key: 'portfolio_max_albums',
+    label: 'Máx. álbuns por profissional',
+    description: 'Quantos álbuns cada profissional pode criar no portfólio.',
+    defaultValue: '4',
+    tip: 'Aumentar este valor permite que profissionais organizem mais categorias de trabalho, mas pode tornar a página de perfil mais longa de navegar. Recomendado: 4-8.',
+  },
+  {
+    key: 'portfolio_max_photos_per_album',
+    label: 'Máx. fotos por álbum',
+    description: 'Quantas fotos cabem em cada álbum.',
+    defaultValue: '20',
+    tip: 'Aumentar o limite de fotos pode impactar o tempo de carregamento das páginas de perfil e o consumo de armazenamento. Recomendado: 15-30 fotos por álbum.',
+  },
 ];
 
 const PlatformLimitsSection = ({ settings, onSaveText }: {
@@ -436,47 +449,64 @@ const PlatformLimitsSection = ({ settings, onSaveText }: {
   };
 
   return (
-    <div className="mt-6 rounded-xl border-2 border-accent/30 bg-accent/5 p-5">
-      <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-2">
-        <Settings className="h-5 w-5 text-accent" /> Limites da Plataforma
-      </h2>
-      <p className="text-sm text-muted-foreground mb-4">
-        Ajuste os limites globais de portfólio. As mudanças refletem imediatamente para todos os profissionais.
-      </p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {PLATFORM_LIMIT_KEYS.map(({ key, label, description, defaultValue }) => {
-          const stored = map[key];
-          const value = local[key] ?? stored ?? defaultValue;
-          const changed = String(value) !== String(stored ?? defaultValue);
-          return (
-            <div key={key} className="rounded-lg border border-border bg-card p-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{label}</p>
-                  <p className="text-[11px] text-muted-foreground">{description}</p>
+    <TooltipProvider delayDuration={150}>
+      <div className="mt-6 rounded-xl border-2 border-accent/30 bg-accent/5 p-5">
+        <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+          <Settings className="h-5 w-5 text-accent" /> Limites da Plataforma
+        </h2>
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5 text-[11px] text-amber-700 dark:text-amber-400">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <p>
+            <strong>Atenção:</strong> alterar limites afeta todos os profissionais imediatamente. Aumentar o número de fotos pode impactar o tempo de carregamento das páginas de perfil.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {PLATFORM_LIMIT_KEYS.map(({ key, label, description, defaultValue, tip }) => {
+            const stored = map[key];
+            const value = local[key] ?? stored ?? defaultValue;
+            const changed = String(value) !== String(stored ?? defaultValue);
+            return (
+              <div key={key} className="rounded-lg border border-border bg-card p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                      {label}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="text-muted-foreground hover:text-accent">
+                            <Info className="h-3.5 w-3.5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs text-xs">
+                          {tip}
+                        </TooltipContent>
+                      </Tooltip>
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">{description}</p>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    className="w-24 text-center"
+                    value={value}
+                    onChange={(e) => setLocal(p => ({ ...p, [key]: e.target.value }))}
+                  />
+                  {changed && (
+                    <Button variant="accent" size="sm" onClick={() => handleSave(key)}>
+                      <Save className="mr-1 h-3 w-3" /> Salvar
+                    </Button>
+                  )}
+                  {stored === undefined && (
+                    <span className="text-[10px] text-muted-foreground">(usando padrão: {defaultValue})</span>
+                  )}
                 </div>
               </div>
-              <div className="mt-2 flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={1}
-                  className="w-24 text-center"
-                  value={value}
-                  onChange={(e) => setLocal(p => ({ ...p, [key]: e.target.value }))}
-                />
-                {changed && (
-                  <Button variant="accent" size="sm" onClick={() => handleSave(key)}>
-                    <Save className="mr-1 h-3 w-3" /> Salvar
-                  </Button>
-                )}
-                {stored === undefined && (
-                  <span className="text-[10px] text-muted-foreground">(usando padrão: {defaultValue})</span>
-                )}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
