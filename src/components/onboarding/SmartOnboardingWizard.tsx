@@ -189,24 +189,29 @@ const BasicOnboardingWizard = () => {
     });
   };
 
-  // Auto-advance Step 3 → confirm assim que a categoria for selecionada (provider)
-  // e nome já estiver preenchido. Cliente: dispara assim que nome existir + step 3.
-  useEffect(() => {
-    if (step !== 3 || saving || autoAdvancedRef.current) return;
-    if (!fullName.trim()) return;
-    if (profileType === 'provider' && selectedCategoryIds.length === 0) return;
-    if (profileType === 'provider' && providerSubtype === 'company' && (!legalName.trim() || !cnpj.trim())) return;
-    if (profileType === 'rh' && !agencyName.trim()) return;
-    autoAdvancedRef.current = true;
-    const t = setTimeout(() => { handleConfirm(); }, 650);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, selectedCategoryIds, fullName, profileType, providerSubtype, legalName, cnpj, agencyName, saving]);
-
-  // Reset auto-advance guard quando voltar de step
+  // Auto-advance removido: a esteira deve ser controlada ATIVAMENTE pelo usuário.
+  // Mantemos apenas o reset de qualquer guard antigo ao trocar de step.
   useEffect(() => {
     if (step !== 3) autoAdvancedRef.current = false;
   }, [step]);
+
+  /**
+   * Salvamento incremental — sempre que o usuário avança (clicando em "Salvar e avançar"
+   * OU em "Pular esta etapa"), persistimos o que já foi digitado em profiles/providers.
+   * Nunca perdemos dados parciais.
+   */
+  const persistPartialProgress = async () => {
+    if (!user?.id) return;
+    try {
+      const profilePatch: Record<string, any> = { onboarding_completed: false };
+      if (profileType) { profilePatch.profile_type = profileType; profilePatch.role = profileType; }
+      if (fullName.trim()) profilePatch.full_name = fullName.trim();
+      await supabase.from('profiles').update(profilePatch as any).eq('id', user.id);
+    } catch (err) {
+      // silencioso — não bloqueia avanço se houver glitch de rede
+      if (import.meta.env.DEV) console.warn('[Onboarding] persistPartialProgress falhou:', err);
+    }
+  };
 
   const clearPersisted = () => {
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
