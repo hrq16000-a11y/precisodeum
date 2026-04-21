@@ -105,11 +105,11 @@ const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
 
       <div className="grid grid-cols-2 gap-2.5">
         <Metric icon={Eye} label="Visualizações" value={views} accent="hsl(217 91% 60%)" />
-        <Metric icon={MessageCircle} label="Cliques no WhatsApp" value={clicks} accent="hsl(142 71% 45%)" />
+        <Metric icon={MessageCircle} label="WhatsApp/Telefone" value={clicks + phoneClicks} accent="hsl(142 71% 45%)" />
       </div>
 
       {/* Mini sparkline (last 14 days) */}
-      {series.length > 0 && (views > 0 || clicks > 0) && (
+      {series.length > 0 && (views > 0 || clicks > 0 || phoneClicks > 0) && (
         <div className="mt-4">
           <div className="flex items-end gap-[3px] h-14">
             {series.map((b, i) => (
@@ -121,8 +121,8 @@ const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
                 />
                 <div
                   className="w-full rounded-sm bg-emerald-500/70"
-                  style={{ height: `${Math.max(2, (b.clicks / peak) * 16)}px` }}
-                  title={`${b.label} • ${b.clicks} cliques`}
+                   style={{ height: `${Math.max(2, ((b.clicks + b.phoneClicks) / peak) * 16)}px` }}
+                   title={`${b.label} • ${b.clicks + b.phoneClicks} contatos`}
                 />
               </div>
             ))}
@@ -134,7 +134,7 @@ const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
                 <span className="h-1.5 w-1.5 rounded-sm bg-primary/70" /> Views
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-sm bg-emerald-500/70" /> Cliques
+                <span className="h-1.5 w-1.5 rounded-sm bg-emerald-500/70" /> Contatos
               </span>
             </span>
             <span>{series[series.length - 1]?.label}</span>
@@ -142,7 +142,7 @@ const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
         </div>
       )}
 
-      {views === 0 && clicks === 0 && (
+      {views === 0 && clicks === 0 && phoneClicks === 0 && (
         <p className="mt-3 text-center text-[11px] text-muted-foreground">
           Compartilhe seu perfil para começar a registrar resultados.
         </p>
