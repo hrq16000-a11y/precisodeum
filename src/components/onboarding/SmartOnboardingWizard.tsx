@@ -522,12 +522,19 @@ const Step2Location = ({
     <p className="mt-1 text-center text-xs text-muted-foreground">Vamos personalizar seu perfil.</p>
 
     <div className="mt-5 space-y-4">
-      <div>
-        <label className="mb-2 block text-xs font-semibold text-foreground">Foto de perfil (opcional)</label>
-        <div className="flex justify-center">
-          <AvatarUpload userId={userId} avatarUrl={avatarUrl || ''} onAvatarChange={onAvatarChange} />
+      {userId && (
+        <div>
+          <label className="mb-2 block text-xs font-semibold text-foreground">Foto de perfil (opcional)</label>
+          <div className="flex justify-center">
+            <AvatarUpload
+              userId={userId}
+              currentUrl={avatarUrl}
+              initials={(avatarUrl ? '' : 'U')}
+              onUploaded={onAvatarChange}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div>
         <label className="mb-1 block text-xs font-semibold text-foreground">Cidade</label>
