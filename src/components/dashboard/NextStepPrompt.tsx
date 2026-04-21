@@ -56,6 +56,7 @@ const NextStepPrompt = ({ open, onClose, context, providerSlug }: NextStepPrompt
 
   if (open && wasRecentlyShown(context) && skippedRef.current) return null;
 
+  const headline = {
     service: 'Parabéns! Seu serviço está no ar.',
     album: 'Álbum criado com sucesso!',
     photo: 'Foto adicionada ao portfólio!',
