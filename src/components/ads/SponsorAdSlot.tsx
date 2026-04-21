@@ -291,9 +291,9 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
   if (!current) return null;
 
   return (
-    <section ref={containerRef} className={`py-4 ${className}`}>
+    <section ref={containerRef} className={`my-4 sm:my-6 ${className}`}>
       <div className="container mx-auto px-4">
-        <div className="rounded-xl bg-muted/30 p-3 overflow-hidden">
+        <div className="rounded-xl bg-muted/30 p-3 shadow-sm overflow-hidden">
           <span className="mb-2 block text-center text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
             Patrocinado{effectiveCity ? ` • ${effectiveCity}` : ''}
           </span>
