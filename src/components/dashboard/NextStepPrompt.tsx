@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Briefcase, Image as ImageIcon, Eye, Sparkles, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { logAuditAction } from '@/hooks/useAuditLog';
 
 interface NextStepPromptProps {
   open: boolean;
