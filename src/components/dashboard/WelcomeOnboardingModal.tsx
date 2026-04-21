@@ -19,8 +19,8 @@ const FALLBACK: Settings = {
   title: 'Bem-vindo! Como você quer usar a plataforma?',
   subtitle: 'Escolha o perfil que melhor descreve você. Você pode mudar depois.',
   card1_icon: 'Briefcase', card1_title: 'Sou Profissional', card1_description: 'Quero divulgar meus serviços e receber clientes.', card1_profile_type: 'provider',
-  card2_icon: 'Building2', card2_title: 'Sou Agência / RH', card2_description: 'Quero publicar vagas e recrutar profissionais.', card2_profile_type: 'rh',
-  card3_icon: 'User', card3_title: 'Quero Contratar', card3_description: 'Estou procurando profissionais qualificados.', card3_profile_type: 'client',
+  card2_icon: 'Users', card2_title: 'Quero Contratar', card2_description: 'Procuro profissionais qualificados para um serviço.', card2_profile_type: 'client',
+  card3_icon: 'User', card3_title: 'Sou Cliente', card3_description: 'Quero salvar meus profissionais favoritos e acompanhar contatos.', card3_profile_type: 'client',
 };
 
 const ACCENTS = [
@@ -44,11 +44,12 @@ export default function WelcomeOnboardingModal() {
 
   const choose = async (profileType: string) => {
     if (!user) return;
-    setSubmitting(profileType);
-    const role = profileType === 'rh' ? 'client' : profileType;
+    // Blindagem: signup público nunca pode gravar 'rh'. Apenas admin atribui esse tipo.
+    const safeType = profileType === 'rh' ? 'client' : profileType;
+    setSubmitting(safeType);
     const { error } = await supabase.from('profiles').update({
-      profile_type: profileType,
-      role,
+      profile_type: safeType,
+      role: safeType,
       onboarding_completed: true,
       updated_at: new Date().toISOString(),
     } as any).eq('id', user.id);

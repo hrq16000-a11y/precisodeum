@@ -54,17 +54,23 @@ const DashboardPage = () => {
     if (!user?.id) return;
     if (!window.confirm('Reiniciar o assistente? Seus dados (nome, telefone, cidade) serão preservados.')) return;
     try {
-      // Smart reset: only reopens the wizard. Keep full_name, phone, whatsapp, city.
+      // Reset profile_type/role no banco e metadata no auth
       const [{ error: profErr }, { error: metaErr }] = await Promise.all([
         supabase.from('profiles').update({
           profile_type: null,
+          role: null,
           onboarding_completed: false,
         } as any).eq('id', user.id),
-        supabase.auth.updateUser({ data: { profile_type_chosen: false } }),
+        supabase.auth.updateUser({ data: { profile_type_chosen: false, profile_type: null } }),
       ]);
       if (profErr || metaErr) throw profErr || metaErr;
-      // Clear local wizard progress so it starts at step 1
-      try { localStorage.removeItem('onboarding_wizard_state'); } catch {}
+      // Limpeza completa de cache local relacionado ao fluxo de cadastro/triagem
+      try {
+        const keysToRemove = ['onboarding_wizard_state', 'pending_referral_code', 'auth_redirect'];
+        keysToRemove.forEach((k) => { localStorage.removeItem(k); sessionStorage.removeItem(k); });
+        // Limpa qualquer chave residual com prefixo de onboarding
+        Object.keys(localStorage).filter(k => k.startsWith('onboarding_') || k.startsWith('wizard_')).forEach(k => localStorage.removeItem(k));
+      } catch {}
       await refetchProfile();
       toast.success('Assistente reiniciado. Recarregando...');
       setTimeout(() => window.location.href = '/dashboard', 600);
