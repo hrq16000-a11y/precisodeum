@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Crown, Star, MapPin, MessageCircle, Sparkles, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,21 @@ interface Props {
 const AD_INTERVAL = 4;
 
 const FeaturedProviders = ({ providers, isLoading, isFetching, hasError, categories = [], selectedCategory = '', sortBy = 'proximity', updatedAt, onCategoryChange, onSortChange }: Props) => {
+  const mountedAt = useRef(typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+  useEffect(() => {
+    if (providers.length === 0 || typeof window === 'undefined') return;
+    const renderMs = Math.round(((performance.now?.() || Date.now()) - mountedAt.current) * 100) / 100;
+    (window as any).__featuredProvidersMetrics = {
+      ...(window as any).__featuredProvidersMetrics,
+      renderMs,
+      providersRendered: providers.length,
+      fallbackMode: hasError,
+      sortBy,
+      selectedCategory: selectedCategory || 'all',
+    };
+  }, [providers.length, hasError, sortBy, selectedCategory]);
+
   const items: ({ type: 'provider'; data: DbProvider; index: number } | { type: 'ad'; adIndex: number })[] = [];
   let adCounter = 0;
   providers.forEach((p, i) => {
@@ -167,7 +182,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
           <Avatar className="h-12 w-12 shrink-0 ring-2 ring-accent/20 transition-transform duration-300 group-hover:scale-105 sm:h-16 sm:w-16">
             <AvatarImage src={displayPhoto || undefined} alt={displayName} className="object-cover" />
             <AvatarFallback className="bg-accent/10 text-2xl">
-              {p.categoryIcon || '🔧'}
+              <Sparkles className="h-5 w-5 text-accent" />
             </AvatarFallback>
           </Avatar>
 
