@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "assets:logo": "node scripts/generate-logo-webp.mjs",
+    "assets:logo:upload": "node scripts/generate-logo-webp.mjs --upload",
     "prebuild": "npm run assets:logo",
     "build": "vite build",
     "prebuild:dev": "npm run assets:logo",
