@@ -279,6 +279,8 @@ const ProviderProfile = () => {
   const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '' });
   const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
   const [relatedProviders, setRelatedProviders] = useState<any[]>([]);
+  const [showStickyContact, setShowStickyContact] = useState(false);
+  const mainWhatsappRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -562,6 +564,24 @@ const ProviderProfile = () => {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [provider?.id]);
+
+  useEffect(() => {
+    if (!isMobile || !effectiveWhatsApp) {
+      setShowStickyContact(false);
+      return;
+    }
+
+    const target = mainWhatsappRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyContact(!entry.isIntersecting),
+      { threshold: 0.15 },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [isMobile, effectiveWhatsApp]);
 
   // DESTAQUE criteria
   const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
