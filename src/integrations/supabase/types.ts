@@ -2346,6 +2346,75 @@ export type Database = {
           },
         ]
       }
+      provider_daily_stats: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          phone_clicks: number
+          provider_id: string
+          updated_at: string
+          views: number
+          whatsapp_clicks: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          phone_clicks?: number
+          provider_id: string
+          updated_at?: string
+          views?: number
+          whatsapp_clicks?: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          phone_clicks?: number
+          provider_id?: string
+          updated_at?: string
+          views?: number
+          whatsapp_clicks?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_daily_stats_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_daily_stats_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "provider_daily_stats_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_daily_stats_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_daily_stats_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
+          },
+        ]
+      }
       provider_impressions: {
         Row: {
           date: string
@@ -5387,6 +5456,7 @@ export type Database = {
           years_experience: number
         }[]
       }
+      process_daily_stats: { Args: never; Returns: number }
       recalc_provider_community_verified: {
         Args: { _provider_id: string }
         Returns: boolean
