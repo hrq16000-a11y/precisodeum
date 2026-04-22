@@ -817,7 +817,7 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
   };
 }
 
-export function useSearchSuggestions() {
+export function useSearchSuggestions(enabled = true) {
   return useQuery({
     queryKey: ['search-suggestions'],
     queryFn: async () => {
@@ -833,6 +833,10 @@ export function useSearchSuggestions() {
       };
     },
     staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+    enabled,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 
