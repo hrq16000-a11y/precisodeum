@@ -303,7 +303,7 @@ const BasicOnboardingWizard = () => {
       } catch { /* silent */ }
 
       try {
-        celebrate({ intensity: 'big' });
+        celebrate({ intensity: 'big', id: `onboarding-complete:${user.id}` });
       } catch { /* noop */ }
 
       await refetchProfile();
