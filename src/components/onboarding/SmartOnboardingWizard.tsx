@@ -285,7 +285,7 @@ const BasicOnboardingWizard = () => {
     if (!user?.id) return;
     const { data, error } = await supabase
       .from('profiles')
-      .select('full_name, city, state, avatar_url, whatsapp, phone, profile_type, onboarding_step')
+      .select('full_name, avatar_url, whatsapp, phone, profile_type, onboarding_step')
       .eq('id', user.id)
       .single();
 
@@ -294,13 +294,26 @@ const BasicOnboardingWizard = () => {
       return;
     }
 
-    setFullName(data.full_name || '');
-    setCity(data.city || '');
-    setState(data.state || '');
-    setAvatarUrl(data.avatar_url || null);
-    setWhatsapp(data.whatsapp || data.phone || '');
-    if (data.profile_type) setProfileType(data.profile_type as ProfileType);
-    const savedStep = clampWizardStep(data.onboarding_step);
+    const savedProfile = data as any;
+    let savedCity = '';
+    let savedState = '';
+    if (savedProfile.profile_type === 'provider') {
+      const { data: providerRows } = await supabase.from('providers').select('city, state').eq('user_id', user.id).limit(1);
+      savedCity = providerRows?.[0]?.city || '';
+      savedState = providerRows?.[0]?.state || '';
+    } else if (savedProfile.profile_type === 'rh') {
+      const { data: agencyRows } = await (supabase as any).from('agencies').select('city, state').eq('user_id', user.id).limit(1);
+      savedCity = agencyRows?.[0]?.city || '';
+      savedState = agencyRows?.[0]?.state || '';
+    }
+
+    setFullName(savedProfile.full_name || '');
+    setCity(savedCity);
+    setState(savedState);
+    setAvatarUrl(savedProfile.avatar_url || null);
+    setWhatsapp(savedProfile.whatsapp || savedProfile.phone || '');
+    if (savedProfile.profile_type) setProfileType(savedProfile.profile_type as ProfileType);
+    const savedStep = clampWizardStep(savedProfile.onboarding_step);
     setStep(savedStep);
     setFurthestStep(savedStep);
     setAutoSaveStatus('idle');
@@ -308,13 +321,13 @@ const BasicOnboardingWizard = () => {
     setLastAutoSaveError(null);
     lastSavedFingerprintRef.current = JSON.stringify({
       onboarding_completed: false,
-      city: data.city || null,
-      state: data.state || null,
-      avatar_url: data.avatar_url || null,
-      full_name: data.full_name || null,
-      whatsapp: data.whatsapp || data.phone || null,
-      phone: data.whatsapp || data.phone || null,
-      ...(data.profile_type ? { profile_type: data.profile_type, role: data.profile_type } : {}),
+      city: savedCity || null,
+      state: savedState || null,
+      avatar_url: savedProfile.avatar_url || null,
+      full_name: savedProfile.full_name || null,
+      whatsapp: savedProfile.whatsapp || savedProfile.phone || null,
+      phone: savedProfile.whatsapp || savedProfile.phone || null,
+      ...(savedProfile.profile_type ? { profile_type: savedProfile.profile_type, role: savedProfile.profile_type } : {}),
       onboarding_step: savedStep,
     });
     toast.success('Campos salvos recarregados.');
