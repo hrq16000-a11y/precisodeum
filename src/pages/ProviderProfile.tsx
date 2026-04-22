@@ -582,6 +582,8 @@ const ProviderProfile = () => {
     }
 
     let frame = 0;
+    let safeAreaBottom = 0;
+    let lastShouldShow: boolean | null = null;
     const getSafeAreaBottom = () => {
       const probe = document.createElement('div');
       probe.style.cssText = 'position:fixed;bottom:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none;';
@@ -591,42 +593,49 @@ const ProviderProfile = () => {
       return value;
     };
 
-    const updateVisibility = () => {
+    const measureVisibility = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const rect = target.getBoundingClientRect();
         const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
         const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
-        const safeBottom = getSafeAreaBottom();
-        const visibleHeight = Math.min(rect.bottom, viewportHeight - safeBottom) - Math.max(rect.top, 0);
+        const visibleHeight = Math.min(rect.bottom, viewportHeight - safeAreaBottom) - Math.max(rect.top, 0);
         const visibleWidth = Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0);
-        setShowStickyContact(!(visibleHeight > 8 && visibleWidth > 8));
+        const shouldShow = !(visibleHeight > 8 && visibleWidth > 8);
+        if (shouldShow !== lastShouldShow) {
+          lastShouldShow = shouldShow;
+          setShowStickyContact(shouldShow);
+        }
       });
+    };
+    const updateSafeAreaAndVisibility = () => {
+      safeAreaBottom = getSafeAreaBottom();
+      measureVisibility();
     };
 
     const observer = new IntersectionObserver(
-      () => updateVisibility(),
+      () => measureVisibility(),
       { threshold: [0, 0.01, 0.1, 1] },
     );
-    const resizeObserver = new ResizeObserver(updateVisibility);
+    const resizeObserver = new ResizeObserver(measureVisibility);
 
     observer.observe(target);
     resizeObserver.observe(target);
     resizeObserver.observe(document.body);
-    window.addEventListener('scroll', updateVisibility, { passive: true });
-    window.addEventListener('resize', updateVisibility);
-    window.visualViewport?.addEventListener('resize', updateVisibility);
-    window.visualViewport?.addEventListener('scroll', updateVisibility);
-    updateVisibility();
+    window.addEventListener('scroll', measureVisibility, { passive: true });
+    window.addEventListener('resize', updateSafeAreaAndVisibility);
+    window.visualViewport?.addEventListener('resize', updateSafeAreaAndVisibility);
+    window.visualViewport?.addEventListener('scroll', measureVisibility);
+    updateSafeAreaAndVisibility();
 
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
       resizeObserver.disconnect();
-      window.removeEventListener('scroll', updateVisibility);
-      window.removeEventListener('resize', updateVisibility);
-      window.visualViewport?.removeEventListener('resize', updateVisibility);
-      window.visualViewport?.removeEventListener('scroll', updateVisibility);
+      window.removeEventListener('scroll', measureVisibility);
+      window.removeEventListener('resize', updateSafeAreaAndVisibility);
+      window.visualViewport?.removeEventListener('resize', updateSafeAreaAndVisibility);
+      window.visualViewport?.removeEventListener('scroll', measureVisibility);
     };
   }, [isMobile, provider?.whatsapp, provider?.phone]);
 
