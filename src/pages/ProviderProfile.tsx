@@ -1700,34 +1700,40 @@ const ProviderProfile = () => {
       </Dialog>
 
       {/* Sticky CTA bar for mobile */}
-      {effectiveWhatsApp && showStickyContact && (
-        <motion.div
-          className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/95 p-3 md:hidden shadow-lg backdrop-blur-lg"
-          style={{ zIndex: 999, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
-          initial={{ y: 100 }}
-          animate={showStickyContact ? { y: 0, opacity: 1 } : { y: 100, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          aria-hidden={!showStickyContact}
-        >
-          <Button
-            variant="accent"
-            size="lg"
-            className="w-full gap-2 shadow-lg"
-            onClick={() => {
-              if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname);
-              requestWhatsApp({
-                url: whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`),
-                targetType: 'provider',
-                targetId: provider?.id ?? null,
-                targetLabel: name,
-                whatsappNumber: effectiveWhatsApp,
-              });
-            }}
+      <AnimatePresence initial={false}>
+        {effectiveWhatsApp && showStickyContact && (
+          <motion.div
+            key="sticky-mobile-whatsapp"
+            role="region"
+            aria-label="Contato rápido por WhatsApp"
+            className="fixed inset-x-0 bottom-0 border-t border-border bg-card/95 p-3 md:hidden shadow-lg backdrop-blur-lg transform-gpu will-change-transform"
+            style={{ zIndex: 999, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
+            initial={{ y: '100%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 34, mass: 0.8 }}
           >
-            <MessageCircle className="h-5 w-5" /> {pageSettings.cta_whatsapp_text}
-          </Button>
-        </motion.div>
-      )}
+            <Button
+              variant="accent"
+              size="lg"
+              aria-label={`Chamar ${name} no WhatsApp`}
+              className="w-full gap-2 shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              onClick={() => {
+                if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname);
+                requestWhatsApp({
+                  url: whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`),
+                  targetType: 'provider',
+                  targetId: provider?.id ?? null,
+                  targetLabel: name,
+                  whatsappNumber: effectiveWhatsApp,
+                });
+              }}
+            >
+              <MessageCircle className="h-5 w-5" aria-hidden="true" /> {pageSettings.cta_whatsapp_text}
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Floating WhatsApp — desktop only */}
       {effectiveWhatsApp && (
