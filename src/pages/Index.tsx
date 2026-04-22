@@ -399,6 +399,15 @@ const Index = () => {
       {sectionOrder.map((slug) => {
         const section = renderSection(slug);
         if (!section) return null;
+        if (slug === 'featured') {
+          return (
+            <LazyErrorBoundary key={slug}>
+              <Suspense fallback={<FeaturedProvidersFallback />}>
+                {section}
+              </Suspense>
+            </LazyErrorBoundary>
+          );
+        }
         return (
           <LazyErrorBoundary key={slug}>
             <LazyViewportSection>
