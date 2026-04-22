@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useSettingValue } from '@/hooks/useSiteSettings';
-import { DEFAULT_LOGO_URL, siteImageOrFallback } from '@/lib/siteAssets';
+import { DEFAULT_LOGO_URL } from '@/lib/siteAssets';
 
 interface LogoProps {
   variant?: 'default' | 'white' | 'dark';
@@ -10,8 +9,7 @@ interface LogoProps {
 }
 
 const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-20 md:h-28' }: LogoProps) => {
-  const logoUrl = useSettingValue('logo_url');
-  const logo = siteImageOrFallback(logoUrl, DEFAULT_LOGO_URL);
+  const logo = DEFAULT_LOGO_URL;
 
   const filterClass = variant === 'white'
     ? 'brightness-0 invert'
