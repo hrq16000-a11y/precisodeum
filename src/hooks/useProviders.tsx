@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
@@ -479,6 +479,7 @@ function matchesGeoContextCompat(
 export { normalizeCityName, matchesGeoContextCompat as matchesGeoContext };
 
 const MIN_LOCAL_RESULTS = 3;
+const SEARCH_RESULT_LIMIT = 96;
 
 export function filterAndRankProviders(
   providers: DbProvider[],
