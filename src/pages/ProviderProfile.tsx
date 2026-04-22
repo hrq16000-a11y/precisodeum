@@ -763,6 +763,9 @@ const ProviderProfile = () => {
   const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
   const categoryIcon = provider ? ((provider.categories as any)?.icon || '') : '';
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
+  const providerSocialImage = provider
+    ? pageSettings.cover_image_url || portfolioRawUrls.find((url) => !isVideoUrl(url)) || (hasOwnAvatar ? ((provider.profiles as any)?.avatar_url || provider.photo_url) : '')
+    : '';
 
   // DESTAQUE: based on profile completeness (no longer requires legacy 'premium' plan)
   const isDestaque = !!provider && (
@@ -780,7 +783,7 @@ const ProviderProfile = () => {
       ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Peca seu orcamento gratis!`
       : 'Encontre profissionais na plataforma.',
     canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
-    ogImage: provider && hasOwnAvatar ? ((provider.profiles as any)?.avatar_url || provider.photo_url || undefined) : undefined,
+    ogImage: providerSocialImage || undefined,
     ogType: 'profile',
   });
 
