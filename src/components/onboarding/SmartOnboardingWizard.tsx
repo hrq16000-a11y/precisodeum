@@ -683,8 +683,12 @@ const BasicOnboardingWizard = () => {
         <AutoSaveControls
           status={autoSaveStatus}
           delay={autoSaveDelay}
+          hasPendingChanges={hasPendingChanges}
+          lastAttemptAt={lastAutoSaveAttemptAt}
+          errorMessage={lastAutoSaveError}
           onDelayChange={setAutoSaveDelay}
           onRetry={retryAutoSave}
+          onReloadSaved={reloadSavedFields}
         />
 
         {/* ─── PASSO 1 ─── */}
@@ -712,7 +716,8 @@ const BasicOnboardingWizard = () => {
             editingCity={editingCity}
             onEditCity={() => setEditingCity(true)}
             onCityChange={(c, s) => { setCity(c); setState(s); }}
-            onAvatarChange={setAvatarUrl}
+            onAvatarChange={(url) => { setAvatarUrl(url); window.setTimeout(handleStepFieldBlur, 0); }}
+            onFieldBlur={handleStepFieldBlur}
             userId={user?.id}
             onBack={() => hasExistingCadastro ? navigate('/dashboard', { replace: true }) : advanceTo(1)}
             onNext={handleStep2Next}
@@ -735,7 +740,8 @@ const BasicOnboardingWizard = () => {
             setBio={setBio}
             categoriesForPicker={categoriesForPicker}
             selectedCategoryIds={selectedCategoryIds}
-            onToggleCategory={(id) => setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id])}
+            onToggleCategory={(id) => { setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id]); window.setTimeout(handleStepFieldBlur, 0); }}
+            onFieldBlur={handleStepFieldBlur}
             saving={saving}
             canAdvance={canAdvanceFromStep3}
             onBack={() => advanceTo(2)}
