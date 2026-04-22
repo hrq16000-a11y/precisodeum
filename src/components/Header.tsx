@@ -16,15 +16,7 @@ const NotificationBell = (props: any) => (
   </Suspense>
 );
 import { useMenuItems } from '@/hooks/useMenuItems';
-
-const DEFAULT_LOGO_URL = '/lovable-uploads/logo-pdup-v3.png';
-
-const normalizeLogoUrl = (value?: string | null) => {
-  if (!value) return DEFAULT_LOGO_URL;
-
-  const cleaned = value.trim().replace(/^['"]+|['"]+$/g, '');
-  return cleaned || DEFAULT_LOGO_URL;
-};
+import Logo from '@/components/Logo';
 
 /* ── Geo badge (full & compact) ───────────────────────────── */
 type GeoBadgeProps = { city: string | null; temp: number | null; compact?: boolean; className?: string };
@@ -104,8 +96,6 @@ const Header = () => {
   const location = useLocation();
   const { user, profile, signOut, loading } = useAuth();
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
-  const logoUrl = useSettingValue('logo_url');
-  const logo = normalizeLogoUrl(logoUrl);
   const { city: geoCity, temp: geoTemp } = useGeoCity();
   const headerRef = useRef<HTMLElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -235,24 +225,10 @@ const Header = () => {
       >
         {/* Left: Logo + Geo */}
         <div className="flex items-center gap-2 -ml-1 sm:-ml-2">
-          <Link to="/" className="flex items-center logo-link">
-            <img
-              src={logo}
-              alt="Preciso de um Profissional"
-              className={`drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] object-contain transition-all duration-300 ease-in-out ${
-                isCompact ? 'h-11 md:h-12' : 'h-14 md:h-16'
-              }`}
-              width="166"
-              height="48"
-              fetchPriority="high"
-              onError={(e) => {
-                const target = e.currentTarget;
-                if (!target.src.includes(DEFAULT_LOGO_URL)) {
-                  target.src = DEFAULT_LOGO_URL;
-                }
-              }}
-            />
-          </Link>
+          <Logo
+            height={isCompact ? 'h-11 md:h-12' : 'h-14 md:h-16'}
+            className="w-auto object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition-all duration-300 ease-in-out"
+          />
 
           {/* Full geo badge — hidden when compact on desktop */}
           <GeoBadge
