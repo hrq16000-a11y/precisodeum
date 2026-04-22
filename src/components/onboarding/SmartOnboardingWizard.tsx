@@ -76,6 +76,7 @@ const BasicOnboardingWizard = () => {
   const storedStep = clampWizardStep(profile?.onboarding_step);
   const initialStep = hasExistingCadastro ? storedStep : 1;
   const [step, setStep] = useState<WizardStep>(initialStep);
+  const [furthestStep, setFurthestStep] = useState<WizardStep>(initialStep);
 
   // Tipo de perfil
   const [profileType, setProfileType] = useState<ProfileType | null>(profile?.profile_type ?? null);
@@ -115,6 +116,7 @@ const BasicOnboardingWizard = () => {
     syncedRef.current = true;
     const nextStep = profile.profile_type ? clampWizardStep(profile.onboarding_step) : 1;
     setStep(nextStep);
+    setFurthestStep(nextStep);
     if (profile.profile_type) setProfileType(profile.profile_type as ProfileType);
     if (profile.full_name) setFullName(profile.full_name);
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
@@ -162,6 +164,7 @@ const BasicOnboardingWizard = () => {
   };
 
   const advanceTo = async (nextStep: WizardStep, extraPatch: Record<string, any> = {}) => {
+    setFurthestStep(prev => Math.max(prev, nextStep) as WizardStep);
     setStep(nextStep);
     await persistStep(nextStep, extraPatch);
   };
@@ -170,7 +173,7 @@ const BasicOnboardingWizard = () => {
   useEffect(() => {
     if (!user?.id || !profile || step === 1 || saving) return;
 
-    const patch: Record<string, any> = { onboarding_step: step, onboarding_completed: false };
+    const patch: Record<string, any> = { onboarding_step: Math.max(furthestStep, step), onboarding_completed: false };
     if (step >= 2) {
       patch.city = city || null;
       patch.state = state || null;
@@ -199,7 +202,7 @@ const BasicOnboardingWizard = () => {
     }, 900);
 
     return () => window.clearTimeout(timer);
-  }, [user?.id, profile, step, city, state, avatarUrl, fullName, whatsapp, profileType, saving]);
+  }, [user?.id, profile, step, furthestStep, city, state, avatarUrl, fullName, whatsapp, profileType, saving]);
 
   // Quando provider termina o wizard de serviços, marcamos +1 e avançamos
   const handleServiceCreated = async (_id: string) => {
