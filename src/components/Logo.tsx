@@ -20,7 +20,7 @@ const Logo = ({ variant = 'default', className = '', linkTo = '/' }: LogoProps) 
     <img
       src={logo}
       alt="Preciso de um Profissional"
-      className={`block h-12 min-h-12 max-h-12 aspect-[111/40] w-auto max-w-full shrink-0 object-contain ${filterClass} ${className}`}
+      className={`block h-14 min-h-14 max-h-14 aspect-[111/40] w-auto max-w-full shrink-0 object-contain sm:h-12 sm:min-h-12 sm:max-h-12 ${filterClass} ${className}`}
       width="111"
       height="40"
       decoding="async"
