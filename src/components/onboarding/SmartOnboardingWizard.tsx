@@ -107,7 +107,9 @@ const BasicOnboardingWizard = () => {
   const [servicesCreated, setServicesCreated] = useState(0);
 
   const [saving, setSaving] = useState(false);
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [autoSaveDelay, setAutoSaveDelay] = useState<1000 | 2000 | 3000>(1000);
+  const [lastAutoSavePatch, setLastAutoSavePatch] = useState<Record<string, any> | null>(null);
 
   // ─── Sync inicial: se profile carrega DEPOIS do mount, atualiza step ───
   const syncedRef = useRef(false);
@@ -119,6 +121,8 @@ const BasicOnboardingWizard = () => {
     setFurthestStep(nextStep);
     if (profile.profile_type) setProfileType(profile.profile_type as ProfileType);
     if (profile.full_name) setFullName(profile.full_name);
+    if (profile.city) setCity(profile.city);
+    if (profile.state) setState(profile.state);
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
     if (profile.whatsapp || profile.phone) setWhatsapp(profile.whatsapp || profile.phone || '');
   }, [profile]);
