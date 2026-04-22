@@ -588,6 +588,8 @@ const ProviderProfile = () => {
     let emergencyTimer: number | null = null;
     let safeAreaBottom = 0;
     let lastShouldShow: boolean | null = null;
+    const minVisibleCtaPx = 8;
+    const fallbackVisibilityHysteresisPx = 8;
     const visualViewport = window.visualViewport;
     const supportsIntersectionObserver = 'IntersectionObserver' in window;
     const supportsResizeObserver = 'ResizeObserver' in window;
@@ -604,8 +606,10 @@ const ProviderProfile = () => {
      *   virtual keyboards can change the visible area without changing window.innerHeight.
      *
      * Fallback behavior:
-     * - If IntersectionObserver is missing, scroll uses scheduleVisibilityMeasure(), which is
-     *   throttled by requestAnimationFrame so only one visibility measurement runs per frame.
+      * - If IntersectionObserver is missing, scroll uses scheduleVisibilityMeasure(), which is
+      *   throttled by requestAnimationFrame so only one visibility measurement runs per frame.
+      *   The fallback also applies an 8px hysteresis while the sticky CTA is visible, preventing
+      *   flicker when scroll settles around the visibility threshold.
      * - If visualViewport is missing, measurements fall back to documentElement/client size and
      *   then window.innerHeight/innerWidth, preserving the same visible-area rule.
      * - If ResizeObserver is missing, window resize plus the scroll fallback keep the CTA reachable;
@@ -633,7 +637,10 @@ const ProviderProfile = () => {
       const viewportWidth = visualViewport?.width ?? document.documentElement.clientWidth ?? window.innerWidth;
       const visibleHeight = Math.min(rect.bottom, viewportHeight - safeAreaBottom) - Math.max(rect.top, 0);
       const visibleWidth = Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0);
-      const shouldShow = !(visibleHeight > 8 && visibleWidth > 8);
+      const visibilityThreshold = !supportsIntersectionObserver && lastShouldShow === true
+        ? minVisibleCtaPx + fallbackVisibilityHysteresisPx
+        : minVisibleCtaPx;
+      const shouldShow = !(visibleHeight > visibilityThreshold && visibleWidth > visibilityThreshold);
       if (shouldShow !== lastShouldShow) {
         lastShouldShow = shouldShow;
         setShowStickyContact(shouldShow);
