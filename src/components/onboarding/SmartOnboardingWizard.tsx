@@ -793,6 +793,39 @@ const AutoSaveControls = ({
   </div>
 );
 
+const ReviewSummaryCard = ({
+  items,
+  saving,
+  onBack,
+  onFinish,
+}: {
+  items: Array<{ label: string; value: string }>;
+  saving: boolean;
+  onBack: () => void;
+  onFinish: () => void;
+}) => (
+  <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4">
+    <h2 className="font-display text-lg font-bold text-foreground">Resumo final</h2>
+    <p className="mt-1 text-xs text-muted-foreground">Confira seus dados antes de concluir.</p>
+    <div className="mt-4 space-y-2">
+      {items.map((item) => (
+        <div key={item.label} className="flex items-start justify-between gap-3 rounded-lg border border-border bg-background/70 px-3 py-2">
+          <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+          <span className="text-right text-xs font-bold text-foreground">{item.value}</span>
+        </div>
+      ))}
+    </div>
+    <div className="mt-4 grid gap-2">
+      <Button type="button" variant="accent" onClick={onFinish} disabled={saving}>
+        {saving ? 'Concluindo…' : 'Concluir wizard'}
+      </Button>
+      <Button type="button" variant="outline" onClick={onBack} disabled={saving}>
+        Voltar para revisar
+      </Button>
+    </div>
+  </div>
+);
+
 const Step1Identity = ({
   existingProfileType,
   onContinueProfileUpdate,
