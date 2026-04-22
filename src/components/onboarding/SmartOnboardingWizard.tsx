@@ -592,7 +592,7 @@ const BasicOnboardingWizard = () => {
         />
 
         {/* ─── PASSO 1 ─── */}
-        {step === 1 && !showSubtypeStep && (
+        {!showFinalSummary && step === 1 && !showSubtypeStep && (
           <Step1Identity
             existingProfileType={hasExistingCadastro ? profileType : null}
             onContinueProfileUpdate={handleContinueProfileUpdate}
@@ -600,7 +600,7 @@ const BasicOnboardingWizard = () => {
           />
         )}
 
-        {step === 1 && showSubtypeStep && profileType === 'provider' && (
+        {!showFinalSummary && step === 1 && showSubtypeStep && profileType === 'provider' && (
           <SubtypeChoice
             onBack={() => { setShowSubtypeStep(false); setProfileType(null); }}
             onSelect={handleSelectSubtype}
@@ -608,7 +608,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 2 ─── */}
-        {step === 2 && (
+        {!showFinalSummary && step === 2 && (
           <Step2Location
             city={city}
             state={state}
