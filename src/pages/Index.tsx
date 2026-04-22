@@ -5,6 +5,7 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import type { FeaturedProviderSort } from '@/hooks/useProviders';
 
 // Critical path — eagerly loaded for instant render
 import Header from '@/components/Header';
@@ -132,8 +133,10 @@ const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,home_featu
 // right after HeroBanner, outside the lazy section loop.
 
 const Index = () => {
-  const { city: geoCity } = useGeoCity();
+  const { city: geoCity, latitude: geoLat, longitude: geoLng } = useGeoCity();
   const [postLcpReady, setPostLcpReady] = useState(false);
+  const [featuredSort, setFeaturedSort] = useState<FeaturedProviderSort>('proximity');
+  const [featuredCategory, setFeaturedCategory] = useState('');
 
   useSeoHead({
     title: geoCity
@@ -186,7 +189,48 @@ const Index = () => {
   }, [sectionsOrderRaw, hiddenSectionsRaw]);
 
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
-  const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders(featuredEnabled && postLcpReady);
+  const {
+    data: featuredProviders = [],
+    isLoading: provsLoading,
+    isFetching: featuredFetching,
+    isError: featuredError,
+    dataUpdatedAt: featuredUpdatedAt,
+  } = useFeaturedProviders({
+    enabled: featuredEnabled && postLcpReady,
+    latitude: geoLat,
+    longitude: geoLng,
+    categorySlug: featuredCategory || undefined,
+    sortBy: featuredSort,
+    limit: 6,
+  });
+
+  useJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: geoCity ? `Diretório local de profissionais em ${geoCity}` : 'Diretório local de profissionais no Brasil',
+    url: SITE_BASE_URL,
+    itemListElement: featuredProviders.slice(0, 6).map((provider, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'LocalBusiness',
+        name: provider.name,
+        url: `${SITE_BASE_URL}/profissional/${provider.slug}`,
+        image: provider.photo || undefined,
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: provider.city || geoCity || undefined,
+          addressRegion: provider.state || undefined,
+          addressCountry: 'BR',
+        },
+        aggregateRating: provider.rating > 0 ? {
+          '@type': 'AggregateRating',
+          ratingValue: provider.rating,
+          reviewCount: provider.reviewCount || 1,
+        } : undefined,
+      },
+    })),
+  });
 
   useEffect(() => {
     const id = window.setTimeout(() => setPostLcpReady(true), MOBILE_FIRST_DELAY_MS);
