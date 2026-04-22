@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { isCelebrationMuted, setCelebrationMuted } from '@/lib/celebrate';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,9 +29,8 @@ const CelebrationMuteToggle = () => {
     return () => window.removeEventListener('pdu:celebrate-muted-change', handler);
   }, [profile?.celebration_muted]);
 
-  const toggle = async () => {
+  const toggle = async (next: boolean) => {
     if (!user?.id || saving) return;
-    const next = !muted;
     setSaving(true);
     setCelebrationMuted(next);
     setMuted(next);
@@ -50,31 +50,29 @@ const CelebrationMuteToggle = () => {
   return (
     <div className="flex min-w-0 items-center justify-end gap-3 text-right">
       <div className="min-w-0">
-        <p className="text-xs font-semibold text-foreground">
-          {muted ? 'Desativado' : 'Ativado'}
+        <p className="inline-flex items-center justify-end gap-1.5 text-xs font-semibold text-foreground">
+          {muted ? <VolumeX className="h-3.5 w-3.5 text-muted-foreground" /> : <Volume2 className="h-3.5 w-3.5 text-primary" />}
+          {muted ? 'Mute ativado' : 'Mute desativado'}
         </p>
         <p className="max-w-[190px] text-[10px] leading-snug text-muted-foreground">
           {muted
-            ? 'Ao alternar, o som volta nas próximas conquistas.'
-            : 'Ao alternar, o som será silenciado e salvo no perfil.'}
+            ? 'As próximas conquistas ficam sem som.'
+            : 'As próximas conquistas tocam som normalmente.'}
         </p>
       </div>
       <TooltipProvider delayDuration={150}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={toggle}
+            <Switch
+              checked={muted}
+              onCheckedChange={toggle}
               disabled={saving}
-              aria-label={muted ? 'Ativar som de conquistas' : 'Silenciar som de conquistas'}
-              aria-pressed={muted}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </button>
+              aria-label={muted ? 'Desativar mute de celebrações' : 'Ativar mute de celebrações'}
+              className="shrink-0"
+            />
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            {muted ? 'Clique para ativar o som de conquistas' : 'Clique para silenciar o som de conquistas'}
+            {muted ? 'Desligue para voltar a ouvir celebrações' : 'Ligue para silenciar celebrações'}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
