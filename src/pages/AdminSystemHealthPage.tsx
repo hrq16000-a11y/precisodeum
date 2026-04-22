@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/AdminLayout';
 import {
   Activity, Database, ShieldCheck, Camera, Users, Search, AlertTriangle,
-  CheckCircle2, Loader2, Clock, RefreshCw, FileWarning, Gauge,
+  CheckCircle2, Loader2, Clock, RefreshCw, FileWarning, Gauge, Timer,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +35,18 @@ interface HealthData {
     }>;
   };
   generated_at: string;
+}
+
+interface PerformanceReportRow {
+  id: string;
+  route: string;
+  vitals: Record<string, number>;
+  backend: { requestCount?: number; maxDurationMs?: number; slowRequests?: Array<{ name: string; duration: number }> };
+  resources: { totalTransferKb?: number; jsTransferKb?: number; imageTransferKb?: number };
+  bottlenecks: string[];
+  viewport: string | null;
+  connection_type: string | null;
+  created_at: string;
 }
 
 const STATUS_STYLES: Record<Status, { dot: string; ring: string; text: string; bg: string; label: string }> = {
@@ -106,6 +118,20 @@ export default function AdminSystemHealthPage() {
     refetchInterval: 60_000,
   });
 
+  const { data: performanceReports = [] } = useQuery({
+    queryKey: ['admin-performance-reports'],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from('performance_reports' as any) as any)
+        .select('id, route, vitals, backend, resources, bottlenecks, viewport, connection_type, created_at')
+        .order('created_at', { ascending: false })
+        .limit(40);
+      if (error) throw error;
+      return (data || []) as PerformanceReportRow[];
+    },
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+
   // Status calculators
   const signupStatus: Status = !data ? 'ok'
     : data.signup.missing_ref > 0 ? 'critical'
@@ -130,6 +156,17 @@ export default function AdminSystemHealthPage() {
 
   const overall: Status = [signupStatus, storageStatus, searchStatus, rlsStatus].includes('critical') ? 'critical'
     : [signupStatus, storageStatus, searchStatus, rlsStatus].includes('warn') ? 'warn'
+    : 'ok';
+
+  const avgMetric = (key: string) => {
+    const values = performanceReports.map((r) => Number(r.vitals?.[key] || 0)).filter((v) => v > 0);
+    return values.length ? Math.round(values.reduce((sum, v) => sum + v, 0) / values.length) : 0;
+  };
+  const avgBackend = Math.round(
+    performanceReports.reduce((sum, r) => sum + Number(r.backend?.maxDurationMs || 0), 0) / Math.max(1, performanceReports.length)
+  );
+  const perfStatus: Status = avgMetric('lcp') > 3500 || avgBackend > 1200 ? 'critical'
+    : avgMetric('lcp') > 2500 || avgMetric('ttfb') > 800 || avgBackend > 900 ? 'warn'
     : 'ok';
 
   return (
@@ -262,6 +299,37 @@ export default function AdminSystemHealthPage() {
             </div>
 
             {/* Log de erros silenciosos */}
+            <Quadrant icon={Timer} title="Relatório de Performance Real" subtitle="Core Web Vitals · TTFB · LCP · backend" status={perfStatus}>
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+                <Metric label="Amostras" value={performanceReports.length} />
+                <Metric label="TTFB médio" value={`${avgMetric('ttfb')}ms`} status={avgMetric('ttfb') > 800 ? 'warn' : 'ok'} />
+                <Metric label="LCP médio" value={`${avgMetric('lcp')}ms`} status={avgMetric('lcp') > 2500 ? 'warn' : 'ok'} />
+                <Metric label="INP médio" value={`${avgMetric('inp')}ms`} status={avgMetric('inp') > 200 ? 'warn' : 'ok'} />
+                <Metric label="Backend máx." value={`${avgBackend}ms`} status={avgBackend > 900 ? 'warn' : 'ok'} />
+              </div>
+              <div className="mt-3 max-h-72 space-y-1.5 overflow-y-auto">
+                {performanceReports.slice(0, 8).map((report) => (
+                  <div key={report.id} className="rounded-lg border border-border/40 bg-muted/30 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-semibold text-foreground">{report.route}</p>
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatDistanceToNow(new Date(report.created_at), { addSuffix: true, locale: ptBR })}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      TTFB {Math.round(report.vitals?.ttfb || 0)}ms · LCP {Math.round(report.vitals?.lcp || 0)}ms · JS {Math.round(report.resources?.jsTransferKb || 0)}KB · backend {Math.round(report.backend?.maxDurationMs || 0)}ms
+                    </p>
+                    {report.bottlenecks?.[0] && (
+                      <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">{report.bottlenecks[0]}</p>
+                    )}
+                  </div>
+                ))}
+                {performanceReports.length === 0 && (
+                  <p className="py-6 text-center text-sm text-muted-foreground">Aguardando as primeiras medições reais dos visitantes.</p>
+                )}
+              </div>
+            </Quadrant>
+
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">

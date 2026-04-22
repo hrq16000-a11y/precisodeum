@@ -1956,6 +1956,51 @@ export type Database = {
           },
         ]
       }
+      performance_reports: {
+        Row: {
+          backend: Json
+          bottlenecks: Json
+          connection_type: string | null
+          created_at: string
+          id: string
+          navigation_type: string
+          resources: Json
+          route: string
+          user_agent: string | null
+          user_id: string | null
+          viewport: string | null
+          vitals: Json
+        }
+        Insert: {
+          backend?: Json
+          bottlenecks?: Json
+          connection_type?: string | null
+          created_at?: string
+          id?: string
+          navigation_type?: string
+          resources?: Json
+          route?: string
+          user_agent?: string | null
+          user_id?: string | null
+          viewport?: string | null
+          vitals?: Json
+        }
+        Update: {
+          backend?: Json
+          bottlenecks?: Json
+          connection_type?: string | null
+          created_at?: string
+          id?: string
+          navigation_type?: string
+          resources?: Json
+          route?: string
+          user_agent?: string | null
+          user_id?: string | null
+          viewport?: string | null
+          vitals?: Json
+        }
+        Relationships: []
+      }
       plan_resources: {
         Row: {
           active: boolean

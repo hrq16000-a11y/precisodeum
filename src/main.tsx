@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { installPerformanceTelemetry } from "./lib/performanceTelemetry";
 
 const rootElement = document.getElementById("root");
 const shellElement = document.getElementById("app-shell");
@@ -163,6 +164,8 @@ const startVersionWatcher = () => {
     if (document.visibilityState === "visible") check();
   });
 };
+
+installPerformanceTelemetry();
 
 const installBootstrapGuards = () => {
   window.addEventListener("error", (event) => {

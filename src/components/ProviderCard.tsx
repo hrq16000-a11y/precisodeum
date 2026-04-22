@@ -12,6 +12,7 @@ import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { handleImageError, getOptimizedUrl } from '@/lib/imageResolver';
+import { responsiveImageSrcSet } from '@/lib/imageOptimizer';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { motion } from 'framer-motion';
@@ -176,6 +177,8 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
            <Avatar className="h-12 w-12 shrink-0 ring-2 ring-transparent transition-transform duration-300 group-hover:scale-105 group-hover:ring-accent/20 sm:h-14 sm:w-14">
             <AvatarImage
               src={getOptimizedUrl(displayPhoto, 112) || displayPhoto || undefined}
+              srcSet={responsiveImageSrcSet(displayPhoto, [112, 168, 224], 72) || undefined}
+              sizes="(max-width: 640px) 48px, 56px"
               alt={displayName}
               loading={index < 3 ? 'eager' : 'lazy'}
               fetchPriority={index < 3 ? 'high' : 'auto'}

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { avatarThumb, serviceImageThumb } from '@/lib/imageOptimizer';
@@ -370,7 +370,7 @@ export function useCategoriesWithCount() {
     queryFn: async () => {
       const [catsRes, provsRes] = await Promise.all([
         supabase.from('categories').select('id, name, slug, icon, parent_id').is('deleted_at', null).order('name'),
-        supabase.from('providers').select('category_id').eq('status', 'approved'),
+        supabase.from('providers').select('category_id').eq('status', 'approved').limit(1000),
       ]);
 
       if (catsRes.error) throw catsRes.error;
@@ -479,6 +479,7 @@ function matchesGeoContextCompat(
 export { normalizeCityName, matchesGeoContextCompat as matchesGeoContext };
 
 const MIN_LOCAL_RESULTS = 3;
+const SEARCH_RESULT_LIMIT = 96;
 
 export function filterAndRankProviders(
   providers: DbProvider[],
@@ -754,6 +755,7 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
         .eq('status', 'approved')
         .order('rating_avg', { ascending: false })
         .order('review_count', { ascending: false })
+        .limit(SEARCH_RESULT_LIMIT)
       );
     },
     staleTime: 1000 * 60 * 15,
@@ -783,6 +785,7 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
         .eq('status', 'approved')
         .order('rating_avg', { ascending: false })
         .order('review_count', { ascending: false })
+        .limit(SEARCH_RESULT_LIMIT)
       );
     },
     staleTime: 1000 * 60 * 15,
@@ -796,7 +799,7 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
   );
 
   // Fire-and-forget demand log for heatmap
-  useMemo(() => {
+  useEffect(() => {
     if (!query && !categorySlug) return;
     if (userLat == null || userLon == null) return;
     supabase.from('search_demand_logs').insert({
@@ -806,8 +809,7 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
       category_slug: categorySlug || '',
       city: city || '',
     }).then(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, categorySlug, userLat != null]);
+  }, [query, categorySlug, city, userLat, userLon]);
 
   return {
     ...baseQuery,
@@ -844,7 +846,7 @@ export function useGeoCategories(userLat?: number | null, userLon?: number | nul
       // Fetch categories + providers with coords in parallel
       const [catsRes, provsRes] = await Promise.all([
         supabase.from('categories').select('id, name, slug, icon'),
-        supabase.from('providers').select('category_id, latitude, longitude').eq('status', 'approved'),
+        supabase.from('providers').select('category_id, latitude, longitude').eq('status', 'approved').limit(1000),
       ]);
       if (catsRes.error) throw catsRes.error;
 

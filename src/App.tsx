@@ -34,10 +34,8 @@ const isTransientNetworkError = (error: unknown) => {
   );
 };
 
-// Index — eagerly loaded to avoid CinematicLoader blocking LCP
-import Index from "./pages/Index";
-
-// Lazy loaded pages
+// Route-level chunks — keep App shell light and split every page by route.
+const Index = lazy(() => import("./pages/Index"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const ProviderProfile = lazy(() => import("./pages/ProviderProfile"));
