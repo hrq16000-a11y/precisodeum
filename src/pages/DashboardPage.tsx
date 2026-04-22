@@ -47,6 +47,7 @@ import EngagementLoop from '@/components/dashboard/EngagementLoop';
 import AchievementHistory from '@/components/dashboard/AchievementHistory';
 import CelebrationMuteToggle from '@/components/dashboard/CelebrationMuteToggle';
 import LeadAnalytics from '@/components/dashboard/LeadAnalytics';
+import LeadInsights from '@/components/dashboard/LeadInsights';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
@@ -551,7 +552,7 @@ const DashboardPage = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   {completenessPercent < 100
                     ? 'Complete seu perfil para aparecer no topo dos resultados.'
-                    : '🎉 Perfil completo! Você está no máximo destaque.'}
+                    : 'Perfil completo! Você está no máximo destaque.'}
                 </p>
               </div>
             </div>
@@ -572,6 +573,10 @@ const DashboardPage = () => {
           <GlassCard variant="default" hoverEffect={false} delay={0.5}>
             <ConversionInsights views={viewsTotal} leads={leadsCount} services={servicesCount ?? 0} />
           </GlassCard>
+
+          <div className="lg:col-span-2">
+            <LeadInsights providerId={provider.id} />
+          </div>
 
           <GlassCard variant="bordered" hoverEffect={false} delay={0.6}>
             <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">

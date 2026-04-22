@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench, Info } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
@@ -45,7 +45,16 @@ import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
 
 /** Fire-and-forget contact click tracker */
-const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone', pagePath: string) => {
+const getLeadSource = () => {
+  if (typeof window === 'undefined') return 'direto';
+  const params = new URLSearchParams(window.location.search);
+  const source = (params.get('origem') || params.get('utm_source') || '').toLowerCase();
+  if (source.includes('busca') || document.referrer.includes('/buscar')) return 'busca';
+  if (source.includes('categoria') || document.referrer.includes('/categoria/')) return 'categoria';
+  return 'direto';
+};
+
+const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone', pagePath: string, serviceName?: string) => {
   try {
     supabase.from('contact_clicks' as any).insert({
       provider_id: providerId,
@@ -62,6 +71,8 @@ const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone'
       provider_id: providerId,
       event_action: contactType === 'whatsapp' ? 'whatsapp_click' : 'phone_click',
       page_path: pagePath,
+      service_name: serviceName || null,
+      source_marker: getLeadSource(),
     }).then(() => {});
   } catch { /* silent */ }
 };
@@ -76,6 +87,7 @@ const trackProfileView = (providerId: string) => {
       provider_id: providerId,
       event_action: 'profile_view',
       page_path: window.location.pathname,
+      source_marker: getLeadSource(),
     }).then(() => {});
   } catch { /* silent */ }
 };
@@ -267,6 +279,8 @@ const ProviderProfile = () => {
   const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '' });
   const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
   const [relatedProviders, setRelatedProviders] = useState<any[]>([]);
+  const [showStickyContact, setShowStickyContact] = useState(false);
+  const mainWhatsappRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -550,6 +564,25 @@ const ProviderProfile = () => {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [provider?.id]);
+
+  useEffect(() => {
+    const currentWhatsApp = toCanonical(provider?.whatsapp || provider?.phone || '');
+    if (!isMobile || !currentWhatsApp) {
+      setShowStickyContact(false);
+      return;
+    }
+
+    const target = mainWhatsappRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyContact(!entry.isIntersecting),
+      { threshold: 0.15 },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [isMobile, provider?.whatsapp, provider?.phone]);
 
   // DESTAQUE criteria
   const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
@@ -964,6 +997,7 @@ const ProviderProfile = () => {
       accentBg={accentBg}
       themeClasses={tc}
       onImageClick={openServiceLightbox}
+      providerId={provider.id}
     />
   );
 
@@ -1172,26 +1206,18 @@ const ProviderProfile = () => {
                     <TooltipProvider delayDuration={150}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <button type="button" className="inline-flex" aria-label={`Profissional Nível ${provider.levelInfo.name}`}>
+                          <button type="button" className="inline-flex items-center gap-1.5" aria-label={`Profissional Nível ${provider.levelInfo.name}`}>
                             <GamificationLevelBadge
                               levelName={provider.levelInfo.name}
                               levelColor={provider.levelInfo.color}
                               size="lg"
                               showShine={true}
                             />
+                            <Info className="h-4 w-4 text-muted-foreground" />
                           </button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="max-w-xs text-center">
-                          <strong>Profissional Nível {provider.levelInfo.name}:</strong>{' '}
-                          {(() => {
-                            const lvl = (provider.levelInfo.name || '').toLowerCase();
-                            if (lvl.includes('mestre')) return 'Topo absoluto da plataforma — entrega impecável e reputação consolidada.';
-                            if (lvl.includes('diamante')) return '100% de compromisso com a qualidade e dados verificados.';
-                            if (lvl.includes('platina')) return 'Alta consistência e perfil completo verificado.';
-                            if (lvl.includes('ouro')) return 'Profissional ativo e com histórico sólido na plataforma.';
-                            if (lvl.includes('engajado')) return 'Mantém perfil atualizado e responde rápido.';
-                            return 'Profissional ativo na plataforma.';
-                          })()}
+                          Este profissional atingiu o nível máximo de completude e engajamento na plataforma.
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -1365,7 +1391,7 @@ const ProviderProfile = () => {
                 </Button>
               </motion.div>
               {effectiveWhatsApp && (
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <motion.div ref={mainWhatsappRef} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                   <Button
                     size="lg"
                     className="gap-2 w-full sm:w-auto bg-[#25D366] text-white hover:bg-[#1ebe5a] shadow-lg hover:shadow-xl transition-all"
@@ -1631,13 +1657,14 @@ const ProviderProfile = () => {
       </Dialog>
 
       {/* Sticky CTA bar for mobile */}
-      {effectiveWhatsApp && (
+      {effectiveWhatsApp && showStickyContact && (
         <motion.div
           className="fixed bottom-0 left-0 right-0 border-t border-border bg-gradient-to-t from-card via-card/98 to-card/90 backdrop-blur-lg p-3 flex gap-2 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
           style={{ zIndex: 999, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
           initial={{ y: 100 }}
-          animate={{ y: 0 }}
+          animate={showStickyContact ? { y: 0, opacity: 1 } : { y: 100, opacity: 0 }}
           transition={{ delay: 1.5, type: 'spring', stiffness: 300, damping: 25 }}
+          aria-hidden={!showStickyContact}
         >
           <Button
             variant="accent"
@@ -1707,7 +1734,7 @@ const ProviderProfile = () => {
 };
 
 /* ── Service Detail Dialog ── */
-const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText, accentBg, onImageClick }: { service: any; open: boolean; onClose: () => void; whatsapp: string; ctaWhatsappText?: string; accentBg?: string; onImageClick?: (images: string[], index: number) => void }) => (
+const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText, accentBg, onImageClick, providerId }: { service: any; open: boolean; onClose: () => void; whatsapp: string; ctaWhatsappText?: string; accentBg?: string; onImageClick?: (images: string[], index: number) => void; providerId?: string }) => (
   <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
       <DialogHeader>
@@ -1776,7 +1803,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
       </div>
       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
         <Button variant="accent" className="w-full gap-2" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-          <a href={whatsappLink(whatsapp || '', `Olá! Vi seu serviço no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
+          <a href={whatsappLink(whatsapp || '', `Olá! Vi o serviço "${service.service_name}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer" onClick={() => providerId && trackContactClick(providerId, 'whatsapp', window.location.pathname, service.service_name)}>
             <MessageCircle className="h-4 w-4" /> {ctaWhatsappText || 'Chamar no WhatsApp'}
           </a>
         </Button>
@@ -1786,7 +1813,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
 );
 
 /* ── Services List with popup ── */
-const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg, themeClasses, onImageClick }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string; themeClasses?: ThemeConfig; onImageClick?: (images: string[], index: number) => void }) => {
+const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg, themeClasses, onImageClick, providerId }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string; themeClasses?: ThemeConfig; onImageClick?: (images: string[], index: number) => void; providerId?: string }) => {
   const [selected, setSelected] = useState<any | null>(null);
   const tc = themeClasses || THEME_CLASSES.default;
 
@@ -1879,7 +1906,7 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
         </div>
       </motion.div>
       {selected && (
-        <ServiceDetailDialog service={selected} open={!!selected} onClose={() => setSelected(null)} whatsapp={whatsapp} ctaWhatsappText={ctaWhatsappText} accentBg={accentBg} onImageClick={onImageClick} />
+        <ServiceDetailDialog service={selected} open={!!selected} onClose={() => setSelected(null)} whatsapp={whatsapp} ctaWhatsappText={ctaWhatsappText} accentBg={accentBg} onImageClick={onImageClick} providerId={providerId} />
       )}
     </>
   );
