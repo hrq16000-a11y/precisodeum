@@ -19,7 +19,7 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import {
   Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2,
-  PartyPopper, Building2, Megaphone, Camera, Phone,
+  PartyPopper, Building2, Megaphone, Camera, Phone, AlertCircle, RefreshCw,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -113,10 +113,16 @@ const BasicOnboardingWizard = () => {
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [autoSaveDelay, setAutoSaveDelay] = useState<1000 | 2000 | 3000>(1000);
   const [lastAutoSavePatch, setLastAutoSavePatch] = useState<Record<string, any> | null>(null);
+  const [lastAutoSaveAttemptAt, setLastAutoSaveAttemptAt] = useState<string | null>(null);
+  const [lastAutoSaveError, setLastAutoSaveError] = useState<string | null>(null);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
   const [drafts, setDrafts] = useState<WizardDrafts>({});
   const [reviewReturnStep, setReviewReturnStep] = useState<WizardStep | null>(null);
   const [reviewAllMode, setReviewAllMode] = useState(false);
   const [showFinalSummary, setShowFinalSummary] = useState(false);
+  const lastSavedFingerprintRef = useRef<string | null>(null);
+  const latestAutoSaveFingerprintRef = useRef<string | null>(null);
+  const autoSaveVersionRef = useRef(0);
 
   // ─── Sync inicial: se profile carrega DEPOIS do mount, atualiza step ───
   const syncedRef = useRef(false);
@@ -179,31 +185,39 @@ const BasicOnboardingWizard = () => {
   const persistStep = async (nextStep: WizardStep, extraPatch: Record<string, any> = {}) => {
     if (!user?.id) return;
     try {
-      await supabase.from('profiles').update({
+      const { error } = await supabase.from('profiles').update({
         onboarding_step: nextStep,
         onboarding_completed: false,
         ...extraPatch,
       } as any).eq('id', user.id);
+      if (error) throw error;
     } catch (err) {
       if (import.meta.env.DEV) console.warn('[Wizard] persistStep falhou', err);
     }
   };
 
-  const advanceTo = async (nextStep: WizardStep, extraPatch: Record<string, any> = {}) => {
-    setFurthestStep(prev => Math.max(prev, nextStep) as WizardStep);
-    setStep(nextStep);
-    await persistStep(nextStep, extraPatch);
-  };
-
   const saveAutoSavePatch = async (patch: Record<string, any>) => {
     if (!user?.id) return;
+    const fingerprint = JSON.stringify(patch);
+    latestAutoSaveFingerprintRef.current = fingerprint;
     setAutoSaveStatus('saving');
     setLastAutoSavePatch(patch);
+    setLastAutoSaveAttemptAt(new Date().toISOString());
+    setLastAutoSaveError(null);
     try {
-      await supabase.from('profiles').update(patch as any).eq('id', user.id);
-      setAutoSaveStatus('saved');
-    } catch {
-      setAutoSaveStatus('error');
+      const { error } = await supabase.from('profiles').update(patch as any).eq('id', user.id);
+      if (error) throw error;
+      lastSavedFingerprintRef.current = fingerprint;
+      if (latestAutoSaveFingerprintRef.current === fingerprint) {
+        setHasPendingChanges(false);
+        setAutoSaveStatus('idle');
+      }
+    } catch (err: any) {
+      if (latestAutoSaveFingerprintRef.current === fingerprint) {
+        setAutoSaveStatus('error');
+        setHasPendingChanges(true);
+        setLastAutoSaveError(err?.message || 'Não foi possível sincronizar suas alterações agora.');
+      }
     }
   };
 
@@ -229,8 +243,6 @@ const BasicOnboardingWizard = () => {
 
   const currentProfilePatch = (): Record<string, any> => {
     const patch: Record<string, any> = { onboarding_completed: false };
-    patch.city = city || null;
-    patch.state = state || null;
     patch.avatar_url = avatarUrl;
     patch.full_name = fullName.trim() || null;
     patch.whatsapp = whatsapp || null;
@@ -242,24 +254,108 @@ const BasicOnboardingWizard = () => {
     return patch;
   };
 
+  const buildAutoSavePatch = (): Record<string, any> => ({
+    ...currentProfilePatch(),
+    onboarding_step: Math.max(furthestStep, step),
+  });
+
+  const flushAutoSave = async () => {
+    if (!user?.id || saving) return;
+    const patch = buildAutoSavePatch();
+    const fingerprint = JSON.stringify(patch);
+    if (fingerprint === lastSavedFingerprintRef.current && autoSaveStatus !== 'error') return;
+    saveStepDraft(step);
+    await saveAutoSavePatch(patch);
+  };
+
+  const advanceTo = async (nextStep: WizardStep, extraPatch: Record<string, any> = {}) => {
+    await flushAutoSave();
+    setFurthestStep(prev => Math.max(prev, nextStep) as WizardStep);
+    setStep(nextStep);
+    await persistStep(nextStep, extraPatch);
+  };
+
   const saveStepDraft = (targetStep: WizardStep = step) => {
     setDrafts(prev => ({ ...prev, [targetStep]: currentStepDraft(targetStep) }));
+  };
+
+  const reloadSavedFields = async () => {
+    if (!user?.id) return;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('full_name, avatar_url, whatsapp, phone, profile_type, onboarding_step')
+      .eq('id', user.id)
+      .single();
+
+    if (error || !data) {
+      toast.error('Não foi possível recarregar os campos salvos.');
+      return;
+    }
+
+    const savedProfile = data as any;
+    let savedCity = '';
+    let savedState = '';
+    if (savedProfile.profile_type === 'provider') {
+      const { data: providerRows } = await supabase.from('providers').select('city, state').eq('user_id', user.id).limit(1);
+      savedCity = providerRows?.[0]?.city || '';
+      savedState = providerRows?.[0]?.state || '';
+    } else if (savedProfile.profile_type === 'rh') {
+      const { data: agencyRows } = await (supabase as any).from('agencies').select('city, state').eq('user_id', user.id).limit(1);
+      savedCity = agencyRows?.[0]?.city || '';
+      savedState = agencyRows?.[0]?.state || '';
+    }
+
+    setFullName(savedProfile.full_name || '');
+    setCity(savedCity);
+    setState(savedState);
+    setAvatarUrl(savedProfile.avatar_url || null);
+    setWhatsapp(savedProfile.whatsapp || savedProfile.phone || '');
+    if (savedProfile.profile_type) setProfileType(savedProfile.profile_type as ProfileType);
+    const savedStep = clampWizardStep(savedProfile.onboarding_step);
+    setStep(savedStep);
+    setFurthestStep(savedStep);
+    setAutoSaveStatus('idle');
+    setHasPendingChanges(false);
+    setLastAutoSaveError(null);
+    lastSavedFingerprintRef.current = JSON.stringify({
+      onboarding_completed: false,
+      city: savedCity || null,
+      state: savedState || null,
+      avatar_url: savedProfile.avatar_url || null,
+      full_name: savedProfile.full_name || null,
+      whatsapp: savedProfile.whatsapp || savedProfile.phone || null,
+      phone: savedProfile.whatsapp || savedProfile.phone || null,
+      ...(savedProfile.profile_type ? { profile_type: savedProfile.profile_type, role: savedProfile.profile_type } : {}),
+      onboarding_step: savedStep,
+    });
+    toast.success('Campos salvos recarregados.');
+  };
+
+  const handleStepFieldBlur = () => {
+    void flushAutoSave();
   };
 
   // ─── Auto-save com debounce: mantém o último passo e dados parciais salvos ───
   useEffect(() => {
     if (!user?.id || !profile || saving) return;
 
-    const patch: Record<string, any> = { ...currentProfilePatch(), onboarding_step: Math.max(furthestStep, step) };
-    setDrafts(prev => ({ ...prev, [step]: currentStepDraft(step) }));
+    const patch: Record<string, any> = buildAutoSavePatch();
+    const fingerprint = JSON.stringify(patch);
+    if (fingerprint === lastSavedFingerprintRef.current && autoSaveStatus !== 'error') return;
 
-    setAutoSaveStatus('saving');
+    const version = autoSaveVersionRef.current + 1;
+    autoSaveVersionRef.current = version;
+    setDrafts(prev => ({ ...prev, [step]: currentStepDraft(step) }));
+    setHasPendingChanges(true);
+    if (autoSaveStatus !== 'error') setAutoSaveStatus('idle');
+
     const timer = window.setTimeout(() => {
+      if (version !== autoSaveVersionRef.current) return;
       void saveAutoSavePatch(patch);
     }, autoSaveDelay);
 
     return () => window.clearTimeout(timer);
-  }, [user?.id, profile, step, furthestStep, city, state, avatarUrl, fullName, whatsapp, profileType, saving, autoSaveDelay]);
+  }, [user?.id, profile, step, furthestStep, city, state, avatarUrl, fullName, whatsapp, bio, agencyName, selectedCategoryIds, profileType, saving, autoSaveDelay]);
 
   useEffect(() => {
     const hasPendingAutoSave = autoSaveStatus === 'saving' || autoSaveStatus === 'error';
@@ -525,7 +621,7 @@ const BasicOnboardingWizard = () => {
         </div>
         <div className="mb-6 h-2 w-full overflow-hidden rounded-full bg-muted">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-accent via-amber-400 to-accent bg-[length:200%_100%]"
+            className="h-full rounded-full bg-gradient-to-r from-accent via-primary to-accent bg-[length:200%_100%]"
             initial={{ width: 0 }}
             animate={{
               width: `${(step / TOTAL_STEPS) * 100}%`,
@@ -587,8 +683,12 @@ const BasicOnboardingWizard = () => {
         <AutoSaveControls
           status={autoSaveStatus}
           delay={autoSaveDelay}
+          hasPendingChanges={hasPendingChanges}
+          lastAttemptAt={lastAutoSaveAttemptAt}
+          errorMessage={lastAutoSaveError}
           onDelayChange={setAutoSaveDelay}
           onRetry={retryAutoSave}
+          onReloadSaved={reloadSavedFields}
         />
 
         {/* ─── PASSO 1 ─── */}
@@ -616,7 +716,8 @@ const BasicOnboardingWizard = () => {
             editingCity={editingCity}
             onEditCity={() => setEditingCity(true)}
             onCityChange={(c, s) => { setCity(c); setState(s); }}
-            onAvatarChange={setAvatarUrl}
+            onAvatarChange={(url) => { setAvatarUrl(url); window.setTimeout(handleStepFieldBlur, 0); }}
+            onFieldBlur={handleStepFieldBlur}
             userId={user?.id}
             onBack={() => hasExistingCadastro ? navigate('/dashboard', { replace: true }) : advanceTo(1)}
             onNext={handleStep2Next}
@@ -639,7 +740,8 @@ const BasicOnboardingWizard = () => {
             setBio={setBio}
             categoriesForPicker={categoriesForPicker}
             selectedCategoryIds={selectedCategoryIds}
-            onToggleCategory={(id) => setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id])}
+            onToggleCategory={(id) => { setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id]); window.setTimeout(handleStepFieldBlur, 0); }}
+            onFieldBlur={handleStepFieldBlur}
             saving={saving}
             canAdvance={canAdvanceFromStep3}
             onBack={() => advanceTo(2)}
@@ -710,12 +812,20 @@ const WizardChecklist = ({
   estimates: Record<WizardStep, string>;
   onReview: (step: WizardStep) => void;
   onReviewAll: () => void;
-}) => (
+}) => {
+  const completedCount = checklistItems.filter(item => item.step < furthestStep || item.step < currentStep).length;
+  const progressPercent = Math.round((completedCount / TOTAL_STEPS) * 100);
+
+  return (
   <div className="mb-5 rounded-xl border border-border bg-muted/30 p-3">
     <div className="mb-3 flex items-center justify-between gap-3">
-      <p className="text-xs font-bold text-foreground">Checklist do perfil</p>
+      <div>
+        <p className="text-xs font-bold text-foreground">Progresso do perfil</p>
+        <p className="text-[10px] font-medium text-muted-foreground">{completedCount} de {TOTAL_STEPS} etapas concluídas • {progressPercent}%</p>
+      </div>
       <button type="button" onClick={onReviewAll} className="text-[11px] font-bold text-accent hover:underline">Revisar tudo</button>
     </div>
+    <Progress value={progressPercent} className="mb-3 h-1.5" />
     <div className="grid grid-cols-5 gap-2">
       {checklistItems.map((item) => {
         const done = item.step < currentStep || item.step < furthestStep;
@@ -748,19 +858,34 @@ const WizardChecklist = ({
       })}
     </div>
   </div>
-);
+  );
+};
 
 const AutoSaveControls = ({
   status,
   delay,
+  hasPendingChanges,
+  lastAttemptAt,
+  errorMessage,
   onDelayChange,
   onRetry,
+  onReloadSaved,
 }: {
   status: 'idle' | 'saving' | 'saved' | 'error';
   delay: 1000 | 2000 | 3000;
+  hasPendingChanges: boolean;
+  lastAttemptAt: string | null;
+  errorMessage: string | null;
   onDelayChange: (delay: 1000 | 2000 | 3000) => void;
   onRetry: () => void;
-}) => (
+  onReloadSaved: () => void;
+}) => {
+  if (!hasPendingChanges && status !== 'error') return null;
+  const lastAttemptLabel = lastAttemptAt
+    ? new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(lastAttemptAt))
+    : 'ainda não enviada';
+
+  return (
   <div className="mb-4 rounded-xl border border-border bg-muted/20 p-3">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -768,11 +893,9 @@ const AutoSaveControls = ({
         <p className={`text-[11px] font-medium ${status === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}>
           {status === 'saving'
             ? 'Salvando automaticamente…'
-            : status === 'saved'
-              ? 'Alterações salvas'
-              : status === 'error'
+            : status === 'error'
                 ? 'Erro ao salvar alterações'
-                : 'Pronto para salvar'}
+                : 'Alterações pendentes serão salvas em instantes'}
         </p>
       </div>
       <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-1">
@@ -791,12 +914,25 @@ const AutoSaveControls = ({
       </div>
     </div>
     {status === 'error' && (
-      <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={onRetry}>
-        Tentar salvar novamente
-      </Button>
+      <div className="mt-3 rounded-lg border border-destructive/25 bg-destructive/10 p-3">
+        <div className="flex items-start gap-2 text-xs text-destructive">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-bold">Última tentativa: {lastAttemptLabel}</p>
+            <p className="mt-1 text-[11px]">{errorMessage || 'Verifique sua conexão e tente novamente.'}</p>
+          </div>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <Button type="button" variant="outline" size="sm" onClick={onRetry}>Tentar salvar novamente</Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onReloadSaved} className="gap-2">
+            <RefreshCw className="h-3.5 w-3.5" /> Recarregar salvos
+          </Button>
+        </div>
+      </div>
     )}
   </div>
-);
+  );
+};
 
 const ReviewSummaryCard = ({
   items,
@@ -925,7 +1061,7 @@ TypeButton.displayName = 'TypeButton';
 // ─── Passo 2 ───
 const Step2Location = ({
   city, state, avatarUrl, editingCity, onEditCity, onCityChange, onAvatarChange,
-  userId, onBack, onNext, onSkip, canAdvance,
+  userId, onBack, onNext, onSkip, canAdvance, onFieldBlur,
 }: any) => (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -963,7 +1099,9 @@ const Step2Location = ({
             <button onClick={onEditCity} className="text-xs font-medium text-accent hover:underline">Trocar</button>
           </div>
         ) : (
-          <CityAutocomplete value={{ city, state }} onChange={({ city: c, state: s }) => onCityChange(c, s)} />
+          <div onBlur={onFieldBlur}>
+            <CityAutocomplete value={{ city, state }} onChange={({ city: c, state: s }) => onCityChange(c, s)} />
+          </div>
         )}
       </div>
     </div>
@@ -984,7 +1122,7 @@ const Step3Contact = ({
   profileType, fullName, setFullName, agencyName, setAgencyName,
   whatsapp, setWhatsapp, bio, setBio,
   categoriesForPicker, selectedCategoryIds, onToggleCategory,
-  saving, canAdvance, onBack, onNext, onSkip,
+  saving, canAdvance, onBack, onNext, onSkip, onFieldBlur,
 }: any) => (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -1004,24 +1142,26 @@ const Step3Contact = ({
         <label className="mb-1 block text-xs font-semibold text-foreground">
           {profileType === 'rh' ? 'Seu nome (responsável)' : 'Seu nome completo'}
         </label>
-        <Input placeholder="Ex: João Silva" value={fullName} onChange={e => setFullName(e.target.value)} />
+        <Input placeholder="Ex: João Silva" value={fullName} onChange={e => setFullName(e.target.value)} onBlur={onFieldBlur} />
       </div>
 
       {profileType === 'rh' && (
         <div>
           <label className="mb-1 block text-xs font-semibold text-foreground">Nome da Agência</label>
-          <Input placeholder="Ex: Talentos RH" value={agencyName} onChange={e => setAgencyName(e.target.value)} />
+          <Input placeholder="Ex: Talentos RH" value={agencyName} onChange={e => setAgencyName(e.target.value)} onBlur={onFieldBlur} />
         </div>
       )}
 
       <div>
         <label className="mb-1 block text-xs font-semibold text-foreground">WhatsApp</label>
-        <PhoneMaskedInput
-          name="whatsapp"
-          value={whatsapp}
-          onChange={(_n: any, val: string) => setWhatsapp(val)}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-        />
+        <div onBlur={onFieldBlur}>
+          <PhoneMaskedInput
+            name="whatsapp"
+            value={whatsapp}
+            onChange={(_n: any, val: string) => setWhatsapp(val)}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+          />
+        </div>
       </div>
 
       {profileType === 'provider' && (
@@ -1032,6 +1172,7 @@ const Step3Contact = ({
               placeholder="Conte em 2 linhas o que você faz de melhor."
               value={bio}
               onChange={e => setBio(e.target.value)}
+              onBlur={onFieldBlur}
               rows={3}
             />
           </div>
@@ -1081,8 +1222,8 @@ const Step4Service = ({
     <div className="mt-5">
       {providerReady ? (
         servicesCreated > 0 ? (
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
-            <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-500" />
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 text-center">
+            <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-accent" />
             <p className="text-sm font-bold text-foreground">
               {servicesCreated === 1 ? '1 serviço cadastrado!' : `${servicesCreated} serviços cadastrados!`}
             </p>
@@ -1128,7 +1269,7 @@ const Step5Done = ({
       </button>
 
       <div className="mb-3 flex justify-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-amber-500 text-white">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-primary text-accent-foreground">
           <PartyPopper className="h-8 w-8" />
         </div>
       </div>
@@ -1138,7 +1279,7 @@ const Step5Done = ({
       </p>
 
       {!canFinish && (
-        <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-center text-xs text-amber-700 dark:text-amber-400">
+        <div className="mt-4 rounded-xl border border-primary/40 bg-primary/10 p-3 text-center text-xs text-primary">
           Sem serviço cadastrado, seu perfil pode aparecer incompleto. Você pode finalizar agora e completar depois.
         </div>
       )}
