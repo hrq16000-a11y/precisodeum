@@ -227,15 +227,8 @@ const BasicOnboardingWizard = () => {
     saved_at: new Date().toISOString(),
   });
 
-  const saveStepDraft = (targetStep: WizardStep = step) => {
-    setDrafts(prev => ({ ...prev, [targetStep]: currentStepDraft(targetStep) }));
-  };
-
-  // ─── Auto-save com debounce: mantém o último passo e dados parciais salvos ───
-  useEffect(() => {
-    if (!user?.id || !profile || saving) return;
-
-    const patch: Record<string, any> = { onboarding_step: Math.max(furthestStep, step), onboarding_completed: false };
+  const currentProfilePatch = (): Record<string, any> => {
+    const patch: Record<string, any> = { onboarding_completed: false };
     patch.city = city || null;
     patch.state = state || null;
     patch.avatar_url = avatarUrl;
@@ -246,6 +239,18 @@ const BasicOnboardingWizard = () => {
       patch.profile_type = profileType;
       patch.role = profileType;
     }
+    return patch;
+  };
+
+  const saveStepDraft = (targetStep: WizardStep = step) => {
+    setDrafts(prev => ({ ...prev, [targetStep]: currentStepDraft(targetStep) }));
+  };
+
+  // ─── Auto-save com debounce: mantém o último passo e dados parciais salvos ───
+  useEffect(() => {
+    if (!user?.id || !profile || saving) return;
+
+    const patch: Record<string, any> = { ...currentProfilePatch(), onboarding_step: Math.max(furthestStep, step) };
     setDrafts(prev => ({ ...prev, [step]: currentStepDraft(step) }));
 
     setAutoSaveStatus('saving');
