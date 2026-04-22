@@ -11,7 +11,7 @@ on:
       - "scripts/**"
       - "package.json"
       - "vite.config.ts"
-      - ".github/workflow/performance-ci.yml"
+      - ".github/workflows/performance-ci.yml"
 
 jobs:
   performance:
