@@ -232,6 +232,11 @@ const BasicOnboardingWizard = () => {
     await advanceTo(resumeStep, profileType ? { profile_type: profileType, role: profileType } : {});
   };
 
+  const reviewStep = (targetStep: WizardStep) => {
+    if (targetStep > furthestStep) return;
+    setStep(targetStep);
+  };
+
   // ─── Passo 2: Localização + Foto ───
   const canAdvanceFromStep2 = !!city.trim();
   const handleStep2Next = async () => {
@@ -418,6 +423,8 @@ const BasicOnboardingWizard = () => {
             }}
           />
         </div>
+
+        <WizardChecklist currentStep={step} furthestStep={furthestStep} onReview={reviewStep} />
 
         {hasExistingCadastro && step > 1 && (
           <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4 text-sm text-foreground">
