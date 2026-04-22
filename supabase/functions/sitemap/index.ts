@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
       'blog', 'jobs', 'pages', 'popular', 'seo',
     ];
     const entries = sitemaps.map(s =>
-      `  <sitemap>\n    <loc>${escapeXml(siteUrl)}/api/sitemap?type=${s}</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>`
+      `  <sitemap>\n    <loc>${escapeXml(siteUrl)}/sitemap.xml?type=${s}</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>`
     ).join('\n');
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -59,21 +59,21 @@ ${entries}
   }
 
   if (type === 'categories') {
-    const { data } = await supabase.from('categories').select('slug, created_at').is('deleted_at', null);
+    const { data } = await supabase.from('categories').select('slug, created_at').is('deleted_at', null).range(0, 49999);
     for (const cat of data || []) {
       urls += entry(siteUrl, `/categoria/${cat.slug}`, fmtDate(cat.created_at), 'daily', '0.9');
     }
   }
 
   if (type === 'providers') {
-    const { data } = await supabase.from('providers').select('slug, updated_at').eq('status', 'approved').not('slug', 'is', null);
+    const { data } = await supabase.from('providers').select('slug, updated_at').eq('status', 'approved').not('slug', 'is', null).range(0, 49999);
     for (const p of data || []) {
       urls += entry(siteUrl, `/profissional/${p.slug}`, fmtDate(p.updated_at), 'weekly', '0.7');
     }
   }
 
   if (type === 'cities') {
-    const { data } = await supabase.from('cities').select('slug, created_at');
+    const { data } = await supabase.from('cities').select('slug, created_at').range(0, 49999);
     for (const city of data || []) {
       urls += entry(siteUrl, `/cidade/${city.slug}`, fmtDate(city.created_at), 'weekly', '0.8');
     }
