@@ -1716,20 +1716,25 @@ const ProviderProfile = () => {
         {effectiveWhatsApp && showStickyContact && (
           <motion.div
             key="sticky-mobile-whatsapp"
-            role="region"
-            aria-label="Contato rápido por WhatsApp"
-            className="fixed inset-x-0 bottom-0 border-t border-border bg-card/95 p-3 md:hidden shadow-lg backdrop-blur-lg transform-gpu will-change-transform"
-            style={{ zIndex: 999, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
+            role="navigation"
+            aria-label="Ação rápida de contato"
+            className="fixed inset-x-0 border-t border-border bg-card/95 p-3 md:hidden shadow-lg backdrop-blur-lg transform-gpu will-change-transform"
+            style={{ zIndex: 999, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px)' }}
             initial={{ y: '100%', opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', stiffness: 360, damping: 34, mass: 0.8 }}
           >
+            <span id="sticky-whatsapp-description" className="sr-only">
+              Abre uma conversa no WhatsApp com este profissional sem alterar sua posição na página.
+            </span>
             <Button
+              type="button"
               variant="accent"
               size="lg"
               aria-label={`Chamar ${name} no WhatsApp`}
-              className="w-full gap-2 shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              aria-describedby="sticky-whatsapp-description"
+              className="min-h-12 w-full gap-2 bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               onClick={() => {
                 if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'sticky');
                 requestWhatsApp({
