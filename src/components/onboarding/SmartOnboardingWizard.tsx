@@ -1024,7 +1024,7 @@ const AutoSaveControls = ({
           </div>
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          <Button type="button" variant="outline" size="sm" onClick={onRetry}>Tentar salvar novamente</Button>
+          <Button type="button" variant="outline" size="sm" onClick={onRetry}>Tentar novamente o auto-save</Button>
           <Button type="button" variant="ghost" size="sm" onClick={onReloadSaved} className="gap-2">
             <RefreshCw className="h-3.5 w-3.5" /> Recarregar salvos
           </Button>
