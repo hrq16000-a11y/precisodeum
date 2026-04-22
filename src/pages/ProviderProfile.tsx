@@ -1398,7 +1398,7 @@ const ProviderProfile = () => {
                 </Button>
               </motion.div>
               {effectiveWhatsApp && (
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <motion.div ref={mainWhatsappRef} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                   <Button
                     size="lg"
                     className="gap-2 w-full sm:w-auto bg-[#25D366] text-white hover:bg-[#1ebe5a] shadow-lg hover:shadow-xl transition-all"
@@ -1669,8 +1669,9 @@ const ProviderProfile = () => {
           className="fixed bottom-0 left-0 right-0 border-t border-border bg-gradient-to-t from-card via-card/98 to-card/90 backdrop-blur-lg p-3 flex gap-2 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
           style={{ zIndex: 999, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
           initial={{ y: 100 }}
-          animate={{ y: 0 }}
+          animate={showStickyContact ? { y: 0, opacity: 1 } : { y: 100, opacity: 0 }}
           transition={{ delay: 1.5, type: 'spring', stiffness: 300, damping: 25 }}
+          aria-hidden={!showStickyContact}
         >
           <Button
             variant="accent"
