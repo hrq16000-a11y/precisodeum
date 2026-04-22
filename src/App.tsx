@@ -19,6 +19,7 @@ const ScrollProgressBar = reactLazy(() => importWithRetry(() => import("./compon
 const ImpersonationBanner = reactLazy(() => importWithRetry(() => import("./components/admin/ImpersonationBanner")));
 import { useAuth } from "@/hooks/useAuth";
 import { initializeUiFreezeMonitor } from "@/lib/uiFreezeMonitor";
+import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
@@ -278,6 +279,7 @@ const App = () => {
     <ErrorGuard componentName="App">
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <PWAUpdatePrompt />
         <BrowserRouter>
           <RoutePrefetcher />
           <ScrollToTop />
