@@ -3,6 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresenceTracker } from '@/hooks/useOnlinePresence';
 import { geocodeCity } from '@/lib/geoUtils';
+import { setCelebrationMuted } from '@/lib/celebrate';
 
 interface AuthContextType {
   session: Session | null;
@@ -54,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setProfile(profileData);
+    setCelebrationMuted(!!profileData?.celebration_muted);
 
     const metaChosen = authUser?.user_metadata?.profile_type_chosen === true;
     const hasType = !!profileData?.profile_type;
@@ -131,6 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           setProfile(null);
           setProvider(null);
+          setCelebrationMuted(false);
           setNeedsTypeSelection(false);
           setLoading(false);
         }
@@ -172,6 +175,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setProfile(null);
     setProvider(null);
+    setCelebrationMuted(false);
     setNeedsTypeSelection(false);
   };
   // Track online presence for the current user, including their city
