@@ -433,9 +433,34 @@ const BasicOnboardingWizard = () => {
   const startReviewAll = () => {
     saveStepDraft(step);
     setReviewAllMode(true);
+    setGuidedReviewStep(null);
     setShowFinalSummary(false);
     const firstPending = checklistItems.find(item => item.step <= furthestStep && item.step >= step)?.step ?? 1;
     setStep(firstPending);
+  };
+
+  const startGuidedReview = () => {
+    saveStepDraft(step);
+    setReviewAllMode(false);
+    setShowFinalSummary(false);
+    setGuidedReviewStep(1);
+  };
+
+  const editGuidedReviewStep = (targetStep: WizardStep) => {
+    setReviewReturnStep(furthestStep);
+    setGuidedReviewStep(null);
+    setShowFinalSummary(false);
+    setStep(targetStep);
+  };
+
+  const keepGuidedReviewStep = () => {
+    const next = checklistItems.find(item => item.step > (guidedReviewStep ?? 1) && item.step <= furthestStep)?.step;
+    if (next) {
+      setGuidedReviewStep(next);
+      return;
+    }
+    setGuidedReviewStep(null);
+    setShowFinalSummary(true);
   };
 
   const continueReviewAll = () => {
@@ -559,13 +584,19 @@ const BasicOnboardingWizard = () => {
     await advanceTo(5);
   };
 
-  const stepEstimates: Record<WizardStep, string> = {
-    1: profileType ? '~0 min' : '~1 min',
-    2: city && avatarUrl ? '~0 min' : city ? '~1 min' : '~2 min',
-    3: canAdvanceFromStep3 ? '~0 min' : fullName || whatsapp ? '~2 min' : '~3 min',
-    4: profileType !== 'provider' || servicesCreated > 0 ? '~0 min' : '~3 min',
-    5: '~1 min',
+  const stepEstimateMinutes: Record<WizardStep, number> = {
+    1: profileType ? 0 : 1,
+    2: Math.max(0, 3 - (city ? 1 : 0) - (state ? 1 : 0) - (avatarUrl ? 1 : 0)),
+    3: Math.max(0, 4 - (fullName.trim() ? 1 : 0) - (hasValidWhatsapp(whatsapp) ? 1 : 0) - (bio.trim() ? 1 : 0) - (profileType !== 'provider' || selectedCategoryIds.length ? 1 : 0) - (profileType !== 'rh' || agencyName.trim() ? 1 : 0)),
+    4: profileType !== 'provider' || servicesCreated > 0 ? 0 : 3,
+    5: 1,
   };
+
+  const stepEstimates: Record<WizardStep, string> = Object.fromEntries(
+    Object.entries(stepEstimateMinutes).map(([key, minutes]) => [Number(key), minutes <= 0 ? 'Pronto' : `~${minutes} min`])
+  ) as Record<WizardStep, string>;
+
+  const reviewItems = buildReviewItems({ profileType, providerSubtype, city, state, avatarUrl, fullName, agencyName, whatsapp, bio, selectedCategoryIds, servicesCreated });
 
   const summaryItems = [
     { label: 'Tipo de perfil', value: profileType || 'Não definido' },
