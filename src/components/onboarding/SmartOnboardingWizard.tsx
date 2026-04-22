@@ -211,6 +211,26 @@ const BasicOnboardingWizard = () => {
     if (lastAutoSavePatch) void saveAutoSavePatch(lastAutoSavePatch);
   };
 
+  const currentStepDraft = (targetStep: WizardStep = step): Record<string, any> => ({
+    step: targetStep,
+    profile_type: profileType,
+    provider_subtype: providerSubtype,
+    full_name: fullName,
+    agency_name: agencyName,
+    city,
+    state,
+    avatar_url: avatarUrl,
+    whatsapp,
+    bio,
+    selected_category_ids: selectedCategoryIds,
+    services_created: servicesCreated,
+    saved_at: new Date().toISOString(),
+  });
+
+  const saveStepDraft = (targetStep: WizardStep = step) => {
+    setDrafts(prev => ({ ...prev, [targetStep]: currentStepDraft(targetStep) }));
+  };
+
   // ─── Auto-save com debounce: mantém o último passo e dados parciais salvos ───
   useEffect(() => {
     if (!user?.id || !profile || saving) return;
