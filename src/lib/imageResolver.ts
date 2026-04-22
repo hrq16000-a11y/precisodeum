@@ -11,6 +11,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { DEFAULT_LOGO_URL, DEFAULT_SOCIAL_IMAGE_URL } from '@/lib/siteAssets';
 
 export type EntityType = 'service' | 'profile' | 'provider' | 'banner' | 'sponsor' | 'portfolio';
 
@@ -159,6 +160,27 @@ export function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
   }
 
   // Last resort: show a neutral placeholder instead of hiding
+  img.src = '/placeholder.svg';
+  img.style.objectFit = 'contain';
+  img.style.background = 'hsl(var(--muted))';
+}
+
+export function handleBrandImageError(
+  e: React.SyntheticEvent<HTMLImageElement>,
+  type: 'logo' | 'social' = 'logo'
+) {
+  const img = e.currentTarget;
+  const fallback = type === 'social' ? DEFAULT_SOCIAL_IMAGE_URL : DEFAULT_LOGO_URL;
+  const currentSrc = img.currentSrc || img.src;
+
+  img.removeAttribute('srcset');
+  img.removeAttribute('sizes');
+
+  if (!currentSrc.endsWith(fallback) && img.src !== fallback) {
+    img.src = fallback;
+    return;
+  }
+
   img.src = '/placeholder.svg';
   img.style.objectFit = 'contain';
   img.style.background = 'hsl(var(--muted))';
