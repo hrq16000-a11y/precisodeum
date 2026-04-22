@@ -44,6 +44,7 @@ import { useCategoriesWithCount } from '@/hooks/useProviders';
 type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
 type ProviderSubtype = 'autonomous' | 'company';
 type WizardStep = 1 | 2 | 3 | 4 | 5;
+type WizardDrafts = Partial<Record<WizardStep, Record<string, any>>>;
 
 const TOTAL_STEPS = 5;
 
@@ -56,6 +57,8 @@ const clampWizardStep = (value: unknown): WizardStep => {
 const slugify = (s: string) =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+const draftStorageKey = (userId?: string) => `wizard-drafts:${userId ?? 'anonymous'}`;
 
 export type WizardMode = 'basic';
 
@@ -110,6 +113,10 @@ const BasicOnboardingWizard = () => {
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [autoSaveDelay, setAutoSaveDelay] = useState<1000 | 2000 | 3000>(1000);
   const [lastAutoSavePatch, setLastAutoSavePatch] = useState<Record<string, any> | null>(null);
+  const [drafts, setDrafts] = useState<WizardDrafts>({});
+  const [reviewReturnStep, setReviewReturnStep] = useState<WizardStep | null>(null);
+  const [reviewAllMode, setReviewAllMode] = useState(false);
+  const [showFinalSummary, setShowFinalSummary] = useState(false);
 
   // ─── Sync inicial: se profile carrega DEPOIS do mount, atualiza step ───
   const syncedRef = useRef(false);
@@ -126,6 +133,21 @@ const BasicOnboardingWizard = () => {
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
     if (profile.whatsapp || profile.phone) setWhatsapp(profile.whatsapp || profile.phone || '');
   }, [profile]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      const raw = window.localStorage.getItem(draftStorageKey(user.id));
+      if (raw) setDrafts(JSON.parse(raw));
+    } catch { /* ignore invalid draft */ }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      window.localStorage.setItem(draftStorageKey(user.id), JSON.stringify(drafts));
+    } catch { /* storage may be unavailable */ }
+  }, [user?.id, drafts]);
 
   // ─── Carrega provider salvo (caso volte ao Passo 4 após F5) ───
   useEffect(() => {
@@ -189,11 +211,24 @@ const BasicOnboardingWizard = () => {
     if (lastAutoSavePatch) void saveAutoSavePatch(lastAutoSavePatch);
   };
 
-  // ─── Auto-save com debounce: mantém o último passo e dados parciais salvos ───
-  useEffect(() => {
-    if (!user?.id || !profile || saving) return;
+  const currentStepDraft = (targetStep: WizardStep = step): Record<string, any> => ({
+    step: targetStep,
+    profile_type: profileType,
+    provider_subtype: providerSubtype,
+    full_name: fullName,
+    agency_name: agencyName,
+    city,
+    state,
+    avatar_url: avatarUrl,
+    whatsapp,
+    bio,
+    selected_category_ids: selectedCategoryIds,
+    services_created: servicesCreated,
+    saved_at: new Date().toISOString(),
+  });
 
-    const patch: Record<string, any> = { onboarding_step: Math.max(furthestStep, step), onboarding_completed: false };
+  const currentProfilePatch = (): Record<string, any> => {
+    const patch: Record<string, any> = { onboarding_completed: false };
     patch.city = city || null;
     patch.state = state || null;
     patch.avatar_url = avatarUrl;
@@ -204,6 +239,19 @@ const BasicOnboardingWizard = () => {
       patch.profile_type = profileType;
       patch.role = profileType;
     }
+    return patch;
+  };
+
+  const saveStepDraft = (targetStep: WizardStep = step) => {
+    setDrafts(prev => ({ ...prev, [targetStep]: currentStepDraft(targetStep) }));
+  };
+
+  // ─── Auto-save com debounce: mantém o último passo e dados parciais salvos ───
+  useEffect(() => {
+    if (!user?.id || !profile || saving) return;
+
+    const patch: Record<string, any> = { ...currentProfilePatch(), onboarding_step: Math.max(furthestStep, step) };
+    setDrafts(prev => ({ ...prev, [step]: currentStepDraft(step) }));
 
     setAutoSaveStatus('saving');
     const timer = window.setTimeout(() => {
@@ -254,7 +302,37 @@ const BasicOnboardingWizard = () => {
 
   const reviewStep = (targetStep: WizardStep) => {
     if (targetStep > furthestStep) return;
+    saveStepDraft(step);
+    if (targetStep < furthestStep) setReviewReturnStep(furthestStep);
+    setShowFinalSummary(false);
     setStep(targetStep);
+  };
+
+  const returnToProgress = async () => {
+    saveStepDraft(step);
+    const target = reviewReturnStep ?? furthestStep;
+    setReviewReturnStep(null);
+    setStep(target);
+    await persistStep(furthestStep, currentProfilePatch());
+  };
+
+  const startReviewAll = () => {
+    saveStepDraft(step);
+    setReviewAllMode(true);
+    setShowFinalSummary(false);
+    const firstPending = checklistItems.find(item => item.step <= furthestStep && item.step >= step)?.step ?? 1;
+    setStep(firstPending);
+  };
+
+  const continueReviewAll = () => {
+    saveStepDraft(step);
+    const next = checklistItems.find(item => item.step > step && item.step <= furthestStep)?.step;
+    if (next) {
+      setStep(next);
+      return;
+    }
+    setShowFinalSummary(true);
+    setReviewAllMode(false);
   };
 
   // ─── Passo 2: Localização + Foto ───
@@ -367,6 +445,22 @@ const BasicOnboardingWizard = () => {
     await advanceTo(5);
   };
 
+  const stepEstimates: Record<WizardStep, string> = {
+    1: profileType ? '~0 min' : '~1 min',
+    2: city && avatarUrl ? '~0 min' : city ? '~1 min' : '~2 min',
+    3: canAdvanceFromStep3 ? '~0 min' : fullName || whatsapp ? '~2 min' : '~3 min',
+    4: profileType !== 'provider' || servicesCreated > 0 ? '~0 min' : '~3 min',
+    5: '~1 min',
+  };
+
+  const summaryItems = [
+    { label: 'Tipo de perfil', value: profileType || 'Não definido' },
+    { label: 'Cidade', value: city ? `${city}${state ? ` • ${state}` : ''}` : 'Não informada' },
+    { label: 'Nome', value: fullName || 'Não informado' },
+    { label: 'WhatsApp', value: whatsapp || 'Não informado' },
+    { label: 'Serviços', value: profileType === 'provider' ? `${servicesCreated} cadastrado(s)` : 'Não aplicável' },
+  ];
+
   // ─── Passo 5: Conclusão ───
   const finishOnboarding = async () => {
     if (!user?.id) return;
@@ -444,9 +538,39 @@ const BasicOnboardingWizard = () => {
           />
         </div>
 
-        <WizardChecklist currentStep={step} furthestStep={furthestStep} onReview={reviewStep} />
+        <WizardChecklist
+          currentStep={step}
+          furthestStep={furthestStep}
+          estimates={stepEstimates}
+          onReview={reviewStep}
+          onReviewAll={startReviewAll}
+        />
 
-        {hasExistingCadastro && step > 1 && (
+        {reviewReturnStep && !showFinalSummary && (
+          <div className="mb-4 rounded-xl border border-accent/25 bg-accent/10 p-3 text-sm text-foreground">
+            <p className="font-bold">Revisando passo antigo</p>
+            <p className="mt-1 text-xs text-muted-foreground">Ao salvar, você volta para seu progresso mais recente.</p>
+            <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={returnToProgress}>
+              Salvar revisão e voltar ao progresso
+            </Button>
+          </div>
+        )}
+
+        {reviewAllMode && !showFinalSummary && (
+          <div className="mb-4 rounded-xl border border-border bg-muted/30 p-3 text-sm text-foreground">
+            <p className="font-bold">Revisar tudo</p>
+            <p className="mt-1 text-xs text-muted-foreground">Confira este passo e avance para o próximo item disponível.</p>
+            <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={continueReviewAll}>
+              Próximo item da revisão
+            </Button>
+          </div>
+        )}
+
+        {showFinalSummary && (
+          <ReviewSummaryCard items={summaryItems} onBack={() => setShowFinalSummary(false)} onFinish={finishOnboarding} saving={saving} />
+        )}
+
+        {!showFinalSummary && hasExistingCadastro && step > 1 && (
           <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4 text-sm text-foreground">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
@@ -468,7 +592,7 @@ const BasicOnboardingWizard = () => {
         />
 
         {/* ─── PASSO 1 ─── */}
-        {step === 1 && !showSubtypeStep && (
+        {!showFinalSummary && step === 1 && !showSubtypeStep && (
           <Step1Identity
             existingProfileType={hasExistingCadastro ? profileType : null}
             onContinueProfileUpdate={handleContinueProfileUpdate}
@@ -476,7 +600,7 @@ const BasicOnboardingWizard = () => {
           />
         )}
 
-        {step === 1 && showSubtypeStep && profileType === 'provider' && (
+        {!showFinalSummary && step === 1 && showSubtypeStep && profileType === 'provider' && (
           <SubtypeChoice
             onBack={() => { setShowSubtypeStep(false); setProfileType(null); }}
             onSelect={handleSelectSubtype}
@@ -484,7 +608,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 2 ─── */}
-        {step === 2 && (
+        {!showFinalSummary && step === 2 && (
           <Step2Location
             city={city}
             state={state}
@@ -502,7 +626,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 3 ─── */}
-        {step === 3 && (
+        {!showFinalSummary && step === 3 && (
           <Step3Contact
             profileType={profileType}
             fullName={fullName}
@@ -525,7 +649,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 4 — PROVIDER apenas ─── */}
-        {step === 4 && profileType === 'provider' && (
+        {!showFinalSummary && step === 4 && profileType === 'provider' && (
           <Step4Service
             providerReady={!!savedProvider}
             servicesCreated={servicesCreated}
@@ -540,7 +664,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* Caso provider ainda não tenha provider row (raro), volta ao step 3 */}
-        {step === 4 && profileType !== 'provider' && (
+        {!showFinalSummary && step === 4 && profileType !== 'provider' && (
           <div className="text-center">
             <p className="text-sm text-muted-foreground">Avançando…</p>
             <Button className="mt-4" onClick={finishOnboarding}>Concluir</Button>
@@ -548,7 +672,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 5 ─── */}
-        {step === 5 && (
+        {!showFinalSummary && step === 5 && (
           <Step5Done
             profileType={profileType}
             servicesCreated={servicesCreated}
@@ -577,16 +701,20 @@ const checklistItems: Array<{ step: WizardStep; label: string }> = [
 const WizardChecklist = ({
   currentStep,
   furthestStep,
+  estimates,
   onReview,
+  onReviewAll,
 }: {
   currentStep: WizardStep;
   furthestStep: WizardStep;
+  estimates: Record<WizardStep, string>;
   onReview: (step: WizardStep) => void;
+  onReviewAll: () => void;
 }) => (
   <div className="mb-5 rounded-xl border border-border bg-muted/30 p-3">
     <div className="mb-3 flex items-center justify-between gap-3">
       <p className="text-xs font-bold text-foreground">Checklist do perfil</p>
-      <p className="text-[11px] font-medium text-muted-foreground">Toque para revisar</p>
+      <button type="button" onClick={onReviewAll} className="text-[11px] font-bold text-accent hover:underline">Revisar tudo</button>
     </div>
     <div className="grid grid-cols-5 gap-2">
       {checklistItems.map((item) => {
@@ -614,6 +742,7 @@ const WizardChecklist = ({
             <span className="mt-0.5 block text-[9px] leading-tight opacity-80">
               {active ? 'Agora' : done ? 'Completo' : 'Falta'}
             </span>
+            <span className="mt-0.5 block text-[9px] leading-tight opacity-70">{estimates[item.step]}</span>
           </button>
         );
       })}
@@ -666,6 +795,39 @@ const AutoSaveControls = ({
         Tentar salvar novamente
       </Button>
     )}
+  </div>
+);
+
+const ReviewSummaryCard = ({
+  items,
+  saving,
+  onBack,
+  onFinish,
+}: {
+  items: Array<{ label: string; value: string }>;
+  saving: boolean;
+  onBack: () => void;
+  onFinish: () => void;
+}) => (
+  <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4">
+    <h2 className="font-display text-lg font-bold text-foreground">Resumo final</h2>
+    <p className="mt-1 text-xs text-muted-foreground">Confira seus dados antes de concluir.</p>
+    <div className="mt-4 space-y-2">
+      {items.map((item) => (
+        <div key={item.label} className="flex items-start justify-between gap-3 rounded-lg border border-border bg-background/70 px-3 py-2">
+          <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+          <span className="text-right text-xs font-bold text-foreground">{item.value}</span>
+        </div>
+      ))}
+    </div>
+    <div className="mt-4 grid gap-2">
+      <Button type="button" variant="accent" onClick={onFinish} disabled={saving}>
+        {saving ? 'Concluindo…' : 'Concluir wizard'}
+      </Button>
+      <Button type="button" variant="outline" onClick={onBack} disabled={saving}>
+        Voltar para revisar
+      </Button>
+    </div>
   </div>
 );
 
