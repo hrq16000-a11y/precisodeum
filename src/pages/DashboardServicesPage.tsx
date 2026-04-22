@@ -458,7 +458,7 @@ const DashboardServicesPage = () => {
         const newCount = services.length + 1;
         const SERVICES_CAP = 5;
         const unlockedNext = newCount < SERVICES_CAP;
-        celebrate({ intensity: 'mini' });
+        celebrate({ intensity: 'mini', id: `service-slot:${serviceId}` });
         toast.success('🎉 Você ganhou um novo slot!', {
           description: unlockedNext
             ? `Seu ${newCount + 1}º espaço na vitrine já está liberado. Continue subindo!`
