@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const type = url.searchParams.get('type');
-  const sitemapBaseUrl = `${url.origin}${url.pathname}`;
+  const sitemapBaseUrl = `${siteUrl}/sitemap`;
 
   // Sitemap Index — returns links to sub-sitemaps
   if (!type) {
