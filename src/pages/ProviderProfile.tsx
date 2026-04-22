@@ -566,7 +566,8 @@ const ProviderProfile = () => {
   }, [provider?.id]);
 
   useEffect(() => {
-    if (!isMobile || !effectiveWhatsApp) {
+    const currentWhatsApp = toCanonical(provider?.whatsapp || provider?.phone || '');
+    if (!isMobile || !currentWhatsApp) {
       setShowStickyContact(false);
       return;
     }
@@ -581,7 +582,7 @@ const ProviderProfile = () => {
 
     observer.observe(target);
     return () => observer.disconnect();
-  }, [isMobile, effectiveWhatsApp]);
+  }, [isMobile, provider?.whatsapp, provider?.phone]);
 
   // DESTAQUE criteria
   const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
