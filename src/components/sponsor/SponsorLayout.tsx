@@ -36,8 +36,8 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="flex min-h-screen bg-background">
       {/* Mobile header */}
       <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border bg-card px-4 lg:hidden">
-        <div className="flex items-center gap-2">
-          <Logo height="h-10" className="w-auto object-contain drop-shadow-sm" />
+        <div className="flex h-14 min-w-0 max-w-[calc(100%-3rem)] items-center gap-2 overflow-hidden">
+          <Logo height="h-10 min-h-10" className="w-auto max-w-full object-contain drop-shadow-sm" />
           <span className="sr-only">Painel patrocinador</span>
         </div>
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-foreground">
@@ -47,8 +47,8 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-60 transform border-r border-sidebar-border bg-sidebar transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
-        <div className="flex h-14 items-center gap-2 px-5 border-b border-sidebar-border">
-          <Logo height="h-11" className="w-auto object-contain drop-shadow-sm" />
+        <div className="flex h-14 min-w-0 items-center gap-2 overflow-hidden px-5 border-b border-sidebar-border">
+          <Logo height="h-10 min-h-10" className="w-auto max-w-full object-contain drop-shadow-sm" />
           <span className="sr-only">Menu do patrocinador</span>
           <Badge variant="secondary" className="ml-auto text-[10px]">CRM</Badge>
         </div>
