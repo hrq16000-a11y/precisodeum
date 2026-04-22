@@ -147,12 +147,15 @@ const CityPage = () => {
     });
   }, [rawProviders, userLat, userLon, city]);
 
+  const citySocialImage = providers.find((provider) => provider.photo)?.photo;
+
   useSeoHead({
     title: city ? `Profissionais em ${city.name} - ${city.state}` : 'Cidade',
     description: city
       ? `Encontre os melhores profissionais em ${city.name}, ${city.state}. ${providers.length} cadastrados com avaliações verificadas.`
       : 'Encontre profissionais na sua cidade.',
     canonical: slug ? `${SITE_BASE_URL}/cidade/${slug}` : undefined,
+    ogImage: citySocialImage || undefined,
   });
 
   const cityAuthorityLd = useMemo(() => {
