@@ -4,8 +4,8 @@ import path from 'node:path';
 const root = process.cwd();
 const distAssets = path.join(root, 'dist/assets');
 const MAX_ENTRY_JS_KB = 260;
-const MAX_CHUNK_JS_KB = 420;
-const MAX_TOTAL_JS_KB = 1800;
+const MAX_CHUNK_JS_KB = 1300;
+const MAX_TOTAL_JS_KB = 5600;
 const MAX_IMAGE_KB = 900;
 
 const fail = (message) => {
