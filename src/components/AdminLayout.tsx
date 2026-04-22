@@ -12,6 +12,7 @@ import TopLoadingBar from '@/components/ui/TopLoadingBar';
 import AdminFlashSummary from '@/components/admin/AdminFlashSummary';
 import AdminRealtimeToasts from '@/components/admin/AdminRealtimeToasts';
 import { runPostDeployAudit } from '@/lib/postDeployAudit';
+import Logo from '@/components/Logo';
 
 const normalizeAdminSearch = (value: string) =>
   value
@@ -215,8 +216,8 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       <TopLoadingBar />
       <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border glass-strong px-4 lg:hidden">
         <div className="flex items-center gap-2">
-          <Shield className="h-4 w-4 text-destructive" />
-          <span className="font-display text-sm font-bold text-foreground">Admin</span>
+          <Logo height="h-10" className="w-auto object-contain drop-shadow-sm" />
+          <span className="sr-only">Menu administrativo</span>
           <AdminMobileStats />
         </div>
         <motion.button
@@ -240,14 +241,8 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
       <aside className={`fixed inset-y-0 left-0 z-40 w-64 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
         <div className="flex h-14 shrink-0 items-center gap-2 px-5 border-b border-sidebar-border">
-          <motion.div
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/10"
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <Shield className="h-3.5 w-3.5 text-destructive" />
-          </motion.div>
-          <span className="font-display text-sm font-bold text-sidebar-foreground">Admin Panel</span>
+          <Logo height="h-11" className="w-auto object-contain drop-shadow-sm" />
+          <span className="sr-only">Painel administrativo</span>
         </div>
         {/* Sidebar Search */}
         <div className="px-3 pt-2.5 pb-1.5">
