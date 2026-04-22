@@ -375,6 +375,18 @@ const BasicOnboardingWizard = () => {
           />
         </div>
 
+        {hasExistingCadastro && step > 1 && (
+          <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4 text-sm text-foreground">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+              <div>
+                <p className="font-bold">Continuando atualização do seu perfil</p>
+                <p className="mt-1 text-muted-foreground">Retomamos exatamente do último passo salvo.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ─── PASSO 1 ─── */}
         {step === 1 && !showSubtypeStep && (
           <Step1Identity
