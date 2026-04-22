@@ -642,8 +642,11 @@ const DashboardPage = () => {
             </GlassCard>
           )}
 
-          <div className="flex items-center justify-between gap-2 px-1">
-            <span className="text-[11px] text-muted-foreground">Som de conquistas</span>
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card/60 px-4 py-3 shadow-sm">
+            <div className="min-w-0">
+              <span className="text-sm font-semibold text-foreground">Som de conquistas</span>
+              <p className="text-xs text-muted-foreground">Controla o áudio das celebrações; confetes continuam ativos.</p>
+            </div>
             <CelebrationMuteToggle />
           </div>
 

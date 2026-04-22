@@ -48,25 +48,37 @@ const CelebrationMuteToggle = () => {
   };
 
   return (
-    <TooltipProvider delayDuration={150}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            onClick={toggle}
-            disabled={saving}
-            aria-label={muted ? 'Ativar som de conquistas' : 'Silenciar som de conquistas'}
-            aria-pressed={muted}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          {muted ? 'Sons de conquista desativados' : 'Som de conquistas ativo (clique para silenciar)'}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div className="flex min-w-0 items-center justify-end gap-3 text-right">
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-foreground">
+          {muted ? 'Desativado' : 'Ativado'}
+        </p>
+        <p className="max-w-[190px] text-[10px] leading-snug text-muted-foreground">
+          {muted
+            ? 'Ao alternar, o som volta nas próximas conquistas.'
+            : 'Ao alternar, o som será silenciado e salvo no perfil.'}
+        </p>
+      </div>
+      <TooltipProvider delayDuration={150}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={toggle}
+              disabled={saving}
+              aria-label={muted ? 'Ativar som de conquistas' : 'Silenciar som de conquistas'}
+              aria-pressed={muted}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {muted ? 'Clique para ativar o som de conquistas' : 'Clique para silenciar o som de conquistas'}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
   );
 };
 
