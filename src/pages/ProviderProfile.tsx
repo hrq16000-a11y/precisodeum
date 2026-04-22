@@ -283,6 +283,7 @@ const ProviderProfile = () => {
   const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
   const [relatedProviders, setRelatedProviders] = useState<any[]>([]);
   const [showStickyContact, setShowStickyContact] = useState(false);
+  const [showEmergencyContact, setShowEmergencyContact] = useState(false);
   const mainWhatsappRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -572,21 +573,25 @@ const ProviderProfile = () => {
     const currentWhatsApp = toCanonical(provider?.whatsapp || provider?.phone || '');
     if (!isMobile || !currentWhatsApp) {
       setShowStickyContact(false);
+      setShowEmergencyContact(false);
       return;
     }
 
     const target = mainWhatsappRef.current;
     if (!target) {
       setShowStickyContact(false);
+      setShowEmergencyContact(false);
       return;
     }
 
     let frame: number | null = null;
+    let emergencyTimer: ReturnType<typeof window.setTimeout> | null = null;
     let safeAreaBottom = 0;
     let lastShouldShow: boolean | null = null;
     const visualViewport = window.visualViewport;
     const supportsIntersectionObserver = 'IntersectionObserver' in window;
     const supportsResizeObserver = 'ResizeObserver' in window;
+    const hasLimitedApiSupport = !supportsIntersectionObserver || !supportsResizeObserver || !visualViewport;
     const getSafeAreaBottom = () => {
       const probe = document.createElement('div');
       probe.style.cssText = 'position:fixed;bottom:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none;';
@@ -598,6 +603,11 @@ const ProviderProfile = () => {
 
     const measureVisibility = () => {
       frame = null;
+      if (emergencyTimer !== null) {
+        window.clearTimeout(emergencyTimer);
+        emergencyTimer = null;
+      }
+      setShowEmergencyContact(false);
       const rect = target.getBoundingClientRect();
       const viewportHeight = visualViewport?.height ?? document.documentElement.clientHeight ?? window.innerHeight;
       const viewportWidth = visualViewport?.width ?? document.documentElement.clientWidth ?? window.innerWidth;
@@ -612,6 +622,11 @@ const ProviderProfile = () => {
     const scheduleVisibilityMeasure = () => {
       if (frame !== null) return;
       frame = requestAnimationFrame(measureVisibility);
+      if (hasLimitedApiSupport && emergencyTimer === null) {
+        emergencyTimer = window.setTimeout(() => {
+          if (frame !== null) setShowEmergencyContact(true);
+        }, 180);
+      }
     };
     const updateSafeAreaAndVisibility = () => {
       safeAreaBottom = getSafeAreaBottom();
@@ -636,6 +651,7 @@ const ProviderProfile = () => {
 
     return () => {
       if (frame !== null) cancelAnimationFrame(frame);
+      if (emergencyTimer !== null) window.clearTimeout(emergencyTimer);
       observer?.disconnect();
       resizeObserver?.disconnect();
       if (useScrollFallback) window.removeEventListener('scroll', scheduleVisibilityMeasure);
