@@ -52,7 +52,7 @@ User-agent: cohere-ai
 Allow: /
 
 # Dynamic sitemap index (sub-sitemaps for categories, providers, cities, etc.)
-Sitemap: https://qaftogrqeyymewoofexc.supabase.co/functions/v1/sitemap
+Sitemap: https://precisodeum.com.br/sitemap.xml
 
 # Static fallback
 Sitemap: https://precisodeum.com.br/sitemap.xml
