@@ -205,6 +205,7 @@ const BasicOnboardingWizard = () => {
       patch.role = profileType;
     }
 
+    setAutoSaveStatus('saving');
     const timer = window.setTimeout(() => {
       void saveAutoSavePatch(patch);
     }, autoSaveDelay);
