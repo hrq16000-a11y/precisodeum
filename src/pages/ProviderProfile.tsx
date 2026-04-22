@@ -592,6 +592,26 @@ const ProviderProfile = () => {
     const supportsIntersectionObserver = 'IntersectionObserver' in window;
     const supportsResizeObserver = 'ResizeObserver' in window;
     const hasLimitedApiSupport = !supportsIntersectionObserver || !supportsResizeObserver || !visualViewport;
+
+    /**
+     * Sticky Action Bar visibility contract
+     *
+     * - IntersectionObserver: primary signal for detecting whether the main WhatsApp CTA
+     *   is inside the viewport. When available, it avoids running layout reads on every scroll.
+     * - ResizeObserver: secondary signal for layout changes that can move or resize the CTA
+     *   without a scroll event, such as image loads, expandable content, font swaps, or admin data.
+     * - visualViewport: preferred viewport dimensions on mobile because browser chrome and
+     *   virtual keyboards can change the visible area without changing window.innerHeight.
+     *
+     * Fallback behavior:
+     * - If IntersectionObserver is missing, scroll uses scheduleVisibilityMeasure(), which is
+     *   throttled by requestAnimationFrame so only one visibility measurement runs per frame.
+     * - If visualViewport is missing, measurements fall back to documentElement/client size and
+     *   then window.innerHeight/innerWidth, preserving the same visible-area rule.
+     * - If ResizeObserver is missing, window resize plus the scroll fallback keep the CTA reachable;
+     *   while a scheduled fallback measurement is pending, showEmergencyContact can reveal a compact
+     *   emergency button so users still have access to the WhatsApp CTA.
+     */
     const getSafeAreaBottom = () => {
       const probe = document.createElement('div');
       probe.style.cssText = 'position:fixed;bottom:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none;';
