@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Crown, Star, MapPin, MessageCircle, Sparkles, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,15 +15,39 @@ import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import AdNativeCard from '@/components/ads/AdNativeCard';
 import { useSettingValue } from '@/hooks/useSiteSettings';
+import type { FeaturedProviderSort } from '@/hooks/useProviders';
 
 interface Props {
   providers: DbProvider[];
   isLoading: boolean;
+  isFetching?: boolean;
+  hasError?: boolean;
+  categories?: { id: string; name: string; slug: string; count?: number }[];
+  selectedCategory?: string;
+  sortBy?: FeaturedProviderSort;
+  updatedAt?: number;
+  onCategoryChange?: (slug: string) => void;
+  onSortChange?: (sort: FeaturedProviderSort) => void;
 }
 
 const AD_INTERVAL = 4;
 
-const FeaturedProviders = ({ providers, isLoading }: Props) => {
+const FeaturedProviders = ({ providers, isLoading, isFetching, hasError, categories = [], selectedCategory = '', sortBy = 'proximity', updatedAt, onCategoryChange, onSortChange }: Props) => {
+  const mountedAt = useRef(typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+  useEffect(() => {
+    if (providers.length === 0 || typeof window === 'undefined') return;
+    const renderMs = Math.round(((performance.now?.() || Date.now()) - mountedAt.current) * 100) / 100;
+    (window as any).__featuredProvidersMetrics = {
+      ...(window as any).__featuredProvidersMetrics,
+      renderMs,
+      providersRendered: providers.length,
+      fallbackMode: hasError,
+      sortBy,
+      selectedCategory: selectedCategory || 'all',
+    };
+  }, [providers.length, hasError, sortBy, selectedCategory]);
+
   const items: ({ type: 'provider'; data: DbProvider; index: number } | { type: 'ad'; adIndex: number })[] = [];
   let adCounter = 0;
   providers.forEach((p, i) => {
@@ -48,12 +72,40 @@ const FeaturedProviders = ({ providers, isLoading }: Props) => {
             <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
               Profissionais em Destaque
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">Os mais bem avaliados da plataforma</p>
+            <p className="mt-1 text-sm text-muted-foreground">Ordenados por proximidade, categoria e disponibilidade</p>
           </div>
           <Button variant="ghost" size="sm" className="hidden text-accent md:flex mt-4 md:mt-0" asChild>
             <Link to="/buscar">Ver todos <ArrowRight className="h-4 w-4" /></Link>
           </Button>
         </div>
+
+        <div className="mb-5 flex flex-col gap-3 rounded-xl border border-border bg-card/80 p-3 shadow-sm md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {(['proximity', 'availability', 'category'] as FeaturedProviderSort[]).map((option) => (
+              <Button key={option} type="button" size="sm" variant={sortBy === option ? 'default' : 'outline'} onClick={() => onSortChange?.(option)}>
+                {option === 'proximity' ? 'Mais próximos' : option === 'availability' ? 'Disponíveis' : 'Por categoria'}
+              </Button>
+            ))}
+          </div>
+          <select
+            value={selectedCategory}
+            onChange={(event) => onCategoryChange?.(event.target.value)}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            aria-label="Filtrar categoria em destaque"
+          >
+            <option value="">Todas as categorias</option>
+            {categories.filter((category) => (category.count || 0) > 0).slice(0, 12).map((category) => (
+              <option key={category.id} value={category.slug}>{category.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {(hasError || (isFetching && providers.length > 0)) && (
+          <p className="mb-3 text-center text-xs text-muted-foreground">
+            {hasError ? 'Exibindo destaques salvos enquanto atualizamos a busca.' : 'Atualizando destaques em segundo plano.'}
+            {updatedAt ? ` Última atualização: ${new Date(updatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.` : ''}
+          </p>
+        )}
 
         {isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -130,7 +182,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
           <Avatar className="h-12 w-12 shrink-0 ring-2 ring-accent/20 transition-transform duration-300 group-hover:scale-105 sm:h-16 sm:w-16">
             <AvatarImage src={displayPhoto || undefined} alt={displayName} className="object-cover" />
             <AvatarFallback className="bg-accent/10 text-2xl">
-              {p.categoryIcon || '🔧'}
+              <Sparkles className="h-5 w-5 text-accent" />
             </AvatarFallback>
           </Avatar>
 
