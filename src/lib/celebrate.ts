@@ -65,24 +65,24 @@ function getAudioContext(): AudioContext | null {
   }
 }
 
-/** Plays a short happy "pling/ebá" arpeggio. Safe to call repeatedly. */
-export function playAchievementSound(volume = 0.18) {
+/** Plays a short happy conquest/applause arpeggio. Safe to call repeatedly. */
+export function playAchievementSound(volume = 0.14) {
   if (isCelebrationMuted()) return;
   const ctx = getAudioContext();
   if (!ctx) return;
 
-  // Mi5, Sol#5, Si5, Mi6 — arpeggio maior alegre
-  const notes = [659.25, 830.61, 987.77, 1318.51];
+  // C5, E5, G5, C6, E6 — assinatura curta de conquista, menos estridente.
+  const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51];
   const now = ctx.currentTime;
-  const noteDur = 0.12;
+  const noteDur = 0.105;
 
   notes.forEach((freq, i) => {
     try {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'triangle';
+      osc.type = i % 2 === 0 ? 'triangle' : 'sine';
       osc.frequency.value = freq;
-      const start = now + i * 0.07;
+      const start = now + i * 0.055;
       const end = start + noteDur;
       // Envelope ADSR rápido para evitar "click"
       gain.gain.setValueAtTime(0, start);
@@ -95,6 +95,29 @@ export function playAchievementSound(volume = 0.18) {
       /* noop */
     }
   });
+}
+
+/** Short soft pop synced with confetti burst. */
+export function playConfettiPopSound(volume = 0.09) {
+  if (isCelebrationMuted()) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  try {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const now = ctx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(520, now + 0.045);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(volume, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.11);
+  } catch {
+    /* noop */
+  }
 }
 
 interface ConfettiOptions {
@@ -173,12 +196,15 @@ export async function fireConfetti(opts: ConfettiOptions = {}) {
     const confetti = (await import('canvas-confetti')).default;
     if (opts.intensity === 'mini') {
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
+      playConfettiPopSound(0.07);
       return;
     }
     // Big celebration: two bursts
     confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+    playConfettiPopSound(0.09);
     setTimeout(() => {
       confetti({ particleCount: 80, spread: 120, origin: { y: 0.5 } });
+      playConfettiPopSound(0.07);
     }, 220);
   } catch {
     /* noop */
@@ -195,5 +221,5 @@ export function celebrate(opts: ConfettiOptions = {}) {
   }
   void logCelebrationTelemetry(TELEMETRY_ACTION_TRIGGERED, opts);
   void fireConfetti(opts);
-  playAchievementSound(opts.intensity === 'mini' ? 0.14 : 0.2);
+  setTimeout(() => playAchievementSound(opts.intensity === 'mini' ? 0.1 : 0.14), opts.intensity === 'mini' ? 80 : 140);
 }
