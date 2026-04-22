@@ -106,6 +106,7 @@ const BasicOnboardingWizard = () => {
   const [servicesCreated, setServicesCreated] = useState(0);
 
   const [saving, setSaving] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   // ─── Sync inicial: se profile carrega DEPOIS do mount, atualiza step ───
   const syncedRef = useRef(false);
@@ -164,6 +165,36 @@ const BasicOnboardingWizard = () => {
     setStep(nextStep);
     await persistStep(nextStep, extraPatch);
   };
+
+  // ─── Auto-save com debounce: mantém o último passo e dados parciais salvos ───
+  useEffect(() => {
+    if (!user?.id || !profile || step === 1 || saving) return;
+
+    const patch: Record<string, any> = { onboarding_step: step, onboarding_completed: false };
+    if (step >= 2) {
+      patch.city = city || null;
+      patch.state = state || null;
+      patch.avatar_url = avatarUrl;
+    }
+    if (step >= 3) {
+      patch.full_name = fullName.trim() || null;
+      patch.whatsapp = whatsapp || null;
+      patch.phone = whatsapp || null;
+      if (profileType) {
+        patch.profile_type = profileType;
+        patch.role = profileType;
+      }
+    }
+
+    setAutoSaveStatus('saving');
+    const timer = window.setTimeout(() => {
+      supabase.from('profiles').update(patch as any).eq('id', user.id)
+        .then(() => setAutoSaveStatus('saved'))
+        .catch(() => setAutoSaveStatus('idle'));
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [user?.id, profile, step, city, state, avatarUrl, fullName, whatsapp, profileType, saving]);
 
   // Quando provider termina o wizard de serviços, marcamos +1 e avançamos
   const handleServiceCreated = async (_id: string) => {
