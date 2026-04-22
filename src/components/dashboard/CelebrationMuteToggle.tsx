@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
-import { isCelebrationMuted, setCelebrationMuted } from '@/lib/celebrate';
+import { isCelebrationMuted, resolveCelebrationMutedPreference, setCelebrationMuted } from '@/lib/celebrate';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
@@ -18,7 +18,7 @@ const CelebrationMuteToggle = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const profileMuted = !!profile?.celebration_muted;
+    const profileMuted = resolveCelebrationMutedPreference(profile?.celebration_muted);
     setCelebrationMuted(profileMuted);
     setMuted(profileMuted || isCelebrationMuted());
     const handler = (e: Event) => {
