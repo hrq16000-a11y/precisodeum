@@ -20,8 +20,10 @@ const readSiteAssets = async () => {
   const content = await fs.readFile(siteAssetsPath, 'utf8');
   const logoUrl = content.match(/DEFAULT_LOGO_URL\s*=\s*['"]([^'"]+)['"]/)?.[1];
   const srcset = content.match(/DEFAULT_LOGO_SRCSET\s*=\s*['"]([^'"]+)['"]/)?.[1] ?? '';
+  const pngSrcset = content.match(/DEFAULT_LOGO_PNG_SRCSET\s*=\s*['"]([^'"]+)['"]/)?.[1] ?? '';
   const variants = [...srcset.matchAll(/([^\s,]+\.webp)\s+(\d+)w/g)].map(([, url, width]) => ({
     url,
+    pngUrl: pngSrcset.match(new RegExp(`([^\\s,]+\\.png)\\s+${width}w`))?.[1] ?? url.replace(/\.webp$/, '.png'),
     width: Number(width),
   }));
 
@@ -37,13 +39,13 @@ const cleanupOldLogoVariants = async (keepUrls) => {
   const entries = await fs.readdir(uploadsDir).catch(() => []);
 
   await Promise.all(entries.map(async (entry) => {
-    if (!/^logo-brand-[\w-]+\.webp$/.test(entry)) return;
+    if (!/^logo-brand-[\w-]+\.(webp|png)$/.test(entry)) return;
 
     const filePath = path.join(uploadsDir, entry);
     if (keep.has(filePath)) return;
 
     await fs.rm(filePath, { force: true });
-    console.log(`Logo WebP antiga removida: ${path.relative(projectRoot, filePath)}`);
+    console.log(`Logo variante antiga removida: ${path.relative(projectRoot, filePath)}`);
   }));
 };
 
@@ -58,12 +60,15 @@ const prepareUploadedLogo = async (currentContent, currentLogoUrl) => {
   const sourcePath = path.join(uploadsDir, `logo-brand-source-${hash}${ext}`);
   await fs.writeFile(sourcePath, inputBuffer);
 
-  const variantUrls = widths.map((width) => `/lovable-uploads/logo-brand-${hash}-${width}.webp`);
-  const nextSrcset = variantUrls.map((url, index) => `${url} ${widths[index]}w`).join(', ');
+  const webpVariantUrls = widths.map((width) => `/lovable-uploads/logo-brand-${hash}-${width}.webp`);
+  const pngVariantUrls = widths.map((width) => `/lovable-uploads/logo-brand-${hash}-${width}.png`);
+  const nextSrcset = webpVariantUrls.map((url, index) => `${url} ${widths[index]}w`).join(', ');
+  const nextPngSrcset = pngVariantUrls.map((url, index) => `${url} ${widths[index]}w`).join(', ');
   const nextLogoUrl = toPublicUrl(sourcePath);
   const nextContent = currentContent
     .replace(/DEFAULT_LOGO_URL\s*=\s*['"][^'"]+['"]/, `DEFAULT_LOGO_URL = '${nextLogoUrl}'`)
-    .replace(/DEFAULT_LOGO_SRCSET\s*=\s*['"][^'"]+['"]/, `DEFAULT_LOGO_SRCSET = '${nextSrcset}'`);
+    .replace(/DEFAULT_LOGO_SRCSET\s*=\s*['"][^'"]+['"]/, `DEFAULT_LOGO_SRCSET = '${nextSrcset}'`)
+    .replace(/DEFAULT_LOGO_PNG_SRCSET\s*=\s*['"][^'"]+['"]/, `DEFAULT_LOGO_PNG_SRCSET = '${nextPngSrcset}'`);
 
   await fs.writeFile(siteAssetsPath, nextContent);
 
@@ -74,7 +79,7 @@ const prepareUploadedLogo = async (currentContent, currentLogoUrl) => {
 
   return {
     logoUrl: nextLogoUrl,
-    variants: widths.map((width, index) => ({ width, url: variantUrls[index] })),
+    variants: widths.map((width, index) => ({ width, url: webpVariantUrls[index], pngUrl: pngVariantUrls[index] })),
   };
 };
 
