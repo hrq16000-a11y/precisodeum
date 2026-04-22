@@ -169,6 +169,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [fetchProfile]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const syncMutedFromProfile = (nextProfile: any) => {
+      setProfile(prev => ({ ...(prev ?? {}), ...(nextProfile ?? {}) }));
+      setCelebrationMuted(!!nextProfile?.celebration_muted);
+    };
+
+    const channel = supabase
+      .channel(`profile-preferences:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => syncMutedFromProfile(payload.new)
+      )
+      .subscribe();
+
+    const refreshOnFocus = () => {
+      if (document.visibilityState === 'visible') void refetchProfile();
+    };
+    document.addEventListener('visibilitychange', refreshOnFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', refreshOnFocus);
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, refetchProfile]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setSession(null);
