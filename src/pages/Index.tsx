@@ -1,4 +1,4 @@
-import { lazy as reactLazy, Suspense, memo, Component, ReactNode, type ComponentType, useMemo, useCallback } from 'react';
+import { lazy as reactLazy, Suspense, Component, ReactNode, type ComponentType, useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useHomeFeatureFlags } from '@/hooks/useHomeFeatureFlags';
@@ -77,6 +77,52 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
 // Instant fallback — no blocking skeletons
 
 const SectionFallback = () => null;
+
+const DeferredAboveFoldSection = ({ children }: { children: ReactNode }) => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if ('requestIdleCallback' in window) {
+      const id = (window as any).requestIdleCallback(() => setReady(true), { timeout: 1800 });
+      return () => (window as any).cancelIdleCallback?.(id);
+    }
+
+    const id = window.setTimeout(() => setReady(true), 900);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  return ready ? <>{children}</> : null;
+};
+
+const LazyViewportSection = ({ children }: { children: ReactNode }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || visible) return;
+
+    if (!('IntersectionObserver' in window)) {
+      const id = window.setTimeout(() => setVisible(true), 1200);
+      return () => window.clearTimeout(id);
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '650px 0px' },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [visible]);
+
+  return <div ref={ref} className="cv-auto">{visible ? children : null}</div>;
+};
 
 // Default section order
 const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,home_featured_ad,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,courses,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
@@ -254,14 +300,18 @@ const Index = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <HeroBanner />
-      <Suspense fallback={<div className="h-8" />}><ActiveProvidersCounter /></Suspense>
+      <DeferredAboveFoldSection>
+        <Suspense fallback={<div className="h-8" />}><ActiveProvidersCounter /></Suspense>
+      </DeferredAboveFoldSection>
 
       {/* Mural de Prova Social — Realtime (compacto, ~40% menor) */}
-      <Suspense fallback={null}>
-        <div className="container mx-auto px-4 mt-3 max-w-2xl">
-          <CommunityFeed compact />
-        </div>
-      </Suspense>
+      <DeferredAboveFoldSection>
+        <Suspense fallback={null}>
+          <div className="container mx-auto px-4 mt-3 max-w-2xl">
+            <CommunityFeed compact />
+          </div>
+        </Suspense>
+      </DeferredAboveFoldSection>
 
       {/* Categories rendered eagerly (not lazy) to eliminate CLS caused by lazy sections above */}
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
@@ -271,11 +321,11 @@ const Index = () => {
         if (!section) return null;
         return (
           <LazyErrorBoundary key={slug}>
-            <Suspense fallback={<SectionFallback />}>
-              <div className="cv-auto">
+            <LazyViewportSection>
+              <Suspense fallback={<SectionFallback />}>
                 {section}
-              </div>
-            </Suspense>
+              </Suspense>
+            </LazyViewportSection>
           </LazyErrorBoundary>
         );
       })}
