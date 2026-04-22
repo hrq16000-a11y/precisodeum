@@ -226,7 +226,6 @@ const Header = () => {
         {/* Left: Logo + Geo */}
         <div className="flex min-w-0 items-center gap-2 overflow-hidden -ml-1 sm:-ml-2">
           <Logo
-            height="h-10 min-h-10 max-h-10"
             className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition-opacity duration-300 ease-in-out"
           />
 

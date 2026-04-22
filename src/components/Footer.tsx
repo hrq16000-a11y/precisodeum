@@ -85,7 +85,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <Link to="/">
-              <Logo linkTo="" height="h-10 min-h-10 max-h-10" className="mb-4 brightness-0 invert" />
+              <Logo linkTo="" variant="white" className="mb-4" />
             </Link>
             <p className="text-sm font-semibold text-primary-foreground/90 mb-1">{tagline.headline}</p>
             <p className="text-sm leading-relaxed text-primary-foreground/70">
