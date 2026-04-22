@@ -5,6 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import IconRenderer from '@/components/ui/IconRenderer';
+import DopamineCounter from '@/components/dashboard/DopamineCounter';
+import { useSettingValue } from '@/hooks/useSiteSettings';
+import { resolveGamificationMultiplier, scaleGamificationPoints } from '@/lib/gamification';
 
 interface GamificationLevel {
   id: string;
@@ -21,8 +24,9 @@ const ProfileStrength = () => {
   const { user, profile } = useAuth();
   const [levels, setLevels] = useState<GamificationLevel[]>([]);
   const [loading, setLoading] = useState(true);
+  const multiplier = resolveGamificationMultiplier(useSettingValue('gamification_multiplier'));
 
-  const points = profile?.engagement_points || 0;
+  const points = scaleGamificationPoints(profile?.engagement_points || 0, multiplier);
 
   useEffect(() => {
     supabase.from('gamification_levels')
@@ -30,10 +34,14 @@ const ProfileStrength = () => {
       .eq('active', true)
       .order('min_points', { ascending: true })
       .then(({ data }) => {
-        setLevels((data || []) as GamificationLevel[]);
+        setLevels(((data || []) as GamificationLevel[]).map((level) => ({
+          ...level,
+          min_points: scaleGamificationPoints(level.min_points, multiplier),
+          max_points: level.max_points == null ? null : scaleGamificationPoints(level.max_points, multiplier),
+        })));
         setLoading(false);
       });
-  }, []);
+  }, [multiplier]);
 
   if (loading || levels.length === 0) return null;
 
@@ -84,7 +92,7 @@ const ProfileStrength = () => {
             </h3>
             <p className="text-[11px] text-muted-foreground">
               Nível <span className="font-semibold" style={{ color: currentLevel.color }}>{currentLevel.name}</span>
-              {' · '}{points} pts
+              {' · '}<DopamineCounter value={points} className="font-semibold" celebrateOnComplete />
             </p>
           </div>
         </div>
@@ -129,7 +137,7 @@ const ProfileStrength = () => {
           {nextLevel && (
             <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
               <ArrowUp className="h-2.5 w-2.5" />
-              Faltam <span className="font-bold text-foreground">{pointsToNext}</span> pts
+              Faltam <span className="font-bold text-foreground"><DopamineCounter value={pointsToNext} suffix="" /></span> pts
             </span>
           )}
         </div>
@@ -161,7 +169,7 @@ const ProfileStrength = () => {
         >
           <Sparkles className="h-4 w-4 text-purple-500" />
           <p className="text-[11px] font-bold text-foreground">
-            🎉 Nível máximo alcançado! Você é um Mestre da plataforma.
+            Nível máximo alcançado! Você é um Mestre da plataforma.
           </p>
         </motion.div>
       )}
