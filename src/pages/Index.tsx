@@ -1,6 +1,4 @@
 import { lazy as reactLazy, Suspense, Component, ReactNode, type ComponentType, useMemo, useCallback, useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useHomeFeatureFlags } from '@/hooks/useHomeFeatureFlags';
 import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
@@ -186,37 +184,7 @@ const Index = () => {
   }, [sectionsOrderRaw, hiddenSectionsRaw]);
 
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
-  const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
-
-  // Consolidated secondary data — single RPC call (replaces 4 parallel queries)
-  const { data: secondaryData } = useQuery({
-    queryKey: ['home-secondary-data'],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_home_bootstrap');
-      if (error) throw error;
-      const payload = (data ?? {}) as {
-        topCities?: Array<{ name: string; slug: string; state: string }>;
-        sponsors?: Array<any>;
-        counts?: { services?: number; jobs?: number };
-      };
-      return {
-        topCities: payload.topCities ?? [],
-        sponsors: payload.sponsors ?? [],
-        counts: {
-          services: payload.counts?.services ?? 0,
-          jobs: payload.counts?.jobs ?? 0,
-        },
-      };
-    },
-    staleTime: 1000 * 60 * 30,
-    gcTime: 1000 * 60 * 60,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
-
-  const topCities = secondaryData?.topCities || [];
-  const sponsors = secondaryData?.sponsors || [];
-  const counts = secondaryData?.counts;
+  const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders(featuredEnabled);
 
   // Section renderer — memoized to avoid re-creation each render
   const renderSection = useCallback((slug: string) => {
@@ -292,7 +260,7 @@ const Index = () => {
   }, [
     heroBannersEnabled, sponsorsEnabled, featuredEnabled, jobsEnabled,
     blogEnabled, ctaEnabled, howItWorksEnabled, popularSearchesEnabled,
-    reviewsEnabled, faqEnabled, categories, catsLoading,
+    reviewsEnabled, faqEnabled,
     featuredProviders, provsLoading, geoCity,
   ]);
 
