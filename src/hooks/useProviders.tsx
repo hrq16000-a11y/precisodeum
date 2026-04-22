@@ -393,7 +393,7 @@ export function useCategoriesWithCount() {
   });
 }
 
-export function useFeaturedProviders() {
+export function useFeaturedProviders(enabled = true) {
   return useQuery({
     queryKey: ['featured-providers'],
     queryFn: async (): Promise<DbProvider[]> => {
@@ -443,6 +443,7 @@ export function useFeaturedProviders() {
     },
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
+    enabled,
   });
 }
 
