@@ -41,6 +41,8 @@ const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
       return (data || []).map((s: any) => s.name.toLowerCase());
     },
     staleTime: 1000 * 60 * 10,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const serviceList = dbServices && dbServices.length > 0 ? dbServices : FALLBACK_SERVICES;
