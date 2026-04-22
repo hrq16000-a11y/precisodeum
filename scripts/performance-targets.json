@@ -1,0 +1,10 @@
+{
+  "mobileScoreMin": 70,
+  "lcpMaxMs": 3000,
+  "inpMaxMs": 250,
+  "tbtMaxMs": 300,
+  "clsMax": 0.1,
+  "ttfbMaxMs": 800,
+  "entryJsMaxKb": 260,
+  "totalJsMaxKb": 5600
+}
