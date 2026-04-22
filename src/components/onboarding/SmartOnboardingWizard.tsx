@@ -715,6 +715,15 @@ const BasicOnboardingWizard = () => {
           <ReviewSummaryCard items={summaryItems} onBack={() => setShowFinalSummary(false)} onFinish={finishOnboarding} saving={saving} />
         )}
 
+        {guidedReviewStep && !showFinalSummary && (
+          <GuidedReviewCard
+            step={guidedReviewStep}
+            items={reviewItems[guidedReviewStep] ?? []}
+            onEdit={() => editGuidedReviewStep(guidedReviewStep)}
+            onKeep={keepGuidedReviewStep}
+          />
+        )}
+
         {!showFinalSummary && hasExistingCadastro && step > 1 && (
           <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4 text-sm text-foreground">
             <div className="flex items-start gap-3">
@@ -735,6 +744,7 @@ const BasicOnboardingWizard = () => {
           hasPendingChanges={hasPendingChanges}
           lastAttemptAt={lastAutoSaveAttemptAt}
           errorMessage={lastAutoSaveError}
+          attempts={autoSaveAttempts}
           onDelayChange={setAutoSaveDelay}
           onRetry={retryAutoSave}
           onReloadSaved={reloadSavedFields}
@@ -828,7 +838,7 @@ const BasicOnboardingWizard = () => {
             profileType={profileType}
             servicesCreated={servicesCreated}
             saving={saving}
-            onFinish={finishOnboarding}
+            onFinish={startGuidedReview}
             onBack={() => advanceTo(profileType === 'provider' ? 4 : 3)}
           />
         )}
