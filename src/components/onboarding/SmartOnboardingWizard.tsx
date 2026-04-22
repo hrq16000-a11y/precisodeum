@@ -778,6 +778,9 @@ const Step5Done = ({
   profileType, servicesCreated, saving, onFinish, onBack,
 }: any) => {
   const canFinish = profileType !== 'provider' || servicesCreated > 0;
+  const finishLabel = profileType === 'provider' && servicesCreated === 0
+    ? 'Entrar no Dashboard e concluir depois'
+    : 'Entrar no Dashboard';
   return (
     <>
       <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -796,17 +799,17 @@ const Step5Done = ({
 
       {!canFinish && (
         <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-center text-xs text-amber-700 dark:text-amber-400">
-          Você precisa cadastrar pelo menos 1 serviço no passo anterior antes de concluir.
+          Sem serviço cadastrado, seu perfil pode aparecer incompleto. Você pode finalizar agora e completar depois.
         </div>
       )}
 
       <Button
         variant="accent"
         className="mt-6 w-full"
-        disabled={!canFinish || saving}
+        disabled={saving}
         onClick={onFinish}
       >
-        {saving ? 'Concluindo…' : 'Entrar no Dashboard'}
+        {saving ? 'Concluindo…' : finishLabel}
       </Button>
     </>
   );
