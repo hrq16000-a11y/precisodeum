@@ -294,6 +294,13 @@ const GamificationManagementSection = ({ settings, onSaveText }: {
       return;
     }
     await onSaveText(key, value);
+    if (key.startsWith('gamification_level_')) {
+      const levelName = meta.label;
+      await supabase
+        .from('gamification_levels')
+        .update({ min_points: Number(value), updated_at: new Date().toISOString() } as any)
+        .ilike('name', levelName);
+    }
   };
 
   const multiplier = Number(local.gamification_multiplier || map.gamification_multiplier || 1) || 1;
