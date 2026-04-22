@@ -16,6 +16,7 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { motion } from 'framer-motion';
 import { importWithRetry } from '@/lib/lazyWithRetry';
+import { getSeoAuthorityData } from '@/lib/seoAuthority';
 
 const SponsorLeaderBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorLeaderBanner')));
 const SponsorFooterCTA = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorFooterCTA')));
@@ -185,12 +186,7 @@ const CityDetailPage = () => {
   // JSON-LD
   const jsonLd = useMemo(() => {
     if (!city) return null;
-    const authorityProviders = providers.filter((p: any) => {
-      const level = (p.levelName || '').toLowerCase();
-      return level.includes('diamante') || level.includes('ouro');
-    });
-    const ratingSource = authorityProviders.length > 0 ? authorityProviders : providers;
-    const ratings = ratingSource.map((p: any) => Number(p.rating || 0)).filter((r: number) => r > 0);
+    const { aggregateRating } = getSeoAuthorityData(providers);
     return {
       '@context': 'https://schema.org',
       '@type': 'City',
@@ -201,13 +197,7 @@ const CityDetailPage = () => {
         containedInPlace: { '@type': 'Country', name: 'Brazil' },
       },
       ...(providers.length > 0 && {
-        aggregateRating: ratings.length > 0 ? {
-          '@type': 'AggregateRating',
-          ratingValue: (ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length).toFixed(1),
-          reviewCount: ratingSource.reduce((acc: number, p: any) => acc + (Number(p.reviewCount) || 0), 0) || ratings.length,
-          bestRating: 5,
-          worstRating: 1,
-        } : undefined,
+        aggregateRating: aggregateRating || undefined,
         makesOffer: providers.slice(0, 5).map(p => ({
           '@type': 'Offer',
           itemOffered: {
