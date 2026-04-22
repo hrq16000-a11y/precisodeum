@@ -533,9 +533,39 @@ const BasicOnboardingWizard = () => {
           />
         </div>
 
-        <WizardChecklist currentStep={step} furthestStep={furthestStep} onReview={reviewStep} />
+        <WizardChecklist
+          currentStep={step}
+          furthestStep={furthestStep}
+          estimates={stepEstimates}
+          onReview={reviewStep}
+          onReviewAll={startReviewAll}
+        />
 
-        {hasExistingCadastro && step > 1 && (
+        {reviewReturnStep && !showFinalSummary && (
+          <div className="mb-4 rounded-xl border border-accent/25 bg-accent/10 p-3 text-sm text-foreground">
+            <p className="font-bold">Revisando passo antigo</p>
+            <p className="mt-1 text-xs text-muted-foreground">Ao salvar, você volta para seu progresso mais recente.</p>
+            <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={returnToProgress}>
+              Salvar revisão e voltar ao progresso
+            </Button>
+          </div>
+        )}
+
+        {reviewAllMode && !showFinalSummary && (
+          <div className="mb-4 rounded-xl border border-border bg-muted/30 p-3 text-sm text-foreground">
+            <p className="font-bold">Revisar tudo</p>
+            <p className="mt-1 text-xs text-muted-foreground">Confira este passo e avance para o próximo item disponível.</p>
+            <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={continueReviewAll}>
+              Próximo item da revisão
+            </Button>
+          </div>
+        )}
+
+        {showFinalSummary && (
+          <ReviewSummaryCard items={summaryItems} onBack={() => setShowFinalSummary(false)} onFinish={finishOnboarding} saving={saving} />
+        )}
+
+        {!showFinalSummary && hasExistingCadastro && step > 1 && (
           <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4 text-sm text-foreground">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
