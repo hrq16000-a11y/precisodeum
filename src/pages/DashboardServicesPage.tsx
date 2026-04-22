@@ -405,7 +405,11 @@ const DashboardServicesPage = () => {
       let serviceId = editId;
 
       if (editId) {
-        const { error } = await supabase.from('services').update(payload).eq('id', editId);
+        const { error } = await (supabase.rpc as any)('update_service_atomic', {
+          p_service_id: editId,
+          p_data: payload,
+          p_category_ids: selectedCategoryIds,
+        });
         if (error) {
           await showSaveError({ actionContext: 'Atualizar serviço', componentName: 'DashboardServicesPage', errorMessage: error.message, retryFn: handleSave });
           return;
@@ -434,12 +438,6 @@ const DashboardServicesPage = () => {
       }
 
       if (serviceId) {
-        await supabase.from('service_categories').delete().eq('service_id', serviceId);
-        if (selectedCategoryIds.length > 0) {
-          await supabase.from('service_categories').insert(
-            selectedCategoryIds.map(catId => ({ service_id: serviceId!, category_id: catId }))
-          );
-        }
         if (!editId && newServicePhoto) {
           await uploadPhoto(serviceId);
         }
@@ -547,14 +545,24 @@ const DashboardServicesPage = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Tem certeza que deseja excluir este serviço? Ele será movido para a lixeira.')) return;
-    await supabase.from('services').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+    const { error } = await (supabase.rpc as any)('update_service_atomic', {
+      p_service_id: id,
+      p_data: { deleted_at: new Date().toISOString() },
+      p_category_ids: null,
+    });
+    if (error) { toast.error('Erro: ' + error.message); return; }
     toast.success('Serviço movido para a lixeira');
     fetchServices();
   };
 
   const handlePause = async (s: any) => {
     const newDate = s.deleted_at ? null : new Date().toISOString();
-    await supabase.from('services').update({ deleted_at: newDate }).eq('id', s.id);
+    const { error } = await (supabase.rpc as any)('update_service_atomic', {
+      p_service_id: s.id,
+      p_data: { deleted_at: newDate },
+      p_category_ids: null,
+    });
+    if (error) { toast.error('Erro: ' + error.message); return; }
     toast.success(newDate ? 'Serviço pausado' : 'Serviço reativado');
     fetchServices();
   };

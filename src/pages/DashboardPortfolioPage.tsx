@@ -147,10 +147,10 @@ const DashboardPortfolioPage = () => {
 
     try {
       if (editingAlbum) {
-        const { error } = await supabase
-          .from('portfolio_albums')
-          .update({ name: albumName.trim(), description: albumDesc.trim() })
-          .eq('id', editingAlbum.id);
+        const { error } = await (supabase.rpc as any)('update_album_atomic', {
+          p_album_id: editingAlbum.id,
+          p_data: { name: albumName.trim(), description: albumDesc.trim() },
+        });
         if (error) {
           await showSaveError({ actionContext: 'Atualizar álbum', componentName: 'DashboardPortfolioPage', errorMessage: error.message, retryFn: handleSaveAlbum });
           setAlbumSaving(false); return;

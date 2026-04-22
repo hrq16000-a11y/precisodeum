@@ -5410,6 +5410,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_album_atomic: {
+        Args: { p_album_id: string; p_data: Json }
+        Returns: Json
+      }
+      update_photo_atomic: {
+        Args: { p_data: Json; p_photo_id: string }
+        Returns: Json
+      }
+      update_service_atomic: {
+        Args: { p_category_ids?: string[]; p_data: Json; p_service_id: string }
+        Returns: Json
+      }
       update_site_setting_audited: {
         Args: { p_key: string; p_value: string }
         Returns: undefined
