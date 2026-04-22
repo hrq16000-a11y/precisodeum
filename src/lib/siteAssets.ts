@@ -2,7 +2,7 @@ export const SITE_BASE_URL = 'https://precisodeum.com.br';
 
 export const DEFAULT_LOGO_URL = '/lovable-uploads/logo-pdup-v3.png';
 export const DEFAULT_FOOTER_LOGO_URL = '/lovable-uploads/logo-transparent.webp';
-export const DEFAULT_SOCIAL_IMAGE_URL = '/og-image.png';
+export const DEFAULT_SOCIAL_IMAGE_URL = '/social-image.png';
 
 export const toAbsoluteSiteUrl = (url: string | null | undefined): string => {
   const value = String(url || '').trim();
