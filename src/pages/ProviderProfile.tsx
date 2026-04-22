@@ -585,7 +585,7 @@ const ProviderProfile = () => {
     }
 
     let frame: number | null = null;
-    let emergencyTimer: ReturnType<typeof window.setTimeout> | null = null;
+    let emergencyTimer: number | null = null;
     let safeAreaBottom = 0;
     let lastShouldShow: boolean | null = null;
     const visualViewport = window.visualViewport;
