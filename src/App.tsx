@@ -7,7 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdDebugProvider } from "@/contexts/AdDebugContext";
 import { WhatsAppGateProvider, WhatsAppGateInterceptor } from "@/contexts/WhatsAppGateContext";
-import { importWithRetry } from "@/lib/lazyWithRetry";
+import { importWithRetry, prefetchImportWithRetry } from "@/lib/lazyWithRetry";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ModuleBoundary from "./components/ModuleBoundary";
@@ -202,6 +202,7 @@ const DeferredShell = () => {
   if (!ready) return null;
   return (
     <Suspense fallback={null}>
+      <CurtainReveal />
       <Toaster />
       <Sonner />
       <ScrollProgressBar />
@@ -212,6 +213,31 @@ const DeferredShell = () => {
       <PwaInstallBanner />
     </Suspense>
   );
+};
+
+const RoutePrefetcher = () => {
+  const location = useLocation();
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const prefetch = () => {
+      if (location.pathname === '/' || location.pathname === '/index') {
+        void prefetchImportWithRetry('route-search', () => import('./pages/SearchPage'));
+        void prefetchImportWithRetry('route-category', () => import('./pages/CategoryPage'));
+        return;
+      }
+      if (location.pathname.startsWith('/buscar') || location.pathname.startsWith('/categoria/')) {
+        void prefetchImportWithRetry('route-provider', () => import('./pages/ProviderProfile'));
+      }
+    };
+    const id = 'requestIdleCallback' in window
+      ? (window as any).requestIdleCallback(prefetch, { timeout: 3500 })
+      : window.setTimeout(prefetch, 2200);
+    return () => {
+      if ('cancelIdleCallback' in window) (window as any).cancelIdleCallback(id);
+      else window.clearTimeout(id);
+    };
+  }, [location.pathname]);
+  return null;
 };
 
 const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
@@ -253,7 +279,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
-          <Suspense fallback={null}><CurtainReveal /></Suspense>
+          <RoutePrefetcher />
           <ScrollToTop />
             <AuthProvider>
             <AdDebugProvider>
