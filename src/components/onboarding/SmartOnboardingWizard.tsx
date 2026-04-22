@@ -243,8 +243,6 @@ const BasicOnboardingWizard = () => {
 
   const currentProfilePatch = (): Record<string, any> => {
     const patch: Record<string, any> = { onboarding_completed: false };
-    patch.city = city || null;
-    patch.state = state || null;
     patch.avatar_url = avatarUrl;
     patch.full_name = fullName.trim() || null;
     patch.whatsapp = whatsapp || null;
@@ -333,6 +331,10 @@ const BasicOnboardingWizard = () => {
     toast.success('Campos salvos recarregados.');
   };
 
+  const handleStepFieldBlur = () => {
+    void flushAutoSave();
+  };
+
   // ─── Auto-save com debounce: mantém o último passo e dados parciais salvos ───
   useEffect(() => {
     if (!user?.id || !profile || saving) return;
@@ -353,7 +355,7 @@ const BasicOnboardingWizard = () => {
     }, autoSaveDelay);
 
     return () => window.clearTimeout(timer);
-  }, [user?.id, profile, step, furthestStep, city, state, avatarUrl, fullName, whatsapp, profileType, saving, autoSaveDelay]);
+  }, [user?.id, profile, step, furthestStep, city, state, avatarUrl, fullName, whatsapp, bio, agencyName, selectedCategoryIds, profileType, saving, autoSaveDelay]);
 
   useEffect(() => {
     const hasPendingAutoSave = autoSaveStatus === 'saving' || autoSaveStatus === 'error';
