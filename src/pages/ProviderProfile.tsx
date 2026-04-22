@@ -1657,7 +1657,7 @@ const ProviderProfile = () => {
       </Dialog>
 
       {/* Sticky CTA bar for mobile */}
-      {effectiveWhatsApp && (
+      {effectiveWhatsApp && showStickyContact && (
         <motion.div
           className="fixed bottom-0 left-0 right-0 border-t border-border bg-gradient-to-t from-card via-card/98 to-card/90 backdrop-blur-lg p-3 flex gap-2 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
           style={{ zIndex: 999, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
@@ -1734,7 +1734,7 @@ const ProviderProfile = () => {
 };
 
 /* ── Service Detail Dialog ── */
-const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText, accentBg, onImageClick }: { service: any; open: boolean; onClose: () => void; whatsapp: string; ctaWhatsappText?: string; accentBg?: string; onImageClick?: (images: string[], index: number) => void }) => (
+const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText, accentBg, onImageClick, providerId }: { service: any; open: boolean; onClose: () => void; whatsapp: string; ctaWhatsappText?: string; accentBg?: string; onImageClick?: (images: string[], index: number) => void; providerId?: string }) => (
   <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
       <DialogHeader>
@@ -1803,7 +1803,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
       </div>
       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
         <Button variant="accent" className="w-full gap-2" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-          <a href={whatsappLink(whatsapp || '', `Olá! Vi seu serviço no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
+          <a href={whatsappLink(whatsapp || '', `Olá! Vi o serviço "${service.service_name}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer" onClick={() => providerId && trackContactClick(providerId, 'whatsapp', window.location.pathname, service.service_name)}>
             <MessageCircle className="h-4 w-4" /> {ctaWhatsappText || 'Chamar no WhatsApp'}
           </a>
         </Button>
@@ -1813,7 +1813,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
 );
 
 /* ── Services List with popup ── */
-const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg, themeClasses, onImageClick }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string; themeClasses?: ThemeConfig; onImageClick?: (images: string[], index: number) => void }) => {
+const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg, themeClasses, onImageClick, providerId }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string; themeClasses?: ThemeConfig; onImageClick?: (images: string[], index: number) => void; providerId?: string }) => {
   const [selected, setSelected] = useState<any | null>(null);
   const tc = themeClasses || THEME_CLASSES.default;
 
@@ -1906,7 +1906,7 @@ const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhats
         </div>
       </motion.div>
       {selected && (
-        <ServiceDetailDialog service={selected} open={!!selected} onClose={() => setSelected(null)} whatsapp={whatsapp} ctaWhatsappText={ctaWhatsappText} accentBg={accentBg} onImageClick={onImageClick} />
+        <ServiceDetailDialog service={selected} open={!!selected} onClose={() => setSelected(null)} whatsapp={whatsapp} ctaWhatsappText={ctaWhatsappText} accentBg={accentBg} onImageClick={onImageClick} providerId={providerId} />
       )}
     </>
   );
