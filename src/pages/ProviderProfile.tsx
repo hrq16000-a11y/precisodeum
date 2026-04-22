@@ -594,6 +594,19 @@ const ProviderProfile = () => {
     const supportsIntersectionObserver = 'IntersectionObserver' in window;
     const supportsResizeObserver = 'ResizeObserver' in window;
     const hasLimitedApiSupport = !supportsIntersectionObserver || !supportsResizeObserver || !visualViewport;
+    const debugVisibilityMetrics = import.meta.env.DEV && hasLimitedApiSupport;
+    const visibilityMetrics = {
+      calls: 0,
+      scheduled: 0,
+      skippedFrames: 0,
+      scrollSchedules: 0,
+      observerSchedules: 0,
+      resizeSchedules: 0,
+      totalMs: 0,
+      maxMs: 0,
+      lastReportAt: performance.now(),
+      lastSource: 'init',
+    };
 
     /**
      * Sticky Action Bar visibility contract
@@ -626,6 +639,7 @@ const ProviderProfile = () => {
     };
 
     const measureVisibility = () => {
+      const startedAt = debugVisibilityMetrics ? performance.now() : 0;
       frame = null;
       if (emergencyTimer !== null) {
         window.clearTimeout(emergencyTimer);
@@ -645,9 +659,40 @@ const ProviderProfile = () => {
         lastShouldShow = shouldShow;
         setShowStickyContact(shouldShow);
       }
+      if (debugVisibilityMetrics) {
+        const now = performance.now();
+        const duration = now - startedAt;
+        visibilityMetrics.calls += 1;
+        visibilityMetrics.totalMs += duration;
+        visibilityMetrics.maxMs = Math.max(visibilityMetrics.maxMs, duration);
+        if (now - visibilityMetrics.lastReportAt >= 2000) {
+          console.debug('[StickyActionBar] measureVisibility metrics', {
+            calls: visibilityMetrics.calls,
+            scheduled: visibilityMetrics.scheduled,
+            skippedFrames: visibilityMetrics.skippedFrames,
+            scrollSchedules: visibilityMetrics.scrollSchedules,
+            observerSchedules: visibilityMetrics.observerSchedules,
+            resizeSchedules: visibilityMetrics.resizeSchedules,
+            avgMs: Number((visibilityMetrics.totalMs / visibilityMetrics.calls).toFixed(3)),
+            maxMs: Number(visibilityMetrics.maxMs.toFixed(3)),
+            lastSource: visibilityMetrics.lastSource,
+          });
+          visibilityMetrics.lastReportAt = now;
+        }
+      }
     };
-    const scheduleVisibilityMeasure = () => {
-      if (frame !== null) return;
+    const scheduleVisibilityMeasure = (source: 'scroll' | 'observer' | 'resize' | 'init' = 'init') => {
+      if (debugVisibilityMetrics) {
+        visibilityMetrics.scheduled += 1;
+        visibilityMetrics.lastSource = source;
+        if (source === 'scroll') visibilityMetrics.scrollSchedules += 1;
+        if (source === 'observer') visibilityMetrics.observerSchedules += 1;
+        if (source === 'resize') visibilityMetrics.resizeSchedules += 1;
+      }
+      if (frame !== null) {
+        if (debugVisibilityMetrics) visibilityMetrics.skippedFrames += 1;
+        return;
+      }
       frame = requestAnimationFrame(measureVisibility);
       if (hasLimitedApiSupport && emergencyTimer === null) {
         emergencyTimer = window.setTimeout(() => {
@@ -657,23 +702,25 @@ const ProviderProfile = () => {
     };
     const updateSafeAreaAndVisibility = () => {
       safeAreaBottom = getSafeAreaBottom();
-      scheduleVisibilityMeasure();
+      scheduleVisibilityMeasure('resize');
     };
 
     const observer = supportsIntersectionObserver ? new IntersectionObserver(
-      scheduleVisibilityMeasure,
+      () => scheduleVisibilityMeasure('observer'),
       { threshold: [0, 0.01, 0.1, 1] },
     ) : null;
-    const resizeObserver = supportsResizeObserver ? new ResizeObserver(scheduleVisibilityMeasure) : null;
+    const resizeObserver = supportsResizeObserver ? new ResizeObserver(() => scheduleVisibilityMeasure('resize')) : null;
     const useScrollFallback = !supportsIntersectionObserver;
+    const handleScrollFallback = () => scheduleVisibilityMeasure('scroll');
+    const handleVisualViewportScroll = () => scheduleVisibilityMeasure('scroll');
 
     observer?.observe(target);
     resizeObserver?.observe(target);
     resizeObserver?.observe(document.body);
-    if (useScrollFallback) window.addEventListener('scroll', scheduleVisibilityMeasure, { passive: true });
+    if (useScrollFallback) window.addEventListener('scroll', handleScrollFallback, { passive: true });
     window.addEventListener('resize', updateSafeAreaAndVisibility);
     visualViewport?.addEventListener('resize', updateSafeAreaAndVisibility);
-    visualViewport?.addEventListener('scroll', scheduleVisibilityMeasure);
+    visualViewport?.addEventListener('scroll', handleVisualViewportScroll);
     updateSafeAreaAndVisibility();
 
     return () => {
@@ -681,10 +728,10 @@ const ProviderProfile = () => {
       if (emergencyTimer !== null) window.clearTimeout(emergencyTimer);
       observer?.disconnect();
       resizeObserver?.disconnect();
-      if (useScrollFallback) window.removeEventListener('scroll', scheduleVisibilityMeasure);
+      if (useScrollFallback) window.removeEventListener('scroll', handleScrollFallback);
       window.removeEventListener('resize', updateSafeAreaAndVisibility);
       visualViewport?.removeEventListener('resize', updateSafeAreaAndVisibility);
-      visualViewport?.removeEventListener('scroll', scheduleVisibilityMeasure);
+      visualViewport?.removeEventListener('scroll', handleVisualViewportScroll);
     };
   }, [isMobile, provider?.whatsapp, provider?.phone]);
 
