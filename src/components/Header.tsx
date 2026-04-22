@@ -227,7 +227,8 @@ const Header = () => {
         <div className="flex min-w-0 items-center gap-2 overflow-hidden -ml-1 sm:-ml-2">
           <Logo
             priority
-            className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition-opacity duration-300 ease-in-out"
+            sizes="(max-width: 639px) 190px, 165px"
+            className="h-16 min-h-16 max-h-16 sm:h-14 sm:min-h-14 sm:max-h-14 drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition-opacity duration-300 ease-in-out"
           />
 
           {/* Full geo badge — hidden when compact on desktop */}
