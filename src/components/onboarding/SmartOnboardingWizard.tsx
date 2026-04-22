@@ -474,12 +474,29 @@ const BasicOnboardingWizard = () => {
 // SUBCOMPONENTES (mantidos no mesmo arquivo p/ rapidez de leitura)
 // ════════════════════════════════════════════════════════════════════
 
-const Step1Identity = ({ onSelectType }: { onSelectType: (t: ProfileType) => void }) => (
+const Step1Identity = ({
+  existingProfileType,
+  onContinueProfileUpdate,
+  onSelectType,
+}: {
+  existingProfileType: ProfileType | null;
+  onContinueProfileUpdate: () => void;
+  onSelectType: (t: ProfileType) => void;
+}) => (
   <>
     <h1 className="text-center font-display text-2xl font-bold text-foreground">Seu talento merece brilhar</h1>
     <p className="mt-2 text-center text-sm text-muted-foreground">Em 5 passos rápidos a gente coloca você no mapa.</p>
 
     <div className="mt-6 grid gap-3">
+      {existingProfileType && (
+        <Button type="button" size="lg" className="h-auto justify-start gap-3 py-4 text-left" onClick={onContinueProfileUpdate}>
+          <CheckCircle2 className="h-5 w-5 shrink-0" />
+          <span className="min-w-0">
+            <span className="block font-bold">Continuar atualização do meu perfil</span>
+            <span className="block text-xs font-normal opacity-80">Ir direto para os dados do cadastro</span>
+          </span>
+        </Button>
+      )}
       <TypeButton onClick={() => onSelectType('provider')} icon={Briefcase} title="Sou Profissional" desc="Quero ser encontrado por novos clientes" tone="accent" />
       <TypeButton onClick={() => onSelectType('client')} icon={UserRound} title="Sou Cliente" desc="Procuro um profissional de confiança" tone="blue" />
       <TypeButton onClick={() => onSelectType('rh')} icon={Building2} title="Agência de RH" desc="Recruto talentos para empresas" tone="purple" />
