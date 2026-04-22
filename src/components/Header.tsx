@@ -117,8 +117,8 @@ const Header = () => {
       return () => (window as any).cancelIdleCallback?.(id);
     }
 
-    const id = window.setTimeout(() => setDeferredReady(true), 1200);
-    return () => window.clearTimeout(id);
+    const id = globalThis.setTimeout(() => setDeferredReady(true), 1200);
+    return () => globalThis.clearTimeout(id);
   }, []);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
