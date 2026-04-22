@@ -1154,13 +1154,14 @@ const Step3Contact = ({
 
       <div>
         <label className="mb-1 block text-xs font-semibold text-foreground">WhatsApp</label>
-        <PhoneMaskedInput
-          name="whatsapp"
-          value={whatsapp}
-          onChange={(_n: any, val: string) => setWhatsapp(val)}
-          onBlur={onFieldBlur}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-        />
+        <div onBlur={onFieldBlur}>
+          <PhoneMaskedInput
+            name="whatsapp"
+            value={whatsapp}
+            onChange={(_n: any, val: string) => setWhatsapp(val)}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+          />
+        </div>
       </div>
 
       {profileType === 'provider' && (
@@ -1221,8 +1222,8 @@ const Step4Service = ({
     <div className="mt-5">
       {providerReady ? (
         servicesCreated > 0 ? (
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
-            <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-500" />
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 text-center">
+            <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-accent" />
             <p className="text-sm font-bold text-foreground">
               {servicesCreated === 1 ? '1 serviço cadastrado!' : `${servicesCreated} serviços cadastrados!`}
             </p>
@@ -1268,7 +1269,7 @@ const Step5Done = ({
       </button>
 
       <div className="mb-3 flex justify-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-amber-500 text-white">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-primary text-accent-foreground">
           <PartyPopper className="h-8 w-8" />
         </div>
       </div>
