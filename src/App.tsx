@@ -202,6 +202,8 @@ const DeferredShell = () => {
   if (!ready) return null;
   return (
     <Suspense fallback={null}>
+      <Toaster />
+      <Sonner />
       <ScrollProgressBar />
       <MobileBottomNav />
       <FloatingHelpButton />
@@ -250,8 +252,6 @@ const App = () => {
     <ErrorGuard componentName="App">
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Suspense fallback={null}><Toaster /></Suspense>
-        <Suspense fallback={null}><Sonner /></Suspense>
         <BrowserRouter>
           <Suspense fallback={null}><CurtainReveal /></Suspense>
           <ScrollToTop />

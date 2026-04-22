@@ -29,7 +29,7 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-export function useTypingPlaceholder(city: string | null, enabled = true) {
+export function useTypingPlaceholder(city: string | null, enabled = true, initialDelayMs = 1200) {
   const [placeholder, setPlaceholder] = useState('');
   const shuffledRef = useRef(shuffle(SERVICES));
   const indexRef = useRef(0);
@@ -85,13 +85,13 @@ export function useTypingPlaceholder(city: string | null, enabled = true) {
       }
     };
 
-    frameId = setTimeout(tick, 1200);
+    frameId = setTimeout(tick, initialDelayMs);
 
     return () => {
       if (frameId) clearTimeout(frameId);
       if (pauseTimer) clearTimeout(pauseTimer);
     };
-  }, [city, enabled]);
+  }, [city, enabled, initialDelayMs]);
 
   return placeholder;
 }

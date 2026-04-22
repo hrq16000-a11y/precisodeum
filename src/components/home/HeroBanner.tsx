@@ -8,6 +8,7 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { getCategoryForService, CATEGORY_IMAGES, type ServiceCategory } from '@/lib/serviceCategoryMap';
+import { Icon } from '@/components/ui/Icon';
 
 const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBar')));
 
@@ -57,6 +58,7 @@ const HeroPrefixRotator = ({ prefixes }: { prefixes: string[] }) => {
 const HeroBanner = () => {
   const [displayedImage, setDisplayedImage] = useState(CATEGORY_IMAGES.instalacoes);
   const [nextImage, setNextImage] = useState<string | null>(null);
+  const [heroReady, setHeroReady] = useState(false);
   const { city: geoCity } = useGeoCity();
   const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
 
@@ -73,6 +75,7 @@ const HeroBanner = () => {
   }, [prefixesRaw]);
 
   const handleServiceChange = useCallback((service: string) => {
+    if (!heroReady) return;
     const cat = getCategoryForService(service);
     const newImg = CATEGORY_IMAGES[cat];
     if (newImg !== displayedImage) {
@@ -82,10 +85,16 @@ const HeroBanner = () => {
         setNextImage(null);
       }, 800);
     }
-  }, [displayedImage]);
+  }, [displayedImage, heroReady]);
+
+  useEffect(() => {
+    const id = globalThis.setTimeout(() => setHeroReady(true), 3200);
+    return () => globalThis.clearTimeout(id);
+  }, []);
 
   // Deferred preload of next image — no forced reflow
   useEffect(() => {
+    if (!heroReady) return;
     const id = setTimeout(() => {
       const allImages = Object.values(CATEGORY_IMAGES);
       const currentIdx = allImages.indexOf(displayedImage);
@@ -94,7 +103,7 @@ const HeroBanner = () => {
       img.src = allImages[nextIdx];
     }, 2000);
     return () => clearTimeout(id);
-  }, [displayedImage]);
+  }, [displayedImage, heroReady]);
 
   return (
     <section
@@ -109,7 +118,7 @@ const HeroBanner = () => {
         height={768}
         fetchPriority="high"
         loading="eager"
-        decoding="sync"
+        decoding="async"
         // @ts-expect-error - non-standard but supported by Chromium for LCP hinting
         elementtiming="hero-lcp"
         className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700"
@@ -157,9 +166,9 @@ const HeroBanner = () => {
               <SearchBar />
             </div>
           </Suspense>
-          <div className="mt-3 flex flex-col items-center justify-center gap-2 text-xs text-primary-foreground/70 sm:flex-row sm:gap-3">
+          <div className="mt-3 flex min-h-[2.5rem] flex-col items-center justify-center gap-2 text-xs text-primary-foreground/70 sm:min-h-[1.25rem] sm:flex-row sm:gap-3">
             <span className="inline-flex items-center gap-2">
-              <MapPin className="h-3.5 w-3.5 text-secondary" />
+              <Icon icon={MapPin} className="h-3.5 w-3.5 text-secondary" />
               <span>{geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
             </span>
             <UrgencyToggle

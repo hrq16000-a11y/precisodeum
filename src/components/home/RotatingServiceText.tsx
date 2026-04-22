@@ -41,6 +41,8 @@ const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
       return (data || []).map((s: any) => s.name.toLowerCase());
     },
     staleTime: 1000 * 60 * 10,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const serviceList = dbServices && dbServices.length > 0 ? dbServices : FALLBACK_SERVICES;
@@ -52,7 +54,7 @@ const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
 
   // Notify parent whenever the displayed service changes
   useEffect(() => {
-    if (shuffled.length > 0) {
+    if (index > 0 && shuffled.length > 0) {
       onServiceChange?.(shuffled[index]);
     }
   }, [index, shuffled]); // eslint-disable-line react-hooks/exhaustive-deps

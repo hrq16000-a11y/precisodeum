@@ -61,8 +61,9 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const { data: suggestions } = useSearchSuggestions();
-  const typingPlaceholder = useTypingPlaceholder(geoCity, !isFocused && !query.trim());
+  const shouldLoadSuggestions = isOpen || query.trim().length > 0;
+  const { data: suggestions } = useSearchSuggestions(shouldLoadSuggestions);
+  const typingPlaceholder = useTypingPlaceholder(geoCity, !isFocused && !query.trim(), !isFocused ? 2400 : 1200);
 
   const requestGeoOnce = useCallback(() => {
     try {
@@ -113,12 +114,12 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   }, [debouncedQuery]);
 
   const filteredSuggestions = useMemo((): Suggestion[] => {
-    if (!suggestions) return [];
+    if (!suggestions && debouncedQuery.trim()) return [];
     const q = debouncedQuery.trim().toLowerCase();
 
     if (!q) {
       const trending: Suggestion[] = TRENDING_QUERIES.map(label => {
-        const cat = suggestions.categories.find(c => c.name.toLowerCase() === label.toLowerCase());
+        const cat = suggestions?.categories.find(c => c.name.toLowerCase() === label.toLowerCase());
         return {
           label,
           type: 'popular' as const,
@@ -143,17 +144,17 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
       });
     }
 
-    suggestions.categories
+    suggestions?.categories
       .filter(c => c.name.toLowerCase().includes(q))
       .slice(0, 3)
       .forEach(c => results.push({ label: c.name, type: 'category', icon: c.icon, slug: c.slug }));
 
-    suggestions.services
+    suggestions?.services
       .filter(s => s.name.toLowerCase().includes(q))
       .slice(0, 3)
       .forEach(s => results.push({ label: s.name, type: 'service', extra: s.category_name, slug: s.slug }));
 
-    suggestions.cities
+    suggestions?.cities
       .filter(c => c.name.toLowerCase().includes(q) || c.state.toLowerCase().includes(q))
       .slice(0, 2)
       .forEach(c => results.push({ label: c.name, type: 'city', extra: c.state, slug: c.slug }));

@@ -72,16 +72,10 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
   // Visible items based on chip filter
   const visible = useMemo(() => {
     if (activeChip === ALL_CHIP) {
-      const arr = [...subcategories];
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr.slice(0, 9);
+      return subcategories.slice().sort((a, b) => b.count - a.count).slice(0, 6);
     }
-    return subcategories.filter(c => c.parent_id === activeChip);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeChip, subcategories.length]);
+    return subcategories.filter(c => c.parent_id === activeChip).slice(0, 9);
+  }, [activeChip, subcategories]);
 
   // Chips that have at least one subcategory with providers
   const activeChips = useMemo(() => {
@@ -128,8 +122,8 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {Array.from({ length: 9 }).map((_, i) => (
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" aria-hidden="true">
+            {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="aspect-square rounded-3xl" />
             ))}
           </div>
@@ -189,8 +183,8 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
                 key={activeChip}
                 className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr"
               >
-                {visible.map((cat, i) => (
-                  <div key={cat.id} className="animate-fade-in" style={{ animationDelay: `${i * 40}ms`, animationFillMode: 'both' }}>
+                {visible.map((cat) => (
+                  <div key={cat.id} className="animate-fade-in" style={{ animationFillMode: 'both' }}>
                     <CategoryCard cat={cat} />
                   </div>
                 ))}
