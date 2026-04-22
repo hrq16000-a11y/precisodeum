@@ -21,6 +21,7 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { calculateDistanceKm } from '@/lib/geoDistance';
+import { getSeoAuthorityData } from '@/lib/seoAuthority';
 
 const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) =>
   calculateDistanceKm({ latitude: lat1, longitude: lon1 }, { latitude: lat2, longitude: lon2 });
@@ -168,23 +169,8 @@ const CategoryPage = () => {
   const serviceLd = useMemo(() => {
     if (!category) return null;
     const topProviders = [...localProviders, ...nearbyProviders].slice(0, 10);
-    const authorityProviders = topProviders.filter((p) => {
-      const level = (p.levelName || '').toLowerCase();
-      return level.includes('diamante') || level.includes('ouro');
-    });
-    const ratingSource = authorityProviders.length > 0 ? authorityProviders : topProviders;
-    const ratings = ratingSource.map(p => Number(p.rating || 0)).filter(r => r > 0);
-    const aggregate = ratings.length > 0
-      ? {
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1),
-            reviewCount: ratingSource.reduce((acc, p) => acc + (Number(p.reviewCount) || 0), 0) || ratings.length,
-            bestRating: 5,
-            worstRating: 1,
-          },
-        }
-      : {};
+    const { aggregateRating } = getSeoAuthorityData(topProviders);
+    const aggregate = aggregateRating ? { aggregateRating } : {};
     return {
       '@context': 'https://schema.org',
       '@type': 'Service',
