@@ -5438,6 +5438,17 @@ export type Database = {
             }
             Returns: undefined
           }
+        | {
+            Args: {
+              cta_origin?: string
+              event_action: string
+              page_path?: string
+              provider_id: string
+              service_name?: string
+              source_marker?: string
+            }
+            Returns: undefined
+          }
       nearby_providers: {
         Args: {
           _category_slug?: string

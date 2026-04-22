@@ -54,7 +54,9 @@ const getLeadSource = () => {
   return 'direto';
 };
 
-const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone', pagePath: string, serviceName?: string) => {
+type ContactCtaOrigin = 'principal' | 'sticky' | 'flutuante' | 'servico';
+
+const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone', pagePath: string, serviceName?: string, ctaOrigin: ContactCtaOrigin = 'principal') => {
   try {
     supabase.from('contact_clicks' as any).insert({
       provider_id: providerId,
@@ -73,6 +75,7 @@ const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone'
       page_path: pagePath,
       service_name: serviceName || null,
       source_marker: getLeadSource(),
+      cta_origin: ctaOrigin,
     }).then(() => {});
   } catch { /* silent */ }
 };
@@ -1439,7 +1442,7 @@ const ProviderProfile = () => {
                     size="lg"
                     className="gap-2 w-full sm:w-auto bg-[#25D366] text-white hover:bg-[#1ebe5a] shadow-lg hover:shadow-xl transition-all"
                     onClick={() => {
-                      if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname);
+                      if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'principal');
                       requestWhatsApp({
                         url: whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`),
                         targetType: 'provider',
@@ -1719,7 +1722,7 @@ const ProviderProfile = () => {
               aria-label={`Chamar ${name} no WhatsApp`}
               className="w-full gap-2 shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               onClick={() => {
-                if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname);
+                if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'sticky');
                 requestWhatsApp({
                   url: whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`),
                   targetType: 'provider',
@@ -1741,7 +1744,7 @@ const ProviderProfile = () => {
           href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => provider?.id && trackContactClick(provider.id, 'whatsapp', window.location.pathname)}
+          onClick={() => provider?.id && trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'flutuante')}
           className="fixed right-4 hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg"
           style={{ zIndex: 9999, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
           aria-label="WhatsApp"
@@ -1848,7 +1851,7 @@ const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText
       </div>
       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
         <Button variant="accent" className="w-full gap-2" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-          <a href={whatsappLink(whatsapp || '', `Olá! Vi o serviço "${service.service_name}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer" onClick={() => providerId && trackContactClick(providerId, 'whatsapp', window.location.pathname, service.service_name)}>
+          <a href={whatsappLink(whatsapp || '', `Olá! Vi o serviço "${service.service_name}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer" onClick={() => providerId && trackContactClick(providerId, 'whatsapp', window.location.pathname, service.service_name, 'servico')}>
             <MessageCircle className="h-4 w-4" /> {ctaWhatsappText || 'Chamar no WhatsApp'}
           </a>
         </Button>
