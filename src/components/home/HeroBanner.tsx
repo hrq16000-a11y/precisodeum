@@ -7,7 +7,7 @@ import { useUrgencyMode } from '@/hooks/useUrgencyMode';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { importWithRetry } from '@/lib/lazyWithRetry';
-import { getCategoryForService, CATEGORY_IMAGES, type ServiceCategory } from '@/lib/serviceCategoryMap';
+import { getCategoryForService, CATEGORY_IMAGES } from '@/lib/serviceCategoryMap';
 import { Icon } from '@/components/ui/Icon';
 
 const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBar')));
