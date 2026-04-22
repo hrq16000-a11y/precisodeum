@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { logAuditAction } from '@/hooks/useAuditLog';
 import SmartCategoryPicker from '@/components/SmartCategoryPicker';
 
 interface ServiceEditDialogProps {
@@ -103,18 +102,16 @@ const ServiceEditDialog = ({ service, onClose, onSaved }: ServiceEditDialogProps
     };
     if (form.category_id) updateData.category_id = form.category_id;
 
-    const { error } = await supabase.from('services').update(updateData).eq('id', service.id);
+    const { error } = await (supabase.rpc as any)('update_service_atomic', {
+      p_service_id: service.id,
+      p_data: updateData,
+      p_category_ids: form.category_id ? [form.category_id] : null,
+    });
     setSaving(false);
 
     if (error) {
       toast.error('Erro ao salvar: ' + error.message);
     } else {
-      await logAuditAction({
-        action: 'update',
-        resource_type: 'service',
-        resource_id: service.id,
-        details: { changes: { ...form, is_emergency: isEmergency, service_radius: serviceRadius, seo_tags: seoTags } },
-      });
       toast.success('Serviço atualizado!');
       onSaved();
       onClose();
