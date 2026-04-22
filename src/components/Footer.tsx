@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import { useMemo, lazy, Suspense } from 'react';
-import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import Logo from '@/components/Logo';
@@ -68,7 +68,6 @@ const FooterLinkItem = ({ item }: { item: any }) => {
 };
 
 const Footer = () => {
-  useSettingValue('logo_footer_url');
   const tagline = useMemo(() => footerTaglines[Math.floor(Math.random() * footerTaglines.length)], []);
   const blogEnabled = useFeatureEnabled('module_blog');
 
