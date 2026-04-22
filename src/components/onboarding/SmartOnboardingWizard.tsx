@@ -1279,7 +1279,7 @@ const Step5Done = ({
       </p>
 
       {!canFinish && (
-        <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-center text-xs text-amber-700 dark:text-amber-400">
+        <div className="mt-4 rounded-xl border border-primary/40 bg-primary/10 p-3 text-center text-xs text-primary">
           Sem serviço cadastrado, seu perfil pode aparecer incompleto. Você pode finalizar agora e completar depois.
         </div>
       )}
