@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-
-const DEFAULT_LOGO_URL = '/lovable-uploads/logo-pdup-v3.png';
+import { DEFAULT_LOGO_URL, siteImageOrFallback } from '@/lib/siteAssets';
 
 interface LogoProps {
   variant?: 'default' | 'white' | 'dark';
@@ -12,7 +11,7 @@ interface LogoProps {
 
 const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-20 md:h-28' }: LogoProps) => {
   const logoUrl = useSettingValue('logo_url');
-  const logo = logoUrl || DEFAULT_LOGO_URL;
+  const logo = siteImageOrFallback(logoUrl, DEFAULT_LOGO_URL);
 
   const filterClass = variant === 'white'
     ? 'brightness-0 invert'

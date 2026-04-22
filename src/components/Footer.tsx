@@ -4,8 +4,8 @@ import { useMemo, lazy, Suspense } from 'react';
 import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 import { importWithRetry } from '@/lib/lazyWithRetry';
+import { DEFAULT_FOOTER_LOGO_URL, siteImageOrFallback } from '@/lib/siteAssets';
 
-const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.webp';
 const SponsorAd = lazy(() => importWithRetry(() => import('@/components/SponsorAd')));
 const PwaFooterInstall = lazy(() => importWithRetry(() => import('@/components/PwaFooterInstall')));
 
@@ -69,7 +69,7 @@ const FooterLinkItem = ({ item }: { item: any }) => {
 
 const Footer = () => {
   const logoFooterUrl = useSettingValue('logo_footer_url');
-  const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : DEFAULT_LOGO_URL;
+  const logoVertical = siteImageOrFallback(logoFooterUrl, DEFAULT_FOOTER_LOGO_URL);
   const tagline = useMemo(() => footerTaglines[Math.floor(Math.random() * footerTaglines.length)], []);
   const blogEnabled = useFeatureEnabled('module_blog');
 
