@@ -45,6 +45,14 @@ type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
 type ProviderSubtype = 'autonomous' | 'company';
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 type WizardDrafts = Partial<Record<WizardStep, Record<string, any>>>;
+type AutoSaveAttempt = {
+  id: string;
+  status: 'success' | 'error';
+  attemptedAt: string;
+  step: WizardStep;
+  fields: string[];
+  message: string;
+};
 
 const TOTAL_STEPS = 5;
 
@@ -59,6 +67,7 @@ const slugify = (s: string) =>
    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 const draftStorageKey = (userId?: string) => `wizard-drafts:${userId ?? 'anonymous'}`;
+const hasValidWhatsapp = (value: string) => value.replace(/\D/g, '').length >= 10;
 
 export type WizardMode = 'basic';
 
