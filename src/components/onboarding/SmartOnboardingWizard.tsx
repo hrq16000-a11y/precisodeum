@@ -440,6 +440,22 @@ const BasicOnboardingWizard = () => {
     await advanceTo(5);
   };
 
+  const stepEstimates: Record<WizardStep, string> = {
+    1: profileType ? '~0 min' : '~1 min',
+    2: city && avatarUrl ? '~0 min' : city ? '~1 min' : '~2 min',
+    3: canAdvanceFromStep3 ? '~0 min' : fullName || whatsapp ? '~2 min' : '~3 min',
+    4: profileType !== 'provider' || servicesCreated > 0 ? '~0 min' : '~3 min',
+    5: '~1 min',
+  };
+
+  const summaryItems = [
+    { label: 'Tipo de perfil', value: profileType || 'Não definido' },
+    { label: 'Cidade', value: city ? `${city}${state ? ` • ${state}` : ''}` : 'Não informada' },
+    { label: 'Nome', value: fullName || 'Não informado' },
+    { label: 'WhatsApp', value: whatsapp || 'Não informado' },
+    { label: 'Serviços', value: profileType === 'provider' ? `${servicesCreated} cadastrado(s)` : 'Não aplicável' },
+  ];
+
   // ─── Passo 5: Conclusão ───
   const finishOnboarding = async () => {
     if (!user?.id) return;
