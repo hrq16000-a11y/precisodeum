@@ -219,7 +219,12 @@ const Index = () => {
   const sectionOrder = useMemo(() => {
     const order = (sectionsOrderRaw || DEFAULT_ORDER).split(',').map(s => s.trim()).filter(Boolean);
     const hidden = new Set((hiddenSectionsRaw || '').split(',').map(s => s.trim()).filter(Boolean));
-    return order.filter(s => !hidden.has(s));
+    const normalized = order.filter(s => !hidden.has(s) && s !== 'leader_sponsor' && s !== 'featured');
+    if (!hidden.has('featured')) {
+      const popularIndex = normalized.indexOf('popular');
+      normalized.splice(popularIndex >= 0 ? popularIndex : normalized.length, 0, 'featured');
+    }
+    return normalized;
   }, [sectionsOrderRaw, hiddenSectionsRaw]);
 
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
@@ -279,7 +284,7 @@ const Index = () => {
       case 'urgency':
         return <UrgencyBanner key={slug} />;
       case 'leader_sponsor':
-        return sponsorsEnabled ? <SponsorLeaderBanner key={slug} /> : null;
+        return null; // rendered directly below hero as the wide sponsor banner
       case 'sponsor_top':
         return sponsorsEnabled ? <SponsorTopBanner key={slug} /> : null;
       case 'stats':
@@ -303,7 +308,21 @@ const Index = () => {
           </div>
         );
       case 'featured':
-        return null; // rendered eagerly after categories to keep the home slot visible
+        return featuredEnabled ? (
+          <FeaturedProviders
+            key={slug}
+            providers={featuredProviders}
+            isLoading={!postLcpReady || provsLoading}
+            isFetching={featuredFetching}
+            hasError={featuredError}
+            categories={categories}
+            selectedCategory={featuredCategory}
+            sortBy={featuredSort}
+            updatedAt={featuredUpdatedAt}
+            onCategoryChange={setFeaturedCategory}
+            onSortChange={setFeaturedSort}
+          />
+        ) : null;
       case 'popular':
         return <PopularServices key={slug} />;
       case 'recent':
@@ -343,16 +362,24 @@ const Index = () => {
         return null;
     }
   }, [
-    heroBannersEnabled, sponsorsEnabled, featuredEnabled, jobsEnabled,
+    heroBannersEnabled, sponsorsEnabled, featuredEnabled, postLcpReady, jobsEnabled,
     blogEnabled, ctaEnabled, howItWorksEnabled, popularSearchesEnabled,
     reviewsEnabled, faqEnabled,
-    geoCity,
+    featuredProviders, provsLoading, featuredFetching, featuredError, categories,
+    featuredCategory, featuredSort, featuredUpdatedAt, geoCity,
   ]);
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <HeroBanner />
+      {sponsorsEnabled && (
+        <LazyErrorBoundary>
+          <Suspense fallback={<div className="h-24" />}>
+            <SponsorLeaderBanner />
+          </Suspense>
+        </LazyErrorBoundary>
+      )}
       <DeferredAboveFoldSection>
         <Suspense fallback={<div className="h-8" />}><ActiveProvidersCounter /></Suspense>
       </DeferredAboveFoldSection>
@@ -368,25 +395,6 @@ const Index = () => {
 
       {/* Categories rendered eagerly (not lazy) to eliminate CLS caused by lazy sections above */}
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
-
-      {featuredEnabled && (
-        <LazyErrorBoundary>
-          <Suspense fallback={<FeaturedProvidersFallback />}>
-            <FeaturedProviders
-              providers={featuredProviders}
-              isLoading={!postLcpReady || provsLoading}
-              isFetching={featuredFetching}
-              hasError={featuredError}
-              categories={categories}
-              selectedCategory={featuredCategory}
-              sortBy={featuredSort}
-              updatedAt={featuredUpdatedAt}
-              onCategoryChange={setFeaturedCategory}
-              onSortChange={setFeaturedSort}
-            />
-          </Suspense>
-        </LazyErrorBoundary>
-      )}
 
       {sectionOrder.map((slug) => {
         const section = renderSection(slug);
