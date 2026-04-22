@@ -72,8 +72,10 @@ const getInp = () => new Promise<number | null>((resolve) => {
 const getResourceSummary = () => {
   const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
   const backendResources = resources.filter((r) => /\/rest\/v1|\/functions\/v1|supabase\.co/i.test(r.name));
+  const featuredResources = backendResources.filter((r) => /get_featured_providers|featured_providers/i.test(r.name));
   const imageResources = resources.filter((r) => r.initiatorType === 'img' || /\.(webp|png|jpe?g)(\?|$)/i.test(r.name));
   const scripts = resources.filter((r) => r.initiatorType === 'script');
+  const featuredRuntime = typeof window !== 'undefined' ? (window as any).__featuredProvidersMetrics || {} : {};
 
   const slowBackend = backendResources
     .filter((r) => r.duration >= SLOW_BACKEND_MS)
@@ -95,6 +97,14 @@ const getResourceSummary = () => {
       totalDurationMs: round(backendResources.reduce((sum, r) => sum + r.duration, 0)),
       maxDurationMs: round(Math.max(0, ...backendResources.map((r) => r.duration))),
       slowRequests: slowBackend,
+    },
+    featuredProviders: {
+      renderMs: featuredRuntime.renderMs || 0,
+      queryTtfbMs: featuredRuntime.queryMs || round(Math.max(0, ...featuredResources.map((r) => r.responseStart - r.requestStart))),
+      payloadKb: featuredRuntime.payloadBytes ? round(featuredRuntime.payloadBytes / 1024) : round(featuredResources.reduce((sum, r) => sum + (r.transferSize || 0), 0) / 1024),
+      providersRendered: featuredRuntime.providersRendered || featuredRuntime.renderedRows || 0,
+      fallbackMode: !!featuredRuntime.fallbackMode,
+      sortBy: featuredRuntime.sortBy || null,
     },
   };
 };
@@ -135,6 +145,7 @@ export const installPerformanceTelemetry = () => {
         vitals,
         resources: summary.resources,
         backend: summary.backend,
+        featured_providers: summary.featuredProviders,
         bottlenecks,
         user_agent: navigator.userAgent.slice(0, 512),
         viewport: `${window.innerWidth}x${window.innerHeight}@${round(window.devicePixelRatio || 1)}`,
