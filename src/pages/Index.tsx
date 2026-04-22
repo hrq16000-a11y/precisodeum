@@ -1,6 +1,6 @@
 import { lazy as reactLazy, Suspense, Component, ReactNode, type ComponentType, useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { useHomeFeatureFlags } from '@/hooks/useHomeFeatureFlags';
-import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
+import { useCategoriesWithCount } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { importWithRetry } from '@/lib/lazyWithRetry';
@@ -46,6 +46,7 @@ const CommunityFeed = lazy(() => import('@/components/dashboard/CommunityFeed'))
 
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
 const ActiveProvidersCounter = lazy(() => import('@/components/home/ActiveProvidersCounter'));
+const MOBILE_FIRST_DELAY_MS = 2600;
 
 // Error boundary to prevent lazy load failures from crashing the page
 class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -81,11 +82,11 @@ const DeferredAboveFoldSection = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if ('requestIdleCallback' in window) {
-      const id = (window as any).requestIdleCallback(() => setReady(true), { timeout: 1800 });
+      const id = (window as any).requestIdleCallback(() => setReady(true), { timeout: MOBILE_FIRST_DELAY_MS });
       return () => (window as any).cancelIdleCallback?.(id);
     }
 
-    const id = globalThis.setTimeout(() => setReady(true), 900);
+    const id = globalThis.setTimeout(() => setReady(true), MOBILE_FIRST_DELAY_MS);
     return () => globalThis.clearTimeout(id);
   }, []);
 
@@ -112,7 +113,7 @@ const LazyViewportSection = ({ children }: { children: ReactNode }) => {
           observer.disconnect();
         }
       },
-      { rootMargin: '650px 0px' },
+      { rootMargin: '250px 0px' },
     );
 
     observer.observe(node);
@@ -132,6 +133,7 @@ const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,home_featu
 
 const Index = () => {
   const { city: geoCity } = useGeoCity();
+  const [postLcpReady, setPostLcpReady] = useState(false);
 
   useSeoHead({
     title: geoCity
@@ -184,7 +186,13 @@ const Index = () => {
   }, [sectionsOrderRaw, hiddenSectionsRaw]);
 
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
-  const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders(featuredEnabled);
+  const featuredProviders: never[] = [];
+  const provsLoading = false;
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setPostLcpReady(true), MOBILE_FIRST_DELAY_MS);
+    return () => window.clearTimeout(id);
+  }, []);
 
   // Section renderer — memoized to avoid re-creation each render
   const renderSection = useCallback((slug: string) => {
@@ -218,7 +226,7 @@ const Index = () => {
           </div>
         );
       case 'featured':
-        return featuredEnabled ? <FeaturedProviders key={slug} providers={featuredProviders} isLoading={provsLoading} /> : null;
+        return featuredEnabled && postLcpReady ? <FeaturedProviders key={slug} providers={featuredProviders} isLoading={provsLoading} /> : null;
       case 'popular':
         return <PopularServices key={slug} />;
       case 'recent':
