@@ -283,6 +283,7 @@ const ProviderProfile = () => {
   const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
   const [relatedProviders, setRelatedProviders] = useState<any[]>([]);
   const [showStickyContact, setShowStickyContact] = useState(false);
+  const [showEmergencyContact, setShowEmergencyContact] = useState(false);
   const mainWhatsappRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -572,21 +573,25 @@ const ProviderProfile = () => {
     const currentWhatsApp = toCanonical(provider?.whatsapp || provider?.phone || '');
     if (!isMobile || !currentWhatsApp) {
       setShowStickyContact(false);
+      setShowEmergencyContact(false);
       return;
     }
 
     const target = mainWhatsappRef.current;
     if (!target) {
       setShowStickyContact(false);
+      setShowEmergencyContact(false);
       return;
     }
 
     let frame: number | null = null;
+    let emergencyTimer: number | null = null;
     let safeAreaBottom = 0;
     let lastShouldShow: boolean | null = null;
     const visualViewport = window.visualViewport;
     const supportsIntersectionObserver = 'IntersectionObserver' in window;
     const supportsResizeObserver = 'ResizeObserver' in window;
+    const hasLimitedApiSupport = !supportsIntersectionObserver || !supportsResizeObserver || !visualViewport;
     const getSafeAreaBottom = () => {
       const probe = document.createElement('div');
       probe.style.cssText = 'position:fixed;bottom:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none;';
@@ -598,6 +603,11 @@ const ProviderProfile = () => {
 
     const measureVisibility = () => {
       frame = null;
+      if (emergencyTimer !== null) {
+        window.clearTimeout(emergencyTimer);
+        emergencyTimer = null;
+      }
+      setShowEmergencyContact(false);
       const rect = target.getBoundingClientRect();
       const viewportHeight = visualViewport?.height ?? document.documentElement.clientHeight ?? window.innerHeight;
       const viewportWidth = visualViewport?.width ?? document.documentElement.clientWidth ?? window.innerWidth;
@@ -612,6 +622,11 @@ const ProviderProfile = () => {
     const scheduleVisibilityMeasure = () => {
       if (frame !== null) return;
       frame = requestAnimationFrame(measureVisibility);
+      if (hasLimitedApiSupport && emergencyTimer === null) {
+        emergencyTimer = window.setTimeout(() => {
+          if (frame !== null) setShowEmergencyContact(true);
+        }, 180);
+      }
     };
     const updateSafeAreaAndVisibility = () => {
       safeAreaBottom = getSafeAreaBottom();
@@ -636,6 +651,7 @@ const ProviderProfile = () => {
 
     return () => {
       if (frame !== null) cancelAnimationFrame(frame);
+      if (emergencyTimer !== null) window.clearTimeout(emergencyTimer);
       observer?.disconnect();
       resizeObserver?.disconnect();
       if (useScrollFallback) window.removeEventListener('scroll', scheduleVisibilityMeasure);
@@ -1753,6 +1769,41 @@ const ProviderProfile = () => {
               }}
             >
               <MessageCircle className="h-5 w-5" aria-hidden="true" /> {pageSettings.cta_whatsapp_text}
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence initial={false}>
+        {effectiveWhatsApp && showEmergencyContact && !showStickyContact && (
+          <motion.div
+            key="emergency-mobile-whatsapp"
+            role="navigation"
+            aria-label="Contato rápido de emergência"
+            className="fixed right-3 md:hidden"
+            style={{ zIndex: 1000, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)' }}
+            initial={{ scale: 0.92, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.92, opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+          >
+            <Button
+              type="button"
+              size="icon"
+              aria-label={`Chamar ${name} no WhatsApp`}
+              className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              onClick={() => {
+                if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'sticky');
+                requestWhatsApp({
+                  url: whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`),
+                  targetType: 'provider',
+                  targetId: provider?.id ?? null,
+                  targetLabel: name,
+                  whatsappNumber: effectiveWhatsApp,
+                });
+              }}
+            >
+              <MessageCircle className="h-5 w-5" aria-hidden="true" />
             </Button>
           </motion.div>
         )}
