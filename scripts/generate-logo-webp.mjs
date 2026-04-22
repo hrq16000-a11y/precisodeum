@@ -91,20 +91,29 @@ const generateVariants = async (logoUrl, variants) => {
   const metadata = await input.metadata();
 
   await Promise.all(
-    variants.map(async ({ url, width }) => {
+    variants.map(async ({ url, pngUrl, width }) => {
       const outputPath = fromPublicUrl(url);
+      const pngOutputPath = fromPublicUrl(pngUrl ?? url.replace(/\.webp$/, '.png'));
       await fs.mkdir(path.dirname(outputPath), { recursive: true });
+      await fs.mkdir(path.dirname(pngOutputPath), { recursive: true });
 
-      await sharp(sourcePath)
-        .resize({ width, withoutEnlargement: true })
-        .webp({ quality: 92, nearLossless: true, effort: 6 })
-        .toFile(outputPath);
+      await Promise.all([
+        sharp(sourcePath)
+          .resize({ width, withoutEnlargement: true })
+          .webp({ quality: 92, nearLossless: true, effort: 6 })
+          .toFile(outputPath),
+        sharp(sourcePath)
+          .resize({ width, withoutEnlargement: true })
+          .png({ quality: 92, compressionLevel: 9, adaptiveFiltering: true })
+          .toFile(pngOutputPath),
+      ]);
 
       const height = metadata.width && metadata.height
         ? Math.round((width / metadata.width) * metadata.height)
         : 'auto';
 
       console.log(`Logo WebP gerada: ${path.relative(projectRoot, outputPath)} (${width}x${height})`);
+      console.log(`Logo PNG gerada: ${path.relative(projectRoot, pngOutputPath)} (${width}x${height})`);
     })
   );
 };
@@ -122,5 +131,5 @@ const assets = uploadPath
 await generateVariants(assets.logoUrl, assets.variants);
 
 if (uploadPath) {
-  await cleanupOldLogoVariants(assets.variants.map(({ url }) => url));
+  await cleanupOldLogoVariants(assets.variants.flatMap(({ url, pngUrl }) => [url, pngUrl ?? url.replace(/\.webp$/, '.png')]));
 }
