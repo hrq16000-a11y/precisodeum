@@ -859,6 +859,42 @@ const checklistItems: Array<{ step: WizardStep; label: string }> = [
   { step: 5, label: 'Finalizar' },
 ];
 
+const buildReviewItems = (data: {
+  profileType: ProfileType | null;
+  providerSubtype: ProviderSubtype | null;
+  city: string;
+  state: string;
+  avatarUrl: string | null;
+  fullName: string;
+  agencyName: string;
+  whatsapp: string;
+  bio: string;
+  selectedCategoryIds: string[];
+  servicesCreated: number;
+}): Record<WizardStep, Array<{ label: string; value: string }>> => ({
+  1: [
+    { label: 'Tipo de perfil', value: data.profileType || 'Não definido' },
+    { label: 'Formato profissional', value: data.providerSubtype || 'Não aplicável' },
+  ],
+  2: [
+    { label: 'Cidade', value: data.city ? `${data.city}${data.state ? ` • ${data.state}` : ''}` : 'Não informada' },
+    { label: 'Foto', value: data.avatarUrl ? 'Carregada' : 'Não enviada' },
+  ],
+  3: [
+    { label: 'Nome', value: data.fullName || 'Não informado' },
+    { label: 'Agência', value: data.agencyName || 'Não aplicável' },
+    { label: 'WhatsApp', value: hasValidWhatsapp(data.whatsapp) ? 'Validado' : 'Pendente' },
+    { label: 'Bio', value: data.bio ? 'Preenchida' : 'Não preenchida' },
+    { label: 'Especialidade', value: data.selectedCategoryIds.length ? 'Selecionada' : 'Pendente' },
+  ],
+  4: [
+    { label: 'Serviços', value: data.profileType === 'provider' ? `${data.servicesCreated} cadastrado(s)` : 'Não aplicável' },
+  ],
+  5: [
+    { label: 'Pronto para finalizar', value: 'Revise os dados e confirme' },
+  ],
+});
+
 const WizardChecklist = ({
   currentStep,
   furthestStep,
