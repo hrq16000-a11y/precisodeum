@@ -4,8 +4,8 @@ import { useMemo, lazy, Suspense } from 'react';
 import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 import { importWithRetry } from '@/lib/lazyWithRetry';
+import { DEFAULT_FOOTER_LOGO_URL, siteImageOrFallback } from '@/lib/siteAssets';
 
-const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.webp';
 const SponsorAd = lazy(() => importWithRetry(() => import('@/components/SponsorAd')));
 const PwaFooterInstall = lazy(() => importWithRetry(() => import('@/components/PwaFooterInstall')));
 
@@ -69,7 +69,7 @@ const FooterLinkItem = ({ item }: { item: any }) => {
 
 const Footer = () => {
   const logoFooterUrl = useSettingValue('logo_footer_url');
-  const logoVertical = logoFooterUrl?.trim() ? logoFooterUrl.trim() : DEFAULT_LOGO_URL;
+  const logoVertical = siteImageOrFallback(logoFooterUrl, DEFAULT_FOOTER_LOGO_URL);
   const tagline = useMemo(() => footerTaglines[Math.floor(Math.random() * footerTaglines.length)], []);
   const blogEnabled = useFeatureEnabled('module_blog');
 
@@ -87,7 +87,19 @@ const Footer = () => {
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <Link to="/">
-              <img src={logoVertical} alt="Preciso de um" className="mb-4 object-contain" width="133" height="48" loading="lazy" style={{ width: '133px', height: '48px', maxWidth: '220px' }} />
+              <img
+                src={logoVertical}
+                alt="Preciso de um"
+                className="mb-4 object-contain"
+                width="133"
+                height="48"
+                loading="lazy"
+                style={{ width: '133px', height: '48px', maxWidth: '220px' }}
+                onError={(e) => {
+                  const t = e.currentTarget;
+                  if (t.src.indexOf(DEFAULT_FOOTER_LOGO_URL) === -1) t.src = DEFAULT_FOOTER_LOGO_URL;
+                }}
+              />
             </Link>
             <p className="text-sm font-semibold text-primary-foreground/90 mb-1">{tagline.headline}</p>
             <p className="text-sm leading-relaxed text-primary-foreground/70">

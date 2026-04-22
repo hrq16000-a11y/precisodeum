@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-
-const SITE_URL = 'https://precisodeum.com.br';
-const DEFAULT_OG_IMAGE = 'https://storage.googleapis.com/gpt-engineer-file-uploads/El3gITL9bldQ7WZaPszZm8jw8DX2/social-images/social-1773355301217-69324.webp';
+import { DEFAULT_LOGO_URL, SITE_BASE_URL as SITE_URL, socialImageUrl, toAbsoluteSiteUrl } from '@/lib/siteAssets';
 
 interface SeoHeadProps {
   title: string;
@@ -38,13 +36,18 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     setMeta('description', description);
     setMeta('robots', noindex ? 'noindex, nofollow' : 'index, follow');
 
+    const resolvedOgImage = socialImageUrl(ogImage);
+    const resolvedLogo = toAbsoluteSiteUrl(DEFAULT_LOGO_URL);
+
     // Open Graph
     setMeta('og:title', fullTitle, 'property');
     setMeta('og:description', description, 'property');
     setMeta('og:type', ogType || 'website', 'property');
-    setMeta('og:image', ogImage || DEFAULT_OG_IMAGE, 'property');
+    setMeta('og:image', resolvedOgImage, 'property');
+    setMeta('og:image:secure_url', resolvedOgImage, 'property');
     setMeta('og:site_name', 'Preciso de um', 'property');
     setMeta('og:locale', 'pt_BR', 'property');
+    setMeta('logo', resolvedLogo, 'property');
 
     // Article-specific OG tags
     if (ogType === 'article') {
@@ -57,7 +60,7 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     setMeta('twitter:card', 'summary_large_image');
     setMeta('twitter:title', fullTitle);
     setMeta('twitter:description', description);
-    setMeta('twitter:image', ogImage || DEFAULT_OG_IMAGE);
+    setMeta('twitter:image', resolvedOgImage);
 
     // Google Search Console verification
     if (gscId) {
