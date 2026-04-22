@@ -997,6 +997,7 @@ const ProviderProfile = () => {
       accentBg={accentBg}
       themeClasses={tc}
       onImageClick={openServiceLightbox}
+      providerId={provider.id}
     />
   );
 
@@ -1205,26 +1206,18 @@ const ProviderProfile = () => {
                     <TooltipProvider delayDuration={150}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <button type="button" className="inline-flex" aria-label={`Profissional Nível ${provider.levelInfo.name}`}>
+                          <button type="button" className="inline-flex items-center gap-1.5" aria-label={`Profissional Nível ${provider.levelInfo.name}`}>
                             <GamificationLevelBadge
                               levelName={provider.levelInfo.name}
                               levelColor={provider.levelInfo.color}
                               size="lg"
                               showShine={true}
                             />
+                            <Info className="h-4 w-4 text-muted-foreground" />
                           </button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="max-w-xs text-center">
-                          <strong>Profissional Nível {provider.levelInfo.name}:</strong>{' '}
-                          {(() => {
-                            const lvl = (provider.levelInfo.name || '').toLowerCase();
-                            if (lvl.includes('mestre')) return 'Topo absoluto da plataforma — entrega impecável e reputação consolidada.';
-                            if (lvl.includes('diamante')) return '100% de compromisso com a qualidade e dados verificados.';
-                            if (lvl.includes('platina')) return 'Alta consistência e perfil completo verificado.';
-                            if (lvl.includes('ouro')) return 'Profissional ativo e com histórico sólido na plataforma.';
-                            if (lvl.includes('engajado')) return 'Mantém perfil atualizado e responde rápido.';
-                            return 'Profissional ativo na plataforma.';
-                          })()}
+                          Este profissional atingiu o nível máximo de completude e engajamento na plataforma.
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
