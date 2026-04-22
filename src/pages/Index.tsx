@@ -1,6 +1,6 @@
 import { lazy as reactLazy, Suspense, Component, ReactNode, type ComponentType, useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { useHomeFeatureFlags } from '@/hooks/useHomeFeatureFlags';
-import { useCategoriesWithCount } from '@/hooks/useProviders';
+import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { importWithRetry } from '@/lib/lazyWithRetry';
@@ -186,8 +186,7 @@ const Index = () => {
   }, [sectionsOrderRaw, hiddenSectionsRaw]);
 
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
-  const featuredProviders: never[] = [];
-  const provsLoading = false;
+  const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders(featuredEnabled && postLcpReady);
 
   useEffect(() => {
     const id = window.setTimeout(() => setPostLcpReady(true), MOBILE_FIRST_DELAY_MS);
