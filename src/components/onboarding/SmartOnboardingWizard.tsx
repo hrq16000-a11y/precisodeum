@@ -19,7 +19,7 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import {
   Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2,
-  PartyPopper, Building2, Megaphone, Camera, Phone,
+  PartyPopper, Building2, Megaphone, Camera, Phone, AlertCircle, RefreshCw,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -113,10 +113,16 @@ const BasicOnboardingWizard = () => {
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [autoSaveDelay, setAutoSaveDelay] = useState<1000 | 2000 | 3000>(1000);
   const [lastAutoSavePatch, setLastAutoSavePatch] = useState<Record<string, any> | null>(null);
+  const [lastAutoSaveAttemptAt, setLastAutoSaveAttemptAt] = useState<string | null>(null);
+  const [lastAutoSaveError, setLastAutoSaveError] = useState<string | null>(null);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
   const [drafts, setDrafts] = useState<WizardDrafts>({});
   const [reviewReturnStep, setReviewReturnStep] = useState<WizardStep | null>(null);
   const [reviewAllMode, setReviewAllMode] = useState(false);
   const [showFinalSummary, setShowFinalSummary] = useState(false);
+  const lastSavedFingerprintRef = useRef<string | null>(null);
+  const latestAutoSaveFingerprintRef = useRef<string | null>(null);
+  const autoSaveVersionRef = useRef(0);
 
   // ─── Sync inicial: se profile carrega DEPOIS do mount, atualiza step ───
   const syncedRef = useRef(false);
@@ -179,17 +185,20 @@ const BasicOnboardingWizard = () => {
   const persistStep = async (nextStep: WizardStep, extraPatch: Record<string, any> = {}) => {
     if (!user?.id) return;
     try {
-      await supabase.from('profiles').update({
+      const { error } = await supabase.from('profiles').update({
         onboarding_step: nextStep,
         onboarding_completed: false,
         ...extraPatch,
       } as any).eq('id', user.id);
+      if (error) throw error;
     } catch (err) {
       if (import.meta.env.DEV) console.warn('[Wizard] persistStep falhou', err);
     }
   };
 
   const advanceTo = async (nextStep: WizardStep, extraPatch: Record<string, any> = {}) => {
+    saveStepDraft(step);
+    await flushAutoSave();
     setFurthestStep(prev => Math.max(prev, nextStep) as WizardStep);
     setStep(nextStep);
     await persistStep(nextStep, extraPatch);
@@ -197,13 +206,26 @@ const BasicOnboardingWizard = () => {
 
   const saveAutoSavePatch = async (patch: Record<string, any>) => {
     if (!user?.id) return;
+    const fingerprint = JSON.stringify(patch);
+    latestAutoSaveFingerprintRef.current = fingerprint;
     setAutoSaveStatus('saving');
     setLastAutoSavePatch(patch);
+    setLastAutoSaveAttemptAt(new Date().toISOString());
+    setLastAutoSaveError(null);
     try {
-      await supabase.from('profiles').update(patch as any).eq('id', user.id);
-      setAutoSaveStatus('saved');
-    } catch {
-      setAutoSaveStatus('error');
+      const { error } = await supabase.from('profiles').update(patch as any).eq('id', user.id);
+      if (error) throw error;
+      lastSavedFingerprintRef.current = fingerprint;
+      if (latestAutoSaveFingerprintRef.current === fingerprint) {
+        setHasPendingChanges(false);
+        setAutoSaveStatus('idle');
+      }
+    } catch (err: any) {
+      if (latestAutoSaveFingerprintRef.current === fingerprint) {
+        setAutoSaveStatus('error');
+        setHasPendingChanges(true);
+        setLastAutoSaveError(err?.message || 'Não foi possível sincronizar suas alterações agora.');
+      }
     }
   };
 
