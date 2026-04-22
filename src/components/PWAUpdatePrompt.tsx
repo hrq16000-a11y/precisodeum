@@ -12,6 +12,8 @@ const PWAUpdatePrompt = () => {
   const [reloading, setReloading] = useState(false);
   const waitingWorkerRef = useRef<ServiceWorker | null>(null);
   const refreshingRef = useRef(false);
+  const visibleRef = useRef(false);
+  const reloadingRef = useRef(false);
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return undefined;
@@ -27,14 +29,16 @@ const PWAUpdatePrompt = () => {
     };
 
     const applyUpdate = () => {
-      if (!mounted || reloading) return;
+      if (!mounted || reloadingRef.current) return;
+      reloadingRef.current = true;
       setReloading(true);
       waitingWorkerRef.current?.postMessage('SKIP_WAITING');
       fallbackId = window.setTimeout(reloadOnce, RELOAD_FALLBACK_MS);
     };
 
     const showUpdatePrompt = (worker: ServiceWorker) => {
-      if (!mounted || visible || refreshingRef.current) return;
+      if (!mounted || visibleRef.current || refreshingRef.current) return;
+      visibleRef.current = true;
       waitingWorkerRef.current = worker;
       setVisible(true);
       setCountdown(UPDATE_COUNTDOWN_SECONDS);
@@ -85,7 +89,7 @@ const PWAUpdatePrompt = () => {
       if (fallbackId) window.clearTimeout(fallbackId);
       navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
     };
-  }, [reloading, visible]);
+  }, []);
 
   const progress = reloading ? 100 : ((UPDATE_COUNTDOWN_SECONDS - countdown) / UPDATE_COUNTDOWN_SECONDS) * 100;
   const circleRadius = 58;
