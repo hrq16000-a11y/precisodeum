@@ -106,6 +106,15 @@ const Metric = ({
 const sevColor = (sev: string) =>
   sev === 'critical' ? 'destructive' : sev === 'high' ? 'destructive' : sev === 'medium' ? 'secondary' : 'outline';
 
+const PERF_TARGETS = { lcp: 2500, inp: 200, cls: 0.1, ttfb: 800 };
+const estimateMobileScore = ({ lcp, inp, cls, ttfb }: { lcp: number; inp: number; cls: number; ttfb: number }) => {
+  const lcpScore = Math.max(0, 100 - Math.max(0, lcp - PERF_TARGETS.lcp) / 35);
+  const inpScore = Math.max(0, 100 - Math.max(0, inp - PERF_TARGETS.inp) / 4);
+  const clsScore = Math.max(0, 100 - Math.max(0, cls - PERF_TARGETS.cls) * 500);
+  const ttfbScore = Math.max(0, 100 - Math.max(0, ttfb - PERF_TARGETS.ttfb) / 20);
+  return Math.round((lcpScore * 0.4) + (inpScore * 0.25) + (clsScore * 0.2) + (ttfbScore * 0.15));
+};
+
 export default function AdminSystemHealthPage() {
   const { data, isLoading, isFetching, refetch, error } = useQuery({
     queryKey: ['admin-system-health-full'],
@@ -168,6 +177,12 @@ export default function AdminSystemHealthPage() {
   const perfStatus: Status = avgMetric('lcp') > 3500 || avgBackend > 1200 ? 'critical'
     : avgMetric('lcp') > 2500 || avgMetric('ttfb') > 800 || avgBackend > 900 ? 'warn'
     : 'ok';
+  const avgLcp = avgMetric('lcp');
+  const avgInp = avgMetric('inp');
+  const avgCls = Number((performanceReports.map((r) => Number(r.vitals?.cls || 0)).filter((v) => v >= 0).reduce((sum, v) => sum + v, 0) / Math.max(1, performanceReports.length)).toFixed(3));
+  const avgTtfb = avgMetric('ttfb');
+  const mobileScore = estimateMobileScore({ lcp: avgLcp, inp: avgInp || 200, cls: avgCls, ttfb: avgTtfb });
+  const scoreProgress = Math.min(100, Math.round((mobileScore / 80) * 100));
 
   return (
     <AdminLayout>
