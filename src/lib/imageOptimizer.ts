@@ -87,6 +87,19 @@ export function avatarThumb(url: string | null | undefined): string {
   return optimizedImageUrl(url, { width: 112, height: 112, quality: 70 });
 }
 
+/** Responsive srcset using the storage image transform endpoint. */
+export function responsiveImageSrcSet(
+  url: string | null | undefined,
+  widths: number[] = [112, 224, 448],
+  quality = 72,
+): string {
+  const sanitized = sanitizeUrl(url);
+  if (!sanitized || isVideoUrl(sanitized)) return '';
+  return widths
+    .map((width) => `${optimizedImageUrl(sanitized, { width, quality })} ${width}w`)
+    .join(', ');
+}
+
 /** Preset: avatar large (profile page, 96x96 rendered at 2x) */
 export function avatarLarge(url: string | null | undefined): string {
   return optimizedImageUrl(url, { width: 192, height: 192, quality: 75 });
