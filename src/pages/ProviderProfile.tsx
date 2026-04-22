@@ -581,10 +581,12 @@ const ProviderProfile = () => {
       return;
     }
 
-    let frame = 0;
+    let frame: number | null = null;
     let safeAreaBottom = 0;
     let lastShouldShow: boolean | null = null;
     const visualViewport = window.visualViewport;
+    const supportsIntersectionObserver = 'IntersectionObserver' in window;
+    const supportsResizeObserver = 'ResizeObserver' in window;
     const getSafeAreaBottom = () => {
       const probe = document.createElement('div');
       probe.style.cssText = 'position:fixed;bottom:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none;';
@@ -595,48 +597,51 @@ const ProviderProfile = () => {
     };
 
     const measureVisibility = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        const rect = target.getBoundingClientRect();
-        const viewportHeight = visualViewport?.height ?? document.documentElement.clientHeight ?? window.innerHeight;
-        const viewportWidth = visualViewport?.width ?? document.documentElement.clientWidth ?? window.innerWidth;
-        const visibleHeight = Math.min(rect.bottom, viewportHeight - safeAreaBottom) - Math.max(rect.top, 0);
-        const visibleWidth = Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0);
-        const shouldShow = !(visibleHeight > 8 && visibleWidth > 8);
-        if (shouldShow !== lastShouldShow) {
-          lastShouldShow = shouldShow;
-          setShowStickyContact(shouldShow);
-        }
-      });
+      frame = null;
+      const rect = target.getBoundingClientRect();
+      const viewportHeight = visualViewport?.height ?? document.documentElement.clientHeight ?? window.innerHeight;
+      const viewportWidth = visualViewport?.width ?? document.documentElement.clientWidth ?? window.innerWidth;
+      const visibleHeight = Math.min(rect.bottom, viewportHeight - safeAreaBottom) - Math.max(rect.top, 0);
+      const visibleWidth = Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0);
+      const shouldShow = !(visibleHeight > 8 && visibleWidth > 8);
+      if (shouldShow !== lastShouldShow) {
+        lastShouldShow = shouldShow;
+        setShowStickyContact(shouldShow);
+      }
+    };
+    const scheduleVisibilityMeasure = () => {
+      if (frame !== null) return;
+      frame = requestAnimationFrame(measureVisibility);
     };
     const updateSafeAreaAndVisibility = () => {
       safeAreaBottom = getSafeAreaBottom();
-      measureVisibility();
+      scheduleVisibilityMeasure();
     };
 
-    const observer = 'IntersectionObserver' in window ? new IntersectionObserver(
-      () => measureVisibility(),
+    const observer = supportsIntersectionObserver ? new IntersectionObserver(
+      scheduleVisibilityMeasure,
       { threshold: [0, 0.01, 0.1, 1] },
     ) : null;
-    const resizeObserver = 'ResizeObserver' in window ? new ResizeObserver(measureVisibility) : null;
+    const resizeObserver = supportsResizeObserver ? new ResizeObserver(scheduleVisibilityMeasure) : null;
+    const useScrollFallback = !supportsIntersectionObserver;
 
     observer?.observe(target);
     resizeObserver?.observe(target);
     resizeObserver?.observe(document.body);
-    window.addEventListener('scroll', measureVisibility, { passive: true });
+    if (useScrollFallback) window.addEventListener('scroll', scheduleVisibilityMeasure, { passive: true });
     window.addEventListener('resize', updateSafeAreaAndVisibility);
     visualViewport?.addEventListener('resize', updateSafeAreaAndVisibility);
-    visualViewport?.addEventListener('scroll', measureVisibility);
+    visualViewport?.addEventListener('scroll', scheduleVisibilityMeasure);
     updateSafeAreaAndVisibility();
 
     return () => {
-      cancelAnimationFrame(frame);
+      if (frame !== null) cancelAnimationFrame(frame);
       observer?.disconnect();
       resizeObserver?.disconnect();
-      window.removeEventListener('scroll', measureVisibility);
+      if (useScrollFallback) window.removeEventListener('scroll', scheduleVisibilityMeasure);
       window.removeEventListener('resize', updateSafeAreaAndVisibility);
       visualViewport?.removeEventListener('resize', updateSafeAreaAndVisibility);
-      visualViewport?.removeEventListener('scroll', measureVisibility);
+      visualViewport?.removeEventListener('scroll', scheduleVisibilityMeasure);
     };
   }, [isMobile, provider?.whatsapp, provider?.phone]);
 
