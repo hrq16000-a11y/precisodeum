@@ -58,12 +58,12 @@ const DashboardPage = () => {
   useEffect(() => {
     if (searchParams.get('welcome') === '1') {
       setWelcomeOpen(true);
-      celebrate({ intensity: 'big' });
+      celebrate({ intensity: 'big', id: `welcome-onboarding:${user?.id ?? 'anon'}` });
       const params = new URLSearchParams(searchParams);
       params.delete('welcome');
       setSearchParams(params, { replace: true });
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, user?.id]);
 
   const handleResetOnboarding = async () => {
     if (!user?.id) return;

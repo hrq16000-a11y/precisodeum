@@ -16,6 +16,8 @@
  */
 
 const MUTE_KEY = 'pdu_celebrate_muted';
+const CELEBRATION_SESSION_PREFIX = 'pdu_celebrate_once:';
+const CELEBRATION_COOLDOWN_MS = 60_000;
 
 export function isCelebrationMuted(): boolean {
   if (typeof window === 'undefined') return false;
@@ -91,6 +93,22 @@ export function playAchievementSound(volume = 0.18) {
 interface ConfettiOptions {
   /** "big" = boas-vindas / level up. "mini" = item desbloqueado. */
   intensity?: 'big' | 'mini';
+  /** Optional idempotency key. Same id is ignored for 60s in the current tab session. */
+  id?: string;
+}
+
+function shouldRunCelebration(id?: string): boolean {
+  if (!id || typeof window === 'undefined') return true;
+  try {
+    const key = `${CELEBRATION_SESSION_PREFIX}${id}`;
+    const lastRun = Number(sessionStorage.getItem(key) || '0');
+    const now = Date.now();
+    if (lastRun && now - lastRun < CELEBRATION_COOLDOWN_MS) return false;
+    sessionStorage.setItem(key, String(now));
+    return true;
+  } catch {
+    return true;
+  }
 }
 
 /** Fires confetti. Falls back to noop if dependency unavailable. */
@@ -113,6 +131,7 @@ export async function fireConfetti(opts: ConfettiOptions = {}) {
 
 /** Combined helper: confetti + sound. Use for any "win" moment. */
 export function celebrate(opts: ConfettiOptions = {}) {
+  if (!shouldRunCelebration(opts.id)) return;
   void fireConfetti(opts);
   playAchievementSound(opts.intensity === 'mini' ? 0.14 : 0.2);
 }

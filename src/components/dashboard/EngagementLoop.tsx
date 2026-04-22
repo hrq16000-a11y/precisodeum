@@ -7,9 +7,6 @@ import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
 import { useAuth } from '@/hooks/useAuth';
 import { celebrate } from '@/lib/celebrate';
 
-/** Persistent flag to ensure the Diamante celebration fires EXACTLY once per user. */
-const DIAMOND_CELEBRATED_KEY = 'diamante_celebrated_v1';
-
 /**
  * EngagementLoop — orchestrates the "infinite engagement circuit".
  *
@@ -109,13 +106,7 @@ const EngagementLoop = () => {
   useEffect(() => {
     if (!data || !user?.id) return;
     if (data.percentage < 90) return;
-    try {
-      const key = `${DIAMOND_CELEBRATED_KEY}:${user.id}`;
-      if (localStorage.getItem(key)) return;
-      localStorage.setItem(key, String(Date.now()));
-      // Big celebration synchronized with confetti rain (handled inside celebrate())
-      celebrate({ intensity: 'big' });
-    } catch { /* localStorage may be unavailable in private mode */ }
+    celebrate({ intensity: 'big', id: `level-up-diamond:${user.id}` });
   }, [data?.percentage, user?.id]);
 
   if (dismissed) return null;
