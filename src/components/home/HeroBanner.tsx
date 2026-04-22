@@ -58,6 +58,7 @@ const HeroPrefixRotator = ({ prefixes }: { prefixes: string[] }) => {
 const HeroBanner = () => {
   const [displayedImage, setDisplayedImage] = useState(CATEGORY_IMAGES.instalacoes);
   const [nextImage, setNextImage] = useState<string | null>(null);
+  const [heroReady, setHeroReady] = useState(false);
   const { city: geoCity } = useGeoCity();
   const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
 
@@ -74,6 +75,7 @@ const HeroBanner = () => {
   }, [prefixesRaw]);
 
   const handleServiceChange = useCallback((service: string) => {
+    if (!heroReady) return;
     const cat = getCategoryForService(service);
     const newImg = CATEGORY_IMAGES[cat];
     if (newImg !== displayedImage) {
@@ -83,10 +85,16 @@ const HeroBanner = () => {
         setNextImage(null);
       }, 800);
     }
-  }, [displayedImage]);
+  }, [displayedImage, heroReady]);
+
+  useEffect(() => {
+    const id = globalThis.setTimeout(() => setHeroReady(true), 3200);
+    return () => globalThis.clearTimeout(id);
+  }, []);
 
   // Deferred preload of next image — no forced reflow
   useEffect(() => {
+    if (!heroReady) return;
     const id = setTimeout(() => {
       const allImages = Object.values(CATEGORY_IMAGES);
       const currentIdx = allImages.indexOf(displayedImage);
@@ -95,7 +103,7 @@ const HeroBanner = () => {
       img.src = allImages[nextIdx];
     }, 2000);
     return () => clearTimeout(id);
-  }, [displayedImage]);
+  }, [displayedImage, heroReady]);
 
   return (
     <section
