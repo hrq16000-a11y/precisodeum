@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const type = url.searchParams.get('type');
+  const sitemapBaseUrl = `${url.origin}${url.pathname}`;
 
   // Sitemap Index — returns links to sub-sitemaps
   if (!type) {
@@ -27,7 +28,7 @@ Deno.serve(async (req) => {
       'blog', 'jobs', 'pages', 'popular', 'seo',
     ];
     const entries = sitemaps.map(s =>
-      `  <sitemap>\n    <loc>${escapeXml(siteUrl)}/sitemap.xml?type=${s}</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>`
+      `  <sitemap>\n    <loc>${escapeXml(sitemapBaseUrl)}?type=${s}</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>`
     ).join('\n');
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
