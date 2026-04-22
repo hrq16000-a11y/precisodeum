@@ -962,6 +962,7 @@ const AutoSaveControls = ({
   hasPendingChanges,
   lastAttemptAt,
   errorMessage,
+  attempts,
   onDelayChange,
   onRetry,
   onReloadSaved,
@@ -971,6 +972,7 @@ const AutoSaveControls = ({
   hasPendingChanges: boolean;
   lastAttemptAt: string | null;
   errorMessage: string | null;
+  attempts: AutoSaveAttempt[];
   onDelayChange: (delay: 1000 | 2000 | 3000) => void;
   onRetry: () => void;
   onReloadSaved: () => void;
@@ -1025,9 +1027,58 @@ const AutoSaveControls = ({
         </div>
       </div>
     )}
+    {attempts.length > 0 && (
+      <div className="mt-3 rounded-lg border border-border bg-background/70 p-3">
+        <p className="text-[11px] font-bold text-foreground">Histórico de salvamento</p>
+        <div className="mt-2 space-y-2">
+          {attempts.map((attempt) => (
+            <div key={attempt.id} className="flex items-start justify-between gap-3 text-[10px]">
+              <div>
+                <p className={attempt.status === 'error' ? 'font-bold text-destructive' : 'font-bold text-accent'}>
+                  {attempt.status === 'error' ? 'Falhou' : 'Salvo'} • passo {attempt.step}
+                </p>
+                <p className="text-muted-foreground">{attempt.fields.join(', ') || 'progresso'} — {attempt.message}</p>
+              </div>
+              <span className="shrink-0 text-muted-foreground">
+                {new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(attempt.attemptedAt))}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
   </div>
   );
 };
+
+const GuidedReviewCard = ({
+  step,
+  items,
+  onEdit,
+  onKeep,
+}: {
+  step: WizardStep;
+  items: Array<{ label: string; value: string }>;
+  onEdit: () => void;
+  onKeep: () => void;
+}) => (
+  <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4">
+    <p className="text-xs font-bold text-accent">Revisão guiada • passo {step}</p>
+    <h2 className="mt-1 font-display text-lg font-bold text-foreground">{checklistItems.find(item => item.step === step)?.label}</h2>
+    <div className="mt-4 space-y-2">
+      {items.map((item) => (
+        <div key={item.label} className="flex items-start justify-between gap-3 rounded-lg border border-border bg-background/70 px-3 py-2">
+          <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+          <span className="text-right text-xs font-bold text-foreground">{item.value}</span>
+        </div>
+      ))}
+    </div>
+    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+      <Button type="button" variant="outline" onClick={onEdit}>Editar novamente</Button>
+      <Button type="button" variant="accent" onClick={onKeep}>Manter</Button>
+    </div>
+  </div>
+);
 
 const ReviewSummaryCard = ({
   items,
