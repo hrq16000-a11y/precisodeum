@@ -18,6 +18,8 @@
 const MUTE_KEY = 'pdu_celebrate_muted';
 const CELEBRATION_SESSION_PREFIX = 'pdu_celebrate_once:';
 const CELEBRATION_COOLDOWN_MS = 60_000;
+const TELEMETRY_ACTION_TRIGGERED = 'celebration.triggered';
+const TELEMETRY_ACTION_BLOCKED = 'celebration.blocked_cooldown';
 let sessionKeysCleaned = false;
 
 export const CELEBRATION_IDS = {
@@ -107,18 +109,49 @@ interface ConfettiOptions {
   id?: string;
 }
 
-function shouldRunCelebration(id?: string): boolean {
-  if (!id || typeof window === 'undefined') return true;
+function shouldRunCelebration(id?: string): { allowed: boolean; cooldownRemainingMs?: number } {
+  if (!id || typeof window === 'undefined') return { allowed: true };
   try {
     cleanupExpiredSessionKeys();
     const key = `${CELEBRATION_SESSION_PREFIX}${id}`;
     const lastRun = Number(sessionStorage.getItem(key) || '0');
     const now = Date.now();
-    if (lastRun && now - lastRun < CELEBRATION_COOLDOWN_MS) return false;
+    if (lastRun && now - lastRun < CELEBRATION_COOLDOWN_MS) {
+      return { allowed: false, cooldownRemainingMs: CELEBRATION_COOLDOWN_MS - (now - lastRun) };
+    }
     sessionStorage.setItem(key, String(now));
-    return true;
+    return { allowed: true };
   } catch {
-    return true;
+    return { allowed: true };
+  }
+}
+
+async function logCelebrationTelemetry(
+  action: typeof TELEMETRY_ACTION_TRIGGERED | typeof TELEMETRY_ACTION_BLOCKED,
+  opts: ConfettiOptions,
+  cooldownRemainingMs?: number,
+) {
+  if (!opts.id || typeof window === 'undefined') return;
+  try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) return;
+
+    await supabase.from('audit_log').insert({
+      user_id: user.id,
+      action,
+      resource_type: 'celebration',
+      resource_id: opts.id,
+      details: {
+        celebration_id: opts.id,
+        intensity: opts.intensity ?? 'big',
+        cooldown_ms: CELEBRATION_COOLDOWN_MS,
+        cooldown_remaining_ms: cooldownRemainingMs ?? null,
+        page_path: window.location.pathname,
+      },
+    } as any);
+  } catch {
+    /* telemetry is best-effort */
   }
 }
 
@@ -160,7 +193,12 @@ export async function fireConfetti(opts: ConfettiOptions = {}) {
 /** Combined helper: confetti + sound. Use for any "win" moment. */
 export function celebrate(opts: ConfettiOptions = {}) {
   if (typeof window === 'undefined') return;
-  if (!shouldRunCelebration(opts.id)) return;
+  const decision = shouldRunCelebration(opts.id);
+  if (!decision.allowed) {
+    void logCelebrationTelemetry(TELEMETRY_ACTION_BLOCKED, opts, decision.cooldownRemainingMs);
+    return;
+  }
+  void logCelebrationTelemetry(TELEMETRY_ACTION_TRIGGERED, opts);
   void fireConfetti(opts);
   playAchievementSound(opts.intensity === 'mini' ? 0.14 : 0.2);
 }
