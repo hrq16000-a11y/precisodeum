@@ -12,7 +12,7 @@
     "prebuild:dev": "npm run assets:logo",
     "build:dev": "vite build --mode development",
     "check": "npm run health:ui && npm run test && npm run build",
-    "check:performance": "node scripts/validate-srcsets.mjs && node scripts/performance-budget.mjs && node scripts/performance-regression.mjs",
+    "check:performance": "node scripts/validate-srcsets.mjs && node scripts/performance-budget.mjs && node scripts/bundle-analyzer.mjs && node scripts/performance-regression.mjs",
     "lighthouse:ci": "node scripts/lighthouse-ci.mjs",
     "ci:performance": "npm run lint && npm run test && npm run build && npm run check:performance && npm run lighthouse:ci",
     "health:ui": "node scripts/health-check-ui.mjs",
