@@ -68,7 +68,7 @@ const BasicOnboardingWizard = () => {
   // ─── Estado persistido por banco (onboarding_step controla a esteira) ───
   const hasExistingCadastro = !!profile?.profile_type;
   const storedStep = Number(profile?.onboarding_step ?? 0);
-  const initialStep = (hasExistingCadastro ? Math.max(storedStep, 2) : (storedStep || 1)) as WizardStep;
+  const initialStep = (storedStep || 1) as WizardStep;
   const [step, setStep] = useState<WizardStep>(initialStep);
 
   // Tipo de perfil
@@ -106,9 +106,7 @@ const BasicOnboardingWizard = () => {
   useEffect(() => {
     if (syncedRef.current || !profile) return;
     syncedRef.current = true;
-    const nextStep = profile.profile_type
-      ? Math.max(Number(profile.onboarding_step ?? 0), 2)
-      : Number(profile.onboarding_step ?? 1);
+    const nextStep = Number(profile.onboarding_step ?? 1);
     setStep(Math.min(Math.max(nextStep, 1), 5) as WizardStep);
     if (profile.profile_type) setProfileType(profile.profile_type as ProfileType);
     if (profile.full_name) setFullName(profile.full_name);
@@ -182,6 +180,10 @@ const BasicOnboardingWizard = () => {
     setProviderSubtype(sub);
     setShowSubtypeStep(false);
     await advanceTo(2, { profile_type: 'provider', role: 'provider' });
+  };
+
+  const handleContinueProfileUpdate = async () => {
+    await advanceTo(2, profileType ? { profile_type: profileType, role: profileType } : {});
   };
 
   // ─── Passo 2: Localização + Foto ───
@@ -368,7 +370,11 @@ const BasicOnboardingWizard = () => {
 
         {/* ─── PASSO 1 ─── */}
         {step === 1 && !showSubtypeStep && (
-          <Step1Identity onSelectType={handleSelectType} />
+          <Step1Identity
+            existingProfileType={hasExistingCadastro ? profileType : null}
+            onContinueProfileUpdate={handleContinueProfileUpdate}
+            onSelectType={handleSelectType}
+          />
         )}
 
         {step === 1 && showSubtypeStep && profileType === 'provider' && (
