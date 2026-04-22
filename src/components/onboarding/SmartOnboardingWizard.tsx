@@ -696,16 +696,20 @@ const checklistItems: Array<{ step: WizardStep; label: string }> = [
 const WizardChecklist = ({
   currentStep,
   furthestStep,
+  estimates,
   onReview,
+  onReviewAll,
 }: {
   currentStep: WizardStep;
   furthestStep: WizardStep;
+  estimates: Record<WizardStep, string>;
   onReview: (step: WizardStep) => void;
+  onReviewAll: () => void;
 }) => (
   <div className="mb-5 rounded-xl border border-border bg-muted/30 p-3">
     <div className="mb-3 flex items-center justify-between gap-3">
       <p className="text-xs font-bold text-foreground">Checklist do perfil</p>
-      <p className="text-[11px] font-medium text-muted-foreground">Toque para revisar</p>
+      <button type="button" onClick={onReviewAll} className="text-[11px] font-bold text-accent hover:underline">Revisar tudo</button>
     </div>
     <div className="grid grid-cols-5 gap-2">
       {checklistItems.map((item) => {
@@ -733,6 +737,7 @@ const WizardChecklist = ({
             <span className="mt-0.5 block text-[9px] leading-tight opacity-80">
               {active ? 'Agora' : done ? 'Completo' : 'Falta'}
             </span>
+            <span className="mt-0.5 block text-[9px] leading-tight opacity-70">{estimates[item.step]}</span>
           </button>
         );
       })}
