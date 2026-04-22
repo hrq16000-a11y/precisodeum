@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "assets:logo": "node scripts/generate-logo-webp.mjs",
+    "prebuild": "npm run assets:logo",
     "build": "vite build",
+    "prebuild:dev": "npm run assets:logo",
     "build:dev": "vite build --mode development",
     "check": "npm run health:ui && npm run test && npm run build",
     "health:ui": "node scripts/health-check-ui.mjs",
