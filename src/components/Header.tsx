@@ -15,7 +15,7 @@ const NotificationBell = (props: any) => (
     <LazyNotificationBell {...props} />
   </Suspense>
 );
-import { useMenuItems } from '@/hooks/useMenuItems';
+import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 import Logo from '@/components/Logo';
 
 /* ── Geo badge (full & compact) ───────────────────────────── */
@@ -100,14 +100,27 @@ const Header = () => {
   const headerRef = useRef<HTMLElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deferredReady, setDeferredReady] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Admin settings for compact header
   const compactEnabled = useSettingValue('header_compact_enabled');
   const isCompactEnabled = compactEnabled !== 'false'; // default true
 
-  const { data: headerItems = [] } = useMenuItems('header');
-  const { data: mobileItems = [] } = useMenuItems('mobile');
+  const { data: menuGroups } = useMenuItemsByLocations(['header', 'mobile']);
+  const headerItems = menuGroups?.header || [];
+  const mobileItems = menuGroups?.mobile || [];
+
+  useEffect(() => {
+    const schedule = 'requestIdleCallback' in window
+      ? (window as any).requestIdleCallback
+      : (cb: () => void) => window.setTimeout(cb, 1200);
+    const cancel = 'cancelIdleCallback' in window
+      ? (window as any).cancelIdleCallback
+      : window.clearTimeout;
+    const id = schedule(() => setDeferredReady(true), { timeout: 2200 });
+    return () => cancel(id);
+  }, []);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
@@ -301,7 +314,7 @@ const Header = () => {
               <Search className="h-4 w-4" />
             </Button>
           )}
-          <NotificationBell />
+          {deferredReady && <NotificationBell />}
           {!loading && user ? (
             <>
               <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')} className={`gap-1.5 ${isCompact ? 'text-xs h-7 px-2' : ''}`}>
@@ -340,7 +353,7 @@ const Header = () => {
           ) : (
             <GeoBadge city={geoCity} temp={geoTemp} compact className="hidden xs:inline-flex text-[10px] px-1.5 py-0.5 shrink-0 max-w-[110px] truncate" />
           )}
-          <NotificationBell />
+          {deferredReady && <NotificationBell />}
           <button
             className="text-foreground p-1 rounded-lg active:scale-90 transition-transform shrink-0"
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -426,9 +439,11 @@ const Header = () => {
           </nav>
         </div>
       )}
-      <Suspense fallback={null}>
-        <AdSlot slotSlug="global-top" />
-      </Suspense>
+      {deferredReady && (
+        <Suspense fallback={null}>
+          <AdSlot slotSlug="global-top" />
+        </Suspense>
+      )}
 
       {/* Admin X-Ray Toolbar */}
       {profile?.role === 'admin' && <AdminAdToolbar />}
