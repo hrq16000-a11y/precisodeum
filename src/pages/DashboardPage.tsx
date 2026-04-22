@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
-import { celebrate } from '@/lib/celebrate';
+import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap, Camera, FileText, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -58,7 +58,7 @@ const DashboardPage = () => {
   useEffect(() => {
     if (searchParams.get('welcome') === '1') {
       setWelcomeOpen(true);
-      celebrate({ intensity: 'big', id: `welcome-onboarding:${user?.id ?? 'anon'}` });
+      celebrate({ intensity: 'big', id: CELEBRATION_IDS.welcomeOnboarding(user?.id) });
       const params = new URLSearchParams(searchParams);
       params.delete('welcome');
       setSearchParams(params, { replace: true });
