@@ -231,10 +231,10 @@ const RoutePrefetcher = () => {
     };
     const id = 'requestIdleCallback' in window
       ? (window as any).requestIdleCallback(prefetch, { timeout: 3500 })
-      : window.setTimeout(prefetch, 2200);
+      : globalThis.setTimeout(prefetch, 2200);
     return () => {
       if ('cancelIdleCallback' in window) (window as any).cancelIdleCallback(id);
-      else window.clearTimeout(id);
+      else globalThis.clearTimeout(id);
     };
   }, [location.pathname]);
   return null;
