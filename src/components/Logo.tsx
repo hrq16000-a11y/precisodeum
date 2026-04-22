@@ -7,9 +7,10 @@ interface LogoProps {
   className?: string;
   linkTo?: string;
   priority?: boolean;
+  sizes?: string;
 }
 
-const Logo = ({ variant = 'default', className = '', linkTo = '/', priority = false }: LogoProps) => {
+const Logo = ({ variant = 'default', className = '', linkTo = '/', priority = false, sizes = '(max-width: 639px) 155px, 133px' }: LogoProps) => {
   const logo = DEFAULT_LOGO_URL;
 
   const filterClass = variant === 'white'
@@ -22,7 +23,7 @@ const Logo = ({ variant = 'default', className = '', linkTo = '/', priority = fa
     <img
       src={logo}
       srcSet={DEFAULT_LOGO_SRCSET}
-      sizes="(max-width: 639px) 155px, 133px"
+      sizes={sizes}
       alt="Preciso de um Profissional"
       className={`block h-14 min-h-14 max-h-14 aspect-[111/40] w-auto max-w-full shrink-0 object-contain sm:h-12 sm:min-h-12 sm:max-h-12 ${filterClass} ${className}`}
       width="710"
