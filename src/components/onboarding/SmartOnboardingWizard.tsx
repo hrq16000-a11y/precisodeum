@@ -545,6 +545,61 @@ const BasicOnboardingWizard = () => {
 // SUBCOMPONENTES (mantidos no mesmo arquivo p/ rapidez de leitura)
 // ════════════════════════════════════════════════════════════════════
 
+const checklistItems: Array<{ step: WizardStep; label: string }> = [
+  { step: 1, label: 'Perfil' },
+  { step: 2, label: 'Local' },
+  { step: 3, label: 'Contato' },
+  { step: 4, label: 'Serviço' },
+  { step: 5, label: 'Finalizar' },
+];
+
+const WizardChecklist = ({
+  currentStep,
+  furthestStep,
+  onReview,
+}: {
+  currentStep: WizardStep;
+  furthestStep: WizardStep;
+  onReview: (step: WizardStep) => void;
+}) => (
+  <div className="mb-5 rounded-xl border border-border bg-muted/30 p-3">
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <p className="text-xs font-bold text-foreground">Checklist do perfil</p>
+      <p className="text-[11px] font-medium text-muted-foreground">Toque para revisar</p>
+    </div>
+    <div className="grid grid-cols-5 gap-2">
+      {checklistItems.map((item) => {
+        const done = item.step < currentStep || item.step < furthestStep;
+        const active = item.step === currentStep;
+        const available = item.step <= furthestStep;
+        return (
+          <button
+            key={item.step}
+            type="button"
+            disabled={!available}
+            onClick={() => onReview(item.step)}
+            className={`min-h-16 rounded-lg border px-1.5 py-2 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              active
+                ? 'border-accent bg-accent/10 text-foreground'
+                : done
+                  ? 'border-accent/30 bg-accent/5 text-foreground'
+                  : 'border-border bg-background text-muted-foreground'
+            }`}
+          >
+            <span className="mx-auto mb-1 flex h-5 w-5 items-center justify-center rounded-full border border-current text-[10px] font-bold">
+              {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : item.step}
+            </span>
+            <span className="block text-[10px] font-semibold leading-tight">{item.label}</span>
+            <span className="mt-0.5 block text-[9px] leading-tight opacity-80">
+              {active ? 'Agora' : done ? 'Completo' : 'Falta'}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
 const Step1Identity = ({
   existingProfileType,
   onContinueProfileUpdate,
