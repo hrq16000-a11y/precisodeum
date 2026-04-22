@@ -460,11 +460,12 @@ const BasicOnboardingWizard = () => {
           </div>
         )}
 
-        {autoSaveStatus !== 'idle' && step > 1 && (
-          <p className="mb-4 text-right text-[11px] font-medium text-muted-foreground">
-            {autoSaveStatus === 'saving' ? 'Salvando automaticamente…' : 'Alterações salvas'}
-          </p>
-        )}
+        <AutoSaveControls
+          status={autoSaveStatus}
+          delay={autoSaveDelay}
+          onDelayChange={setAutoSaveDelay}
+          onRetry={retryAutoSave}
+        />
 
         {/* ─── PASSO 1 ─── */}
         {step === 1 && !showSubtypeStep && (
