@@ -124,10 +124,12 @@ const BasicOnboardingWizard = () => {
   const [lastAutoSavePatch, setLastAutoSavePatch] = useState<Record<string, any> | null>(null);
   const [lastAutoSaveAttemptAt, setLastAutoSaveAttemptAt] = useState<string | null>(null);
   const [lastAutoSaveError, setLastAutoSaveError] = useState<string | null>(null);
+  const [autoSaveAttempts, setAutoSaveAttempts] = useState<AutoSaveAttempt[]>([]);
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
   const [drafts, setDrafts] = useState<WizardDrafts>({});
   const [reviewReturnStep, setReviewReturnStep] = useState<WizardStep | null>(null);
   const [reviewAllMode, setReviewAllMode] = useState(false);
+  const [guidedReviewStep, setGuidedReviewStep] = useState<WizardStep | null>(null);
   const [showFinalSummary, setShowFinalSummary] = useState(false);
   const lastSavedFingerprintRef = useRef<string | null>(null);
   const latestAutoSaveFingerprintRef = useRef<string | null>(null);
@@ -208,14 +210,17 @@ const BasicOnboardingWizard = () => {
   const saveAutoSavePatch = async (patch: Record<string, any>) => {
     if (!user?.id) return;
     const fingerprint = JSON.stringify(patch);
+    const attemptedAt = new Date().toISOString();
+    const fields = Object.keys(patch).filter(key => !['onboarding_completed', 'onboarding_step'].includes(key));
     latestAutoSaveFingerprintRef.current = fingerprint;
     setAutoSaveStatus('saving');
     setLastAutoSavePatch(patch);
-    setLastAutoSaveAttemptAt(new Date().toISOString());
+    setLastAutoSaveAttemptAt(attemptedAt);
     setLastAutoSaveError(null);
     try {
       const { error } = await supabase.from('profiles').update(patch as any).eq('id', user.id);
       if (error) throw error;
+      setAutoSaveAttempts(prev => [{ id: `${attemptedAt}-ok`, status: 'success', attemptedAt, step, fields, message: 'Salvo automaticamente' }, ...prev].slice(0, 5));
       lastSavedFingerprintRef.current = fingerprint;
       if (latestAutoSaveFingerprintRef.current === fingerprint) {
         setHasPendingChanges(false);
@@ -223,9 +228,11 @@ const BasicOnboardingWizard = () => {
       }
     } catch (err: any) {
       if (latestAutoSaveFingerprintRef.current === fingerprint) {
+        const message = err?.message || 'Não foi possível sincronizar suas alterações agora.';
         setAutoSaveStatus('error');
         setHasPendingChanges(true);
-        setLastAutoSaveError(err?.message || 'Não foi possível sincronizar suas alterações agora.');
+        setLastAutoSaveError(message);
+        setAutoSaveAttempts(prev => [{ id: `${attemptedAt}-error`, status: 'error', attemptedAt, step, fields, message }, ...prev].slice(0, 5));
       }
     }
   };
