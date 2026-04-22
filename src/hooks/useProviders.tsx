@@ -799,7 +799,7 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
   );
 
   // Fire-and-forget demand log for heatmap
-  useMemo(() => {
+  useEffect(() => {
     if (!query && !categorySlug) return;
     if (userLat == null || userLon == null) return;
     supabase.from('search_demand_logs').insert({
@@ -809,8 +809,7 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
       category_slug: categorySlug || '',
       city: city || '',
     }).then(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, categorySlug, userLat != null]);
+  }, [query, categorySlug, city, userLat, userLon]);
 
   return {
     ...baseQuery,
@@ -847,7 +846,7 @@ export function useGeoCategories(userLat?: number | null, userLon?: number | nul
       // Fetch categories + providers with coords in parallel
       const [catsRes, provsRes] = await Promise.all([
         supabase.from('categories').select('id, name, slug, icon'),
-        supabase.from('providers').select('category_id, latitude, longitude').eq('status', 'approved'),
+        supabase.from('providers').select('category_id, latitude, longitude').eq('status', 'approved').limit(1000),
       ]);
       if (catsRes.error) throw catsRes.error;
 
