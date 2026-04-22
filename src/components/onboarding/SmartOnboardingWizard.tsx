@@ -113,6 +113,10 @@ const BasicOnboardingWizard = () => {
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [autoSaveDelay, setAutoSaveDelay] = useState<1000 | 2000 | 3000>(1000);
   const [lastAutoSavePatch, setLastAutoSavePatch] = useState<Record<string, any> | null>(null);
+  const [drafts, setDrafts] = useState<WizardDrafts>({});
+  const [reviewReturnStep, setReviewReturnStep] = useState<WizardStep | null>(null);
+  const [reviewAllMode, setReviewAllMode] = useState(false);
+  const [showFinalSummary, setShowFinalSummary] = useState(false);
 
   // ─── Sync inicial: se profile carrega DEPOIS do mount, atualiza step ───
   const syncedRef = useRef(false);
