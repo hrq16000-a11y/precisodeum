@@ -370,7 +370,7 @@ export function useCategoriesWithCount() {
     queryFn: async () => {
       const [catsRes, provsRes] = await Promise.all([
         supabase.from('categories').select('id, name, slug, icon, parent_id').is('deleted_at', null).order('name'),
-        supabase.from('providers').select('category_id').eq('status', 'approved'),
+        supabase.from('providers').select('category_id').eq('status', 'approved').limit(1000),
       ]);
 
       if (catsRes.error) throw catsRes.error;
@@ -755,6 +755,7 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
         .eq('status', 'approved')
         .order('rating_avg', { ascending: false })
         .order('review_count', { ascending: false })
+        .limit(SEARCH_RESULT_LIMIT)
       );
     },
     staleTime: 1000 * 60 * 15,
@@ -784,6 +785,7 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
         .eq('status', 'approved')
         .order('rating_avg', { ascending: false })
         .order('review_count', { ascending: false })
+        .limit(SEARCH_RESULT_LIMIT)
       );
     },
     staleTime: 1000 * 60 * 15,
