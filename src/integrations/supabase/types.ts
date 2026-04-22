@@ -5410,6 +5410,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_site_setting_audited: {
+        Args: { p_key: string; p_value: string }
+        Returns: undefined
+      }
       user_lead_quota: { Args: { _user_id: string }; Returns: number }
       user_lead_quota_usage: { Args: { _user_id: string }; Returns: Json }
     }
