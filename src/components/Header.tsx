@@ -112,14 +112,13 @@ const Header = () => {
   const mobileItems = menuGroups?.mobile || [];
 
   useEffect(() => {
-    const schedule = 'requestIdleCallback' in window
-      ? (window as any).requestIdleCallback
-      : (cb: () => void) => window.setTimeout(cb, 1200);
-    const cancel = 'cancelIdleCallback' in window
-      ? (window as any).cancelIdleCallback
-      : window.clearTimeout;
-    const id = schedule(() => setDeferredReady(true), { timeout: 2200 });
-    return () => cancel(id);
+    if ('requestIdleCallback' in window) {
+      const id = (window as any).requestIdleCallback(() => setDeferredReady(true), { timeout: 2200 });
+      return () => (window as any).cancelIdleCallback?.(id);
+    }
+
+    const id = window.setTimeout(() => setDeferredReady(true), 1200);
+    return () => window.clearTimeout(id);
   }, []);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
