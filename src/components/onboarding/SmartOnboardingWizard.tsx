@@ -134,6 +134,21 @@ const BasicOnboardingWizard = () => {
     if (profile.whatsapp || profile.phone) setWhatsapp(profile.whatsapp || profile.phone || '');
   }, [profile]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      const raw = window.localStorage.getItem(draftStorageKey(user.id));
+      if (raw) setDrafts(JSON.parse(raw));
+    } catch { /* ignore invalid draft */ }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      window.localStorage.setItem(draftStorageKey(user.id), JSON.stringify(drafts));
+    } catch { /* storage may be unavailable */ }
+  }, [user?.id, drafts]);
+
   // ─── Carrega provider salvo (caso volte ao Passo 4 após F5) ───
   useEffect(() => {
     if (!user?.id || profileType !== 'provider' || savedProvider) return;
