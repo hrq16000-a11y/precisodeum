@@ -21,3 +21,5 @@ export const siteImageOrFallback = (url: string | null | undefined, fallback: st
 export const socialImageUrl = (url?: string | null): string => {
   return toAbsoluteSiteUrl(url || DEFAULT_SOCIAL_IMAGE_URL);
 };
+
+export const DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL = toAbsoluteSiteUrl(DEFAULT_SOCIAL_IMAGE_URL);
