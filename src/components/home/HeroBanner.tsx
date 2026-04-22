@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
-import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
 import UrgencyToggle from '@/components/home/UrgencyToggle';
@@ -8,6 +7,7 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { getCategoryForService, CATEGORY_IMAGES, type ServiceCategory } from '@/lib/serviceCategoryMap';
+import { Icon } from '@/components/ui/Icon';
 
 const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBar')));
 
@@ -109,7 +109,7 @@ const HeroBanner = () => {
         height={768}
         fetchPriority="high"
         loading="eager"
-        decoding="sync"
+        decoding="async"
         // @ts-expect-error - non-standard but supported by Chromium for LCP hinting
         elementtiming="hero-lcp"
         className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700"
@@ -157,9 +157,9 @@ const HeroBanner = () => {
               <SearchBar />
             </div>
           </Suspense>
-          <div className="mt-3 flex flex-col items-center justify-center gap-2 text-xs text-primary-foreground/70 sm:flex-row sm:gap-3">
+          <div className="mt-3 flex min-h-[2.5rem] flex-col items-center justify-center gap-2 text-xs text-primary-foreground/70 sm:min-h-[1.25rem] sm:flex-row sm:gap-3">
             <span className="inline-flex items-center gap-2">
-              <MapPin className="h-3.5 w-3.5 text-secondary" />
+              <Icon name="MapPin" className="h-3.5 w-3.5 text-secondary" />
               <span>{geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
             </span>
             <UrgencyToggle
