@@ -751,7 +751,7 @@ const BasicOnboardingWizard = () => {
         />
 
         {/* ─── PASSO 1 ─── */}
-        {!showFinalSummary && step === 1 && !showSubtypeStep && (
+        {!guidedReviewStep && !showFinalSummary && step === 1 && !showSubtypeStep && (
           <Step1Identity
             existingProfileType={hasExistingCadastro ? profileType : null}
             onContinueProfileUpdate={handleContinueProfileUpdate}
@@ -759,7 +759,7 @@ const BasicOnboardingWizard = () => {
           />
         )}
 
-        {!showFinalSummary && step === 1 && showSubtypeStep && profileType === 'provider' && (
+        {!guidedReviewStep && !showFinalSummary && step === 1 && showSubtypeStep && profileType === 'provider' && (
           <SubtypeChoice
             onBack={() => { setShowSubtypeStep(false); setProfileType(null); }}
             onSelect={handleSelectSubtype}
@@ -767,7 +767,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 2 ─── */}
-        {!showFinalSummary && step === 2 && (
+        {!guidedReviewStep && !showFinalSummary && step === 2 && (
           <Step2Location
             city={city}
             state={state}
@@ -786,7 +786,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 3 ─── */}
-        {!showFinalSummary && step === 3 && (
+        {!guidedReviewStep && !showFinalSummary && step === 3 && (
           <Step3Contact
             profileType={profileType}
             fullName={fullName}
@@ -810,7 +810,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 4 — PROVIDER apenas ─── */}
-        {!showFinalSummary && step === 4 && profileType === 'provider' && (
+        {!guidedReviewStep && !showFinalSummary && step === 4 && profileType === 'provider' && (
           <Step4Service
             providerReady={!!savedProvider}
             servicesCreated={servicesCreated}
@@ -825,7 +825,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* Caso provider ainda não tenha provider row (raro), volta ao step 3 */}
-        {!showFinalSummary && step === 4 && profileType !== 'provider' && (
+        {!guidedReviewStep && !showFinalSummary && step === 4 && profileType !== 'provider' && (
           <div className="text-center">
             <p className="text-sm text-muted-foreground">Avançando…</p>
             <Button className="mt-4" onClick={finishOnboarding}>Concluir</Button>
@@ -833,7 +833,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 5 ─── */}
-        {!showFinalSummary && step === 5 && (
+        {!guidedReviewStep && !showFinalSummary && step === 5 && (
           <Step5Done
             profileType={profileType}
             servicesCreated={servicesCreated}
