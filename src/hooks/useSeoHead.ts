@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
-import { DEFAULT_LOGO_URL, SITE_BASE_URL, socialImageUrl, toAbsoluteSiteUrl } from '@/lib/siteAssets';
-
-const SITE_URL = SITE_BASE_URL;
+import { DEFAULT_LOGO_URL, SITE_BASE_URL as SITE_URL, socialImageUrl, toAbsoluteSiteUrl } from '@/lib/siteAssets';
 
 interface SeoHeadProps {
   title: string;
