@@ -7,6 +7,7 @@ import GeoEngine from '@/lib/geoEngine';
 import type { GeoIntent } from '@/lib/geoEngine';
 import SearchIntelligence from '@/lib/searchIntelligence';
 import { sanitizeSearchTokens } from '@/lib/searchSanitizer';
+import { calculateDistanceKm, hasCoordinates } from '@/lib/geoDistance';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
@@ -56,6 +57,62 @@ export interface DbProvider {
   levelName?: string | null;
   levelPriority?: number;
 }
+
+export type FeaturedProviderSort = 'proximity' | 'category' | 'availability';
+
+export interface FeaturedProvidersOptions {
+  enabled?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  categorySlug?: string;
+  sortBy?: FeaturedProviderSort;
+  limit?: number;
+}
+
+const FEATURED_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+const featuredCacheKey = ({ latitude, longitude, categorySlug, sortBy, limit }: FeaturedProvidersOptions) =>
+  `featured-providers:v2:${categorySlug || 'all'}:${sortBy || 'proximity'}:${limit || 6}:${latitude?.toFixed(2) || 'na'}:${longitude?.toFixed(2) || 'na'}`;
+
+const readFeaturedCache = (key: string): DbProvider[] | undefined => {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const cached = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!cached?.time || Date.now() - cached.time > FEATURED_CACHE_TTL_MS) return undefined;
+    return Array.isArray(cached.data) ? cached.data : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const writeFeaturedCache = (key: string, data: DbProvider[], metrics: Record<string, number | string>) => {
+  if (typeof window === 'undefined' || data.length === 0) return;
+  try {
+    localStorage.setItem(key, JSON.stringify({ time: Date.now(), data }));
+    (window as any).__featuredProvidersMetrics = { ...(window as any).__featuredProvidersMetrics, ...metrics, cacheKey: key };
+  } catch { /* ignore quota */ }
+};
+
+const sortFeaturedProviders = (providers: DbProvider[], options: FeaturedProvidersOptions) => {
+  const { latitude, longitude, categorySlug, sortBy = 'proximity' } = options;
+  const withDistance = providers.map((provider) => {
+    if (hasCoordinates(latitude, longitude) && hasCoordinates(provider.latitude, provider.longitude)) {
+      return { ...provider, distanceKm: Math.round(calculateDistanceKm({ latitude, longitude }, { latitude: provider.latitude, longitude: provider.longitude }) * 10) / 10 };
+    }
+    return provider;
+  });
+
+  const filtered = categorySlug ? withDistance.filter((p) => p.categorySlug === categorySlug) : withDistance;
+  const availabilityScore = (p: DbProvider) => (p.whatsapp ? 30 : 0) + (p.avgResponseMinutes != null ? Math.max(0, 30 - p.avgResponseMinutes / 4) : 0) + (p.servicesCount || 0);
+
+  return filtered.sort((a, b) => {
+    if (sortBy === 'category') return a.category.localeCompare(b.category) || compareEliteMerit(a, b);
+    if (sortBy === 'availability') return availabilityScore(b) - availabilityScore(a) || compareEliteMerit(a, b);
+    const aDistance = a.distanceKm ?? Number.MAX_SAFE_INTEGER;
+    const bDistance = b.distanceKm ?? Number.MAX_SAFE_INTEGER;
+    return aDistance - bDistance || compareEliteMerit(a, b);
+  });
+};
 
 interface ServiceFallback {
   serviceName?: string;
