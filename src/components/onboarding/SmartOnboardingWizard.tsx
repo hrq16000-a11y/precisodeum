@@ -421,11 +421,19 @@ const BasicOnboardingWizard = () => {
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
               <div>
-                <p className="font-bold">Continuando atualização do seu perfil</p>
-                <p className="mt-1 text-muted-foreground">Retomamos exatamente do último passo salvo.</p>
+                <p className="font-bold">Continuar de onde parei</p>
+                <p className="mt-1 text-muted-foreground">
+                  Retomamos o passo salvo e salvamos suas alterações automaticamente.
+                </p>
               </div>
             </div>
           </div>
+        )}
+
+        {autoSaveStatus !== 'idle' && step > 1 && (
+          <p className="mb-4 text-right text-[11px] font-medium text-muted-foreground">
+            {autoSaveStatus === 'saving' ? 'Salvando automaticamente…' : 'Alterações salvas'}
+          </p>
         )}
 
         {/* ─── PASSO 1 ─── */}
