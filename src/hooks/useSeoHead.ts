@@ -67,14 +67,52 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     setMeta('twitter:description', description);
 
     let cancelled = false;
-    const imageProbe = new Image();
-    imageProbe.onload = () => {
-      if (!cancelled) setSocialImageMeta(resolvedOgImage);
+    let imageProbe: HTMLImageElement | null = null;
+    const headController = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const headTimeout = window.setTimeout(() => headController?.abort(), 1200);
+
+    const validateWithImageProbe = () => {
+      if (cancelled) return;
+      imageProbe = new Image();
+      imageProbe.onload = () => {
+        if (!cancelled) setSocialImageMeta(resolvedOgImage);
+      };
+      imageProbe.onerror = () => {
+        if (!cancelled) setSocialImageMeta(DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL);
+      };
+      imageProbe.src = resolvedOgImage || DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL;
     };
-    imageProbe.onerror = () => {
-      if (!cancelled) setSocialImageMeta(DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL);
+
+    const validateSocialImage = async () => {
+      if (!resolvedOgImage || resolvedOgImage === DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL) return;
+
+      if (typeof fetch !== 'function' || !headController) {
+        validateWithImageProbe();
+        return;
+      }
+
+      try {
+        const response = await fetch(resolvedOgImage, {
+          method: 'HEAD',
+          cache: 'force-cache',
+          signal: headController.signal,
+        });
+
+        if (cancelled) return;
+        if (response.status === 403 || response.status === 404 || !response.ok) {
+          setSocialImageMeta(DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL);
+          return;
+        }
+
+        setSocialImageMeta(resolvedOgImage);
+      } catch {
+        validateWithImageProbe();
+      } finally {
+        window.clearTimeout(headTimeout);
+      }
     };
-    imageProbe.src = resolvedOgImage || DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL;
+
+    void validateSocialImage();
 
     // Google Search Console verification
     if (gscId) {
@@ -95,8 +133,12 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
 
     return () => {
       cancelled = true;
-      imageProbe.onload = null;
-      imageProbe.onerror = null;
+      headController?.abort();
+      window.clearTimeout(headTimeout);
+      if (imageProbe) {
+        imageProbe.onload = null;
+        imageProbe.onerror = null;
+      }
       document.title = 'Preciso de um | Encontre um profissional para qualquer tipo de serviço no Brasil';
     };
   }, [title, description, canonical, ogImage, noindex, gscId, gaId, ogType, articlePublishedTime, articleModifiedTime, articleAuthor]);
