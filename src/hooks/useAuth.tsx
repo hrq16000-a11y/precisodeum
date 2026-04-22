@@ -3,7 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresenceTracker } from '@/hooks/useOnlinePresence';
 import { geocodeCity } from '@/lib/geoUtils';
-import { setCelebrationMuted } from '@/lib/celebrate';
+import { resolveCelebrationMutedPreference, setCelebrationMuted } from '@/lib/celebrate';
 
 interface AuthContextType {
   session: Session | null;
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setProfile(profileData);
-    setCelebrationMuted(!!profileData?.celebration_muted);
+    setCelebrationMuted(resolveCelebrationMutedPreference(profileData?.celebration_muted));
 
     const metaChosen = authUser?.user_metadata?.profile_type_chosen === true;
     const hasType = !!profileData?.profile_type;
@@ -174,7 +174,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const syncMutedFromProfile = (nextProfile: any) => {
       setProfile(prev => ({ ...(prev ?? {}), ...(nextProfile ?? {}) }));
-      setCelebrationMuted(!!nextProfile?.celebration_muted);
+      setCelebrationMuted(resolveCelebrationMutedPreference(nextProfile?.celebration_muted));
     };
 
     const channel = supabase
