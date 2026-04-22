@@ -931,10 +931,14 @@ export function useCategoryProviders(categorySlug: string) {
           .eq('status', 'approved')
           .eq('category_id', cat.id)
           .order('rating_avg', { ascending: false })
+          .limit(SEARCH_RESULT_LIMIT)
       );
 
       return { category: cat, providers };
     },
     enabled: !!categorySlug,
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
   });
 }

@@ -7,6 +7,13 @@ const MAX_ENTRY_JS_KB = 260;
 const MAX_CHUNK_JS_KB = 1300;
 const MAX_TOTAL_JS_KB = 5600;
 const MAX_IMAGE_KB = 900;
+const routeHints = [
+  ['SearchPage', '/buscar'],
+  ['CategoryPage', '/categoria/:slug'],
+  ['ProviderProfile', '/profissional/:slug'],
+  ['Index', '/index'],
+  ['AdminSystemHealthPage', '/admin/sistema/saude'],
+];
 
 const fail = (message) => {
   console.error(`[perf-budget] ${message}`);
@@ -29,7 +36,10 @@ const totalJsKb = jsFiles.reduce((sum, file) => sum + file.sizeKb, 0);
 
 for (const file of jsFiles) {
   const limit = file.name.startsWith('index-') ? MAX_ENTRY_JS_KB : MAX_CHUNK_JS_KB;
-  if (file.sizeKb > limit) fail(`${file.name} tem ${file.sizeKb.toFixed(1)}KB, acima do limite ${limit}KB.`);
+  if (file.sizeKb > limit) {
+    const route = routeHints.find(([hint]) => file.name.includes(hint))?.[1];
+    fail(`${file.name} tem ${file.sizeKb.toFixed(1)}KB, acima do limite ${limit}KB${route ? ` · rota provável ${route}` : ''}.`);
+  }
 }
 
 for (const file of imageFiles) {
