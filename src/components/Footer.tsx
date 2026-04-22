@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import { useMemo, lazy, Suspense } from 'react';
-import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 import { importWithRetry } from '@/lib/lazyWithRetry';
-import { DEFAULT_FOOTER_LOGO_URL, siteImageOrFallback } from '@/lib/siteAssets';
+import Logo from '@/components/Logo';
 
 const SponsorAd = lazy(() => importWithRetry(() => import('@/components/SponsorAd')));
 const PwaFooterInstall = lazy(() => importWithRetry(() => import('@/components/PwaFooterInstall')));
@@ -68,8 +68,6 @@ const FooterLinkItem = ({ item }: { item: any }) => {
 };
 
 const Footer = () => {
-  const logoFooterUrl = useSettingValue('logo_footer_url');
-  const logoVertical = siteImageOrFallback(logoFooterUrl, DEFAULT_FOOTER_LOGO_URL);
   const tagline = useMemo(() => footerTaglines[Math.floor(Math.random() * footerTaglines.length)], []);
   const blogEnabled = useFeatureEnabled('module_blog');
 
@@ -87,19 +85,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <Link to="/">
-              <img
-                src={logoVertical}
-                alt="Preciso de um"
-                className="mb-4 object-contain"
-                width="133"
-                height="48"
-                loading="lazy"
-                style={{ width: '133px', height: '48px', maxWidth: '220px' }}
-                onError={(e) => {
-                  const t = e.currentTarget;
-                  if (t.src.indexOf(DEFAULT_FOOTER_LOGO_URL) === -1) t.src = DEFAULT_FOOTER_LOGO_URL;
-                }}
-              />
+              <Logo linkTo="" height="h-10 min-h-10 max-h-10" className="mb-4 brightness-0 invert" />
             </Link>
             <p className="text-sm font-semibold text-primary-foreground/90 mb-1">{tagline.headline}</p>
             <p className="text-sm leading-relaxed text-primary-foreground/70">

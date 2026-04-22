@@ -224,10 +224,10 @@ const Header = () => {
         style={{ height: isCompact ? 48 : 56, minHeight: isCompact ? 48 : 56 }}
       >
         {/* Left: Logo + Geo */}
-        <div className="flex items-center gap-2 -ml-1 sm:-ml-2">
+        <div className="flex min-w-0 items-center gap-2 overflow-hidden -ml-1 sm:-ml-2">
           <Logo
-            height={isCompact ? 'h-11 md:h-12' : 'h-14 md:h-16'}
-            className="w-auto object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition-all duration-300 ease-in-out"
+            height="h-10 min-h-10 max-h-10"
+            className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition-opacity duration-300 ease-in-out"
           />
 
           {/* Full geo badge — hidden when compact on desktop */}

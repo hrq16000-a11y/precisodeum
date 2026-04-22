@@ -8,7 +8,7 @@ interface LogoProps {
   height?: string;
 }
 
-const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-20 md:h-28' }: LogoProps) => {
+const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-10 min-h-10 max-h-10' }: LogoProps) => {
   const logo = DEFAULT_LOGO_URL;
 
   const filterClass = variant === 'white'
@@ -21,9 +21,10 @@ const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-2
     <img
       src={logo}
       alt="Preciso de um Profissional"
-      className={`${height} ${filterClass} ${className}`}
+      className={`block aspect-[111/40] w-auto max-w-full shrink-0 object-contain ${height} ${filterClass} ${className}`}
       width="111"
       height="40"
+      decoding="async"
       onError={(e) => {
         const t = e.currentTarget;
         if (t.src.indexOf(DEFAULT_LOGO_URL) === -1) t.src = DEFAULT_LOGO_URL;

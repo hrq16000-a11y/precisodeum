@@ -115,8 +115,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         >
           <Logo
             linkTo=""
-            height="h-10 min-h-10"
-            className="w-auto max-w-full object-contain drop-shadow-sm"
+            height="h-10 min-h-10 max-h-10"
+            className="drop-shadow-sm"
           />
         </Link>
         <div className="flex items-center gap-1">
@@ -151,7 +151,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <aside className={`fixed inset-y-0 left-0 z-40 w-60 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
         <div className="flex h-14 shrink-0 items-center justify-between px-5 border-b border-sidebar-border">
           <Link to="/" aria-label="Ir para a página inicial" className="flex min-w-0 flex-1 items-center overflow-hidden pr-3">
-            <Logo linkTo="" variant="white" height="h-10 min-h-10" className="w-auto max-w-full object-contain" />
+            <Logo linkTo="" variant="white" height="h-10 min-h-10 max-h-10" />
           </Link>
           <Link to="/" className="text-[9px] text-sidebar-foreground/30 hover:text-sidebar-foreground/50 transition-colors font-medium">← Site</Link>
         </div>

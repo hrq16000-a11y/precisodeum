@@ -216,7 +216,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       <TopLoadingBar />
       <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border glass-strong px-4 lg:hidden">
         <div className="flex h-14 min-w-0 max-w-[calc(100%-3rem)] items-center gap-2 overflow-hidden">
-          <Logo height="h-10 min-h-10" className="w-auto max-w-full object-contain drop-shadow-sm" />
+          <Logo height="h-10 min-h-10 max-h-10" className="drop-shadow-sm" />
           <span className="sr-only">Menu administrativo</span>
           <AdminMobileStats />
         </div>
@@ -241,7 +241,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
       <aside className={`fixed inset-y-0 left-0 z-40 w-64 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
         <div className="flex h-14 min-w-0 shrink-0 items-center gap-2 overflow-hidden px-5 border-b border-sidebar-border">
-          <Logo height="h-10 min-h-10" className="w-auto max-w-full object-contain drop-shadow-sm" />
+          <Logo height="h-10 min-h-10 max-h-10" className="drop-shadow-sm" />
           <span className="sr-only">Painel administrativo</span>
         </div>
         {/* Sidebar Search */}
