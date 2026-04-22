@@ -23,12 +23,7 @@ const TriagePage = () => {
     }
     const onboardingStep = Number(profile?.onboarding_step ?? 0);
     if (profile?.profile_type && profile.onboarding_completed === true && onboardingStep >= 5) {
-      const target = profile.profile_type === 'rh'
-        ? '/dashboard/vagas'
-        : profile.profile_type === 'sponsor'
-          ? '/quero-ser-patrocinador'
-          : '/dashboard';
-      navigate(target, { replace: true });
+      navigate('/dashboard', { replace: true });
     }
   }, [loading, user, profile, navigate]);
 

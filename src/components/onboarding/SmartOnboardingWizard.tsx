@@ -47,6 +47,12 @@ type WizardStep = 1 | 2 | 3 | 4 | 5;
 
 const TOTAL_STEPS = 5;
 
+const clampWizardStep = (value: unknown): WizardStep => {
+  const parsed = Number(value ?? 1);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.min(Math.max(Math.trunc(parsed), 1), TOTAL_STEPS) as WizardStep;
+};
+
 const slugify = (s: string) =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -67,8 +73,8 @@ const BasicOnboardingWizard = () => {
 
   // ─── Estado persistido por banco (onboarding_step controla a esteira) ───
   const hasExistingCadastro = !!profile?.profile_type;
-  const storedStep = Number(profile?.onboarding_step ?? 0);
-  const initialStep = (storedStep || 1) as WizardStep;
+  const storedStep = clampWizardStep(profile?.onboarding_step);
+  const initialStep = hasExistingCadastro ? storedStep : 1;
   const [step, setStep] = useState<WizardStep>(initialStep);
 
   // Tipo de perfil
@@ -106,8 +112,8 @@ const BasicOnboardingWizard = () => {
   useEffect(() => {
     if (syncedRef.current || !profile) return;
     syncedRef.current = true;
-    const nextStep = Number(profile.onboarding_step ?? 1);
-    setStep(Math.min(Math.max(nextStep, 1), 5) as WizardStep);
+    const nextStep = profile.profile_type ? clampWizardStep(profile.onboarding_step) : 1;
+    setStep(nextStep);
     if (profile.profile_type) setProfileType(profile.profile_type as ProfileType);
     if (profile.full_name) setFullName(profile.full_name);
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
@@ -183,7 +189,8 @@ const BasicOnboardingWizard = () => {
   };
 
   const handleContinueProfileUpdate = async () => {
-    await advanceTo(2, profileType ? { profile_type: profileType, role: profileType } : {});
+    const resumeStep = hasExistingCadastro ? storedStep : 2;
+    await advanceTo(resumeStep, profileType ? { profile_type: profileType, role: profileType } : {});
   };
 
   // ─── Passo 2: Localização + Foto ───
@@ -367,6 +374,18 @@ const BasicOnboardingWizard = () => {
             }}
           />
         </div>
+
+        {hasExistingCadastro && step > 1 && (
+          <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4 text-sm text-foreground">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+              <div>
+                <p className="font-bold">Continuando atualização do seu perfil</p>
+                <p className="mt-1 text-muted-foreground">Retomamos exatamente do último passo salvo.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ─── PASSO 1 ─── */}
         {step === 1 && !showSubtypeStep && (
