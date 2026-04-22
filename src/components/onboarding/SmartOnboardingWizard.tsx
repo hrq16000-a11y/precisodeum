@@ -297,7 +297,37 @@ const BasicOnboardingWizard = () => {
 
   const reviewStep = (targetStep: WizardStep) => {
     if (targetStep > furthestStep) return;
+    saveStepDraft(step);
+    if (targetStep < furthestStep) setReviewReturnStep(furthestStep);
+    setShowFinalSummary(false);
     setStep(targetStep);
+  };
+
+  const returnToProgress = async () => {
+    saveStepDraft(step);
+    const target = reviewReturnStep ?? furthestStep;
+    setReviewReturnStep(null);
+    setStep(target);
+    await persistStep(furthestStep, currentStepDraft(step));
+  };
+
+  const startReviewAll = () => {
+    saveStepDraft(step);
+    setReviewAllMode(true);
+    setShowFinalSummary(false);
+    const firstPending = checklistItems.find(item => item.step <= furthestStep && item.step >= step)?.step ?? 1;
+    setStep(firstPending);
+  };
+
+  const continueReviewAll = () => {
+    saveStepDraft(step);
+    const next = checklistItems.find(item => item.step > step && item.step <= furthestStep)?.step;
+    if (next) {
+      setStep(next);
+      return;
+    }
+    setShowFinalSummary(true);
+    setReviewAllMode(false);
   };
 
   // ─── Passo 2: Localização + Foto ───
