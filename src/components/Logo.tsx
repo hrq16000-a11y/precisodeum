@@ -5,10 +5,9 @@ interface LogoProps {
   variant?: 'default' | 'white' | 'dark';
   className?: string;
   linkTo?: string;
-  height?: string;
 }
 
-const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-10 min-h-10 max-h-10' }: LogoProps) => {
+const Logo = ({ variant = 'default', className = '', linkTo = '/' }: LogoProps) => {
   const logo = DEFAULT_LOGO_URL;
 
   const filterClass = variant === 'white'
@@ -21,7 +20,7 @@ const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-1
     <img
       src={logo}
       alt="Preciso de um Profissional"
-      className={`block aspect-[111/40] w-auto max-w-full shrink-0 object-contain ${height} ${filterClass} ${className}`}
+      className={`block h-10 min-h-10 max-h-10 aspect-[111/40] w-auto max-w-full shrink-0 object-contain ${filterClass} ${className}`}
       width="111"
       height="40"
       decoding="async"
