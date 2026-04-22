@@ -588,6 +588,7 @@ const ProviderProfile = () => {
     let emergencyTimer: number | null = null;
     let safeAreaBottom = 0;
     let lastShouldShow: boolean | null = null;
+    let disposed = false;
     const minVisibleCtaPx = 8;
     const fallbackVisibilityHysteresisPx = 8;
     const visualViewport = window.visualViewport;
@@ -618,7 +619,7 @@ const ProviderProfile = () => {
      * - visualViewport: preferred viewport dimensions on mobile because browser chrome and
      *   virtual keyboards can change the visible area without changing window.innerHeight.
      *
-     * Fallback behavior:
+      * Fallback behavior:
       * - If IntersectionObserver is missing, scroll uses scheduleVisibilityMeasure(), which is
       *   throttled by requestAnimationFrame so only one visibility measurement runs per frame.
       *   The fallback also applies an 8px hysteresis while the sticky CTA is visible, preventing
@@ -639,6 +640,7 @@ const ProviderProfile = () => {
     };
 
     const measureVisibility = () => {
+      if (disposed) return;
       const startedAt = debugVisibilityMetrics ? performance.now() : 0;
       frame = null;
       if (emergencyTimer !== null) {
@@ -681,7 +683,14 @@ const ProviderProfile = () => {
         }
       }
     };
+    const cancelScheduledVisibilityMeasure = () => {
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
+        frame = null;
+      }
+    };
     const scheduleVisibilityMeasure = (source: 'scroll' | 'observer' | 'resize' | 'init' = 'init') => {
+      if (disposed) return;
       if (debugVisibilityMetrics) {
         visibilityMetrics.scheduled += 1;
         visibilityMetrics.lastSource = source;
@@ -704,15 +713,17 @@ const ProviderProfile = () => {
       safeAreaBottom = getSafeAreaBottom();
       scheduleVisibilityMeasure('resize');
     };
-
-    const observer = supportsIntersectionObserver ? new IntersectionObserver(
-      () => scheduleVisibilityMeasure('observer'),
-      { threshold: [0, 0.01, 0.1, 1] },
-    ) : null;
-    const resizeObserver = supportsResizeObserver ? new ResizeObserver(() => scheduleVisibilityMeasure('resize')) : null;
-    const useScrollFallback = !supportsIntersectionObserver;
+    const handleObserverVisibility = () => scheduleVisibilityMeasure('observer');
+    const handleResizeObserverVisibility = () => scheduleVisibilityMeasure('resize');
     const handleScrollFallback = () => scheduleVisibilityMeasure('scroll');
     const handleVisualViewportScroll = () => scheduleVisibilityMeasure('scroll');
+
+    const observer = supportsIntersectionObserver ? new IntersectionObserver(
+      handleObserverVisibility,
+      { threshold: [0, 0.01, 0.1, 1] },
+    ) : null;
+    const resizeObserver = supportsResizeObserver ? new ResizeObserver(handleResizeObserverVisibility) : null;
+    const useScrollFallback = !supportsIntersectionObserver;
 
     observer?.observe(target);
     resizeObserver?.observe(target);
@@ -724,7 +735,8 @@ const ProviderProfile = () => {
     updateSafeAreaAndVisibility();
 
     return () => {
-      if (frame !== null) cancelAnimationFrame(frame);
+      disposed = true;
+      cancelScheduledVisibilityMeasure();
       if (emergencyTimer !== null) window.clearTimeout(emergencyTimer);
       observer?.disconnect();
       resizeObserver?.disconnect();
