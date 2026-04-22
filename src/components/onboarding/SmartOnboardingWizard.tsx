@@ -246,6 +246,7 @@ const BasicOnboardingWizard = () => {
       patch.profile_type = profileType;
       patch.role = profileType;
     }
+    setDrafts(prev => ({ ...prev, [step]: currentStepDraft(step) }));
 
     setAutoSaveStatus('saving');
     const timer = window.setTimeout(() => {
