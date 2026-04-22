@@ -173,40 +173,55 @@ const BasicOnboardingWizard = () => {
     await persistStep(nextStep, extraPatch);
   };
 
+  const saveAutoSavePatch = async (patch: Record<string, any>) => {
+    if (!user?.id) return;
+    setAutoSaveStatus('saving');
+    setLastAutoSavePatch(patch);
+    try {
+      await supabase.from('profiles').update(patch as any).eq('id', user.id);
+      setAutoSaveStatus('saved');
+    } catch {
+      setAutoSaveStatus('error');
+    }
+  };
+
+  const retryAutoSave = () => {
+    if (lastAutoSavePatch) void saveAutoSavePatch(lastAutoSavePatch);
+  };
+
   // ─── Auto-save com debounce: mantém o último passo e dados parciais salvos ───
   useEffect(() => {
-    if (!user?.id || !profile || step === 1 || saving) return;
+    if (!user?.id || !profile || saving) return;
 
     const patch: Record<string, any> = { onboarding_step: Math.max(furthestStep, step), onboarding_completed: false };
-    if (step >= 2) {
-      patch.city = city || null;
-      patch.state = state || null;
-      patch.avatar_url = avatarUrl;
-    }
-    if (step >= 3) {
-      patch.full_name = fullName.trim() || null;
-      patch.whatsapp = whatsapp || null;
-      patch.phone = whatsapp || null;
-      if (profileType) {
-        patch.profile_type = profileType;
-        patch.role = profileType;
-      }
+    patch.city = city || null;
+    patch.state = state || null;
+    patch.avatar_url = avatarUrl;
+    patch.full_name = fullName.trim() || null;
+    patch.whatsapp = whatsapp || null;
+    patch.phone = whatsapp || null;
+    if (profileType) {
+      patch.profile_type = profileType;
+      patch.role = profileType;
     }
 
-    setAutoSaveStatus('saving');
     const timer = window.setTimeout(() => {
-      void (async () => {
-        try {
-          await supabase.from('profiles').update(patch as any).eq('id', user.id);
-          setAutoSaveStatus('saved');
-        } catch {
-          setAutoSaveStatus('idle');
-        }
-      })();
-    }, 900);
+      void saveAutoSavePatch(patch);
+    }, autoSaveDelay);
 
     return () => window.clearTimeout(timer);
-  }, [user?.id, profile, step, furthestStep, city, state, avatarUrl, fullName, whatsapp, profileType, saving]);
+  }, [user?.id, profile, step, furthestStep, city, state, avatarUrl, fullName, whatsapp, profileType, saving, autoSaveDelay]);
+
+  useEffect(() => {
+    const hasPendingAutoSave = autoSaveStatus === 'saving' || autoSaveStatus === 'error';
+    if (!hasPendingAutoSave) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [autoSaveStatus]);
 
   // Quando provider termina o wizard de serviços, marcamos +1 e avançamos
   const handleServiceCreated = async (_id: string) => {
