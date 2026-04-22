@@ -44,6 +44,7 @@ import { useCategoriesWithCount } from '@/hooks/useProviders';
 type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
 type ProviderSubtype = 'autonomous' | 'company';
 type WizardStep = 1 | 2 | 3 | 4 | 5;
+type WizardDrafts = Partial<Record<WizardStep, Record<string, any>>>;
 
 const TOTAL_STEPS = 5;
 
@@ -56,6 +57,8 @@ const clampWizardStep = (value: unknown): WizardStep => {
 const slugify = (s: string) =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+const draftStorageKey = (userId?: string) => `wizard-drafts:${userId ?? 'anonymous'}`;
 
 export type WizardMode = 'basic';
 
