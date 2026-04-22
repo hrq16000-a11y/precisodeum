@@ -10,8 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import TopLoadingBar from '@/components/ui/TopLoadingBar';
-
-const DEFAULT_LOGO_URL = '/lovable-uploads/8a22c45f-f2c2-4ac8-a925-92aecd2b313b.png';
+import Logo from '@/components/Logo';
 
 const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
@@ -31,8 +30,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingLeads, setPendingLeads] = useState(0);
   const [incompleteAlert, setIncompleteAlert] = useState<{ daysLeft: number } | null>(null);
-  const logoUrl = useSettingValue('logo_url');
-  const logo = logoUrl || DEFAULT_LOGO_URL;
   const daysLimit = Number(useSettingValue('incomplete_profile_days_limit')) || 60;
 
   useEffect(() => {
@@ -111,7 +108,17 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <TopLoadingBar />
       {/* Mobile header */}
       <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border glass-strong px-4 lg:hidden">
-        <Link to="/" className="flex items-center"><img src={logo} alt="Preciso de um" className="h-7" /></Link>
+        <Link
+          to="/"
+          aria-label="Ir para a página inicial"
+          className="flex h-14 min-w-0 max-w-[calc(100%-6rem)] items-center overflow-hidden"
+        >
+          <Logo
+            linkTo=""
+            height="h-10 min-h-10"
+            className="w-auto max-w-full object-contain drop-shadow-sm"
+          />
+        </Link>
         <div className="flex items-center gap-1">
           <button
             onClick={handleSignOut}
@@ -143,7 +150,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-60 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
         <div className="flex h-14 shrink-0 items-center justify-between px-5 border-b border-sidebar-border">
-          <Link to="/" className="flex items-center"><img src={logo} alt="Preciso de um" className="h-7 brightness-0 invert" /></Link>
+          <Link to="/" aria-label="Ir para a página inicial" className="flex min-w-0 flex-1 items-center overflow-hidden pr-3">
+            <Logo linkTo="" variant="white" height="h-10 min-h-10" className="w-auto max-w-full object-contain" />
+          </Link>
           <Link to="/" className="text-[9px] text-sidebar-foreground/30 hover:text-sidebar-foreground/50 transition-colors font-medium">← Site</Link>
         </div>
 
