@@ -621,7 +621,7 @@ const BasicOnboardingWizard = () => {
         </div>
         <div className="mb-6 h-2 w-full overflow-hidden rounded-full bg-muted">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-accent via-amber-400 to-accent bg-[length:200%_100%]"
+            className="h-full rounded-full bg-gradient-to-r from-accent via-primary to-accent bg-[length:200%_100%]"
             initial={{ width: 0 }}
             animate={{
               width: `${(step / TOTAL_STEPS) * 100}%`,
@@ -1061,7 +1061,7 @@ TypeButton.displayName = 'TypeButton';
 // ─── Passo 2 ───
 const Step2Location = ({
   city, state, avatarUrl, editingCity, onEditCity, onCityChange, onAvatarChange,
-  userId, onBack, onNext, onSkip, canAdvance,
+  userId, onBack, onNext, onSkip, canAdvance, onFieldBlur,
 }: any) => (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -1099,7 +1099,9 @@ const Step2Location = ({
             <button onClick={onEditCity} className="text-xs font-medium text-accent hover:underline">Trocar</button>
           </div>
         ) : (
-          <CityAutocomplete value={{ city, state }} onChange={({ city: c, state: s }) => onCityChange(c, s)} />
+          <div onBlur={onFieldBlur}>
+            <CityAutocomplete value={{ city, state }} onChange={({ city: c, state: s }) => onCityChange(c, s)} />
+          </div>
         )}
       </div>
     </div>
@@ -1120,7 +1122,7 @@ const Step3Contact = ({
   profileType, fullName, setFullName, agencyName, setAgencyName,
   whatsapp, setWhatsapp, bio, setBio,
   categoriesForPicker, selectedCategoryIds, onToggleCategory,
-  saving, canAdvance, onBack, onNext, onSkip,
+  saving, canAdvance, onBack, onNext, onSkip, onFieldBlur,
 }: any) => (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -1140,13 +1142,13 @@ const Step3Contact = ({
         <label className="mb-1 block text-xs font-semibold text-foreground">
           {profileType === 'rh' ? 'Seu nome (responsável)' : 'Seu nome completo'}
         </label>
-        <Input placeholder="Ex: João Silva" value={fullName} onChange={e => setFullName(e.target.value)} />
+        <Input placeholder="Ex: João Silva" value={fullName} onChange={e => setFullName(e.target.value)} onBlur={onFieldBlur} />
       </div>
 
       {profileType === 'rh' && (
         <div>
           <label className="mb-1 block text-xs font-semibold text-foreground">Nome da Agência</label>
-          <Input placeholder="Ex: Talentos RH" value={agencyName} onChange={e => setAgencyName(e.target.value)} />
+          <Input placeholder="Ex: Talentos RH" value={agencyName} onChange={e => setAgencyName(e.target.value)} onBlur={onFieldBlur} />
         </div>
       )}
 
@@ -1156,6 +1158,7 @@ const Step3Contact = ({
           name="whatsapp"
           value={whatsapp}
           onChange={(_n: any, val: string) => setWhatsapp(val)}
+          onBlur={onFieldBlur}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
         />
       </div>
@@ -1168,6 +1171,7 @@ const Step3Contact = ({
               placeholder="Conte em 2 linhas o que você faz de melhor."
               value={bio}
               onChange={e => setBio(e.target.value)}
+              onBlur={onFieldBlur}
               rows={3}
             />
           </div>
