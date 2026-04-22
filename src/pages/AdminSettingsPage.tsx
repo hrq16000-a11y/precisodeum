@@ -3,7 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Settings, Save, Plus, Trash2, X, Crown, FolderSync, Loader2, Info, AlertTriangle } from 'lucide-react';
+import { Settings, Save, Plus, Trash2, X, Crown, FolderSync, Loader2, Info, AlertTriangle, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import ImageUploadField from '@/components/ImageUploadField';
@@ -93,7 +93,7 @@ const AdminSettingsPage = () => {
   );
 
   const booleanSettings = filtered.filter((s: any) => s.value === 'true' || s.value === 'false');
-  const textSettings = filtered.filter((s: any) => s.value !== 'true' && s.value !== 'false');
+  const textSettings = filtered.filter((s: any) => s.value !== 'true' && s.value !== 'false' && !s.key.startsWith('gamification_'));
 
   return (
     <AdminLayout>
@@ -119,6 +119,9 @@ const AdminSettingsPage = () => {
       />
 
       {/* 'Selo Verificado' removed — destaque agora é exclusivamente o Ranking de Gamificação (vide /admin/rankings) */}
+
+      {/* ====== Gestão de Gamificação ====== */}
+      <GamificationManagementSection settings={settings} onSaveText={updateTextSetting} />
 
       {/* ====== Limites da Plataforma (Portfólio) ====== */}
       <PlatformLimitsSection settings={settings} onSaveText={updateTextSetting} />
