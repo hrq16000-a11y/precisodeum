@@ -4,6 +4,8 @@ import { Gift, Lock, CheckCircle2, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import IconRenderer from '@/components/ui/IconRenderer';
+import { useSettingValue } from '@/hooks/useSiteSettings';
+import { resolveGamificationMultiplier, scaleGamificationPoints } from '@/lib/gamification';
 
 interface GamLevel {
   id: string;
@@ -18,15 +20,20 @@ interface GamLevel {
 const LevelBenefits = () => {
   const { profile } = useAuth();
   const [levels, setLevels] = useState<GamLevel[]>([]);
-  const points = profile?.engagement_points || 0;
+  const multiplier = resolveGamificationMultiplier(useSettingValue('gamification_multiplier'));
+  const points = scaleGamificationPoints(profile?.engagement_points || 0, multiplier);
 
   useEffect(() => {
     supabase.from('gamification_levels')
       .select('id, name, icon, color, min_points, max_points, benefits')
       .eq('active', true)
       .order('min_points', { ascending: true })
-      .then(({ data }) => setLevels((data || []) as GamLevel[]));
-  }, []);
+      .then(({ data }) => setLevels(((data || []) as GamLevel[]).map((level) => ({
+        ...level,
+        min_points: scaleGamificationPoints(level.min_points, multiplier),
+        max_points: level.max_points == null ? null : scaleGamificationPoints(level.max_points, multiplier),
+      }))));
+  }, [multiplier]);
 
   if (levels.length === 0) return null;
 
