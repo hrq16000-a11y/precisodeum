@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { useSponsorAuth, type SponsorPermissionKey } from '@/hooks/useSponsorAuth';
+import Logo from '@/components/Logo';
 
 const sponsorMenu: { label: string; icon: any; path: string; permKey?: SponsorPermissionKey }[] = [
   { label: 'Visão Geral', icon: LayoutDashboard, path: '/sponsor-panel' },
@@ -36,8 +37,8 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Mobile header */}
       <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border bg-card px-4 lg:hidden">
         <div className="flex items-center gap-2">
-          <Megaphone className="h-4 w-4 text-primary" />
-          <span className="font-display text-sm font-bold text-foreground">Painel Patrocinador</span>
+          <Logo height="h-10" className="w-auto object-contain drop-shadow-sm" />
+          <span className="sr-only">Painel patrocinador</span>
         </div>
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-foreground">
           {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -47,8 +48,8 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-60 transform border-r border-sidebar-border bg-sidebar transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
         <div className="flex h-14 items-center gap-2 px-5 border-b border-sidebar-border">
-          <Megaphone className="h-4 w-4 text-primary" />
-          <span className="font-display text-sm font-bold text-sidebar-foreground">Patrocinador</span>
+          <Logo height="h-11" className="w-auto object-contain drop-shadow-sm" />
+          <span className="sr-only">Menu do patrocinador</span>
           <Badge variant="secondary" className="ml-auto text-[10px]">CRM</Badge>
         </div>
         <nav className="mt-2 space-y-0.5 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 56px - 80px)' }}>
