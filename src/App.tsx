@@ -7,7 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdDebugProvider } from "@/contexts/AdDebugContext";
 import { WhatsAppGateProvider, WhatsAppGateInterceptor } from "@/contexts/WhatsAppGateContext";
-import { importWithRetry, prefetchImportWithRetry } from "@/lib/lazyWithRetry";
+import { importWithRetry } from "@/lib/lazyWithRetry";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ModuleBoundary from "./components/ModuleBoundary";
@@ -245,23 +245,7 @@ const App = () => {
       console.log('[Cache] React Query invalidated (daily purge).');
     }
 
-    const startPrefetch = () => {
-      void Promise.allSettled([
-        prefetchImportWithRetry("route-search-page", () => import("./pages/SearchPage")),
-        prefetchImportWithRetry("route-category-page", () => import("./pages/CategoryPage")),
-      ]);
-    };
-    const hasIdleCb = typeof (window as any).requestIdleCallback === 'function';
-    let cleanupFn: (() => void) | undefined;
-    if (hasIdleCb) {
-      const idleId = (window as any).requestIdleCallback(startPrefetch, { timeout: 15000 });
-      cleanupFn = () => (window as any).cancelIdleCallback(idleId);
-    } else {
-      const timerId = globalThis.setTimeout(startPrefetch, 8000);
-      cleanupFn = () => globalThis.clearTimeout(timerId);
-    }
-
-    return () => cleanupFn?.();
+    return undefined;
   }, []);
 
   return (
