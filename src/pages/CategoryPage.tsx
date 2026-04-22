@@ -136,6 +136,7 @@ const CategoryPage = () => {
   const nearestDistanceKm = (nearestProvider as any)?._dist;
   const nearestCity = nearestProvider?.city;
   const totalDisplay = localProviders.length + nearbyProviders.length + (showOutOfState ? outOfStateProviders.length : 0);
+  const categorySocialImage = nearestProvider?.photo || allProviders.find((provider) => provider.photo)?.photo;
 
   const cityForSeo = geoCity ? geoCity.trim() : '';
   const dynamicTitle = category
@@ -153,6 +154,7 @@ const CategoryPage = () => {
     title: dynamicTitle,
     description: dynamicDescription,
     canonical: slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined,
+    ogImage: categorySocialImage || undefined,
   });
 
   const breadcrumbLd = useMemo(() => category ? ({
