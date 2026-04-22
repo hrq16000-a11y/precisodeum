@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { MapPin, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
@@ -50,25 +50,40 @@ const CriticalHeroSearch = ({ onUpgrade }: { onUpgrade: () => void }) => {
   );
 };
 
-const HeroPrefixRotator = ({ prefixes }: { prefixes: string[] }) => {
+const HeroPrefixRotator = ({ prefixes, active }: { prefixes: string[]; active: boolean }) => {
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<'visible' | 'glitch' | 'hidden'>('visible');
+  const startedAt = useRef(0);
 
   useEffect(() => {
-    if (prefixes.length <= 1) return;
-    const interval = setInterval(() => {
-      setPhase('glitch');
-      setTimeout(() => {
+    if (!active || prefixes.length <= 1) return;
+    let frame = 0;
+    let stage: 'visible' | 'glitch' | 'hidden' = 'visible';
+    startedAt.current = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - startedAt.current;
+      if (elapsed >= 5350) {
+        startedAt.current = now;
+        stage = 'visible';
+        setPhase('visible');
+      } else if (elapsed >= 5200 && stage !== 'glitch') {
+        stage = 'glitch';
+        setPhase('glitch');
+      } else if (elapsed >= 5100 && stage !== 'hidden') {
+        stage = 'hidden';
         setPhase('hidden');
-        setTimeout(() => {
-          setIndex(prev => (prev + 1) % prefixes.length);
-          setPhase('glitch');
-          setTimeout(() => setPhase('visible'), 150);
-        }, 100);
-      }, 200);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [prefixes.length]);
+        setIndex(prev => (prev + 1) % prefixes.length);
+      } else if (elapsed >= 5000 && stage !== 'glitch') {
+        stage = 'glitch';
+        setPhase('glitch');
+      }
+      frame = requestAnimationFrame(tick);
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [active, prefixes.length]);
 
   return (
     <span className="relative inline-block overflow-hidden">
@@ -187,7 +202,7 @@ const HeroBanner = () => {
             className="font-display text-2xl font-black tracking-tight text-primary-foreground sm:text-3xl md:text-5xl lg:text-6xl max-w-full overflow-hidden"
             style={{ textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)' }}
           >
-            <HeroPrefixRotator prefixes={prefixes} />
+            <HeroPrefixRotator prefixes={prefixes} active={heroImageLoaded} />
             <br />
             <RotatingServiceText onServiceChange={handleServiceChange} />
           </h1>
