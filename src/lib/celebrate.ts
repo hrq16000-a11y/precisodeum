@@ -19,8 +19,9 @@ const CELEBRATION_SESSION_PREFIX = 'pdu_celebrate_once:';
 const CELEBRATION_COOLDOWN_MS = 60_000;
 const TELEMETRY_ACTION_TRIGGERED = 'celebration.triggered';
 const TELEMETRY_ACTION_BLOCKED = 'celebration.blocked_cooldown';
+export const DEFAULT_CELEBRATION_MUTED = false;
 let sessionKeysCleaned = false;
-let celebrationMuted = false;
+let celebrationMuted = DEFAULT_CELEBRATION_MUTED;
 
 export const CELEBRATION_IDS = {
   welcomeOnboarding: (userId?: string | null) => `welcome-onboarding:${userId || 'anonymous'}`,
@@ -36,9 +37,13 @@ export function isCelebrationMuted(): boolean {
 }
 
 export function setCelebrationMuted(muted: boolean) {
-  celebrationMuted = muted;
+  celebrationMuted = muted ?? DEFAULT_CELEBRATION_MUTED;
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('pdu:celebrate-muted-change', { detail: { muted } }));
+}
+
+export function resolveCelebrationMutedPreference(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : DEFAULT_CELEBRATION_MUTED;
 }
 
 let audioCtx: AudioContext | null = null;
