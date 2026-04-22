@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { DEFAULT_LOGO_URL } from '@/lib/siteAssets';
+import { DEFAULT_LOGO_SRCSET, DEFAULT_LOGO_URL } from '@/lib/siteAssets';
 
 interface LogoProps {
   variant?: 'default' | 'white' | 'dark';
@@ -19,10 +19,12 @@ const Logo = ({ variant = 'default', className = '', linkTo = '/' }: LogoProps) 
   const img = (
     <img
       src={logo}
+      srcSet={DEFAULT_LOGO_SRCSET}
+      sizes="(max-width: 639px) 155px, 133px"
       alt="Preciso de um Profissional"
       className={`block h-14 min-h-14 max-h-14 aspect-[111/40] w-auto max-w-full shrink-0 object-contain sm:h-12 sm:min-h-12 sm:max-h-12 ${filterClass} ${className}`}
-      width="111"
-      height="40"
+      width="710"
+      height="209"
       decoding="async"
       onError={(e) => {
         const t = e.currentTarget;
