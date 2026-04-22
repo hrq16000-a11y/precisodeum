@@ -66,7 +66,9 @@ const BasicOnboardingWizard = () => {
   const navigate = useNavigate();
 
   // ─── Estado persistido por banco (onboarding_step controla a esteira) ───
-  const initialStep = (profile?.onboarding_step as WizardStep) || 1;
+  const hasExistingCadastro = !!profile?.profile_type;
+  const storedStep = Number(profile?.onboarding_step ?? 0);
+  const initialStep = (hasExistingCadastro ? Math.max(storedStep, 2) : (storedStep || 1)) as WizardStep;
   const [step, setStep] = useState<WizardStep>(initialStep);
 
   // Tipo de perfil
@@ -104,7 +106,10 @@ const BasicOnboardingWizard = () => {
   useEffect(() => {
     if (syncedRef.current || !profile) return;
     syncedRef.current = true;
-    if (profile.onboarding_step) setStep(profile.onboarding_step as WizardStep);
+    const nextStep = profile.profile_type
+      ? Math.max(Number(profile.onboarding_step ?? 0), 2)
+      : Number(profile.onboarding_step ?? 1);
+    setStep(Math.min(Math.max(nextStep, 1), 5) as WizardStep);
     if (profile.profile_type) setProfileType(profile.profile_type as ProfileType);
     if (profile.full_name) setFullName(profile.full_name);
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
@@ -384,7 +389,7 @@ const BasicOnboardingWizard = () => {
             onCityChange={(c, s) => { setCity(c); setState(s); }}
             onAvatarChange={setAvatarUrl}
             userId={user?.id}
-            onBack={() => advanceTo(1)}
+            onBack={() => hasExistingCadastro ? navigate('/dashboard', { replace: true }) : advanceTo(1)}
             onNext={handleStep2Next}
             onSkip={() => advanceTo(3)}
             canAdvance={canAdvanceFromStep2}
