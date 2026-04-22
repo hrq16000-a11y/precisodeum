@@ -220,7 +220,8 @@ const BasicOnboardingWizard = () => {
     try {
       const { error } = await supabase.from('profiles').update(patch as any).eq('id', user.id);
       if (error) throw error;
-      setAutoSaveAttempts(prev => [{ id: `${attemptedAt}-ok`, status: 'success', attemptedAt, step, fields, message: 'Salvo automaticamente' }, ...prev].slice(0, 5));
+      const attempt: AutoSaveAttempt = { id: `${attemptedAt}-ok`, status: 'success', attemptedAt, step, fields, message: 'Salvo automaticamente' };
+      setAutoSaveAttempts(prev => [attempt, ...prev].slice(0, 5));
       lastSavedFingerprintRef.current = fingerprint;
       if (latestAutoSaveFingerprintRef.current === fingerprint) {
         setHasPendingChanges(false);
@@ -232,7 +233,8 @@ const BasicOnboardingWizard = () => {
         setAutoSaveStatus('error');
         setHasPendingChanges(true);
         setLastAutoSaveError(message);
-        setAutoSaveAttempts(prev => [{ id: `${attemptedAt}-error`, status: 'error', attemptedAt, step, fields, message }, ...prev].slice(0, 5));
+        const attempt: AutoSaveAttempt = { id: `${attemptedAt}-error`, status: 'error', attemptedAt, step, fields, message };
+        setAutoSaveAttempts(prev => [attempt, ...prev].slice(0, 5));
       }
     }
   };
