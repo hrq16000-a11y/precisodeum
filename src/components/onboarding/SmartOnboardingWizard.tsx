@@ -45,6 +45,14 @@ type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
 type ProviderSubtype = 'autonomous' | 'company';
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 type WizardDrafts = Partial<Record<WizardStep, Record<string, any>>>;
+type AutoSaveAttempt = {
+  id: string;
+  status: 'success' | 'error';
+  attemptedAt: string;
+  step: WizardStep;
+  fields: string[];
+  message: string;
+};
 
 const TOTAL_STEPS = 5;
 
@@ -59,6 +67,7 @@ const slugify = (s: string) =>
    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 const draftStorageKey = (userId?: string) => `wizard-drafts:${userId ?? 'anonymous'}`;
+const hasValidWhatsapp = (value: string) => value.replace(/\D/g, '').length >= 10;
 
 export type WizardMode = 'basic';
 
@@ -115,10 +124,12 @@ const BasicOnboardingWizard = () => {
   const [lastAutoSavePatch, setLastAutoSavePatch] = useState<Record<string, any> | null>(null);
   const [lastAutoSaveAttemptAt, setLastAutoSaveAttemptAt] = useState<string | null>(null);
   const [lastAutoSaveError, setLastAutoSaveError] = useState<string | null>(null);
+  const [autoSaveAttempts, setAutoSaveAttempts] = useState<AutoSaveAttempt[]>([]);
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
   const [drafts, setDrafts] = useState<WizardDrafts>({});
   const [reviewReturnStep, setReviewReturnStep] = useState<WizardStep | null>(null);
   const [reviewAllMode, setReviewAllMode] = useState(false);
+  const [guidedReviewStep, setGuidedReviewStep] = useState<WizardStep | null>(null);
   const [showFinalSummary, setShowFinalSummary] = useState(false);
   const lastSavedFingerprintRef = useRef<string | null>(null);
   const latestAutoSaveFingerprintRef = useRef<string | null>(null);
@@ -199,14 +210,18 @@ const BasicOnboardingWizard = () => {
   const saveAutoSavePatch = async (patch: Record<string, any>) => {
     if (!user?.id) return;
     const fingerprint = JSON.stringify(patch);
+    const attemptedAt = new Date().toISOString();
+    const fields = Object.keys(patch).filter(key => !['onboarding_completed', 'onboarding_step'].includes(key));
     latestAutoSaveFingerprintRef.current = fingerprint;
     setAutoSaveStatus('saving');
     setLastAutoSavePatch(patch);
-    setLastAutoSaveAttemptAt(new Date().toISOString());
+    setLastAutoSaveAttemptAt(attemptedAt);
     setLastAutoSaveError(null);
     try {
       const { error } = await supabase.from('profiles').update(patch as any).eq('id', user.id);
       if (error) throw error;
+      const attempt: AutoSaveAttempt = { id: `${attemptedAt}-ok`, status: 'success', attemptedAt, step, fields, message: 'Salvo automaticamente' };
+      setAutoSaveAttempts(prev => [attempt, ...prev].slice(0, 5));
       lastSavedFingerprintRef.current = fingerprint;
       if (latestAutoSaveFingerprintRef.current === fingerprint) {
         setHasPendingChanges(false);
@@ -214,9 +229,12 @@ const BasicOnboardingWizard = () => {
       }
     } catch (err: any) {
       if (latestAutoSaveFingerprintRef.current === fingerprint) {
+        const message = err?.message || 'Não foi possível sincronizar suas alterações agora.';
         setAutoSaveStatus('error');
         setHasPendingChanges(true);
-        setLastAutoSaveError(err?.message || 'Não foi possível sincronizar suas alterações agora.');
+        setLastAutoSaveError(message);
+        const attempt: AutoSaveAttempt = { id: `${attemptedAt}-error`, status: 'error', attemptedAt, step, fields, message };
+        setAutoSaveAttempts(prev => [attempt, ...prev].slice(0, 5));
       }
     }
   };
@@ -415,9 +433,34 @@ const BasicOnboardingWizard = () => {
   const startReviewAll = () => {
     saveStepDraft(step);
     setReviewAllMode(true);
+    setGuidedReviewStep(null);
     setShowFinalSummary(false);
     const firstPending = checklistItems.find(item => item.step <= furthestStep && item.step >= step)?.step ?? 1;
     setStep(firstPending);
+  };
+
+  const startGuidedReview = () => {
+    saveStepDraft(step);
+    setReviewAllMode(false);
+    setShowFinalSummary(false);
+    setGuidedReviewStep(1);
+  };
+
+  const editGuidedReviewStep = (targetStep: WizardStep) => {
+    setReviewReturnStep(furthestStep);
+    setGuidedReviewStep(null);
+    setShowFinalSummary(false);
+    setStep(targetStep);
+  };
+
+  const keepGuidedReviewStep = () => {
+    const next = checklistItems.find(item => item.step > (guidedReviewStep ?? 1) && item.step <= furthestStep)?.step;
+    if (next) {
+      setGuidedReviewStep(next);
+      return;
+    }
+    setGuidedReviewStep(null);
+    setShowFinalSummary(true);
   };
 
   const continueReviewAll = () => {
@@ -541,13 +584,19 @@ const BasicOnboardingWizard = () => {
     await advanceTo(5);
   };
 
-  const stepEstimates: Record<WizardStep, string> = {
-    1: profileType ? '~0 min' : '~1 min',
-    2: city && avatarUrl ? '~0 min' : city ? '~1 min' : '~2 min',
-    3: canAdvanceFromStep3 ? '~0 min' : fullName || whatsapp ? '~2 min' : '~3 min',
-    4: profileType !== 'provider' || servicesCreated > 0 ? '~0 min' : '~3 min',
-    5: '~1 min',
+  const stepEstimateMinutes: Record<WizardStep, number> = {
+    1: profileType ? 0 : 1,
+    2: Math.max(0, 3 - (city ? 1 : 0) - (state ? 1 : 0) - (avatarUrl ? 1 : 0)),
+    3: Math.max(0, 4 - (fullName.trim() ? 1 : 0) - (hasValidWhatsapp(whatsapp) ? 1 : 0) - (bio.trim() ? 1 : 0) - (profileType !== 'provider' || selectedCategoryIds.length ? 1 : 0) - (profileType !== 'rh' || agencyName.trim() ? 1 : 0)),
+    4: profileType !== 'provider' || servicesCreated > 0 ? 0 : 3,
+    5: 1,
   };
+
+  const stepEstimates: Record<WizardStep, string> = Object.fromEntries(
+    Object.entries(stepEstimateMinutes).map(([key, minutes]) => [Number(key), minutes <= 0 ? 'Pronto' : `~${minutes} min`])
+  ) as Record<WizardStep, string>;
+
+  const reviewItems = buildReviewItems({ profileType, providerSubtype, city, state, avatarUrl, fullName, agencyName, whatsapp, bio, selectedCategoryIds, servicesCreated });
 
   const summaryItems = [
     { label: 'Tipo de perfil', value: profileType || 'Não definido' },
@@ -666,6 +715,15 @@ const BasicOnboardingWizard = () => {
           <ReviewSummaryCard items={summaryItems} onBack={() => setShowFinalSummary(false)} onFinish={finishOnboarding} saving={saving} />
         )}
 
+        {guidedReviewStep && !showFinalSummary && (
+          <GuidedReviewCard
+            step={guidedReviewStep}
+            items={reviewItems[guidedReviewStep] ?? []}
+            onEdit={() => editGuidedReviewStep(guidedReviewStep)}
+            onKeep={keepGuidedReviewStep}
+          />
+        )}
+
         {!showFinalSummary && hasExistingCadastro && step > 1 && (
           <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4 text-sm text-foreground">
             <div className="flex items-start gap-3">
@@ -686,13 +744,14 @@ const BasicOnboardingWizard = () => {
           hasPendingChanges={hasPendingChanges}
           lastAttemptAt={lastAutoSaveAttemptAt}
           errorMessage={lastAutoSaveError}
+          attempts={autoSaveAttempts}
           onDelayChange={setAutoSaveDelay}
           onRetry={retryAutoSave}
           onReloadSaved={reloadSavedFields}
         />
 
         {/* ─── PASSO 1 ─── */}
-        {!showFinalSummary && step === 1 && !showSubtypeStep && (
+        {!guidedReviewStep && !showFinalSummary && step === 1 && !showSubtypeStep && (
           <Step1Identity
             existingProfileType={hasExistingCadastro ? profileType : null}
             onContinueProfileUpdate={handleContinueProfileUpdate}
@@ -700,7 +759,7 @@ const BasicOnboardingWizard = () => {
           />
         )}
 
-        {!showFinalSummary && step === 1 && showSubtypeStep && profileType === 'provider' && (
+        {!guidedReviewStep && !showFinalSummary && step === 1 && showSubtypeStep && profileType === 'provider' && (
           <SubtypeChoice
             onBack={() => { setShowSubtypeStep(false); setProfileType(null); }}
             onSelect={handleSelectSubtype}
@@ -708,7 +767,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 2 ─── */}
-        {!showFinalSummary && step === 2 && (
+        {!guidedReviewStep && !showFinalSummary && step === 2 && (
           <Step2Location
             city={city}
             state={state}
@@ -727,7 +786,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 3 ─── */}
-        {!showFinalSummary && step === 3 && (
+        {!guidedReviewStep && !showFinalSummary && step === 3 && (
           <Step3Contact
             profileType={profileType}
             fullName={fullName}
@@ -751,7 +810,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 4 — PROVIDER apenas ─── */}
-        {!showFinalSummary && step === 4 && profileType === 'provider' && (
+        {!guidedReviewStep && !showFinalSummary && step === 4 && profileType === 'provider' && (
           <Step4Service
             providerReady={!!savedProvider}
             servicesCreated={servicesCreated}
@@ -766,7 +825,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* Caso provider ainda não tenha provider row (raro), volta ao step 3 */}
-        {!showFinalSummary && step === 4 && profileType !== 'provider' && (
+        {!guidedReviewStep && !showFinalSummary && step === 4 && profileType !== 'provider' && (
           <div className="text-center">
             <p className="text-sm text-muted-foreground">Avançando…</p>
             <Button className="mt-4" onClick={finishOnboarding}>Concluir</Button>
@@ -774,12 +833,12 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 5 ─── */}
-        {!showFinalSummary && step === 5 && (
+        {!guidedReviewStep && !showFinalSummary && step === 5 && (
           <Step5Done
             profileType={profileType}
             servicesCreated={servicesCreated}
             saving={saving}
-            onFinish={finishOnboarding}
+            onFinish={startGuidedReview}
             onBack={() => advanceTo(profileType === 'provider' ? 4 : 3)}
           />
         )}
@@ -799,6 +858,42 @@ const checklistItems: Array<{ step: WizardStep; label: string }> = [
   { step: 4, label: 'Serviço' },
   { step: 5, label: 'Finalizar' },
 ];
+
+const buildReviewItems = (data: {
+  profileType: ProfileType | null;
+  providerSubtype: ProviderSubtype | null;
+  city: string;
+  state: string;
+  avatarUrl: string | null;
+  fullName: string;
+  agencyName: string;
+  whatsapp: string;
+  bio: string;
+  selectedCategoryIds: string[];
+  servicesCreated: number;
+}): Record<WizardStep, Array<{ label: string; value: string }>> => ({
+  1: [
+    { label: 'Tipo de perfil', value: data.profileType || 'Não definido' },
+    { label: 'Formato profissional', value: data.providerSubtype || 'Não aplicável' },
+  ],
+  2: [
+    { label: 'Cidade', value: data.city ? `${data.city}${data.state ? ` • ${data.state}` : ''}` : 'Não informada' },
+    { label: 'Foto', value: data.avatarUrl ? 'Carregada' : 'Não enviada' },
+  ],
+  3: [
+    { label: 'Nome', value: data.fullName || 'Não informado' },
+    { label: 'Agência', value: data.agencyName || 'Não aplicável' },
+    { label: 'WhatsApp', value: hasValidWhatsapp(data.whatsapp) ? 'Validado' : 'Pendente' },
+    { label: 'Bio', value: data.bio ? 'Preenchida' : 'Não preenchida' },
+    { label: 'Especialidade', value: data.selectedCategoryIds.length ? 'Selecionada' : 'Pendente' },
+  ],
+  4: [
+    { label: 'Serviços', value: data.profileType === 'provider' ? `${data.servicesCreated} cadastrado(s)` : 'Não aplicável' },
+  ],
+  5: [
+    { label: 'Pronto para finalizar', value: 'Revise os dados e confirme' },
+  ],
+});
 
 const WizardChecklist = ({
   currentStep,
@@ -867,6 +962,7 @@ const AutoSaveControls = ({
   hasPendingChanges,
   lastAttemptAt,
   errorMessage,
+  attempts,
   onDelayChange,
   onRetry,
   onReloadSaved,
@@ -876,6 +972,7 @@ const AutoSaveControls = ({
   hasPendingChanges: boolean;
   lastAttemptAt: string | null;
   errorMessage: string | null;
+  attempts: AutoSaveAttempt[];
   onDelayChange: (delay: 1000 | 2000 | 3000) => void;
   onRetry: () => void;
   onReloadSaved: () => void;
@@ -930,9 +1027,58 @@ const AutoSaveControls = ({
         </div>
       </div>
     )}
+    {attempts.length > 0 && (
+      <div className="mt-3 rounded-lg border border-border bg-background/70 p-3">
+        <p className="text-[11px] font-bold text-foreground">Histórico de salvamento</p>
+        <div className="mt-2 space-y-2">
+          {attempts.map((attempt) => (
+            <div key={attempt.id} className="flex items-start justify-between gap-3 text-[10px]">
+              <div>
+                <p className={attempt.status === 'error' ? 'font-bold text-destructive' : 'font-bold text-accent'}>
+                  {attempt.status === 'error' ? 'Falhou' : 'Salvo'} • passo {attempt.step}
+                </p>
+                <p className="text-muted-foreground">{attempt.fields.join(', ') || 'progresso'} — {attempt.message}</p>
+              </div>
+              <span className="shrink-0 text-muted-foreground">
+                {new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(attempt.attemptedAt))}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
   </div>
   );
 };
+
+const GuidedReviewCard = ({
+  step,
+  items,
+  onEdit,
+  onKeep,
+}: {
+  step: WizardStep;
+  items: Array<{ label: string; value: string }>;
+  onEdit: () => void;
+  onKeep: () => void;
+}) => (
+  <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4">
+    <p className="text-xs font-bold text-accent">Revisão guiada • passo {step}</p>
+    <h2 className="mt-1 font-display text-lg font-bold text-foreground">{checklistItems.find(item => item.step === step)?.label}</h2>
+    <div className="mt-4 space-y-2">
+      {items.map((item) => (
+        <div key={item.label} className="flex items-start justify-between gap-3 rounded-lg border border-border bg-background/70 px-3 py-2">
+          <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+          <span className="text-right text-xs font-bold text-foreground">{item.value}</span>
+        </div>
+      ))}
+    </div>
+    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+      <Button type="button" variant="outline" onClick={onEdit}>Editar novamente</Button>
+      <Button type="button" variant="accent" onClick={onKeep}>Manter</Button>
+    </div>
+  </div>
+);
 
 const ReviewSummaryCard = ({
   items,
