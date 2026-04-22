@@ -1774,6 +1774,41 @@ const ProviderProfile = () => {
         )}
       </AnimatePresence>
 
+      <AnimatePresence initial={false}>
+        {effectiveWhatsApp && showEmergencyContact && !showStickyContact && (
+          <motion.div
+            key="emergency-mobile-whatsapp"
+            role="navigation"
+            aria-label="Contato rápido de emergência"
+            className="fixed right-3 md:hidden"
+            style={{ zIndex: 1000, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)' }}
+            initial={{ scale: 0.92, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.92, opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+          >
+            <Button
+              type="button"
+              size="icon"
+              aria-label={`Chamar ${name} no WhatsApp`}
+              className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              onClick={() => {
+                if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'sticky');
+                requestWhatsApp({
+                  url: whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`),
+                  targetType: 'provider',
+                  targetId: provider?.id ?? null,
+                  targetLabel: name,
+                  whatsappNumber: effectiveWhatsApp,
+                });
+              }}
+            >
+              <MessageCircle className="h-5 w-5" aria-hidden="true" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Floating WhatsApp — desktop only */}
       {effectiveWhatsApp && (
         <motion.a
