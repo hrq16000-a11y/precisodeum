@@ -450,17 +450,23 @@ export function useCategoriesWithCount() {
   });
 }
 
-export function useFeaturedProviders(enabled = true) {
+export function useFeaturedProviders(options: boolean | FeaturedProvidersOptions = true) {
+  const normalizedOptions: FeaturedProvidersOptions = typeof options === 'boolean' ? { enabled: options } : options;
+  const { enabled = true, latitude, longitude, categorySlug, sortBy = 'proximity', limit = 6 } = normalizedOptions;
+  const cacheKey = featuredCacheKey(normalizedOptions);
+
   return useQuery({
-    queryKey: ['featured-providers'],
+    queryKey: ['featured-providers', categorySlug || 'all', sortBy, limit, latitude?.toFixed(3) || null, longitude?.toFixed(3) || null],
     queryFn: async (): Promise<DbProvider[]> => {
-      const { data, error } = await supabase.rpc('get_featured_providers', { _limit: 6 });
+      const startedAt = performance.now();
+      const { data, error, count } = await supabase.rpc('get_featured_providers', { _limit: Math.max(limit * 3, 12) });
+      const queryMs = Math.round((performance.now() - startedAt) * 100) / 100;
       if (error) throw error;
       const rows = (data || []) as any[];
       if (rows.length === 0) return [];
 
       // Map MV rows (snake_case + flat category fields) to DbProvider shape
-      return rows.map((p) => {
+      const mappedRows = rows.map((p) => {
         const provWhatsapp = (p.whatsapp || '').trim();
         const provPhone = (p.phone || '').trim();
         const effectiveWhatsapp = provWhatsapp || provPhone || '';
@@ -497,9 +503,19 @@ export function useFeaturedProviders(enabled = true) {
         };
         return mapped;
       });
+
+      const sorted = sortFeaturedProviders(mappedRows, normalizedOptions).slice(0, limit);
+      const payloadBytes = new Blob([JSON.stringify(rows)]).size;
+      writeFeaturedCache(cacheKey, sorted, { queryMs, payloadBytes, rows: rows.length, renderedRows: sorted.length, count: count || rows.length });
+      return sorted;
     },
-    staleTime: 1000 * 60 * 10,
-    gcTime: 1000 * 60 * 30,
+    initialData: () => readFeaturedCache(cacheKey),
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: 'always',
+    refetchInterval: enabled ? 1000 * 60 * 20 : false,
+    refetchIntervalInBackground: false,
     enabled,
   });
 }
