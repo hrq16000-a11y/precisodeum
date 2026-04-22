@@ -292,10 +292,15 @@ const BasicOnboardingWizard = () => {
     }
   };
 
+  const handleSkipStep3 = async () => {
+    toast.info('Você pode completar estes dados depois no dashboard.');
+    await advanceTo(profileType === 'provider' ? 4 : 5);
+  };
+
   // ─── Passo 4: Primeiro serviço (provider apenas) ───
-  // Botão "Pular" no passo 4 NÃO fecha o wizard — apenas mostra aviso.
-  const handleSkipStep4 = () => {
-    toast.info('Cadastre pelo menos 1 serviço para concluir o cadastro.');
+  const handleSkipStep4 = async () => {
+    toast.info('Você pode cadastrar serviços depois no dashboard.');
+    await advanceTo(5);
   };
 
   // ─── Passo 5: Conclusão ───
@@ -440,14 +445,7 @@ const BasicOnboardingWizard = () => {
             canAdvance={canAdvanceFromStep3}
             onBack={() => advanceTo(2)}
             onNext={handleStep3Next}
-            onSkip={() => {
-              // Skip salva o que tem e avança. Mas mantém o passo 3 obrigatório p/ campos mínimos.
-              if (!fullName.trim()) {
-                toast.error('Informe ao menos seu nome para avançar.');
-                return;
-              }
-              handleStep3Next();
-            }}
+            onSkip={handleSkipStep3}
           />
         )}
 
@@ -630,12 +628,14 @@ const Step2Location = ({
       </div>
     </div>
 
-    <Button variant="accent" className="mt-5 w-full" disabled={!canAdvance} onClick={onNext}>
-      Continuar
-    </Button>
-    <button type="button" onClick={onSkip} className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground">
-      Pular esta etapa
-    </button>
+    <div className="mt-5 grid gap-3">
+      <Button variant="accent" className="w-full" disabled={!canAdvance} onClick={onNext}>
+        Salvar e continuar
+      </Button>
+      <Button type="button" variant="outline" className="w-full" onClick={onSkip}>
+        Pular por enquanto
+      </Button>
+    </div>
   </>
 );
 
@@ -709,12 +709,14 @@ const Step3Contact = ({
       )}
     </div>
 
-    <Button variant="accent" className="mt-5 w-full" disabled={!canAdvance || saving} onClick={onNext}>
-      {saving ? 'Salvando…' : 'Continuar'}
-    </Button>
-    <button type="button" onClick={onSkip} disabled={saving} className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-50">
-      Pular esta etapa
-    </button>
+    <div className="mt-5 grid gap-3">
+      <Button variant="accent" className="w-full" disabled={!canAdvance || saving} onClick={onNext}>
+        {saving ? 'Salvando…' : 'Salvar e continuar'}
+      </Button>
+      <Button type="button" variant="outline" className="w-full" onClick={onSkip} disabled={saving}>
+        Pular por enquanto
+      </Button>
+    </div>
   </>
 );
 
@@ -776,6 +778,9 @@ const Step5Done = ({
   profileType, servicesCreated, saving, onFinish, onBack,
 }: any) => {
   const canFinish = profileType !== 'provider' || servicesCreated > 0;
+  const finishLabel = profileType === 'provider' && servicesCreated === 0
+    ? 'Entrar no Dashboard e concluir depois'
+    : 'Entrar no Dashboard';
   return (
     <>
       <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -794,17 +799,17 @@ const Step5Done = ({
 
       {!canFinish && (
         <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-center text-xs text-amber-700 dark:text-amber-400">
-          Você precisa cadastrar pelo menos 1 serviço no passo anterior antes de concluir.
+          Sem serviço cadastrado, seu perfil pode aparecer incompleto. Você pode finalizar agora e completar depois.
         </div>
       )}
 
       <Button
         variant="accent"
         className="mt-6 w-full"
-        disabled={!canFinish || saving}
+        disabled={saving}
         onClick={onFinish}
       >
-        {saving ? 'Concluindo…' : 'Entrar no Dashboard'}
+        {saving ? 'Concluindo…' : finishLabel}
       </Button>
     </>
   );
