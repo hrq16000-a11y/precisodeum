@@ -11,16 +11,16 @@
  * Os disparos são best-effort: qualquer falha (ex: contexto suspenso por
  * autoplay policy) é silenciosamente ignorada, sem quebrar o fluxo da UI.
  *
- * Preferência de áudio: o usuário pode silenciar via localStorage
- * (`pdu_celebrate_muted` = '1'). O confete continua disparando.
+ * Preferência de áudio: sincronizada com o perfil do usuário via Dashboard.
+ * O confete continua disparando mesmo quando o som está silenciado.
  */
 
-const MUTE_KEY = 'pdu_celebrate_muted';
 const CELEBRATION_SESSION_PREFIX = 'pdu_celebrate_once:';
 const CELEBRATION_COOLDOWN_MS = 60_000;
 const TELEMETRY_ACTION_TRIGGERED = 'celebration.triggered';
 const TELEMETRY_ACTION_BLOCKED = 'celebration.blocked_cooldown';
 let sessionKeysCleaned = false;
+let celebrationMuted = false;
 
 export const CELEBRATION_IDS = {
   welcomeOnboarding: (userId?: string | null) => `welcome-onboarding:${userId || 'anonymous'}`,
@@ -32,23 +32,13 @@ export const CELEBRATION_IDS = {
 } as const;
 
 export function isCelebrationMuted(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    return localStorage.getItem(MUTE_KEY) === '1';
-  } catch {
-    return false;
-  }
+  return celebrationMuted;
 }
 
 export function setCelebrationMuted(muted: boolean) {
+  celebrationMuted = muted;
   if (typeof window === 'undefined') return;
-  try {
-    if (muted) localStorage.setItem(MUTE_KEY, '1');
-    else localStorage.removeItem(MUTE_KEY);
-    window.dispatchEvent(new CustomEvent('pdu:celebrate-muted-change', { detail: { muted } }));
-  } catch {
-    /* noop */
-  }
+  window.dispatchEvent(new CustomEvent('pdu:celebrate-muted-change', { detail: { muted } }));
 }
 
 let audioCtx: AudioContext | null = null;

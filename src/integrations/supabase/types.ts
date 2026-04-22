@@ -2233,6 +2233,7 @@ export type Database = {
         Row: {
           account_type_id: string | null
           avatar_url: string | null
+          celebration_muted: boolean
           commercial_plan: string | null
           created_at: string
           department: string | null
@@ -2266,6 +2267,7 @@ export type Database = {
         Insert: {
           account_type_id?: string | null
           avatar_url?: string | null
+          celebration_muted?: boolean
           commercial_plan?: string | null
           created_at?: string
           department?: string | null
@@ -2299,6 +2301,7 @@ export type Database = {
         Update: {
           account_type_id?: string | null
           avatar_url?: string | null
+          celebration_muted?: boolean
           commercial_plan?: string | null
           created_at?: string
           department?: string | null
