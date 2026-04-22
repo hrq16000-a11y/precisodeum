@@ -3,7 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Settings, Save, Plus, Trash2, X, Crown, FolderSync, Loader2, Info, AlertTriangle } from 'lucide-react';
+import { Settings, Save, Plus, Trash2, X, Crown, FolderSync, Loader2, Info, AlertTriangle, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import ImageUploadField from '@/components/ImageUploadField';
@@ -93,7 +93,7 @@ const AdminSettingsPage = () => {
   );
 
   const booleanSettings = filtered.filter((s: any) => s.value === 'true' || s.value === 'false');
-  const textSettings = filtered.filter((s: any) => s.value !== 'true' && s.value !== 'false');
+  const textSettings = filtered.filter((s: any) => s.value !== 'true' && s.value !== 'false' && !s.key.startsWith('gamification_'));
 
   return (
     <AdminLayout>
@@ -119,6 +119,9 @@ const AdminSettingsPage = () => {
       />
 
       {/* 'Selo Verificado' removed — destaque agora é exclusivamente o Ranking de Gamificação (vide /admin/rankings) */}
+
+      {/* ====== Gestão de Gamificação ====== */}
+      <GamificationManagementSection settings={settings} onSaveText={updateTextSetting} />
 
       {/* ====== Limites da Plataforma (Portfólio) ====== */}
       <PlatformLimitsSection settings={settings} onSaveText={updateTextSetting} />
@@ -247,6 +250,100 @@ const TextSettingRow = ({ setting, onSave, onDelete }: { setting: any; onSave: (
 /* 'VerifiedBadgeSection' removed — sistema de selo agora é regido pelo Ranking de Gamificação (vide /admin/rankings). */
 
 export default AdminSettingsPage;
+
+const GAMIFICATION_SETTING_KEYS = [
+  { key: 'gamification_multiplier', label: 'Multiplicador global', defaultValue: '1', step: '0.1', min: '0.1' },
+  { key: 'gamification_level_bronze', label: 'Bronze', defaultValue: '0', step: '1', min: '0' },
+  { key: 'gamification_level_prata', label: 'Prata', defaultValue: '120', step: '1', min: '0' },
+  { key: 'gamification_level_ouro', label: 'Ouro', defaultValue: '260', step: '1', min: '0' },
+  { key: 'gamification_level_diamante', label: 'Diamante', defaultValue: '400', step: '1', min: '0' },
+  { key: 'gamification_level_mestre', label: 'Mestre', defaultValue: '500', step: '1', min: '0' },
+];
+
+const GamificationManagementSection = ({ settings, onSaveText }: {
+  settings: any[];
+  onSaveText: (key: string, value: string) => Promise<void>;
+}) => {
+  const map = useMemo(() => {
+    const m: Record<string, string> = {};
+    settings.forEach((s: any) => { m[s.key] = s.value; });
+    return m;
+  }, [settings]);
+  const [local, setLocal] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const init: Record<string, string> = {};
+    GAMIFICATION_SETTING_KEYS.forEach((item) => { init[item.key] = map[item.key] ?? item.defaultValue; });
+    setLocal(init);
+  }, [map]);
+
+  const save = async (key: string) => {
+    const meta = GAMIFICATION_SETTING_KEYS.find((item) => item.key === key)!;
+    const raw = local[key] ?? meta.defaultValue;
+    const value = key === 'gamification_multiplier' ? String(Math.max(0.1, Number(raw) || 1)) : String(Math.max(0, Math.round(Number(raw) || 0)));
+    if (map[key] === undefined) {
+      const { error } = await (supabase.from('site_settings' as any) as any).insert({
+        key,
+        label: meta.label,
+        description: key === 'gamification_multiplier' ? 'Multiplicador visual dos pontos exibidos.' : `Limite base da estação ${meta.label}.`,
+        value,
+        is_public: true,
+      });
+      if (error) toast.error('Erro: ' + error.message);
+      else toast.success('Configuração criada!');
+      return;
+    }
+    await onSaveText(key, value);
+    if (key.startsWith('gamification_level_')) {
+      const levelName = meta.label;
+      await supabase
+        .from('gamification_levels')
+        .update({ min_points: Number(value), updated_at: new Date().toISOString() } as any)
+        .ilike('name', levelName);
+    }
+  };
+
+  const multiplier = Number(local.gamification_multiplier || map.gamification_multiplier || 1) || 1;
+
+  return (
+    <div className="mt-6 rounded-xl border-2 border-accent/30 bg-accent/5 p-5">
+      <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+        <Trophy className="h-5 w-5 text-accent" /> Gestão de Gamificação
+      </h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Controle a economia de pontos, o multiplicador visual e os limites das estações sem alterar o mérito real dos profissionais.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {GAMIFICATION_SETTING_KEYS.map((item) => {
+          const value = local[item.key] ?? map[item.key] ?? item.defaultValue;
+          const changed = String(value) !== String(map[item.key] ?? item.defaultValue);
+          const preview = item.key === 'gamification_multiplier' ? null : Math.round(Number(value || 0) * multiplier);
+          return (
+            <div key={item.key} className="rounded-lg border border-border bg-card p-3">
+              <Label className="text-sm font-medium text-foreground">{item.label}</Label>
+              <div className="mt-2 flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={item.min}
+                  step={item.step}
+                  value={value}
+                  onChange={(e) => setLocal((prev) => ({ ...prev, [item.key]: e.target.value }))}
+                  className="text-center"
+                />
+                {changed && (
+                  <Button variant="accent" size="sm" onClick={() => save(item.key)}>
+                    <Save className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+              {preview !== null && <p className="mt-1 text-[10px] text-muted-foreground">Exibição atual: {preview.toLocaleString('pt-BR')} pts</p>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 /* ====== Regras de Perfil / DESTAQUE — Painel Agrupado ====== */
 const PROFILE_RULE_KEYS = [
