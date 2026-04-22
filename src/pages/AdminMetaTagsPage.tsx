@@ -36,9 +36,10 @@ const AdminMetaTagsPage = () => {
   const saveSetting = async (key: string, value: string, label: string, description: string) => {
     const exists = settings.find((s: any) => s.key === key);
     if (exists) {
-      const { error } = await (supabase.from('site_settings' as any) as any)
-        .update({ value, updated_at: new Date().toISOString() })
-        .eq('key', key);
+      const { error } = await (supabase.rpc as any)('update_site_setting_audited', {
+        p_key: key,
+        p_value: value,
+      });
       if (error) { toast.error(error.message); return; }
     } else {
       const { error } = await (supabase.from('site_settings' as any) as any)

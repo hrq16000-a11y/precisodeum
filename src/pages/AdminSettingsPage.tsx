@@ -35,10 +35,10 @@ const AdminSettingsPage = () => {
 
   const toggleSetting = async (key: string, currentValue: string) => {
     const newValue = currentValue === 'true' ? 'false' : 'true';
-    const { error } = await (supabase
-      .from('site_settings' as any) as any)
-      .update({ value: newValue, updated_at: new Date().toISOString() })
-      .eq('key', key);
+    const { error } = await (supabase.rpc as any)('update_site_setting_audited', {
+      p_key: key,
+      p_value: newValue,
+    });
     if (error) {
       toast.error('Erro ao atualizar: ' + error.message);
     } else {
@@ -48,10 +48,10 @@ const AdminSettingsPage = () => {
   };
 
   const updateTextSetting = async (key: string, newValue: string) => {
-    const { error } = await (supabase
-      .from('site_settings' as any) as any)
-      .update({ value: newValue, updated_at: new Date().toISOString() })
-      .eq('key', key);
+    const { error } = await (supabase.rpc as any)('update_site_setting_audited', {
+      p_key: key,
+      p_value: newValue,
+    });
     if (error) {
       toast.error('Erro ao atualizar: ' + error.message);
     } else {
