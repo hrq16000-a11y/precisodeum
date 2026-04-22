@@ -78,6 +78,40 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
 
 const SectionFallback = () => null;
 
+const FeaturedProvidersFallback = () => (
+  <section className="relative overflow-hidden pt-8 pb-24 md:py-14">
+    <div className="container relative">
+      <div className="mb-8 space-y-3 text-center md:text-left">
+        <div className="mx-auto h-6 w-28 rounded-full bg-muted md:mx-0" />
+        <div className="mx-auto h-8 w-64 rounded-md bg-muted md:mx-0" />
+        <div className="mx-auto h-4 w-80 max-w-full rounded-md bg-muted md:mx-0" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="h-56 rounded-2xl border border-border bg-card shadow-sm">
+            <div className="h-1 rounded-t-2xl bg-muted" />
+            <div className="space-y-4 p-4">
+              <div className="flex gap-3">
+                <div className="h-14 w-14 rounded-full bg-muted" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-3/4 rounded bg-muted" />
+                  <div className="h-3 w-1/2 rounded bg-muted" />
+                  <div className="h-3 w-2/3 rounded bg-muted" />
+                </div>
+              </div>
+              <div className="h-3 w-24 rounded bg-muted" />
+              <div className="flex gap-2">
+                <div className="h-9 flex-1 rounded-md bg-muted" />
+                <div className="h-9 flex-1 rounded-md bg-muted" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
 const DeferredAboveFoldSection = ({ children }: { children: ReactNode }) => {
   const [ready, setReady] = useState(false);
 
@@ -269,21 +303,7 @@ const Index = () => {
           </div>
         );
       case 'featured':
-        return featuredEnabled && postLcpReady ? (
-          <FeaturedProviders
-            key={slug}
-            providers={featuredProviders}
-            isLoading={provsLoading}
-            isFetching={featuredFetching}
-            hasError={featuredError}
-            categories={categories}
-            selectedCategory={featuredCategory}
-            sortBy={featuredSort}
-            updatedAt={featuredUpdatedAt}
-            onCategoryChange={setFeaturedCategory}
-            onSortChange={setFeaturedSort}
-          />
-        ) : null;
+        return null; // rendered eagerly after categories to keep the home slot visible
       case 'popular':
         return <PopularServices key={slug} />;
       case 'recent':
@@ -326,7 +346,7 @@ const Index = () => {
     heroBannersEnabled, sponsorsEnabled, featuredEnabled, jobsEnabled,
     blogEnabled, ctaEnabled, howItWorksEnabled, popularSearchesEnabled,
     reviewsEnabled, faqEnabled,
-    featuredProviders, provsLoading, geoCity,
+    geoCity,
   ]);
 
   return (
@@ -348,6 +368,25 @@ const Index = () => {
 
       {/* Categories rendered eagerly (not lazy) to eliminate CLS caused by lazy sections above */}
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
+
+      {featuredEnabled && (
+        <LazyErrorBoundary>
+          <Suspense fallback={<FeaturedProvidersFallback />}>
+            <FeaturedProviders
+              providers={featuredProviders}
+              isLoading={!postLcpReady || provsLoading}
+              isFetching={featuredFetching}
+              hasError={featuredError}
+              categories={categories}
+              selectedCategory={featuredCategory}
+              sortBy={featuredSort}
+              updatedAt={featuredUpdatedAt}
+              onCategoryChange={setFeaturedCategory}
+              onSortChange={setFeaturedSort}
+            />
+          </Suspense>
+        </LazyErrorBoundary>
+      )}
 
       {sectionOrder.map((slug) => {
         const section = renderSection(slug);
