@@ -315,11 +315,31 @@ export default function AdminSystemHealthPage() {
 
             {/* Log de erros silenciosos */}
             <Quadrant icon={Timer} title="Relatório de Performance Real" subtitle="Core Web Vitals · TTFB · LCP · backend" status={perfStatus}>
+              <div className="mb-4 rounded-xl border border-border/40 bg-background/50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Meta PageSpeed mobile</p>
+                    <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{mobileScore}/80</p>
+                  </div>
+                  <Badge variant={mobileScore >= 70 ? 'secondary' : 'outline'} className="text-[10px]">
+                    {mobileScore >= 70 ? 'Próximo da meta 70/80' : `${Math.max(0, 70 - mobileScore)} pts até 70`}
+                  </Badge>
+                </div>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${scoreProgress}%` }} />
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] text-muted-foreground md:grid-cols-4">
+                  <span>LCP meta {PERF_TARGETS.lcp}ms</span>
+                  <span>INP meta {PERF_TARGETS.inp}ms</span>
+                  <span>CLS meta {PERF_TARGETS.cls}</span>
+                  <span>TTFB meta {PERF_TARGETS.ttfb}ms</span>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
                 <Metric label="Amostras" value={performanceReports.length} />
-                <Metric label="TTFB médio" value={`${avgMetric('ttfb')}ms`} status={avgMetric('ttfb') > 800 ? 'warn' : 'ok'} />
-                <Metric label="LCP médio" value={`${avgMetric('lcp')}ms`} status={avgMetric('lcp') > 2500 ? 'warn' : 'ok'} />
-                <Metric label="INP médio" value={`${avgMetric('inp')}ms`} status={avgMetric('inp') > 200 ? 'warn' : 'ok'} />
+                <Metric label="TTFB médio" value={`${avgTtfb}ms`} status={avgTtfb > PERF_TARGETS.ttfb ? 'warn' : 'ok'} />
+                <Metric label="LCP médio" value={`${avgLcp}ms`} status={avgLcp > PERF_TARGETS.lcp ? 'warn' : 'ok'} />
+                <Metric label="INP médio" value={`${avgInp}ms`} status={avgInp > PERF_TARGETS.inp ? 'warn' : 'ok'} />
                 <Metric label="Backend máx." value={`${avgBackend}ms`} status={avgBackend > 900 ? 'warn' : 'ok'} />
               </div>
               <div className="mt-3 max-h-72 space-y-1.5 overflow-y-auto">
