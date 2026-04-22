@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { DEFAULT_LOGO_SRCSET, DEFAULT_LOGO_URL } from '@/lib/siteAssets';
+import { handleBrandImageError } from '@/lib/imageResolver';
 
 interface LogoProps {
   variant?: 'default' | 'white' | 'dark';
@@ -29,10 +30,7 @@ const Logo = ({ variant = 'default', className = '', linkTo = '/', priority = fa
       loading={priority ? 'eager' : 'lazy'}
       fetchPriority={priority ? 'high' : 'auto'}
       decoding="async"
-      onError={(e) => {
-        const t = e.currentTarget;
-        if (t.src.indexOf(DEFAULT_LOGO_URL) === -1) t.src = DEFAULT_LOGO_URL;
-      }}
+      onError={(e) => handleBrandImageError(e, 'logo')}
     />
   );
 
