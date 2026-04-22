@@ -18,6 +18,16 @@
 const MUTE_KEY = 'pdu_celebrate_muted';
 const CELEBRATION_SESSION_PREFIX = 'pdu_celebrate_once:';
 const CELEBRATION_COOLDOWN_MS = 60_000;
+let sessionKeysCleaned = false;
+
+export const CELEBRATION_IDS = {
+  welcomeOnboarding: (userId?: string | null) => `welcome-onboarding:${userId || 'anonymous'}`,
+  onboardingComplete: (userId: string) => `onboarding-complete:${userId}`,
+  levelUp: (level: string, userId: string) => `level-up:${level}:${userId}`,
+  serviceSlot: (serviceId: string) => `portfolio-service:${serviceId}`,
+  portfolioAlbum: (albumId: string) => `portfolio-album:${albumId}`,
+  portfolioPhoto: (albumId: string, photoTotal: number) => `portfolio-photo:${albumId}:${photoTotal}`,
+} as const;
 
 export function isCelebrationMuted(): boolean {
   if (typeof window === 'undefined') return false;
@@ -100,6 +110,7 @@ interface ConfettiOptions {
 function shouldRunCelebration(id?: string): boolean {
   if (!id || typeof window === 'undefined') return true;
   try {
+    cleanupExpiredSessionKeys();
     const key = `${CELEBRATION_SESSION_PREFIX}${id}`;
     const lastRun = Number(sessionStorage.getItem(key) || '0');
     const now = Date.now();
@@ -111,8 +122,25 @@ function shouldRunCelebration(id?: string): boolean {
   }
 }
 
+function cleanupExpiredSessionKeys() {
+  if (sessionKeysCleaned || typeof window === 'undefined') return;
+  sessionKeysCleaned = true;
+  try {
+    const now = Date.now();
+    for (let i = sessionStorage.length - 1; i >= 0; i -= 1) {
+      const key = sessionStorage.key(i);
+      if (!key?.startsWith(CELEBRATION_SESSION_PREFIX)) continue;
+      const ts = Number(sessionStorage.getItem(key) || '0');
+      if (!ts || now - ts >= CELEBRATION_COOLDOWN_MS) sessionStorage.removeItem(key);
+    }
+  } catch {
+    /* noop */
+  }
+}
+
 /** Fires confetti. Falls back to noop if dependency unavailable. */
 export async function fireConfetti(opts: ConfettiOptions = {}) {
+  if (typeof window === 'undefined') return;
   try {
     const confetti = (await import('canvas-confetti')).default;
     if (opts.intensity === 'mini') {
@@ -131,6 +159,7 @@ export async function fireConfetti(opts: ConfettiOptions = {}) {
 
 /** Combined helper: confetti + sound. Use for any "win" moment. */
 export function celebrate(opts: ConfettiOptions = {}) {
+  if (typeof window === 'undefined') return;
   if (!shouldRunCelebration(opts.id)) return;
   void fireConfetti(opts);
   playAchievementSound(opts.intensity === 'mini' ? 0.14 : 0.2);
