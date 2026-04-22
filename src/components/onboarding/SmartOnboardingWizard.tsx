@@ -122,6 +122,7 @@ const BasicOnboardingWizard = () => {
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [autoSaveDelay, setAutoSaveDelay] = useState<1000 | 2000 | 3000>(1000);
   const [lastAutoSavePatch, setLastAutoSavePatch] = useState<Record<string, any> | null>(null);
+  const [lastFailedAutoSavePatch, setLastFailedAutoSavePatch] = useState<Record<string, any> | null>(null);
   const [lastAutoSaveAttemptAt, setLastAutoSaveAttemptAt] = useState<string | null>(null);
   const [lastAutoSaveError, setLastAutoSaveError] = useState<string | null>(null);
   const [autoSaveAttempts, setAutoSaveAttempts] = useState<AutoSaveAttempt[]>([]);
@@ -222,6 +223,7 @@ const BasicOnboardingWizard = () => {
       if (error) throw error;
       const attempt: AutoSaveAttempt = { id: `${attemptedAt}-ok`, status: 'success', attemptedAt, step, fields, message: 'Salvo automaticamente' };
       setAutoSaveAttempts(prev => [attempt, ...prev].slice(0, 5));
+      setLastFailedAutoSavePatch(null);
       lastSavedFingerprintRef.current = fingerprint;
       if (latestAutoSaveFingerprintRef.current === fingerprint) {
         setHasPendingChanges(false);
@@ -233,6 +235,7 @@ const BasicOnboardingWizard = () => {
         setAutoSaveStatus('error');
         setHasPendingChanges(true);
         setLastAutoSaveError(message);
+        setLastFailedAutoSavePatch(patch);
         const attempt: AutoSaveAttempt = { id: `${attemptedAt}-error`, status: 'error', attemptedAt, step, fields, message };
         setAutoSaveAttempts(prev => [attempt, ...prev].slice(0, 5));
       }
@@ -240,7 +243,8 @@ const BasicOnboardingWizard = () => {
   };
 
   const retryAutoSave = () => {
-    if (lastAutoSavePatch) void saveAutoSavePatch(lastAutoSavePatch);
+    const failedPatch = lastFailedAutoSavePatch ?? lastAutoSavePatch;
+    if (failedPatch) void saveAutoSavePatch(failedPatch);
   };
 
   const currentStepDraft = (targetStep: WizardStep = step): Record<string, any> => ({
@@ -1020,7 +1024,7 @@ const AutoSaveControls = ({
           </div>
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          <Button type="button" variant="outline" size="sm" onClick={onRetry}>Tentar salvar novamente</Button>
+          <Button type="button" variant="outline" size="sm" onClick={onRetry}>Tentar novamente o auto-save</Button>
           <Button type="button" variant="ghost" size="sm" onClick={onReloadSaved} className="gap-2">
             <RefreshCw className="h-3.5 w-3.5" /> Recarregar salvos
           </Button>
