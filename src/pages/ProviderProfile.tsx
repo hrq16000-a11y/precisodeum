@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench, Info } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
@@ -45,7 +45,16 @@ import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
 
 /** Fire-and-forget contact click tracker */
-const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone', pagePath: string) => {
+const getLeadSource = () => {
+  if (typeof window === 'undefined') return 'direto';
+  const params = new URLSearchParams(window.location.search);
+  const source = (params.get('origem') || params.get('utm_source') || '').toLowerCase();
+  if (source.includes('busca') || document.referrer.includes('/buscar')) return 'busca';
+  if (source.includes('categoria') || document.referrer.includes('/categoria/')) return 'categoria';
+  return 'direto';
+};
+
+const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone', pagePath: string, serviceName?: string) => {
   try {
     supabase.from('contact_clicks' as any).insert({
       provider_id: providerId,
@@ -62,6 +71,8 @@ const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone'
       provider_id: providerId,
       event_action: contactType === 'whatsapp' ? 'whatsapp_click' : 'phone_click',
       page_path: pagePath,
+      service_name: serviceName || null,
+      source_marker: getLeadSource(),
     }).then(() => {});
   } catch { /* silent */ }
 };
@@ -76,6 +87,7 @@ const trackProfileView = (providerId: string) => {
       provider_id: providerId,
       event_action: 'profile_view',
       page_path: window.location.pathname,
+      source_marker: getLeadSource(),
     }).then(() => {});
   } catch { /* silent */ }
 };
