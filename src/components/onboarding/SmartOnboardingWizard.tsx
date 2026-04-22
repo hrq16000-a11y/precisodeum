@@ -626,7 +626,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 3 ─── */}
-        {step === 3 && (
+        {!showFinalSummary && step === 3 && (
           <Step3Contact
             profileType={profileType}
             fullName={fullName}
@@ -649,7 +649,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 4 — PROVIDER apenas ─── */}
-        {step === 4 && profileType === 'provider' && (
+        {!showFinalSummary && step === 4 && profileType === 'provider' && (
           <Step4Service
             providerReady={!!savedProvider}
             servicesCreated={servicesCreated}
@@ -664,7 +664,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* Caso provider ainda não tenha provider row (raro), volta ao step 3 */}
-        {step === 4 && profileType !== 'provider' && (
+        {!showFinalSummary && step === 4 && profileType !== 'provider' && (
           <div className="text-center">
             <p className="text-sm text-muted-foreground">Avançando…</p>
             <Button className="mt-4" onClick={finishOnboarding}>Concluir</Button>
@@ -672,7 +672,7 @@ const BasicOnboardingWizard = () => {
         )}
 
         {/* ─── PASSO 5 ─── */}
-        {step === 5 && (
+        {!showFinalSummary && step === 5 && (
           <Step5Done
             profileType={profileType}
             servicesCreated={servicesCreated}
