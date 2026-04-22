@@ -107,7 +107,9 @@ const BasicOnboardingWizard = () => {
   const [servicesCreated, setServicesCreated] = useState(0);
 
   const [saving, setSaving] = useState(false);
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [autoSaveDelay, setAutoSaveDelay] = useState<1000 | 2000 | 3000>(1000);
+  const [lastAutoSavePatch, setLastAutoSavePatch] = useState<Record<string, any> | null>(null);
 
   // ─── Sync inicial: se profile carrega DEPOIS do mount, atualiza step ───
   const syncedRef = useRef(false);
@@ -119,6 +121,8 @@ const BasicOnboardingWizard = () => {
     setFurthestStep(nextStep);
     if (profile.profile_type) setProfileType(profile.profile_type as ProfileType);
     if (profile.full_name) setFullName(profile.full_name);
+    if (profile.city) setCity(profile.city);
+    if (profile.state) setState(profile.state);
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
     if (profile.whatsapp || profile.phone) setWhatsapp(profile.whatsapp || profile.phone || '');
   }, [profile]);
@@ -169,40 +173,56 @@ const BasicOnboardingWizard = () => {
     await persistStep(nextStep, extraPatch);
   };
 
+  const saveAutoSavePatch = async (patch: Record<string, any>) => {
+    if (!user?.id) return;
+    setAutoSaveStatus('saving');
+    setLastAutoSavePatch(patch);
+    try {
+      await supabase.from('profiles').update(patch as any).eq('id', user.id);
+      setAutoSaveStatus('saved');
+    } catch {
+      setAutoSaveStatus('error');
+    }
+  };
+
+  const retryAutoSave = () => {
+    if (lastAutoSavePatch) void saveAutoSavePatch(lastAutoSavePatch);
+  };
+
   // ─── Auto-save com debounce: mantém o último passo e dados parciais salvos ───
   useEffect(() => {
-    if (!user?.id || !profile || step === 1 || saving) return;
+    if (!user?.id || !profile || saving) return;
 
     const patch: Record<string, any> = { onboarding_step: Math.max(furthestStep, step), onboarding_completed: false };
-    if (step >= 2) {
-      patch.city = city || null;
-      patch.state = state || null;
-      patch.avatar_url = avatarUrl;
-    }
-    if (step >= 3) {
-      patch.full_name = fullName.trim() || null;
-      patch.whatsapp = whatsapp || null;
-      patch.phone = whatsapp || null;
-      if (profileType) {
-        patch.profile_type = profileType;
-        patch.role = profileType;
-      }
+    patch.city = city || null;
+    patch.state = state || null;
+    patch.avatar_url = avatarUrl;
+    patch.full_name = fullName.trim() || null;
+    patch.whatsapp = whatsapp || null;
+    patch.phone = whatsapp || null;
+    if (profileType) {
+      patch.profile_type = profileType;
+      patch.role = profileType;
     }
 
     setAutoSaveStatus('saving');
     const timer = window.setTimeout(() => {
-      void (async () => {
-        try {
-          await supabase.from('profiles').update(patch as any).eq('id', user.id);
-          setAutoSaveStatus('saved');
-        } catch {
-          setAutoSaveStatus('idle');
-        }
-      })();
-    }, 900);
+      void saveAutoSavePatch(patch);
+    }, autoSaveDelay);
 
     return () => window.clearTimeout(timer);
-  }, [user?.id, profile, step, furthestStep, city, state, avatarUrl, fullName, whatsapp, profileType, saving]);
+  }, [user?.id, profile, step, furthestStep, city, state, avatarUrl, fullName, whatsapp, profileType, saving, autoSaveDelay]);
+
+  useEffect(() => {
+    const hasPendingAutoSave = autoSaveStatus === 'saving' || autoSaveStatus === 'error';
+    if (!hasPendingAutoSave) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [autoSaveStatus]);
 
   // Quando provider termina o wizard de serviços, marcamos +1 e avançamos
   const handleServiceCreated = async (_id: string) => {
@@ -440,11 +460,12 @@ const BasicOnboardingWizard = () => {
           </div>
         )}
 
-        {autoSaveStatus !== 'idle' && step > 1 && (
-          <p className="mb-4 text-right text-[11px] font-medium text-muted-foreground">
-            {autoSaveStatus === 'saving' ? 'Salvando automaticamente…' : 'Alterações salvas'}
-          </p>
-        )}
+        <AutoSaveControls
+          status={autoSaveStatus}
+          delay={autoSaveDelay}
+          onDelayChange={setAutoSaveDelay}
+          onRetry={retryAutoSave}
+        />
 
         {/* ─── PASSO 1 ─── */}
         {step === 1 && !showSubtypeStep && (
@@ -597,6 +618,54 @@ const WizardChecklist = ({
         );
       })}
     </div>
+  </div>
+);
+
+const AutoSaveControls = ({
+  status,
+  delay,
+  onDelayChange,
+  onRetry,
+}: {
+  status: 'idle' | 'saving' | 'saved' | 'error';
+  delay: 1000 | 2000 | 3000;
+  onDelayChange: (delay: 1000 | 2000 | 3000) => void;
+  onRetry: () => void;
+}) => (
+  <div className="mb-4 rounded-xl border border-border bg-muted/20 p-3">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p className="text-[11px] font-bold text-foreground">Auto-save</p>
+        <p className={`text-[11px] font-medium ${status === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}>
+          {status === 'saving'
+            ? 'Salvando automaticamente…'
+            : status === 'saved'
+              ? 'Alterações salvas'
+              : status === 'error'
+                ? 'Erro ao salvar alterações'
+                : 'Pronto para salvar'}
+        </p>
+      </div>
+      <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-1">
+        {[1000, 2000, 3000].map((value) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => onDelayChange(value as 1000 | 2000 | 3000)}
+            className={`rounded-md px-2 py-1 text-[10px] font-bold transition-colors ${
+              delay === value ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {value / 1000}s
+          </button>
+        ))}
+      </div>
+    </div>
+    {status === 'error' && (
+      <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={onRetry}>
+        Tentar salvar novamente
+      </Button>
+    )}
   </div>
 );
 
