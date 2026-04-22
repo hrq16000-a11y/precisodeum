@@ -196,14 +196,6 @@ const BasicOnboardingWizard = () => {
     }
   };
 
-  const advanceTo = async (nextStep: WizardStep, extraPatch: Record<string, any> = {}) => {
-    saveStepDraft(step);
-    await flushAutoSave();
-    setFurthestStep(prev => Math.max(prev, nextStep) as WizardStep);
-    setStep(nextStep);
-    await persistStep(nextStep, extraPatch);
-  };
-
   const saveAutoSavePatch = async (patch: Record<string, any>) => {
     if (!user?.id) return;
     const fingerprint = JSON.stringify(patch);
@@ -264,19 +256,86 @@ const BasicOnboardingWizard = () => {
     return patch;
   };
 
+  const buildAutoSavePatch = (): Record<string, any> => ({
+    ...currentProfilePatch(),
+    onboarding_step: Math.max(furthestStep, step),
+  });
+
+  const flushAutoSave = async () => {
+    if (!user?.id || saving) return;
+    const patch = buildAutoSavePatch();
+    const fingerprint = JSON.stringify(patch);
+    if (fingerprint === lastSavedFingerprintRef.current && autoSaveStatus !== 'error') return;
+    saveStepDraft(step);
+    await saveAutoSavePatch(patch);
+  };
+
+  const advanceTo = async (nextStep: WizardStep, extraPatch: Record<string, any> = {}) => {
+    await flushAutoSave();
+    setFurthestStep(prev => Math.max(prev, nextStep) as WizardStep);
+    setStep(nextStep);
+    await persistStep(nextStep, extraPatch);
+  };
+
   const saveStepDraft = (targetStep: WizardStep = step) => {
     setDrafts(prev => ({ ...prev, [targetStep]: currentStepDraft(targetStep) }));
+  };
+
+  const reloadSavedFields = async () => {
+    if (!user?.id) return;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('full_name, city, state, avatar_url, whatsapp, phone, profile_type, onboarding_step')
+      .eq('id', user.id)
+      .single();
+
+    if (error || !data) {
+      toast.error('Não foi possível recarregar os campos salvos.');
+      return;
+    }
+
+    setFullName(data.full_name || '');
+    setCity(data.city || '');
+    setState(data.state || '');
+    setAvatarUrl(data.avatar_url || null);
+    setWhatsapp(data.whatsapp || data.phone || '');
+    if (data.profile_type) setProfileType(data.profile_type as ProfileType);
+    const savedStep = clampWizardStep(data.onboarding_step);
+    setStep(savedStep);
+    setFurthestStep(savedStep);
+    setAutoSaveStatus('idle');
+    setHasPendingChanges(false);
+    setLastAutoSaveError(null);
+    lastSavedFingerprintRef.current = JSON.stringify({
+      onboarding_completed: false,
+      city: data.city || null,
+      state: data.state || null,
+      avatar_url: data.avatar_url || null,
+      full_name: data.full_name || null,
+      whatsapp: data.whatsapp || data.phone || null,
+      phone: data.whatsapp || data.phone || null,
+      ...(data.profile_type ? { profile_type: data.profile_type, role: data.profile_type } : {}),
+      onboarding_step: savedStep,
+    });
+    toast.success('Campos salvos recarregados.');
   };
 
   // ─── Auto-save com debounce: mantém o último passo e dados parciais salvos ───
   useEffect(() => {
     if (!user?.id || !profile || saving) return;
 
-    const patch: Record<string, any> = { ...currentProfilePatch(), onboarding_step: Math.max(furthestStep, step) };
-    setDrafts(prev => ({ ...prev, [step]: currentStepDraft(step) }));
+    const patch: Record<string, any> = buildAutoSavePatch();
+    const fingerprint = JSON.stringify(patch);
+    if (fingerprint === lastSavedFingerprintRef.current && autoSaveStatus !== 'error') return;
 
-    setAutoSaveStatus('saving');
+    const version = autoSaveVersionRef.current + 1;
+    autoSaveVersionRef.current = version;
+    setDrafts(prev => ({ ...prev, [step]: currentStepDraft(step) }));
+    setHasPendingChanges(true);
+    if (autoSaveStatus !== 'error') setAutoSaveStatus('idle');
+
     const timer = window.setTimeout(() => {
+      if (version !== autoSaveVersionRef.current) return;
       void saveAutoSavePatch(patch);
     }, autoSaveDelay);
 
