@@ -106,6 +106,15 @@ const Metric = ({
 const sevColor = (sev: string) =>
   sev === 'critical' ? 'destructive' : sev === 'high' ? 'destructive' : sev === 'medium' ? 'secondary' : 'outline';
 
+const PERF_TARGETS = { lcp: 2500, inp: 200, cls: 0.1, ttfb: 800 };
+const estimateMobileScore = ({ lcp, inp, cls, ttfb }: { lcp: number; inp: number; cls: number; ttfb: number }) => {
+  const lcpScore = Math.max(0, 100 - Math.max(0, lcp - PERF_TARGETS.lcp) / 35);
+  const inpScore = Math.max(0, 100 - Math.max(0, inp - PERF_TARGETS.inp) / 4);
+  const clsScore = Math.max(0, 100 - Math.max(0, cls - PERF_TARGETS.cls) * 500);
+  const ttfbScore = Math.max(0, 100 - Math.max(0, ttfb - PERF_TARGETS.ttfb) / 20);
+  return Math.round((lcpScore * 0.4) + (inpScore * 0.25) + (clsScore * 0.2) + (ttfbScore * 0.15));
+};
+
 export default function AdminSystemHealthPage() {
   const { data, isLoading, isFetching, refetch, error } = useQuery({
     queryKey: ['admin-system-health-full'],
@@ -168,6 +177,12 @@ export default function AdminSystemHealthPage() {
   const perfStatus: Status = avgMetric('lcp') > 3500 || avgBackend > 1200 ? 'critical'
     : avgMetric('lcp') > 2500 || avgMetric('ttfb') > 800 || avgBackend > 900 ? 'warn'
     : 'ok';
+  const avgLcp = avgMetric('lcp');
+  const avgInp = avgMetric('inp');
+  const avgCls = Number((performanceReports.map((r) => Number(r.vitals?.cls || 0)).filter((v) => v >= 0).reduce((sum, v) => sum + v, 0) / Math.max(1, performanceReports.length)).toFixed(3));
+  const avgTtfb = avgMetric('ttfb');
+  const mobileScore = estimateMobileScore({ lcp: avgLcp, inp: avgInp || 200, cls: avgCls, ttfb: avgTtfb });
+  const scoreProgress = Math.min(100, Math.round((mobileScore / 80) * 100));
 
   return (
     <AdminLayout>
@@ -300,11 +315,31 @@ export default function AdminSystemHealthPage() {
 
             {/* Log de erros silenciosos */}
             <Quadrant icon={Timer} title="Relatório de Performance Real" subtitle="Core Web Vitals · TTFB · LCP · backend" status={perfStatus}>
+              <div className="mb-4 rounded-xl border border-border/40 bg-background/50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Meta PageSpeed mobile</p>
+                    <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{mobileScore}/80</p>
+                  </div>
+                  <Badge variant={mobileScore >= 70 ? 'secondary' : 'outline'} className="text-[10px]">
+                    {mobileScore >= 70 ? 'Próximo da meta 70/80' : `${Math.max(0, 70 - mobileScore)} pts até 70`}
+                  </Badge>
+                </div>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${scoreProgress}%` }} />
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] text-muted-foreground md:grid-cols-4">
+                  <span>LCP meta {PERF_TARGETS.lcp}ms</span>
+                  <span>INP meta {PERF_TARGETS.inp}ms</span>
+                  <span>CLS meta {PERF_TARGETS.cls}</span>
+                  <span>TTFB meta {PERF_TARGETS.ttfb}ms</span>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
                 <Metric label="Amostras" value={performanceReports.length} />
-                <Metric label="TTFB médio" value={`${avgMetric('ttfb')}ms`} status={avgMetric('ttfb') > 800 ? 'warn' : 'ok'} />
-                <Metric label="LCP médio" value={`${avgMetric('lcp')}ms`} status={avgMetric('lcp') > 2500 ? 'warn' : 'ok'} />
-                <Metric label="INP médio" value={`${avgMetric('inp')}ms`} status={avgMetric('inp') > 200 ? 'warn' : 'ok'} />
+                <Metric label="TTFB médio" value={`${avgTtfb}ms`} status={avgTtfb > PERF_TARGETS.ttfb ? 'warn' : 'ok'} />
+                <Metric label="LCP médio" value={`${avgLcp}ms`} status={avgLcp > PERF_TARGETS.lcp ? 'warn' : 'ok'} />
+                <Metric label="INP médio" value={`${avgInp}ms`} status={avgInp > PERF_TARGETS.inp ? 'warn' : 'ok'} />
                 <Metric label="Backend máx." value={`${avgBackend}ms`} status={avgBackend > 900 ? 'warn' : 'ok'} />
               </div>
               <div className="mt-3 max-h-72 space-y-1.5 overflow-y-auto">

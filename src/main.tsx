@@ -16,6 +16,20 @@ const CURRENT_BUILD_ID = (import.meta as any).env?.VITE_BUILD_ID
   || '';
 const CURRENT_DAY_KEY = new Date().toISOString().slice(0, 10);
 
+const preloadCriticalAssets = () => {
+  const head = document.head;
+  if (!head) return;
+  for (const href of ['/hero-cat-instalacoes.webp', '/lovable-uploads/logo-brand-380.webp']) {
+    if (document.querySelector(`link[rel="preload"][href="${href}"]`)) continue;
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = href;
+    if (href.endsWith('.webp')) link.type = 'image/webp';
+    head.appendChild(link);
+  }
+};
+
 const getAutoHealAttempts = () => {
   try {
     return Number(sessionStorage.getItem(AUTO_HEAL_KEY) || "0") || 0;
@@ -199,6 +213,7 @@ const installBootstrapGuards = () => {
 const bootstrap = () => {
   try {
     if (!rootElement) throw new Error("Elemento root ausente.");
+    preloadCriticalAssets();
 
     if ((window as any).__appShellTimer) {
       clearTimeout((window as any).__appShellTimer);

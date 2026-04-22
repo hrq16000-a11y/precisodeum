@@ -30,4 +30,5 @@ jobs:
           name: performance-artifacts
           path: |
             dist/lighthouse-report.json
+            dist/bundle-report.json
             dist/assets

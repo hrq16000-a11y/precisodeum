@@ -1,38 +1,89 @@
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
-import { MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
+import { MapPin, Search } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
 import UrgencyToggle from '@/components/home/UrgencyToggle';
 import { useUrgencyMode } from '@/hooks/useUrgencyMode';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { importWithRetry } from '@/lib/lazyWithRetry';
-import { getCategoryForService, CATEGORY_IMAGES, type ServiceCategory } from '@/lib/serviceCategoryMap';
+import { getCategoryForService, CATEGORY_IMAGES } from '@/lib/serviceCategoryMap';
 import { Icon } from '@/components/ui/Icon';
 
 const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBar')));
 
 const FALLBACK_PREFIXES = ['Encontre o melhor', 'Preciso de'];
 
-const HeroPrefixRotator = ({ prefixes }: { prefixes: string[] }) => {
+const CriticalHeroSearch = ({ onUpgrade }: { onUpgrade: () => void }) => {
+  const [query, setQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const value = query.trim();
+    if (!value) {
+      onUpgrade();
+      return;
+    }
+    navigate(`/buscar?q=${encodeURIComponent(value)}`);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex w-full items-center gap-2 rounded-full bg-card pl-4 pr-1.5 py-1.5 shadow-card-hover">
+      <input
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        onFocus={onUpgrade}
+        placeholder="O que você precisa?"
+        className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 outline-none"
+        autoComplete="off"
+        inputMode="search"
+      />
+      <button
+        type="submit"
+        aria-label="Buscar profissional"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md transition-transform active:scale-95"
+      >
+        <Icon icon={Search} className="h-5 w-5" />
+      </button>
+    </form>
+  );
+};
+
+const HeroPrefixRotator = ({ prefixes, active }: { prefixes: string[]; active: boolean }) => {
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<'visible' | 'glitch' | 'hidden'>('visible');
+  const startedAt = useRef(0);
 
   useEffect(() => {
-    if (prefixes.length <= 1) return;
-    const interval = setInterval(() => {
-      setPhase('glitch');
-      setTimeout(() => {
+    if (!active || prefixes.length <= 1) return;
+    let frame = 0;
+    let stage: 'visible' | 'glitch' | 'hidden' = 'visible';
+    startedAt.current = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - startedAt.current;
+      if (elapsed >= 5350) {
+        startedAt.current = now;
+        stage = 'visible';
+        setPhase('visible');
+      } else if (elapsed >= 5200 && stage !== 'glitch') {
+        stage = 'glitch';
+        setPhase('glitch');
+      } else if (elapsed >= 5100 && stage !== 'hidden') {
+        stage = 'hidden';
         setPhase('hidden');
-        setTimeout(() => {
-          setIndex(prev => (prev + 1) % prefixes.length);
-          setPhase('glitch');
-          setTimeout(() => setPhase('visible'), 150);
-        }, 100);
-      }, 200);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [prefixes.length]);
+        setIndex(prev => (prev + 1) % prefixes.length);
+      } else if (elapsed >= 5000 && stage !== 'glitch') {
+        stage = 'glitch';
+        setPhase('glitch');
+      }
+      frame = requestAnimationFrame(tick);
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [active, prefixes.length]);
 
   return (
     <span className="relative inline-block overflow-hidden">
@@ -58,7 +109,8 @@ const HeroPrefixRotator = ({ prefixes }: { prefixes: string[] }) => {
 const HeroBanner = () => {
   const [displayedImage, setDisplayedImage] = useState(CATEGORY_IMAGES.instalacoes);
   const [nextImage, setNextImage] = useState<string | null>(null);
-  const [heroReady, setHeroReady] = useState(false);
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
+  const [enhancedSearch, setEnhancedSearch] = useState(false);
   const { city: geoCity } = useGeoCity();
   const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
 
@@ -75,35 +127,30 @@ const HeroBanner = () => {
   }, [prefixesRaw]);
 
   const handleServiceChange = useCallback((service: string) => {
-    if (!heroReady) return;
+    if (!heroImageLoaded) return;
     const cat = getCategoryForService(service);
     const newImg = CATEGORY_IMAGES[cat];
     if (newImg !== displayedImage) {
       setNextImage(newImg);
-      setTimeout(() => {
+      const img = new Image();
+      img.onload = () => {
         setDisplayedImage(newImg);
         setNextImage(null);
-      }, 800);
+      };
+      img.src = newImg;
     }
-  }, [displayedImage, heroReady]);
+  }, [displayedImage, heroImageLoaded]);
 
   useEffect(() => {
-    const id = globalThis.setTimeout(() => setHeroReady(true), 3200);
-    return () => globalThis.clearTimeout(id);
-  }, []);
-
-  // Deferred preload of next image — no forced reflow
-  useEffect(() => {
-    if (!heroReady) return;
-    const id = setTimeout(() => {
-      const allImages = Object.values(CATEGORY_IMAGES);
-      const currentIdx = allImages.indexOf(displayedImage);
-      const nextIdx = (currentIdx + 1) % allImages.length;
-      const img = new Image();
-      img.src = allImages[nextIdx];
-    }, 2000);
-    return () => clearTimeout(id);
-  }, [displayedImage, heroReady]);
+    if (enhancedSearch) return;
+    const onFirstInput = () => setEnhancedSearch(true);
+    window.addEventListener('pointerdown', onFirstInput, { once: true, passive: true });
+    window.addEventListener('keydown', onFirstInput, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', onFirstInput);
+      window.removeEventListener('keydown', onFirstInput);
+    };
+  }, [enhancedSearch]);
 
   return (
     <section
@@ -123,6 +170,7 @@ const HeroBanner = () => {
         elementtiming="hero-lcp"
         className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700"
         style={{ width: '100%', height: '100%' }}
+        onLoad={() => setHeroImageLoaded(true)}
       />
 
       {nextImage && (
@@ -154,18 +202,22 @@ const HeroBanner = () => {
             className="font-display text-2xl font-black tracking-tight text-primary-foreground sm:text-3xl md:text-5xl lg:text-6xl max-w-full overflow-hidden"
             style={{ textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)' }}
           >
-            <HeroPrefixRotator prefixes={prefixes} />
+            <HeroPrefixRotator prefixes={prefixes} active={heroImageLoaded} />
             <br />
             <RotatingServiceText onServiceChange={handleServiceChange} />
           </h1>
         </div>
 
         <div className="relative z-30 mt-4 w-full max-w-2xl md:mt-6 hero-search-wrapper">
-          <Suspense fallback={<div className="h-12 rounded-full bg-primary-foreground/10 animate-pulse" />}>
-            <div className="animate-glow-ring rounded-full">
-              <SearchBar />
-            </div>
-          </Suspense>
+          <div className="animate-glow-ring rounded-full">
+            {enhancedSearch ? (
+              <Suspense fallback={<CriticalHeroSearch onUpgrade={() => setEnhancedSearch(true)} />}>
+                <SearchBar />
+              </Suspense>
+            ) : (
+              <CriticalHeroSearch onUpgrade={() => setEnhancedSearch(true)} />
+            )}
+          </div>
           <div className="mt-3 flex min-h-[2.5rem] flex-col items-center justify-center gap-2 text-xs text-primary-foreground/70 sm:min-h-[1.25rem] sm:flex-row sm:gap-3">
             <span className="inline-flex items-center gap-2">
               <Icon icon={MapPin} className="h-3.5 w-3.5 text-secondary" />
