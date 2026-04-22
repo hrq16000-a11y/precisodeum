@@ -628,12 +628,14 @@ const Step2Location = ({
       </div>
     </div>
 
-    <Button variant="accent" className="mt-5 w-full" disabled={!canAdvance} onClick={onNext}>
-      Continuar
-    </Button>
-    <button type="button" onClick={onSkip} className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground">
-      Pular esta etapa
-    </button>
+    <div className="mt-5 grid gap-3">
+      <Button variant="accent" className="w-full" disabled={!canAdvance} onClick={onNext}>
+        Salvar e continuar
+      </Button>
+      <Button type="button" variant="outline" className="w-full" onClick={onSkip}>
+        Pular por enquanto
+      </Button>
+    </div>
   </>
 );
 
@@ -707,12 +709,14 @@ const Step3Contact = ({
       )}
     </div>
 
-    <Button variant="accent" className="mt-5 w-full" disabled={!canAdvance || saving} onClick={onNext}>
-      {saving ? 'Salvando…' : 'Continuar'}
-    </Button>
-    <button type="button" onClick={onSkip} disabled={saving} className="mt-3 w-full text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-50">
-      Pular esta etapa
-    </button>
+    <div className="mt-5 grid gap-3">
+      <Button variant="accent" className="w-full" disabled={!canAdvance || saving} onClick={onNext}>
+        {saving ? 'Salvando…' : 'Salvar e continuar'}
+      </Button>
+      <Button type="button" variant="outline" className="w-full" onClick={onSkip} disabled={saving}>
+        Pular por enquanto
+      </Button>
+    </div>
   </>
 );
 
