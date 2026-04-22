@@ -292,10 +292,15 @@ const BasicOnboardingWizard = () => {
     }
   };
 
+  const handleSkipStep3 = async () => {
+    toast.info('Você pode completar estes dados depois no dashboard.');
+    await advanceTo(profileType === 'provider' ? 4 : 5);
+  };
+
   // ─── Passo 4: Primeiro serviço (provider apenas) ───
-  // Botão "Pular" no passo 4 NÃO fecha o wizard — apenas mostra aviso.
-  const handleSkipStep4 = () => {
-    toast.info('Cadastre pelo menos 1 serviço para concluir o cadastro.');
+  const handleSkipStep4 = async () => {
+    toast.info('Você pode cadastrar serviços depois no dashboard.');
+    await advanceTo(5);
   };
 
   // ─── Passo 5: Conclusão ───
@@ -440,14 +445,7 @@ const BasicOnboardingWizard = () => {
             canAdvance={canAdvanceFromStep3}
             onBack={() => advanceTo(2)}
             onNext={handleStep3Next}
-            onSkip={() => {
-              // Skip salva o que tem e avança. Mas mantém o passo 3 obrigatório p/ campos mínimos.
-              if (!fullName.trim()) {
-                toast.error('Informe ao menos seu nome para avançar.');
-                return;
-              }
-              handleStep3Next();
-            }}
+            onSkip={handleSkipStep3}
           />
         )}
 
