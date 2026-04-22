@@ -812,12 +812,20 @@ const WizardChecklist = ({
   estimates: Record<WizardStep, string>;
   onReview: (step: WizardStep) => void;
   onReviewAll: () => void;
-}) => (
+}) => {
+  const completedCount = checklistItems.filter(item => item.step < furthestStep || item.step < currentStep).length;
+  const progressPercent = Math.round((completedCount / TOTAL_STEPS) * 100);
+
+  return (
   <div className="mb-5 rounded-xl border border-border bg-muted/30 p-3">
     <div className="mb-3 flex items-center justify-between gap-3">
-      <p className="text-xs font-bold text-foreground">Checklist do perfil</p>
+      <div>
+        <p className="text-xs font-bold text-foreground">Progresso do perfil</p>
+        <p className="text-[10px] font-medium text-muted-foreground">{completedCount} de {TOTAL_STEPS} etapas concluídas • {progressPercent}%</p>
+      </div>
       <button type="button" onClick={onReviewAll} className="text-[11px] font-bold text-accent hover:underline">Revisar tudo</button>
     </div>
+    <Progress value={progressPercent} className="mb-3 h-1.5" />
     <div className="grid grid-cols-5 gap-2">
       {checklistItems.map((item) => {
         const done = item.step < currentStep || item.step < furthestStep;
@@ -850,19 +858,34 @@ const WizardChecklist = ({
       })}
     </div>
   </div>
-);
+  );
+};
 
 const AutoSaveControls = ({
   status,
   delay,
+  hasPendingChanges,
+  lastAttemptAt,
+  errorMessage,
   onDelayChange,
   onRetry,
+  onReloadSaved,
 }: {
   status: 'idle' | 'saving' | 'saved' | 'error';
   delay: 1000 | 2000 | 3000;
+  hasPendingChanges: boolean;
+  lastAttemptAt: string | null;
+  errorMessage: string | null;
   onDelayChange: (delay: 1000 | 2000 | 3000) => void;
   onRetry: () => void;
-}) => (
+  onReloadSaved: () => void;
+}) => {
+  if (!hasPendingChanges && status !== 'error') return null;
+  const lastAttemptLabel = lastAttemptAt
+    ? new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(lastAttemptAt))
+    : 'ainda não enviada';
+
+  return (
   <div className="mb-4 rounded-xl border border-border bg-muted/20 p-3">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -870,11 +893,9 @@ const AutoSaveControls = ({
         <p className={`text-[11px] font-medium ${status === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}>
           {status === 'saving'
             ? 'Salvando automaticamente…'
-            : status === 'saved'
-              ? 'Alterações salvas'
-              : status === 'error'
+            : status === 'error'
                 ? 'Erro ao salvar alterações'
-                : 'Pronto para salvar'}
+                : 'Alterações pendentes serão salvas em instantes'}
         </p>
       </div>
       <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-1">
@@ -893,12 +914,25 @@ const AutoSaveControls = ({
       </div>
     </div>
     {status === 'error' && (
-      <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={onRetry}>
-        Tentar salvar novamente
-      </Button>
+      <div className="mt-3 rounded-lg border border-destructive/25 bg-destructive/10 p-3">
+        <div className="flex items-start gap-2 text-xs text-destructive">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-bold">Última tentativa: {lastAttemptLabel}</p>
+            <p className="mt-1 text-[11px]">{errorMessage || 'Verifique sua conexão e tente novamente.'}</p>
+          </div>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <Button type="button" variant="outline" size="sm" onClick={onRetry}>Tentar salvar novamente</Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onReloadSaved} className="gap-2">
+            <RefreshCw className="h-3.5 w-3.5" /> Recarregar salvos
+          </Button>
+        </div>
+      </div>
     )}
   </div>
-);
+  );
+};
 
 const ReviewSummaryCard = ({
   items,
