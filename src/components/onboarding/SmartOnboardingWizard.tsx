@@ -68,7 +68,7 @@ const BasicOnboardingWizard = () => {
   // ─── Estado persistido por banco (onboarding_step controla a esteira) ───
   const hasExistingCadastro = !!profile?.profile_type;
   const storedStep = Number(profile?.onboarding_step ?? 0);
-  const initialStep = (hasExistingCadastro ? Math.max(storedStep, 2) : (storedStep || 1)) as WizardStep;
+  const initialStep = (storedStep || 1) as WizardStep;
   const [step, setStep] = useState<WizardStep>(initialStep);
 
   // Tipo de perfil
@@ -106,9 +106,7 @@ const BasicOnboardingWizard = () => {
   useEffect(() => {
     if (syncedRef.current || !profile) return;
     syncedRef.current = true;
-    const nextStep = profile.profile_type
-      ? Math.max(Number(profile.onboarding_step ?? 0), 2)
-      : Number(profile.onboarding_step ?? 1);
+    const nextStep = Number(profile.onboarding_step ?? 1);
     setStep(Math.min(Math.max(nextStep, 1), 5) as WizardStep);
     if (profile.profile_type) setProfileType(profile.profile_type as ProfileType);
     if (profile.full_name) setFullName(profile.full_name);
@@ -182,6 +180,10 @@ const BasicOnboardingWizard = () => {
     setProviderSubtype(sub);
     setShowSubtypeStep(false);
     await advanceTo(2, { profile_type: 'provider', role: 'provider' });
+  };
+
+  const handleContinueProfileUpdate = async () => {
+    await advanceTo(2, profileType ? { profile_type: profileType, role: profileType } : {});
   };
 
   // ─── Passo 2: Localização + Foto ───
@@ -368,7 +370,11 @@ const BasicOnboardingWizard = () => {
 
         {/* ─── PASSO 1 ─── */}
         {step === 1 && !showSubtypeStep && (
-          <Step1Identity onSelectType={handleSelectType} />
+          <Step1Identity
+            existingProfileType={hasExistingCadastro ? profileType : null}
+            onContinueProfileUpdate={handleContinueProfileUpdate}
+            onSelectType={handleSelectType}
+          />
         )}
 
         {step === 1 && showSubtypeStep && profileType === 'provider' && (
@@ -468,12 +474,29 @@ const BasicOnboardingWizard = () => {
 // SUBCOMPONENTES (mantidos no mesmo arquivo p/ rapidez de leitura)
 // ════════════════════════════════════════════════════════════════════
 
-const Step1Identity = ({ onSelectType }: { onSelectType: (t: ProfileType) => void }) => (
+const Step1Identity = ({
+  existingProfileType,
+  onContinueProfileUpdate,
+  onSelectType,
+}: {
+  existingProfileType: ProfileType | null;
+  onContinueProfileUpdate: () => void;
+  onSelectType: (t: ProfileType) => void;
+}) => (
   <>
     <h1 className="text-center font-display text-2xl font-bold text-foreground">Seu talento merece brilhar</h1>
     <p className="mt-2 text-center text-sm text-muted-foreground">Em 5 passos rápidos a gente coloca você no mapa.</p>
 
     <div className="mt-6 grid gap-3">
+      {existingProfileType && (
+        <Button type="button" size="lg" className="h-auto justify-start gap-3 py-4 text-left" onClick={onContinueProfileUpdate}>
+          <CheckCircle2 className="h-5 w-5 shrink-0" />
+          <span className="min-w-0">
+            <span className="block font-bold">Continuar atualização do meu perfil</span>
+            <span className="block text-xs font-normal opacity-80">Ir direto para os dados do cadastro</span>
+          </span>
+        </Button>
+      )}
       <TypeButton onClick={() => onSelectType('provider')} icon={Briefcase} title="Sou Profissional" desc="Quero ser encontrado por novos clientes" tone="accent" />
       <TypeButton onClick={() => onSelectType('client')} icon={UserRound} title="Sou Cliente" desc="Procuro um profissional de confiança" tone="blue" />
       <TypeButton onClick={() => onSelectType('rh')} icon={Building2} title="Agência de RH" desc="Recruto talentos para empresas" tone="purple" />
