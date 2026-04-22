@@ -87,8 +87,8 @@ const DeferredAboveFoldSection = ({ children }: { children: ReactNode }) => {
       return () => (window as any).cancelIdleCallback?.(id);
     }
 
-    const id = window.setTimeout(() => setReady(true), 900);
-    return () => window.clearTimeout(id);
+    const id = globalThis.setTimeout(() => setReady(true), 900);
+    return () => globalThis.clearTimeout(id);
   }, []);
 
   return ready ? <>{children}</> : null;
@@ -103,8 +103,8 @@ const LazyViewportSection = ({ children }: { children: ReactNode }) => {
     if (!node || visible) return;
 
     if (!('IntersectionObserver' in window)) {
-      const id = window.setTimeout(() => setVisible(true), 1200);
-      return () => window.clearTimeout(id);
+      const id = globalThis.setTimeout(() => setVisible(true), 1200);
+      return () => globalThis.clearTimeout(id);
     }
 
     const observer = new IntersectionObserver(
