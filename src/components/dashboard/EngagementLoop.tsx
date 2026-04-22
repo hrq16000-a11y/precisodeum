@@ -5,7 +5,7 @@ import { Sparkles, Briefcase, Image as ImageIcon, User, X, ArrowRight, Trophy } 
 import { Button } from '@/components/ui/button';
 import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
 import { useAuth } from '@/hooks/useAuth';
-import { celebrate } from '@/lib/celebrate';
+import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 
 /**
  * EngagementLoop — orchestrates the "infinite engagement circuit".
@@ -106,7 +106,7 @@ const EngagementLoop = () => {
   useEffect(() => {
     if (!data || !user?.id) return;
     if (data.percentage < 90) return;
-    celebrate({ intensity: 'big', id: `level-up-diamond:${user.id}` });
+    celebrate({ intensity: 'big', id: CELEBRATION_IDS.levelUp('diamond', user.id) });
   }, [data?.percentage, user?.id]);
 
   if (dismissed) return null;

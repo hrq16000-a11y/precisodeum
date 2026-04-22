@@ -15,7 +15,7 @@ import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils'
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
-import { celebrate } from '@/lib/celebrate';
+import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 
 // Defaults — overridden by site_settings (`portfolio_max_albums`, `portfolio_max_photos_per_album`)
 const DEFAULT_MAX_ALBUMS = 4;
@@ -168,7 +168,7 @@ const DashboardPortfolioPage = () => {
         }
         const newCount = albums.length + 1;
         const unlockedNext = newCount < MAX_ALBUMS;
-        celebrate({ intensity: 'mini', id: `portfolio-album:${data?.id ?? newCount}` });
+        celebrate({ intensity: 'mini', id: CELEBRATION_IDS.portfolioAlbum(data?.id ?? String(newCount)) });
         toast.success('🎉 Você ganhou um novo slot!', {
           description: unlockedNext
             ? `Seu ${newCount + 1}º álbum já está liberado na vitrine.`
@@ -320,7 +320,7 @@ const DashboardPortfolioPage = () => {
     if (successCount > 0) {
       const newPhotoTotal = photos.length + successCount;
       const unlockedNext = newPhotoTotal < MAX_PHOTOS_PER_ALBUM;
-      celebrate({ intensity: 'mini', id: `portfolio-photo:${selectedAlbum?.id}:${newPhotoTotal}` });
+      celebrate({ intensity: 'mini', id: CELEBRATION_IDS.portfolioPhoto(selectedAlbum.id, newPhotoTotal) });
       toast.success(`🎉 ${successCount} foto${successCount > 1 ? 's' : ''} desbloqueada${successCount > 1 ? 's' : ''}!`, {
         description: unlockedNext
           ? `Você tem mais ${MAX_PHOTOS_PER_ALBUM - newPhotoTotal} slots disponíveis neste álbum.`

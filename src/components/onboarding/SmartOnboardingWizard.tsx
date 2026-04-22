@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { celebrate } from '@/lib/celebrate';
+import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -303,7 +303,7 @@ const BasicOnboardingWizard = () => {
       } catch { /* silent */ }
 
       try {
-        celebrate({ intensity: 'big', id: `onboarding-complete:${user.id}` });
+        celebrate({ intensity: 'big', id: CELEBRATION_IDS.onboardingComplete(user.id) });
       } catch { /* noop */ }
 
       await refetchProfile();
