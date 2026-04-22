@@ -621,6 +621,54 @@ const WizardChecklist = ({
   </div>
 );
 
+const AutoSaveControls = ({
+  status,
+  delay,
+  onDelayChange,
+  onRetry,
+}: {
+  status: 'idle' | 'saving' | 'saved' | 'error';
+  delay: 1000 | 2000 | 3000;
+  onDelayChange: (delay: 1000 | 2000 | 3000) => void;
+  onRetry: () => void;
+}) => (
+  <div className="mb-4 rounded-xl border border-border bg-muted/20 p-3">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p className="text-[11px] font-bold text-foreground">Auto-save</p>
+        <p className={`text-[11px] font-medium ${status === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}>
+          {status === 'saving'
+            ? 'Salvando automaticamente…'
+            : status === 'saved'
+              ? 'Alterações salvas'
+              : status === 'error'
+                ? 'Erro ao salvar alterações'
+                : 'Pronto para salvar'}
+        </p>
+      </div>
+      <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-1">
+        {[1000, 2000, 3000].map((value) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => onDelayChange(value as 1000 | 2000 | 3000)}
+            className={`rounded-md px-2 py-1 text-[10px] font-bold transition-colors ${
+              delay === value ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {value / 1000}s
+          </button>
+        ))}
+      </div>
+    </div>
+    {status === 'error' && (
+      <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={onRetry}>
+        Tentar salvar novamente
+      </Button>
+    )}
+  </div>
+);
+
 const Step1Identity = ({
   existingProfileType,
   onContinueProfileUpdate,
