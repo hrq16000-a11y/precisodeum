@@ -313,7 +313,7 @@ const BasicOnboardingWizard = () => {
     const target = reviewReturnStep ?? furthestStep;
     setReviewReturnStep(null);
     setStep(target);
-    await persistStep(furthestStep, currentStepDraft(step));
+    await persistStep(furthestStep, currentProfilePatch());
   };
 
   const startReviewAll = () => {
