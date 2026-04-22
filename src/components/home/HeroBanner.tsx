@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
 import UrgencyToggle from '@/components/home/UrgencyToggle';
@@ -159,7 +160,7 @@ const HeroBanner = () => {
           </Suspense>
           <div className="mt-3 flex min-h-[2.5rem] flex-col items-center justify-center gap-2 text-xs text-primary-foreground/70 sm:min-h-[1.25rem] sm:flex-row sm:gap-3">
             <span className="inline-flex items-center gap-2">
-              <Icon name="MapPin" className="h-3.5 w-3.5 text-secondary" />
+              <Icon icon={MapPin} className="h-3.5 w-3.5 text-secondary" />
               <span>{geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
             </span>
             <UrgencyToggle
