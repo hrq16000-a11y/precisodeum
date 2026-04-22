@@ -188,9 +188,14 @@ const BasicOnboardingWizard = () => {
 
     setAutoSaveStatus('saving');
     const timer = window.setTimeout(() => {
-      supabase.from('profiles').update(patch as any).eq('id', user.id)
-        .then(() => setAutoSaveStatus('saved'))
-        .catch(() => setAutoSaveStatus('idle'));
+      void (async () => {
+        try {
+          await supabase.from('profiles').update(patch as any).eq('id', user.id);
+          setAutoSaveStatus('saved');
+        } catch {
+          setAutoSaveStatus('idle');
+        }
+      })();
     }, 900);
 
     return () => window.clearTimeout(timer);
