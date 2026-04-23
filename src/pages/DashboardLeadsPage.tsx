@@ -10,7 +10,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 
@@ -29,6 +28,12 @@ const normalizeStatus = (status?: string): LeadStatus => {
   if (status === 'in_progress' || status === 'completed') return status;
   return 'new';
 };
+
+const sortLeads = (items: any[]) => [...items].sort((a, b) => {
+  const scoreDiff = (Number(b.lead_score) || 0) - (Number(a.lead_score) || 0);
+  if (scoreDiff !== 0) return scoreDiff;
+  return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+});
 
 const DashboardLeadsPage = () => {
   const { user, provider, loading } = useAuth();
@@ -65,12 +70,13 @@ const DashboardLeadsPage = () => {
     const draft = historyDrafts[leadId]?.trim();
     if (!draft) return;
     const timestamp = new Date().toLocaleString('pt-BR');
+    const currentLead = leads.find(l => l.id === leadId);
+    const nextMessage = `${currentLead?.message || ''}\n\n[${timestamp}] ${draft}`.trim();
     setLeads(prev => prev.map(lead => {
       if (lead.id !== leadId) return lead;
-      const previous = lead.message ? `${lead.message}\n\n` : '';
-      return { ...lead, message: `${previous}[${timestamp}] ${draft}` };
+      return { ...lead, message: nextMessage };
     }));
-    supabase.from('leads').update({ message: `${leads.find(l => l.id === leadId)?.message || ''}\n\n[${timestamp}] ${draft}`.trim() }).eq('id', leadId).then(({ error }) => {
+    supabase.from('leads').update({ message: nextMessage }).eq('id', leadId).then(({ error }) => {
       if (error) toast.error('Erro ao salvar histórico');
     });
     setHistoryDrafts(prev => ({ ...prev, [leadId]: '' }));
@@ -86,7 +92,23 @@ const DashboardLeadsPage = () => {
       .select('*')
       .eq('provider_id', provider.id)
       .order('lead_score', { ascending: false })
-      .then(({ data }) => { if (data) setLeads(data); });
+      .then(({ data }) => { if (data) setLeads(sortLeads(data)); });
+
+    const channel = supabase
+      .channel(`dashboard-leads-${provider.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: `provider_id=eq.${provider.id}` }, (payload) => {
+        setLeads(prev => sortLeads([payload.new, ...prev.filter(lead => lead.id !== (payload.new as any).id)]));
+        toast.info('Novo lead recebido');
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'leads', filter: `provider_id=eq.${provider.id}` }, (payload) => {
+        setLeads(prev => sortLeads(prev.map(lead => lead.id === (payload.new as any).id ? payload.new : lead)));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'leads', filter: `provider_id=eq.${provider.id}` }, (payload) => {
+        setLeads(prev => prev.filter(lead => lead.id !== (payload.old as any).id));
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [provider]);
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
