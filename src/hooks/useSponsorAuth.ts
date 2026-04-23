@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { hasSponsorFeatureAccess, isSponsorSubscriptionActive, type SponsorSubscription } from '@/lib/sponsorAccess';
-import { toast } from 'sonner';
 
 export type SponsorPermissionKey = 'banners' | 'campanhas' | 'metricas' | 'contratos' | 'notificacoes' | 'dados';
 
@@ -134,7 +133,6 @@ export function useSponsorAuth(redirectIfNot = true) {
         },
         () => {
           void refetch();
-          toast.info('Status da assinatura atualizado');
         },
       )
       .subscribe();
