@@ -5326,6 +5326,10 @@ export type Database = {
         }
         Returns: Json
       }
+      current_user_owns_sponsor: {
+        Args: { _sponsor_id: string }
+        Returns: boolean
+      }
       derive_user_ref: { Args: { _uuid: string }; Returns: string }
       distribute_open_lead: { Args: { _open_lead_id: string }; Returns: number }
       effective_user_permissions: { Args: { _user_id: string }; Returns: Json }
@@ -5541,6 +5545,15 @@ export type Database = {
             }
             Returns: undefined
           }
+      log_sponsor_access_event: {
+        Args: {
+          _details?: Json
+          _event_type: string
+          _resource_path: string
+          _sponsor_id: string
+        }
+        Returns: undefined
+      }
       nearby_providers: {
         Args: {
           _category_slug?: string
@@ -5590,6 +5603,10 @@ export type Database = {
       register_daily_checkin: { Args: never; Returns: Json }
       register_referral: {
         Args: { _referral_code: string; _referred_id: string }
+        Returns: boolean
+      }
+      sponsor_has_active_plan: {
+        Args: { _sponsor_id: string }
         Returns: boolean
       }
       track_sponsor_metric: {
