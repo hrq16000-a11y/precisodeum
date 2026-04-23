@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Megaphone, Settings, Shield, Globe } from 'lucide-react';
+import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Megaphone, Settings, Shield, Globe, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ const sponsorMenu: { label: string; icon: any; path: string; permKey?: SponsorPe
   { label: 'Métricas', icon: BarChart3, path: '/sponsor-panel/metricas', permKey: 'metricas', requiresActivePlan: true },
   { label: 'Contratos', icon: FileText, path: '/sponsor-panel/contratos', permKey: 'contratos' },
   { label: 'Notificações', icon: Bell, path: '/sponsor-panel/notificacoes', permKey: 'notificacoes' },
+  { label: 'Planos e Assinatura', icon: CreditCard, path: '/espacos-patrocinio' },
   { label: 'Meus Dados', icon: Settings, path: '/sponsor-panel/dados', permKey: 'dados' },
 ];
 
