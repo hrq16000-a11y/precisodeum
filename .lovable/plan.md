@@ -1,36 +1,105 @@
 
+Vou implementar usando a logo atual do projeto como imagem base.
 
-## Diagnosis
+## O que será feito
 
-The fatal error `Cannot read properties of undefined (reading 'unstable_scheduleCallback')` occurs because `react-dom` internally imports the `scheduler` package, but `scheduler` is not present in `node_modules/`. The Vite deduplication added previously cannot help if the package does not exist on disk. The recovery buttons in the HTML shell do not fix this because the problem is a missing dependency, not a cache issue.
+1. **Gerar ícones web/PWA a partir da logo atual**
+   - Usar a imagem configurada em `src/lib/siteAssets.ts` como fonte.
+   - Gerar PNGs nos tamanhos padrão:
+     - `16x16`
+     - `32x32`
+     - `48x48`
+     - `72x72`
+     - `96x96`
+     - `128x128`
+     - `144x144`
+     - `152x152`
+     - `167x167`
+     - `180x180`
+     - `192x192`
+     - `384x384`
+     - `512x512`
+   - Gerar também `favicon.ico` com múltiplos tamanhos internos.
+   - Salvar tudo em `public/icons/` com nomes versionados por hash, para evitar cache antigo.
 
-## Plan (4 rules of fault tolerance)
+2. **Atualizar o `manifest.json`**
+   - Atualizar:
+     - `name`: `Preciso de um Profissional`
+     - `short_name`: `Preciso de Um`
+     - `start_url`: `/?source=pwa`
+     - `theme_color`: `#F97316`
+     - `background_color`: `#ffffff`
+   - Substituir os ícones atuais pelos arquivos recém-gerados.
+   - Incluir ícones PWA principais com `purpose: "any maskable"`.
+   - Atualizar os ícones dos atalhos do app para apontarem para os novos arquivos versionados.
 
-### 1. Fix the fatal dependency error
+3. **Atualizar o `<head>` global**
+   - Atualizar `index.html`, que atende tanto páginas públicas quanto dashboards.
+   - Adicionar/ajustar:
+     - `favicon.ico`
+     - PNG favicons
+     - `apple-touch-icon` para cada tamanho Apple gerado
+     - `manifest`
+     - `theme-color`
+     - `apple-mobile-web-app-title`
+   - Aplicar cache-busting nos links do head usando versão/hash.
 
-- Add `scheduler` as an explicit dependency in `package.json` (version `^0.23.2`, matching what `react-dom@18.3.1` requires).
-- Keep the existing Vite config (`optimizeDeps.include`, `resolve.dedupe`, `manualChunks`) which correctly groups `scheduler` with React.
+4. **Gerar startup images para iOS**
+   - Criar imagens de inicialização com a logo centralizada sobre o fundo do app.
+   - Gerar tamanhos comuns para iPhone/iPad, incluindo orientações principais.
+   - Adicionar tags:
+     ```html
+     <link rel="apple-touch-startup-image" ...>
+     ```
+   - Usar media queries adequadas para largura, altura, device pixel ratio e orientação.
 
-### 2. Global Error Boundary shield (App.tsx)
+5. **Adicionar automação**
+   - Criar um script dedicado, por exemplo:
+     ```text
+     scripts/generate-pwa-icons.mjs
+     ```
+   - O script irá:
+     - Ler a logo atual.
+     - Gerar PNGs, ICO e startup images.
+     - Calcular hash/versionamento.
+     - Atualizar `public/manifest.json`.
+     - Atualizar o bloco de ícones no `index.html`.
+     - Validar se todos os arquivos referenciados existem.
 
-- Wrap the entire rendered tree inside `App.tsx` (everything inside `QueryClientProvider`) with `ErrorGuard` using `componentName="App"`.
-- This ensures that if any component crashes at any level, the app shows a clean fallback UI instead of a white screen or infinite splash. Navigation remains accessible via the fallback's "Go Home" and "Go Back" buttons.
+6. **Ajustar cache**
+   - Atualizar `public/_headers` para garantir que:
+     - ícones versionados possam usar cache longo.
+     - `manifest.json` continue revalidando corretamente.
+     - `favicon.ico` não fique preso em cache antigo sem controle.
+   - Usar nomes com hash e/ou query string versionada nos links críticos.
 
-### 3. Optimistic loading -- no full-screen block
+7. **Validação**
+   - Executar o script de geração.
+   - Conferir se todos os caminhos do `head` e do `manifest.json` apontam para arquivos existentes.
+   - Validar o build do projeto.
+   - Confirmar que os ícones ficam disponíveis para:
+     - páginas públicas
+     - dashboards
+     - instalação PWA
+     - Apple touch icon
+     - favicon padrão do navegador
+     - startup images iOS
 
-- In `useAuth.tsx`, change `loading` initial state from `true` to `false`. The AuthProvider will render children immediately. Components that need auth data already check `loading` individually.
-- Remove the `setLoading(true)` call inside `onAuthStateChange` for the `SIGNED_IN` path -- profile fetching happens in the background while the UI is already interactive. Keep `setLoading(true)` only in the initial `getSession` path, with a 3-second safety timeout.
+## Arquivos que serão alterados
 
-### 4. Network/session resilience (3-second timeout)
+```text
+index.html
+public/manifest.json
+public/_headers
+package.json
+scripts/generate-pwa-icons.mjs
+public/icons/*
+public/favicon.ico
+```
 
-- Add a `setTimeout(3000)` safety net in the `useEffect` of `AuthProvider`: if `getSession()` plus `fetchProfile()` haven't resolved in 3 seconds, force `setLoading(false)` so the app renders in "logged out" state with empty structure.
-- Wrap `fetchProfile` calls in try/catch to prevent unhandled rejections from blocking state updates.
+## Observações técnicas
 
-### Files changed
-
-| File | Change |
-|------|--------|
-| `package.json` | Add `"scheduler": "^0.23.2"` to dependencies |
-| `src/App.tsx` | Wrap root tree with `ErrorGuard componentName="App"` |
-| `src/hooks/useAuth.tsx` | Set `loading` default to `false`, add 3s safety timeout, try/catch on fetchProfile |
-
+- Não vou adicionar novo Service Worker nem alterar a política PWA atual além dos ícones/metadados solicitados.
+- Como o app é SPA, atualizar o `index.html` garante consistência em dashboards e páginas públicas.
+- A geração usará `sharp`, que já existe nas dependências do projeto.
+- O versionamento será derivado do conteúdo da logo/ícones para evitar que navegadores mantenham favicons antigos.
