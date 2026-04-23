@@ -2,6 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { isSponsorSubscriptionActive, type SponsorSubscription } from '@/lib/sponsorAccess';
 
 interface SponsorProtectedRouteProps {
   children: React.ReactNode;
