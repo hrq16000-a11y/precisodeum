@@ -21,7 +21,7 @@ import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const SponsorDashboardPage = () => {
-  const { sponsor, sponsorContact, loading } = useSponsorAuth();
+  const { sponsor, sponsorContact, subscription, hasActivePlan, loading } = useSponsorAuth();
 
   const { data: campaigns = [] } = useQuery({
     queryKey: ['sponsor-campaigns', sponsor?.id],
@@ -181,8 +181,9 @@ const SponsorDashboardPage = () => {
   // Alerts
   const alerts: { text: string; type: 'warn' | 'info' }[] = [];
   if (!sponsor?.image_url) alerts.push({ text: 'Você ainda não enviou um banner. Envie agora!', type: 'warn' });
-  if (daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0) alerts.push({ text: `Seu patrocínio expira em ${daysRemaining} dia(s)!`, type: 'warn' });
-  if (daysRemaining !== null && daysRemaining <= 0) alerts.push({ text: 'Seu patrocínio expirou. Entre em contato para renovar.', type: 'warn' });
+  if (!hasActivePlan) alerts.push({ text: 'Sua assinatura não está ativa. Recursos de banners, campanhas, métricas e página pública estão bloqueados até a regularização.', type: 'warn' });
+  if (hasActivePlan && daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0) alerts.push({ text: `Seu patrocínio expira em ${daysRemaining} dia(s)!`, type: 'warn' });
+  if (hasActivePlan && daysRemaining !== null && daysRemaining <= 0) alerts.push({ text: 'Seu patrocínio expirou. Entre em contato para renovar.', type: 'warn' });
   if (activeCampaigns === 0 && campaigns.length === 0) alerts.push({ text: 'Crie sua primeira campanha para organizar seus anúncios.', type: 'info' });
 
   return (
@@ -193,7 +194,7 @@ const SponsorDashboardPage = () => {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">
-                Olá, {sponsorContact?.contact_name || sponsor?.title} 👋
+                Olá, {sponsorContact?.contact_name || sponsor?.title}
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Painel do patrocinador — {sponsor?.title}
@@ -205,7 +206,7 @@ const SponsorDashboardPage = () => {
                 Gerar Relatório Mensal (PDF)
               </Button>
               <Badge variant="outline" className="capitalize gap-1">
-                <Crown className="w-3 h-3" /> {sponsor?.tier || 'free'}
+                <Crown className="w-3 h-3" /> {subscription?.sponsor_plans?.name || sponsor?.tier || 'free'}
               </Badge>
             </div>
           </div>
