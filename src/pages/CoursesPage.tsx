@@ -12,6 +12,9 @@ import CourseCard from '@/components/courses/CourseCard';
 import CoursesSkeleton from '@/components/courses/CoursesSkeleton';
 import CoursesCta from '@/components/courses/CoursesCta';
 import AdSlot from '@/components/ads/AdSlot';
+import CourseArticlesSection from '@/components/courses/CourseArticlesSection';
+import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 
 const CATEGORIES = [
   { value: 'all', label: 'Todas' },
@@ -40,6 +43,20 @@ const CoursesPage = () => {
   const [category, setCategory] = useState('all');
   const [provider, setProvider] = useState('all');
 
+  useSeoHead({
+    title: 'Cursos gratuitos',
+    description: 'Cursos gratuitos com filtros por área e matérias especiais sobre capacitação profissional.',
+    canonical: `${SITE_BASE_URL}/cursos`,
+  });
+
+  useJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Cursos gratuitos',
+    url: `${SITE_BASE_URL}/cursos`,
+    publisher: { '@type': 'Organization', name: 'Preciso de um', url: SITE_BASE_URL },
+  });
+
   const { data: courses = [], isLoading } = useQuery({
     queryKey: ['courses-public'],
     queryFn: async () => {
@@ -52,6 +69,23 @@ const CoursesPage = () => {
       return data || [];
     },
     staleTime: 1000 * 60 * 15,
+  });
+
+  const { data: courseArticles = [] } = useQuery({
+    queryKey: ['course-articles-public'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('blog_posts')
+        .select('id, title, slug, excerpt, cover_image_url, created_at, featured')
+        .eq('published', true)
+        .is('deleted_at', null)
+        .or('title.ilike.%curso%,excerpt.ilike.%curso%,content.ilike.%curso%,title.ilike.%SENAI%,title.ilike.%IFSP%')
+        .order('featured', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(12);
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 10,
   });
 
   const filtered = useMemo(() => {
@@ -209,6 +243,8 @@ const CoursesPage = () => {
 
         {/* Slot: Rodapé dos cursos */}
         <AdSlot slotSlug="courses-footer" layout="banner" className="mt-8 mb-4" />
+
+        <CourseArticlesSection articles={courseArticles} />
 
         <CoursesCta />
       </main>

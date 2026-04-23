@@ -257,6 +257,50 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_discover_previews: {
+        Row: {
+          created_at: string
+          description_variant: string
+          id: string
+          image_variant_url: string
+          post_id: string
+          ready_for_publish: boolean
+          title_variant: string
+          updated_at: string
+          variant_name: string
+        }
+        Insert: {
+          created_at?: string
+          description_variant: string
+          id?: string
+          image_variant_url: string
+          post_id: string
+          ready_for_publish?: boolean
+          title_variant: string
+          updated_at?: string
+          variant_name?: string
+        }
+        Update: {
+          created_at?: string
+          description_variant?: string
+          id?: string
+          image_variant_url?: string
+          post_id?: string
+          ready_for_publish?: boolean
+          title_variant?: string
+          updated_at?: string
+          variant_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_discover_previews_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_posts: {
         Row: {
           author_name: string

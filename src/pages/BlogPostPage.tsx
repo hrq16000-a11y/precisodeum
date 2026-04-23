@@ -5,11 +5,13 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CalendarDays, ArrowLeft, ExternalLink, User, Newspaper } from 'lucide-react';
+import { CalendarDays, ExternalLink, User, Newspaper } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { Navigate } from 'react-router-dom';
+import DiscoverPreviewSection from '@/components/courses/DiscoverPreviewSection';
 
 /** Strip HTML tags and decode common entities */
 function stripHtmlTags(rawHtml: string): string {
@@ -71,6 +73,20 @@ const BlogPostPage = () => {
     enabled: !!slug,
   });
 
+  const { data: discoverPreviews = [] } = useQuery({
+    queryKey: ['blog-discover-previews', post?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('blog_discover_previews' as any)
+        .select('id, variant_name, title_variant, description_variant, image_variant_url')
+        .eq('post_id', post!.id)
+        .eq('ready_for_publish', true)
+        .order('variant_name');
+      return data || [];
+    },
+    enabled: !!post?.id,
+  });
+
   useSeoHead({
     title: post?.title ? `${post.title} | Preciso de um` : 'Blog | Preciso de um',
     description: post?.excerpt || 'Confira as ultimas noticias e dicas do Preciso de um.',
@@ -80,6 +96,26 @@ const BlogPostPage = () => {
     articlePublishedTime: post?.created_at,
     articleModifiedTime: post?.updated_at,
     articleAuthor: post?.author_name,
+  });
+
+  useJsonLd(post ? {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title,
+    description: post.excerpt,
+    image: post.cover_image_url ? [post.cover_image_url] : undefined,
+    datePublished: post.created_at,
+    dateModified: post.updated_at,
+    author: { '@type': 'Organization', name: post.author_name || 'Preciso de um' },
+    publisher: { '@type': 'Organization', name: 'Preciso de um', url: SITE_BASE_URL },
+    mainEntityOfPage: `${SITE_BASE_URL}${window.location.pathname}`,
+  } : null);
+
+  useJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Preciso de um',
+    url: SITE_BASE_URL,
   });
 
   if (!blogEnabled) return <Navigate to="/" replace />;
@@ -185,9 +221,9 @@ const BlogPostPage = () => {
 
             {/* Source link at bottom */}
             {post.source_url && (
-              <div className="rounded-lg border border-border bg-muted/50 p-4">
+            <div className="rounded-lg border border-border bg-muted/50 p-4">
                 <p className="text-sm text-muted-foreground">
-                  📰 Fonte original:{' '}
+                  Fonte original:{' '}
                   <a
                     href={post.source_url}
                     target="_blank"
@@ -199,6 +235,8 @@ const BlogPostPage = () => {
                 </p>
               </div>
             )}
+
+            <DiscoverPreviewSection previews={discoverPreviews as any[]} />
           </article>
         )}
 

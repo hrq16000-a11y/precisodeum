@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import CategoryIcon from '@/components/CategoryIcon';
 import { ExternalLink, Award, Clock, Sparkles, Heart, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const LEVEL_COLORS: Record<string, string> = {
   iniciante: 'bg-success/15 text-success dark:bg-success/10',
@@ -39,7 +40,7 @@ const CourseCard = ({ course, index, featured = false }: CourseCardProps) => {
       viewport={{ once: true, margin: '-30px' }}
       transition={{ delay: index * 0.06, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
-      <Link to={`/cursos/${course.id}`} className="block group">
+      <div className="block group">
         <Card className={`
           h-full transition-all duration-400 ease-out overflow-hidden
           hover:shadow-xl hover:-translate-y-1.5 hover:shadow-accent/5
@@ -160,6 +161,17 @@ const CourseCard = ({ course, index, featured = false }: CourseCardProps) => {
               </div>
             )}
 
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button asChild variant="outline" size="sm" className="h-8 text-xs">
+                <Link to={`/cursos/${course.id}`}>Detalhes</Link>
+              </Button>
+              <Button asChild size="sm" className="h-8 gap-1 text-xs">
+                <a href={course.url} target="_blank" rel="noopener noreferrer">
+                  Inscrição <ExternalLink className="h-3 w-3" />
+                </a>
+              </Button>
+            </div>
+
             {/* Motivational footer */}
             <div className="mt-3 pt-2.5 border-t border-border/30 flex items-center gap-1.5">
               <Heart className="h-3 w-3 text-accent/50" />
@@ -170,7 +182,7 @@ const CourseCard = ({ course, index, featured = false }: CourseCardProps) => {
             </div>
           </CardContent>
         </Card>
-      </Link>
+      </div>
     </motion.div>
   );
 };
