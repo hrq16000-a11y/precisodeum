@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import SponsorLayout from '@/components/sponsor/SponsorLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,12 +29,16 @@ const SponsorFeatureGate = ({ children, feature }: SponsorFeatureGateProps) => {
     } as any).then(() => undefined);
   }, [feature, hasActivePlan, isAdmin, loading, location.pathname, sponsor?.id]);
 
+  useEffect(() => {
+    if (!loading && hasActivePlan && feature && !hasSponsorPermission(feature)) {
+      toast.warning('Seu plano não inclui este recurso. Você voltou para a visão geral.');
+    }
+  }, [feature, hasActivePlan, hasSponsorPermission, loading]);
+
   if (loading) return null;
   if (isAdmin || (hasActivePlan && (!feature || hasSponsorPermission(feature)))) return <>{children}</>;
   if (hasActivePlan && feature && !hasSponsorPermission(feature)) {
-    toast.warning('Seu plano não inclui este recurso. Você voltou para a visão geral.');
-    navigate('/sponsor-panel', { replace: true, state: { sponsorAccess: 'missing_permission', feature } });
-    return null;
+    return <Navigate to="/sponsor-panel" replace state={{ sponsorAccess: 'missing_permission', feature }} />;
   }
 
   const refreshStatus = async () => {
