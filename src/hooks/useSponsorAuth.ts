@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { hasSponsorFeatureAccess, isSponsorSubscriptionActive, type SponsorSubscription } from '@/lib/sponsorAccess';
 
 export type SponsorPermissionKey = 'banners' | 'campanhas' | 'metricas' | 'contratos' | 'notificacoes' | 'dados';
 
@@ -54,6 +55,7 @@ export function useSponsorAuth(redirectIfNot = true) {
   const { user, loading: authLoading } = useAuth();
   const [sponsorContact, setSponsorContact] = useState<SponsorContact | null>(null);
   const [sponsor, setSponsor] = useState<SponsorData | null>(null);
+  const [subscription, setSubscription] = useState<SponsorSubscription | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -75,9 +77,20 @@ export function useSponsorAuth(redirectIfNot = true) {
         .eq('id', (contact as any).sponsor_id)
         .single();
       setSponsor(sp as any);
+
+      const { data: sub } = await supabase
+        .from('sponsor_subscriptions')
+        .select('*, sponsor_plans(id, name, slug, features)')
+        .eq('sponsor_id', (contact as any).sponsor_id)
+        .in('status', ['active', 'trialing'])
+        .order('current_period_end', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+      setSubscription(sub as SponsorSubscription | null);
     } else {
       setSponsorContact(null);
       setSponsor(null);
+      setSubscription(null);
     }
   }, [user]);
 
@@ -109,7 +122,8 @@ export function useSponsorAuth(redirectIfNot = true) {
     ? ALL_PERMISSIONS
     : (sponsorContact?.permissions ?? ALL_PERMISSIONS);
 
-  const hasSponsorPermission = (key: SponsorPermissionKey) => permissions[key] === true;
+  const hasActivePlan = isAdmin || isSponsorSubscriptionActive(subscription);
+  const hasSponsorPermission = (key: SponsorPermissionKey) => hasSponsorFeatureAccess({ isAdmin, hasActivePlan, permissions, key });
 
-  return { sponsorContact, sponsor, loading: loading || authLoading, user, isAdmin, refetch, permissions, hasSponsorPermission };
+  return { sponsorContact, sponsor, subscription, hasActivePlan, loading: loading || authLoading, user, isAdmin, refetch, permissions, hasSponsorPermission };
 }
