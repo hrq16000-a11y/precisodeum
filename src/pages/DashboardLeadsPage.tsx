@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, CheckCircle2, Send } from 'lucide-react';
+import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, CheckCircle2, Send, History, Paperclip, Bell, BellOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { whatsappLink } from '@/lib/whatsapp';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,8 +12,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 
 type LeadStatus = 'new' | 'in_progress' | 'completed';
+
+interface LeadHistoryItem {
+  id: string;
+  lead_id: string;
+  author_id: string;
+  entry_type: 'message' | 'status_change' | string;
+  old_status: string | null;
+  new_status: string | null;
+  message: string | null;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  created_at: string;
+}
 
 const statusMeta: Record<LeadStatus, { label: string; icon: typeof Clock; className: string }> = {
   new: { label: 'Novo', icon: AlertTriangle, className: 'bg-accent/10 text-accent border-accent/20' },
@@ -36,19 +50,44 @@ const sortLeads = (items: any[]) => [...items].sort((a, b) => {
 });
 
 const DashboardLeadsPage = () => {
-  const { user, provider, loading } = useAuth();
+  const { user, provider, loading, profile } = useAuth();
   const { limits, canReceiveMoreLeads, remainingLeads, loading: limitsLoading } = useAccountLimits();
   const navigate = useNavigate();
   const [leads, setLeads] = useState<any[]>([]);
+  const [history, setHistory] = useState<Record<string, LeadHistoryItem[]>>({});
   const [statusFilter, setStatusFilter] = useState<'all' | LeadStatus>('all');
   const [historyDrafts, setHistoryDrafts] = useState<Record<string, string>>({});
+  const [audibleAlerts, setAudibleAlerts] = useState(false);
+  const leadsRef = useRef<any[]>([]);
 
   const filteredLeads = useMemo(() => (
     statusFilter === 'all' ? leads : leads.filter((lead) => normalizeStatus(lead.status) === statusFilter)
   ), [leads, statusFilter]);
 
+  const playAlert = useCallback(() => {
+    if (!audibleAlerts) return;
+    const audio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=');
+    audio.play().catch(() => {});
+  }, [audibleAlerts]);
+
+  const fetchHistory = useCallback(async (leadIds: string[]) => {
+    if (leadIds.length === 0) return;
+    const { data } = await supabase
+      .from('lead_history' as any)
+      .select('*')
+      .in('lead_id', leadIds)
+      .order('created_at', { ascending: false });
+
+    const grouped = ((data || []) as unknown as LeadHistoryItem[]).reduce<Record<string, LeadHistoryItem[]>>((acc, item) => {
+      acc[item.lead_id] = [...(acc[item.lead_id] || []), item];
+      return acc;
+    }, {});
+    setHistory(grouped);
+  }, []);
+
   const handleDelete = async (leadId: string) => {
-    const { error } = await supabase.from('leads').delete().eq('id', leadId);
+    if (!provider) return;
+    const { error } = await supabase.from('leads').delete().eq('id', leadId).eq('provider_id', provider.id);
     if (error) {
       toast.error('Erro ao excluir lead');
       return;
@@ -57,30 +96,39 @@ const DashboardLeadsPage = () => {
     toast.success('Lead excluído');
   };
 
-  const handleStatusChange = async (leadId: string, status: LeadStatus) => {
-    const { error } = await supabase.from('leads').update({ status }).eq('id', leadId);
+  const handleStatusChange = async (lead: any, status: LeadStatus) => {
+    if (!provider || normalizeStatus(lead.status) === status) return;
+    const { error } = await supabase.from('leads').update({ status }).eq('id', lead.id).eq('provider_id', provider.id);
     if (error) {
       toast.error('Erro ao atualizar status');
       return;
     }
-    setLeads(prev => prev.map(lead => lead.id === leadId ? { ...lead, status } : lead));
+    setLeads(prev => prev.map(item => item.id === lead.id ? { ...item, status } : item));
+    toast.success(`Status atualizado para ${statusMeta[status].label}`);
   };
 
-  const addHistoryMessage = (leadId: string) => {
+  const addHistoryMessage = async (leadId: string) => {
     const draft = historyDrafts[leadId]?.trim();
-    if (!draft) return;
-    const timestamp = new Date().toLocaleString('pt-BR');
-    const currentLead = leads.find(l => l.id === leadId);
-    const nextMessage = `${currentLead?.message || ''}\n\n[${timestamp}] ${draft}`.trim();
-    setLeads(prev => prev.map(lead => {
-      if (lead.id !== leadId) return lead;
-      return { ...lead, message: nextMessage };
-    }));
-    supabase.from('leads').update({ message: nextMessage }).eq('id', leadId).then(({ error }) => {
-      if (error) toast.error('Erro ao salvar histórico');
+    if (!draft || !user) return;
+
+    const { error } = await supabase.from('lead_history' as any).insert({
+      lead_id: leadId,
+      author_id: user.id,
+      entry_type: 'message',
+      message: draft,
     });
+
+    if (error) {
+      toast.error('Erro ao salvar mensagem');
+      return;
+    }
     setHistoryDrafts(prev => ({ ...prev, [leadId]: '' }));
+    toast.success('Mensagem adicionada ao histórico');
   };
+
+  useEffect(() => {
+    leadsRef.current = leads;
+  }, [leads]);
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');
@@ -92,24 +140,49 @@ const DashboardLeadsPage = () => {
       .select('*')
       .eq('provider_id', provider.id)
       .order('lead_score', { ascending: false })
-      .then(({ data }) => { if (data) setLeads(sortLeads(data)); });
+      .then(({ data }) => {
+        const nextLeads = sortLeads(data || []);
+        setLeads(nextLeads);
+        void fetchHistory(nextLeads.map(lead => lead.id));
+      });
 
-    const channel = supabase
+    const leadChannel = supabase
       .channel(`dashboard-leads-${provider.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: `provider_id=eq.${provider.id}` }, (payload) => {
         setLeads(prev => sortLeads([payload.new, ...prev.filter(lead => lead.id !== (payload.new as any).id)]));
         toast.info('Novo lead recebido');
+        playAlert();
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'leads', filter: `provider_id=eq.${provider.id}` }, (payload) => {
+        const before = leadsRef.current.find(lead => lead.id === (payload.new as any).id);
         setLeads(prev => sortLeads(prev.map(lead => lead.id === (payload.new as any).id ? payload.new : lead)));
+        if (before && before.status !== (payload.new as any).status) {
+          toast.info(`Status de ${((payload.new as any).client_name || 'um lead')} atualizado`);
+          playAlert();
+        }
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'leads', filter: `provider_id=eq.${provider.id}` }, (payload) => {
         setLeads(prev => prev.filter(lead => lead.id !== (payload.old as any).id));
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [provider]);
+    const historyChannel = supabase
+      .channel(`dashboard-lead-history-${provider.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lead_history' }, (payload) => {
+        const item = payload.new as LeadHistoryItem;
+        setHistory(prev => ({
+          ...prev,
+          [item.lead_id]: [item, ...(prev[item.lead_id] || []).filter(existing => existing.id !== item.id)],
+        }));
+        if (item.entry_type === 'status_change') toast.info('Histórico de status atualizado');
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(leadChannel);
+      supabase.removeChannel(historyChannel);
+    };
+  }, [provider, fetchHistory, playAlert]);
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
@@ -133,15 +206,22 @@ const DashboardLeadsPage = () => {
             <h1 className="font-display text-2xl font-bold text-foreground">Leads Recebidos</h1>
             <p className="mt-1 text-sm text-muted-foreground">{filteredLeads.length} de {leads.length} lead(s) exibido(s)</p>
           </div>
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'all' | LeadStatus)}>
-            <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os status</SelectItem>
-              <SelectItem value="new">Novo</SelectItem>
-              <SelectItem value="in_progress">Em andamento</SelectItem>
-              <SelectItem value="completed">Concluído</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <label className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground">
+              {audibleAlerts ? <Bell className="h-4 w-4 text-primary" /> : <BellOff className="h-4 w-4" />}
+              Alertas
+              <Switch checked={audibleAlerts} onCheckedChange={setAudibleAlerts} />
+            </label>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'all' | LeadStatus)}>
+              <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="new">Novo</SelectItem>
+                <SelectItem value="in_progress">Em andamento</SelectItem>
+                <SelectItem value="completed">Concluído</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </motion.div>
 
@@ -166,6 +246,7 @@ const DashboardLeadsPage = () => {
           {filteredLeads.map((lead) => {
             const status = normalizeStatus(lead.status);
             const StatusIcon = statusMeta[status].icon;
+            const leadHistory = history[lead.id] || [];
             return (
               <motion.div key={lead.id} layout variants={itemVariants} exit={{ opacity: 0, x: -80, transition: { duration: 0.3 } }} whileHover={{ y: -2, scale: 1.005 }} className="rounded-xl border border-border bg-card p-4 shadow-card transition-shadow hover:shadow-card-hover">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -176,11 +257,11 @@ const DashboardLeadsPage = () => {
                       <Badge variant="outline" className={`gap-1 ${statusMeta[status].className}`}><StatusIcon className="h-3 w-3" />{statusMeta[status].label}</Badge>
                     </div>
                     {lead.service_needed && <p className="text-xs font-medium text-accent">{lead.service_needed}</p>}
-                    {lead.message && <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-muted/40 p-3 font-sans text-xs text-muted-foreground">{lead.message}</pre>}
+                    {lead.message && <p className="mt-2 rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">{lead.message}</p>}
                   </div>
                   <div className="shrink-0 space-y-2 sm:text-right">
                     <p className="text-xs text-muted-foreground">{new Date(lead.created_at).toLocaleDateString('pt-BR')}</p>
-                    <Select value={status} onValueChange={(value) => handleStatusChange(lead.id, value as LeadStatus)}>
+                    <Select value={status} onValueChange={(value) => handleStatusChange(lead, value as LeadStatus)}>
                       <SelectTrigger className="h-8 w-full sm:w-40"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="new">Novo</SelectItem>
@@ -190,14 +271,38 @@ const DashboardLeadsPage = () => {
                     </Select>
                     <div className="flex items-center gap-2 sm:justify-end">
                       <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"><Phone className="h-3 w-3" /> {lead.phone}</a>
-                      <motion.a href={whatsappLink(lead.phone, `Olá ${lead.client_name}, recebi sua solicitação${lead.service_needed ? ` sobre "${lead.service_needed}"` : ''}. Como posso ajudar?`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-full bg-accent p-1.5 text-accent-foreground transition-colors hover:bg-accent/90" title="Responder pelo WhatsApp" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}><MessageCircle className="h-4 w-4" /></motion.a>
+                      <motion.a href={whatsappLink(lead.phone, `Olá ${lead.client_name}, recebi sua solicitação${lead.service_needed ? ` sobre &quot;${lead.service_needed}&quot;` : ''}. Como posso ajudar?`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-full bg-accent p-1.5 text-accent-foreground transition-colors hover:bg-accent/90" title="Responder pelo WhatsApp" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}><MessageCircle className="h-4 w-4" /></motion.a>
                       <motion.button onClick={() => handleDelete(lead.id)} className="inline-flex items-center justify-center rounded-full bg-destructive/10 p-1.5 text-destructive transition-colors hover:bg-destructive/20" title="Excluir lead" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}><Trash2 className="h-4 w-4" /></motion.button>
                     </div>
                   </div>
                 </div>
-                <div className="mt-3 flex gap-2">
-                  <Input value={historyDrafts[lead.id] || ''} onChange={(event) => setHistoryDrafts(prev => ({ ...prev, [lead.id]: event.target.value }))} placeholder="Adicionar histórico de conversa" className="h-9 text-xs" maxLength={500} />
-                  <Button size="sm" variant="outline" onClick={() => addHistoryMessage(lead.id)} className="gap-1"><Send className="h-3 w-3" />Salvar</Button>
+
+                <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
+                  <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-foreground">
+                    <History className="h-4 w-4 text-primary" /> Timeline e auditoria
+                  </div>
+                  <div className="space-y-3">
+                    {leadHistory.length === 0 && <p className="text-xs text-muted-foreground">Nenhuma movimentação registrada ainda.</p>}
+                    {leadHistory.map(item => {
+                      const isStatus = item.entry_type === 'status_change';
+                      return (
+                        <div key={item.id} className="border-l-2 border-primary/30 pl-3">
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
+                            <Badge variant="outline">{isStatus ? 'Status' : 'Mensagem'}</Badge>
+                            <span className="text-muted-foreground">{item.author_id === user?.id ? (profile?.name || 'Você') : 'Sistema/Equipe'}</span>
+                            <span className="text-muted-foreground">{new Date(item.created_at).toLocaleString('pt-BR')}</span>
+                          </div>
+                          {isStatus && <p className="mt-1 text-xs text-muted-foreground">{statusMeta[normalizeStatus(item.old_status || undefined)].label} → {statusMeta[normalizeStatus(item.new_status || undefined)].label}</p>}
+                          {item.message && <p className="mt-1 text-sm text-foreground">{item.message}</p>}
+                          {item.attachment_url && <a className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline" href={item.attachment_url} target="_blank" rel="noreferrer"><Paperclip className="h-3 w-3" />{item.attachment_name || 'Anexo'}</a>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <Input value={historyDrafts[lead.id] || ''} onChange={(event) => setHistoryDrafts(prev => ({ ...prev, [lead.id]: event.target.value }))} placeholder="Adicionar mensagem ao histórico" className="h-9 text-xs" maxLength={500} />
+                    <Button size="sm" variant="outline" onClick={() => addHistoryMessage(lead.id)} className="gap-1"><Send className="h-3 w-3" />Salvar</Button>
+                  </div>
                 </div>
               </motion.div>
             );

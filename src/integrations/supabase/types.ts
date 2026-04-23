@@ -1467,6 +1467,53 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_history: {
+        Row: {
+          attachment_name: string | null
+          attachment_url: string | null
+          author_id: string
+          created_at: string
+          entry_type: string
+          id: string
+          lead_id: string
+          message: string | null
+          new_status: string | null
+          old_status: string | null
+        }
+        Insert: {
+          attachment_name?: string | null
+          attachment_url?: string | null
+          author_id: string
+          created_at?: string
+          entry_type?: string
+          id?: string
+          lead_id: string
+          message?: string | null
+          new_status?: string | null
+          old_status?: string | null
+        }
+        Update: {
+          attachment_name?: string | null
+          attachment_url?: string | null
+          author_id?: string
+          created_at?: string
+          entry_type?: string
+          id?: string
+          lead_id?: string
+          message?: string | null
+          new_status?: string | null
+          old_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_history_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           client_name: string
