@@ -7,6 +7,7 @@
     "dev": "vite",
     "assets:logo": "node scripts/generate-logo-webp.mjs",
     "assets:logo:upload": "node scripts/generate-logo-webp.mjs --upload",
+    "assets:pwa-icons": "node scripts/generate-pwa-icons.mjs",
     "prebuild": "npm run assets:logo",
     "build": "vite build",
     "prebuild:dev": "npm run assets:logo",
