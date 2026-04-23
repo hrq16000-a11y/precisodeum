@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { hasSponsorFeatureAccess, isSponsorSubscriptionActive, type SponsorSubscription } from '@/lib/sponsorAccess';
+import { toast } from 'sonner';
 
 export type SponsorPermissionKey = 'banners' | 'campanhas' | 'metricas' | 'contratos' | 'notificacoes' | 'dados';
 
@@ -117,6 +118,31 @@ export function useSponsorAuth(redirectIfNot = true) {
       navigate('/dashboard', { replace: true });
     }
   }, [loading, authLoading, sponsorContact, isAdmin, user, redirectIfNot, navigate]);
+
+  useEffect(() => {
+    if (!sponsorContact?.sponsor_id) return;
+
+    const channel = supabase
+      .channel(`sponsor-subscription-${sponsorContact.sponsor_id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sponsor_subscriptions',
+          filter: `sponsor_id=eq.${sponsorContact.sponsor_id}`,
+        },
+        () => {
+          void refetch();
+          toast.info('Status da assinatura atualizado');
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sponsorContact?.sponsor_id, refetch]);
 
   const permissions: SponsorPermissions = isAdmin
     ? ALL_PERMISSIONS
