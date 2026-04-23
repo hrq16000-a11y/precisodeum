@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, CheckCircle2, Send, History, Paperclip, Bell, BellOff } from 'lucide-react';
@@ -58,6 +58,7 @@ const DashboardLeadsPage = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | LeadStatus>('all');
   const [historyDrafts, setHistoryDrafts] = useState<Record<string, string>>({});
   const [audibleAlerts, setAudibleAlerts] = useState(false);
+  const leadsRef = useRef<any[]>([]);
 
   const filteredLeads = useMemo(() => (
     statusFilter === 'all' ? leads : leads.filter((lead) => normalizeStatus(lead.status) === statusFilter)
@@ -77,7 +78,7 @@ const DashboardLeadsPage = () => {
       .in('lead_id', leadIds)
       .order('created_at', { ascending: false });
 
-    const grouped = ((data || []) as LeadHistoryItem[]).reduce<Record<string, LeadHistoryItem[]>>((acc, item) => {
+    const grouped = ((data || []) as unknown as LeadHistoryItem[]).reduce<Record<string, LeadHistoryItem[]>>((acc, item) => {
       acc[item.lead_id] = [...(acc[item.lead_id] || []), item];
       return acc;
     }, {});
@@ -126,6 +127,10 @@ const DashboardLeadsPage = () => {
   };
 
   useEffect(() => {
+    leadsRef.current = leads;
+  }, [leads]);
+
+  useEffect(() => {
     if (!loading && !user) navigate('/login');
   }, [loading, user, navigate]);
 
@@ -149,7 +154,7 @@ const DashboardLeadsPage = () => {
         playAlert();
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'leads', filter: `provider_id=eq.${provider.id}` }, (payload) => {
-        const before = leads.find(lead => lead.id === (payload.new as any).id);
+        const before = leadsRef.current.find(lead => lead.id === (payload.new as any).id);
         setLeads(prev => sortLeads(prev.map(lead => lead.id === (payload.new as any).id ? payload.new : lead)));
         if (before && before.status !== (payload.new as any).status) {
           toast.info(`Status de ${((payload.new as any).client_name || 'um lead')} atualizado`);
@@ -177,7 +182,7 @@ const DashboardLeadsPage = () => {
       supabase.removeChannel(leadChannel);
       supabase.removeChannel(historyChannel);
     };
-  }, [provider, fetchHistory, playAlert, leads]);
+  }, [provider, fetchHistory, playAlert]);
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
