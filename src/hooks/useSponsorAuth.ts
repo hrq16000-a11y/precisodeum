@@ -118,6 +118,30 @@ export function useSponsorAuth(redirectIfNot = true) {
     }
   }, [loading, authLoading, sponsorContact, isAdmin, user, redirectIfNot, navigate]);
 
+  useEffect(() => {
+    if (!sponsorContact?.sponsor_id) return;
+
+    const channel = supabase
+      .channel(`sponsor-subscription-${sponsorContact.sponsor_id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sponsor_subscriptions',
+          filter: `sponsor_id=eq.${sponsorContact.sponsor_id}`,
+        },
+        () => {
+          void refetch();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sponsorContact?.sponsor_id, refetch]);
+
   const permissions: SponsorPermissions = isAdmin
     ? ALL_PERMISSIONS
     : (sponsorContact?.permissions ?? ALL_PERMISSIONS);

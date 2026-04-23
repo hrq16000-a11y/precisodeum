@@ -1,5 +1,5 @@
-import { useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useCallback, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import SponsorLayout from '@/components/sponsor/SponsorLayout';
 import { useSponsorAuth } from '@/hooks/useSponsorAuth';
 import { useQuery } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import {
   BarChart3, Eye, MousePointerClick, Image, FileText, Megaphone,
   TrendingUp, ArrowRight, Bell, Crown, Calendar, CheckCircle2,
-  AlertTriangle, Upload, Zap, FileDown
+  AlertTriangle, Upload, Zap, FileDown, RefreshCw
 } from 'lucide-react';
 import { exportSponsorPdf } from '@/lib/exportSponsorPdf';
 import { SponsorImage } from '@/components/SponsorImage';
@@ -19,9 +19,12 @@ import SponsorApprovalCelebration from '@/components/sponsor/SponsorApprovalCele
 import { motion } from 'framer-motion';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const SponsorDashboardPage = () => {
-  const { sponsor, sponsorContact, subscription, hasActivePlan, loading } = useSponsorAuth();
+  const { sponsor, sponsorContact, subscription, hasActivePlan, loading, refetch } = useSponsorAuth();
+  const location = useLocation();
+  const [refreshingSubscription, setRefreshingSubscription] = useState(false);
 
   const { data: campaigns = [] } = useQuery({
     queryKey: ['sponsor-campaigns', sponsor?.id],
@@ -144,6 +147,25 @@ const SponsorDashboardPage = () => {
     });
   }, [fullMetrics, sponsor]);
 
+  const handleRefreshSubscription = useCallback(async () => {
+    if (!sponsor?.id) return;
+    setRefreshingSubscription(true);
+    try {
+      await refetch();
+      await supabase.rpc('log_sponsor_access_event' as any, {
+        _sponsor_id: sponsor.id,
+        _event_type: 'subscription_refresh',
+        _resource_path: location.pathname,
+        _details: { source: 'sponsor_dashboard' },
+      } as any);
+      toast.success('Status da assinatura atualizado');
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível atualizar o status');
+    } finally {
+      setRefreshingSubscription(false);
+    }
+  }, [location.pathname, refetch, sponsor?.id]);
+
   const weeklyImpressions = useMemo(() => recentMetrics.filter(m => m.event_type === 'impression').reduce((s, m) => s + m.count, 0), [recentMetrics]);
   const weeklyClicks = useMemo(() => recentMetrics.filter(m => m.event_type === 'click').reduce((s, m) => s + m.count, 0), [recentMetrics]);
 
@@ -201,6 +223,10 @@ const SponsorDashboardPage = () => {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-2" onClick={handleRefreshSubscription} disabled={refreshingSubscription || !sponsor?.id}>
+                <RefreshCw className={`h-4 w-4 ${refreshingSubscription ? 'animate-spin' : ''}`} />
+                Atualizar status
+              </Button>
               <Button variant="default" size="sm" className="gap-2" onClick={handleExportPdf}>
                 <FileDown className="h-4 w-4" />
                 Gerar Relatório Mensal (PDF)

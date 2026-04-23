@@ -1,10 +1,13 @@
-import { Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import SponsorLayout from '@/components/sponsor/SponsorLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useSponsorAuth, type SponsorPermissionKey } from '@/hooks/useSponsorAuth';
-import { Crown, LockKeyhole } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { ArrowLeft, Crown, LockKeyhole, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface SponsorFeatureGateProps {
   children: React.ReactNode;
@@ -12,11 +15,44 @@ interface SponsorFeatureGateProps {
 }
 
 const SponsorFeatureGate = ({ children, feature }: SponsorFeatureGateProps) => {
-  const { loading, hasActivePlan, hasSponsorPermission, subscription, isAdmin } = useSponsorAuth(false);
+  const { loading, hasActivePlan, hasSponsorPermission, subscription, isAdmin, sponsor, refetch } = useSponsorAuth(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loading || hasActivePlan || isAdmin || !sponsor?.id) return;
+    supabase.rpc('log_sponsor_access_event' as any, {
+      _sponsor_id: sponsor.id,
+      _event_type: 'blocked_access',
+      _resource_path: location.pathname,
+      _details: { feature: feature || 'active_plan' },
+    } as any).then(() => undefined);
+  }, [feature, hasActivePlan, isAdmin, loading, location.pathname, sponsor?.id]);
+
+  useEffect(() => {
+    if (!loading && hasActivePlan && feature && !hasSponsorPermission(feature)) {
+      toast.warning('Seu plano não inclui este recurso. Você voltou para a visão geral.');
+    }
+  }, [feature, hasActivePlan, hasSponsorPermission, loading]);
 
   if (loading) return null;
   if (isAdmin || (hasActivePlan && (!feature || hasSponsorPermission(feature)))) return <>{children}</>;
-  if (hasActivePlan && feature && !hasSponsorPermission(feature)) return <Navigate to="/sponsor-panel" replace />;
+  if (hasActivePlan && feature && !hasSponsorPermission(feature)) {
+    return <Navigate to="/sponsor-panel" replace state={{ sponsorAccess: 'missing_permission', feature }} />;
+  }
+
+  const refreshStatus = async () => {
+    await refetch();
+    if (sponsor?.id) {
+      await supabase.rpc('log_sponsor_access_event' as any, {
+        _sponsor_id: sponsor.id,
+        _event_type: 'subscription_refresh',
+        _resource_path: location.pathname,
+        _details: { source: 'blocked_gate' },
+      } as any);
+    }
+    toast.success('Status da assinatura reconsultado');
+  };
 
   return (
     <SponsorLayout>
@@ -32,11 +68,19 @@ const SponsorFeatureGate = ({ children, feature }: SponsorFeatureGateProps) => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Este recurso fica disponível apenas para patrocinadores com assinatura ativa. Status atual: {subscription?.status || 'sem assinatura ativa'}.
+              Este recurso fica disponível apenas com assinatura ativa. Status atual: {subscription?.status || 'sem assinatura ativa'}.
             </p>
-            <Button asChild className="w-full sm:w-auto">
-              <a href="/espacos-patrocinio">Ver planos de patrocínio</a>
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button asChild className="w-full sm:w-auto">
+                <Link to="/espacos-patrocinio">Ver planos de patrocínio</Link>
+              </Button>
+              <Button variant="outline" className="w-full gap-2 sm:w-auto" onClick={refreshStatus}>
+                <RefreshCw className="h-4 w-4" /> Atualizar status
+              </Button>
+              <Button variant="ghost" className="w-full gap-2 sm:w-auto" onClick={() => navigate('/sponsor-panel', { replace: true })}>
+                <ArrowLeft className="h-4 w-4" /> Voltar ao painel
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
