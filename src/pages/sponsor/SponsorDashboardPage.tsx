@@ -352,20 +352,20 @@ const SponsorDashboardPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full justify-start" asChild>
-                  <Link to="/sponsor-panel/banners">
+                <Button variant="outline" size="sm" className="w-full justify-start" disabled={!hasActivePlan} asChild={hasActivePlan}>
+                  {hasActivePlan ? <Link to="/sponsor-panel/banners">
                     <Upload className="w-4 h-4 mr-2" /> {sponsor?.image_url ? 'Alterar Banner' : 'Enviar Banner'}
-                  </Link>
+                  </Link> : <span><Upload className="w-4 h-4 mr-2" /> Banner bloqueado</span>}
                 </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start" asChild>
-                  <Link to="/sponsor-panel/campanhas">
+                <Button variant="outline" size="sm" className="w-full justify-start" disabled={!hasActivePlan} asChild={hasActivePlan}>
+                  {hasActivePlan ? <Link to="/sponsor-panel/campanhas">
                     <Megaphone className="w-4 h-4 mr-2" /> {activeCampaigns > 0 ? `${activeCampaigns} campanha(s) ativa(s)` : 'Criar Campanha'}
-                  </Link>
+                  </Link> : <span><Megaphone className="w-4 h-4 mr-2" /> Campanhas bloqueadas</span>}
                 </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start" asChild>
-                  <Link to="/sponsor-panel/metricas">
+                <Button variant="outline" size="sm" className="w-full justify-start" disabled={!hasActivePlan} asChild={hasActivePlan}>
+                  {hasActivePlan ? <Link to="/sponsor-panel/metricas">
                     <BarChart3 className="w-4 h-4 mr-2" /> Ver Métricas Detalhadas
-                  </Link>
+                  </Link> : <span><BarChart3 className="w-4 h-4 mr-2" /> Métricas bloqueadas</span>}
                 </Button>
                 {notifications.length > 0 && (
                   <Button variant="outline" size="sm" className="w-full justify-start text-destructive" asChild>
