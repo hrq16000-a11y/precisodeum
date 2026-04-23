@@ -7,12 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { useSponsorAuth, type SponsorPermissionKey } from '@/hooks/useSponsorAuth';
 import Logo from '@/components/Logo';
 
-const sponsorMenu: { label: string; icon: any; path: string; permKey?: SponsorPermissionKey }[] = [
+const sponsorMenu: { label: string; icon: any; path: string; permKey?: SponsorPermissionKey; requiresActivePlan?: boolean }[] = [
   { label: 'Visão Geral', icon: LayoutDashboard, path: '/sponsor-panel' },
-  { label: 'Personalizar Página', icon: Globe, path: '/sponsor-panel/pagina' },
-  { label: 'Meus Banners', icon: Image, path: '/sponsor-panel/banners', permKey: 'banners' },
-  { label: 'Campanhas', icon: Megaphone, path: '/sponsor-panel/campanhas', permKey: 'campanhas' },
-  { label: 'Métricas', icon: BarChart3, path: '/sponsor-panel/metricas', permKey: 'metricas' },
+  { label: 'Personalizar Página', icon: Globe, path: '/sponsor-panel/pagina', requiresActivePlan: true },
+  { label: 'Meus Banners', icon: Image, path: '/sponsor-panel/banners', permKey: 'banners', requiresActivePlan: true },
+  { label: 'Campanhas', icon: Megaphone, path: '/sponsor-panel/campanhas', permKey: 'campanhas', requiresActivePlan: true },
+  { label: 'Métricas', icon: BarChart3, path: '/sponsor-panel/metricas', permKey: 'metricas', requiresActivePlan: true },
   { label: 'Contratos', icon: FileText, path: '/sponsor-panel/contratos', permKey: 'contratos' },
   { label: 'Notificações', icon: Bell, path: '/sponsor-panel/notificacoes', permKey: 'notificacoes' },
   { label: 'Meus Dados', icon: Settings, path: '/sponsor-panel/dados', permKey: 'dados' },
@@ -22,10 +22,13 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
-  const { hasSponsorPermission, isAdmin } = useSponsorAuth(false);
+  const { hasSponsorPermission, hasActivePlan, isAdmin, subscription } = useSponsorAuth(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const visibleMenu = sponsorMenu.filter(item => !item.permKey || hasSponsorPermission(item.permKey));
+  const visibleMenu = sponsorMenu.filter(item => {
+    if (item.requiresActivePlan && !hasActivePlan && !isAdmin) return false;
+    return !item.permKey || hasSponsorPermission(item.permKey);
+  });
 
   const handleSignOut = async () => {
     await signOut();
@@ -50,7 +53,9 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="flex h-14 min-w-0 items-center gap-2 overflow-hidden px-5 border-b border-sidebar-border">
           <Logo className="drop-shadow-sm" />
           <span className="sr-only">Menu do patrocinador</span>
-          <Badge variant="secondary" className="ml-auto text-[10px]">CRM</Badge>
+          <Badge variant={hasActivePlan ? 'secondary' : 'outline'} className="ml-auto text-[10px]">
+            {hasActivePlan ? (subscription?.sponsor_plans?.name || 'Ativo') : 'Sem plano ativo'}
+          </Badge>
         </div>
         <nav className="mt-2 space-y-0.5 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 56px - 80px)' }}>
           {visibleMenu.map((item) => {
@@ -69,9 +74,11 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
           })}
         </nav>
         <div className="absolute bottom-4 left-3 right-3 space-y-1">
-          <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-sidebar-foreground/70" asChild>
-            <Link to="/admin"><Shield className="h-4 w-4" /> Painel Admin</Link>
-          </Button>
+          {isAdmin && (
+            <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-sidebar-foreground/70" asChild>
+              <Link to="/admin"><Shield className="h-4 w-4" /> Painel Admin</Link>
+            </Button>
+          )}
           <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-sidebar-foreground/70" asChild>
             <Link to="/"><LayoutDashboard className="h-4 w-4" /> Ir ao Site</Link>
           </Button>
