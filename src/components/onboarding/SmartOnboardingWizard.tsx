@@ -136,6 +136,7 @@ const BasicOnboardingWizard = () => {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [taxId, setTaxId] = useState<string>(((profile as any)?.tax_id as string) || '');
   const [hasAwardedTaxIdPoints, setHasAwardedTaxIdPoints] = useState(false);
+  const [taxIdJustSaved, setTaxIdJustSaved] = useState(false);
 
   // Provider data
   const [savedProvider, setSavedProvider] = useState<any | null>(null);
