@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.migrate-portfolio-albums]
 verify_jwt = false
+
+[functions.import-jobs-rss]
+verify_jwt = false
