@@ -163,7 +163,16 @@ const SearchPage = () => {
   const nearestCity = nearestFiltered?.city;
   const totalDisplay = filteredLocal.length + filteredNearby.length + (showOutOfState ? filteredOutOfState.length : 0);
 
-  const activeFilterCount = [selectedCategory, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter !== 'all' ? 'x' : '', minRating > 0 ? 'x' : '', onlineOnly ? 'x' : '', acceptingOnly ? 'x' : ''].filter(Boolean).length;
+  const activeFilterCount = countActiveFilters({
+    selectedCategory,
+    selectedNeighborhood,
+    businessNameFilter,
+    phoneFilter,
+    featuredFilter: featuredFilter as 'all' | 'featured' | 'normal',
+    minRating,
+    onlineOnly,
+    acceptingOnly,
+  });
 
   const clearAllFilters = useCallback(() => {
     setSelectedCategory('');
