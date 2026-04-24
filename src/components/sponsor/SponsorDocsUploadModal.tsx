@@ -46,11 +46,12 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
 
     const logFailure = async (reason: string) => {
       try {
-        await supabase.from('sponsor_docs_history' as any).insert({
-          lead_id: leadId, doc_type: kind, action: 'validation_failed',
-          status: 'error', reason,
-          metadata: { file_name: file.name, file_size: file.size, file_type: file.type },
-        } as any);
+        await supabase.rpc('log_sponsor_doc_validation_failure' as any, {
+          _lead_id: leadId,
+          _doc_type: kind,
+          _reason: reason,
+          _metadata: { file_name: file.name, file_size: file.size, file_type: file.type },
+        });
       } catch { /* ignore */ }
     };
 
