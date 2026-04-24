@@ -1440,7 +1440,8 @@ const Step2Location = ({
       </Button>
     </div>
   </>
-);
+  );
+};
 
 // ─── Passo 3 ───
 const Step3Contact = ({
