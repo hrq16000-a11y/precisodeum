@@ -487,7 +487,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
             <Button
               variant="accent"
               disabled={photoCount === 0}
-              onClick={() => onComplete(createdServiceId!)}
+              onClick={() => { try { localStorage.removeItem(draftKey); } catch {} onComplete(createdServiceId!); }}
               title={photoCount === 0 ? 'Adicione ao menos 1 foto para concluir' : ''}
             >
               {photoCount === 0 ? 'Adicione 1 foto' : 'Concluir'} <Sparkles className="h-4 w-4 ml-1" />
