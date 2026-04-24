@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Trash2, RefreshCw, Rss, FileText, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, RefreshCw, Rss, FileText, Loader2, ExternalLink, Upload, RotateCcw } from 'lucide-react';
 import { parseJobText } from '@/lib/jobTextParser';
 
 export default function AdminJobsImportPage() {
@@ -260,6 +260,40 @@ export default function AdminJobsImportPage() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Label htmlFor="csv-upload" className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-input bg-background px-3 py-1.5 text-xs hover:bg-muted">
+                    <Upload className="h-3.5 w-3.5" /> Carregar arquivo CSV/TXT
+                  </Label>
+                  <input
+                    id="csv-upload"
+                    type="file"
+                    accept=".csv,.txt"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 2 * 1024 * 1024) { toast.error('Arquivo maior que 2MB.'); return; }
+                      const text = await file.text();
+                      // CSV → converte cada linha (após header) em bloco "Coluna: valor"
+                      if (file.name.toLowerCase().endsWith('.csv')) {
+                        const lines = text.split(/\r?\n/).filter(Boolean);
+                        if (lines.length < 2) { toast.error('CSV vazio.'); return; }
+                        const headers = lines[0].split(/[,;]/).map(h => h.trim());
+                        const blocks = lines.slice(1).map(row => {
+                          const cells = row.split(/[,;]/);
+                          return headers.map((h, i) => `${h}: ${(cells[i] ?? '').trim()}`).join('\n');
+                        });
+                        setPasteText(blocks.join('\n\n---\n\n'));
+                        toast.success(`${blocks.length} linhas carregadas do CSV. Clique em Pré-visualizar.`);
+                      } else {
+                        setPasteText(text);
+                        toast.success('Arquivo carregado.');
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                  <span className="text-[11px] text-muted-foreground">CSV deve ter cabeçalho na 1ª linha (ex: title,city,state,salary)</span>
+                </div>
                 <Textarea
                   rows={12}
                   value={pasteText}
@@ -305,15 +339,31 @@ export default function AdminJobsImportPage() {
             {logs.map((l: any) => (
               <Card key={l.id}>
                 <CardContent className="py-3 flex items-center justify-between flex-wrap gap-2">
-                  <div>
-                    <div className="font-medium text-sm">{l.source_name || '—'} <Badge variant="outline" className="ml-2 text-[10px]">{l.trigger_mode}</Badge></div>
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm flex items-center gap-2 flex-wrap">
+                      {l.source_name || '—'}
+                      <Badge variant="outline" className="text-[10px]">{l.trigger_mode}</Badge>
+                      {l.error_count > 0 && l.inserted_count === 0 && <Badge variant="destructive" className="text-[10px]">Falhou</Badge>}
+                      {l.inserted_count > 0 && <Badge variant="default" className="text-[10px]">OK</Badge>}
+                    </div>
                     <div className="text-xs text-muted-foreground">{new Date(l.created_at).toLocaleString('pt-BR')}</div>
                   </div>
-                  <div className="flex gap-3 text-xs">
+                  <div className="flex gap-3 text-xs items-center flex-wrap">
                     <span>Encontradas: <b>{l.found_count}</b></span>
-                    <span className="text-green-600">Novas: <b>{l.inserted_count}</b></span>
-                    <span className="text-amber-600">Duplicadas: <b>{l.duplicate_count}</b></span>
+                    <span className="text-green-600">Aprovadas/Novas: <b>{l.inserted_count}</b></span>
+                    <span className="text-amber-600">Duplicadas/Pendentes: <b>{l.duplicate_count}</b></span>
                     {l.error_count > 0 && <span className="text-destructive">Erros: <b>{l.error_count}</b></span>}
+                    {l.source_id && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => runImport(l.source_id)}
+                        disabled={running !== null}
+                      >
+                        {running === l.source_id ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5 mr-1" />}
+                        Reprocessar
+                      </Button>
+                    )}
                   </div>
                   {l.error_message && <div className="w-full text-xs text-destructive">{l.error_message}</div>}
                 </CardContent>
