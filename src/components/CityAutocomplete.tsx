@@ -27,6 +27,8 @@ interface CityAutocompleteProps {
   value: { city: string; state: string };
   onChange: (next: { city: string; state: string }) => void;
   placeholder?: string;
+  /** Callback fired whenever the popover closes (selection, click outside, Esc). */
+  onClose?: () => void;
 }
 
 /**
