@@ -176,6 +176,8 @@ const AdminCoverageMapPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        <CoverageSearchStatsWidget />
       </div>
     </AdminLayout>
   );
