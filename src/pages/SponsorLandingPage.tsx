@@ -533,13 +533,22 @@ export default function SponsorLandingPage() {
             >
               <CheckCircle2 className="w-12 h-12 text-white" />
             </motion.div>
-            <h1 className="text-4xl font-bold text-foreground mb-4">Parabéns!</h1>
-            <p className="text-lg text-muted-foreground mb-4">
-              Seu interesse foi registrado com sucesso.
+            <h1 className="text-4xl font-bold text-foreground mb-4">Solicitação recebida!</h1>
+            <p className="text-lg text-muted-foreground mb-2">
+              Status: <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-sm font-semibold">Pendente de análise</span>
             </p>
-            <p className="text-sm text-muted-foreground mb-8">
-              Nossa equipe entrará em contato em até <strong className="text-foreground">24 horas úteis</strong> para configurar sua campanha.
+            <p className="text-sm text-muted-foreground mb-6">
+              Nossa equipe entrará em contato em até <strong className="text-foreground">24 horas úteis</strong>.
             </p>
+            <div className="text-left bg-muted/40 border border-border rounded-2xl p-5 mb-8">
+              <p className="text-sm font-semibold text-foreground mb-3">Próximos passos</p>
+              <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+                <li>Validação dos dados da empresa e do CNPJ informado.</li>
+                <li>Envio do contrato definitivo e da proposta comercial por e-mail.</li>
+                <li>Configuração da campanha e ativação dos slots de patrocínio.</li>
+                <li>Liberação do painel do patrocinador com métricas em tempo real.</li>
+              </ol>
+            </div>
             <Button onClick={() => window.location.href = '/'} size="lg" className="px-8">
               <ArrowRight className="w-4 h-4 mr-2" /> Voltar ao Início
             </Button>
