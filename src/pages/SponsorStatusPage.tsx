@@ -361,6 +361,16 @@ export default function SponsorStatusPage() {
         )}
       </main>
       <Footer />
+
+      {/* Resubmit modal — gated to authenticated owner of the lead */}
+      {lead && isOwner && (
+        <SponsorDocsUploadModal
+          leadId={lead.id}
+          open={resubmitOpen}
+          onOpenChange={setResubmitOpen}
+          onCompleted={() => { setResubmitOpen(false); load(lead.id); }}
+        />
+      )}
     </>
   );
 }
