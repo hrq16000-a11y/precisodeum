@@ -59,6 +59,8 @@ const AdminSponsorLeadsPage = () => {
   const [contactNote, setContactNote] = useState('');
   const [contactDialog, setContactDialog] = useState(false);
   const [contactItem, setContactItem] = useState<any>(null);
+  const [docsDialog, setDocsDialog] = useState(false);
+  const [docsItem, setDocsItem] = useState<any>(null);
 
   const bulk = useAdminBulkActions({
     table: 'sponsor_leads' as any,
@@ -355,6 +357,13 @@ const AdminSponsorLeadsPage = () => {
                         <Button size="icon" variant="ghost" className="h-7 w-7" title="Converter em patrocinador"
                           onClick={() => { setConvertItem(l); setConvertDialog(true); }}>
                           <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                        </Button>
+                      )}
+                      {/* Docs */}
+                      {(l.cnpj_document_url || l.banner_url) && (
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="Ver documentos enviados"
+                          onClick={() => { setDocsItem(l); setDocsDialog(true); }}>
+                          <FileText className="h-3.5 w-3.5 text-emerald-600" />
                         </Button>
                       )}
                       {/* Edit */}
