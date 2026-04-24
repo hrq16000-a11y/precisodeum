@@ -441,7 +441,7 @@ const DashboardProfilePage = () => {
                   </div>
                   <div>
                     <label className={labelCls}>WhatsApp</label>
-                    <PhoneMaskedInput name="whatsapp" value={form.whatsapp} onChange={handlePhoneChange} className={inputCls} />
+                    <PhoneMaskedInput ref={whatsappInputRef} name="whatsapp" value={form.whatsapp} onChange={handlePhoneChange} className={inputCls} />
                     {!form.whatsapp && form.phone && (
                       <button type="button" onClick={() => setForm(prev => ({ ...prev, whatsapp: prev.phone }))} className="mt-1 text-xs text-accent hover:underline">
                         Copiar do telefone
