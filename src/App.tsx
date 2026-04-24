@@ -81,6 +81,7 @@ const AdminSponsorCrmPage = lazy(() => import("./pages/AdminSponsorCrmPage"));
 const AdminAdSlotsPage = lazy(() => import("./pages/AdminAdSlotsPage"));
 const AdminAuditLogPage = lazy(() => import("./pages/AdminAuditLogPage"));
 const AdminAuditRefPage = lazy(() => import("./pages/AdminAuditRefPage"));
+const AdminAuditRlsPage = lazy(() => import("./pages/AdminAuditRlsPage"));
 const AdminTrashPage = lazy(() => import("./pages/AdminTrashPage"));
 const AdminBackupPage = lazy(() => import("./pages/AdminBackupPage"));
 const AdminHeroBannersPage = lazy(() => import("./pages/AdminHeroBannersPage"));
@@ -320,7 +321,130 @@ const App = () => {
                 <Route path="/index" element={<Index />} />
                 <Route path="/index02" element={<Index02 />} />
                 <Route path="/index02.html" element={<Index02 />} />
-... keep existing code
+                <Route path="/pg03" element={<Index03 />} />
+                <Route path="/pg03.html" element={<Index03 />} />
+                <Route path="/index03" element={<Index03 />} />
+                <Route path="/buscar" element={<SearchPage />} />
+                <Route path="/categoria/:slug" element={<CategoryPage />} />
+                <Route path="/profissional/:slug" element={<ProviderProfile />} />
+                <Route path="/agencia/:slug" element={<AgencyPublicPage />} />
+                <Route path="/patrocinador/:slug" element={<SponsorPublicPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/cadastro" element={<LoginPage />} />
+                <Route path="/cadastro/rh" element={<LoginPage />} />
+                <Route path="/anuncie" element={<SponsorLandingPage />} />
+                <Route path="/vagas" element={<JobsPage />} />
+                <Route path="/quero-ser-patrocinador" element={<SponsorLandingPage />} />
+                <Route path="/espacos-patrocinio" element={<SponsorSlotsPage />} />
+                <Route path="/contrato-patrocinio" element={<SponsorContractPage />} />
+                <Route path="/vaga/:slug" element={<JobDetailPage />} />
+                <Route path="/triagem" element={<TriagePage />} />
+                <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                <Route path="/dashboard/perfil" element={<ProtectedRoute><ErrorGuard componentName="DashboardProfilePage"><DashboardProfilePage /></ErrorGuard></ProtectedRoute>} />
+                <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><ErrorGuard componentName="DashboardServicesPage"><DashboardServicesPage /></ErrorGuard></ProtectedRoute>} />
+                <Route path="/dashboard/portfolio" element={<ProtectedRoute allowedTypes={['provider']}><ErrorGuard componentName="DashboardPortfolioPage"><DashboardPortfolioPage /></ErrorGuard></ProtectedRoute>} />
+                <Route path="/dashboard/avaliacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReviewsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/leads" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLeadsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/metricas" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMetricsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/leads-abertos" element={<ProtectedRoute allowedTypes={['provider']}><DashboardOpenLeadsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/plano" element={<ProtectedRoute allowedTypes={['provider']}><DashboardPlanPage /></ProtectedRoute>} />
+                <Route path="/dashboard/minha-pagina" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMyPagePage /></ProtectedRoute>} />
+                <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/agencia" element={<ProtectedRoute allowedTypes={['rh']}><DashboardAgencyDataPage /></ProtectedRoute>} />
+                <Route path="/dashboard/comunidade" element={<ProtectedRoute><DashboardCommunityPage /></ProtectedRoute>} />
+                <Route path="/dashboard/notificacoes" element={<ProtectedRoute><DashboardNotificationsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/indicacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReferralsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/chat" element={<ProtectedRoute><DashboardChatPage /></ProtectedRoute>} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
+                <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
+                <Route path="/admin/usuarios" element={<AdminUsersPage />} />
+                <Route path="/admin/crm-usuarios" element={<AdminUsersCrmPage />} />
+                <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
+                <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
+                <Route path="/admin/cidades" element={<AdminCitiesPage />} />
+                <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
+                <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
+                <Route path="/admin/patrocinadores/aprovacoes" element={<AdminSponsorApprovalsPage />} />
+                <Route path="/admin/servicos-populares" element={<AdminPopularServicesPage />} />
+                <Route path="/admin/faq" element={<AdminFaqPage />} />
+                <Route path="/admin/metatags" element={<AdminMetaTagsPage />} />
+                <Route path="/admin/destaques" element={<AdminHighlightsPage />} />
+                <Route path="/admin/comunidade" element={<AdminCommunityPage />} />
+                <Route path="/admin/vagas" element={<AdminJobsPage />} />
+                <Route path="/admin/blog" element={<AdminBlogPage />} />
+                <Route path="/admin/crm-patrocinadores" element={<AdminSponsorCrmPage />} />
+                <Route path="/admin/slots-anuncios" element={<AdminAdSlotsPage />} />
+                <Route path="/admin/auditoria" element={<AdminAuditLogPage />} />
+                <Route path="/admin/auditoria-ref" element={<AdminAuditRefPage />} />
+                <Route path="/admin/auditoria-rls" element={<AdminAuditRlsPage />} />
+                <Route path="/admin/backup" element={<AdminBackupPage />} />
+                <Route path="/admin/lixeira" element={<AdminTrashPage />} />
+                <Route path="/admin/hero-banners" element={<AdminHeroBannersPage />} />
+                <Route path="/admin/pwa" element={<AdminPwaPage />} />
+                
+                <Route path="/admin/midia" element={<AdminMediaPage />} />
+                <Route path="/admin/servicos" element={<AdminServicesPage />} />
+                <Route path="/admin/leads" element={<AdminLeadsPage />} />
+                <Route path="/admin/modulos" element={<AdminModulesPage />} />
+                <Route path="/admin/blocos" element={<AdminBlocksPage />} />
+                <Route path="/admin/paginas" element={<AdminInstitutionalPagesPage />} />
+                <Route path="/admin/menus" element={<AdminMenuPage />} />
+                <Route path="/admin/como-funciona" element={<AdminHomeStepsPage />} />
+                <Route path="/admin/depoimentos" element={<AdminTestimonialsPage />} />
+                <Route path="/admin/cta-blocos" element={<AdminCtaBlocksPage />} />
+                <Route path="/admin/secoes-home" element={<AdminHomeSectionsPage />} />
+                <Route path="/admin/leads-patrocinadores" element={<AdminSponsorLeadsPage />} />
+                
+                <Route path="/admin/overview" element={<AdminOverviewPage />} />
+                <Route path="/admin/notificacoes" element={<AdminNotificationsPage />} />
+                <Route path="/admin/chat" element={<AdminChatPage />} />
+                <Route path="/admin/boosts" element={<AdminBoostsPage />} />
+                <Route path="/admin/barra-inferior" element={<AdminBottomNavPage />} />
+                <Route path="/admin/governanca" element={<AdminGovernancePage />} />
+                <Route path="/admin/sistema/saude" element={<AdminSystemHealthPage />} />
+                <Route path="/admin/sistema/permissoes" element={<AdminPermissionsPage />} />
+                <Route path="/admin/permissoes" element={<Navigate to="/admin/sistema/permissoes" replace />} />
+                <Route path="/admin/gamificacao" element={<AdminGamificationPage />} />
+                <Route path="/admin/rankings" element={<AdminRankingsPage />} />
+                <Route path="/admin/staff" element={<AdminStaffPage />} />
+                <Route path="/admin/aprovacao" element={<AdminApprovalSettingsPage />} />
+                <Route path="/admin/onboarding" element={<AdminOnboardingPage />} />
+                <Route path="/admin/cursos" element={<AdminCoursesPage />} />
+                <Route path="/cursos" element={<CoursesPage />} />
+                <Route path="/cursos/:courseId" element={<CourseDetailPage />} />
+                <Route path="/cursos/materias/:slug" element={<BlogPostPage />} />
+                <Route path="/blog" element={<BlogPage />} />
+                <Route path="/blog/:slug" element={<BlogPostPage />} />
+                <Route path="/servico/:slug" element={<PopularServicePage />} />
+                <Route path="/servicos" element={<ServicesPage />} />
+                <Route path="/servico-detalhe/:id" element={<ServiceDetailPage />} />
+                <Route path="/cidade/:slug" element={<CityPage />} />
+                <Route path="/cidades" element={<CitiesListPage />} />
+                <Route path="/cidades/:estado" element={<StateProviderPage />} />
+                <Route path="/cidades/:estado/:cidade" element={<CityDetailPage />} />
+                <Route path="/categorias" element={<CategoriesListPage />} />
+                <Route path="/faq" element={<FaqPage />} />
+                <Route path="/ajuda" element={<HelpCenterPage />} />
+                <Route path="/privacidade" element={<PrivacyPage />} />
+                <Route path="/termos" element={<TermsPage />} />
+                <Route path="/cookies" element={<CookiesPage />} />
+                <Route path="/sobre" element={<AboutPage />} />
+                <Route path="/como-funciona" element={<ComoFuncionaPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/sitemap" element={<SitemapRedirect />} />
+                <Route path="/sitemap.xml" element={<SitemapRedirect />} />
+                {/* Sponsor Panel — CRM Module (protected B2B access) */}
+                <Route path="/sponsor-panel" element={<SponsorProtectedRoute><SponsorDashboardPage /></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/banners" element={<SponsorProtectedRoute><SponsorFeatureGate feature="banners"><SponsorBannersPage /></SponsorFeatureGate></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/campanhas" element={<SponsorProtectedRoute><SponsorFeatureGate feature="campanhas"><SponsorCampaignsPage /></SponsorFeatureGate></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/metricas" element={<SponsorProtectedRoute><SponsorFeatureGate feature="metricas"><SponsorMetricsPage /></SponsorFeatureGate></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/contratos" element={<SponsorProtectedRoute><SponsorContractsPage /></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/notificacoes" element={<SponsorProtectedRoute><SponsorNotificationsPage /></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/dados" element={<SponsorProtectedRoute><SponsorDataPage /></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/pagina" element={<SponsorProtectedRoute><SponsorFeatureGate><SponsorPublicProfilePage /></SponsorFeatureGate></SponsorProtectedRoute>} />
+                <Route path="/p/:slug" element={<InstitutionalPage />} />
+                <Route path="/error/404" element={<ErrorPage code={404} />} />
                 <Route path="*" element={<NotFound />} />
                 </Routes>
               </OnboardingGate>
