@@ -137,7 +137,7 @@ const EngagementLoop = ({ servicesCount: servicesOverride, portfolioAlbumsCount:
           <div className="flex-1">
             <h3 className="text-sm font-bold text-foreground">Circuito completo!</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Seu perfil está {data.percentage}% completo e pronto para liderar as buscas.
+              Seu perfil está {pct}% completo e pronto para liderar as buscas.
               Continue evoluindo com novos serviços e fotos.
             </p>
           </div>
