@@ -234,4 +234,54 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
   );
 }
 
+function SlotFeedback({ slot, onClear }: { slot: FileSlot; onClear: () => void }) {
+  if (slot.uploading) {
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Loader2 className="h-3 w-3 animate-spin" /> Enviando {slot.file?.name}...
+          </span>
+          <span className="font-medium">{slot.progress}%</span>
+        </div>
+        <Progress value={slot.progress} className="h-1.5" />
+      </div>
+    );
+  }
+  if (slot.error) {
+    return (
+      <div className="rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+        <div className="flex items-start justify-between gap-2">
+          <p className="flex items-start gap-1">
+            <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <span><strong>Erro:</strong> {slot.error}</span>
+          </p>
+          <button type="button" onClick={onClear} className="text-red-700/70 hover:text-red-900">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <p className="mt-1 text-[11px] text-red-700/80">
+          Ajuste o arquivo (tipo/tamanho permitido) e tente novamente.
+        </p>
+      </div>
+    );
+  }
+  if (slot.path) {
+    return (
+      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-xs text-emerald-700">
+        <div className="flex items-start justify-between gap-2">
+          <p className="flex items-center gap-1">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Enviado: <strong>{slot.file?.name}</strong>
+            {slot.file && <span className="opacity-70 ml-1">({(slot.file.size / 1024).toFixed(1)} KB)</span>}
+          </p>
+          <button type="button" onClick={onClear} className="text-emerald-700/70 hover:text-emerald-900">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
 export default SponsorDocsUploadModal;
