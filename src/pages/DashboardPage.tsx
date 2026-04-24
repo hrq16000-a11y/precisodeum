@@ -448,11 +448,49 @@ const DashboardPage = () => {
         <EngagementLoop />
       </div>
 
-      {/* "Primeiro Lead Garantido" — checklist motivador + boost 7d */}
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <FirstLeadChecklist />
-        <CommunityVerifiedStatus />
-      </div>
+      {/* Banners persistentes de alta prioridade — Empty States estruturais */}
+      {servicesCount !== null && servicesCount === 0 && (
+        <div className="mt-4">
+          <EmptyStateBanner variant="service" />
+        </div>
+      )}
+      {servicesCount !== null && servicesCount > 0 && portfolioCount === 0 && (
+        <div className="mt-4">
+          <EmptyStateBanner variant="portfolio" />
+        </div>
+      )}
+
+      {/* CTA único inteligente — substitui checklist passivo quando há pendências */}
+      {(() => {
+        const items = buildOnboardingChecklist({
+          profile, provider,
+          servicesCount: servicesCount ?? 0,
+          portfolioAlbumsCount: portfolioCount,
+        });
+        const stats = checklistStats(items);
+        const remaining = stats.total - stats.completed;
+
+        // Tudo completo OU 1 pendência → CTA único enxuto. Caso contrário (>1) mostramos o checklist + status comunidade.
+        if (remaining <= 1) {
+          return (
+            <div className="mt-4">
+              <SmartNextStepCTA
+                servicesCount={servicesCount ?? 0}
+                portfolioAlbumsCount={portfolioCount}
+              />
+            </div>
+          );
+        }
+        return (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <FirstLeadChecklist
+              servicesCount={servicesCount ?? 0}
+              portfolioAlbumsCount={portfolioCount}
+            />
+            <CommunityVerifiedStatus />
+          </div>
+        );
+      })()}
 
       {/* Sinal de demanda (FOMO) — apenas Engajado+ */}
       <div className="mt-4">
