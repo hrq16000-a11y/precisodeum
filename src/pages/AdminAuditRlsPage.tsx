@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { ShieldAlert, ShieldCheck, Search, RefreshCw, AlertTriangle, Lock, Download, FileJson, FileSpreadsheet } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, Search, RefreshCw, AlertTriangle, Lock, FileJson, FileSpreadsheet, FolderDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import RlsHistoryPanel from '@/components/admin/RlsHistoryPanel';
 
 interface RlsPolicy {
   schemaname: string;
