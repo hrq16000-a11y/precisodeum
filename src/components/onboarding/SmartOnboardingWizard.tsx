@@ -28,6 +28,7 @@ import { forwardRef, useEffect, useRef, useState } from 'react';
 import {
   Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2,
   PartyPopper, Building2, Megaphone, Camera, Phone, AlertCircle, RefreshCw,
+  Image as ImageIcon, Plus,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
