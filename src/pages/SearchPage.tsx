@@ -133,67 +133,24 @@ const SearchPage = () => {
 
   // Apply additional client-side filters
   const applyClientFilters = useCallback((list: DbProvider[]) => {
-    let results = [...list];
-
-    if (selectedNeighborhood) {
-      const nb = selectedNeighborhood.toLowerCase();
-      results = results.filter(p => p.neighborhood.toLowerCase().includes(nb));
-    }
-    if (businessNameFilter) {
-      const bn = businessNameFilter.toLowerCase();
-      results = results.filter(p => (p.businessName?.toLowerCase().includes(bn)) || p.name.toLowerCase().includes(bn));
-    }
-    if (phoneFilter) {
-      const ph = phoneFilter.replace(/\D/g, '');
-      if (ph) results = results.filter(p => p.phone.includes(ph) || p.whatsapp.includes(ph));
-    }
-    if (featuredFilter === 'featured') results = results.filter(p => p.featured);
-    else if (featuredFilter === 'normal') results = results.filter(p => !p.featured);
-
-    // Availability filters
-    if (onlineOnly) results = results.filter(p => onlineSet.has(p.userId));
-    if (acceptingOnly) results = results.filter(p => !!p.whatsapp && p.whatsapp.trim().length > 0);
-
-    // Sort within group — never mix local/other ordering
-    if (sortBy === 'nearest') {
-      results.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
-    } else if (sortBy !== 'relevance') {
-      const sortFn = (a: DbProvider, b: DbProvider) => {
-        switch (sortBy) {
-          case 'rating': return b.rating - a.rating;
-          case 'reviews': return b.reviewCount - a.reviewCount;
-          case 'name_asc': return a.name.localeCompare(b.name);
-          case 'name_desc': return b.name.localeCompare(a.name);
-          case 'experience': return b.yearsExperience - a.yearsExperience;
-          default: return 0;
-        }
-      };
-      results.sort(sortFn);
-    }
-
-    // Route corridor filter
-    if (routeCorridor) {
-      results = results.filter(p => {
-        if (p.latitude == null || p.longitude == null) return false;
-        return isInsideCorridor(p.latitude, p.longitude, routeCorridor);
-      });
-      // Sort by distance to midpoint
-      results.sort((a, b) => {
-        const dA = calculateDistanceKm({ latitude: routeCorridor.midLat, longitude: routeCorridor.midLon }, { latitude: a.latitude!, longitude: a.longitude! });
-        const dB = calculateDistanceKm({ latitude: routeCorridor.midLat, longitude: routeCorridor.midLon }, { latitude: b.latitude!, longitude: b.longitude! });
-        return dA - dB;
-      });
-    }
-
-    // Urgency mode — prioritize online providers (stable sort within current order)
-    if (urgencyMode && onlineSet.size > 0) {
-      results = [
-        ...results.filter(p => onlineSet.has(p.userId)),
-        ...results.filter(p => !onlineSet.has(p.userId)),
-      ];
-    }
-
-    return results;
+    return applySearchFilters(list, {
+      selectedNeighborhood,
+      businessNameFilter,
+      phoneFilter,
+      featuredFilter,
+      onlineOnly,
+      acceptingOnly,
+      sortBy,
+      urgencyMode,
+      onlineSet,
+      routeCorridor: routeCorridor
+        ? {
+            midLat: routeCorridor.midLat,
+            midLon: routeCorridor.midLon,
+            isInside: (lat, lon) => isInsideCorridor(lat, lon, routeCorridor),
+          }
+        : null,
+    }) as DbProvider[];
   }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, onlineOnly, acceptingOnly]);
 
   const filteredLocal = useMemo(() => applyClientFilters(localProviders), [applyClientFilters, localProviders]);
