@@ -247,9 +247,29 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) return null;
+  // While auth is resolving, or user exists but profile not yet loaded,
+  // render an accessible skeleton instead of null to avoid blank screens.
+  if (loading || (user && !profile)) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        aria-label="Carregando sua sessão"
+        className="flex min-h-screen items-center justify-center bg-background"
+      >
+        <div className="w-full max-w-md space-y-3 px-4">
+          <div className="h-8 w-3/4 animate-pulse rounded-lg bg-muted" />
+          <div className="h-4 w-full animate-pulse rounded bg-muted" />
+          <div className="h-4 w-5/6 animate-pulse rounded bg-muted" />
+        </div>
+        <span className="sr-only">Carregando…</span>
+      </div>
+    );
+  }
 
   const onboardingStep = Number(profile?.onboarding_step ?? 0);
+  // Only redirect when profile EXISTS and is incomplete. Never when profile is null.
   const mustCompleteOnboarding = !!user && !!profile && (
     !profile.profile_type ||
     profile.onboarding_completed !== true ||
