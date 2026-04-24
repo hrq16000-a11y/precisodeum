@@ -173,9 +173,74 @@ export default function SponsorLeadDocsPanel({ open, onOpenChange, leadId, compa
                 </ul>
               )}
             </div>
+
+            {lead.docs_review_notes && (lead.docs_status === 'approved' || lead.docs_status === 'rejected') && (
+              <div className={`rounded-lg border p-3 text-xs ${lead.docs_status === 'approved' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-900'}`}>
+                <p className="font-semibold mb-1">
+                  {lead.docs_status === 'approved' ? 'Aprovado' : 'Rejeitado'}
+                  {lead.docs_reviewed_at && ` · ${format(new Date(lead.docs_reviewed_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}`}
+                </p>
+                <p>{lead.docs_review_notes}</p>
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+              <Button
+                size="sm"
+                className="flex-1 min-w-[140px] bg-emerald-600 hover:bg-emerald-700 text-white"
+                disabled={reviewing || lead.docs_status === 'approved' || (!lead.cnpj_document_url && !lead.banner_url)}
+                onClick={() => handleReview('approved')}
+              >
+                {reviewing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                Aprovar documentação
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="flex-1 min-w-[140px]"
+                disabled={reviewing || lead.docs_status === 'rejected'}
+                onClick={() => setRejectOpen(true)}
+              >
+                <XCircle className="h-4 w-4 mr-1" />
+                Rejeitar / Solicitar correção
+              </Button>
+            </div>
           </div>
         )}
       </DialogContent>
+
+      <Dialog open={rejectOpen} onOpenChange={(o) => { if (!reviewing) { setRejectOpen(o); if (!o) setRejectReason(''); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <XCircle className="h-5 w-5" /> Rejeitar documentação
+            </DialogTitle>
+            <DialogDescription>
+              Descreva o motivo. O patrocinador será notificado e o checklist será reaberto para correção.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Ex: O CNPJ está ilegível. Reenviar uma foto nítida do cartão CNPJ atualizado."
+            rows={5}
+            maxLength={500}
+            disabled={reviewing}
+          />
+          <p className="text-xs text-muted-foreground">{rejectReason.trim().length}/500 — mínimo 5 caracteres.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectOpen(false)} disabled={reviewing}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              disabled={reviewing || rejectReason.trim().length < 5}
+              onClick={() => handleReview('rejected', rejectReason.trim())}
+            >
+              {reviewing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
+              Confirmar rejeição
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
