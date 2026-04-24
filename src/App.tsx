@@ -76,6 +76,7 @@ const AdminPopularServicesPage = lazy(() => import("./pages/AdminPopularServices
 const AdminFaqPage = lazy(() => import("./pages/AdminFaqPage"));
 const AdminMetaTagsPage = lazy(() => import("./pages/AdminMetaTagsPage"));
 const AdminJobsPage = lazy(() => import("./pages/AdminJobsPage"));
+const AdminJobsImportPage = lazy(() => import("./pages/AdminJobsImportPage"));
 const AdminHighlightsPage = lazy(() => import("./pages/AdminHighlightsPage"));
 const AdminCommunityPage = lazy(() => import("./pages/AdminCommunityPage"));
 const AdminBlogPage = lazy(() => import("./pages/AdminBlogPage"));
@@ -382,6 +383,7 @@ const App = () => {
                 <Route path="/admin/destaques" element={<AdminHighlightsPage />} />
                 <Route path="/admin/comunidade" element={<AdminCommunityPage />} />
                 <Route path="/admin/vagas" element={<AdminJobsPage />} />
+                <Route path="/admin/vagas/importar" element={<AdminJobsImportPage />} />
                 <Route path="/admin/blog" element={<AdminBlogPage />} />
                 <Route path="/admin/crm-patrocinadores" element={<AdminSponsorCrmPage />} />
                 <Route path="/admin/slots-anuncios" element={<AdminAdSlotsPage />} />

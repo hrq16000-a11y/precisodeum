@@ -57,6 +57,7 @@ const menuGroups = [
       { label: 'Páginas', icon: FileText, path: '/admin/paginas' },
       { label: 'Categorias', icon: FolderOpen, path: '/admin/categorias' },
       { label: 'Vagas', icon: ClipboardList, path: '/admin/vagas' },
+      { label: 'Importar Vagas', icon: ClipboardList, path: '/admin/vagas/importar' },
       { label: 'Blog / Notícias', icon: Newspaper, path: '/admin/blog' },
       { label: 'Serv. Populares', icon: Wrench, path: '/admin/servicos-populares' },
       { label: 'FAQ', icon: HelpCircle, path: '/admin/faq' },

@@ -1458,6 +1458,118 @@ export type Database = {
         }
         Relationships: []
       }
+      job_import_log: {
+        Row: {
+          created_at: string
+          details: Json | null
+          duplicate_count: number
+          error_count: number
+          error_message: string | null
+          found_count: number
+          id: string
+          inserted_count: number
+          source_id: string | null
+          source_name: string | null
+          trigger_mode: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          duplicate_count?: number
+          error_count?: number
+          error_message?: string | null
+          found_count?: number
+          id?: string
+          inserted_count?: number
+          source_id?: string | null
+          source_name?: string | null
+          trigger_mode?: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          duplicate_count?: number
+          error_count?: number
+          error_message?: string | null
+          found_count?: number
+          id?: string
+          inserted_count?: number
+          source_id?: string | null
+          source_name?: string | null
+          trigger_mode?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_import_log_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "job_import_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_import_sources: {
+        Row: {
+          created_at: string
+          default_category_id: string | null
+          default_city: string | null
+          default_opportunity_type: string
+          default_state: string | null
+          feed_url: string | null
+          id: string
+          is_active: boolean
+          is_trusted: boolean
+          last_run_at: string | null
+          last_status: string | null
+          name: string
+          notes: string | null
+          source_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_category_id?: string | null
+          default_city?: string | null
+          default_opportunity_type?: string
+          default_state?: string | null
+          feed_url?: string | null
+          id?: string
+          is_active?: boolean
+          is_trusted?: boolean
+          last_run_at?: string | null
+          last_status?: string | null
+          name: string
+          notes?: string | null
+          source_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_category_id?: string | null
+          default_city?: string | null
+          default_opportunity_type?: string
+          default_state?: string | null
+          feed_url?: string | null
+          id?: string
+          is_active?: boolean
+          is_trusted?: boolean
+          last_run_at?: string | null
+          last_status?: string | null
+          name?: string
+          notes?: string | null
+          source_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_import_sources_default_category_id_fkey"
+            columns: ["default_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           activities: string | null
@@ -1472,7 +1584,9 @@ export type Database = {
           deadline: string | null
           deleted_at: string | null
           description: string
+          external_id: string | null
           id: string
+          import_source_id: string | null
           job_type: string
           neighborhood: string
           opportunity_type: string
@@ -1504,7 +1618,9 @@ export type Database = {
           deadline?: string | null
           deleted_at?: string | null
           description?: string
+          external_id?: string | null
           id?: string
+          import_source_id?: string | null
           job_type?: string
           neighborhood?: string
           opportunity_type?: string
@@ -1536,7 +1652,9 @@ export type Database = {
           deadline?: string | null
           deleted_at?: string | null
           description?: string
+          external_id?: string | null
           id?: string
+          import_source_id?: string | null
           job_type?: string
           neighborhood?: string
           opportunity_type?: string
@@ -1561,6 +1679,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_import_source_id_fkey"
+            columns: ["import_source_id"]
+            isOneToOne: false
+            referencedRelation: "job_import_sources"
             referencedColumns: ["id"]
           },
         ]
