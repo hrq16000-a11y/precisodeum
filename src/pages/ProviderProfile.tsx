@@ -778,9 +778,12 @@ const ProviderProfile = () => {
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
   useSeoHead({
-    title: provider ? `${name} - ${category} em ${provider.city} | Preciso de um` : 'Profissional',
+    title: provider
+      ? (provider.meta_title?.trim() || `${name} - ${category} em ${provider.city} | Preciso de um`)
+      : 'Profissional',
     description: provider
-      ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Peca seu orcamento gratis!`
+      ? (provider.meta_description?.trim() ||
+          `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Peca seu orcamento gratis!`)
       : 'Encontre profissionais na plataforma.',
     canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
     ogImage: providerSocialImage || undefined,
