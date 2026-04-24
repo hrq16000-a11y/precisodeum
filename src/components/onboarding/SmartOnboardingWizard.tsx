@@ -953,6 +953,20 @@ const checklistItems: Array<{ step: WizardStep; label: string }> = [
   { step: 5, label: 'Finalizar' },
 ];
 
+const PROFILE_TYPE_LABEL: Record<string, string> = {
+  provider: 'Profissional',
+  client: 'Cliente',
+  agency: 'Agência / RH',
+  hr: 'Agência / RH',
+};
+
+const PROVIDER_SUBTYPE_LABEL: Record<string, string> = {
+  autonomous: 'Autônomo',
+  company: 'Empresa / Agência',
+  agency: 'Empresa / Agência',
+  provider: 'Profissional',
+};
+
 const buildReviewItems = (data: {
   profileType: ProfileType | null;
   providerSubtype: ProviderSubtype | null;
@@ -967,11 +981,11 @@ const buildReviewItems = (data: {
   servicesCreated: number;
 }): Record<WizardStep, Array<{ label: string; value: string }>> => ({
   1: [
-    { label: 'Tipo de perfil', value: data.profileType || 'Não definido' },
-    { label: 'Formato profissional', value: data.providerSubtype || 'Não aplicável' },
+    { label: 'Tipo de perfil', value: data.profileType ? (PROFILE_TYPE_LABEL[data.profileType] || data.profileType) : 'Não definido' },
+    { label: 'Formato profissional', value: data.providerSubtype ? (PROVIDER_SUBTYPE_LABEL[data.providerSubtype] || data.providerSubtype) : 'Não aplicável' },
   ],
   2: [
-    { label: 'Cidade', value: data.city ? `${data.city}${data.state ? ` • ${data.state}` : ''}` : 'Não informada' },
+    { label: 'Cidade', value: data.city ? `${data.city}${data.state && data.state !== 'ST' ? ` • ${data.state}` : ''}` : 'Não informada' },
     { label: 'Foto', value: data.avatarUrl ? 'Carregada' : 'Não enviada' },
   ],
   3: [
