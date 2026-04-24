@@ -43,12 +43,27 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
   ) => {
     if (!file) return;
     const allowed = kind === 'cnpj' ? ALLOWED_DOC : ALLOWED_BANNER;
+
+    const logFailure = async (reason: string) => {
+      try {
+        await supabase.from('sponsor_docs_history' as any).insert({
+          lead_id: leadId, doc_type: kind, action: 'validation_failed',
+          status: 'error', reason,
+          metadata: { file_name: file.name, file_size: file.size, file_type: file.type },
+        } as any);
+      } catch { /* ignore */ }
+    };
+
     if (!allowed.includes(file.type)) {
-      toast.error(`Tipo não permitido. Use ${kind === 'cnpj' ? 'PDF/JPG/PNG/WEBP' : 'JPG/PNG/WEBP'}.`);
+      const reason = `Tipo não permitido (${file.type || 'desconhecido'}).`;
+      toast.error(`${reason} Use ${kind === 'cnpj' ? 'PDF/JPG/PNG/WEBP' : 'JPG/PNG/WEBP'}.`);
+      logFailure(reason);
       return;
     }
     if (file.size > MAX_SIZE) {
-      toast.error('Arquivo deve ter no máximo 10MB.');
+      const reason = `Arquivo acima de 10MB (${(file.size / (1024*1024)).toFixed(1)}MB).`;
+      toast.error(reason);
+      logFailure(reason);
       return;
     }
 
