@@ -405,6 +405,7 @@ const App = () => {
                 <Route path="/admin/cta-blocos" element={<AdminCtaBlocksPage />} />
                 <Route path="/admin/secoes-home" element={<AdminHomeSectionsPage />} />
                 <Route path="/admin/leads-patrocinadores" element={<AdminSponsorLeadsPage />} />
+                <Route path="/admin/sponsor-docs-historico" element={<AdminSponsorDocsHistoryPage />} />
                 
                 <Route path="/admin/overview" element={<AdminOverviewPage />} />
                 <Route path="/admin/notificacoes" element={<AdminNotificationsPage />} />
