@@ -5314,6 +5314,7 @@ export type Database = {
           qual: string
           roles: string[]
           schemaname: string
+          table_owner: string
           tablename: string
           with_check: string
         }[]
