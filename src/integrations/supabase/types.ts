@@ -5952,6 +5952,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_sponsor_doc_validation_failure: {
+        Args: {
+          _doc_type: string
+          _lead_id: string
+          _metadata?: Json
+          _reason: string
+        }
+        Returns: undefined
+      }
       nearby_providers: {
         Args: {
           _category_slug?: string
