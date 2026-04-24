@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import AvatarUpload from '@/components/AvatarUpload';
+import { getInitials, getSocialAvatarUrl } from '@/lib/avatarUtils';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
@@ -336,9 +337,14 @@ const DashboardProfilePage = () => {
     if (!socialUrl) return;
     socialAvatarSyncedRef.current = true;
     setAvatarUrl(socialUrl);
-    supabase.from('profiles').update({ avatar_url: socialUrl }).eq('id', user.id)
-      .then(() => refetchProfile?.())
-      .catch((err) => console.warn('[profile] failed to persist social avatar', err));
+    (async () => {
+      try {
+        await supabase.from('profiles').update({ avatar_url: socialUrl }).eq('id', user.id);
+        refetchProfile?.();
+      } catch (err) {
+        console.warn('[profile] failed to persist social avatar', err);
+      }
+    })();
   }, [user, profile, avatarUrl, refetchProfile]);
 
   // Profile completeness
