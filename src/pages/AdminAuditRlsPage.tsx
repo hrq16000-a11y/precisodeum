@@ -193,6 +193,14 @@ const AdminAuditRlsPage = () => {
     toast.success(`${filtered.length} políticas exportadas (CSV)`);
   };
 
+  const exportGroupedCsv = () => {
+    if (!filtered.length) { toast.error('Nada para exportar'); return; }
+    const csv = toGroupedCsv(filtered);
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    downloadBlob(csv, `rls-audit-grouped-${ts}.csv`, 'text/csv;charset=utf-8');
+    toast.success(`Relatório agrupado exportado (${filtered.length} políticas)`);
+  };
+
   const exportJson = () => {
     if (!filtered.length) { toast.error('Nada para exportar'); return; }
     const payload = {
@@ -235,6 +243,9 @@ const AdminAuditRlsPage = () => {
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={exportCsv} disabled={!filtered.length}>
             <FileSpreadsheet className="mr-2 h-4 w-4" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportGroupedCsv} disabled={!filtered.length}>
+            <FolderDown className="mr-2 h-4 w-4" /> CSV agrupado
           </Button>
           <Button variant="outline" size="sm" onClick={exportJson} disabled={!filtered.length}>
             <FileJson className="mr-2 h-4 w-4" /> JSON
@@ -281,6 +292,11 @@ const AdminAuditRlsPage = () => {
         <StatCard label="Críticas" value={stats.criticalCount} icon={<ShieldAlert className="h-4 w-4 text-rose-500" />} highlight={stats.criticalCount > 0} highlightTone="critical" />
         <StatCard label="Write permissivas" value={stats.permissiveWrites} icon={<AlertTriangle className="h-4 w-4 text-amber-500" />} highlight={stats.permissiveWrites > 0} />
         <StatCard label="Acesso public/anon" value={stats.publicAccess} icon={<ShieldAlert className="h-4 w-4 text-rose-500" />} />
+      </div>
+
+      {/* Histórico de mudanças (snapshots diários) */}
+      <div className="mt-5">
+        <RlsHistoryPanel />
       </div>
 
       {/* Search */}
