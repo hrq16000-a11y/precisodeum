@@ -142,14 +142,22 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
     ).slice(0, 20);
   }, [categories, selectedCategoryIds, categorySearch]);
 
-  // Single-select category — replaces previous and auto-fills service name if empty
+  // Track the last auto-filled name so we only overwrite when the user hasn't customized it.
+  const lastAutoNameRef = useRef<string>('');
+
+  // Single-select category — replaces previous and (re)auto-fills service name when applicable.
   const handleSelectCategory = (catId: string) => {
     const cat = categories.find((c: any) => c.id === catId);
     setSelectedCategoryIds([catId]);
     setCategorySearch('');
     setShowCatDrop(false);
-    if (cat?.name && !serviceName.trim()) {
+    if (!cat?.name) return;
+    const current = serviceName.trim();
+    const isEmpty = current.length === 0;
+    const isPreviousAuto = current && current === lastAutoNameRef.current.trim();
+    if (isEmpty || isPreviousAuto) {
       setServiceName(cat.name);
+      lastAutoNameRef.current = cat.name;
     }
   };
 
@@ -173,11 +181,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
     'Sob agendamento',
   ];
 
-  const providerCity = provider?.city || '';
-  const providerState = (provider?.state && provider.state !== 'ST') ? provider.state : '';
-  const providerCityDisplay = providerCity
-    ? `${providerCity}${providerState ? ` - ${providerState}` : ''}`
-    : '';
+  const providerCityDisplay = formatCityState(provider?.city, provider?.state);
   const providerSlug = provider?.slug || '';
   const profileUrl = `${window.location.origin}/profissional/${providerSlug}`;
 
