@@ -70,16 +70,42 @@ function toCsv(rows: RlsPolicy[]): string {
   const lines = [headers.join(',')];
   for (const r of rows) {
     lines.push([
-      r.schemaname,
-      r.tablename,
-      r.policyname,
-      r.permissive,
-      r.cmd,
-      (r.roles ?? []).join('|'),
-      r.qual ?? '',
-      r.with_check ?? '',
-      r.table_owner ?? '',
+      r.schemaname, r.tablename, r.policyname, r.permissive, r.cmd,
+      (r.roles ?? []).join('|'), r.qual ?? '', r.with_check ?? '', r.table_owner ?? '',
     ].map(escape).join(','));
+  }
+  return lines.join('\n');
+}
+
+/** CSV agrupado por tabela, com seções por comando (INSERT/UPDATE/DELETE/SELECT/ALL) e roles. */
+function toGroupedCsv(rows: RlsPolicy[]): string {
+  const escape = (v: string | null | undefined) => {
+    const s = (v ?? '').toString().replace(/"/g, '""');
+    return /[",\n\r]/.test(s) ? `"${s}"` : s;
+  };
+  const tables = new Map<string, RlsPolicy[]>();
+  for (const r of rows) {
+    if (!tables.has(r.tablename)) tables.set(r.tablename, []);
+    tables.get(r.tablename)!.push(r);
+  }
+  const sortedTables = Array.from(tables.keys()).sort();
+  const lines: string[] = [];
+  const cmdOrder = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'ALL'];
+
+  for (const table of sortedTables) {
+    const polices = tables.get(table)!;
+    lines.push('');
+    lines.push(`### TABELA: ${table} (${polices.length} políticas)`);
+    for (const cmd of cmdOrder) {
+      const cmdPolices = polices.filter(p => p.cmd === cmd);
+      if (cmdPolices.length === 0) continue;
+      lines.push('');
+      lines.push(`-- ${cmd} (${cmdPolices.length})`);
+      lines.push(['policy', 'roles', 'permissive', 'qual', 'with_check'].join(','));
+      for (const p of cmdPolices) {
+        lines.push([p.policyname, (p.roles ?? []).join('|'), p.permissive, p.qual ?? '', p.with_check ?? ''].map(escape).join(','));
+      }
+    }
   }
   return lines.join('\n');
 }
