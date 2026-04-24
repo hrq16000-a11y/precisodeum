@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import confetti from 'canvas-confetti';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -8,11 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CheckCircle2, Clock, FileText, Image as ImageIcon, Loader2, ShieldCheck, XCircle, AlertCircle, ArrowLeft, Link2 } from 'lucide-react';
+import { CheckCircle2, Clock, FileText, Image as ImageIcon, Loader2, ShieldCheck, XCircle, AlertCircle, ArrowLeft, Link2, RefreshCw, Sparkles, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import SponsorDocsUploadModal from '@/components/sponsor/SponsorDocsUploadModal';
 
 interface HistoryItem {
   id: string;
@@ -74,6 +76,15 @@ export default function SponsorStatusPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [claiming, setClaiming] = useState(false);
   const [claimed, setClaimed] = useState(false);
+  const [resubmitOpen, setResubmitOpen] = useState(false);
+  const lastDocsStatusRef = useRef<string | null>(null);
+
+  const fireApprovalConfetti = () => {
+    const colors = ['#10b981', '#3b82f6', '#f59e0b', '#a855f7'];
+    confetti({ particleCount: 140, spread: 100, origin: { y: 0.6 }, colors });
+    setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors }), 250);
+    setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors }), 400);
+  };
 
   const handleClaim = async () => {
     if (!leadId) return;
@@ -83,6 +94,7 @@ export default function SponsorStatusPage() {
       if (cErr) throw cErr;
       toast.success('Cadastro vinculado! Agora você receberá notificações sobre revisões e atualizações.');
       setClaimed(true);
+      load(leadId);
     } catch (e: any) {
       toast.error(e?.message || 'Não foi possível vincular este cadastro.');
     } finally {
@@ -118,6 +130,38 @@ export default function SponsorStatusPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leadId]);
 
+  // Realtime: detect docs_status changes pushed by admin
+  useEffect(() => {
+    if (!leadId) return;
+    const channel = supabase
+      .channel(`sponsor-lead-status-${leadId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'sponsor_leads', filter: `id=eq.${leadId}` },
+        (payload: any) => {
+          const newStatus = payload?.new?.docs_status as string | undefined;
+          const prev = lastDocsStatusRef.current;
+          if (newStatus && newStatus !== prev) {
+            if (newStatus === 'approved') {
+              fireApprovalConfetti();
+              toast.success('Sua documentação foi aprovada!');
+            } else if (newStatus === 'rejected') {
+              toast.error('Documentação rejeitada — confira o motivo abaixo.');
+            }
+            lastDocsStatusRef.current = newStatus;
+          }
+          load(leadId);
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [leadId]);
+
+  // Sync ref with current status (for first load and polling)
+  useEffect(() => {
+    if (lead?.docs_status) lastDocsStatusRef.current = lead.docs_status;
+  }, [lead?.docs_status]);
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setLeadId(input.trim());
@@ -126,6 +170,9 @@ export default function SponsorStatusPage() {
 
   const statusInfo = lead ? STATUS_LABEL[lead.docs_status] || STATUS_LABEL.pending : null;
   const StatusIcon = statusInfo?.icon || Clock;
+  const leadUserId = (lead as any)?.user_id ?? null;
+  const isOwner = !!(user && leadUserId && leadUserId === user.id);
+  const canResubmit = !!lead && (lead.docs_status === 'rejected' || !lead.checklist_confirmed);
 
   return (
     <>
@@ -154,6 +201,84 @@ export default function SponsorStatusPage() {
           <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             <AlertCircle className="h-4 w-4" /> {error}
           </div>
+        )}
+
+        {/* Rejection alert: shown prominently when admin rejected docs */}
+        {lead && lead.docs_status === 'rejected' && (
+          <Card className="mb-4 border-red-300 bg-red-50/60">
+            <CardContent className="pt-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-red-100 p-2 shrink-0">
+                  <XCircle className="h-5 w-5 text-red-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-red-800">Documentação rejeitada</h3>
+                  <p className="text-xs text-red-700 mt-1">
+                    O administrador revisou seu envio e identificou pontos a corrigir. Veja o motivo abaixo
+                    e reenvie os documentos solicitados.
+                  </p>
+                  {lead.docs_review_notes && (
+                    <div className="mt-2 rounded-md border border-red-200 bg-white p-2 text-xs text-red-900">
+                      <span className="font-medium">Motivo: </span>{lead.docs_review_notes}
+                    </div>
+                  )}
+                  {lead.docs_reviewed_at && (
+                    <p className="text-[11px] text-red-700/80 mt-1">
+                      Revisado em {format(new Date(lead.docs_reviewed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                {user ? (
+                  isOwner ? (
+                    <Button size="sm" className="gap-2" onClick={() => setResubmitOpen(true)}>
+                      <RefreshCw className="h-4 w-4" /> Reenviar Documentos
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" className="gap-2" onClick={handleClaim} disabled={claiming}>
+                      <Link2 className="h-4 w-4" /> Vincular cadastro para reenviar
+                    </Button>
+                  )
+                ) : (
+                  <Button asChild size="sm" className="gap-2">
+                    <Link to={`/login?next=${encodeURIComponent(`/sponsor/status?id=${lead.id}`)}`}>
+                      <Lock className="h-4 w-4" /> Entrar para reenviar documentos
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Approval celebration banner */}
+        {lead && lead.docs_status === 'approved' && (
+          <Card className="mb-4 border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50">
+            <CardContent className="pt-4">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-emerald-100 p-2 shrink-0">
+                  <Sparkles className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-emerald-800">Parabéns! Sua documentação foi aprovada</h3>
+                  <p className="text-xs text-emerald-700 mt-1">
+                    Tudo certo do seu lado. O próximo passo é configurar sua campanha e ativar seu anúncio.
+                  </p>
+                  <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                    <Button asChild size="sm" className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+                      <Link to="/sponsor-panel">
+                        <ShieldCheck className="h-4 w-4" /> Continuar onboarding
+                      </Link>
+                    </Button>
+                    <Button asChild size="sm" variant="outline" className="gap-2">
+                      <Link to="/sponsor-panel/campanhas">Ver minhas campanhas</Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {lead && statusInfo && (
@@ -236,6 +361,16 @@ export default function SponsorStatusPage() {
         )}
       </main>
       <Footer />
+
+      {/* Resubmit modal — gated to authenticated owner of the lead */}
+      {lead && isOwner && (
+        <SponsorDocsUploadModal
+          leadId={lead.id}
+          open={resubmitOpen}
+          onOpenChange={setResubmitOpen}
+          onCompleted={() => { setResubmitOpen(false); load(lead.id); }}
+        />
+      )}
     </>
   );
 }
