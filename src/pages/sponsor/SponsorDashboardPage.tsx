@@ -1,6 +1,7 @@
 import { useMemo, useCallback, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import SponsorLayout from '@/components/sponsor/SponsorLayout';
+import { useAuth } from '@/hooks/useAuth';
 import { useSponsorAuth } from '@/hooks/useSponsorAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
