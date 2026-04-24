@@ -19,8 +19,8 @@ const DemandSignalAlert = () => {
   const tier = getEngagementTier(points);
   const [signals, setSignals] = useState<Signal[]>([]);
 
-  // Restricted to "Engajado" or higher
-  const eligible = ['engajado', 'ouro', 'platina', 'diamante', 'mestre'].includes(tier.tier);
+  // Restricted to "Ouro" or higher
+  const eligible = ['ouro', 'diamante', 'mestre'].includes(tier.tier);
 
   useEffect(() => {
     if (!user?.id || !eligible) return;
