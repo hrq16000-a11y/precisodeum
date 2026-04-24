@@ -60,6 +60,8 @@ const PRECISE_KEY = 'geo_precise';
 const GEO_ASKED_KEY = 'geo_browser_asked';
 const RADIUS_KEY = 'geo_radius';
 const FETCH_TS_KEY = 'geo_fetch_ts';
+const SOURCE_KEY = 'geo_source';
+const LAST_KNOWN_KEY = 'geo_last_known_at';
 const GEO_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 function safeGet(key: string): string | null {
@@ -79,15 +81,27 @@ function parseNumber(value: string | null) {
   return value !== null && Number.isFinite(Number(value)) ? Number(value) : null;
 }
 
+const initialCity = safeGet(CITY_KEY);
+const initialLat = parseNumber(safeGet(LAT_KEY));
+const initialLon = parseNumber(safeGet(LON_KEY));
+const initialOverride = safeGet(OVERRIDE_KEY) === 'true';
+const initialPrecise = safeGet(PRECISE_KEY) === 'true';
+const storedSource = safeGet(SOURCE_KEY) as GeoData['source'] | null;
+const initialSource: GeoData['source'] =
+  storedSource ?? (initialOverride ? 'manual' : initialPrecise ? 'gps' : initialCity || initialLat != null ? 'cache' : 'none');
+
 let geoState: GeoData = {
-  city: safeGet(CITY_KEY),
+  city: initialCity,
   state: normalizeUF(safeGet(STATE_KEY)),
   temp: parseNumber(safeGet(TEMP_KEY)),
-  latitude: parseNumber(safeGet(LAT_KEY)),
-  longitude: parseNumber(safeGet(LON_KEY)),
-  precise: safeGet(PRECISE_KEY) === 'true',
-  manualOverride: safeGet(OVERRIDE_KEY) === 'true',
+  latitude: initialLat,
+  longitude: initialLon,
+  precise: initialPrecise,
+  manualOverride: initialOverride,
   radiusKm: parseNumber(safeGet(RADIUS_KEY)) ?? 50,
+  geoFailed: false,
+  source: initialSource,
+  lastKnownAt: safeGet(LAST_KNOWN_KEY),
 };
 
 let listeners = new Set<() => void>();
