@@ -238,6 +238,7 @@ function startFetchIfNeeded() {
   // Use requestIdleCallback (with 8s timeout fallback) so the fetch only fires
   // once the browser is truly idle, keeping it out of Lighthouse's dependency tree.
   const startGeoFetch = () => { (async () => {
+    let success = false;
     try {
       const edgeGeo = await fetchGeoFromEdge();
       if (edgeGeo.city || edgeGeo.state || edgeGeo.temp !== null) {
@@ -245,8 +246,12 @@ function startFetchIfNeeded() {
         if (edgeGeo.city) safeSet(CITY_KEY, edgeGeo.city);
         if (uf) safeSet(STATE_KEY, uf);
         if (edgeGeo.temp !== null) safeSet(TEMP_KEY, String(edgeGeo.temp));
-        safeSet(FETCH_TS_KEY, String(Date.now()));
-        setGeoState({ ...edgeGeo, state: uf });
+        const now = String(Date.now());
+        safeSet(FETCH_TS_KEY, now);
+        safeSet(SOURCE_KEY, 'ip');
+        safeSet(LAST_KNOWN_KEY, new Date().toISOString());
+        setGeoState({ ...edgeGeo, state: uf, source: 'ip', geoFailed: false, lastKnownAt: new Date().toISOString() });
+        success = true;
       }
     } catch (error) {
       console.debug('[GeoCity] edge function failed:', error);
@@ -270,8 +275,11 @@ function startFetchIfNeeded() {
         if (result.lat !== null) safeSet(LAT_KEY, String(result.lat));
         if (result.lon !== null) safeSet(LON_KEY, String(result.lon));
         if (temp !== null) safeSet(TEMP_KEY, String(temp));
+        const ts = new Date().toISOString();
         safeSet(FETCH_TS_KEY, String(Date.now()));
         safeSet(PRECISE_KEY, 'false');
+        safeSet(SOURCE_KEY, 'ip');
+        safeSet(LAST_KNOWN_KEY, ts);
 
         setGeoState({
           city: result.city || geoState.city,
@@ -280,11 +288,22 @@ function startFetchIfNeeded() {
           latitude: result.lat,
           longitude: result.lon,
           precise: false,
+          source: 'ip',
+          geoFailed: false,
+          lastKnownAt: ts,
         });
+        success = true;
         return;
       } catch (error) {
         console.debug('[GeoCity] API fallback:', error);
       }
+    }
+
+    // Todas as fontes falharam — se temos cache (cidade/coords), avisamos via geoFailed.
+    if (!success && (geoState.city || geoState.latitude !== null)) {
+      setGeoState({ geoFailed: true, source: geoState.source === 'none' ? 'cache' : geoState.source });
+    } else if (!success) {
+      setGeoState({ geoFailed: true });
     }
   })(); };
 
