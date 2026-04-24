@@ -8,9 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CheckCircle2, Clock, FileText, Image as ImageIcon, Loader2, ShieldCheck, XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, Clock, FileText, Image as ImageIcon, Loader2, ShieldCheck, XCircle, AlertCircle, ArrowLeft, Link2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface HistoryItem {
   id: string;
@@ -61,6 +63,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default function SponsorStatusPage() {
+  const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const initialId = params.get('id') || '';
   const [leadId, setLeadId] = useState<string>(initialId);
@@ -69,6 +72,23 @@ export default function SponsorStatusPage() {
   const [error, setError] = useState<string | null>(null);
   const [lead, setLead] = useState<LeadStatus | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [claiming, setClaiming] = useState(false);
+  const [claimed, setClaimed] = useState(false);
+
+  const handleClaim = async () => {
+    if (!leadId) return;
+    setClaiming(true);
+    try {
+      const { error: cErr } = await supabase.rpc('claim_sponsor_lead' as any, { _lead_id: leadId });
+      if (cErr) throw cErr;
+      toast.success('Cadastro vinculado! Agora você receberá notificações sobre revisões e atualizações.');
+      setClaimed(true);
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível vincular este cadastro.');
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   const load = async (id: string) => {
     if (!id) return;
@@ -161,6 +181,28 @@ export default function SponsorStatusPage() {
                 <p className="text-xs text-muted-foreground">
                   Revisado em {format(new Date(lead.docs_reviewed_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}.
                   {lead.docs_review_notes ? <> — “{lead.docs_review_notes}”</> : null}
+                </p>
+              )}
+
+              {/* Claim CTA: link this lead to the logged-in user's account for push/email */}
+              {user && !claimed && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs space-y-2">
+                  <p className="font-semibold text-foreground flex items-center gap-1">
+                    <Link2 className="h-3.5 w-3.5" /> Vincule este cadastro à sua conta
+                  </p>
+                  <p className="text-muted-foreground">
+                    Receba notificações automáticas (push e e-mail) quando o admin aprovar, reprovar ou solicitar
+                    correções na sua documentação.
+                  </p>
+                  <Button size="sm" onClick={handleClaim} disabled={claiming} className="w-full sm:w-auto">
+                    {claiming ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Link2 className="h-3.5 w-3.5 mr-1" />}
+                    Vincular à minha conta
+                  </Button>
+                </div>
+              )}
+              {!user && (
+                <p className="text-[11px] text-muted-foreground">
+                  Faça login com o e-mail usado neste cadastro para receber notificações de aprovação/reprovação automaticamente.
                 </p>
               )}
             </CardContent>

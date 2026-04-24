@@ -50,6 +50,9 @@ const AdminSponsorLeadsPage = () => {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [docsStatusFilter, setDocsStatusFilter] = useState('all');
+  const [cityFilter, setCityFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [editDialog, setEditDialog] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
@@ -70,12 +73,22 @@ const AdminSponsorLeadsPage = () => {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
+    const cq = cityFilter.trim().toLowerCase();
     return leads.filter((l: any) => {
       if (statusFilter !== 'all' && l.status !== statusFilter) return false;
+      if (docsStatusFilter !== 'all' && (l.docs_status || 'pending') !== docsStatusFilter) return false;
+      if (categoryFilter !== 'all' && (l.category || '') !== categoryFilter) return false;
+      if (cq && !(l.city || '').toLowerCase().includes(cq)) return false;
       if (q && !l.company_name.toLowerCase().includes(q) && !l.email.toLowerCase().includes(q) && !l.cnpj.includes(q)) return false;
       return true;
     });
-  }, [leads, search, statusFilter]);
+  }, [leads, search, statusFilter, docsStatusFilter, cityFilter, categoryFilter]);
+
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach((l: any) => { if (l.category) set.add(l.category); });
+    return Array.from(set).sort();
+  }, [leads]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -270,6 +283,29 @@ const AdminSponsorLeadsPage = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Buscar empresa, email, CNPJ..." className="pl-9" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
           </div>
+          <Select value={docsStatusFilter} onValueChange={(v) => { setDocsStatusFilter(v); setPage(1); }}>
+            <SelectTrigger className="w-44"><SelectValue placeholder="Status docs" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os docs</SelectItem>
+              <SelectItem value="pending">Pendente</SelectItem>
+              <SelectItem value="submitted">Enviado</SelectItem>
+              <SelectItem value="approved">Aprovado</SelectItem>
+              <SelectItem value="rejected">Rejeitado</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            placeholder="Cidade"
+            className="w-36"
+            value={cityFilter}
+            onChange={(e) => { setCityFilter(e.target.value); setPage(1); }}
+          />
+          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(1); }}>
+            <SelectTrigger className="w-44"><SelectValue placeholder="Categoria" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {categoryOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Bulk */}

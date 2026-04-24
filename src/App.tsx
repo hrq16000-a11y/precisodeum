@@ -105,6 +105,7 @@ const AdminBoostsPage = lazy(() => import("./pages/AdminBoostsPage"));
 const AdminBottomNavPage = lazy(() => import("./pages/AdminBottomNavPage"));
 
 const AdminSponsorLeadsPage = lazy(() => import("./pages/AdminSponsorLeadsPage"));
+const AdminSponsorDocsHistoryPage = lazy(() => import("./pages/AdminSponsorDocsHistoryPage"));
 const AdminGamificationPage = lazy(() => import("./pages/AdminGamificationPage"));
 const AdminRankingsPage = lazy(() => import("./pages/AdminRankingsPage"));
 const AdminCoverageMapPage = lazy(() => import("./pages/AdminCoverageMapPage"));
@@ -404,6 +405,7 @@ const App = () => {
                 <Route path="/admin/cta-blocos" element={<AdminCtaBlocksPage />} />
                 <Route path="/admin/secoes-home" element={<AdminHomeSectionsPage />} />
                 <Route path="/admin/leads-patrocinadores" element={<AdminSponsorLeadsPage />} />
+                <Route path="/admin/sponsor-docs-historico" element={<AdminSponsorDocsHistoryPage />} />
                 
                 <Route path="/admin/overview" element={<AdminOverviewPage />} />
                 <Route path="/admin/notificacoes" element={<AdminNotificationsPage />} />
