@@ -643,8 +643,10 @@ const BasicOnboardingWizard = () => {
   };
 
   // ─── Passo 4: Primeiro serviço (provider apenas) ───
+  // PULAR não pode burlar o gate. Avança visualmente para o Passo 5,
+  // mas onboarding_completed permanece false até existir 1 serviço real.
   const handleSkipStep4 = async () => {
-    toast.info('Você pode cadastrar serviços depois no dashboard.');
+    toast.info('Você pode cadastrar serviços depois no dashboard, mas seu perfil ficará incompleto até lá.');
     await advanceTo(5);
   };
 
@@ -671,12 +673,17 @@ const BasicOnboardingWizard = () => {
   ];
 
   // ─── Passo 5: Conclusão ───
+  // Regra estrutural: para PROVIDER, onboarding_completed=true SOMENTE se
+  // já existe 1 serviço cadastrado. Caso contrário, marca step=5 mas
+  // onboarding_completed=false — o OnboardingGate continuará trazendo o
+  // usuário de volta ao wizard até que ele cumpra o requisito mínimo.
   const finishOnboarding = async () => {
     if (!user?.id) return;
     setSaving(true);
     try {
+      const meetsStructuralMinimum = profileType !== 'provider' || servicesCreated >= 1;
       await supabase.from('profiles').update({
-        onboarding_completed: true,
+        onboarding_completed: meetsStructuralMinimum,
         onboarding_step: 5,
       } as any).eq('id', user.id);
 
