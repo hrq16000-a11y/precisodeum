@@ -128,8 +128,7 @@ const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...', o
                       value={`${c.name}-${uf || 'NA'}`}
                       onSelect={() => {
                         onChange({ city: c.name, state: uf });
-                        setOpen(false);
-                        setQuery('');
+                        handleOpenChange(false);
                       }}
                     >
                       <Check className={cn('mr-2 h-4 w-4', selected ? 'opacity-100' : 'opacity-0')} />
