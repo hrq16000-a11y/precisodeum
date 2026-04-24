@@ -29,7 +29,15 @@ interface NextAction {
   tone: 'primary' | 'accent' | 'success';
 }
 
-const EngagementLoop = () => {
+interface EngagementLoopProps {
+  /** Override fresh do dashboard — evita divergência com a RPC cacheada. */
+  servicesCount?: number;
+  portfolioAlbumsCount?: number;
+  /** Override fresh do `checklistStats(items).pct` calculado no DashboardPage. */
+  unifiedPct?: number;
+}
+
+const EngagementLoop = ({ servicesCount: servicesOverride, portfolioAlbumsCount: albumsOverride, unifiedPct }: EngagementLoopProps = {}) => {
   const navigate = useNavigate();
   const { profile, provider, user } = useAuth();
   const { data } = useProfileCompleteness();
