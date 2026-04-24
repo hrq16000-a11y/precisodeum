@@ -1179,11 +1179,15 @@ const GuidedReviewCard = ({
   items,
   onEdit,
   onKeep,
+  onPrev,
+  canGoPrev,
 }: {
   step: WizardStep;
   items: Array<{ label: string; value: string }>;
   onEdit: () => void;
   onKeep: () => void;
+  onPrev: () => void;
+  canGoPrev: boolean;
 }) => (
   <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4">
     <p className="text-xs font-bold text-accent">Revisão guiada • passo {step}</p>
@@ -1196,7 +1200,8 @@ const GuidedReviewCard = ({
         </div>
       ))}
     </div>
-    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      <Button type="button" variant="ghost" onClick={onPrev} disabled={!canGoPrev}>Voltar item</Button>
       <Button type="button" variant="outline" onClick={onEdit}>Editar novamente</Button>
       <Button type="button" variant="accent" onClick={onKeep}>Manter</Button>
     </div>
