@@ -558,10 +558,10 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
       </AnimatePresence>
 
       {/* Navigation buttons */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {isPhotosStep ? (
           <>
-            <Button variant="outline" onClick={() => setStep(step - 1)}>
+            <Button variant="outline" onClick={() => setStep(step - 1)} className="w-full sm:w-auto">
               <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
             </Button>
             <Button
@@ -569,6 +569,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
               disabled={photoCount === 0}
               onClick={() => { try { localStorage.removeItem(draftKey); } catch {} onComplete(createdServiceId!); }}
               title={photoCount === 0 ? 'Adicione ao menos 1 foto para concluir' : ''}
+              className="w-full sm:w-auto"
             >
               {photoCount === 0 ? 'Adicione 1 foto' : 'Concluir'} <Sparkles className="h-4 w-4 ml-1" />
             </Button>
@@ -577,10 +578,9 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           <>
             <Button
               variant="outline"
-              onClick={() => {
-                if (step > 0) setStep(step - 1);
-              }}
+              onClick={() => { if (step > 0) setStep(step - 1); }}
               disabled={step === 0}
+              className="w-full sm:w-auto"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Voltar
@@ -590,12 +590,29 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
               variant="accent"
               disabled={!canNext() || saving}
               onClick={handleNext}
+              className="w-full sm:w-auto"
             >
               {saving ? 'Salvando...' : step === 1 ? 'Salvar e adicionar fotos' : 'Próximo'}
               <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           </>
         )}
+      </div>
+
+      {/* Secondary action bar — visible "skip" with proper contrast */}
+      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-muted-foreground">
+          Sem tempo agora? Você pode pular e completar depois pelo Dashboard.
+        </p>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={handleSkipForNow}
+          className="w-full sm:w-auto font-semibold"
+        >
+          Pular por enquanto
+        </Button>
       </div>
 
       {/* Share section (only on photos step) */}
@@ -608,12 +625,18 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
               <Copy className="h-4 w-4 mr-1" /> {linkCopied ? 'Copiado!' : 'Copiar'}
             </Button>
           </div>
-          <div className="flex gap-2">
-            <Button variant="accent" size="sm" className="flex-1" onClick={handleShareWhatsApp}>
-              <Share2 className="h-4 w-4 mr-1" /> WhatsApp
+          <div className="flex flex-wrap gap-2">
+            <Button variant="accent" size="sm" className="flex-1 min-w-[140px]" onClick={handleShareNative}>
+              <Share2 className="h-4 w-4 mr-1" /> Compartilhar
             </Button>
-            <Button variant="outline" size="sm" className="flex-1" onClick={() => window.open(profileUrl, '_blank')}>
-              <ExternalLink className="h-4 w-4 mr-1" /> Ver loja
+            {/* Desktop only — "Ver minha página" */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden sm:inline-flex flex-1 min-w-[140px]"
+              onClick={() => window.open(profileUrl, '_blank', 'noopener')}
+            >
+              <ExternalLink className="h-4 w-4 mr-1" /> Ver minha página
             </Button>
           </div>
         </div>
