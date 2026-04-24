@@ -5654,6 +5654,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Json
       }
+      admin_review_sponsor_docs: {
+        Args: { _decision: string; _lead_id: string; _reason?: string }
+        Returns: Json
+      }
       admin_set_staff_permission: {
         Args: {
           _enabled: boolean
