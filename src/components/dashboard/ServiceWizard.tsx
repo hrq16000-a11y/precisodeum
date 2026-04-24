@@ -115,20 +115,21 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
     (async () => {
       const { data } = await supabase
         .from('services')
-        .select('name, description, whatsapp, service_area, working_hours, website, instagram_url, facebook_url, youtube_url, category_id')
+        .select('service_name, description, whatsapp, service_area, working_hours, website, instagram_url, facebook_url, youtube_url, category_id')
         .eq('id', createdServiceId)
         .maybeSingle();
       if (cancelled || !data) return;
-      if (data.name && !serviceName) setServiceName(data.name);
-      if (data.description && !description) setDescription(data.description);
-      if (data.whatsapp && !whatsapp) setWhatsapp(data.whatsapp);
-      if (data.service_area && !serviceArea) setServiceArea(data.service_area);
-      if (data.working_hours && !workingHours) setWorkingHours(data.working_hours);
-      if (data.website && !website) setWebsite(data.website);
-      if (data.instagram_url && !instagramUrl) setInstagramUrl(data.instagram_url);
-      if (data.facebook_url && !facebookUrl) setFacebookUrl(data.facebook_url);
-      if (data.youtube_url && !youtubeUrl) setYoutubeUrl(data.youtube_url);
-      if (data.category_id && !selectedCategoryIds.length) setSelectedCategoryIds([data.category_id]);
+      const row: any = data;
+      if (row.service_name && !serviceName) setServiceName(row.service_name);
+      if (row.description && !description) setDescription(row.description);
+      if (row.whatsapp && !whatsapp) setWhatsapp(row.whatsapp);
+      if (row.service_area && !serviceArea) setServiceArea(row.service_area);
+      if (row.working_hours && !workingHours) setWorkingHours(row.working_hours);
+      if (row.website && !website) setWebsite(row.website);
+      if (row.instagram_url && !instagramUrl) setInstagramUrl(row.instagram_url);
+      if (row.facebook_url && !facebookUrl) setFacebookUrl(row.facebook_url);
+      if (row.youtube_url && !youtubeUrl) setYoutubeUrl(row.youtube_url);
+      if (row.category_id && !selectedCategoryIds.length) setSelectedCategoryIds([row.category_id]);
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
