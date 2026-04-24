@@ -142,6 +142,37 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
     ).slice(0, 20);
   }, [categories, selectedCategoryIds, categorySearch]);
 
+  // Single-select category — replaces previous and auto-fills service name if empty
+  const handleSelectCategory = (catId: string) => {
+    const cat = categories.find((c: any) => c.id === catId);
+    setSelectedCategoryIds([catId]);
+    setCategorySearch('');
+    setShowCatDrop(false);
+    if (cat?.name && !serviceName.trim()) {
+      setServiceName(cat.name);
+    }
+  };
+
+  // Quick suggestions for service area / working hours
+  const areaSuggestions = useMemo(() => {
+    const city = provider?.city || '';
+    const list: string[] = [];
+    if (city) {
+      list.push(city);
+      list.push(`Região metropolitana de ${city}`);
+    }
+    list.push('Atendo toda a cidade', 'Atendo a domicílio');
+    return list;
+  }, [provider?.city]);
+
+  const hoursSuggestions = [
+    'Seg a Sex, 08h às 18h',
+    'Seg a Sáb, 08h às 18h',
+    'Comercial (09h às 17h)',
+    '24 horas',
+    'Sob agendamento',
+  ];
+
   const providerCity = provider?.city || '';
   const providerState = (provider?.state && provider.state !== 'ST') ? provider.state : '';
   const providerCityDisplay = providerCity
@@ -212,9 +243,23 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  const handleShareWhatsApp = () => {
+  const handleShareNative = async () => {
     const text = `Confira meu perfil profissional: ${profileUrl}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
+      try {
+        await (navigator as any).share({ title: serviceName || 'Meu perfil', text, url: profileUrl });
+        return;
+      } catch {
+        // user cancelled — fall through to copy
+      }
+    }
+    handleCopyLink();
+  };
+
+  const handleSkipForNow = () => {
+    try { localStorage.removeItem(draftKey); } catch {}
+    if (createdServiceId) onComplete(createdServiceId);
+    else onCancel();
   };
 
   const progress = ((step + 1) / STEPS.length) * 100;
@@ -304,7 +349,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                   />
                 </div>
 
-                {/* Category multi-select */}
+                {/* Category single-select */}
                 <div ref={catRef}>
                   <label className="mb-1 block text-sm font-medium text-foreground">Categoria *</label>
                   <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 min-h-[40px]">
@@ -314,30 +359,35 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                       return (
                         <span key={catId} className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-medium text-accent">
                           <CategoryIcon icon={cat.icon} size={12} className="text-accent" /> {cat.name}
-                          <button onClick={() => setSelectedCategoryIds(prev => prev.filter(id => id !== catId))} className="hover:text-destructive">
+                          <button onClick={() => setSelectedCategoryIds([])} className="hover:text-destructive" aria-label="Remover categoria">
                             <X className="h-3 w-3" />
                           </button>
                         </span>
                       );
                     })}
-                    <div className="relative flex-1 min-w-[120px]">
-                      <input
-                        value={categorySearch}
-                        onChange={e => { setCategorySearch(e.target.value); setShowCatDrop(true); }}
-                        onFocus={() => setShowCatDrop(true)}
-                        placeholder={selectedCategoryIds.length === 0 ? 'Buscar categoria...' : 'Adicionar...'}
-                        className="w-full border-0 bg-transparent px-1 py-0.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                      />
-                    </div>
+                    {selectedCategoryIds.length === 0 && (
+                      <div className="relative flex-1 min-w-[120px]">
+                        <input
+                          value={categorySearch}
+                          onChange={e => { setCategorySearch(e.target.value); setShowCatDrop(true); }}
+                          onFocus={() => setShowCatDrop(true)}
+                          placeholder="Buscar categoria..."
+                          className="w-full border-0 bg-transparent px-1 py-0.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                        />
+                      </div>
+                    )}
                   </div>
-                  {showCatDrop && filteredCats.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Limite de 1 categoria por serviço. Você poderá cadastrar outros serviços depois.
+                  </p>
+                  {showCatDrop && selectedCategoryIds.length === 0 && filteredCats.length > 0 && (
                     <div className="relative">
                       <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-border bg-card shadow-lg">
                         {filteredCats.map((c: any) => (
                           <button
                             key={c.id}
                             type="button"
-                            onClick={() => { setSelectedCategoryIds(prev => [...prev, c.id]); setCategorySearch(''); }}
+                            onClick={() => handleSelectCategory(c.id)}
                             className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent/10"
                           >
                             <CategoryIcon icon={c.icon} size={14} className="text-current" /> {c.name}
@@ -400,6 +450,21 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                       value={serviceArea}
                       onChange={e => setServiceArea(e.target.value)}
                     />
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {areaSuggestions.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setServiceArea(s)}
+                          className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-foreground hover:bg-accent/10 hover:border-accent transition"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                    {serviceArea && (
+                      <p className="text-[11px] text-muted-foreground mt-1">Ficará visível assim: <span className="text-foreground">{serviceArea}</span></p>
+                    )}
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">🕐 Horário</label>
@@ -408,6 +473,21 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                       value={workingHours}
                       onChange={e => setWorkingHours(e.target.value)}
                     />
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {hoursSuggestions.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setWorkingHours(s)}
+                          className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-foreground hover:bg-accent/10 hover:border-accent transition"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                    {workingHours && (
+                      <p className="text-[11px] text-muted-foreground mt-1">Ficará visível assim: <span className="text-foreground">{workingHours}</span></p>
+                    )}
                   </div>
                 </div>
 
@@ -478,10 +558,10 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
       </AnimatePresence>
 
       {/* Navigation buttons */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {isPhotosStep ? (
           <>
-            <Button variant="outline" onClick={() => setStep(step - 1)}>
+            <Button variant="outline" onClick={() => setStep(step - 1)} className="w-full sm:w-auto">
               <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
             </Button>
             <Button
@@ -489,6 +569,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
               disabled={photoCount === 0}
               onClick={() => { try { localStorage.removeItem(draftKey); } catch {} onComplete(createdServiceId!); }}
               title={photoCount === 0 ? 'Adicione ao menos 1 foto para concluir' : ''}
+              className="w-full sm:w-auto"
             >
               {photoCount === 0 ? 'Adicione 1 foto' : 'Concluir'} <Sparkles className="h-4 w-4 ml-1" />
             </Button>
@@ -497,10 +578,9 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           <>
             <Button
               variant="outline"
-              onClick={() => {
-                if (step > 0) setStep(step - 1);
-              }}
+              onClick={() => { if (step > 0) setStep(step - 1); }}
               disabled={step === 0}
+              className="w-full sm:w-auto"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Voltar
@@ -510,12 +590,29 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
               variant="accent"
               disabled={!canNext() || saving}
               onClick={handleNext}
+              className="w-full sm:w-auto"
             >
               {saving ? 'Salvando...' : step === 1 ? 'Salvar e adicionar fotos' : 'Próximo'}
               <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           </>
         )}
+      </div>
+
+      {/* Secondary action bar — visible "skip" with proper contrast */}
+      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-muted-foreground">
+          Sem tempo agora? Você pode pular e completar depois pelo Dashboard.
+        </p>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={handleSkipForNow}
+          className="w-full sm:w-auto font-semibold"
+        >
+          Pular por enquanto
+        </Button>
       </div>
 
       {/* Share section (only on photos step) */}
@@ -528,12 +625,18 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
               <Copy className="h-4 w-4 mr-1" /> {linkCopied ? 'Copiado!' : 'Copiar'}
             </Button>
           </div>
-          <div className="flex gap-2">
-            <Button variant="accent" size="sm" className="flex-1" onClick={handleShareWhatsApp}>
-              <Share2 className="h-4 w-4 mr-1" /> WhatsApp
+          <div className="flex flex-wrap gap-2">
+            <Button variant="accent" size="sm" className="flex-1 min-w-[140px]" onClick={handleShareNative}>
+              <Share2 className="h-4 w-4 mr-1" /> Compartilhar
             </Button>
-            <Button variant="outline" size="sm" className="flex-1" onClick={() => window.open(profileUrl, '_blank')}>
-              <ExternalLink className="h-4 w-4 mr-1" /> Ver loja
+            {/* Desktop only — "Ver minha página" */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden sm:inline-flex flex-1 min-w-[140px]"
+              onClick={() => window.open(profileUrl, '_blank', 'noopener')}
+            >
+              <ExternalLink className="h-4 w-4 mr-1" /> Ver minha página
             </Button>
           </div>
         </div>
