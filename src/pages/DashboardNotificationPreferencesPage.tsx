@@ -79,11 +79,15 @@ const DashboardNotificationPreferencesPage = () => {
         if (error) throw error;
         toast.success('Notificação enviada — confira o sino no topo');
       } else if (key === 'push') {
-        await pwa.showLocalNotification('Teste de Push', { body: 'Push do PWA funcionando!' });
-        toast.success('Push enviado para este dispositivo');
+        if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+          toast.error('Permissão de notificação negada — habilite no navegador');
+        } else {
+          new Notification('Teste de Push', { body: 'Push do PWA funcionando!' });
+          toast.success('Push enviado para este dispositivo');
+        }
       } else if (key === 'whatsapp') {
         const phone = (provider as any)?.whatsapp || (profile as any)?.whatsapp;
-        if (!phone) { toast.error('Sem WhatsApp cadastrado no perfil'); break_label: { } return; }
+        if (!phone) { toast.error('Sem WhatsApp cadastrado no perfil'); return; }
         window.open(whatsappLink(String(phone), 'Mensagem de teste do Preciso de Um.'), '_blank');
         toast.success('WhatsApp aberto');
       } else if (key === 'email') {

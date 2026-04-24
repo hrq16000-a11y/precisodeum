@@ -161,7 +161,7 @@ const DashboardLeadDetailPage = () => {
               <div key={item.id} className="border-l-2 border-primary/30 pl-3">
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <Badge variant="outline">{item.entry_type}</Badge>
-                  <span className="text-muted-foreground">{item.author_id === user?.id ? (profile?.full_name || 'Você') : 'Sistema'}</span>
+                  <span className="text-muted-foreground">{(item as any).author_id === user?.id ? (profile?.full_name || 'Você') : 'Sistema'}</span>
                   <span className="text-muted-foreground">{new Date(item.created_at).toLocaleString('pt-BR')}</span>
                 </div>
                 {isStatus && oldM && newM && <p className="mt-1 text-xs text-muted-foreground">{oldM.label} → <strong className="text-foreground">{newM.label}</strong></p>}
