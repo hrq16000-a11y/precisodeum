@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePresenceTracker } from '@/hooks/useOnlinePresence';
 import { geocodeCity } from '@/lib/geoUtils';
 import { resolveCelebrationMutedPreference, setCelebrationMuted } from '@/lib/celebrate';
+import { reportError } from '@/lib/errorReporter';
 
 interface AuthContextType {
   session: Session | null;
@@ -41,7 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Evita a race condition que deixa o usuário "preso" sem profile carregado.
     let profileData: any = null;
     let providerRows: any[] | null = null;
-    const MAX_ATTEMPTS = 5;
+    const MAX_ATTEMPTS = 8;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const [{ data: pData }, { data: pvRows }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
@@ -50,8 +51,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       profileData = pData;
       providerRows = pvRows;
       if (profileData) break;
-      // Backoff: 150ms, 300ms, 600ms, 1200ms
+      // Backoff: 150ms, 300ms, 600ms, 1200ms, 2400ms, 4800ms, 9600ms
       await new Promise(resolve => setTimeout(resolve, 150 * Math.pow(2, attempt)));
+    }
+
+    if (!profileData) {
+      reportError({
+        errorMessage: `Profile fetch timeout after ${MAX_ATTEMPTS} attempts`,
+        componentName: 'useAuth',
+        actionContext: 'auth.profile_timeout',
+        severity: 'error',
+      }).catch(() => {});
     }
 
     setProfile(profileData);
