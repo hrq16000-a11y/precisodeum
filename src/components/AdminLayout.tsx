@@ -74,6 +74,7 @@ const menuGroups = [
       { label: 'CRM Comercial', icon: HandshakeIcon, path: '/admin/crm-patrocinadores' },
       { label: 'Leads Sponsors', icon: UserPlus, path: '/admin/leads-patrocinadores' },
       { label: 'Cidades', icon: MapPin, path: '/admin/cidades' },
+      { label: 'Mapa de Cobertura', icon: MapPin, path: '/admin/cobertura' },
       { label: 'Boosts', icon: Rocket, path: '/admin/boosts' },
       { label: 'Slots de Anúncios', icon: LayoutGrid, path: '/admin/slots-anuncios' },
       { label: 'Painel Sponsor', icon: Shield, path: '/sponsor-panel' },
