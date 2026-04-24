@@ -189,9 +189,9 @@ const EngagementLoop = ({ servicesCount: servicesOverride, portfolioAlbumsCount:
                 <ArrowRight className="h-3.5 w-3.5" />
               </Button>
               <span className="text-[11px] text-muted-foreground">
-                Perfil {data.percentage}% completo
+                Perfil {pct}% completo
               </span>
-              <LevelBadge percentage={data.percentage} />
+              <LevelBadge percentage={pct} />
             </div>
           </div>
         </div>
