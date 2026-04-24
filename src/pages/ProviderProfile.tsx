@@ -117,7 +117,7 @@ const DEFAULT_SETTINGS: PageSettings = {
   headline: '',
   tagline: '',
   cta_text: 'Solicitar Orçamento',
-  cta_whatsapp_text: 'Chamar no WhatsApp',
+  cta_whatsapp_text: 'Solicitar Orçamento',
   accent_color: '',
   cover_image_url: '',
   instagram_url: '',
@@ -316,7 +316,7 @@ const ProviderProfile = () => {
 
       if (active) setLoading(true);
 
-      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, phone, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, whatsapp, working_hours, years_experience, ibge_code, latitude, longitude, created_at, updated_at, deleted_at, onboarding_progress, website, user_ref';
+      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, phone, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, whatsapp, working_hours, years_experience, ibge_code, latitude, longitude, created_at, updated_at, deleted_at, onboarding_progress, website, user_ref, meta_title, meta_description';
 
       let { data } = await supabase
         .from('providers')
@@ -778,9 +778,12 @@ const ProviderProfile = () => {
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
   useSeoHead({
-    title: provider ? `${name} - ${category} em ${provider.city} | Preciso de um` : 'Profissional',
+    title: provider
+      ? (provider.meta_title?.trim() || `${name} - ${category} em ${provider.city} | Preciso de um`)
+      : 'Profissional',
     description: provider
-      ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Peca seu orcamento gratis!`
+      ? (provider.meta_description?.trim() ||
+          `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Peca seu orcamento gratis!`)
       : 'Encontre profissionais na plataforma.',
     canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
     ogImage: providerSocialImage || undefined,
