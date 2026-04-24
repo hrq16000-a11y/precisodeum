@@ -30,6 +30,7 @@ import CommunityFeed from '@/components/dashboard/CommunityFeed';
 import RealtimeEngagementToast from '@/components/dashboard/RealtimeEngagementToast';
 import QrCodeCard from '@/components/dashboard/QrCodeCard';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useEngagementLevel } from '@/hooks/useEngagementLevel';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
 import ActionQueue from '@/components/dashboard/ActionQueue';
