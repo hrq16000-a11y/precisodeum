@@ -537,6 +537,14 @@ const BasicOnboardingWizard = () => {
     setShowFinalSummary(true);
   };
 
+  const goPrevGuidedReviewStep = () => {
+    const current = guidedReviewStep ?? 1;
+    const prev = [...checklistItems].reverse().find(item => item.step < current)?.step;
+    if (prev) {
+      setGuidedReviewStep(prev);
+    }
+  };
+
   const continueReviewAll = () => {
     saveStepDraft(step);
     const next = checklistItems.find(item => item.step > step && item.step <= furthestStep)?.step;
