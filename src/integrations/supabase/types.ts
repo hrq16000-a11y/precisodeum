@@ -4640,6 +4640,36 @@ export type Database = {
         }
         Relationships: []
       }
+      uf_normalization_audit: {
+        Row: {
+          created_at: string
+          id: string
+          new_state: string | null
+          old_state: string | null
+          row_id: string
+          source: string
+          table_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          new_state?: string | null
+          old_state?: string | null
+          row_id: string
+          source?: string
+          table_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          new_state?: string | null
+          old_state?: string | null
+          row_id?: string
+          source?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
       ui_bottom_nav_config: {
         Row: {
           animation_duration: number
