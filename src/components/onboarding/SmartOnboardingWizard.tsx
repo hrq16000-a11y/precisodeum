@@ -675,8 +675,8 @@ const BasicOnboardingWizard = () => {
   const reviewItems = buildReviewItems({ profileType, providerSubtype, city, state, avatarUrl, fullName, agencyName, whatsapp, bio, selectedCategoryIds, servicesCreated });
 
   const summaryItems = [
-    { label: 'Tipo de perfil', value: profileType || 'Não definido' },
-    { label: 'Cidade', value: city ? `${city}${state ? ` • ${state}` : ''}` : 'Não informada' },
+    { label: 'Tipo de perfil', value: profileType ? (PROFILE_TYPE_LABEL[profileType] || profileType) : 'Não definido' },
+    { label: 'Cidade', value: city ? `${city}${state && state !== 'ST' ? ` • ${state}` : ''}` : 'Não informada' },
     { label: 'Nome', value: fullName || 'Não informado' },
     { label: 'WhatsApp', value: whatsapp || 'Não informado' },
     { label: 'Serviços', value: profileType === 'provider' ? `${servicesCreated} cadastrado(s)` : 'Não aplicável' },
