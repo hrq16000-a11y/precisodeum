@@ -1554,9 +1554,15 @@ const Step2Location = ({
 const Step3Contact = ({
   profileType, fullName, setFullName, agencyName, setAgencyName,
   whatsapp, setWhatsapp, bio, setBio,
+  taxId, setTaxId,
   categoriesForPicker, selectedCategoryIds, onToggleCategory,
   saving, canAdvance, onBack, onNext, onSkip, onFieldBlur,
-}: any) => (
+}: any) => {
+  const taxDigits = (taxId || '').replace(/\D/g, '');
+  const taxFilled = taxDigits.length > 0;
+  const taxValid = !taxFilled || isValidCpfCnpj(taxDigits);
+  const taxLabel = taxDigits.length > 11 ? 'CNPJ' : 'CPF';
+  return (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
       <ArrowLeft className="h-3.5 w-3.5" /> Voltar
