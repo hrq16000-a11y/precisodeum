@@ -45,10 +45,10 @@ export const buildOnboardingChecklist = (input: CompletenessInput): ChecklistIte
   const hasPortfolio = albums >= 1;
 
   return [
-    { key: 'photo', label: 'Foto de perfil', hint: 'Adicione uma foto profissional', done: hasPhoto, href: '/dashboard/perfil', structural: false },
-    { key: 'contact', label: 'WhatsApp / Telefone', hint: 'Cadastre seu contato direto', done: hasContact, href: '/dashboard/perfil', structural: true },
-    { key: 'location', label: 'Cidade e estado', hint: 'Defina onde você atende', done: hasLocation, href: '/dashboard/perfil', structural: true },
-    { key: 'description', label: 'Descrição (≥30 caracteres)', hint: 'Conte o que você faz de melhor', done: hasDescription, href: '/dashboard/perfil', structural: false },
+    { key: 'photo', label: 'Foto de perfil', hint: 'Adicione uma foto profissional', done: hasPhoto, href: '/dashboard/perfil?focus=avatar', structural: false },
+    { key: 'contact', label: 'WhatsApp / Telefone', hint: 'Cadastre seu contato direto', done: hasContact, href: '/dashboard/perfil?focus=contact', structural: true },
+    { key: 'location', label: 'Cidade e estado', hint: 'Defina onde você atende', done: hasLocation, href: '/dashboard/perfil?focus=location', structural: true },
+    { key: 'description', label: 'Descrição (≥30 caracteres)', hint: 'Conte o que você faz de melhor', done: hasDescription, href: '/dashboard/perfil?focus=description', structural: false },
     { key: 'service', label: 'Pelo menos 1 serviço', hint: 'Cadastre o que você oferece', done: hasService, href: '/dashboard/servicos', structural: true },
     { key: 'portfolio', label: 'Pelo menos 1 álbum de portfólio', hint: 'Mostre seu trabalho com fotos reais', done: hasPortfolio, href: '/dashboard/portfolio', structural: false },
   ];

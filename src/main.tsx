@@ -151,8 +151,49 @@ const resetCachesIfNeeded = async () => {
   return false;
 };
 
+const showVersionUpdateToast = () => {
+  // Toast persistente — usa o sonner já carregado pelo App via DeferredShell.
+  // Se o sonner ainda não montou, faz fallback para um banner DOM puro.
+  const triggerReload = () => {
+    try {
+      // Limpa caches de SW antes de recarregar para garantir bundle novo
+      void purgeAllCachesAndSWs().finally(() => {
+        window.location.reload();
+      });
+    } catch {
+      window.location.reload();
+    }
+  };
+
+  // Tenta sonner primeiro
+  import('sonner').then(({ toast }) => {
+    toast('Uma nova versão está disponível', {
+      description: 'Atualize para receber as últimas melhorias do Preciso de Um.',
+      duration: Infinity,
+      id: 'app-version-update',
+      action: { label: 'Atualizar agora', onClick: triggerReload },
+    });
+  }).catch(() => {
+    // Fallback: banner DOM persistente no topo
+    if (document.getElementById('app-version-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'app-version-banner';
+    banner.setAttribute('role', 'alert');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483646;background:hsl(var(--accent,210 90% 55%));color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.15);';
+    banner.innerHTML = '<span>Uma nova versão do Preciso de Um está disponível.</span>';
+    const btn = document.createElement('button');
+    btn.textContent = 'Atualizar agora';
+    btn.style.cssText = 'background:#fff;color:#111;border:0;padding:6px 14px;border-radius:6px;font-weight:600;cursor:pointer;';
+    btn.addEventListener('click', triggerReload);
+    banner.appendChild(btn);
+    document.body.appendChild(banner);
+  });
+};
+
 const startVersionWatcher = () => {
   if (!CURRENT_BUILD_ID) return;
+
+  let promptedForBuild: string | null = null;
 
   const check = async () => {
     try {
@@ -164,8 +205,12 @@ const startVersionWatcher = () => {
       const html = await res.text();
       const match = html.match(/\/assets\/index-[A-Za-z0-9_-]+\.js/);
       const remoteBuild = match?.[0];
-      if (remoteBuild && !CURRENT_BUILD_ID.includes(remoteBuild)) {
-        forceFreshReload();
+      if (remoteBuild && !CURRENT_BUILD_ID.includes(remoteBuild) && promptedForBuild !== remoteBuild) {
+        promptedForBuild = remoteBuild;
+        // Mudança crítica: NÃO recarrega automaticamente para preservar
+        // progresso do usuário (ex: Wizard, formulários). Mostra toast/banner
+        // persistente com botão explícito de "Atualizar agora".
+        showVersionUpdateToast();
       }
     } catch {
       // offline / falha de rede — ignora
