@@ -133,6 +133,7 @@ const ServicesPage = lazy(() => import("./pages/ServicesPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const ErrorPage = lazy(() => import("./pages/ErrorPage"));
 const Index02 = lazy(() => import("./pages/Index02"));
 const Index03 = lazy(() => import("./pages/Index03"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
@@ -420,6 +421,8 @@ const App = () => {
                 <Route path="/sponsor-panel/dados" element={<SponsorProtectedRoute><SponsorDataPage /></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/pagina" element={<SponsorProtectedRoute><SponsorFeatureGate><SponsorPublicProfilePage /></SponsorFeatureGate></SponsorProtectedRoute>} />
                 <Route path="/p/:slug" element={<InstitutionalPage />} />
+                <Route path="/error/404" element={<ErrorPage code={404} />} />
+                <Route path="/error/500" element={<ErrorPage code={500} />} />
                 <Route path="/:slug" element={<SeoPage />} />
                 <Route path="*" element={<NotFound />} />
                 </Routes>
