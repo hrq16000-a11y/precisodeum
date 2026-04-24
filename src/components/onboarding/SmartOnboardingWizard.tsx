@@ -972,6 +972,7 @@ const BasicOnboardingWizard = () => {
             avatarUrl={avatarUrl}
             editingCity={editingCity}
             onEditCity={() => setEditingCity(true)}
+            onCloseEditing={() => setEditingCity(false)}
             onCityChange={(c, s) => { setCity(c); setState(s); if (c) setEditingCity(false); }}
             onAvatarChange={(url) => { setAvatarUrl(url); window.setTimeout(handleStepFieldBlur, 0); }}
             onFieldBlur={handleStepFieldBlur}
