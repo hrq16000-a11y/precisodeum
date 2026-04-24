@@ -163,6 +163,27 @@ const BasicOnboardingWizard = () => {
     if (profile.whatsapp || profile.phone) setWhatsapp(profile.whatsapp || profile.phone || '');
   }, [profile]);
 
+  // ─── Google/social avatar sync (one-shot): copia foto do provedor social para profiles.avatar_url
+  // se ainda não houver avatar definido. Guard com ref evita loop.
+  const socialAvatarSyncedRef = useRef(false);
+  useEffect(() => {
+    if (socialAvatarSyncedRef.current) return;
+    if (!user?.id || !profile) return;
+    if (profile.avatar_url) { socialAvatarSyncedRef.current = true; return; }
+    const socialUrl = getSocialAvatarUrl(user);
+    if (!socialUrl) return;
+    socialAvatarSyncedRef.current = true;
+    setAvatarUrl(socialUrl);
+    (async () => {
+      try {
+        await supabase.from('profiles').update({ avatar_url: socialUrl }).eq('id', user.id);
+      } catch (err) {
+        // silent — UI já mostra a foto e próximo autosave tentará novamente
+        console.warn('[onboarding] failed to persist social avatar', err);
+      }
+    })();
+  }, [user, profile]);
+
   useEffect(() => {
     if (!user?.id) return;
     try {
