@@ -189,6 +189,9 @@ const BasicOnboardingWizard = () => {
             void supabase.from('services').select('id', { count: 'exact', head: true })
               .eq('provider_id', data[0].id)
               .then(({ count }) => setServicesCreated(count ?? 0));
+            void supabase.from('portfolio_albums').select('id', { count: 'exact', head: true })
+              .eq('provider_id', data[0].id)
+              .then(({ count }) => setPortfolioAlbumsCreated(count ?? 0));
           }
         }
       });
