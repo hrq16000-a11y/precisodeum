@@ -1,30 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { normalizeUF } from '@/lib/locationFormat';
 
-/** Normalize state to 2-letter UF code */
-const STATE_NAME_TO_UF: Record<string, string> = {
-  'acre': 'AC', 'alagoas': 'AL', 'amapa': 'AP', 'amapá': 'AP', 'amazonas': 'AM',
-  'bahia': 'BA', 'ceara': 'CE', 'ceará': 'CE', 'distrito federal': 'DF',
-  'espirito santo': 'ES', 'espírito santo': 'ES', 'goias': 'GO', 'goiás': 'GO',
-  'maranhao': 'MA', 'maranhão': 'MA', 'mato grosso': 'MT', 'mato grosso do sul': 'MS',
-  'minas gerais': 'MG', 'para': 'PA', 'pará': 'PA', 'paraiba': 'PB', 'paraíba': 'PB',
-  'parana': 'PR', 'paraná': 'PR', 'pernambuco': 'PE', 'piaui': 'PI', 'piauí': 'PI',
-  'rio de janeiro': 'RJ', 'rio grande do norte': 'RN', 'rio grande do sul': 'RS',
-  'rondonia': 'RO', 'rondônia': 'RO', 'roraima': 'RR', 'santa catarina': 'SC',
-  'sao paulo': 'SP', 'são paulo': 'SP', 'sergipe': 'SE', 'tocantins': 'TO',
-};
-
-function normalizeUF(state: string | null | undefined): string | null {
-  if (!state) return null;
-  const trimmed = state.trim();
-  if (!trimmed) return null;
-  // Already a 2-letter UF
-  if (/^[A-Z]{2}$/.test(trimmed)) return trimmed;
-  if (/^[a-z]{2}$/.test(trimmed)) return trimmed.toUpperCase();
-  // Try to resolve full name
-  const lower = trimmed.toLowerCase();
-  // Só devolvemos UF quando temos certeza — evita resíduos como "St", "Sa", "Es..." vazando para a UI.
-  return STATE_NAME_TO_UF[lower] || null;
-}
 
 interface GeoData {
   city: string | null;
