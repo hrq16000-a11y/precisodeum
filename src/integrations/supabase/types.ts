@@ -3842,10 +3842,15 @@ export type Database = {
       }
       sponsor_leads: {
         Row: {
+          additional_docs: Json
+          banner_url: string | null
+          checklist_confirmed: boolean
           cnpj: string
+          cnpj_document_url: string | null
           company_name: string
           contract_accepted: boolean
           created_at: string
+          docs_submitted_at: string | null
           email: string
           id: string
           notes: string | null
@@ -3855,10 +3860,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          additional_docs?: Json
+          banner_url?: string | null
+          checklist_confirmed?: boolean
           cnpj: string
+          cnpj_document_url?: string | null
           company_name: string
           contract_accepted?: boolean
           created_at?: string
+          docs_submitted_at?: string | null
           email: string
           id?: string
           notes?: string | null
@@ -3868,10 +3878,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          additional_docs?: Json
+          banner_url?: string | null
+          checklist_confirmed?: boolean
           cnpj?: string
+          cnpj_document_url?: string | null
           company_name?: string
           contract_accepted?: boolean
           created_at?: string
+          docs_submitted_at?: string | null
           email?: string
           id?: string
           notes?: string | null
