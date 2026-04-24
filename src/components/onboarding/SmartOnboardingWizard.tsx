@@ -1433,7 +1433,7 @@ TypeButton.displayName = 'TypeButton';
 
 // ─── Passo 2 ───
 const Step2Location = ({
-  city, state, avatarUrl, editingCity, onEditCity, onCityChange, onAvatarChange,
+  city, state, avatarUrl, editingCity, onEditCity, onCloseEditing, onCityChange, onAvatarChange,
   userId, onBack, onNext, onSkip, canAdvance, onFieldBlur, fullName, socialAvatarUrl,
 }: any) => {
   const isFromGoogle = !!socialAvatarUrl && avatarUrl === socialAvatarUrl;
