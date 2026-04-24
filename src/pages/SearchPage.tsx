@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 import { useSearchProvidersGrouped, useCategories, useSearchSuggestions, useGeoCategories, normalizeCityName, matchesGeoContext, type DbProvider } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List, Circle, Zap } from 'lucide-react';
@@ -234,17 +235,68 @@ const SearchPage = () => {
     return nbs.sort();
   }, [allProviders, effectiveCity]);
 
-  // SEO
+  // SEO — dynamic title/description/canonical reflecting active filters
   const seoCity = effectiveCity || '';
-  const seoTitle = query
-    ? `Resultados para "${query}"${seoCity ? ` em ${seoCity}` : ''}`
-    : seoCity ? `Profissionais em ${seoCity}` : 'Buscar Profissionais';
-  const seoDesc = query
-    ? `Encontre profissionais para "${query}"${seoCity ? ` em ${seoCity}` : ''}. Compare avaliações e solicite orçamentos.`
-    : seoCity
-      ? `Encontre um profissional para qualquer tipo de serviço em ${seoCity}. Compare avaliações e solicite orçamentos.`
-      : 'Encontre um profissional para qualquer tipo de serviço no Brasil. Compare avaliações e solicite orçamentos.';
-  useSeoHead({ title: seoTitle, description: seoDesc, canonical: `${SITE_BASE_URL}/buscar` });
+  const seoCategory = useMemo(() => {
+    if (!selectedCategory) return '';
+    return categories.find(c => c.slug === selectedCategory)?.name || '';
+  }, [selectedCategory, categories]);
+
+  const seoFilterParts: string[] = [];
+  if (onlineOnly) seoFilterParts.push('online agora');
+  if (acceptingOnly) seoFilterParts.push('aceitando clientes');
+  if (sortBy === 'nearest') seoFilterParts.push('mais próximos');
+  else if (sortBy === 'rating') seoFilterParts.push('melhor avaliados');
+  const seoFilterSuffix = seoFilterParts.length ? ` (${seoFilterParts.join(', ')})` : '';
+
+  const seoSubject = query
+    ? `"${query}"`
+    : seoCategory
+      ? seoCategory
+      : 'profissionais';
+
+  const seoTitle = query || seoCategory
+    ? `${query ? `Resultados para "${query}"` : `${seoCategory}`}${seoCity ? ` em ${seoCity}` : ''}${seoFilterSuffix}`
+    : seoCity ? `Profissionais em ${seoCity}${seoFilterSuffix}` : 'Buscar Profissionais';
+
+  const seoDesc = `Encontre ${seoSubject}${seoCity ? ` em ${seoCity}` : ' no Brasil'}${seoFilterSuffix}. ${totalDisplay > 0 ? `${totalDisplay} ${totalDisplay === 1 ? 'profissional disponível' : 'profissionais disponíveis'}.` : ''} Compare avaliações e solicite orçamentos.`.trim();
+
+  // Build canonical with stable filter params (only meaningful ones)
+  const canonicalUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (selectedCategory) params.set('categoria', selectedCategory);
+    if (seoCity) params.set('cidade', seoCity);
+    if (sortBy && sortBy !== 'relevance') params.set('ordem', sortBy);
+    const qs = params.toString();
+    return `${SITE_BASE_URL}/buscar${qs ? `?${qs}` : ''}`;
+  }, [query, selectedCategory, seoCity, sortBy]);
+
+  // Noindex when no meaningful query/category/city to avoid thin SERPs
+  const noindex = !query && !selectedCategory && !seoCity;
+
+  useSeoHead({ title: seoTitle, description: seoDesc, canonical: canonicalUrl, noindex });
+
+  // JSON-LD ItemList of visible local providers (top 10)
+  const jsonLdData = useMemo(() => {
+    const items = filteredLocal.slice(0, 10).map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${SITE_BASE_URL}/profissional/${p.slug}`,
+      name: p.businessName || p.name,
+    }));
+    if (!items.length) return null;
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: seoTitle,
+      description: seoDesc,
+      numberOfItems: items.length,
+      itemListElement: items,
+    };
+  }, [filteredLocal, seoTitle, seoDesc]);
+
+  useJsonLd(jsonLdData);
 
   const paginatedLocal = filteredLocal.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
   const paginatedNearby = filteredNearby;
