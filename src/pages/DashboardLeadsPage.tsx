@@ -137,6 +137,14 @@ const DashboardLeadsPage = () => {
     return arr;
   }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo]);
 
+  // Reset paginação quando filtros/lista mudarem
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo]);
+
+  const visibleLeads = useMemo(() => filteredLeads.slice(0, visibleCount), [filteredLeads, visibleCount]);
+  const hasMore = filteredLeads.length > visibleCount;
+
   const overdueCount = useMemo(() => leads.filter(isOverdue).length, [leads]);
 
   const clearFilters = () => {
