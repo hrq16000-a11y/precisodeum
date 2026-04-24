@@ -126,6 +126,8 @@ const BasicOnboardingWizard = () => {
   // Provider data
   const [savedProvider, setSavedProvider] = useState<any | null>(null);
   const [servicesCreated, setServicesCreated] = useState(0);
+  const [portfolioAlbumsCreated, setPortfolioAlbumsCreated] = useState(0);
+  const [creatingAlbum, setCreatingAlbum] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
