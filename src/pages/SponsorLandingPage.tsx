@@ -554,11 +554,40 @@ export default function SponsorLandingPage() {
                 <li>Liberação do painel do patrocinador com métricas em tempo real.</li>
               </ol>
             </div>
-            <Button onClick={() => window.location.href = '/'} size="lg" className="px-8">
-              <ArrowRight className="w-4 h-4 mr-2" /> Voltar ao Início
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              {leadId && (
+                <Button
+                  onClick={() => setDocsModalOpen(true)}
+                  size="lg"
+                  variant={docsCompleted ? 'outline' : 'default'}
+                  className="px-6"
+                >
+                  {docsCompleted ? (
+                    <><CheckCircle2 className="w-4 h-4 mr-2" /> Documentos enviados</>
+                  ) : (
+                    <><Upload className="w-4 h-4 mr-2" /> Anexar CNPJ / Banner</>
+                  )}
+                </Button>
+              )}
+              <Button onClick={() => window.location.href = '/'} size="lg" variant="outline" className="px-6">
+                <ArrowRight className="w-4 h-4 mr-2" /> Voltar ao Início
+              </Button>
+            </div>
+            {leadId && !docsCompleted && (
+              <p className="mt-4 text-xs text-muted-foreground">
+                Dica: anexar o CNPJ e o banner agora acelera a aprovação da sua campanha.
+              </p>
+            )}
           </motion.div>
         </main>
+        {leadId && (
+          <SponsorDocsUploadModal
+            open={docsModalOpen}
+            onOpenChange={setDocsModalOpen}
+            leadId={leadId}
+            onCompleted={() => setDocsCompleted(true)}
+          />
+        )}
         <Footer />
       </>
     );
