@@ -50,7 +50,7 @@ const badgeColors: Record<string, string> = {
 };
 
 const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
-  const { city: geoCity, setCity, latitude, longitude, radiusKm } = useGeoCity();
+  const { city: geoCity, setCity, latitude, longitude, radiusKm, requestPreciseLocation } = useGeoCity();
   const hasGps = latitude != null && longitude != null;
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -65,29 +65,13 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
   const { data: suggestions } = useSearchSuggestions(shouldLoadSuggestions);
   const typingPlaceholder = useTypingPlaceholder(geoCity, !isFocused && !query.trim(), !isFocused ? 2400 : 1200);
 
+  // Ao focar/clicar na barra de busca em qualquer lugar do site, sempre tenta
+  // obter a localização mais precisa possível (GPS + reverse-geocode), com
+  // fallback silencioso para IP se o usuário negar. O próprio hook gerencia
+  // dedup via sessionStorage para não pedir duas vezes na mesma sessão.
   const requestGeoOnce = useCallback(() => {
-    try {
-      if (sessionStorage.getItem(GEO_ASKED_KEY)) return;
-      if (!navigator.geolocation) return;
-      sessionStorage.setItem(GEO_ASKED_KEY, '1');
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const r = await fetch(
-              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&localityLanguage=pt`
-            );
-            if (!r.ok) return;
-            const d = await r.json();
-            const city = d?.city || d?.locality || null;
-            const state = d?.principalSubdivision || null;
-            if (city) setCity(city, state || undefined);
-          } catch { /* silent */ }
-        },
-        () => {},
-        { timeout: 8000 }
-      );
-    } catch { /* silent */ }
-  }, [setCity]);
+    void requestPreciseLocation();
+  }, [requestPreciseLocation]);
 
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
