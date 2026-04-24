@@ -58,17 +58,9 @@ const DashboardPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [welcomeOpen, setWelcomeOpen] = useState(false);
-
-  // Welcome celebration: triggered once when redirected from wizard with ?welcome=1
-  useEffect(() => {
-    if (searchParams.get('welcome') === '1') {
-      setWelcomeOpen(true);
-      celebrate({ intensity: 'big', id: CELEBRATION_IDS.welcomeOnboarding(user?.id) });
-      const params = new URLSearchParams(searchParams);
-      params.delete('welcome');
-      setSearchParams(params, { replace: true });
-    }
-  }, [searchParams, setSearchParams, user?.id]);
+  const [statsLoaded, setStatsLoaded] = useState(false);
+  const [statsError, setStatsError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const handleResetOnboarding = async () => {
     if (!user?.id) return;
@@ -116,6 +108,19 @@ const DashboardPage = () => {
   const [reviewCount, setReviewCount] = useState<number>(0);
   const [guideOpen, setGuideOpen] = useState(true);
 
+  // Welcome celebration: triggered once when redirected from wizard with ?welcome=1
+  // GATE: só dispara quando provider e estatísticas estiverem carregados,
+  // evitando flicker de "0 serviços / 0 portfólio" durante o welcome.
+  useEffect(() => {
+    if (searchParams.get('welcome') !== '1') return;
+    if (!provider || !statsLoaded) return;
+    setWelcomeOpen(true);
+    celebrate({ intensity: 'big', id: CELEBRATION_IDS.welcomeOnboarding(user?.id) });
+    const params = new URLSearchParams(searchParams);
+    params.delete('welcome');
+    setSearchParams(params, { replace: true });
+  }, [searchParams, setSearchParams, user?.id, provider, statsLoaded]);
+
   useEffect(() => {
     if (!loading && !user) {
       const timer = setTimeout(() => navigate('/login', { replace: true }), 200);
@@ -125,26 +130,49 @@ const DashboardPage = () => {
 
   useEffect(() => {
     if (!provider) return;
+    let cancelled = false;
     (async () => {
-      const albumsRes = await supabase.from('portfolio_albums').select('id').eq('provider_id', provider.id);
-      const albumIds = (albumsRes.data || []).map(a => a.id);
-      setPortfolioAlbumCount(albumIds.length);
-      const [sRes, lRes, pRes, rRes] = await Promise.all([
-        supabase.from('services').select('id, view_count', { count: 'exact' }).eq('provider_id', provider.id),
-        supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
-        albumIds.length > 0
-          ? supabase.from('portfolio_photos').select('id', { count: 'exact', head: true }).in('album_id', albumIds)
-          : Promise.resolve({ count: 0 } as any),
-        supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
-      ]);
-      setServicesCount(sRes.count ?? 0);
-      setLeadsCount(lRes.count ?? 0);
-      setPortfolioCount(pRes.count ?? 0);
-      const totalViews = (sRes.data || []).reduce((acc: number, s: any) => acc + (s.view_count || 0), 0);
-      setViewsTotal(totalViews);
-      setReviewCount(rRes.count ?? 0);
+      try {
+        setStatsError(false);
+        const albumsRes = await supabase.from('portfolio_albums').select('id').eq('provider_id', provider.id);
+        if (albumsRes.error) throw albumsRes.error;
+        const albumIds = (albumsRes.data || []).map(a => a.id);
+        const [sRes, lRes, pRes, rRes] = await Promise.all([
+          supabase.from('services').select('id, view_count', { count: 'exact' }).eq('provider_id', provider.id),
+          supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
+          albumIds.length > 0
+            ? supabase.from('portfolio_photos').select('id', { count: 'exact', head: true }).in('album_id', albumIds)
+            : Promise.resolve({ count: 0, error: null } as any),
+          supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
+        ]);
+        if (sRes.error || lRes.error || (pRes as any).error || rRes.error) {
+          throw sRes.error || lRes.error || (pRes as any).error || rRes.error;
+        }
+        if (cancelled) return;
+        setPortfolioAlbumCount(albumIds.length);
+        setServicesCount(sRes.count ?? 0);
+        setLeadsCount(lRes.count ?? 0);
+        setPortfolioCount(pRes.count ?? 0);
+        const totalViews = (sRes.data || []).reduce((acc: number, s: any) => acc + (s.view_count || 0), 0);
+        setViewsTotal(totalViews);
+        setReviewCount(rRes.count ?? 0);
+        setStatsLoaded(true);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('[Dashboard] Erro ao carregar contadores:', err);
+        setStatsError(true);
+        toast.error('Não foi possível carregar suas estatísticas', {
+          description: 'Verifique sua conexão e tente novamente.',
+          action: {
+            label: 'Recarregar',
+            onClick: () => setReloadKey(k => k + 1),
+          },
+          duration: 10000,
+        });
+      }
     })();
-  }, [provider]);
+    return () => { cancelled = true; };
+  }, [provider, reloadKey]);
 
   useEffect(() => {
     if (!user) return;
