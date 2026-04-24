@@ -346,12 +346,18 @@ export function useGeoCity(): GeoStore {
       try { localStorage.removeItem(LON_KEY); sessionStorage.removeItem(LON_KEY); } catch {}
     }
 
+    const ts = new Date().toISOString();
+    safeSet(SOURCE_KEY, 'manual');
+    safeSet(LAST_KNOWN_KEY, ts);
     setGeoState({
       city,
       state: uf || geoState.state,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
       manualOverride: true,
+      source: 'manual',
+      geoFailed: false,
+      lastKnownAt: ts,
     });
   }, []);
 
@@ -393,15 +399,20 @@ export function useGeoCity(): GeoStore {
           safeSet(LAT_KEY, String(latitude));
           safeSet(LON_KEY, String(longitude));
           safeSet(PRECISE_KEY, 'true');
+          const ts2 = new Date().toISOString();
+          safeSet(SOURCE_KEY, 'gps');
+          safeSet(LAST_KNOWN_KEY, ts2);
 
-          setGeoState({ city, state, temp, latitude, longitude, precise: true });
+          setGeoState({ city, state, temp, latitude, longitude, precise: true, source: 'gps', geoFailed: false, lastKnownAt: ts2 });
           resolve(true);
         },
         () => {
-          // GPS denied — force IP fallback immediately if no coordinates
-          if (geoState.latitude === null) {
+          // GPS negado/falhou — se já temos cache, sinaliza fallback; senão, tenta IP.
+          if (geoState.latitude === null && !geoState.city) {
             fetchStarted = false;
             startFetchIfNeeded();
+          } else {
+            setGeoState({ geoFailed: true, source: geoState.source === 'none' ? 'cache' : geoState.source });
           }
           resolve(false);
         },
@@ -415,5 +426,10 @@ export function useGeoCity(): GeoStore {
     setGeoState({ radiusKm: km });
   }, []);
 
-  return { ...data, setCity, setRadius, requestPreciseLocation };
+  const dismissGeoFailure = useCallback(() => {
+    setGeoState({ geoFailed: false });
+  }, []);
+
+  return { ...data, setCity, setRadius, requestPreciseLocation, dismissGeoFailure };
+}
 }
