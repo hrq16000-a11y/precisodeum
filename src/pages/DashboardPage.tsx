@@ -417,9 +417,21 @@ const DashboardPage = () => {
 
   const allStepsDone = profileDone && servicesDone;
 
-  // Profile completeness percentage
-  const completenessItems = [profileDone, servicesDone, portfolioCount > 0, !!provider?.photo_url];
-  const completenessPercent = Math.round((completenessItems.filter(Boolean).length / completenessItems.length) * 100);
+  // FONTE ÚNICA da verdade da completude — `onboardingChecklist` (mesma usada pelos
+  // componentes filhos). Usar SEMPRE este `pct`/`stats` em qualquer lugar do dashboard.
+  const unifiedItems = buildOnboardingChecklist({
+    profile, provider,
+    servicesCount: servicesCount ?? 0,
+    portfolioAlbumsCount: portfolioAlbumCount,
+  });
+  const unifiedStats = checklistStats(unifiedItems);
+  const completenessPercent = unifiedStats.pct;
+  const remainingItems = unifiedStats.total - unifiedStats.completed;
+  const allChecklistDone = remainingItems === 0;
+  // Banners persistentes (cobrem cenários estruturais)
+  const showServiceEmptyBanner = servicesCount !== null && servicesCount === 0;
+  const showPortfolioEmptyBanner = servicesCount !== null && servicesCount > 0 && portfolioAlbumCount === 0;
+  const anyEmptyBannerVisible = showServiceEmptyBanner || showPortfolioEmptyBanner;
 
   const statCards = [
     { icon: Briefcase, value: servicesCount ?? 0, label: servicesCount === 0 ? 'Nenhum serviço' : 'Serviços', gradient: 'from-blue-500/10 to-blue-600/5', iconColor: 'text-blue-500' },
