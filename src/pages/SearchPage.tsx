@@ -204,7 +204,7 @@ const SearchPage = () => {
   const nearestCity = nearestFiltered?.city;
   const totalDisplay = filteredLocal.length + filteredNearby.length + (showOutOfState ? filteredOutOfState.length : 0);
 
-  const activeFilterCount = [selectedCategory, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter !== 'all' ? 'x' : '', minRating > 0 ? 'x' : ''].filter(Boolean).length;
+  const activeFilterCount = [selectedCategory, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter !== 'all' ? 'x' : '', minRating > 0 ? 'x' : '', onlineOnly ? 'x' : '', acceptingOnly ? 'x' : ''].filter(Boolean).length;
 
   const clearAllFilters = useCallback(() => {
     setSelectedCategory('');
@@ -216,6 +216,8 @@ const SearchPage = () => {
     setFeaturedFilter('all');
     setMinRating(0);
     setSortBy('relevance');
+    setOnlineOnly(false);
+    setAcceptingOnly(false);
     setPage(1);
   }, []);
 
