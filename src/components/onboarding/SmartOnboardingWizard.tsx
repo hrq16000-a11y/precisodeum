@@ -668,6 +668,10 @@ const BasicOnboardingWizard = () => {
         _tax_id: taxIdDigits || null,
       });
       if (taxError) throw taxError;
+      if (taxIdDigits) {
+        setTaxIdJustSaved(true);
+        toast.success(`${taxIdDigits.length === 14 ? 'CNPJ' : 'CPF'} salvo com segurança.`);
+      }
 
       if (taxIdDigits && !hadTaxIdBefore && !hasAwardedTaxIdPoints) {
         await (supabase as any).rpc('award_engagement_points', {
