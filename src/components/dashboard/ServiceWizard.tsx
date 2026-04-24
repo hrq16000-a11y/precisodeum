@@ -436,6 +436,21 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                       value={serviceArea}
                       onChange={e => setServiceArea(e.target.value)}
                     />
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {areaSuggestions.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setServiceArea(s)}
+                          className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-foreground hover:bg-accent/10 hover:border-accent transition"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                    {serviceArea && (
+                      <p className="text-[11px] text-muted-foreground mt-1">Ficará visível assim: <span className="text-foreground">{serviceArea}</span></p>
+                    )}
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">🕐 Horário</label>
@@ -444,6 +459,21 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                       value={workingHours}
                       onChange={e => setWorkingHours(e.target.value)}
                     />
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {hoursSuggestions.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setWorkingHours(s)}
+                          className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-foreground hover:bg-accent/10 hover:border-accent transition"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                    {workingHours && (
+                      <p className="text-[11px] text-muted-foreground mt-1">Ficará visível assim: <span className="text-foreground">{workingHours}</span></p>
+                    )}
                   </div>
                 </div>
 
