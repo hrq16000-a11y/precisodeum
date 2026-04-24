@@ -740,6 +740,45 @@ export type Database = {
         }
         Relationships: []
       }
+      coverage_search_log: {
+        Row: {
+          category_slug: string | null
+          city_hint: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          lat: number | null
+          lng: number | null
+          radius_m: number | null
+          result_count: number | null
+          user_agent: string | null
+        }
+        Insert: {
+          category_slug?: string | null
+          city_hint?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          lat?: number | null
+          lng?: number | null
+          radius_m?: number | null
+          result_count?: number | null
+          user_agent?: string | null
+        }
+        Update: {
+          category_slug?: string | null
+          city_hint?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          lat?: number | null
+          lng?: number | null
+          radius_m?: number | null
+          result_count?: number | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       daily_checkins: {
         Row: {
           checkin_date: string
@@ -3840,6 +3879,59 @@ export type Database = {
           },
         ]
       }
+      sponsor_docs_history: {
+        Row: {
+          action: string
+          created_at: string
+          doc_type: string
+          id: string
+          lead_id: string
+          metadata: Json
+          new_value: string | null
+          old_value: string | null
+          performed_by: string | null
+          performed_ip: string | null
+          reason: string | null
+          status: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          doc_type: string
+          id?: string
+          lead_id: string
+          metadata?: Json
+          new_value?: string | null
+          old_value?: string | null
+          performed_by?: string | null
+          performed_ip?: string | null
+          reason?: string | null
+          status?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          doc_type?: string
+          id?: string
+          lead_id?: string
+          metadata?: Json
+          new_value?: string | null
+          old_value?: string | null
+          performed_by?: string | null
+          performed_ip?: string | null
+          reason?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_docs_history_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsor_leads: {
         Row: {
           additional_docs: Json
@@ -3850,6 +3942,10 @@ export type Database = {
           company_name: string
           contract_accepted: boolean
           created_at: string
+          docs_review_notes: string | null
+          docs_reviewed_at: string | null
+          docs_reviewed_by: string | null
+          docs_status: string
           docs_submitted_at: string | null
           email: string
           id: string
@@ -3868,6 +3964,10 @@ export type Database = {
           company_name: string
           contract_accepted?: boolean
           created_at?: string
+          docs_review_notes?: string | null
+          docs_reviewed_at?: string | null
+          docs_reviewed_by?: string | null
+          docs_status?: string
           docs_submitted_at?: string | null
           email: string
           id?: string
@@ -3886,6 +3986,10 @@ export type Database = {
           company_name?: string
           contract_accepted?: boolean
           created_at?: string
+          docs_review_notes?: string | null
+          docs_reviewed_at?: string | null
+          docs_reviewed_by?: string | null
+          docs_status?: string
           docs_submitted_at?: string | null
           email?: string
           id?: string
@@ -5502,6 +5606,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_log_sponsor_doc_access: {
+        Args: { _doc_type: string; _lead_id: string; _path: string }
+        Returns: undefined
+      }
       admin_notify_users: {
         Args: {
           _link?: string
@@ -5770,6 +5878,7 @@ export type Database = {
           user_ref: string
         }[]
       }
+      get_sponsor_docs_status: { Args: { _lead_id: string }; Returns: Json }
       get_staff_permissions: { Args: { _user_id: string }; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       get_user_storage_usage: { Args: { _user_ref: string }; Returns: number }
@@ -5840,6 +5949,15 @@ export type Database = {
           _event_type: string
           _resource_path: string
           _sponsor_id: string
+        }
+        Returns: undefined
+      }
+      log_sponsor_doc_validation_failure: {
+        Args: {
+          _doc_type: string
+          _lead_id: string
+          _metadata?: Json
+          _reason: string
         }
         Returns: undefined
       }

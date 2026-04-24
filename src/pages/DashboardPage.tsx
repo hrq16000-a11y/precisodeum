@@ -28,6 +28,7 @@ import RankingStatus from '@/components/dashboard/RankingStatus';
 import RankingAlertWidget from '@/components/dashboard/RankingAlertWidget';
 import CommunityFeed from '@/components/dashboard/CommunityFeed';
 import RealtimeEngagementToast from '@/components/dashboard/RealtimeEngagementToast';
+import LevelUpBanner from '@/components/dashboard/LevelUpBanner';
 import QrCodeCard from '@/components/dashboard/QrCodeCard';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useEngagementLevel } from '@/hooks/useEngagementLevel';
@@ -481,6 +482,7 @@ const DashboardPage = () => {
     <DashboardLayout>
       {debugResetBar}
       <RealtimeEngagementToast />
+      <LevelUpBanner />
       {/* Enhanced Welcome Hero */}
       <WelcomeHero
         greeting={greeting}

@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Search, Pencil, Trash2, Download, Phone, Mail, ArrowRight, MessageSquare, Clock, CheckCircle2, XCircle, Users2, AlertTriangle } from 'lucide-react';
+import { Search, Pencil, Trash2, Download, Phone, Mail, ArrowRight, MessageSquare, Clock, CheckCircle2, XCircle, Users2, AlertTriangle, FileText } from 'lucide-react';
+import SponsorLeadDocsPanel from '@/components/admin/SponsorLeadDocsPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/hooks/useAdmin';
 import { logAuditAction } from '@/hooks/useAuditLog';
@@ -58,6 +59,8 @@ const AdminSponsorLeadsPage = () => {
   const [contactNote, setContactNote] = useState('');
   const [contactDialog, setContactDialog] = useState(false);
   const [contactItem, setContactItem] = useState<any>(null);
+  const [docsDialog, setDocsDialog] = useState(false);
+  const [docsItem, setDocsItem] = useState<any>(null);
 
   const bulk = useAdminBulkActions({
     table: 'sponsor_leads' as any,
@@ -356,6 +359,13 @@ const AdminSponsorLeadsPage = () => {
                           <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
                         </Button>
                       )}
+                      {/* Docs */}
+                      {(l.cnpj_document_url || l.banner_url) && (
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="Ver documentos enviados"
+                          onClick={() => { setDocsItem(l); setDocsDialog(true); }}>
+                          <FileText className="h-3.5 w-3.5 text-emerald-600" />
+                        </Button>
+                      )}
                       {/* Edit */}
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
                         setEditItem(l); setEditForm({ status: l.status, notes: l.notes || '' }); setEditDialog(true);
@@ -472,6 +482,13 @@ const AdminSponsorLeadsPage = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        <SponsorLeadDocsPanel
+          open={docsDialog}
+          onOpenChange={setDocsDialog}
+          leadId={docsItem?.id || null}
+          companyName={docsItem?.company_name}
+        />
       </div>
     </AdminLayout>
   );

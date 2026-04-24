@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Search, Loader2, Target } from 'lucide-react';
 import { toast } from 'sonner';
+import CoverageSearchStatsWidget from '@/components/admin/CoverageSearchStatsWidget';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -175,6 +176,8 @@ const AdminCoverageMapPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        <CoverageSearchStatsWidget />
       </div>
     </AdminLayout>
   );
