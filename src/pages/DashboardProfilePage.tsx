@@ -640,7 +640,7 @@ const DashboardProfilePage = () => {
 
                 <div>
                   <label className={labelCls}>Descrição profissional</label>
-                  <textarea name="description" rows={4} value={form.description} onChange={handleChange} className={`${inputCls} resize-none`} />
+                  <textarea ref={descriptionRef} name="description" rows={4} value={form.description} onChange={handleChange} className={`${inputCls} resize-none`} />
                 </div>
               </motion.div>
             </TabsContent>
