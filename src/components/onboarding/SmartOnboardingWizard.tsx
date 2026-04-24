@@ -1349,7 +1349,7 @@ const Step2Location = ({
         <label className="mb-1 block text-xs font-semibold text-foreground">Cidade</label>
         {!editingCity && city ? (
           <div className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-3 py-2">
-            <span className="text-sm font-bold text-foreground">{city}{state ? ` • ${state}` : ''}</span>
+            <span className="text-sm font-bold text-foreground">{city}{state && state !== 'ST' ? ` • ${state}` : ''}</span>
             <button onClick={onEditCity} className="text-xs font-medium text-accent hover:underline">Trocar</button>
           </div>
         ) : (
