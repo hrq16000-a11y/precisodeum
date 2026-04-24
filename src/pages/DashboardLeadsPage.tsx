@@ -71,6 +71,16 @@ const DashboardLeadsPage = () => {
   const [, setTick] = useState(0);
   const leadsRef = useRef<LeadRow[]>([]);
 
+  // Filtros avançados
+  const [search, setSearch] = useState('');
+  const [createdFrom, setCreatedFrom] = useState('');
+  const [createdTo, setCreatedTo] = useState('');
+  const [followupFrom, setFollowupFrom] = useState('');
+  const [followupTo, setFollowupTo] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [rescheduleLeadId, setRescheduleLeadId] = useState<string | null>(null);
+  const [rescheduleDefault, setRescheduleDefault] = useState<string | null>(null);
+
   // Re-render minute-by-minute para atualizar relativos e badge "vencido"
   useEffect(() => {
     const interval = setInterval(() => setTick((n) => n + 1), 60_000);
@@ -79,13 +89,47 @@ const DashboardLeadsPage = () => {
 
   const leads = useMemo(() => sortLeads(rawLeads), [rawLeads]);
 
+  const inRange = (iso: string | null | undefined, from: string, to: string) => {
+    if (!iso) return !from && !to;
+    const t = new Date(iso).getTime();
+    if (from && t < new Date(from).getTime()) return false;
+    if (to && t > new Date(to).getTime() + 86_400_000) return false;
+    return true;
+  };
+
   const filteredLeads = useMemo(() => {
-    if (statusFilter === 'all') return leads;
-    if (statusFilter === 'overdue') return leads.filter(isOverdue);
-    return leads.filter((l) => l.status === statusFilter);
-  }, [leads, statusFilter]);
+    let arr = leads;
+    if (statusFilter === 'overdue') arr = arr.filter(isOverdue);
+    else if (statusFilter !== 'all') arr = arr.filter((l) => l.status === statusFilter);
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      arr = arr.filter(l =>
+        l.client_name.toLowerCase().includes(q) ||
+        l.phone.toLowerCase().includes(q) ||
+        (l.service_needed || '').toLowerCase().includes(q) ||
+        (l.message || '').toLowerCase().includes(q)
+      );
+    }
+    if (createdFrom || createdTo) arr = arr.filter(l => inRange(l.created_at, createdFrom, createdTo));
+    if (followupFrom || followupTo) arr = arr.filter(l => inRange(l.next_followup_at, followupFrom, followupTo));
+    return arr;
+  }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo]);
 
   const overdueCount = useMemo(() => leads.filter(isOverdue).length, [leads]);
+
+  const clearFilters = () => {
+    setSearch(''); setCreatedFrom(''); setCreatedTo(''); setFollowupFrom(''); setFollowupTo(''); setStatusFilter('all');
+  };
+
+  const handleExportCsv = () => exportLeadsCsv({
+    providerName: profile?.full_name, leads: filteredLeads, history,
+    range: { from: createdFrom, to: createdTo },
+  });
+  const handleExportPdf = () => exportLeadsPdf({
+    providerName: profile?.full_name, leads: filteredLeads, history,
+    range: { from: createdFrom, to: createdTo },
+  });
 
   const playAlert = useCallback(() => {
     if (!audibleAlerts) return;
