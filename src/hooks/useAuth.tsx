@@ -43,7 +43,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let profileData: any = null;
     let providerRows: any[] | null = null;
     const MAX_ATTEMPTS = 8;
+    const startedAt = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    let attemptsUsed = 0;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      attemptsUsed = attempt + 1;
       const [{ data: pData }, { data: pvRows }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
         supabase.from('providers').select('*, categories(name, slug, icon)').eq('user_id', userId).order('created_at', { ascending: true }),
@@ -55,14 +58,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await new Promise(resolve => setTimeout(resolve, 150 * Math.pow(2, attempt)));
     }
 
+    const elapsedMs = Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - startedAt);
+    // Fire-and-forget telemetry
+    supabase.from('auth_profile_metrics' as any).insert({
+      user_id: userId,
+      duration_ms: elapsedMs,
+      attempts: attemptsUsed,
+      succeeded: !!profileData,
+    } as any).then(() => undefined, () => undefined);
+
     if (!profileData) {
       reportError({
-        errorMessage: `Profile fetch timeout after ${MAX_ATTEMPTS} attempts`,
+        errorMessage: `Profile fetch timeout after ${MAX_ATTEMPTS} attempts (${elapsedMs}ms)`,
         componentName: 'useAuth',
         actionContext: 'auth.profile_timeout',
         severity: 'error',
       }).catch(() => {});
     }
+
 
     setProfile(profileData);
     setCelebrationMuted(resolveCelebrationMutedPreference(profileData?.celebration_muted));

@@ -257,6 +257,33 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_profile_metrics: {
+        Row: {
+          attempts: number
+          duration_ms: number
+          id: string
+          recorded_at: string
+          succeeded: boolean
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          duration_ms?: number
+          id?: string
+          recorded_at?: string
+          succeeded?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          duration_ms?: number
+          id?: string
+          recorded_at?: string
+          succeeded?: boolean
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       blog_discover_previews: {
         Row: {
           created_at: string
