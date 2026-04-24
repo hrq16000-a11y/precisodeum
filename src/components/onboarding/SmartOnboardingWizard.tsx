@@ -707,7 +707,7 @@ const BasicOnboardingWizard = () => {
 
   const summaryItems = [
     { label: 'Tipo de perfil', value: profileType ? (PROFILE_TYPE_LABEL[profileType] || profileType) : 'Não definido' },
-    { label: 'Cidade', value: city ? `${city}${state && state !== 'ST' ? ` • ${state}` : ''}` : 'Não informada' },
+    { label: 'Cidade', value: formatCityState(city, state, ' • ') || 'Não informada' },
     { label: 'Nome', value: fullName || 'Não informado' },
     { label: 'WhatsApp', value: whatsapp || 'Não informado' },
     { label: 'Serviços', value: profileType === 'provider' ? `${servicesCreated} cadastrado(s)` : 'Não aplicável' },
@@ -1023,7 +1023,7 @@ const buildReviewItems = (data: {
     { label: 'Formato profissional', value: data.providerSubtype ? (PROVIDER_SUBTYPE_LABEL[data.providerSubtype] || data.providerSubtype) : 'Não aplicável' },
   ],
   2: [
-    { label: 'Cidade', value: data.city ? `${data.city}${data.state && data.state !== 'ST' ? ` • ${data.state}` : ''}` : 'Não informada' },
+    { label: 'Cidade', value: formatCityState(data.city, data.state, ' • ') || 'Não informada' },
     { label: 'Foto', value: data.avatarUrl ? 'Carregada' : 'Não enviada' },
   ],
   3: [
@@ -1392,7 +1392,7 @@ const Step2Location = ({
         <label className="mb-1 block text-xs font-semibold text-foreground">Cidade</label>
         {!editingCity && city ? (
           <div className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-3 py-2">
-            <span className="text-sm font-bold text-foreground">{city}{state && state !== 'ST' ? ` • ${state}` : ''}</span>
+            <span className="text-sm font-bold text-foreground">{formatCityState(city, state, ' • ')}</span>
             <button onClick={onEditCity} className="text-xs font-medium text-accent hover:underline">Trocar</button>
           </div>
         ) : (
