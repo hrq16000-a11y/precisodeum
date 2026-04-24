@@ -8,9 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CheckCircle2, Clock, FileText, Image as ImageIcon, Loader2, ShieldCheck, XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, Clock, FileText, Image as ImageIcon, Loader2, ShieldCheck, XCircle, AlertCircle, ArrowLeft, Link2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface HistoryItem {
   id: string;
