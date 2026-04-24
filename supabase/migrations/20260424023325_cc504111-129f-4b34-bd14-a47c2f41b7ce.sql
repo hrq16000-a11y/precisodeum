@@ -1,0 +1,2 @@
+-- Migration: refresh_types_drift_fix
+-- Purpose: Trigger regeneration of src/integrations/supabase/types.ts without any schema changes.
