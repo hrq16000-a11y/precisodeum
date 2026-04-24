@@ -52,6 +52,7 @@ import { useCategoriesWithCount } from '@/hooks/useProviders';
 import { getSocialAvatarUrl, getInitials } from '@/lib/avatarUtils';
 import { formatCityState } from '@/lib/locationFormat';
 import { isValidCpfCnpj } from '@/lib/cpfCnpj';
+import CpfCnpjInput, { maskCpfCnpj } from './CpfCnpjInput';
 
 /** Aplica máscara dinâmica de CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00). */
 const maskCpfCnpj = (raw: string): string => {
