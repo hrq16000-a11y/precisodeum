@@ -25,8 +25,40 @@ import { toast } from 'sonner';
 
 const SponsorDashboardPage = () => {
   const { sponsor, sponsorContact, subscription, hasActivePlan, loading, refetch } = useSponsorAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const [refreshingSubscription, setRefreshingSubscription] = useState(false);
+
+  // Onboarding lead (sponsor_leads) vinculado ao usuário autenticado — alimenta o checklist progressivo
+  const { data: onboardingLead } = useQuery({
+    queryKey: ['sponsor-onboarding-lead', user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sponsor_leads' as any)
+        .select('id, cnpj_document_url, banner_url, checklist_confirmed, docs_status, docs_submitted_at, company_name, cnpj')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return (data as any) || null;
+    },
+  });
+
+  // Realtime: quando o admin mudar o status, o checklist atualiza sozinho
+  const queryLeadId = (onboardingLead as any)?.id;
+  useMemo(() => {
+    if (!queryLeadId) return;
+    const ch = supabase
+      .channel(`dashboard-lead-${queryLeadId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sponsor_leads', filter: `id=eq.${queryLeadId}` }, () => {
+        // a refetch acontece via key; força invalidação simples
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).dispatchEvent?.(new CustomEvent('sponsor-lead-updated'));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [queryLeadId]);
 
   const { data: campaigns = [] } = useQuery({
     queryKey: ['sponsor-campaigns', sponsor?.id],
