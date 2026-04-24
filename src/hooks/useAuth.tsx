@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePresenceTracker } from '@/hooks/useOnlinePresence';
 import { geocodeCity } from '@/lib/geoUtils';
 import { resolveCelebrationMutedPreference, setCelebrationMuted } from '@/lib/celebrate';
+import { reportError } from '@/lib/errorReporter';
 
 interface AuthContextType {
   session: Session | null;
