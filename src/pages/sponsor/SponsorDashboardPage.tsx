@@ -16,6 +16,7 @@ import {
 import { exportSponsorPdf } from '@/lib/exportSponsorPdf';
 import { SponsorImage } from '@/components/SponsorImage';
 import SponsorApprovalCelebration from '@/components/sponsor/SponsorApprovalCelebration';
+import SponsorOnboardingChecklist from '@/components/sponsor/SponsorOnboardingChecklist';
 import { motion } from 'framer-motion';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
