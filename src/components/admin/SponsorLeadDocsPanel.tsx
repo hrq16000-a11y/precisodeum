@@ -24,6 +24,8 @@ interface LeadRow {
   checklist_confirmed: boolean;
   docs_status: string | null;
   docs_submitted_at: string | null;
+  docs_reviewed_at?: string | null;
+  docs_review_notes?: string | null;
 }
 
 interface HistoryItem {
