@@ -676,6 +676,7 @@ const SearchPage = () => {
               />
             )}
 
+            {isFallback && effectiveCity && (
               <GeoFallbackBanner
                 originalCity={effectiveCity}
                 expansionLevel="all"
