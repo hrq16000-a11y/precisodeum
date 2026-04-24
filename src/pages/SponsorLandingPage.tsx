@@ -21,8 +21,9 @@ import {
   TrendingUp, Shield, Zap, ArrowRight, FileText, Download, Star,
   Sparkles, Crown, Target, Users, MousePointerClick, LayoutGrid,
   Timer, Phone, Mail, Building2, ChevronDown, ChevronLeft, ChevronRight,
-  Monitor, PieChart, Activity, X, Check, Minus, MessageSquare, HelpCircle
+  Monitor, PieChart, Activity, X, Check, Minus, MessageSquare, HelpCircle, Upload
 } from 'lucide-react';
+import { SponsorDocsUploadModal } from '@/components/sponsor/SponsorDocsUploadModal';
 
 const sponsorSchema = z.object({
   company_name: z.string().trim().min(2, 'Nome da empresa é obrigatório').max(200),
