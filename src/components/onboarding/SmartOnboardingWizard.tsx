@@ -1867,7 +1867,7 @@ const Step5Done = ({
   const isProvider = profileType === 'provider';
   const meetsMinimum = !isProvider || servicesCreated > 0;
   const finishLabel = meetsMinimum
-    ? 'Entrar no Dashboard'
+    ? 'FINALIZAR E PUBLICAR MEU PERFIL'
     : 'Voltar e cadastrar 1 serviço';
   return (
     <>
@@ -1882,7 +1882,7 @@ const Step5Done = ({
       </div>
       <h1 className="text-center font-display text-2xl font-bold text-foreground">Tudo pronto!</h1>
       <p className="mt-2 text-center text-sm text-muted-foreground">
-        Seu cadastro foi concluído. A pontuação é calculada automaticamente conforme você usa a plataforma.
+        Revise suas informações e publique seu perfil. A pontuação é calculada automaticamente conforme você usa a plataforma.
       </p>
 
       {!meetsMinimum && (
@@ -1894,11 +1894,13 @@ const Step5Done = ({
 
       <Button
         variant="accent"
-        className="mt-6 w-full"
-        disabled={saving}
+        className="mt-6 h-16 w-full text-base font-extrabold uppercase tracking-wide shadow-lg sm:text-xl"
+        disabled={saving || !meetsMinimum}
         onClick={onFinish}
       >
-        {saving ? 'Concluindo…' : finishLabel}
+        {saving ? (
+          <span className="inline-flex items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /> Publicando…</span>
+        ) : finishLabel}
       </Button>
     </>
   );
