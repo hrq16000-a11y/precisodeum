@@ -82,9 +82,10 @@ const ActionQueue = () => {
       }
 
       // 4. Reviews to respond
-      const { count: reviewCount } = await (supabase.from('reviews')
+      const { count: reviewCount } = await supabase.from('reviews')
         .select('id', { count: 'exact', head: true })
-        .eq('provider_id', provider.id) as any).eq('reply', '');
+        .eq('provider_id', provider.id)
+        .or('comment.is.null,comment.eq.');
 
       setActions(pending);
     };
