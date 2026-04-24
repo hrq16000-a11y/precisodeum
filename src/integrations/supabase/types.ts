@@ -5878,6 +5878,7 @@ export type Database = {
           user_ref: string
         }[]
       }
+      get_sponsor_docs_status: { Args: { _lead_id: string }; Returns: Json }
       get_staff_permissions: { Args: { _user_id: string }; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       get_user_storage_usage: { Args: { _user_ref: string }; Returns: number }
