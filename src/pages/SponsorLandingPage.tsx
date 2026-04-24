@@ -467,6 +467,9 @@ export default function SponsorLandingPage() {
   const [contractAccepted, setContractAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [leadId, setLeadId] = useState<string | null>(null);
+  const [docsModalOpen, setDocsModalOpen] = useState(false);
+  const [docsCompleted, setDocsCompleted] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro' | 'premium'>('pro');
   const [hoveredBenefit, setHoveredBenefit] = useState<number | null>(null);
 
@@ -487,7 +490,7 @@ export default function SponsorLandingPage() {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('sponsor_leads' as any).insert({
+      const { data: inserted, error } = await supabase.from('sponsor_leads' as any).insert({
         company_name: data.company_name,
         cnpj: data.cnpj,
         email: data.email,
@@ -495,8 +498,9 @@ export default function SponsorLandingPage() {
         plan: data.plan,
         contract_accepted: true,
         status: 'pending',
-      } as any);
+      } as any).select('id').single();
       if (error) throw error;
+      setLeadId((inserted as any)?.id ?? null);
       setSubmitted(true);
       toast.success('Interesse registrado com sucesso!');
     } catch {
