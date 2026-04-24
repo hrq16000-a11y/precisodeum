@@ -695,11 +695,22 @@ const BasicOnboardingWizard = () => {
         });
       } catch { /* silent */ }
 
-      try {
-        celebrate({ intensity: 'big', id: CELEBRATION_IDS.onboardingComplete(user.id) });
-      } catch { /* noop */ }
+      const meetsStructuralMinimum = profileType !== 'provider' || servicesCreated >= 1;
+      if (meetsStructuralMinimum) {
+        try {
+          celebrate({ intensity: 'big', id: CELEBRATION_IDS.onboardingComplete(user.id) });
+        } catch { /* noop */ }
+      } else {
+        toast.warning('Cadastre pelo menos 1 serviço para liberar o dashboard completo.');
+      }
 
       await refetchProfile();
+
+      // Se não cumpriu mínimo, mantém no wizard (gate trará de volta de qualquer forma).
+      if (!meetsStructuralMinimum) {
+        setSaving(false);
+        return;
+      }
 
       const target = profileType === 'rh' ? '/dashboard/vagas'
         : profileType === 'sponsor' ? '/quero-ser-patrocinador'
