@@ -107,16 +107,18 @@ const EngagementLoop = ({ servicesCount: servicesOverride, portfolioAlbumsCount:
       };
     }
     return null;
-  }, [data, profile, provider]);
+  }, [data, profile, provider, servicesOverride, albumsOverride]);
 
-  const circuitComplete = !next && data && data.percentage >= 90;
+  // Sempre que houver pct unificado vindo do dashboard, ele tem prioridade.
+  const pct = unifiedPct ?? data?.percentage ?? 0;
+  const circuitComplete = !next && pct >= 90;
 
   // Dopamine bomb 💎 — fires confetti + "Ebá!" sound EXACTLY once when user first crosses 90%.
   useEffect(() => {
     if (!data || !user?.id) return;
-    if (data.percentage < 90) return;
+    if (pct < 90) return;
     celebrate({ intensity: 'big', id: CELEBRATION_IDS.levelUp('diamond', user.id) });
-  }, [data?.percentage, user?.id]);
+  }, [pct, user?.id, data]);
 
   if (dismissed) return null;
   if (!data) return null;
