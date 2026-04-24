@@ -695,7 +695,6 @@ const BasicOnboardingWizard = () => {
         });
       } catch { /* silent */ }
 
-      const meetsStructuralMinimum = profileType !== 'provider' || servicesCreated >= 1;
       if (meetsStructuralMinimum) {
         try {
           celebrate({ intensity: 'big', id: CELEBRATION_IDS.onboardingComplete(user.id) });
