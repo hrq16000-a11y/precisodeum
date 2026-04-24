@@ -1582,7 +1582,7 @@ const Step2Location = ({
             <CityAutocomplete
               value={{ city, state }}
               onChange={({ city: c, state: s }) => onCityChange(c, s)}
-              onClose={() => { if (city) onEditCity?.(); /* fecha modo edição se já tem cidade */ }}
+              onClose={() => { if (city) onCloseEditing?.(); }}
             />
           </div>
         )}
