@@ -5,16 +5,24 @@
  *  1. Não há botão "X" / "fechar". O wizard ocupa a tela inteira.
  *  2. Cada passo persiste no banco (`profiles.onboarding_step`) ao avançar.
  *     Refresh (F5) volta exatamente para o passo atual.
- *  3. `onboarding_completed = true` SÓ é gravado no Passo 5 (conclusão).
- *  4. "Pular" sempre vai para o próximo passo. Nunca fecha o wizard.
- *  5. Provider precisa criar 1 serviço no Passo 4 antes de liberar o Passo 5.
+ *  3. `onboarding_completed = true` SÓ é gravado no Passo 5 (conclusão)
+ *     E SOMENTE quando os requisitos estruturais reais estiverem preenchidos.
+ *     Para provider: pelo menos 1 serviço cadastrado. Pular não burla o gate.
+ *  4. "Pular" sempre vai para o próximo passo. Nunca fecha o wizard nem
+ *     marca onboarding_completed indevidamente.
+ *  5. Provider precisa criar 1 serviço no Passo 4. O Passo 4 inclui também
+ *     uma sub-etapa OPCIONAL de criação do primeiro álbum de portfólio,
+ *     colocando portfólio na esteira principal (não solto no dashboard).
  *
  * Passos:
  *   1. Identidade (tipo de perfil)
  *   2. Localização + Foto
  *   3. Dados de contato (WhatsApp + bio curta)
- *   4. Primeiro serviço (apenas provider — outros tipos pulam direto p/ 5)
- *   5. Conclusão + ganho de pontos
+ *   4. Primeiro serviço + portfólio inicial (apenas provider)
+ *   5. Conclusão
+ *
+ * Mini-celebrações: cada transição bem-sucedida dispara confete leve
+ * via celebrate({intensity:'mini'}) para reforço positivo imediato.
  */
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import {
