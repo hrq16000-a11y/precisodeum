@@ -102,11 +102,16 @@ const DashboardPage = () => {
   };
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   // ServiceWizard ligado por padrão (a flag só serve para desativar explicitamente).
-  const { levelName, levelColor } = usePermissions();
+  const { levelName: legacyLevelName, levelColor: legacyLevelColor } = usePermissions();
+  // FONTE DA VERDADE para o nível do prestador: gamification_levels via engagement_points.
+  const { currentLevel } = useEngagementLevel();
+  const levelName = currentLevel?.name || legacyLevelName;
+  const levelColor = currentLevel?.color || legacyLevelColor;
   const [servicesCount, setServicesCount] = useState<number | null>(null);
   const [leadsCount, setLeadsCount] = useState<number>(0);
   const [jobsCount, setJobsCount] = useState<number>(0);
   const [portfolioCount, setPortfolioCount] = useState<number>(0);
+  const [portfolioAlbumCount, setPortfolioAlbumCount] = useState<number>(0);
   const [viewsTotal, setViewsTotal] = useState<number>(0);
   const [reviewCount, setReviewCount] = useState<number>(0);
   const [guideOpen, setGuideOpen] = useState(true);
