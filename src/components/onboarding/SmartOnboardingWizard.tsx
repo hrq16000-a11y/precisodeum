@@ -51,6 +51,23 @@ import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
 import { getSocialAvatarUrl, getInitials } from '@/lib/avatarUtils';
 import { formatCityState } from '@/lib/locationFormat';
+import { isValidCpfCnpj } from '@/lib/cpfCnpj';
+
+/** Aplica máscara dinâmica de CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00). */
+const maskCpfCnpj = (raw: string): string => {
+  const d = (raw || '').replace(/\D/g, '').slice(0, 14);
+  if (d.length <= 11) {
+    return d
+      .replace(/^(\d{3})(\d)/, '$1.$2')
+      .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1-$2');
+  }
+  return d
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d)/, '$1-$2');
+};
 
 type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
 type ProviderSubtype = 'autonomous' | 'company';
@@ -124,6 +141,7 @@ const BasicOnboardingWizard = () => {
   const [whatsapp, setWhatsapp] = useState(profile?.whatsapp || profile?.phone || '');
   const [bio, setBio] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [taxId, setTaxId] = useState<string>(((profile as any)?.tax_id as string) || '');
 
   // Provider data
   const [savedProvider, setSavedProvider] = useState<any | null>(null);
@@ -606,6 +624,12 @@ const BasicOnboardingWizard = () => {
       return;
     }
     if (!user?.id) return;
+    // Validação amigável do CPF/CNPJ — campo é opcional, mas se preenchido precisa ser válido.
+    const taxIdDigits = (taxId || '').replace(/\D/g, '');
+    if (taxIdDigits && !isValidCpfCnpj(taxIdDigits)) {
+      toast.error('CPF/CNPJ inválido. Confira os dígitos ou deixe em branco.');
+      return;
+    }
     setSaving(true);
     try {
       // Salva profile
@@ -615,6 +639,7 @@ const BasicOnboardingWizard = () => {
         phone: whatsapp,
         profile_type: profileType,
         role: profileType,
+        tax_id: taxIdDigits || null,
         onboarding_step: 4,
       } as any).eq('id', user.id);
 
@@ -928,6 +953,8 @@ const BasicOnboardingWizard = () => {
             setWhatsapp={setWhatsapp}
             bio={bio}
             setBio={setBio}
+            taxId={taxId}
+            setTaxId={setTaxId}
             categoriesForPicker={categoriesForPicker}
             selectedCategoryIds={selectedCategoryIds}
             onToggleCategory={(id) => { setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id]); window.setTimeout(handleStepFieldBlur, 0); }}
@@ -1527,9 +1554,15 @@ const Step2Location = ({
 const Step3Contact = ({
   profileType, fullName, setFullName, agencyName, setAgencyName,
   whatsapp, setWhatsapp, bio, setBio,
+  taxId, setTaxId,
   categoriesForPicker, selectedCategoryIds, onToggleCategory,
   saving, canAdvance, onBack, onNext, onSkip, onFieldBlur,
-}: any) => (
+}: any) => {
+  const taxDigits = (taxId || '').replace(/\D/g, '');
+  const taxFilled = taxDigits.length > 0;
+  const taxValid = !taxFilled || isValidCpfCnpj(taxDigits);
+  const taxLabel = taxDigits.length > 11 ? 'CNPJ' : 'CPF';
+  return (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
       <ArrowLeft className="h-3.5 w-3.5" /> Voltar
@@ -1570,6 +1603,28 @@ const Step3Contact = ({
         </div>
       </div>
 
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-foreground">
+          CPF ou CNPJ <span className="font-normal text-muted-foreground">(opcional)</span>
+        </label>
+        <Input
+          inputMode="numeric"
+          placeholder="Ex: 000.000.000-00 ou 00.000.000/0000-00"
+          value={maskCpfCnpj(taxId || '')}
+          onChange={e => setTaxId(e.target.value.replace(/\D/g, '').slice(0, 14))}
+          onBlur={onFieldBlur}
+          aria-invalid={!taxValid}
+          className={!taxValid ? 'border-destructive focus-visible:ring-destructive' : ''}
+        />
+        <p className={`mt-1 text-[11px] ${!taxValid ? 'text-destructive' : 'text-muted-foreground'}`}>
+          {!taxValid
+            ? `${taxLabel} inválido — confira os dígitos.`
+            : taxFilled
+              ? `${taxLabel} válido. Usado apenas para comprovantes e nunca aparece publicamente.`
+              : 'Você pode adicionar depois. Ajuda na emissão de comprovantes e validação da conta.'}
+        </p>
+      </div>
+
       {profileType === 'provider' && (
         <>
           <div>
@@ -1605,7 +1660,8 @@ const Step3Contact = ({
       </Button>
     </div>
   </>
-);
+  );
+};
 
 // ─── Passo 4 ───
 const Step4Service = ({

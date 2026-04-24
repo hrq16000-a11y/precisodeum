@@ -2632,6 +2632,7 @@ export type Database = {
           suspicious_at: string | null
           suspicious_ip: string | null
           suspicious_reason: string | null
+          tax_id: string | null
           trial_boost_until: string | null
           updated_at: string
           user_ref: string
@@ -2670,6 +2671,7 @@ export type Database = {
           suspicious_at?: string | null
           suspicious_ip?: string | null
           suspicious_reason?: string | null
+          tax_id?: string | null
           trial_boost_until?: string | null
           updated_at?: string
           user_ref: string
@@ -2708,6 +2710,7 @@ export type Database = {
           suspicious_at?: string | null
           suspicious_ip?: string | null
           suspicious_reason?: string | null
+          tax_id?: string | null
           trial_boost_until?: string | null
           updated_at?: string
           user_ref?: string
