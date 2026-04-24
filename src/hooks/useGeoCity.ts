@@ -34,12 +34,20 @@ interface GeoData {
   precise: boolean;
   manualOverride: boolean;
   radiusKm: number;
+  /** Indica que a última tentativa de obter GPS/CEP falhou e estamos usando cache. */
+  geoFailed: boolean;
+  /** Origem da localização atual (para mostrar avisos contextuais). */
+  source: 'gps' | 'ip' | 'manual' | 'cache' | 'none';
+  /** Timestamp ISO da última atualização bem-sucedida da localização. */
+  lastKnownAt: string | null;
 }
 
 interface GeoStore extends GeoData {
   setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null) => void;
   setRadius: (km: number) => void;
   requestPreciseLocation: () => Promise<boolean>;
+  /** Limpa o estado de erro (ex.: após o usuário ver o aviso). */
+  dismissGeoFailure: () => void;
 }
 
 const CITY_KEY = 'geo_city';
@@ -52,6 +60,8 @@ const PRECISE_KEY = 'geo_precise';
 const GEO_ASKED_KEY = 'geo_browser_asked';
 const RADIUS_KEY = 'geo_radius';
 const FETCH_TS_KEY = 'geo_fetch_ts';
+const SOURCE_KEY = 'geo_source';
+const LAST_KNOWN_KEY = 'geo_last_known_at';
 const GEO_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 function safeGet(key: string): string | null {
@@ -71,15 +81,27 @@ function parseNumber(value: string | null) {
   return value !== null && Number.isFinite(Number(value)) ? Number(value) : null;
 }
 
+const initialCity = safeGet(CITY_KEY);
+const initialLat = parseNumber(safeGet(LAT_KEY));
+const initialLon = parseNumber(safeGet(LON_KEY));
+const initialOverride = safeGet(OVERRIDE_KEY) === 'true';
+const initialPrecise = safeGet(PRECISE_KEY) === 'true';
+const storedSource = safeGet(SOURCE_KEY) as GeoData['source'] | null;
+const initialSource: GeoData['source'] =
+  storedSource ?? (initialOverride ? 'manual' : initialPrecise ? 'gps' : initialCity || initialLat != null ? 'cache' : 'none');
+
 let geoState: GeoData = {
-  city: safeGet(CITY_KEY),
+  city: initialCity,
   state: normalizeUF(safeGet(STATE_KEY)),
   temp: parseNumber(safeGet(TEMP_KEY)),
-  latitude: parseNumber(safeGet(LAT_KEY)),
-  longitude: parseNumber(safeGet(LON_KEY)),
-  precise: safeGet(PRECISE_KEY) === 'true',
-  manualOverride: safeGet(OVERRIDE_KEY) === 'true',
+  latitude: initialLat,
+  longitude: initialLon,
+  precise: initialPrecise,
+  manualOverride: initialOverride,
   radiusKm: parseNumber(safeGet(RADIUS_KEY)) ?? 50,
+  geoFailed: false,
+  source: initialSource,
+  lastKnownAt: safeGet(LAST_KNOWN_KEY),
 };
 
 let listeners = new Set<() => void>();
@@ -216,6 +238,7 @@ function startFetchIfNeeded() {
   // Use requestIdleCallback (with 8s timeout fallback) so the fetch only fires
   // once the browser is truly idle, keeping it out of Lighthouse's dependency tree.
   const startGeoFetch = () => { (async () => {
+    let success = false;
     try {
       const edgeGeo = await fetchGeoFromEdge();
       if (edgeGeo.city || edgeGeo.state || edgeGeo.temp !== null) {
@@ -223,8 +246,12 @@ function startFetchIfNeeded() {
         if (edgeGeo.city) safeSet(CITY_KEY, edgeGeo.city);
         if (uf) safeSet(STATE_KEY, uf);
         if (edgeGeo.temp !== null) safeSet(TEMP_KEY, String(edgeGeo.temp));
-        safeSet(FETCH_TS_KEY, String(Date.now()));
-        setGeoState({ ...edgeGeo, state: uf });
+        const now = String(Date.now());
+        safeSet(FETCH_TS_KEY, now);
+        safeSet(SOURCE_KEY, 'ip');
+        safeSet(LAST_KNOWN_KEY, new Date().toISOString());
+        setGeoState({ ...edgeGeo, state: uf, source: 'ip', geoFailed: false, lastKnownAt: new Date().toISOString() });
+        success = true;
       }
     } catch (error) {
       console.debug('[GeoCity] edge function failed:', error);
@@ -248,8 +275,11 @@ function startFetchIfNeeded() {
         if (result.lat !== null) safeSet(LAT_KEY, String(result.lat));
         if (result.lon !== null) safeSet(LON_KEY, String(result.lon));
         if (temp !== null) safeSet(TEMP_KEY, String(temp));
+        const ts = new Date().toISOString();
         safeSet(FETCH_TS_KEY, String(Date.now()));
         safeSet(PRECISE_KEY, 'false');
+        safeSet(SOURCE_KEY, 'ip');
+        safeSet(LAST_KNOWN_KEY, ts);
 
         setGeoState({
           city: result.city || geoState.city,
@@ -258,11 +288,22 @@ function startFetchIfNeeded() {
           latitude: result.lat,
           longitude: result.lon,
           precise: false,
+          source: 'ip',
+          geoFailed: false,
+          lastKnownAt: ts,
         });
+        success = true;
         return;
       } catch (error) {
         console.debug('[GeoCity] API fallback:', error);
       }
+    }
+
+    // Todas as fontes falharam — se temos cache (cidade/coords), avisamos via geoFailed.
+    if (!success && (geoState.city || geoState.latitude !== null)) {
+      setGeoState({ geoFailed: true, source: geoState.source === 'none' ? 'cache' : geoState.source });
+    } else if (!success) {
+      setGeoState({ geoFailed: true });
     }
   })(); };
 
@@ -305,12 +346,18 @@ export function useGeoCity(): GeoStore {
       try { localStorage.removeItem(LON_KEY); sessionStorage.removeItem(LON_KEY); } catch {}
     }
 
+    const ts = new Date().toISOString();
+    safeSet(SOURCE_KEY, 'manual');
+    safeSet(LAST_KNOWN_KEY, ts);
     setGeoState({
       city,
       state: uf || geoState.state,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
       manualOverride: true,
+      source: 'manual',
+      geoFailed: false,
+      lastKnownAt: ts,
     });
   }, []);
 
@@ -352,15 +399,20 @@ export function useGeoCity(): GeoStore {
           safeSet(LAT_KEY, String(latitude));
           safeSet(LON_KEY, String(longitude));
           safeSet(PRECISE_KEY, 'true');
+          const ts2 = new Date().toISOString();
+          safeSet(SOURCE_KEY, 'gps');
+          safeSet(LAST_KNOWN_KEY, ts2);
 
-          setGeoState({ city, state, temp, latitude, longitude, precise: true });
+          setGeoState({ city, state, temp, latitude, longitude, precise: true, source: 'gps', geoFailed: false, lastKnownAt: ts2 });
           resolve(true);
         },
         () => {
-          // GPS denied — force IP fallback immediately if no coordinates
-          if (geoState.latitude === null) {
+          // GPS negado/falhou — se já temos cache, sinaliza fallback; senão, tenta IP.
+          if (geoState.latitude === null && !geoState.city) {
             fetchStarted = false;
             startFetchIfNeeded();
+          } else {
+            setGeoState({ geoFailed: true, source: geoState.source === 'none' ? 'cache' : geoState.source });
           }
           resolve(false);
         },
@@ -374,5 +426,9 @@ export function useGeoCity(): GeoStore {
     setGeoState({ radiusKm: km });
   }, []);
 
-  return { ...data, setCity, setRadius, requestPreciseLocation };
+  const dismissGeoFailure = useCallback(() => {
+    setGeoState({ geoFailed: false });
+  }, []);
+
+  return { ...data, setCity, setRadius, requestPreciseLocation, dismissGeoFailure };
 }
