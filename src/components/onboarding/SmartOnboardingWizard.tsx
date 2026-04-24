@@ -784,11 +784,16 @@ const BasicOnboardingWizard = () => {
 
         {reviewReturnStep && !showFinalSummary && (
           <div className="mb-4 rounded-xl border border-accent/25 bg-accent/10 p-3 text-sm text-foreground">
-            <p className="font-bold">Revisando passo antigo</p>
-            <p className="mt-1 text-xs text-muted-foreground">Ao salvar, você volta para seu progresso mais recente.</p>
-            <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={returnToProgress}>
-              Salvar revisão e voltar ao progresso
-            </Button>
+            <p className="font-bold">Revisando passo anterior</p>
+            <p className="mt-1 text-xs text-muted-foreground">Suas alterações são salvas automaticamente. Volte ao seu progresso quando quiser.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <Button type="button" variant="outline" size="sm" onClick={returnToProgress}>
+                Salvar e voltar ao progresso
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => { setReviewReturnStep(null); navigate('/dashboard', { replace: true }); }}>
+                Cancelar e ir ao Dashboard
+              </Button>
+            </div>
           </div>
         )}
 
