@@ -669,7 +669,7 @@ const BasicOnboardingWizard = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-accent"
           >
-            +{step * 10} pts de confiança
+            {Math.round((step / TOTAL_STEPS) * 100)}% concluído
           </motion.span>
         </div>
         <div className="mb-6 h-2 w-full overflow-hidden rounded-full bg-muted">
