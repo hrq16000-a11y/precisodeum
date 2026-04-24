@@ -500,7 +500,11 @@ export default function SponsorLandingPage() {
         status: 'pending',
       } as any).select('id').single();
       if (error) throw error;
-      setLeadId((inserted as any)?.id ?? null);
+      const newId = (inserted as any)?.id ?? null;
+      setLeadId(newId);
+      if (newId) {
+        try { localStorage.setItem('pdu_sponsor_lead_id', newId); } catch { /* ignore */ }
+      }
       setSubmitted(true);
       toast.success('Interesse registrado com sucesso!');
     } catch {
@@ -572,6 +576,16 @@ export default function SponsorLandingPage() {
               <Button onClick={() => window.location.href = '/'} size="lg" variant="outline" className="px-6">
                 <ArrowRight className="w-4 h-4 mr-2" /> Voltar ao Início
               </Button>
+              {leadId && (
+                <Button
+                  onClick={() => window.location.href = `/sponsor/status?id=${leadId}`}
+                  size="lg"
+                  variant="outline"
+                  className="px-6"
+                >
+                  Acompanhar status
+                </Button>
+              )}
             </div>
             {leadId && !docsCompleted && (
               <p className="mt-4 text-xs text-muted-foreground">
