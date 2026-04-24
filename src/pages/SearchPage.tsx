@@ -148,6 +148,10 @@ const SearchPage = () => {
     if (featuredFilter === 'featured') results = results.filter(p => p.featured);
     else if (featuredFilter === 'normal') results = results.filter(p => !p.featured);
 
+    // Availability filters
+    if (onlineOnly) results = results.filter(p => onlineSet.has(p.userId));
+    if (acceptingOnly) results = results.filter(p => !!p.whatsapp && p.whatsapp.trim().length > 0);
+
     // Sort within group — never mix local/other ordering
     if (sortBy === 'nearest') {
       results.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
