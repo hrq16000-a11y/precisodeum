@@ -49,6 +49,8 @@ import AvatarUpload from '@/components/AvatarUpload';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
+import { getSocialAvatarUrl } from '@/lib/avatarUtils';
+import { formatCityState } from '@/lib/locationFormat';
 
 type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
 type ProviderSubtype = 'autonomous' | 'company';
