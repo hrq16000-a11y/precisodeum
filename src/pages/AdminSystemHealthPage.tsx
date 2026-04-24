@@ -228,6 +228,9 @@ export default function AdminSystemHealthPage() {
 
         {data && (
           <>
+            {/* Auth profile telemetry + top error paths */}
+            <AuthHealthPanel />
+
             {/* 4 Quadrantes */}
             <div className="grid gap-4 lg:grid-cols-2">
               {/* A - Cadastro */}
