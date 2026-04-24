@@ -183,6 +183,28 @@ export default function SponsorStatusPage() {
                   {lead.docs_review_notes ? <> — “{lead.docs_review_notes}”</> : null}
                 </p>
               )}
+
+              {/* Claim CTA: link this lead to the logged-in user's account for push/email */}
+              {user && !claimed && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs space-y-2">
+                  <p className="font-semibold text-foreground flex items-center gap-1">
+                    <Link2 className="h-3.5 w-3.5" /> Vincule este cadastro à sua conta
+                  </p>
+                  <p className="text-muted-foreground">
+                    Receba notificações automáticas (push e e-mail) quando o admin aprovar, reprovar ou solicitar
+                    correções na sua documentação.
+                  </p>
+                  <Button size="sm" onClick={handleClaim} disabled={claiming} className="w-full sm:w-auto">
+                    {claiming ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Link2 className="h-3.5 w-3.5 mr-1" />}
+                    Vincular à minha conta
+                  </Button>
+                </div>
+              )}
+              {!user && (
+                <p className="text-[11px] text-muted-foreground">
+                  Faça login com o e-mail usado neste cadastro para receber notificações de aprovação/reprovação automaticamente.
+                </p>
+              )}
             </CardContent>
           </Card>
         )}
