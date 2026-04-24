@@ -14,6 +14,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useDebounce } from '@/hooks/useDebounce';
 import { isUF } from '@/lib/ufIndex';
+import { safeUF } from '@/lib/locationFormat';
 
 interface CityRow {
   id: string;
