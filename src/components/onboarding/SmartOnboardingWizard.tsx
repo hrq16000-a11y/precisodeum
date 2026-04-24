@@ -1365,6 +1365,52 @@ const Step2Location = ({
   const isFromGoogle = !!socialAvatarUrl && avatarUrl === socialAvatarUrl;
   const hasNoAvatar = !avatarUrl;
   const initials = getInitials(fullName);
+  const [photoConfirmed, setPhotoConfirmed] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<null | { ok: boolean; message: string }>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const handleResyncFromGoogle = async () => {
+    if (!userId) return;
+    if (!socialAvatarUrl) {
+      setSyncStatus({ ok: false, message: 'Sua conta não tem foto Google disponível para sincronizar.' });
+      return;
+    }
+    setSyncing(true);
+    try {
+      const { error } = await supabase.from('profiles').update({ avatar_url: socialAvatarUrl }).eq('id', userId);
+      if (error) throw error;
+      onAvatarChange(socialAvatarUrl);
+      setSyncStatus({ ok: true, message: 'Foto sincronizada com sucesso da sua conta Google.' });
+      setPhotoConfirmed(true);
+    } catch (err: any) {
+      setSyncStatus({ ok: false, message: err?.message || 'Falha ao sincronizar a foto. Tente novamente.' });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!userId) return;
+    setSyncing(true);
+    try {
+      const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', userId);
+      if (error) throw error;
+      onAvatarChange(null);
+      setSyncStatus({ ok: true, message: 'Foto removida. Suas iniciais serão exibidas.' });
+      setPhotoConfirmed(false);
+    } catch (err: any) {
+      setSyncStatus({ ok: false, message: err?.message || 'Não foi possível remover a foto.' });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const photoSourceLabel = isFromGoogle
+    ? 'Conta Google'
+    : avatarUrl
+      ? 'Upload manual'
+      : 'Iniciais (sem foto)';
+
   return (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
