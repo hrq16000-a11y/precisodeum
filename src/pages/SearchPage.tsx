@@ -8,6 +8,7 @@ import CategoryIcon from '@/components/CategoryIcon';
 import ProviderCard from '@/components/ProviderCard';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';
+import GeoFallbackNotice from '@/components/GeoFallbackNotice';
 import GeoPromptBanner from '@/components/GeoPromptBanner';
 import PaginationControls from '@/components/PaginationControls';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
@@ -61,7 +62,7 @@ const SearchPage = () => {
   const isMobile = useIsMobile();
   const query = searchParams.get('q') || '';
   const cityParam = searchParams.get('cidade') || '';
-  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, requestPreciseLocation } = useGeoCity();
+  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, requestPreciseLocation, geoFailed, source: geoSource, lastKnownAt, dismissGeoFailure } = useGeoCity();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('categoria') || '');
   const [selectedCity, setSelectedCity] = useState(cityParam);
   const [selectedNeighborhood, setSelectedNeighborhood] = useState(searchParams.get('bairro') || '');
