@@ -493,6 +493,7 @@ export default function SponsorLandingPage() {
         phone: data.phone,
         plan: data.plan,
         contract_accepted: true,
+        status: 'pending',
       } as any);
       if (error) throw error;
       setSubmitted(true);
