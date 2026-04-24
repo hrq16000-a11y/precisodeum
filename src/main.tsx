@@ -180,15 +180,12 @@ const startVersionWatcher = () => {
 
 const installBootstrapGuards = () => {
   window.addEventListener("error", (event) => {
-    const target = event.target as HTMLElement | null;
-    const targetTag = target?.tagName?.toLowerCase();
+    if (!event.error && !event.message) return;
+
     const message = String(event.message || "").toLowerCase();
 
     if (
-      targetTag === "script"
-      || targetTag === "link"
-      || message.includes("schedulecallback")
-      || message.includes("dynamically imported module")
+      message.includes("dynamically imported module")
       || message.includes("module script")
     ) {
       void tryAutomatedRecovery("window-error", event.error || event.message);
@@ -200,8 +197,7 @@ const installBootstrapGuards = () => {
     const message = String(reason instanceof Error ? reason.message : reason || "").toLowerCase();
 
     if (
-      message.includes("schedulecallback")
-      || message.includes("dynamically imported module")
+      message.includes("dynamically imported module")
       || message.includes("module script")
     ) {
       event.preventDefault?.();
