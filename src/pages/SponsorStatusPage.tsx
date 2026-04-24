@@ -63,6 +63,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default function SponsorStatusPage() {
+  const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const initialId = params.get('id') || '';
   const [leadId, setLeadId] = useState<string>(initialId);
@@ -71,6 +72,23 @@ export default function SponsorStatusPage() {
   const [error, setError] = useState<string | null>(null);
   const [lead, setLead] = useState<LeadStatus | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [claiming, setClaiming] = useState(false);
+  const [claimed, setClaimed] = useState(false);
+
+  const handleClaim = async () => {
+    if (!leadId) return;
+    setClaiming(true);
+    try {
+      const { error: cErr } = await supabase.rpc('claim_sponsor_lead' as any, { _lead_id: leadId });
+      if (cErr) throw cErr;
+      toast.success('Cadastro vinculado! Agora você receberá notificações sobre revisões e atualizações.');
+      setClaimed(true);
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível vincular este cadastro.');
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   const load = async (id: string) => {
     if (!id) return;
