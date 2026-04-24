@@ -65,6 +65,7 @@ const menuGroups = [
       { label: 'Depoimentos', icon: MessageSquareQuote, path: '/admin/depoimentos' },
       { label: 'Blocos CTA', icon: MousePointerClick, path: '/admin/cta-blocos' },
       { label: 'Ordem Seções', icon: LayoutList, path: '/admin/secoes-home' },
+      { label: 'Auditoria SEO', icon: SearchIcon, path: '/admin/seo-auditoria' },
     ],
   },
   {
