@@ -764,6 +764,36 @@ export type Database = {
         }
         Relationships: []
       }
+      error_page_events: {
+        Row: {
+          code: number
+          id: string
+          occurred_at: string
+          path: string
+          referrer: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          code?: number
+          id?: string
+          occurred_at?: string
+          path?: string
+          referrer?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          code?: number
+          id?: string
+          occurred_at?: string
+          path?: string
+          referrer?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       error_reports: {
         Row: {
           action_context: string
