@@ -32,7 +32,36 @@ const ErrorPage = ({ code = 404 }: ErrorPageProps) => {
 
   useEffect(() => {
     console.error(`[ErrorPage ${code}] Path: ${location.pathname}`);
-  }, [code, location.pathname]);
+
+    // Fire-and-forget: log error page hit for admin analytics
+    const path = location.pathname + location.search;
+    const referrer = typeof document !== "undefined" ? document.referrer || null : null;
+    const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : null;
+
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        await supabase.from("error_page_events" as any).insert({
+          path,
+          code,
+          referrer,
+          user_id: user?.id ?? null,
+          user_agent: userAgent,
+        } as any);
+      } catch (e) {
+        console.debug("[ErrorPage] Failed to log event:", e);
+      }
+
+      if (code === 500) {
+        reportError({
+          errorMessage: `500 error page hit at ${path}`,
+          actionContext: "error_page.500_hit",
+          componentName: "ErrorPage",
+          severity: "error",
+        }).catch(() => undefined);
+      }
+    })();
+  }, [code, location.pathname, location.search]);
 
   return (
     <div className="flex min-h-screen flex-col">
