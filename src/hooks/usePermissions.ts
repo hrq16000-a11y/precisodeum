@@ -146,4 +146,5 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/admin/regras': 'manage_billing',
   '/admin/estatisticas': 'view_reports',
   '/admin/auditoria': 'view_reports',
+  '/admin/auditoria-rls': 'view_reports',
 };
