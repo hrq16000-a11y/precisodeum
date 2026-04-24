@@ -2820,6 +2820,7 @@ export type Database = {
           meta_description: string | null
           meta_title: string | null
           neighborhood: string
+          notification_channels: Json
           onboarding_progress: Json | null
           phone: string
           photo_url: string | null
@@ -2870,6 +2871,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           neighborhood?: string
+          notification_channels?: Json
           onboarding_progress?: Json | null
           phone?: string
           photo_url?: string | null
@@ -2920,6 +2922,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           neighborhood?: string
+          notification_channels?: Json
           onboarding_progress?: Json | null
           phone?: string
           photo_url?: string | null
@@ -5840,6 +5843,10 @@ export type Database = {
       register_referral: {
         Args: { _referral_code: string; _referred_id: string }
         Returns: boolean
+      }
+      reschedule_lead_followup: {
+        Args: { _lead_id: string; _next_at: string; _note?: string }
+        Returns: undefined
       }
       sponsor_has_active_plan: {
         Args: { _sponsor_id: string }

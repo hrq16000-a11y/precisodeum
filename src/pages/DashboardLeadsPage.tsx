@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, Send, History, Paperclip, Bell, BellOff, Timer } from 'lucide-react';
+import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, Send, History, Paperclip, Bell, BellOff, Timer, Search, Filter, FileDown, FileText, CalendarClock, ExternalLink, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { whatsappLink } from '@/lib/whatsapp';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { exportLeadsCsv, exportLeadsPdf } from '@/lib/exportLeads';
+import RescheduleFollowupDialog from '@/components/leads/RescheduleFollowupDialog';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -69,6 +71,16 @@ const DashboardLeadsPage = () => {
   const [, setTick] = useState(0);
   const leadsRef = useRef<LeadRow[]>([]);
 
+  // Filtros avançados
+  const [search, setSearch] = useState('');
+  const [createdFrom, setCreatedFrom] = useState('');
+  const [createdTo, setCreatedTo] = useState('');
+  const [followupFrom, setFollowupFrom] = useState('');
+  const [followupTo, setFollowupTo] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [rescheduleLeadId, setRescheduleLeadId] = useState<string | null>(null);
+  const [rescheduleDefault, setRescheduleDefault] = useState<string | null>(null);
+
   // Re-render minute-by-minute para atualizar relativos e badge "vencido"
   useEffect(() => {
     const interval = setInterval(() => setTick((n) => n + 1), 60_000);
@@ -77,13 +89,47 @@ const DashboardLeadsPage = () => {
 
   const leads = useMemo(() => sortLeads(rawLeads), [rawLeads]);
 
+  const inRange = (iso: string | null | undefined, from: string, to: string) => {
+    if (!iso) return !from && !to;
+    const t = new Date(iso).getTime();
+    if (from && t < new Date(from).getTime()) return false;
+    if (to && t > new Date(to).getTime() + 86_400_000) return false;
+    return true;
+  };
+
   const filteredLeads = useMemo(() => {
-    if (statusFilter === 'all') return leads;
-    if (statusFilter === 'overdue') return leads.filter(isOverdue);
-    return leads.filter((l) => l.status === statusFilter);
-  }, [leads, statusFilter]);
+    let arr = leads;
+    if (statusFilter === 'overdue') arr = arr.filter(isOverdue);
+    else if (statusFilter !== 'all') arr = arr.filter((l) => l.status === statusFilter);
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      arr = arr.filter(l =>
+        l.client_name.toLowerCase().includes(q) ||
+        l.phone.toLowerCase().includes(q) ||
+        (l.service_needed || '').toLowerCase().includes(q) ||
+        (l.message || '').toLowerCase().includes(q)
+      );
+    }
+    if (createdFrom || createdTo) arr = arr.filter(l => inRange(l.created_at, createdFrom, createdTo));
+    if (followupFrom || followupTo) arr = arr.filter(l => inRange(l.next_followup_at, followupFrom, followupTo));
+    return arr;
+  }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo]);
 
   const overdueCount = useMemo(() => leads.filter(isOverdue).length, [leads]);
+
+  const clearFilters = () => {
+    setSearch(''); setCreatedFrom(''); setCreatedTo(''); setFollowupFrom(''); setFollowupTo(''); setStatusFilter('all');
+  };
+
+  const handleExportCsv = () => exportLeadsCsv({
+    providerName: profile?.full_name, leads: filteredLeads, history,
+    range: { from: createdFrom, to: createdTo },
+  });
+  const handleExportPdf = () => exportLeadsPdf({
+    providerName: profile?.full_name, leads: filteredLeads, history,
+    range: { from: createdFrom, to: createdTo },
+  });
 
   const playAlert = useCallback(() => {
     if (!audibleAlerts) return;
@@ -223,6 +269,47 @@ const DashboardLeadsPage = () => {
         </div>
       </motion.div>
 
+      {/* Toolbar: busca, filtros avançados e exportação */}
+      <div className="mt-4 rounded-xl border border-border bg-card p-3 shadow-card">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome, telefone, serviço ou mensagem" className="pl-9" />
+          </div>
+          <Button type="button" variant={showAdvanced ? 'default' : 'outline'} size="sm" onClick={() => setShowAdvanced(v => !v)} className="gap-1">
+            <Filter className="h-4 w-4" /> Filtros
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleExportCsv} className="gap-1"><FileDown className="h-4 w-4" /> CSV</Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleExportPdf} className="gap-1"><FileText className="h-4 w-4" /> PDF</Button>
+          <Button asChild type="button" variant="outline" size="sm" className="gap-1">
+            <Link to="/dashboard/notificacoes/preferencias"><Settings2 className="h-4 w-4" /> Notificações</Link>
+          </Button>
+        </div>
+        {showAdvanced && (
+          <div className="mt-3 grid gap-3 border-t border-border pt-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label className="text-[11px] font-semibold text-muted-foreground">Criado de</label>
+              <Input type="date" value={createdFrom} onChange={e => setCreatedFrom(e.target.value)} className="h-9" />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-muted-foreground">Criado até</label>
+              <Input type="date" value={createdTo} onChange={e => setCreatedTo(e.target.value)} className="h-9" />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-muted-foreground">Próx. follow-up de</label>
+              <Input type="date" value={followupFrom} onChange={e => setFollowupFrom(e.target.value)} className="h-9" />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-muted-foreground">Próx. follow-up até</label>
+              <Input type="date" value={followupTo} onChange={e => setFollowupTo(e.target.value)} className="h-9" />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
+              <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>Limpar filtros</Button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Configuração de janela de follow-up */}
       <motion.div
         className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -330,6 +417,8 @@ const DashboardLeadsPage = () => {
                     <div className="flex items-center gap-2 sm:justify-end">
                       <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"><Phone className="h-3 w-3" /> {lead.phone}</a>
                       <motion.a href={whatsappLink(lead.phone, `Olá ${lead.client_name}, recebi sua solicitação${lead.service_needed ? ` sobre "${lead.service_needed}"` : ''}. Como posso ajudar?`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-full bg-accent p-1.5 text-accent-foreground transition-colors hover:bg-accent/90" title="Responder pelo WhatsApp" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}><MessageCircle className="h-4 w-4" /></motion.a>
+                      <button onClick={() => { setRescheduleLeadId(lead.id); setRescheduleDefault(lead.next_followup_at); }} className="inline-flex items-center justify-center rounded-full bg-primary/10 p-1.5 text-primary transition-colors hover:bg-primary/20" title="Reagendar follow-up"><CalendarClock className="h-4 w-4" /></button>
+                      <Link to={`/dashboard/leads/${lead.id}`} className="inline-flex items-center justify-center rounded-full bg-muted p-1.5 text-foreground transition-colors hover:bg-muted/70" title="Ver detalhes"><ExternalLink className="h-4 w-4" /></Link>
                       <motion.button onClick={() => handleDelete(lead.id)} className="inline-flex items-center justify-center rounded-full bg-destructive/10 p-1.5 text-destructive transition-colors hover:bg-destructive/20" title="Excluir lead" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}><Trash2 className="h-4 w-4" /></motion.button>
                     </div>
                   </div>
@@ -369,6 +458,13 @@ const DashboardLeadsPage = () => {
           })}
         </AnimatePresence>
       </motion.div>
+
+      <RescheduleFollowupDialog
+        leadId={rescheduleLeadId}
+        defaultDate={rescheduleDefault}
+        open={!!rescheduleLeadId}
+        onOpenChange={(open) => { if (!open) setRescheduleLeadId(null); }}
+      />
     </DashboardLayout>
   );
 };
