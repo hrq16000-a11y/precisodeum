@@ -28,6 +28,7 @@ import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Gl
 import { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchModal';
 const RouteSearchModal = lazy(() => import('@/components/RouteSearchModal'));
 import { calculateDistanceKm } from '@/lib/geoDistance';
+import { applySearchFilters, countActiveFilters } from '@/lib/searchFilters';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const ProvidersMap = lazy(() => import('@/components/ProvidersMap'));
