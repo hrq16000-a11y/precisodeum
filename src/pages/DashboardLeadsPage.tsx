@@ -387,7 +387,7 @@ const DashboardLeadsPage = () => {
               <p className="mt-1 text-sm text-muted-foreground">Quando clientes solicitarem orçamento, os leads aparecerão aqui.</p>
             </motion.div>
           )}
-          {filteredLeads.map((lead) => {
+          {visibleLeads.map((lead) => {
             const meta = STATUS_META[lead.status];
             const overdue = isOverdue(lead);
             const leadHistory = history[lead.id] || [];
