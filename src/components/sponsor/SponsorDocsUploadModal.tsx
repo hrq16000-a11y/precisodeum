@@ -22,11 +22,12 @@ const ALLOWED_BANNER = ['image/jpeg', 'image/png', 'image/webp'];
 interface FileSlot {
   file: File | null;
   uploading: boolean;
+  progress: number;       // 0-100 (simulado por etapa de validação/upload)
   path: string | null;
   error: string | null;
 }
 
-const initialSlot: FileSlot = { file: null, uploading: false, path: null, error: null };
+const initialSlot: FileSlot = { file: null, uploading: false, progress: 0, path: null, error: null };
 
 export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted }: Props) {
   const [cnpjDoc, setCnpjDoc] = useState<FileSlot>(initialSlot);
