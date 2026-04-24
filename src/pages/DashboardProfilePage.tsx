@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import CategoryIcon from '@/components/CategoryIcon';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -29,8 +29,38 @@ const fadeIn = {
 const DashboardProfilePage = () => {
   const { user, profile, provider, loading, refetchProfile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('pessoal');
+  const whatsappInputRef = useRef<HTMLInputElement | null>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
+  const cityInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Foco automático vindo dos CTAs do dashboard (?focus=contact|location|description|avatar)
+  useEffect(() => {
+    const focus = searchParams.get('focus');
+    if (!focus) return;
+    // Mapeamento focus → tab + ref
+    const mapping: Record<string, { tab: string; ref?: React.RefObject<HTMLElement | null> }> = {
+      contact: { tab: 'pessoal', ref: whatsappInputRef as any },
+      avatar: { tab: 'pessoal' },
+      description: { tab: 'profissional', ref: descriptionRef as any },
+      location: { tab: 'localizacao', ref: cityInputRef as any },
+    };
+    const target = mapping[focus];
+    if (!target) return;
+    setActiveTab(target.tab);
+    // Aguarda render da tab antes de focar
+    const timer = window.setTimeout(() => {
+      target.ref?.current?.focus();
+      target.ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 250);
+    // Limpa o param para não re-disparar em navegações futuras
+    const next = new URLSearchParams(searchParams);
+    next.delete('focus');
+    setSearchParams(next, { replace: true });
+    return () => window.clearTimeout(timer);
+  }, [searchParams, setSearchParams]);
 
   // City selector state
   const [citySearch, setCitySearch] = useState('');
@@ -411,7 +441,7 @@ const DashboardProfilePage = () => {
                   </div>
                   <div>
                     <label className={labelCls}>WhatsApp</label>
-                    <PhoneMaskedInput name="whatsapp" value={form.whatsapp} onChange={handlePhoneChange} className={inputCls} />
+                    <PhoneMaskedInput ref={whatsappInputRef} name="whatsapp" value={form.whatsapp} onChange={handlePhoneChange} className={inputCls} />
                     {!form.whatsapp && form.phone && (
                       <button type="button" onClick={() => setForm(prev => ({ ...prev, whatsapp: prev.phone }))} className="mt-1 text-xs text-accent hover:underline">
                         Copiar do telefone
@@ -610,7 +640,7 @@ const DashboardProfilePage = () => {
 
                 <div>
                   <label className={labelCls}>Descrição profissional</label>
-                  <textarea name="description" rows={4} value={form.description} onChange={handleChange} className={`${inputCls} resize-none`} />
+                  <textarea ref={descriptionRef} name="description" rows={4} value={form.description} onChange={handleChange} className={`${inputCls} resize-none`} />
                 </div>
               </motion.div>
             </TabsContent>
