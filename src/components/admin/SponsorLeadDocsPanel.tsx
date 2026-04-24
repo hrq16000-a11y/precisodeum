@@ -97,6 +97,28 @@ export default function SponsorLeadDocsPanel({ open, onOpenChange, leadId, compa
     }
   };
 
+  const handleReopen = async () => {
+    if (!leadId) return;
+    setReviewing(true);
+    try {
+      const { error } = await supabase.rpc('admin_reopen_sponsor_checklist' as any, {
+        _lead_id: leadId,
+        _reason: reopenReason.trim(),
+        _pending_items: reopenItems.length > 0 ? reopenItems : null,
+      });
+      if (error) throw error;
+      toast.success('Checklist reaberto — patrocinador notificado.');
+      setReopenOpen(false);
+      setReopenReason('');
+      setReopenItems([]);
+      reload();
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível reabrir o checklist.');
+    } finally {
+      setReviewing(false);
+    }
+  };
+
   const openSigned = async (path: string | null, kind: 'cnpj' | 'banner', mode: 'view' | 'download') => {
     if (!path || !leadId) return;
     setBusyKind(`${kind}-${mode}`);
