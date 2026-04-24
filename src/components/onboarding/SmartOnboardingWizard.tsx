@@ -755,7 +755,15 @@ const BasicOnboardingWizard = () => {
   // PULAR não pode burlar o gate. Avança visualmente para o Passo 5,
   // mas onboarding_completed permanece false até existir 1 serviço real.
   const handleSkipStep4 = async () => {
-    toast.info('Você pode cadastrar serviços depois no dashboard, mas seu perfil ficará incompleto até lá.');
+    // Hard Save: para PROVIDER exigimos 1 serviço criado antes de avançar à Revisão.
+    // O create_service_atomic é executado dentro do ServiceWizard e só então
+    // servicesCreated > 0, liberando a transição para o Passo 5.
+    if (profileType === 'provider' && servicesCreated < 1) {
+      toast.error('Cadastre 1 serviço para continuar.', {
+        description: 'Seu perfil só fica visível para clientes quando há pelo menos um serviço publicado. Os dados já preenchidos foram mantidos.',
+      });
+      return;
+    }
     await advanceTo(5);
   };
 
