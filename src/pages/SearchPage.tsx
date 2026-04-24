@@ -662,7 +662,20 @@ const SearchPage = () => {
               </div>
             </div>
 
-            {isFallback && effectiveCity && (
+            {geoFailed && (
+              <GeoFallbackNotice
+                city={geoCity}
+                source={geoSource}
+                lastKnownAt={lastKnownAt}
+                onRetry={() => {
+                  try { sessionStorage.removeItem('geo_browser_asked'); } catch {}
+                  void requestPreciseLocation();
+                  dismissGeoFailure();
+                }}
+                onDismiss={dismissGeoFailure}
+              />
+            )}
+
               <GeoFallbackBanner
                 originalCity={effectiveCity}
                 expansionLevel="all"
