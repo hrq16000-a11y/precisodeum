@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatCityState } from '@/lib/locationFormat';
 
 /**
  * ServiceWizard — ONBOARDING ONLY
