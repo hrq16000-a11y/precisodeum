@@ -50,6 +50,9 @@ const AdminSponsorLeadsPage = () => {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [docsStatusFilter, setDocsStatusFilter] = useState('all');
+  const [cityFilter, setCityFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [editDialog, setEditDialog] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
