@@ -5376,6 +5376,16 @@ export type Database = {
           user_count: number
         }[]
       }
+      admin_list_orphan_profiles: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          last_sign_in_at: string
+          raw_user_meta_data: Json
+          user_id: string
+        }[]
+      }
       admin_list_rls_policies: {
         Args: never
         Returns: {
@@ -5450,6 +5460,10 @@ export type Database = {
           reason: string
           signup_count: number
         }[]
+      }
+      admin_reconcile_orphan_profile: {
+        Args: { _user_id: string }
+        Returns: Json
       }
       admin_set_staff_permission: {
         Args: {
