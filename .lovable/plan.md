@@ -1,105 +1,84 @@
 
-Vou implementar usando a logo atual do projeto como imagem base.
 
-## O que será feito
+# Análise dos 7 itens propostos
 
-1. **Gerar ícones web/PWA a partir da logo atual**
-   - Usar a imagem configurada em `src/lib/siteAssets.ts` como fonte.
-   - Gerar PNGs nos tamanhos padrão:
-     - `16x16`
-     - `32x32`
-     - `48x48`
-     - `72x72`
-     - `96x96`
-     - `128x128`
-     - `144x144`
-     - `152x152`
-     - `167x167`
-     - `180x180`
-     - `192x192`
-     - `384x384`
-     - `512x512`
-   - Gerar também `favicon.ico` com múltiplos tamanhos internos.
-   - Salvar tudo em `public/icons/` com nomes versionados por hash, para evitar cache antigo.
+| # | Item | Status | Recomendação |
+|---|---|---|---|
+| 1 | `/error/500` com CTA + errorReporter | ⚠️ Parcial | Implementar só o logging |
+| 2 | Métricas p95 + alertas `auth.profile_timeout` | ✅ Compatível | Implementar |
+| 3 | Testes do OnboardingGate | ✅ Compatível | Implementar |
+| 4 | Página `/triagem` com checklist | ❌ Já existe | Ignorar |
+| 5 | Trocar atalhos do ErrorPage | ❌ Incorreto | Ignorar |
+| 6 | Log de eventos /error/404 e /error/500 | ✅ Compatível | Implementar |
+| 7 | Wrapper de fallback para lazy → /error/500 | ⚠️ Parcial | Implementar com cuidado |
 
-2. **Atualizar o `manifest.json`**
-   - Atualizar:
-     - `name`: `Preciso de um Profissional`
-     - `short_name`: `Preciso de Um`
-     - `start_url`: `/?source=pwa`
-     - `theme_color`: `#F97316`
-     - `background_color`: `#ffffff`
-   - Substituir os ícones atuais pelos arquivos recém-gerados.
-   - Incluir ícones PWA principais com `purpose: "any maskable"`.
-   - Atualizar os ícones dos atalhos do app para apontarem para os novos arquivos versionados.
+---
 
-3. **Atualizar o `<head>` global**
-   - Atualizar `index.html`, que atende tanto páginas públicas quanto dashboards.
-   - Adicionar/ajustar:
-     - `favicon.ico`
-     - PNG favicons
-     - `apple-touch-icon` para cada tamanho Apple gerado
-     - `manifest`
-     - `theme-color`
-     - `apple-mobile-web-app-title`
-   - Aplicar cache-busting nos links do head usando versão/hash.
+## Detalhamento
 
-4. **Gerar startup images para iOS**
-   - Criar imagens de inicialização com a logo centralizada sobre o fundo do app.
-   - Gerar tamanhos comuns para iPhone/iPad, incluindo orientações principais.
-   - Adicionar tags:
-     ```html
-     <link rel="apple-touch-startup-image" ...>
-     ```
-   - Usar media queries adequadas para largura, altura, device pixel ratio e orientação.
+### 1. `/error/500` com CTA + errorReporter — PARCIAL
+A rota `/error/500`, o CTA "Buscar Profissionais" e a UI amigável **já foram implementados** no prompt anterior (`src/pages/ErrorPage.tsx` + `src/App.tsx`). O que **falta**: integrar `reportError()` do `errorReporter.ts` quando a página for acessada, capturando `path`, `referrer` e `code` (sobrepõe parcialmente com item 6 — vamos unificar).
 
-5. **Adicionar automação**
-   - Criar um script dedicado, por exemplo:
-     ```text
-     scripts/generate-pwa-icons.mjs
-     ```
-   - O script irá:
-     - Ler a logo atual.
-     - Gerar PNGs, ICO e startup images.
-     - Calcular hash/versionamento.
-     - Atualizar `public/manifest.json`.
-     - Atualizar o bloco de ícones no `index.html`.
-     - Validar se todos os arquivos referenciados existem.
+### 2. Métricas p95 + alertas de `auth.profile_timeout` — COMPATÍVEL
+Hoje o `useAuth.tsx` já dispara `reportError({ action_context: "auth.profile_timeout" })` (prompt B2). O que falta:
+- Tabela `auth_performance_metrics` (ou reuso de `error_reports`) com `duration_ms` por tentativa de fetch de profile.
+- Painel em `/admin/saude-sistema` (já existe `AdminSystemHealthPage.tsx`) com p50/p95/p99 e contagem de timeouts nas últimas 24h.
+- Alerta visual quando `auth.profile_timeout` > 5 ocorrências/hora.
 
-6. **Ajustar cache**
-   - Atualizar `public/_headers` para garantir que:
-     - ícones versionados possam usar cache longo.
-     - `manifest.json` continue revalidando corretamente.
-     - `favicon.ico` não fique preso em cache antigo sem controle.
-   - Usar nomes com hash e/ou query string versionada nos links críticos.
+### 3. Testes do OnboardingGate — COMPATÍVEL
+Criar `src/test/onboarding-gate.test.tsx` cobrindo:
+- `loading=true` → renderiza skeleton, **não** redireciona
+- `user && profile=null` → renderiza skeleton, **não** redireciona
+- `user && profile && !profile_type` → redireciona para `/triagem`
+- `user && profile && onboarding_completed=false` → redireciona
+- `user && profile && completo` → renderiza children
+- `user=null` → renderiza children (rotas públicas)
 
-7. **Validação**
-   - Executar o script de geração.
-   - Conferir se todos os caminhos do `head` e do `manifest.json` apontam para arquivos existentes.
-   - Validar o build do projeto.
-   - Confirmar que os ícones ficam disponíveis para:
-     - páginas públicas
-     - dashboards
-     - instalação PWA
-     - Apple touch icon
-     - favicon padrão do navegador
-     - startup images iOS
+### 4. Página /triagem com checklist — IGNORAR
+**Já existe** `src/pages/TriagePage.tsx` que monta o `SmartOnboardingWizard` (5 passos: identidade, localização+foto, contato, primeiro serviço, conclusão). Hard-gate sem botão fechar, persistência por passo, retomada via F5. Adicionar outro checklist seria duplicar fluxo.
 
-## Arquivos que serão alterados
+### 5. Trocar atalhos do ErrorPage — IGNORAR (premissa incorreta)
+Verifiquei `src/App.tsx` linhas 420 e 423: **as rotas `/categorias` e `/cidades` existem** (`CategoriesListPage` e `CitiesListPage`). Os links atuais estão **corretos**. Trocar por `/categoria/{slug}` exigiria slug — e usar `/buscar` em vez de `/categorias` removeria atalhos legítimos. Manter como está.
 
-```text
-index.html
-public/manifest.json
-public/_headers
-package.json
-scripts/generate-pwa-icons.mjs
-public/icons/*
-public/favicon.ico
-```
+### 6. Log de eventos /error/404 e /error/500 — COMPATÍVEL
+- Criar tabela `error_page_events` (`id, occurred_at, path, code, referrer, user_id nullable, user_agent`) com RLS (insert público, select admin).
+- No `ErrorPage.tsx`, no `useEffect`, gravar uma linha por acesso.
+- Painel admin `/admin/saude-sistema` mostrando top 20 paths com 404 nas últimas 7 dias (insumo para criar redirects ou corrigir links quebrados).
 
-## Observações técnicas
+### 7. Wrapper de fallback para lazy chunks → /error/500 — PARCIAL
+**Já existe** `lazyWithRetry.ts` (`importWithRetry`) que faz retry com backoff. Falta:
+- Um `ErrorBoundary` específico (`LazyRouteBoundary`) envolvendo o `<Suspense>` das rotas em `App.tsx`, que captura erros de chunk-load **após** o retry esgotar e faz `Navigate` para `/error/500`.
+- Não substituir o `ErrorGuard` global (que tem UX rica) — usar só para falhas de import dinâmico.
+- Cuidado: o `main.tsx` já tem `tryAutomatedRecovery` para chunks. O wrapper só age **se** a recuperação automática falhar (limite 1 já configurado no prompt A3).
 
-- Não vou adicionar novo Service Worker nem alterar a política PWA atual além dos ícones/metadados solicitados.
-- Como o app é SPA, atualizar o `index.html` garante consistência em dashboards e páginas públicas.
-- A geração usará `sharp`, que já existe nas dependências do projeto.
-- O versionamento será derivado do conteúdo da logo/ícones para evitar que navegadores mantenham favicons antigos.
+---
+
+## Plano de execução (após sua autorização)
+
+**Etapa 1 — Logging do ErrorPage (itens 1+6 unificados)**
+- Migration: criar tabela `error_page_events` com RLS (insert anônimo + admin select).
+- Migration: índice em `(occurred_at DESC, code)` e `(path, code)`.
+- Editar `src/pages/ErrorPage.tsx`: gravar evento + chamar `reportError` para code=500.
+
+**Etapa 2 — Métricas de auth.profile_timeout (item 2)**
+- Migration: tabela `auth_profile_metrics` (`user_id, duration_ms, attempts, succeeded, recorded_at`) com RLS.
+- Editar `src/hooks/useAuth.tsx`: medir tempo total + nº de tentativas e gravar em background (não bloqueia login).
+- Editar `src/pages/AdminSystemHealthPage.tsx`: novo card "Performance de Auth" com p50/p95/p99 + contagem de timeouts 24h + alerta visual >5/h.
+
+**Etapa 3 — Testes do OnboardingGate (item 3)**
+- Criar `src/test/onboarding-gate.test.tsx` com os 6 cenários listados acima usando `@testing-library/react` e mock do `useAuth`.
+
+**Etapa 4 — LazyRouteBoundary (item 7)**
+- Criar `src/components/LazyRouteBoundary.tsx` (ErrorBoundary classe).
+- Em `App.tsx`, envolver `<Suspense>` interno do `OnboardingGate` com esse boundary.
+- Boundary detecta `ChunkLoadError` / "dynamically imported module" → redireciona para `/error/500` (não tela própria).
+
+---
+
+## O que será ignorado e por quê
+
+- **Item 4 (/triagem com checklist)**: já implementado via `TriagePage` + `SmartOnboardingWizard` 5 passos.
+- **Item 5 (trocar atalhos)**: rotas `/categorias` e `/cidades` existem — premissa do prompt está incorreta.
+
+Aguardando sua autorização para iniciar pela Etapa 1.
+
