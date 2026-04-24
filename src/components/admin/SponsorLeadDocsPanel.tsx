@@ -236,10 +236,71 @@ export default function SponsorLeadDocsPanel({ open, onOpenChange, leadId, compa
                 <XCircle className="h-4 w-4 mr-1" />
                 Rejeitar / Solicitar correção
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 min-w-[140px]"
+                disabled={reviewing}
+                onClick={() => setReopenOpen(true)}
+              >
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Reabrir checklist
+              </Button>
             </div>
           </div>
         )}
       </DialogContent>
+
+      {/* Reopen checklist modal */}
+      <Dialog open={reopenOpen} onOpenChange={(o) => { if (!reviewing) { setReopenOpen(o); if (!o) { setReopenReason(''); setReopenItems([]); } } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <RotateCcw className="h-5 w-5" /> Reabrir checklist do patrocinador
+            </DialogTitle>
+            <DialogDescription>
+              Selecione os itens pendentes e descreva o que o patrocinador precisa enviar novamente. Ele será notificado com o resumo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground">Itens pendentes</p>
+            <div className="space-y-1.5">
+              {REOPEN_ITEM_OPTIONS.map((item) => (
+                <label key={item} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={reopenItems.includes(item)}
+                    onChange={(e) => setReopenItems((prev) =>
+                      e.target.checked ? [...prev, item] : prev.filter((i) => i !== item)
+                    )}
+                  />
+                  <span>{item}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <Textarea
+            value={reopenReason}
+            onChange={(e) => setReopenReason(e.target.value)}
+            placeholder="Ex: Os arquivos enviados estão incompletos. Reenviar o CNPJ legível e confirmar o checklist."
+            rows={4}
+            maxLength={500}
+            disabled={reviewing}
+          />
+          <p className="text-xs text-muted-foreground">{reopenReason.trim().length}/500 — mínimo 5 caracteres.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReopenOpen(false)} disabled={reviewing}>Cancelar</Button>
+            <Button
+              disabled={reviewing || reopenReason.trim().length < 5}
+              onClick={handleReopen}
+            >
+              {reviewing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <RotateCcw className="h-4 w-4 mr-1" />}
+              Reabrir e notificar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={rejectOpen} onOpenChange={(o) => { if (!reviewing) { setRejectOpen(o); if (!o) setRejectReason(''); } }}>
         <DialogContent className="max-w-md">
