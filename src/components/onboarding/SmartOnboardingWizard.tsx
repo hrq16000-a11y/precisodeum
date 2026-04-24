@@ -825,6 +825,8 @@ const BasicOnboardingWizard = () => {
             items={reviewItems[guidedReviewStep] ?? []}
             onEdit={() => editGuidedReviewStep(guidedReviewStep)}
             onKeep={keepGuidedReviewStep}
+            onPrev={goPrevGuidedReviewStep}
+            canGoPrev={guidedReviewStep > 1}
           />
         )}
 
