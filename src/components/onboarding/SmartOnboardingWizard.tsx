@@ -306,9 +306,19 @@ const BasicOnboardingWizard = () => {
 
   const advanceTo = async (nextStep: WizardStep, extraPatch: Record<string, any> = {}) => {
     await flushAutoSave();
+    const isForward = nextStep > step;
     setFurthestStep(prev => Math.max(prev, nextStep) as WizardStep);
     setStep(nextStep);
     await persistStep(nextStep, extraPatch);
+    // Mini-celebração ao avançar (não ao voltar/revisar)
+    if (isForward && user?.id) {
+      try {
+        celebrate({
+          intensity: 'mini',
+          id: `wizard-step-${nextStep}:${user.id}`,
+        });
+      } catch { /* noop */ }
+    }
   };
 
   const saveStepDraft = (targetStep: WizardStep = step) => {
