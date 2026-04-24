@@ -563,9 +563,12 @@ const DashboardPage = () => {
 
       <QuickStatsBar pendingLeads={pendingLeads} providerSlug={provider?.slug} />
 
-      {/* Action Queue — what to do next */}
+      {/* Action Queue — what to do next (sincronizado com checklist unificado) */}
       <div className="mt-4">
-        <ActionQueue />
+        <ActionQueue
+          servicesCount={servicesCount ?? 0}
+          portfolioAlbumsCount={portfolioAlbumCount}
+        />
       </div>
       {/* Dominant CTA when no services — REMOVIDO: substituído por EmptyStateBanner persistente acima */}
       {/* Stats with animated counters */}
