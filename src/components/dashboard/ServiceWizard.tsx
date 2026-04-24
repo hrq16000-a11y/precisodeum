@@ -142,6 +142,37 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
     ).slice(0, 20);
   }, [categories, selectedCategoryIds, categorySearch]);
 
+  // Single-select category — replaces previous and auto-fills service name if empty
+  const handleSelectCategory = (catId: string) => {
+    const cat = categories.find((c: any) => c.id === catId);
+    setSelectedCategoryIds([catId]);
+    setCategorySearch('');
+    setShowCatDrop(false);
+    if (cat?.name && !serviceName.trim()) {
+      setServiceName(cat.name);
+    }
+  };
+
+  // Quick suggestions for service area / working hours
+  const areaSuggestions = useMemo(() => {
+    const city = provider?.city || '';
+    const list: string[] = [];
+    if (city) {
+      list.push(city);
+      list.push(`Região metropolitana de ${city}`);
+    }
+    list.push('Atendo toda a cidade', 'Atendo a domicílio');
+    return list;
+  }, [provider?.city]);
+
+  const hoursSuggestions = [
+    'Seg a Sex, 08h às 18h',
+    'Seg a Sáb, 08h às 18h',
+    'Comercial (09h às 17h)',
+    '24 horas',
+    'Sob agendamento',
+  ];
+
   const providerCity = provider?.city || '';
   const providerState = (provider?.state && provider.state !== 'ST') ? provider.state : '';
   const providerCityDisplay = providerCity
