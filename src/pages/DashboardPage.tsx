@@ -464,38 +464,38 @@ const DashboardPage = () => {
 
       {/* Engagement Loop — guides the user to the next highest-impact action */}
       <div className="mt-4">
-        <EngagementLoop />
+        <EngagementLoop
+          servicesCount={servicesCount ?? 0}
+          portfolioAlbumsCount={portfolioAlbumCount}
+          unifiedPct={completenessPercent}
+        />
       </div>
 
       {/* Banners persistentes de alta prioridade — Empty States estruturais */}
-      {servicesCount !== null && servicesCount === 0 && (
+      {showServiceEmptyBanner && (
         <div className="mt-4">
           <EmptyStateBanner variant="service" />
         </div>
       )}
-      {servicesCount !== null && servicesCount > 0 && portfolioCount === 0 && (
+      {showPortfolioEmptyBanner && (
         <div className="mt-4">
           <EmptyStateBanner variant="portfolio" />
         </div>
       )}
 
-      {/* CTA único inteligente — substitui checklist passivo quando há pendências */}
+      {/* CTA único inteligente — só aparece se NÃO houver banner cobrindo a mesma pendência.
+          Quando há >1 pendência, mostra o checklist completo + status comunidade. */}
       {(() => {
-        const items = buildOnboardingChecklist({
-          profile, provider,
-          servicesCount: servicesCount ?? 0,
-          portfolioAlbumsCount: portfolioCount,
-        });
-        const stats = checklistStats(items);
-        const remaining = stats.total - stats.completed;
+        if (allChecklistDone) return null;
+        // Se um banner Empty State já está cobrindo a única pendência → suprimir CTA duplicado
+        if (anyEmptyBannerVisible && remainingItems <= 1) return null;
 
-        // Tudo completo OU 1 pendência → CTA único enxuto. Caso contrário (>1) mostramos o checklist + status comunidade.
-        if (remaining <= 1) {
+        if (remainingItems <= 1) {
           return (
             <div className="mt-4">
               <SmartNextStepCTA
                 servicesCount={servicesCount ?? 0}
-                portfolioAlbumsCount={portfolioCount}
+                portfolioAlbumsCount={portfolioAlbumCount}
               />
             </div>
           );
@@ -504,7 +504,7 @@ const DashboardPage = () => {
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <FirstLeadChecklist
               servicesCount={servicesCount ?? 0}
-              portfolioAlbumsCount={portfolioCount}
+              portfolioAlbumsCount={portfolioAlbumCount}
             />
             <CommunityVerifiedStatus />
           </div>
