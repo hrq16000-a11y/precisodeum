@@ -40,6 +40,7 @@ import OurStoryBanner from '@/components/OurStoryBanner';
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 import FirstLeadChecklist from '@/components/dashboard/FirstLeadChecklist';
 import SmartNextStepCTA from '@/components/dashboard/SmartNextStepCTA';
+import OnboardingCompletionTracker from '@/components/dashboard/OnboardingCompletionTracker';
 import EmptyStateBanner from '@/components/dashboard/EmptyStateBanner';
 import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
@@ -538,6 +539,14 @@ const DashboardPage = () => {
           </div>
         );
       })()}
+
+      {/* Histórico cronológico de itens concluídos do onboarding + toasts em tempo real */}
+      <div className="mt-4">
+        <OnboardingCompletionTracker
+          servicesCount={servicesCount ?? 0}
+          portfolioAlbumsCount={portfolioAlbumCount}
+        />
+      </div>
 
       {/* Sinal de demanda (FOMO) — apenas Engajado+ */}
       <div className="mt-4">
