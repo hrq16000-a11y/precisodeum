@@ -76,6 +76,7 @@ const AdminPopularServicesPage = lazy(() => import("./pages/AdminPopularServices
 const AdminFaqPage = lazy(() => import("./pages/AdminFaqPage"));
 const AdminMetaTagsPage = lazy(() => import("./pages/AdminMetaTagsPage"));
 const AdminJobsPage = lazy(() => import("./pages/AdminJobsPage"));
+const AdminJobsImportPage = lazy(() => import("./pages/AdminJobsImportPage"));
 const AdminHighlightsPage = lazy(() => import("./pages/AdminHighlightsPage"));
 const AdminCommunityPage = lazy(() => import("./pages/AdminCommunityPage"));
 const AdminBlogPage = lazy(() => import("./pages/AdminBlogPage"));
