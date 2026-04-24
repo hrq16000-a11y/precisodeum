@@ -27,7 +27,13 @@ const urgencyDot = {
   low: 'bg-muted-foreground/30',
 };
 
-const ActionQueue = () => {
+interface ActionQueueProps {
+  /** Override fresh do dashboard — garante coerência com o checklist unificado. */
+  servicesCount?: number;
+  portfolioAlbumsCount?: number;
+}
+
+const ActionQueue = ({ servicesCount: servicesOverride, portfolioAlbumsCount: albumsOverride }: ActionQueueProps = {}) => {
   const { user, profile, provider } = useAuth();
   const [actions, setActions] = useState<Action[]>([]);
 
