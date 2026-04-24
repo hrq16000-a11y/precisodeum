@@ -4,6 +4,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Search, Briefcase, RefreshCcw, Home, AlertTriangle, FileQuestion } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { reportError } from "@/lib/errorReporter";
 
 interface ErrorPageProps {
   code?: 404 | 500;
