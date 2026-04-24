@@ -40,16 +40,17 @@ describe('CpfCnpjInput — cursor & paste', () => {
     render(<Harness initial="12345678" />);
     const input = screen.getByRole('textbox') as HTMLInputElement;
     expect(input.value).toBe('123.456.78');
-    // Posiciona cursor após "123.4" (dígito 4) e digita "9" → "1234956 78".
+    // Posiciona cursor após "123.4" (4º dígito) e digita "9" → cursor deveria
+    // pousar logo após o 5º dígito (que agora é "9").
     input.setSelectionRange(5, 5);
     act(() => {
       fireEvent.change(input, {
-        target: { value: '123.49456.78', selectionStart: 6 },
+        target: { value: '123.4956.78', selectionStart: 6 },
       });
     });
-    // Deve recompor para 123.494.567-8 (9 dígitos) e cursor após o dígito digitado.
-    expect(input.value.replace(/\D/g, '')).toBe('123494567');
-    // Cursor deve estar logo após o 5º dígito (índice 6 considerando '.': "123.49|...").
+    // 10 dígitos no total, sequência 1234956 78.
+    expect(input.value.replace(/\D/g, '')).toBe('1234956 78'.replace(/\s/g, ''));
+    // Cursor deve cair após o 5º dígito → "123.49|..."
     expect(input.selectionStart).toBe(6);
   });
 
