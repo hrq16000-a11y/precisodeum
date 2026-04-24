@@ -414,11 +414,47 @@ const BasicOnboardingWizard = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [autoSaveStatus]);
 
-  // Quando provider termina o wizard de serviços, marcamos +1 e avançamos
+  // Quando provider termina o wizard de serviços, marcamos +1 e mantemos
+  // o usuário no Passo 4 para a sub-etapa de portfólio.
   const handleServiceCreated = async (_id: string) => {
     setServicesCreated(c => c + 1);
-    toast.success('Serviço cadastrado!');
-    await advanceTo(5);
+    toast.success('Serviço cadastrado!', { description: 'Agora vamos adicionar seu primeiro álbum de portfólio.' });
+    if (user?.id) {
+      try {
+        celebrate({ intensity: 'mini', id: `wizard-service-created:${user.id}` });
+      } catch { /* noop */ }
+    }
+    // Permanece no Passo 4: o card de portfólio aparece logo abaixo.
+  };
+
+  // Cria o primeiro álbum de portfólio direto no wizard (Passo 4 sub-etapa).
+  const handleCreateFirstAlbum = async (title: string) => {
+    if (!savedProvider?.id || !user?.id) return;
+    const cleanTitle = title.trim();
+    if (!cleanTitle) {
+      toast.error('Dê um nome para o álbum.');
+      return;
+    }
+    setCreatingAlbum(true);
+    try {
+      const albumSlug = slugify(cleanTitle) || `album-${Date.now()}`;
+      const { error } = await (supabase as any).from('portfolio_albums').insert({
+        provider_id: savedProvider.id,
+        title: cleanTitle,
+        slug: albumSlug,
+      });
+      if (error) throw error;
+      setPortfolioAlbumsCreated(c => c + 1);
+      toast.success('Álbum criado!', { description: 'Você poderá adicionar fotos no Dashboard a qualquer momento.' });
+      try {
+        celebrate({ intensity: 'mini', id: `wizard-first-album:${user.id}` });
+      } catch { /* noop */ }
+    } catch (err: any) {
+      console.error('[Wizard album]', err);
+      toast.error(err?.message || 'Não foi possível criar o álbum.');
+    } finally {
+      setCreatingAlbum(false);
+    }
   };
 
   // ─── Passo 1: Identidade ───
