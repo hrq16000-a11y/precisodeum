@@ -302,8 +302,16 @@ function startFetchIfNeeded() {
     // Todas as fontes falharam — se temos cache (cidade/coords), avisamos via geoFailed.
     if (!success && (geoState.city || geoState.latitude !== null)) {
       setGeoState({ geoFailed: true, source: geoState.source === 'none' ? 'cache' : geoState.source });
+      try {
+        const { trackGeoEvent } = await import('@/lib/tracking');
+        trackGeoEvent('geo_failed', { stage: 'ip_fallback', had_cache: 'true', source: geoState.source });
+      } catch { /* noop */ }
     } else if (!success) {
       setGeoState({ geoFailed: true });
+      try {
+        const { trackGeoEvent } = await import('@/lib/tracking');
+        trackGeoEvent('geo_failed', { stage: 'ip_fallback', had_cache: 'false' });
+      } catch { /* noop */ }
     }
   })(); };
 
@@ -414,6 +422,9 @@ export function useGeoCity(): GeoStore {
           } else {
             setGeoState({ geoFailed: true, source: geoState.source === 'none' ? 'cache' : geoState.source });
           }
+          import('@/lib/tracking').then(({ trackGeoEvent }) => {
+            trackGeoEvent('geo_failed', { stage: 'gps', had_cache: geoState.city ? 'true' : 'false' });
+          }).catch(() => {});
           resolve(false);
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
