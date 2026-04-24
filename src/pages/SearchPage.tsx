@@ -703,6 +703,18 @@ const SearchPage = () => {
                     <X className="h-3 w-3 cursor-pointer" onClick={() => setMinRating(0)} />
                   </Badge>
                 )}
+                {onlineOnly && (
+                  <Badge variant="secondary" className="gap-1 text-xs">
+                    <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online agora
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => setOnlineOnly(false)} />
+                  </Badge>
+                )}
+                {acceptingOnly && (
+                  <Badge variant="secondary" className="gap-1 text-xs">
+                    <Zap className="h-3 w-3" /> Aceitando clientes
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => setAcceptingOnly(false)} />
+                  </Badge>
+                )}
               </div>
             )}
 
