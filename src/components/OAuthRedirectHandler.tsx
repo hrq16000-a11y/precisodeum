@@ -17,6 +17,20 @@ const OAuthRedirectHandler = () => {
     if (!user) return;
     if (!profile) return;
 
+    // Só redireciona para /triagem se o onboarding NÃO está completo.
+    // Logins recorrentes (Google OAuth com profile já completo) devem ir
+    // direto ao destino normal — o OnboardingGate já cuida do resto.
+    const onboardingStep = Number(profile?.onboarding_step ?? 0);
+    const mustComplete =
+      !profile.profile_type ||
+      profile.onboarding_completed !== true ||
+      onboardingStep < 5;
+
+    if (!mustComplete) {
+      handled.current = true;
+      return;
+    }
+
     handled.current = true;
     if (location.pathname !== '/triagem') {
       navigate('/triagem', { replace: true });
