@@ -1860,9 +1860,9 @@ const Step4Service = ({
       </div>
 
       {!hasService && (
-        <button type="button" onClick={onSkip} className="mt-4 w-full text-xs font-medium text-muted-foreground hover:text-foreground">
-          Não consigo agora
-        </button>
+        <p className="mt-4 w-full text-center text-[11px] font-medium text-muted-foreground">
+          Cadastrar 1 serviço é obrigatório para publicar seu perfil. Os dados já preenchidos nos passos anteriores estão salvos.
+        </p>
       )}
     </>
   );
