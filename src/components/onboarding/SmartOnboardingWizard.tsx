@@ -49,7 +49,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
-import { getSocialAvatarUrl } from '@/lib/avatarUtils';
+import { getSocialAvatarUrl, getInitials } from '@/lib/avatarUtils';
 import { formatCityState } from '@/lib/locationFormat';
 
 type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
@@ -911,6 +911,7 @@ const BasicOnboardingWizard = () => {
             onNext={handleStep2Next}
             onSkip={() => advanceTo(3)}
             canAdvance={canAdvanceFromStep2}
+            fullName={fullName}
           />
         )}
 
@@ -1358,7 +1359,7 @@ TypeButton.displayName = 'TypeButton';
 // ─── Passo 2 ───
 const Step2Location = ({
   city, state, avatarUrl, editingCity, onEditCity, onCityChange, onAvatarChange,
-  userId, onBack, onNext, onSkip, canAdvance, onFieldBlur,
+  userId, onBack, onNext, onSkip, canAdvance, onFieldBlur, fullName,
 }: any) => (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -1381,7 +1382,7 @@ const Step2Location = ({
             <AvatarUpload
               userId={userId}
               currentUrl={avatarUrl}
-              initials={(avatarUrl ? '' : 'U')}
+              initials={getInitials(fullName)}
               onUploaded={onAvatarChange}
             />
           </div>
