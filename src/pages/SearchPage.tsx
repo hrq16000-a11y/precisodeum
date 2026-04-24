@@ -137,7 +137,7 @@ const SearchPage = () => {
       selectedNeighborhood,
       businessNameFilter,
       phoneFilter,
-      featuredFilter,
+      featuredFilter: featuredFilter as 'all' | 'featured' | 'normal',
       onlineOnly,
       acceptingOnly,
       sortBy,
