@@ -783,6 +783,7 @@ const BasicOnboardingWizard = () => {
 
   const summaryItems = [
     { label: 'Tipo de perfil', value: profileType ? (PROFILE_TYPE_LABEL[profileType] || profileType) : 'Não definido' },
+    { label: 'Cadastro profissional', value: providerSubtype ? (PROVIDER_SUBTYPE_LABEL[providerSubtype] || providerSubtype) : 'Não aplicável' },
     { label: 'Cidade', value: formatCityState(city, state, ' • ') || 'Não informada' },
     { label: 'Nome', value: fullName || 'Não informado' },
     { label: 'WhatsApp', value: whatsapp || 'Não informado' },
@@ -1079,8 +1080,8 @@ const PROFILE_TYPE_LABEL: Record<string, string> = {
 };
 
 const PROVIDER_SUBTYPE_LABEL: Record<string, string> = {
-  autonomous: 'Autônomo',
-  company: 'Empresa / Agência',
+  autonomous: 'PF • Autônomo',
+  company: 'PJ • Empresa / MEI',
   agency: 'Empresa / Agência',
   provider: 'Profissional',
 };
@@ -1112,6 +1113,7 @@ const buildReviewItems = (data: {
     { label: 'WhatsApp', value: hasValidWhatsapp(data.whatsapp) ? 'Validado' : 'Pendente' },
     { label: 'Bio', value: data.bio ? 'Preenchida' : 'Não preenchida' },
     { label: 'Especialidade', value: data.selectedCategoryIds.length ? 'Selecionada' : 'Pendente' },
+    { label: 'Cadastro profissional', value: data.providerSubtype ? (PROVIDER_SUBTYPE_LABEL[data.providerSubtype] || data.providerSubtype) : 'Não aplicável' },
   ],
   4: [
     { label: 'Serviços', value: data.profileType === 'provider' ? `${data.servicesCreated} cadastrado(s)` : 'Não aplicável' },
