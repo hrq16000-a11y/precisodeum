@@ -147,6 +147,7 @@ const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const CookiesPage = lazy(() => import("./pages/CookiesPage"));
 const SponsorLandingPage = lazy(() => import("./pages/SponsorLandingPage"));
+const SponsorStatusPage = lazy(() => import("./pages/SponsorStatusPage"));
 const SponsorSlotsPage = lazy(() => import("./pages/SponsorSlotsPage"));
 const SponsorContractPage = lazy(() => import("./pages/SponsorContractPage"));
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
@@ -340,6 +341,7 @@ const App = () => {
                 <Route path="/anuncie" element={<SponsorLandingPage />} />
                 <Route path="/vagas" element={<JobsPage />} />
                 <Route path="/quero-ser-patrocinador" element={<SponsorLandingPage />} />
+                <Route path="/sponsor/status" element={<SponsorStatusPage />} />
                 <Route path="/espacos-patrocinio" element={<SponsorSlotsPage />} />
                 <Route path="/contrato-patrocinio" element={<SponsorContractPage />} />
                 <Route path="/vaga/:slug" element={<JobDetailPage />} />
