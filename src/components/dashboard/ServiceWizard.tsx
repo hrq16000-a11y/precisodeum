@@ -69,6 +69,71 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // ─── Re-hidratação a partir de draft local (localStorage) ───
+  // Restaura campos quando o usuário recarrega/volta para o wizard
+  const draftKey = `service-wizard-draft-${userId || 'anon'}`;
+  useEffect(() => {
+    if (!userId) return;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d && typeof d === 'object') {
+        if (d.serviceName && !serviceName) setServiceName(d.serviceName);
+        if (d.description && !description) setDescription(d.description);
+        if (d.serviceArea && !serviceArea) setServiceArea(d.serviceArea);
+        if (d.workingHours && !workingHours) setWorkingHours(d.workingHours);
+        if (d.website && !website) setWebsite(d.website);
+        if (d.instagramUrl && !instagramUrl) setInstagramUrl(d.instagramUrl);
+        if (d.facebookUrl && !facebookUrl) setFacebookUrl(d.facebookUrl);
+        if (d.youtubeUrl && !youtubeUrl) setYoutubeUrl(d.youtubeUrl);
+        if (Array.isArray(d.selectedCategoryIds) && d.selectedCategoryIds.length && !selectedCategoryIds.length) {
+          setSelectedCategoryIds(d.selectedCategoryIds.slice(0, 1));
+        }
+        if (d.createdServiceId && !createdServiceId) setCreatedServiceId(d.createdServiceId);
+      }
+    } catch {/* ignore */}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  // Persiste draft a cada alteração relevante
+  useEffect(() => {
+    if (!userId) return;
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({
+        serviceName, description, serviceArea, workingHours,
+        website, instagramUrl, facebookUrl, youtubeUrl,
+        selectedCategoryIds, createdServiceId,
+      }));
+    } catch {/* ignore */}
+  }, [userId, draftKey, serviceName, description, serviceArea, workingHours, website, instagramUrl, facebookUrl, youtubeUrl, selectedCategoryIds, createdServiceId]);
+
+  // Re-hidratação a partir do banco quando já existe um serviço criado
+  useEffect(() => {
+    if (!createdServiceId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('services')
+        .select('name, description, whatsapp, service_area, working_hours, website, instagram_url, facebook_url, youtube_url, category_id')
+        .eq('id', createdServiceId)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      if (data.name && !serviceName) setServiceName(data.name);
+      if (data.description && !description) setDescription(data.description);
+      if (data.whatsapp && !whatsapp) setWhatsapp(data.whatsapp);
+      if (data.service_area && !serviceArea) setServiceArea(data.service_area);
+      if (data.working_hours && !workingHours) setWorkingHours(data.working_hours);
+      if (data.website && !website) setWebsite(data.website);
+      if (data.instagram_url && !instagramUrl) setInstagramUrl(data.instagram_url);
+      if (data.facebook_url && !facebookUrl) setFacebookUrl(data.facebook_url);
+      if (data.youtube_url && !youtubeUrl) setYoutubeUrl(data.youtube_url);
+      if (data.category_id && !selectedCategoryIds.length) setSelectedCategoryIds([data.category_id]);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createdServiceId]);
+
   const filteredCats = useMemo(() => {
     return categories.filter(c =>
       !selectedCategoryIds.includes(c.id) &&
