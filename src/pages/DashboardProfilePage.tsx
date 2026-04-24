@@ -29,8 +29,38 @@ const fadeIn = {
 const DashboardProfilePage = () => {
   const { user, profile, provider, loading, refetchProfile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('pessoal');
+  const whatsappInputRef = useRef<HTMLInputElement | null>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
+  const cityInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Foco automático vindo dos CTAs do dashboard (?focus=contact|location|description|avatar)
+  useEffect(() => {
+    const focus = searchParams.get('focus');
+    if (!focus) return;
+    // Mapeamento focus → tab + ref
+    const mapping: Record<string, { tab: string; ref?: React.RefObject<HTMLElement | null> }> = {
+      contact: { tab: 'pessoal', ref: whatsappInputRef as any },
+      avatar: { tab: 'pessoal' },
+      description: { tab: 'profissional', ref: descriptionRef as any },
+      location: { tab: 'localizacao', ref: cityInputRef as any },
+    };
+    const target = mapping[focus];
+    if (!target) return;
+    setActiveTab(target.tab);
+    // Aguarda render da tab antes de focar
+    const timer = window.setTimeout(() => {
+      target.ref?.current?.focus();
+      target.ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 250);
+    // Limpa o param para não re-disparar em navegações futuras
+    const next = new URLSearchParams(searchParams);
+    next.delete('focus');
+    setSearchParams(next, { replace: true });
+    return () => window.clearTimeout(timer);
+  }, [searchParams, setSearchParams]);
 
   // City selector state
   const [citySearch, setCitySearch] = useState('');
