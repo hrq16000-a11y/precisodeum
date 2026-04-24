@@ -3936,7 +3936,9 @@ export type Database = {
         Row: {
           additional_docs: Json
           banner_url: string | null
+          category: string | null
           checklist_confirmed: boolean
+          city: string | null
           cnpj: string
           cnpj_document_url: string | null
           company_name: string
@@ -3950,15 +3952,19 @@ export type Database = {
           email: string
           id: string
           notes: string | null
+          pending_items: string[] | null
           phone: string
           plan: string
           status: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           additional_docs?: Json
           banner_url?: string | null
+          category?: string | null
           checklist_confirmed?: boolean
+          city?: string | null
           cnpj: string
           cnpj_document_url?: string | null
           company_name: string
@@ -3972,15 +3978,19 @@ export type Database = {
           email: string
           id?: string
           notes?: string | null
+          pending_items?: string[] | null
           phone: string
           plan?: string
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           additional_docs?: Json
           banner_url?: string | null
+          category?: string | null
           checklist_confirmed?: boolean
+          city?: string | null
           cnpj?: string
           cnpj_document_url?: string | null
           company_name?: string
@@ -3994,10 +4004,12 @@ export type Database = {
           email?: string
           id?: string
           notes?: string | null
+          pending_items?: string[] | null
           phone?: string
           plan?: string
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -5148,6 +5160,31 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_sponsor_docs_history_view: {
+        Row: {
+          action: string | null
+          company_name: string | null
+          created_at: string | null
+          current_status: string | null
+          doc_type: string | null
+          email: string | null
+          id: string | null
+          lead_id: string | null
+          metadata: Json | null
+          performed_by: string | null
+          reason: string | null
+          status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_docs_history_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       city_provider_stats: {
         Row: {
           city_id: string | null
@@ -5654,6 +5691,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Json
       }
+      admin_reopen_sponsor_checklist: {
+        Args: { _lead_id: string; _pending_items?: string[]; _reason: string }
+        Returns: Json
+      }
       admin_review_sponsor_docs: {
         Args: { _decision: string; _lead_id: string; _reason?: string }
         Returns: Json
@@ -5703,6 +5744,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      claim_sponsor_lead: { Args: { _lead_id: string }; Returns: Json }
       complete_onboarding_checklist: { Args: never; Returns: Json }
       complete_referral: { Args: { _referred_id: string }; Returns: boolean }
       create_album_atomic: {
