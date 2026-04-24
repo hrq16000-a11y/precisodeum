@@ -624,6 +624,12 @@ const BasicOnboardingWizard = () => {
       return;
     }
     if (!user?.id) return;
+    // Validação amigável do CPF/CNPJ — campo é opcional, mas se preenchido precisa ser válido.
+    const taxIdDigits = (taxId || '').replace(/\D/g, '');
+    if (taxIdDigits && !isValidCpfCnpj(taxIdDigits)) {
+      toast.error('CPF/CNPJ inválido. Confira os dígitos ou deixe em branco.');
+      return;
+    }
     setSaving(true);
     try {
       // Salva profile
@@ -633,6 +639,7 @@ const BasicOnboardingWizard = () => {
         phone: whatsapp,
         profile_type: profileType,
         role: profileType,
+        tax_id: taxIdDigits || null,
         onboarding_step: 4,
       } as any).eq('id', user.id);
 
