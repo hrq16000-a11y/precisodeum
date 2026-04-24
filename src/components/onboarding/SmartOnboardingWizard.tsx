@@ -1660,7 +1660,8 @@ const Step3Contact = ({
       </Button>
     </div>
   </>
-);
+  );
+};
 
 // ─── Passo 4 ───
 const Step4Service = ({
