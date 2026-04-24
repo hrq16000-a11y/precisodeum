@@ -50,7 +50,7 @@ const badgeColors: Record<string, string> = {
 };
 
 const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
-  const { city: geoCity, setCity, latitude, longitude, radiusKm, requestPreciseLocation } = useGeoCity();
+  const { city: geoCity, latitude, longitude, radiusKm, requestPreciseLocation } = useGeoCity();
   const hasGps = latitude != null && longitude != null;
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
