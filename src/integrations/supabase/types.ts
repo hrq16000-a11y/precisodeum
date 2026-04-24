@@ -3559,6 +3559,8 @@ export type Database = {
           id: string
           instagram_url: string | null
           is_emergency: boolean
+          meta_description: string | null
+          meta_title: string | null
           price: string | null
           provider_id: string
           seo_tags: string[]
@@ -3582,6 +3584,8 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           is_emergency?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
           price?: string | null
           provider_id: string
           seo_tags?: string[]
@@ -3605,6 +3609,8 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           is_emergency?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
           price?: string | null
           provider_id?: string
           seo_tags?: string[]
