@@ -2633,6 +2633,9 @@ export type Database = {
           suspicious_ip: string | null
           suspicious_reason: string | null
           tax_id: string | null
+          tax_id_encrypted: string | null
+          tax_id_kind: string | null
+          tax_id_last4: string | null
           trial_boost_until: string | null
           updated_at: string
           user_ref: string
@@ -2672,6 +2675,9 @@ export type Database = {
           suspicious_ip?: string | null
           suspicious_reason?: string | null
           tax_id?: string | null
+          tax_id_encrypted?: string | null
+          tax_id_kind?: string | null
+          tax_id_last4?: string | null
           trial_boost_until?: string | null
           updated_at?: string
           user_ref: string
@@ -2711,6 +2717,9 @@ export type Database = {
           suspicious_ip?: string | null
           suspicious_reason?: string | null
           tax_id?: string | null
+          tax_id_encrypted?: string | null
+          tax_id_kind?: string | null
+          tax_id_last4?: string | null
           trial_boost_until?: string | null
           updated_at?: string
           user_ref?: string
@@ -5827,6 +5836,10 @@ export type Database = {
         Args: { _decision: string; _lead_id: string; _reason?: string }
         Returns: Json
       }
+      admin_set_profile_tax_id: {
+        Args: { _profile_id: string; _tax_id: string }
+        Returns: undefined
+      }
       admin_set_staff_permission: {
         Args: {
           _enabled: boolean
@@ -6024,6 +6037,15 @@ export type Database = {
       }
       get_profile_completeness: { Args: { _user_id: string }; Returns: Json }
       get_profile_health_score: { Args: { _user_id: string }; Returns: Json }
+      get_profile_tax_id: {
+        Args: { _profile_id?: string }
+        Returns: {
+          profile_id: string
+          tax_id: string
+          tax_id_kind: string
+          tax_id_last4: string
+        }[]
+      }
       get_provider_verification_status: {
         Args: { _user_id: string }
         Returns: {
@@ -6192,6 +6214,7 @@ export type Database = {
         Args: { _lead_id: string; _next_at: string; _note?: string }
         Returns: undefined
       }
+      set_profile_tax_id: { Args: { _tax_id: string }; Returns: undefined }
       sponsor_has_active_plan: {
         Args: { _sponsor_id: string }
         Returns: boolean

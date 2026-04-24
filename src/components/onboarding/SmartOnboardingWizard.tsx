@@ -82,6 +82,12 @@ type AutoSaveAttempt = {
   message: string;
 };
 
+type SecureTaxProfile = {
+  tax_id: string | null;
+  tax_id_kind: string | null;
+  tax_id_last4: string | null;
+};
+
 const TOTAL_STEPS = 5;
 
 const clampWizardStep = (value: unknown): WizardStep => {
@@ -142,6 +148,7 @@ const BasicOnboardingWizard = () => {
   const [bio, setBio] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [taxId, setTaxId] = useState<string>(((profile as any)?.tax_id as string) || '');
+  const [hasAwardedTaxIdPoints, setHasAwardedTaxIdPoints] = useState(false);
 
   // Provider data
   const [savedProvider, setSavedProvider] = useState<any | null>(null);
@@ -182,6 +189,25 @@ const BasicOnboardingWizard = () => {
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
     if (profile.whatsapp || profile.phone) setWhatsapp(profile.whatsapp || profile.phone || '');
   }, [profile]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+
+    const loadSecureTaxId = async () => {
+      const { data, error } = await supabase.rpc('get_profile_tax_id', { _profile_id: user.id });
+      if (error || cancelled) return;
+      const row = Array.isArray(data) ? (data[0] as SecureTaxProfile | undefined) : undefined;
+      if (row?.tax_id) {
+        setTaxId(row.tax_id);
+      }
+    };
+
+    void loadSecureTaxId();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   // ─── Google/social avatar sync (one-shot): copia foto do provedor social para profiles.avatar_url
   // se ainda não houver avatar definido. Guard com ref evita loop.
@@ -313,6 +339,7 @@ const BasicOnboardingWizard = () => {
     avatar_url: avatarUrl,
     whatsapp,
     bio,
+    tax_id: taxId,
     selected_category_ids: selectedCategoryIds,
     services_created: servicesCreated,
     saved_at: new Date().toISOString(),
@@ -331,6 +358,9 @@ const BasicOnboardingWizard = () => {
     if (state) patch.state = state;
     if (selectedCategoryIds && selectedCategoryIds.length > 0) {
       patch.preferred_category_ids = selectedCategoryIds;
+    }
+    if (!selectedCategoryIds?.length) {
+      patch.preferred_category_ids = [];
     }
     if (profileType) {
       patch.profile_type = profileType;
@@ -378,7 +408,7 @@ const BasicOnboardingWizard = () => {
     if (!user?.id) return;
     const { data, error } = await supabase
       .from('profiles')
-      .select('full_name, avatar_url, whatsapp, phone, profile_type, onboarding_step')
+      .select('full_name, avatar_url, whatsapp, phone, profile_type, onboarding_step, bio, city, state, preferred_category_ids')
       .eq('id', user.id)
       .single();
 
@@ -388,23 +418,21 @@ const BasicOnboardingWizard = () => {
     }
 
     const savedProfile = data as any;
-    let savedCity = '';
-    let savedState = '';
-    if (savedProfile.profile_type === 'provider') {
-      const { data: providerRows } = await supabase.from('providers').select('city, state').eq('user_id', user.id).limit(1);
-      savedCity = providerRows?.[0]?.city || '';
-      savedState = providerRows?.[0]?.state || '';
-    } else if (savedProfile.profile_type === 'rh') {
-      const { data: agencyRows } = await (supabase as any).from('agencies').select('city, state').eq('user_id', user.id).limit(1);
-      savedCity = agencyRows?.[0]?.city || '';
-      savedState = agencyRows?.[0]?.state || '';
-    }
+    let savedCity = savedProfile.city || '';
+    let savedState = savedProfile.state || '';
+    const secureTaxResponse = await supabase.rpc('get_profile_tax_id', { _profile_id: user.id });
+    const secureTaxRow = Array.isArray(secureTaxResponse.data)
+      ? (secureTaxResponse.data[0] as SecureTaxProfile | undefined)
+      : undefined;
 
     setFullName(savedProfile.full_name || '');
     setCity(savedCity);
     setState(savedState);
     setAvatarUrl(savedProfile.avatar_url || null);
     setWhatsapp(savedProfile.whatsapp || savedProfile.phone || '');
+    setBio(savedProfile.bio || '');
+    setSelectedCategoryIds(Array.isArray(savedProfile.preferred_category_ids) ? savedProfile.preferred_category_ids : []);
+    setTaxId(secureTaxRow?.tax_id || '');
     if (savedProfile.profile_type) setProfileType(savedProfile.profile_type as ProfileType);
     const savedStep = clampWizardStep(savedProfile.onboarding_step);
     setStep(savedStep);
@@ -632,16 +660,38 @@ const BasicOnboardingWizard = () => {
     }
     setSaving(true);
     try {
-      // Salva profile
-      await supabase.from('profiles').update({
+      const hadTaxIdBefore = !!((profile as any)?.tax_id_last4) || !!taxId.trim();
+
+      const { error: profileError } = await supabase.from('profiles').update({
         full_name: fullName.trim(),
         whatsapp,
         phone: whatsapp,
         profile_type: profileType,
         role: profileType,
-        tax_id: taxIdDigits || null,
+        bio: bio.trim() || null,
+        city: city || null,
+        state: state || null,
+        preferred_category_ids: profileType === 'provider' ? selectedCategoryIds : [],
         onboarding_step: 4,
       } as any).eq('id', user.id);
+      if (profileError) throw profileError;
+
+      const { error: taxError } = await supabase.rpc('set_profile_tax_id', {
+        _tax_id: taxIdDigits || null,
+      });
+      if (taxError) throw taxError;
+
+      if (taxIdDigits && !hadTaxIdBefore && !hasAwardedTaxIdPoints) {
+        await (supabase as any).rpc('award_engagement_points', {
+          _user_id: user.id,
+          _action_key: 'profile_tax_id_added',
+          _metadata: {
+            source: 'onboarding_wizard',
+            tax_id_kind: taxIdDigits.length === 14 ? 'cnpj' : 'cpf',
+          },
+        }).catch(() => undefined);
+        setHasAwardedTaxIdPoints(true);
+      }
 
       // Garante registro provider/agency conforme tipo
       if (profileType === 'provider') {
@@ -688,6 +738,7 @@ const BasicOnboardingWizard = () => {
       }
 
       await refetchProfile();
+      toast.success('Dados salvos com sucesso.');
 
       // Provider passa pelo Passo 4 obrigatoriamente. Demais tipos vão direto p/ 5.
       if (profileType === 'provider') {
@@ -732,6 +783,7 @@ const BasicOnboardingWizard = () => {
 
   const summaryItems = [
     { label: 'Tipo de perfil', value: profileType ? (PROFILE_TYPE_LABEL[profileType] || profileType) : 'Não definido' },
+    { label: 'Cadastro profissional', value: providerSubtype ? (PROVIDER_SUBTYPE_LABEL[providerSubtype] || providerSubtype) : 'Não aplicável' },
     { label: 'Cidade', value: formatCityState(city, state, ' • ') || 'Não informada' },
     { label: 'Nome', value: fullName || 'Não informado' },
     { label: 'WhatsApp', value: whatsapp || 'Não informado' },
@@ -1028,8 +1080,8 @@ const PROFILE_TYPE_LABEL: Record<string, string> = {
 };
 
 const PROVIDER_SUBTYPE_LABEL: Record<string, string> = {
-  autonomous: 'Autônomo',
-  company: 'Empresa / Agência',
+  autonomous: 'PF • Autônomo',
+  company: 'PJ • Empresa / MEI',
   agency: 'Empresa / Agência',
   provider: 'Profissional',
 };
@@ -1061,6 +1113,7 @@ const buildReviewItems = (data: {
     { label: 'WhatsApp', value: hasValidWhatsapp(data.whatsapp) ? 'Validado' : 'Pendente' },
     { label: 'Bio', value: data.bio ? 'Preenchida' : 'Não preenchida' },
     { label: 'Especialidade', value: data.selectedCategoryIds.length ? 'Selecionada' : 'Pendente' },
+    { label: 'Cadastro profissional', value: data.providerSubtype ? (PROVIDER_SUBTYPE_LABEL[data.providerSubtype] || data.providerSubtype) : 'Não aplicável' },
   ],
   4: [
     { label: 'Serviços', value: data.profileType === 'provider' ? `${data.servicesCreated} cadastrado(s)` : 'Não aplicável' },
@@ -1562,6 +1615,7 @@ const Step3Contact = ({
   const taxFilled = taxDigits.length > 0;
   const taxValid = !taxFilled || isValidCpfCnpj(taxDigits);
   const taxLabel = taxDigits.length > 11 ? 'CNPJ' : 'CPF';
+  const isProviderPf = profileType === 'provider';
   return (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -1575,6 +1629,22 @@ const Step3Contact = ({
     </div>
     <h1 className="text-center font-display text-xl font-bold text-foreground">Dados de contato</h1>
     <p className="mt-1 text-center text-xs text-muted-foreground">Como os clientes vão te encontrar.</p>
+
+    {isProviderPf && (
+      <div className="mt-4 rounded-xl border border-border bg-muted/20 p-3">
+        <p className="text-xs font-bold text-foreground">Tipo de cadastro profissional</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="rounded-lg border border-accent bg-accent/10 px-3 py-2 text-center">
+            <p className="text-xs font-bold text-foreground">PF</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Autônomo ou profissional liberal</p>
+          </div>
+          <div className={`rounded-lg border px-3 py-2 text-center ${taxDigits.length > 11 ? 'border-primary bg-primary/10' : 'border-border bg-background'}`}>
+            <p className="text-xs font-bold text-foreground">PJ</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">MEI, empresa ou agência</p>
+          </div>
+        </div>
+      </div>
+    )}
 
     <div className="mt-5 space-y-4">
       <div>
@@ -1604,9 +1674,14 @@ const Step3Contact = ({
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-foreground">
-          CPF ou CNPJ <span className="font-normal text-muted-foreground">(opcional)</span>
-        </label>
+        <div className="mb-1 flex items-center justify-between gap-3">
+          <label className="block text-xs font-semibold text-foreground">
+            CPF ou CNPJ
+          </label>
+          <span className="shrink-0 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+            Documento opcional
+          </span>
+        </div>
         <Input
           inputMode="numeric"
           placeholder="Ex: 000.000.000-00 ou 00.000.000/0000-00"
@@ -1620,8 +1695,8 @@ const Step3Contact = ({
           {!taxValid
             ? `${taxLabel} inválido — confira os dígitos.`
             : taxFilled
-              ? `${taxLabel} válido. Usado apenas para comprovantes e nunca aparece publicamente.`
-              : 'Você pode adicionar depois. Ajuda na emissão de comprovantes e validação da conta.'}
+              ? `${taxLabel} válido. Só você e a administração conseguem visualizar o documento completo.`
+              : 'Você pode deixar em branco e preencher depois. Isso ajuda na confiança do perfil e soma pontos no ranking.'}
         </p>
       </div>
 
@@ -1653,10 +1728,10 @@ const Step3Contact = ({
 
     <div className="mt-5 grid gap-3">
       <Button variant="accent" className="w-full" disabled={!canAdvance || saving} onClick={onNext}>
-        {saving ? 'Salvando…' : 'Salvar e continuar'}
+        {saving ? 'Salvando seus dados…' : 'Salvar meus dados e continuar'}
       </Button>
       <Button type="button" variant="outline" className="w-full" onClick={onSkip} disabled={saving}>
-        Pular por enquanto
+        Continuar sem documento por agora
       </Button>
     </div>
   </>
