@@ -755,7 +755,15 @@ const BasicOnboardingWizard = () => {
   // PULAR não pode burlar o gate. Avança visualmente para o Passo 5,
   // mas onboarding_completed permanece false até existir 1 serviço real.
   const handleSkipStep4 = async () => {
-    toast.info('Você pode cadastrar serviços depois no dashboard, mas seu perfil ficará incompleto até lá.');
+    // Hard Save: para PROVIDER exigimos 1 serviço criado antes de avançar à Revisão.
+    // O create_service_atomic é executado dentro do ServiceWizard e só então
+    // servicesCreated > 0, liberando a transição para o Passo 5.
+    if (profileType === 'provider' && servicesCreated < 1) {
+      toast.error('Cadastre 1 serviço para continuar.', {
+        description: 'Seu perfil só fica visível para clientes quando há pelo menos um serviço publicado. Os dados já preenchidos foram mantidos.',
+      });
+      return;
+    }
     await advanceTo(5);
   };
 
@@ -1301,7 +1309,7 @@ const GuidedReviewCard = ({
     </div>
     <div className="mt-4 grid gap-2 sm:grid-cols-3">
       <Button type="button" variant="ghost" onClick={onPrev} disabled={!canGoPrev}>Voltar item</Button>
-      <Button type="button" variant="outline" onClick={onEdit}>Editar novamente</Button>
+      <Button type="button" variant="outline" onClick={onEdit}>Ajustar Informação</Button>
       <Button type="button" variant="accent" onClick={onKeep}>Manter</Button>
     </div>
   </div>
@@ -1852,9 +1860,9 @@ const Step4Service = ({
       </div>
 
       {!hasService && (
-        <button type="button" onClick={onSkip} className="mt-4 w-full text-xs font-medium text-muted-foreground hover:text-foreground">
-          Não consigo agora
-        </button>
+        <p className="mt-4 w-full text-center text-[11px] font-medium text-muted-foreground">
+          Cadastrar 1 serviço é obrigatório para publicar seu perfil. Os dados já preenchidos nos passos anteriores estão salvos.
+        </p>
       )}
     </>
   );
@@ -1867,7 +1875,7 @@ const Step5Done = ({
   const isProvider = profileType === 'provider';
   const meetsMinimum = !isProvider || servicesCreated > 0;
   const finishLabel = meetsMinimum
-    ? 'Entrar no Dashboard'
+    ? 'FINALIZAR E PUBLICAR MEU PERFIL'
     : 'Voltar e cadastrar 1 serviço';
   return (
     <>
@@ -1882,7 +1890,7 @@ const Step5Done = ({
       </div>
       <h1 className="text-center font-display text-2xl font-bold text-foreground">Tudo pronto!</h1>
       <p className="mt-2 text-center text-sm text-muted-foreground">
-        Seu cadastro foi concluído. A pontuação é calculada automaticamente conforme você usa a plataforma.
+        Revise suas informações e publique seu perfil. A pontuação é calculada automaticamente conforme você usa a plataforma.
       </p>
 
       {!meetsMinimum && (
@@ -1894,11 +1902,13 @@ const Step5Done = ({
 
       <Button
         variant="accent"
-        className="mt-6 w-full"
-        disabled={saving}
+        className="mt-6 h-16 w-full text-base font-extrabold uppercase tracking-wide shadow-lg sm:text-xl"
+        disabled={saving || !meetsMinimum}
         onClick={onFinish}
       >
-        {saving ? 'Concluindo…' : finishLabel}
+        {saving ? (
+          <span className="inline-flex items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /> Publicando…</span>
+        ) : finishLabel}
       </Button>
     </>
   );
