@@ -77,6 +77,10 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   }, [categories, selectedCategoryIds, categorySearch]);
 
   const providerCity = provider?.city || '';
+  const providerState = (provider?.state && provider.state !== 'ST') ? provider.state : '';
+  const providerCityDisplay = providerCity
+    ? `${providerCity}${providerState ? ` - ${providerState}` : ''}`
+    : '';
   const providerSlug = provider?.slug || '';
   const profileUrl = `${window.location.origin}/profissional/${providerSlug}`;
 
