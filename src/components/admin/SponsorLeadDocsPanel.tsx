@@ -43,19 +43,49 @@ export default function SponsorLeadDocsPanel({ open, onOpenChange, leadId, compa
   const [lead, setLead] = useState<LeadRow | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [busyKind, setBusyKind] = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
-  useEffect(() => {
-    if (!open || !leadId) return;
+  const reload = () => {
+    if (!leadId) return;
     setLoading(true);
     Promise.all([
-      supabase.from('sponsor_leads' as any).select('id, company_name, cnpj_document_url, banner_url, checklist_confirmed, docs_status, docs_submitted_at').eq('id', leadId).maybeSingle(),
+      supabase.from('sponsor_leads' as any).select('id, company_name, cnpj_document_url, banner_url, checklist_confirmed, docs_status, docs_submitted_at, docs_reviewed_at, docs_review_notes').eq('id', leadId).maybeSingle(),
       supabase.from('sponsor_docs_history' as any).select('*').eq('lead_id', leadId).order('created_at', { ascending: false }),
     ]).then(([{ data: l }, { data: h }]) => {
       setLead(l as any);
       setHistory((h || []) as any);
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    if (!open || !leadId) return;
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, leadId]);
+
+  const handleReview = async (decision: 'approved' | 'rejected', reason?: string) => {
+    if (!leadId) return;
+    setReviewing(true);
+    try {
+      const { error } = await supabase.rpc('admin_review_sponsor_docs' as any, {
+        _lead_id: leadId,
+        _decision: decision,
+        _reason: reason ?? null,
+      });
+      if (error) throw error;
+      toast.success(decision === 'approved' ? 'Documentação aprovada.' : 'Documentação rejeitada — patrocinador notificado.');
+      setRejectOpen(false);
+      setRejectReason('');
+      reload();
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível registrar a revisão.');
+    } finally {
+      setReviewing(false);
+    }
+  };
 
   const openSigned = async (path: string | null, kind: 'cnpj' | 'banner', mode: 'view' | 'download') => {
     if (!path || !leadId) return;
