@@ -72,11 +72,11 @@ const ActionQueue = ({ servicesCount: servicesOverride, portfolioAlbumsCount: al
         });
       }
 
-      // 3. No portfolio
-      const { count: albumCount } = await supabase.from('portfolio_albums')
+      // 3. No portfolio (usa override se disponível — fonte unificada)
+      const albumCount = albumsOverride ?? (await supabase.from('portfolio_albums')
         .select('id', { count: 'exact', head: true })
-        .eq('provider_id', provider.id);
-      if ((albumCount ?? 0) === 0) {
+        .eq('provider_id', provider.id)).count ?? 0;
+      if (albumCount === 0) {
         pending.push({
           id: 'portfolio',
           icon: Camera,
@@ -87,11 +87,17 @@ const ActionQueue = ({ servicesCount: servicesOverride, portfolioAlbumsCount: al
         });
       }
 
-      // 4. Reviews to respond
-      const { count: reviewCount } = await supabase.from('reviews')
-        .select('id', { count: 'exact', head: true })
-        .eq('provider_id', provider.id)
-        .or('comment.is.null,comment.eq.');
+      // 4. No services (usa override se disponível)
+      if ((servicesOverride ?? 1) === 0) {
+        pending.push({
+          id: 'services',
+          icon: Star,
+          label: 'Sem serviços cadastrados',
+          description: 'Cadastre seu primeiro serviço para aparecer nas buscas.',
+          link: '/dashboard/servicos',
+          urgency: 'high',
+        });
+      }
 
       setActions(pending);
     };
