@@ -15,6 +15,8 @@ import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import SponsorDocsUploadModal from '@/components/sponsor/SponsorDocsUploadModal';
+import SponsorStatusTimeline from '@/components/sponsor/SponsorStatusTimeline';
+import SponsorDocsAuditTrail from '@/components/sponsor/SponsorDocsAuditTrail';
 
 interface HistoryItem {
   id: string;
