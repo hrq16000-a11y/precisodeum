@@ -243,9 +243,23 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  const handleShareWhatsApp = () => {
+  const handleShareNative = async () => {
     const text = `Confira meu perfil profissional: ${profileUrl}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
+      try {
+        await (navigator as any).share({ title: serviceName || 'Meu perfil', text, url: profileUrl });
+        return;
+      } catch {
+        // user cancelled — fall through to copy
+      }
+    }
+    handleCopyLink();
+  };
+
+  const handleSkipForNow = () => {
+    try { localStorage.removeItem(draftKey); } catch {}
+    if (createdServiceId) onComplete(createdServiceId);
+    else onCancel();
   };
 
   const progress = ((step + 1) / STEPS.length) * 100;
