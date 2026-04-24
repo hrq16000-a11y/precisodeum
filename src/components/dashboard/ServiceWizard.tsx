@@ -335,7 +335,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                   />
                 </div>
 
-                {/* Category multi-select */}
+                {/* Category single-select */}
                 <div ref={catRef}>
                   <label className="mb-1 block text-sm font-medium text-foreground">Categoria *</label>
                   <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 min-h-[40px]">
@@ -345,30 +345,35 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                       return (
                         <span key={catId} className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-medium text-accent">
                           <CategoryIcon icon={cat.icon} size={12} className="text-accent" /> {cat.name}
-                          <button onClick={() => setSelectedCategoryIds(prev => prev.filter(id => id !== catId))} className="hover:text-destructive">
+                          <button onClick={() => setSelectedCategoryIds([])} className="hover:text-destructive" aria-label="Remover categoria">
                             <X className="h-3 w-3" />
                           </button>
                         </span>
                       );
                     })}
-                    <div className="relative flex-1 min-w-[120px]">
-                      <input
-                        value={categorySearch}
-                        onChange={e => { setCategorySearch(e.target.value); setShowCatDrop(true); }}
-                        onFocus={() => setShowCatDrop(true)}
-                        placeholder={selectedCategoryIds.length === 0 ? 'Buscar categoria...' : 'Adicionar...'}
-                        className="w-full border-0 bg-transparent px-1 py-0.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                      />
-                    </div>
+                    {selectedCategoryIds.length === 0 && (
+                      <div className="relative flex-1 min-w-[120px]">
+                        <input
+                          value={categorySearch}
+                          onChange={e => { setCategorySearch(e.target.value); setShowCatDrop(true); }}
+                          onFocus={() => setShowCatDrop(true)}
+                          placeholder="Buscar categoria..."
+                          className="w-full border-0 bg-transparent px-1 py-0.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                        />
+                      </div>
+                    )}
                   </div>
-                  {showCatDrop && filteredCats.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Limite de 1 categoria por serviço. Você poderá cadastrar outros serviços depois.
+                  </p>
+                  {showCatDrop && selectedCategoryIds.length === 0 && filteredCats.length > 0 && (
                     <div className="relative">
                       <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-border bg-card shadow-lg">
                         {filteredCats.map((c: any) => (
                           <button
                             key={c.id}
                             type="button"
-                            onClick={() => { setSelectedCategoryIds(prev => [...prev, c.id]); setCategorySearch(''); }}
+                            onClick={() => handleSelectCategory(c.id)}
                             className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent/10"
                           >
                             <CategoryIcon icon={c.icon} size={14} className="text-current" /> {c.name}
