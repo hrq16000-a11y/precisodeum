@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { normalize } from '@/lib/normalize';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { useParams, Link } from 'react-router-dom';
@@ -42,7 +42,12 @@ const compareCityMerit = (a: any, b: any) => {
 const CityPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const [page, setPage] = useState(1);
-  const { latitude: userLat, longitude: userLon } = useGeoCity();
+  const { latitude: userLat, longitude: userLon, requestPreciseLocation } = useGeoCity();
+
+  // Geopriming: solicita GPS antes de listar profissionais para ordenação por proximidade.
+  useEffect(() => {
+    requestPreciseLocation();
+  }, [requestPreciseLocation]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['city-page', slug],
