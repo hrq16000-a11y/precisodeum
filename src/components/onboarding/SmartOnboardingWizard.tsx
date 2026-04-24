@@ -409,7 +409,9 @@ const BasicOnboardingWizard = () => {
     }, autoSaveDelay);
 
     return () => window.clearTimeout(timer);
-  }, [user?.id, profile, step, furthestStep, city, state, avatarUrl, fullName, whatsapp, bio, agencyName, selectedCategoryIds, profileType, saving, autoSaveDelay]);
+    // furthestStep removido das deps: já é capturado dentro de buildAutoSavePatch
+    // e mudanças nele junto com `step` causariam double-save em advanceTo.
+  }, [user?.id, profile, step, city, state, avatarUrl, fullName, whatsapp, bio, agencyName, selectedCategoryIds, profileType, saving, autoSaveDelay]);
 
   useEffect(() => {
     const hasPendingAutoSave = autoSaveStatus === 'saving' || autoSaveStatus === 'error';
