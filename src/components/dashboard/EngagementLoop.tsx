@@ -45,8 +45,9 @@ const EngagementLoop = ({ servicesCount: servicesOverride, portfolioAlbumsCount:
 
   const next = useMemo<NextAction | null>(() => {
     if (!data || !provider) return null;
-    const services = data.counts.services;
-    const albums = data.counts.albums;
+    // Override fresh sempre tem prioridade sobre RPC cacheada (evita divergência visual).
+    const services = servicesOverride ?? data.counts.services;
+    const albums = albumsOverride ?? data.counts.albums;
     const hasBio = (provider?.description ?? '').trim().length >= 30;
     const hasAvatar = !!profile?.avatar_url || !!provider?.photo_url;
 
