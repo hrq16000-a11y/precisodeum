@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, CheckCircle2, Send, History, Paperclip, Bell, BellOff } from 'lucide-react';
+import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, Send, History, Paperclip, Bell, BellOff, Timer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { whatsappLink } from '@/lib/whatsapp';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,8 +13,19 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-
-type LeadStatus = 'new' | 'in_progress' | 'completed';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import {
+  useProviderLeads,
+  useUpdateLeadStatus,
+  useFollowupWindow,
+  isOverdue,
+  STATUS_META,
+  FOLLOWUP_WINDOWS,
+  type LeadStatus,
+  type FollowupWindow,
+  type LeadRow,
+} from '@/hooks/useLeadFollowup';
 
 interface LeadHistoryItem {
   id: string;
@@ -29,40 +40,50 @@ interface LeadHistoryItem {
   created_at: string;
 }
 
-const statusMeta: Record<LeadStatus, { label: string; icon: typeof Clock; className: string }> = {
-  new: { label: 'Novo', icon: AlertTriangle, className: 'bg-accent/10 text-accent border-accent/20' },
-  in_progress: { label: 'Em andamento', icon: Clock, className: 'bg-primary/10 text-primary border-primary/20' },
-  completed: { label: 'Concluído', icon: CheckCircle2, className: 'bg-muted text-muted-foreground border-border' },
-};
-
 const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
 const itemVariants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } } };
 
-const normalizeStatus = (status?: string): LeadStatus => {
-  if (status === 'in_progress' || status === 'completed') return status;
-  return 'new';
-};
+const STATUS_KEYS: LeadStatus[] = ['new', 'contacted', 'scheduled', 'completed', 'lost'];
 
-const sortLeads = (items: any[]) => [...items].sort((a, b) => {
-  const scoreDiff = (Number(b.lead_score) || 0) - (Number(a.lead_score) || 0);
+const sortLeads = (items: LeadRow[]) => [...items].sort((a, b) => {
+  // Vencidos primeiro
+  const aOver = isOverdue(a) ? 1 : 0;
+  const bOver = isOverdue(b) ? 1 : 0;
+  if (aOver !== bOver) return bOver - aOver;
+  const scoreDiff = (b.lead_score || 0) - (a.lead_score || 0);
   if (scoreDiff !== 0) return scoreDiff;
-  return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
 });
 
 const DashboardLeadsPage = () => {
   const { user, provider, loading, profile } = useAuth();
   const { limits, canReceiveMoreLeads, remainingLeads, loading: limitsLoading } = useAccountLimits();
   const navigate = useNavigate();
-  const [leads, setLeads] = useState<any[]>([]);
+  const { data: rawLeads = [], isLoading: leadsLoading } = useProviderLeads(provider?.id);
+  const updateStatus = useUpdateLeadStatus();
+  const updateWindow = useFollowupWindow(provider?.id, provider?.lead_followup_hours);
   const [history, setHistory] = useState<Record<string, LeadHistoryItem[]>>({});
-  const [statusFilter, setStatusFilter] = useState<'all' | LeadStatus>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | LeadStatus>('all');
   const [historyDrafts, setHistoryDrafts] = useState<Record<string, string>>({});
   const [audibleAlerts, setAudibleAlerts] = useState(false);
-  const leadsRef = useRef<any[]>([]);
+  const [, setTick] = useState(0);
+  const leadsRef = useRef<LeadRow[]>([]);
 
-  const filteredLeads = useMemo(() => (
-    statusFilter === 'all' ? leads : leads.filter((lead) => normalizeStatus(lead.status) === statusFilter)
-  ), [leads, statusFilter]);
+  // Re-render minute-by-minute para atualizar relativos e badge "vencido"
+  useEffect(() => {
+    const interval = setInterval(() => setTick((n) => n + 1), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const leads = useMemo(() => sortLeads(rawLeads), [rawLeads]);
+
+  const filteredLeads = useMemo(() => {
+    if (statusFilter === 'all') return leads;
+    if (statusFilter === 'overdue') return leads.filter(isOverdue);
+    return leads.filter((l) => l.status === statusFilter);
+  }, [leads, statusFilter]);
+
+  const overdueCount = useMemo(() => leads.filter(isOverdue).length, [leads]);
 
   const playAlert = useCallback(() => {
     if (!audibleAlerts) return;
@@ -92,19 +113,13 @@ const DashboardLeadsPage = () => {
       toast.error('Erro ao excluir lead');
       return;
     }
-    setLeads(prev => prev.filter(l => l.id !== leadId));
     toast.success('Lead excluído');
   };
 
-  const handleStatusChange = async (lead: any, status: LeadStatus) => {
-    if (!provider || normalizeStatus(lead.status) === status) return;
-    const { error } = await supabase.from('leads').update({ status }).eq('id', lead.id).eq('provider_id', provider.id);
-    if (error) {
-      toast.error('Erro ao atualizar status');
-      return;
-    }
-    setLeads(prev => prev.map(item => item.id === lead.id ? { ...item, status } : item));
-    toast.success(`Status atualizado para ${statusMeta[status].label}`);
+  const handleStatusChange = (lead: LeadRow, status: LeadStatus) => {
+    if (lead.status === status) return;
+    updateStatus.mutate({ leadId: lead.id, status });
+    playAlert();
   };
 
   const addHistoryMessage = async (leadId: string) => {
@@ -122,7 +137,7 @@ const DashboardLeadsPage = () => {
       toast.error('Erro ao salvar mensagem');
       return;
     }
-    setHistoryDrafts(prev => ({ ...prev, [leadId]: '' }));
+    setHistoryDrafts((prev) => ({ ...prev, [leadId]: '' }));
     toast.success('Mensagem adicionada ao histórico');
   };
 
@@ -134,57 +149,29 @@ const DashboardLeadsPage = () => {
     if (!loading && !user) navigate('/login');
   }, [loading, user, navigate]);
 
+  // Carrega histórico inicial e mantém realtime
+  useEffect(() => {
+    if (!provider || leads.length === 0) return;
+    void fetchHistory(leads.map((l) => l.id));
+  }, [provider, leads, fetchHistory]);
+
   useEffect(() => {
     if (!provider) return;
-    supabase.from('leads')
-      .select('*')
-      .eq('provider_id', provider.id)
-      .order('lead_score', { ascending: false })
-      .then(({ data }) => {
-        const nextLeads = sortLeads(data || []);
-        setLeads(nextLeads);
-        void fetchHistory(nextLeads.map(lead => lead.id));
-      });
-
-    const leadChannel = supabase
-      .channel(`dashboard-leads-${provider.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: `provider_id=eq.${provider.id}` }, (payload) => {
-        setLeads(prev => sortLeads([payload.new, ...prev.filter(lead => lead.id !== (payload.new as any).id)]));
-        toast.info('Novo lead recebido');
-        playAlert();
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'leads', filter: `provider_id=eq.${provider.id}` }, (payload) => {
-        const before = leadsRef.current.find(lead => lead.id === (payload.new as any).id);
-        setLeads(prev => sortLeads(prev.map(lead => lead.id === (payload.new as any).id ? payload.new : lead)));
-        if (before && before.status !== (payload.new as any).status) {
-          toast.info(`Status de ${((payload.new as any).client_name || 'um lead')} atualizado`);
-          playAlert();
-        }
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'leads', filter: `provider_id=eq.${provider.id}` }, (payload) => {
-        setLeads(prev => prev.filter(lead => lead.id !== (payload.old as any).id));
-      })
-      .subscribe();
-
     const historyChannel = supabase
       .channel(`dashboard-lead-history-${provider.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lead_history' }, (payload) => {
         const item = payload.new as LeadHistoryItem;
-        setHistory(prev => ({
+        setHistory((prev) => ({
           ...prev,
-          [item.lead_id]: [item, ...(prev[item.lead_id] || []).filter(existing => existing.id !== item.id)],
+          [item.lead_id]: [item, ...(prev[item.lead_id] || []).filter((existing) => existing.id !== item.id)],
         }));
-        if (item.entry_type === 'status_change') toast.info('Histórico de status atualizado');
+        if (item.entry_type === 'status_change') playAlert();
       })
       .subscribe();
+    return () => { supabase.removeChannel(historyChannel); };
+  }, [provider, playAlert]);
 
-    return () => {
-      supabase.removeChannel(leadChannel);
-      supabase.removeChannel(historyChannel);
-    };
-  }, [provider, fetchHistory, playAlert]);
-
-  if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
+  if (loading || leadsLoading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
   if (!limitsLoading && limits?.can_receive_leads === false) {
     return (
@@ -198,13 +185,23 @@ const DashboardLeadsPage = () => {
     );
   }
 
+  const currentWindow = (provider?.lead_followup_hours ?? 24) as FollowupWindow;
+
   return (
     <DashboardLayout>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground">Leads Recebidos</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{filteredLeads.length} de {leads.length} lead(s) exibido(s)</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {filteredLeads.length} de {leads.length} lead(s)
+              {overdueCount > 0 && (
+                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive">
+                  <AlertTriangle className="h-3 w-3" />
+                  {overdueCount} pendente{overdueCount > 1 ? 's' : ''} de follow-up
+                </span>
+              )}
+            </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <label className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground">
@@ -212,21 +209,52 @@ const DashboardLeadsPage = () => {
               Alertas
               <Switch checked={audibleAlerts} onCheckedChange={setAudibleAlerts} />
             </label>
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'all' | LeadStatus)}>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
               <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="new">Novo</SelectItem>
-                <SelectItem value="in_progress">Em andamento</SelectItem>
-                <SelectItem value="completed">Concluído</SelectItem>
+                <SelectItem value="overdue">Pendentes de follow-up</SelectItem>
+                {STATUS_KEYS.map((s) => (
+                  <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         </div>
       </motion.div>
 
+      {/* Configuração de janela de follow-up */}
+      <motion.div
+        className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.3 }}
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Timer className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Lembrete automático de follow-up</p>
+            <p className="text-xs text-muted-foreground">Receba uma notificação quando um lead em aberto passar do tempo configurado.</p>
+          </div>
+        </div>
+        <Select
+          value={String(currentWindow)}
+          onValueChange={(v) => updateWindow.mutate(Number(v) as FollowupWindow)}
+          disabled={updateWindow.isPending}
+        >
+          <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {FOLLOWUP_WINDOWS.map((h) => (
+              <SelectItem key={h} value={String(h)}>A cada {h}h</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </motion.div>
+
       {!limitsLoading && limits && remainingLeads !== null && (
-        <motion.div className={`mt-3 rounded-lg border p-3 text-sm ${!canReceiveMoreLeads ? 'border-destructive/30 bg-destructive/5 text-destructive' : 'border-accent/20 bg-accent/5 text-foreground'}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.4 }}>
+        <motion.div className={`mt-3 rounded-lg border p-3 text-sm ${!canReceiveMoreLeads ? 'border-destructive/30 bg-destructive/5 text-destructive' : 'border-accent/20 bg-accent/5 text-foreground'}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.4 }}>
           <div className="flex items-center gap-2">
             {!canReceiveMoreLeads && <AlertTriangle className="h-4 w-4 shrink-0" />}
             <span>{!canReceiveMoreLeads ? `Limite de ${limits.max_leads} lead(s) atingido para sua categoria.` : `${remainingLeads} de ${limits.max_leads} lead(s) restante(s) na sua categoria.`}</span>
@@ -244,34 +272,64 @@ const DashboardLeadsPage = () => {
             </motion.div>
           )}
           {filteredLeads.map((lead) => {
-            const status = normalizeStatus(lead.status);
-            const StatusIcon = statusMeta[status].icon;
+            const meta = STATUS_META[lead.status];
+            const overdue = isOverdue(lead);
             const leadHistory = history[lead.id] || [];
             return (
-              <motion.div key={lead.id} layout variants={itemVariants} exit={{ opacity: 0, x: -80, transition: { duration: 0.3 } }} whileHover={{ y: -2, scale: 1.005 }} className="rounded-xl border border-border bg-card p-4 shadow-card transition-shadow hover:shadow-card-hover">
+              <motion.div
+                key={lead.id}
+                layout
+                variants={itemVariants}
+                exit={{ opacity: 0, x: -80, transition: { duration: 0.3 } }}
+                whileHover={{ y: -2 }}
+                className={`rounded-xl border bg-card p-4 shadow-card transition-shadow hover:shadow-card-hover ${
+                  overdue ? 'border-destructive/40 ring-1 ring-destructive/20' : 'border-border'
+                }`}
+              >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-semibold text-foreground">{lead.client_name}</p>
                       {lead.lead_score != null && <Badge variant="outline" className="gap-1"><TrendingUp className="h-3 w-3" />{lead.lead_score}</Badge>}
-                      <Badge variant="outline" className={`gap-1 ${statusMeta[status].className}`}><StatusIcon className="h-3 w-3" />{statusMeta[status].label}</Badge>
+                      <Badge variant="outline" className={`gap-1 border ${meta.tone}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                        {meta.label}
+                      </Badge>
+                      {overdue && (
+                        <Badge variant="outline" className="gap-1 border-destructive/40 bg-destructive/10 text-destructive">
+                          <AlertTriangle className="h-3 w-3" />
+                          Follow-up vencido
+                        </Badge>
+                      )}
                     </div>
-                    {lead.service_needed && <p className="text-xs font-medium text-accent">{lead.service_needed}</p>}
+                    {lead.service_needed && <p className="mt-1 text-xs font-medium text-accent">{lead.service_needed}</p>}
                     {lead.message && <p className="mt-2 rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">{lead.message}</p>}
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Recebido {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true, locale: ptBR })}
+                      </span>
+                      {lead.next_followup_at && ['new', 'contacted'].includes(lead.status) && (
+                        <span className={`inline-flex items-center gap-1 ${overdue ? 'font-semibold text-destructive' : ''}`}>
+                          <Timer className="h-3 w-3" />
+                          {overdue ? 'Vencido ' : 'Próximo lembrete '}
+                          {formatDistanceToNow(new Date(lead.next_followup_at), { addSuffix: true, locale: ptBR })}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="shrink-0 space-y-2 sm:text-right">
-                    <p className="text-xs text-muted-foreground">{new Date(lead.created_at).toLocaleDateString('pt-BR')}</p>
-                    <Select value={status} onValueChange={(value) => handleStatusChange(lead, value as LeadStatus)}>
-                      <SelectTrigger className="h-8 w-full sm:w-40"><SelectValue /></SelectTrigger>
+                    <Select value={lead.status} onValueChange={(value) => handleStatusChange(lead, value as LeadStatus)}>
+                      <SelectTrigger className="h-8 w-full sm:w-44"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="new">Novo</SelectItem>
-                        <SelectItem value="in_progress">Em andamento</SelectItem>
-                        <SelectItem value="completed">Concluído</SelectItem>
+                        {STATUS_KEYS.map((s) => (
+                          <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <div className="flex items-center gap-2 sm:justify-end">
                       <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"><Phone className="h-3 w-3" /> {lead.phone}</a>
-                      <motion.a href={whatsappLink(lead.phone, `Olá ${lead.client_name}, recebi sua solicitação${lead.service_needed ? ` sobre &quot;${lead.service_needed}&quot;` : ''}. Como posso ajudar?`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-full bg-accent p-1.5 text-accent-foreground transition-colors hover:bg-accent/90" title="Responder pelo WhatsApp" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}><MessageCircle className="h-4 w-4" /></motion.a>
+                      <motion.a href={whatsappLink(lead.phone, `Olá ${lead.client_name}, recebi sua solicitação${lead.service_needed ? ` sobre "${lead.service_needed}"` : ''}. Como posso ajudar?`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-full bg-accent p-1.5 text-accent-foreground transition-colors hover:bg-accent/90" title="Responder pelo WhatsApp" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}><MessageCircle className="h-4 w-4" /></motion.a>
                       <motion.button onClick={() => handleDelete(lead.id)} className="inline-flex items-center justify-center rounded-full bg-destructive/10 p-1.5 text-destructive transition-colors hover:bg-destructive/20" title="Excluir lead" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}><Trash2 className="h-4 w-4" /></motion.button>
                     </div>
                   </div>
@@ -279,20 +337,22 @@ const DashboardLeadsPage = () => {
 
                 <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
                   <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-foreground">
-                    <History className="h-4 w-4 text-primary" /> Timeline e auditoria
+                    <History className="h-4 w-4 text-primary" /> Timeline
                   </div>
                   <div className="space-y-3">
                     {leadHistory.length === 0 && <p className="text-xs text-muted-foreground">Nenhuma movimentação registrada ainda.</p>}
-                    {leadHistory.map(item => {
+                    {leadHistory.map((item) => {
                       const isStatus = item.entry_type === 'status_change';
+                      const oldM = isStatus && item.old_status && (STATUS_META as any)[item.old_status];
+                      const newM = isStatus && item.new_status && (STATUS_META as any)[item.new_status];
                       return (
                         <div key={item.id} className="border-l-2 border-primary/30 pl-3">
                           <div className="flex flex-wrap items-center gap-2 text-xs">
                             <Badge variant="outline">{isStatus ? 'Status' : 'Mensagem'}</Badge>
-                            <span className="text-muted-foreground">{item.author_id === user?.id ? (profile?.name || 'Você') : 'Sistema/Equipe'}</span>
+                            <span className="text-muted-foreground">{item.author_id === user?.id ? (profile?.full_name || 'Você') : 'Sistema'}</span>
                             <span className="text-muted-foreground">{new Date(item.created_at).toLocaleString('pt-BR')}</span>
                           </div>
-                          {isStatus && <p className="mt-1 text-xs text-muted-foreground">{statusMeta[normalizeStatus(item.old_status || undefined)].label} → {statusMeta[normalizeStatus(item.new_status || undefined)].label}</p>}
+                          {isStatus && oldM && newM && <p className="mt-1 text-xs text-muted-foreground">{oldM.label} → <strong className="text-foreground">{newM.label}</strong></p>}
                           {item.message && <p className="mt-1 text-sm text-foreground">{item.message}</p>}
                           {item.attachment_url && <a className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline" href={item.attachment_url} target="_blank" rel="noreferrer"><Paperclip className="h-3 w-3" />{item.attachment_name || 'Anexo'}</a>}
                         </div>
@@ -300,7 +360,7 @@ const DashboardLeadsPage = () => {
                     })}
                   </div>
                   <div className="mt-3 flex gap-2">
-                    <Input value={historyDrafts[lead.id] || ''} onChange={(event) => setHistoryDrafts(prev => ({ ...prev, [lead.id]: event.target.value }))} placeholder="Adicionar mensagem ao histórico" className="h-9 text-xs" maxLength={500} />
+                    <Input value={historyDrafts[lead.id] || ''} onChange={(event) => setHistoryDrafts((prev) => ({ ...prev, [lead.id]: event.target.value }))} placeholder="Adicionar nota ao histórico" className="h-9 text-xs" maxLength={500} />
                     <Button size="sm" variant="outline" onClick={() => addHistoryMessage(lead.id)} className="gap-1"><Send className="h-3 w-3" />Salvar</Button>
                   </div>
                 </div>
