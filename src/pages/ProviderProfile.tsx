@@ -117,7 +117,7 @@ const DEFAULT_SETTINGS: PageSettings = {
   headline: '',
   tagline: '',
   cta_text: 'Solicitar Orçamento',
-  cta_whatsapp_text: 'Chamar no WhatsApp',
+  cta_whatsapp_text: 'Solicitar Orçamento',
   accent_color: '',
   cover_image_url: '',
   instagram_url: '',
