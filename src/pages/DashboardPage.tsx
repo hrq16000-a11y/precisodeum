@@ -41,6 +41,7 @@ import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 import FirstLeadChecklist from '@/components/dashboard/FirstLeadChecklist';
 import SmartNextStepCTA from '@/components/dashboard/SmartNextStepCTA';
 import OnboardingCompletionTracker from '@/components/dashboard/OnboardingCompletionTracker';
+import LeadFollowupWidget from '@/components/dashboard/LeadFollowupWidget';
 import EmptyStateBanner from '@/components/dashboard/EmptyStateBanner';
 import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
@@ -546,6 +547,11 @@ const DashboardPage = () => {
           servicesCount={servicesCount ?? 0}
           portfolioAlbumsCount={portfolioAlbumCount}
         />
+      </div>
+
+      {/* Lembrete de follow-up de leads em aberto */}
+      <div className="mt-4">
+        <LeadFollowupWidget />
       </div>
 
       {/* Sinal de demanda (FOMO) — apenas Engajado+ */}

@@ -1619,9 +1619,13 @@ export type Database = {
         Row: {
           client_name: string
           created_at: string
+          followup_window_hours: number
           id: string
+          last_followup_notified_at: string | null
+          last_status_at: string
           lead_score: number
           message: string | null
+          next_followup_at: string | null
           phone: string
           provider_id: string
           score_factors: Json | null
@@ -1633,9 +1637,13 @@ export type Database = {
         Insert: {
           client_name: string
           created_at?: string
+          followup_window_hours?: number
           id?: string
+          last_followup_notified_at?: string | null
+          last_status_at?: string
           lead_score?: number
           message?: string | null
+          next_followup_at?: string | null
           phone: string
           provider_id: string
           score_factors?: Json | null
@@ -1647,9 +1655,13 @@ export type Database = {
         Update: {
           client_name?: string
           created_at?: string
+          followup_window_hours?: number
           id?: string
+          last_followup_notified_at?: string | null
+          last_status_at?: string
           lead_score?: number
           message?: string | null
+          next_followup_at?: string | null
           phone?: string
           provider_id?: string
           score_factors?: Json | null
@@ -2802,6 +2814,7 @@ export type Database = {
           id: string
           last_response_calc_at: string | null
           latitude: number | null
+          lead_followup_hours: number
           legal_name: string | null
           longitude: number | null
           meta_description: string | null
@@ -2851,6 +2864,7 @@ export type Database = {
           id?: string
           last_response_calc_at?: string | null
           latitude?: number | null
+          lead_followup_hours?: number
           legal_name?: string | null
           longitude?: number | null
           meta_description?: string | null
@@ -2900,6 +2914,7 @@ export type Database = {
           id?: string
           last_response_calc_at?: string | null
           latitude?: number | null
+          lead_followup_hours?: number
           legal_name?: string | null
           longitude?: number | null
           meta_description?: string | null
@@ -5811,6 +5826,7 @@ export type Database = {
         }[]
       }
       process_daily_stats: { Args: never; Returns: number }
+      process_lead_followup_reminders: { Args: never; Returns: Json }
       recalc_provider_community_verified: {
         Args: { _provider_id: string }
         Returns: boolean

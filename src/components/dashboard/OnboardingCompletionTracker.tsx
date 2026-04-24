@@ -126,9 +126,8 @@ const OnboardingCompletionTracker = ({
 
   const stats = checklistStats(items);
 
-  // Esconde a timeline se nada foi concluído ainda OU se tudo está completo
-  // (nesse caso o SmartNextStepCTA já mostra mensagem de "perfil completo").
-  if (history.length === 0 || stats.completed === stats.total) return null;
+  // Esconde a timeline apenas se tudo está completo (SmartNextStepCTA já celebra).
+  if (stats.completed === stats.total) return null;
 
   const sorted = [...history].sort(
     (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
@@ -155,38 +154,61 @@ const OnboardingCompletionTracker = ({
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
           <Sparkles className="h-3.5 w-3.5" />
         </div>
-        <h3 className="text-sm font-bold text-foreground">Conquistas recentes</h3>
+        <h3 className="text-sm font-bold text-foreground">Conquistas do onboarding</h3>
         <span className="ml-auto text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
           {stats.completed}/{stats.total} concluídos
         </span>
       </div>
-      <ul className="space-y-1.5">
-        <AnimatePresence initial={false}>
-          {sorted.slice(0, 5).map((entry) => {
-            const Icon = ICON_BY_KEY[entry.key] ?? CheckCircle2;
-            return (
-              <motion.li
-                key={entry.key}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center gap-2 rounded-lg bg-background/40 px-2.5 py-1.5"
-              >
-                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  <Icon className="h-3 w-3" />
-                </div>
-                <span className="text-xs font-medium text-foreground flex-1 min-w-0 truncate">
-                  {entry.label}
-                </span>
-                <span className="text-[10px] text-muted-foreground shrink-0">
-                  {formatRelative(entry.completedAt)}
-                </span>
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-              </motion.li>
-            );
-          })}
-        </AnimatePresence>
-      </ul>
+
+      {/* Barra de progresso real-time */}
+      <div className="mb-3">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-emerald-500/10">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400"
+            initial={{ width: 0 }}
+            animate={{ width: `${stats.pct}%` }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+          />
+        </div>
+        <p className="mt-1 text-[10px] text-muted-foreground">
+          {stats.pct}% do perfil pronto
+          {stats.firstMissing && ` — próximo: ${stats.firstMissing.label.toLowerCase()}`}
+        </p>
+      </div>
+
+      {sorted.length > 0 ? (
+        <ul className="space-y-1.5">
+          <AnimatePresence initial={false}>
+            {sorted.slice(0, 5).map((entry) => {
+              const Icon = ICON_BY_KEY[entry.key] ?? CheckCircle2;
+              return (
+                <motion.li
+                  key={entry.key}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-center gap-2 rounded-lg bg-background/40 px-2.5 py-1.5"
+                >
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <Icon className="h-3 w-3" />
+                  </div>
+                  <span className="text-xs font-medium text-foreground flex-1 min-w-0 truncate">
+                    {entry.label}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground shrink-0">
+                    {formatRelative(entry.completedAt)}
+                  </span>
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                </motion.li>
+              );
+            })}
+          </AnimatePresence>
+        </ul>
+      ) : (
+        <p className="text-[11px] text-muted-foreground">
+          Conclua o próximo passo para começar sua trilha de conquistas.
+        </p>
+      )}
     </motion.div>
   );
 };
