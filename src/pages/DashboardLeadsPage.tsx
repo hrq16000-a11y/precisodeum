@@ -269,6 +269,47 @@ const DashboardLeadsPage = () => {
         </div>
       </motion.div>
 
+      {/* Toolbar: busca, filtros avançados e exportação */}
+      <div className="mt-4 rounded-xl border border-border bg-card p-3 shadow-card">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome, telefone, serviço ou mensagem" className="pl-9" />
+          </div>
+          <Button type="button" variant={showAdvanced ? 'default' : 'outline'} size="sm" onClick={() => setShowAdvanced(v => !v)} className="gap-1">
+            <Filter className="h-4 w-4" /> Filtros
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleExportCsv} className="gap-1"><FileDown className="h-4 w-4" /> CSV</Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleExportPdf} className="gap-1"><FileText className="h-4 w-4" /> PDF</Button>
+          <Button asChild type="button" variant="outline" size="sm" className="gap-1">
+            <Link to="/dashboard/notificacoes/preferencias"><Settings2 className="h-4 w-4" /> Notificações</Link>
+          </Button>
+        </div>
+        {showAdvanced && (
+          <div className="mt-3 grid gap-3 border-t border-border pt-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label className="text-[11px] font-semibold text-muted-foreground">Criado de</label>
+              <Input type="date" value={createdFrom} onChange={e => setCreatedFrom(e.target.value)} className="h-9" />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-muted-foreground">Criado até</label>
+              <Input type="date" value={createdTo} onChange={e => setCreatedTo(e.target.value)} className="h-9" />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-muted-foreground">Próx. follow-up de</label>
+              <Input type="date" value={followupFrom} onChange={e => setFollowupFrom(e.target.value)} className="h-9" />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-muted-foreground">Próx. follow-up até</label>
+              <Input type="date" value={followupTo} onChange={e => setFollowupTo(e.target.value)} className="h-9" />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
+              <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>Limpar filtros</Button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Configuração de janela de follow-up */}
       <motion.div
         className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
