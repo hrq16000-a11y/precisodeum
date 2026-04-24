@@ -14,6 +14,7 @@ import ModuleBoundary from "./components/ModuleBoundary";
 const SponsorProtectedRoute = reactLazy(() => importWithRetry(() => import("./components/SponsorProtectedRoute")));
 const SponsorFeatureGate = reactLazy(() => importWithRetry(() => import("./components/sponsor/SponsorFeatureGate")));
 import ErrorGuard from "./components/ErrorGuard";
+import LazyRouteBoundary from "./components/LazyRouteBoundary";
 const MobileBottomNav = reactLazy(() => importWithRetry(() => import("./components/MobileBottomNav")));
 const BackToTopButton = reactLazy(() => importWithRetry(() => import("./components/BackToTopButton")));
 const ScrollProgressBar = reactLazy(() => importWithRetry(() => import("./components/ui/ScrollProgressBar")));
