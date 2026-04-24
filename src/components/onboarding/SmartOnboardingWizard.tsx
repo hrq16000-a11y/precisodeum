@@ -890,11 +890,14 @@ const BasicOnboardingWizard = () => {
           />
         )}
 
-        {/* ─── PASSO 4 — PROVIDER apenas ─── */}
+        {/* ─── PASSO 4 — PROVIDER apenas (serviço + portfólio inicial) ─── */}
         {!guidedReviewStep && !showFinalSummary && step === 4 && profileType === 'provider' && (
           <Step4Service
             providerReady={!!savedProvider}
             servicesCreated={servicesCreated}
+            portfolioAlbumsCreated={portfolioAlbumsCreated}
+            creatingAlbum={creatingAlbum}
+            onCreateFirstAlbum={handleCreateFirstAlbum}
             savedProvider={savedProvider}
             userId={user?.id}
             categories={categoriesData}
