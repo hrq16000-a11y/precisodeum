@@ -1578,7 +1578,11 @@ const Step2Location = ({
           </div>
         ) : (
           <div onBlur={onFieldBlur}>
-            <CityAutocomplete value={{ city, state }} onChange={({ city: c, state: s }) => onCityChange(c, s)} />
+            <CityAutocomplete
+              value={{ city, state }}
+              onChange={({ city: c, state: s }) => onCityChange(c, s)}
+              onClose={() => { if (city) onEditCity?.(); /* fecha modo edição se já tem cidade */ }}
+            />
           </div>
         )}
       </div>
