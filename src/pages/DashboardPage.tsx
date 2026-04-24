@@ -30,6 +30,7 @@ import CommunityFeed from '@/components/dashboard/CommunityFeed';
 import RealtimeEngagementToast from '@/components/dashboard/RealtimeEngagementToast';
 import QrCodeCard from '@/components/dashboard/QrCodeCard';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useEngagementLevel } from '@/hooks/useEngagementLevel';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
 import ActionQueue from '@/components/dashboard/ActionQueue';
@@ -101,11 +102,16 @@ const DashboardPage = () => {
   };
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   // ServiceWizard ligado por padrão (a flag só serve para desativar explicitamente).
-  const { levelName, levelColor } = usePermissions();
+  const { levelName: legacyLevelName, levelColor: legacyLevelColor } = usePermissions();
+  // FONTE DA VERDADE para o nível do prestador: gamification_levels via engagement_points.
+  const { currentLevel } = useEngagementLevel();
+  const levelName = currentLevel?.name || legacyLevelName;
+  const levelColor = currentLevel?.color || legacyLevelColor;
   const [servicesCount, setServicesCount] = useState<number | null>(null);
   const [leadsCount, setLeadsCount] = useState<number>(0);
   const [jobsCount, setJobsCount] = useState<number>(0);
   const [portfolioCount, setPortfolioCount] = useState<number>(0);
+  const [portfolioAlbumCount, setPortfolioAlbumCount] = useState<number>(0);
   const [viewsTotal, setViewsTotal] = useState<number>(0);
   const [reviewCount, setReviewCount] = useState<number>(0);
   const [guideOpen, setGuideOpen] = useState(true);
@@ -122,6 +128,7 @@ const DashboardPage = () => {
     (async () => {
       const albumsRes = await supabase.from('portfolio_albums').select('id').eq('provider_id', provider.id);
       const albumIds = (albumsRes.data || []).map(a => a.id);
+      setPortfolioAlbumCount(albumIds.length);
       const [sRes, lRes, pRes, rRes] = await Promise.all([
         supabase.from('services').select('id, view_count', { count: 'exact' }).eq('provider_id', provider.id),
         supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
@@ -410,9 +417,21 @@ const DashboardPage = () => {
 
   const allStepsDone = profileDone && servicesDone;
 
-  // Profile completeness percentage
-  const completenessItems = [profileDone, servicesDone, portfolioCount > 0, !!provider?.photo_url];
-  const completenessPercent = Math.round((completenessItems.filter(Boolean).length / completenessItems.length) * 100);
+  // FONTE ÚNICA da verdade da completude — `onboardingChecklist` (mesma usada pelos
+  // componentes filhos). Usar SEMPRE este `pct`/`stats` em qualquer lugar do dashboard.
+  const unifiedItems = buildOnboardingChecklist({
+    profile, provider,
+    servicesCount: servicesCount ?? 0,
+    portfolioAlbumsCount: portfolioAlbumCount,
+  });
+  const unifiedStats = checklistStats(unifiedItems);
+  const completenessPercent = unifiedStats.pct;
+  const remainingItems = unifiedStats.total - unifiedStats.completed;
+  const allChecklistDone = remainingItems === 0;
+  // Banners persistentes (cobrem cenários estruturais)
+  const showServiceEmptyBanner = servicesCount !== null && servicesCount === 0;
+  const showPortfolioEmptyBanner = servicesCount !== null && servicesCount > 0 && portfolioAlbumCount === 0;
+  const anyEmptyBannerVisible = showServiceEmptyBanner || showPortfolioEmptyBanner;
 
   const statCards = [
     { icon: Briefcase, value: servicesCount ?? 0, label: servicesCount === 0 ? 'Nenhum serviço' : 'Serviços', gradient: 'from-blue-500/10 to-blue-600/5', iconColor: 'text-blue-500' },
@@ -445,38 +464,38 @@ const DashboardPage = () => {
 
       {/* Engagement Loop — guides the user to the next highest-impact action */}
       <div className="mt-4">
-        <EngagementLoop />
+        <EngagementLoop
+          servicesCount={servicesCount ?? 0}
+          portfolioAlbumsCount={portfolioAlbumCount}
+          unifiedPct={completenessPercent}
+        />
       </div>
 
       {/* Banners persistentes de alta prioridade — Empty States estruturais */}
-      {servicesCount !== null && servicesCount === 0 && (
+      {showServiceEmptyBanner && (
         <div className="mt-4">
           <EmptyStateBanner variant="service" />
         </div>
       )}
-      {servicesCount !== null && servicesCount > 0 && portfolioCount === 0 && (
+      {showPortfolioEmptyBanner && (
         <div className="mt-4">
           <EmptyStateBanner variant="portfolio" />
         </div>
       )}
 
-      {/* CTA único inteligente — substitui checklist passivo quando há pendências */}
+      {/* CTA único inteligente — só aparece se NÃO houver banner cobrindo a mesma pendência.
+          Quando há >1 pendência, mostra o checklist completo + status comunidade. */}
       {(() => {
-        const items = buildOnboardingChecklist({
-          profile, provider,
-          servicesCount: servicesCount ?? 0,
-          portfolioAlbumsCount: portfolioCount,
-        });
-        const stats = checklistStats(items);
-        const remaining = stats.total - stats.completed;
+        if (allChecklistDone) return null;
+        // Se um banner Empty State já está cobrindo a única pendência → suprimir CTA duplicado
+        if (anyEmptyBannerVisible && remainingItems <= 1) return null;
 
-        // Tudo completo OU 1 pendência → CTA único enxuto. Caso contrário (>1) mostramos o checklist + status comunidade.
-        if (remaining <= 1) {
+        if (remainingItems <= 1) {
           return (
             <div className="mt-4">
               <SmartNextStepCTA
                 servicesCount={servicesCount ?? 0}
-                portfolioAlbumsCount={portfolioCount}
+                portfolioAlbumsCount={portfolioAlbumCount}
               />
             </div>
           );
@@ -485,7 +504,7 @@ const DashboardPage = () => {
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <FirstLeadChecklist
               servicesCount={servicesCount ?? 0}
-              portfolioAlbumsCount={portfolioCount}
+              portfolioAlbumsCount={portfolioAlbumCount}
             />
             <CommunityVerifiedStatus />
           </div>
@@ -544,9 +563,12 @@ const DashboardPage = () => {
 
       <QuickStatsBar pendingLeads={pendingLeads} providerSlug={provider?.slug} />
 
-      {/* Action Queue — what to do next */}
+      {/* Action Queue — what to do next (sincronizado com checklist unificado) */}
       <div className="mt-4">
-        <ActionQueue />
+        <ActionQueue
+          servicesCount={servicesCount ?? 0}
+          portfolioAlbumsCount={portfolioAlbumCount}
+        />
       </div>
       {/* Dominant CTA when no services — REMOVIDO: substituído por EmptyStateBanner persistente acima */}
       {/* Stats with animated counters */}
@@ -574,7 +596,7 @@ const DashboardPage = () => {
                 provider={provider}
                 profile={profile}
                 servicesCount={servicesCount ?? 0}
-                portfolioCount={portfolioCount}
+                portfolioCount={portfolioAlbumCount}
               />
             </div>
           </GlassCard>

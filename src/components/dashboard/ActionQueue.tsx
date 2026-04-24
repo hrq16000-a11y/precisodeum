@@ -27,7 +27,13 @@ const urgencyDot = {
   low: 'bg-muted-foreground/30',
 };
 
-const ActionQueue = () => {
+interface ActionQueueProps {
+  /** Override fresh do dashboard — garante coerência com o checklist unificado. */
+  servicesCount?: number;
+  portfolioAlbumsCount?: number;
+}
+
+const ActionQueue = ({ servicesCount: servicesOverride, portfolioAlbumsCount: albumsOverride }: ActionQueueProps = {}) => {
   const { user, profile, provider } = useAuth();
   const [actions, setActions] = useState<Action[]>([]);
 
@@ -66,11 +72,11 @@ const ActionQueue = () => {
         });
       }
 
-      // 3. No portfolio
-      const { count: albumCount } = await supabase.from('portfolio_albums')
+      // 3. No portfolio (usa override se disponível — fonte unificada)
+      const albumCount = albumsOverride ?? (await supabase.from('portfolio_albums')
         .select('id', { count: 'exact', head: true })
-        .eq('provider_id', provider.id);
-      if ((albumCount ?? 0) === 0) {
+        .eq('provider_id', provider.id)).count ?? 0;
+      if (albumCount === 0) {
         pending.push({
           id: 'portfolio',
           icon: Camera,
@@ -81,17 +87,23 @@ const ActionQueue = () => {
         });
       }
 
-      // 4. Reviews to respond
-      const { count: reviewCount } = await supabase.from('reviews')
-        .select('id', { count: 'exact', head: true })
-        .eq('provider_id', provider.id)
-        .or('comment.is.null,comment.eq.');
+      // 4. No services (usa override se disponível)
+      if ((servicesOverride ?? 1) === 0) {
+        pending.push({
+          id: 'services',
+          icon: Star,
+          label: 'Sem serviços cadastrados',
+          description: 'Cadastre seu primeiro serviço para aparecer nas buscas.',
+          link: '/dashboard/servicos',
+          urgency: 'high',
+        });
+      }
 
       setActions(pending);
     };
 
     buildActions();
-  }, [user, provider, profile]);
+  }, [user, provider, profile, servicesOverride, albumsOverride]);
 
   if (!actions.length) {
     return (

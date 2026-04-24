@@ -29,7 +29,15 @@ interface NextAction {
   tone: 'primary' | 'accent' | 'success';
 }
 
-const EngagementLoop = () => {
+interface EngagementLoopProps {
+  /** Override fresh do dashboard — evita divergência com a RPC cacheada. */
+  servicesCount?: number;
+  portfolioAlbumsCount?: number;
+  /** Override fresh do `checklistStats(items).pct` calculado no DashboardPage. */
+  unifiedPct?: number;
+}
+
+const EngagementLoop = ({ servicesCount: servicesOverride, portfolioAlbumsCount: albumsOverride, unifiedPct }: EngagementLoopProps = {}) => {
   const navigate = useNavigate();
   const { profile, provider, user } = useAuth();
   const { data } = useProfileCompleteness();
@@ -37,8 +45,9 @@ const EngagementLoop = () => {
 
   const next = useMemo<NextAction | null>(() => {
     if (!data || !provider) return null;
-    const services = data.counts.services;
-    const albums = data.counts.albums;
+    // Override fresh sempre tem prioridade sobre RPC cacheada (evita divergência visual).
+    const services = servicesOverride ?? data.counts.services;
+    const albums = albumsOverride ?? data.counts.albums;
     const hasBio = (provider?.description ?? '').trim().length >= 30;
     const hasAvatar = !!profile?.avatar_url || !!provider?.photo_url;
 
@@ -98,16 +107,18 @@ const EngagementLoop = () => {
       };
     }
     return null;
-  }, [data, profile, provider]);
+  }, [data, profile, provider, servicesOverride, albumsOverride]);
 
-  const circuitComplete = !next && data && data.percentage >= 90;
+  // Sempre que houver pct unificado vindo do dashboard, ele tem prioridade.
+  const pct = unifiedPct ?? data?.percentage ?? 0;
+  const circuitComplete = !next && pct >= 90;
 
   // Dopamine bomb 💎 — fires confetti + "Ebá!" sound EXACTLY once when user first crosses 90%.
   useEffect(() => {
     if (!data || !user?.id) return;
-    if (data.percentage < 90) return;
+    if (pct < 90) return;
     celebrate({ intensity: 'big', id: CELEBRATION_IDS.levelUp('diamond', user.id) });
-  }, [data?.percentage, user?.id]);
+  }, [pct, user?.id, data]);
 
   if (dismissed) return null;
   if (!data) return null;
@@ -126,7 +137,7 @@ const EngagementLoop = () => {
           <div className="flex-1">
             <h3 className="text-sm font-bold text-foreground">Circuito completo!</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Seu perfil está {data.percentage}% completo e pronto para liderar as buscas.
+              Seu perfil está {pct}% completo e pronto para liderar as buscas.
               Continue evoluindo com novos serviços e fotos.
             </p>
           </div>
@@ -178,9 +189,9 @@ const EngagementLoop = () => {
                 <ArrowRight className="h-3.5 w-3.5" />
               </Button>
               <span className="text-[11px] text-muted-foreground">
-                Perfil {data.percentage}% completo
+                Perfil {pct}% completo
               </span>
-              <LevelBadge percentage={data.percentage} />
+              <LevelBadge percentage={pct} />
             </div>
           </div>
         </div>
