@@ -1669,21 +1669,21 @@ const Step3Contact = ({
             Documento opcional
           </span>
         </div>
-        <Input
-          inputMode="numeric"
-          placeholder="Ex: 000.000.000-00 ou 00.000.000/0000-00"
-          value={maskCpfCnpj(taxId || '')}
-          onChange={e => setTaxId(e.target.value.replace(/\D/g, '').slice(0, 14))}
+        <CpfCnpjInput
+          value={taxId || ''}
+          onChange={(digitsOnly) => setTaxId(digitsOnly)}
           onBlur={onFieldBlur}
           aria-invalid={!taxValid}
           className={!taxValid ? 'border-destructive focus-visible:ring-destructive' : ''}
         />
-        <p className={`mt-1 text-[11px] ${!taxValid ? 'text-destructive' : 'text-muted-foreground'}`}>
+        <p className={`mt-1 text-[11px] ${!taxValid ? 'text-destructive' : taxSavedFeedback ? 'text-emerald-600' : 'text-muted-foreground'}`}>
           {!taxValid
             ? `${taxLabel} inválido — confira os dígitos.`
-            : taxFilled
-              ? `${taxLabel} válido. Só você e a administração conseguem visualizar o documento completo.`
-              : 'Você pode deixar em branco e preencher depois. Isso ajuda na confiança do perfil e soma pontos no ranking.'}
+            : taxSavedFeedback
+              ? `${taxLabel} salvo com segurança. Só você e a administração visualizam o documento completo.`
+              : taxFilled
+                ? `${taxLabel} válido. Será salvo de forma criptografada ao continuar.`
+                : 'Opcional — você pode deixar em branco e preencher depois. Soma pontos no ranking quando informado.'}
         </p>
       </div>
 
