@@ -283,6 +283,29 @@ const AdminSponsorLeadsPage = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Buscar empresa, email, CNPJ..." className="pl-9" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
           </div>
+          <Select value={docsStatusFilter} onValueChange={(v) => { setDocsStatusFilter(v); setPage(1); }}>
+            <SelectTrigger className="w-44"><SelectValue placeholder="Status docs" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os docs</SelectItem>
+              <SelectItem value="pending">Pendente</SelectItem>
+              <SelectItem value="submitted">Enviado</SelectItem>
+              <SelectItem value="approved">Aprovado</SelectItem>
+              <SelectItem value="rejected">Rejeitado</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            placeholder="Cidade"
+            className="w-36"
+            value={cityFilter}
+            onChange={(e) => { setCityFilter(e.target.value); setPage(1); }}
+          />
+          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(1); }}>
+            <SelectTrigger className="w-44"><SelectValue placeholder="Categoria" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {categoryOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Bulk */}
