@@ -593,7 +593,7 @@ const DashboardPage = () => {
                 provider={provider}
                 profile={profile}
                 servicesCount={servicesCount ?? 0}
-                portfolioCount={portfolioCount}
+                portfolioCount={portfolioAlbumCount}
               />
             </div>
           </GlassCard>
