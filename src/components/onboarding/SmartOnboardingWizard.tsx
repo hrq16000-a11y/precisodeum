@@ -660,16 +660,38 @@ const BasicOnboardingWizard = () => {
     }
     setSaving(true);
     try {
-      // Salva profile
-      await supabase.from('profiles').update({
+      const hadTaxIdBefore = !!((profile as any)?.tax_id_last4) || !!taxId.trim();
+
+      const { error: profileError } = await supabase.from('profiles').update({
         full_name: fullName.trim(),
         whatsapp,
         phone: whatsapp,
         profile_type: profileType,
         role: profileType,
-        tax_id: taxIdDigits || null,
+        bio: bio.trim() || null,
+        city: city || null,
+        state: state || null,
+        preferred_category_ids: profileType === 'provider' ? selectedCategoryIds : [],
         onboarding_step: 4,
       } as any).eq('id', user.id);
+      if (profileError) throw profileError;
+
+      const { error: taxError } = await supabase.rpc('set_profile_tax_id', {
+        _tax_id: taxIdDigits || null,
+      });
+      if (taxError) throw taxError;
+
+      if (taxIdDigits && !hadTaxIdBefore && !hasAwardedTaxIdPoints) {
+        await (supabase as any).rpc('award_engagement_points', {
+          _user_id: user.id,
+          _action_key: 'profile_tax_id_added',
+          _metadata: {
+            source: 'onboarding_wizard',
+            tax_id_kind: taxIdDigits.length === 14 ? 'cnpj' : 'cpf',
+          },
+        }).catch(() => undefined);
+        setHasAwardedTaxIdPoints(true);
+      }
 
       // Garante registro provider/agency conforme tipo
       if (profileType === 'provider') {
@@ -716,6 +738,7 @@ const BasicOnboardingWizard = () => {
       }
 
       await refetchProfile();
+      toast.success('Dados salvos com sucesso.');
 
       // Provider passa pelo Passo 4 obrigatoriamente. Demais tipos vão direto p/ 5.
       if (profileType === 'provider') {
@@ -1590,6 +1613,7 @@ const Step3Contact = ({
   const taxFilled = taxDigits.length > 0;
   const taxValid = !taxFilled || isValidCpfCnpj(taxDigits);
   const taxLabel = taxDigits.length > 11 ? 'CNPJ' : 'CPF';
+  const isProviderPf = profileType === 'provider';
   return (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -1603,6 +1627,22 @@ const Step3Contact = ({
     </div>
     <h1 className="text-center font-display text-xl font-bold text-foreground">Dados de contato</h1>
     <p className="mt-1 text-center text-xs text-muted-foreground">Como os clientes vão te encontrar.</p>
+
+    {isProviderPf && (
+      <div className="mt-4 rounded-xl border border-border bg-muted/20 p-3">
+        <p className="text-xs font-bold text-foreground">Tipo de cadastro profissional</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="rounded-lg border border-accent bg-accent/10 px-3 py-2 text-center">
+            <p className="text-xs font-bold text-foreground">PF</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Autônomo ou profissional liberal</p>
+          </div>
+          <div className={`rounded-lg border px-3 py-2 text-center ${taxDigits.length > 11 ? 'border-primary bg-primary/10' : 'border-border bg-background'}`}>
+            <p className="text-xs font-bold text-foreground">PJ</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">MEI, empresa ou agência</p>
+          </div>
+        </div>
+      </div>
+    )}
 
     <div className="mt-5 space-y-4">
       <div>
@@ -1632,9 +1672,14 @@ const Step3Contact = ({
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-foreground">
-          CPF ou CNPJ <span className="font-normal text-muted-foreground">(opcional)</span>
-        </label>
+        <div className="mb-1 flex items-center justify-between gap-3">
+          <label className="block text-xs font-semibold text-foreground">
+            CPF ou CNPJ
+          </label>
+          <span className="shrink-0 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+            Documento opcional
+          </span>
+        </div>
         <Input
           inputMode="numeric"
           placeholder="Ex: 000.000.000-00 ou 00.000.000/0000-00"
@@ -1648,8 +1693,8 @@ const Step3Contact = ({
           {!taxValid
             ? `${taxLabel} inválido — confira os dígitos.`
             : taxFilled
-              ? `${taxLabel} válido. Usado apenas para comprovantes e nunca aparece publicamente.`
-              : 'Você pode adicionar depois. Ajuda na emissão de comprovantes e validação da conta.'}
+              ? `${taxLabel} válido. Só você e a administração conseguem visualizar o documento completo.`
+              : 'Você pode deixar em branco e preencher depois. Isso ajuda na confiança do perfil e soma pontos no ranking.'}
         </p>
       </div>
 
@@ -1681,10 +1726,10 @@ const Step3Contact = ({
 
     <div className="mt-5 grid gap-3">
       <Button variant="accent" className="w-full" disabled={!canAdvance || saving} onClick={onNext}>
-        {saving ? 'Salvando…' : 'Salvar e continuar'}
+        {saving ? 'Salvando seus dados…' : 'Salvar meus dados e continuar'}
       </Button>
       <Button type="button" variant="outline" className="w-full" onClick={onSkip} disabled={saving}>
-        Pular por enquanto
+        Continuar sem documento por agora
       </Button>
     </div>
   </>
