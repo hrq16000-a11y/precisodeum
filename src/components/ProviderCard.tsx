@@ -66,7 +66,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   badges.push(
     <ProfileBadge key="profile" hasPhoto={hasOwnPhoto} hasServices={(provider.servicesCount || 0) >= 1} size="sm" />
   );
-  if (engTier.tier !== 'iniciante') {
+  if (engTier.tier !== 'bronze') {
     badges.push(
       <span key="eng-tier" className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${engTier.badgeClass}`}>
         {engTier.label}
@@ -210,8 +210,8 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                     <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />
                   </motion.div>
                 )}
-                {engTier.tier === 'engajado' && (
-                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-label="Engajado" />
+                {engTier.tier === 'ouro' && (
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-label="Ouro" />
                 )}
               </div>
             </Link>

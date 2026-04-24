@@ -27,8 +27,7 @@ const LevelDistributionBar = ({ profiles }: Props) => {
 
   const counts = useMemo(() => {
     const map: Record<EngagementTier, number> = {
-      iniciante: 0, entusiasta: 0, engajado: 0,
-      ouro: 0, platina: 0, diamante: 0, mestre: 0,
+      bronze: 0, prata: 0, ouro: 0, diamante: 0, mestre: 0,
     };
     profiles.forEach(p => {
       const tier = getEngagementTier(p.engagement_points || 0);
