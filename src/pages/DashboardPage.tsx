@@ -128,6 +128,7 @@ const DashboardPage = () => {
     (async () => {
       const albumsRes = await supabase.from('portfolio_albums').select('id').eq('provider_id', provider.id);
       const albumIds = (albumsRes.data || []).map(a => a.id);
+      setPortfolioAlbumCount(albumIds.length);
       const [sRes, lRes, pRes, rRes] = await Promise.all([
         supabase.from('services').select('id, view_count', { count: 'exact' }).eq('provider_id', provider.id),
         supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
