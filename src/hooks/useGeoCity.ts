@@ -34,12 +34,20 @@ interface GeoData {
   precise: boolean;
   manualOverride: boolean;
   radiusKm: number;
+  /** Indica que a última tentativa de obter GPS/CEP falhou e estamos usando cache. */
+  geoFailed: boolean;
+  /** Origem da localização atual (para mostrar avisos contextuais). */
+  source: 'gps' | 'ip' | 'manual' | 'cache' | 'none';
+  /** Timestamp ISO da última atualização bem-sucedida da localização. */
+  lastKnownAt: string | null;
 }
 
 interface GeoStore extends GeoData {
   setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null) => void;
   setRadius: (km: number) => void;
   requestPreciseLocation: () => Promise<boolean>;
+  /** Limpa o estado de erro (ex.: após o usuário ver o aviso). */
+  dismissGeoFailure: () => void;
 }
 
 const CITY_KEY = 'geo_city';
