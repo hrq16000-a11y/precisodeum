@@ -14,6 +14,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useDebounce } from '@/hooks/useDebounce';
 import { isUF } from '@/lib/ufIndex';
+import { safeUF } from '@/lib/locationFormat';
 
 interface CityRow {
   id: string;
@@ -63,7 +64,8 @@ const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...' }:
 
   const display = useMemo(() => {
     if (!value.city) return placeholder;
-    return value.state ? `${value.city} • ${value.state}` : value.city;
+    const uf = safeUF(value.state);
+    return uf ? `${value.city} • ${uf}` : value.city;
   }, [value, placeholder]);
 
   return (

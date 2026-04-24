@@ -52,22 +52,9 @@ import { useCategoriesWithCount } from '@/hooks/useProviders';
 import { getSocialAvatarUrl, getInitials } from '@/lib/avatarUtils';
 import { formatCityState } from '@/lib/locationFormat';
 import { isValidCpfCnpj } from '@/lib/cpfCnpj';
+import CpfCnpjInput, { maskCpfCnpj } from './CpfCnpjInput';
 
-/** Aplica máscara dinâmica de CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00). */
-const maskCpfCnpj = (raw: string): string => {
-  const d = (raw || '').replace(/\D/g, '').slice(0, 14);
-  if (d.length <= 11) {
-    return d
-      .replace(/^(\d{3})(\d)/, '$1.$2')
-      .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-      .replace(/\.(\d{3})(\d)/, '.$1-$2');
-  }
-  return d
-    .replace(/^(\d{2})(\d)/, '$1.$2')
-    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/\.(\d{3})(\d)/, '.$1/$2')
-    .replace(/(\d{4})(\d)/, '$1-$2');
-};
+
 
 type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
 type ProviderSubtype = 'autonomous' | 'company';
@@ -149,6 +136,7 @@ const BasicOnboardingWizard = () => {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [taxId, setTaxId] = useState<string>(((profile as any)?.tax_id as string) || '');
   const [hasAwardedTaxIdPoints, setHasAwardedTaxIdPoints] = useState(false);
+  const [taxIdJustSaved, setTaxIdJustSaved] = useState(false);
 
   // Provider data
   const [savedProvider, setSavedProvider] = useState<any | null>(null);
@@ -680,6 +668,10 @@ const BasicOnboardingWizard = () => {
         _tax_id: taxIdDigits || null,
       });
       if (taxError) throw taxError;
+      if (taxIdDigits) {
+        setTaxIdJustSaved(true);
+        toast.success(`${taxIdDigits.length === 14 ? 'CNPJ' : 'CPF'} salvo com segurança.`);
+      }
 
       if (taxIdDigits && !hadTaxIdBefore && !hasAwardedTaxIdPoints) {
         await (supabase as any).rpc('award_engagement_points', {
@@ -980,7 +972,7 @@ const BasicOnboardingWizard = () => {
             avatarUrl={avatarUrl}
             editingCity={editingCity}
             onEditCity={() => setEditingCity(true)}
-            onCityChange={(c, s) => { setCity(c); setState(s); }}
+            onCityChange={(c, s) => { setCity(c); setState(s); if (c) setEditingCity(false); }}
             onAvatarChange={(url) => { setAvatarUrl(url); window.setTimeout(handleStepFieldBlur, 0); }}
             onFieldBlur={handleStepFieldBlur}
             userId={user?.id}
@@ -1006,7 +998,8 @@ const BasicOnboardingWizard = () => {
             bio={bio}
             setBio={setBio}
             taxId={taxId}
-            setTaxId={setTaxId}
+            setTaxId={(v: string) => { setTaxId(v); setTaxIdJustSaved(false); }}
+            taxSavedFeedback={taxIdJustSaved}
             categoriesForPicker={categoriesForPicker}
             selectedCategoryIds={selectedCategoryIds}
             onToggleCategory={(id) => { setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id]); window.setTimeout(handleStepFieldBlur, 0); }}
@@ -1607,7 +1600,7 @@ const Step2Location = ({
 const Step3Contact = ({
   profileType, fullName, setFullName, agencyName, setAgencyName,
   whatsapp, setWhatsapp, bio, setBio,
-  taxId, setTaxId,
+  taxId, setTaxId, taxSavedFeedback,
   categoriesForPicker, selectedCategoryIds, onToggleCategory,
   saving, canAdvance, onBack, onNext, onSkip, onFieldBlur,
 }: any) => {
@@ -1682,21 +1675,21 @@ const Step3Contact = ({
             Documento opcional
           </span>
         </div>
-        <Input
-          inputMode="numeric"
-          placeholder="Ex: 000.000.000-00 ou 00.000.000/0000-00"
-          value={maskCpfCnpj(taxId || '')}
-          onChange={e => setTaxId(e.target.value.replace(/\D/g, '').slice(0, 14))}
+        <CpfCnpjInput
+          value={taxId || ''}
+          onChange={(digitsOnly) => setTaxId(digitsOnly)}
           onBlur={onFieldBlur}
           aria-invalid={!taxValid}
           className={!taxValid ? 'border-destructive focus-visible:ring-destructive' : ''}
         />
-        <p className={`mt-1 text-[11px] ${!taxValid ? 'text-destructive' : 'text-muted-foreground'}`}>
+        <p className={`mt-1 text-[11px] ${!taxValid ? 'text-destructive' : taxSavedFeedback ? 'text-emerald-600' : 'text-muted-foreground'}`}>
           {!taxValid
             ? `${taxLabel} inválido — confira os dígitos.`
-            : taxFilled
-              ? `${taxLabel} válido. Só você e a administração conseguem visualizar o documento completo.`
-              : 'Você pode deixar em branco e preencher depois. Isso ajuda na confiança do perfil e soma pontos no ranking.'}
+            : taxSavedFeedback
+              ? `${taxLabel} salvo com segurança. Só você e a administração visualizam o documento completo.`
+              : taxFilled
+                ? `${taxLabel} válido. Será salvo de forma criptografada ao continuar.`
+                : 'Opcional — você pode deixar em branco e preencher depois. Soma pontos no ranking quando informado.'}
         </p>
       </div>
 
@@ -1727,12 +1720,21 @@ const Step3Contact = ({
     </div>
 
     <div className="mt-5 grid gap-3">
-      <Button variant="accent" className="w-full" disabled={!canAdvance || saving} onClick={onNext}>
-        {saving ? 'Salvando seus dados…' : 'Salvar meus dados e continuar'}
+      <Button variant="accent" className="w-full" disabled={!canAdvance || saving || !taxValid} onClick={onNext}>
+        {saving
+          ? 'Salvando…'
+          : taxFilled
+            ? 'Salvar dados e continuar'
+            : 'Continuar (documento depois)'}
       </Button>
-      <Button type="button" variant="outline" className="w-full" onClick={onSkip} disabled={saving}>
-        Continuar sem documento por agora
-      </Button>
+      {!taxFilled && (
+        <Button type="button" variant="outline" className="w-full" onClick={onSkip} disabled={saving}>
+          Pular passo agora
+        </Button>
+      )}
+      <p className="text-center text-[10px] text-muted-foreground">
+        Voltar nunca apaga o que você já preencheu.
+      </p>
     </div>
   </>
   );

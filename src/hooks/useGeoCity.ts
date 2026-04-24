@@ -22,7 +22,8 @@ function normalizeUF(state: string | null | undefined): string | null {
   if (/^[a-z]{2}$/.test(trimmed)) return trimmed.toUpperCase();
   // Try to resolve full name
   const lower = trimmed.toLowerCase();
-  return STATE_NAME_TO_UF[lower] || trimmed.toUpperCase().slice(0, 2);
+  // Só devolvemos UF quando temos certeza — evita resíduos como "St", "Sa", "Es..." vazando para a UI.
+  return STATE_NAME_TO_UF[lower] || null;
 }
 
 interface GeoData {
