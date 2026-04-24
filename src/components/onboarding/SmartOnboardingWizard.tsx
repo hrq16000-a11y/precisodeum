@@ -912,6 +912,7 @@ const BasicOnboardingWizard = () => {
             onSkip={() => advanceTo(3)}
             canAdvance={canAdvanceFromStep2}
             fullName={fullName}
+            socialAvatarUrl={getSocialAvatarUrl(user)}
           />
         )}
 
@@ -1359,8 +1360,12 @@ TypeButton.displayName = 'TypeButton';
 // ─── Passo 2 ───
 const Step2Location = ({
   city, state, avatarUrl, editingCity, onEditCity, onCityChange, onAvatarChange,
-  userId, onBack, onNext, onSkip, canAdvance, onFieldBlur, fullName,
-}: any) => (
+  userId, onBack, onNext, onSkip, canAdvance, onFieldBlur, fullName, socialAvatarUrl,
+}: any) => {
+  const isFromGoogle = !!socialAvatarUrl && avatarUrl === socialAvatarUrl;
+  const hasNoAvatar = !avatarUrl;
+  const initials = getInitials(fullName);
+  return (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
       <ArrowLeft className="h-3.5 w-3.5" /> Voltar
@@ -1378,13 +1383,35 @@ const Step2Location = ({
       {userId && (
         <div>
           <label className="mb-2 block text-xs font-semibold text-foreground">Foto de perfil (opcional)</label>
-          <div className="flex justify-center">
+
+          {/* Preview do avatar antes de concluir */}
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-muted/20 p-4">
             <AvatarUpload
               userId={userId}
               currentUrl={avatarUrl}
-              initials={getInitials(fullName)}
+              initials={initials}
               onUploaded={onAvatarChange}
             />
+
+            {isFromGoogle && (
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-[11px] font-semibold text-accent">
+                <Check className="h-3 w-3" /> Foto sincronizada da sua conta Google
+              </div>
+            )}
+
+            {!isFromGoogle && avatarUrl && (
+              <p className="text-[11px] text-muted-foreground">Foto enviada por você</p>
+            )}
+
+            {hasNoAvatar && initials !== '?' && (
+              <p className="text-[11px] text-muted-foreground text-center">
+                Sem foto? Vamos exibir suas iniciais <span className="font-bold text-foreground">{initials}</span> num círculo colorido.
+              </p>
+            )}
+
+            {!hasNoAvatar && (
+              <p className="text-[11px] text-muted-foreground">Toque na câmera para trocar a foto a qualquer momento.</p>
+            )}
           </div>
         </div>
       )}
