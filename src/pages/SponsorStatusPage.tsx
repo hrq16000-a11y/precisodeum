@@ -76,6 +76,15 @@ export default function SponsorStatusPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [claiming, setClaiming] = useState(false);
   const [claimed, setClaimed] = useState(false);
+  const [resubmitOpen, setResubmitOpen] = useState(false);
+  const lastDocsStatusRef = useRef<string | null>(null);
+
+  const fireApprovalConfetti = () => {
+    const colors = ['#10b981', '#3b82f6', '#f59e0b', '#a855f7'];
+    confetti({ particleCount: 140, spread: 100, origin: { y: 0.6 }, colors });
+    setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors }), 250);
+    setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors }), 400);
+  };
 
   const handleClaim = async () => {
     if (!leadId) return;
@@ -85,6 +94,7 @@ export default function SponsorStatusPage() {
       if (cErr) throw cErr;
       toast.success('Cadastro vinculado! Agora você receberá notificações sobre revisões e atualizações.');
       setClaimed(true);
+      load(leadId);
     } catch (e: any) {
       toast.error(e?.message || 'Não foi possível vincular este cadastro.');
     } finally {
@@ -120,6 +130,38 @@ export default function SponsorStatusPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leadId]);
 
+  // Realtime: detect docs_status changes pushed by admin
+  useEffect(() => {
+    if (!leadId) return;
+    const channel = supabase
+      .channel(`sponsor-lead-status-${leadId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'sponsor_leads', filter: `id=eq.${leadId}` },
+        (payload: any) => {
+          const newStatus = payload?.new?.docs_status as string | undefined;
+          const prev = lastDocsStatusRef.current;
+          if (newStatus && newStatus !== prev) {
+            if (newStatus === 'approved') {
+              fireApprovalConfetti();
+              toast.success('Sua documentação foi aprovada!');
+            } else if (newStatus === 'rejected') {
+              toast.error('Documentação rejeitada — confira o motivo abaixo.');
+            }
+            lastDocsStatusRef.current = newStatus;
+          }
+          load(leadId);
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [leadId]);
+
+  // Sync ref with current status (for first load and polling)
+  useEffect(() => {
+    if (lead?.docs_status) lastDocsStatusRef.current = lead.docs_status;
+  }, [lead?.docs_status]);
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setLeadId(input.trim());
@@ -128,6 +170,9 @@ export default function SponsorStatusPage() {
 
   const statusInfo = lead ? STATUS_LABEL[lead.docs_status] || STATUS_LABEL.pending : null;
   const StatusIcon = statusInfo?.icon || Clock;
+  const leadUserId = (lead as any)?.user_id ?? null;
+  const isOwner = !!(user && leadUserId && leadUserId === user.id);
+  const canResubmit = !!lead && (lead.docs_status === 'rejected' || !lead.checklist_confirmed);
 
   return (
     <>
