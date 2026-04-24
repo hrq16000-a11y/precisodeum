@@ -458,6 +458,13 @@ const DashboardLeadsPage = () => {
           })}
         </AnimatePresence>
       </motion.div>
+
+      <RescheduleFollowupDialog
+        leadId={rescheduleLeadId}
+        defaultDate={rescheduleDefault}
+        open={!!rescheduleLeadId}
+        onOpenChange={(open) => { if (!open) setRescheduleLeadId(null); }}
+      />
     </DashboardLayout>
   );
 };
