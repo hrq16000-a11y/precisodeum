@@ -347,7 +347,45 @@ const SearchPage = () => {
         </Select>
       </div>
 
-      {/* Rating */}
+      {/* Availability toggles */}
+      <div>
+        <Label className="text-xs text-muted-foreground">Disponibilidade</Label>
+        <div className="mt-1.5 flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => { setOnlineOnly(v => !v); setPage(1); }}
+            className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+              onlineOnly
+                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                : 'border-border bg-background text-muted-foreground hover:bg-muted'
+            }`}
+            aria-pressed={onlineOnly}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Circle className={`h-2 w-2 ${onlineOnly ? 'fill-emerald-500 text-emerald-500' : 'fill-muted-foreground/40 text-muted-foreground/40'}`} />
+              Online agora
+            </span>
+            <span className="text-[10px] font-semibold">{onlineOnly ? 'ATIVO' : 'OFF'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setAcceptingOnly(v => !v); setPage(1); }}
+            className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+              acceptingOnly
+                ? 'border-primary/40 bg-primary/10 text-primary'
+                : 'border-border bg-background text-muted-foreground hover:bg-muted'
+            }`}
+            aria-pressed={acceptingOnly}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Zap className="h-3 w-3" />
+              Aceitando clientes
+            </span>
+            <span className="text-[10px] font-semibold">{acceptingOnly ? 'ATIVO' : 'OFF'}</span>
+          </button>
+        </div>
+      </div>
+
       {reviewsEnabled && (
         <div>
           <Label className="text-xs text-muted-foreground">Avaliação mínima</Label>
