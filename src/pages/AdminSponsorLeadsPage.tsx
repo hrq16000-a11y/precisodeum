@@ -482,6 +482,13 @@ const AdminSponsorLeadsPage = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        <SponsorLeadDocsPanel
+          open={docsDialog}
+          onOpenChange={setDocsDialog}
+          leadId={docsItem?.id || null}
+          companyName={docsItem?.company_name}
+        />
       </div>
     </AdminLayout>
   );
