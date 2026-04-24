@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Search, Pencil, Trash2, Download, Phone, Mail, ArrowRight, MessageSquare, Clock, CheckCircle2, XCircle, Users2, AlertTriangle } from 'lucide-react';
+import { Search, Pencil, Trash2, Download, Phone, Mail, ArrowRight, MessageSquare, Clock, CheckCircle2, XCircle, Users2, AlertTriangle, FileText } from 'lucide-react';
+import SponsorLeadDocsPanel from '@/components/admin/SponsorLeadDocsPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/hooks/useAdmin';
 import { logAuditAction } from '@/hooks/useAuditLog';
