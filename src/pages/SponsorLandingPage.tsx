@@ -21,8 +21,9 @@ import {
   TrendingUp, Shield, Zap, ArrowRight, FileText, Download, Star,
   Sparkles, Crown, Target, Users, MousePointerClick, LayoutGrid,
   Timer, Phone, Mail, Building2, ChevronDown, ChevronLeft, ChevronRight,
-  Monitor, PieChart, Activity, X, Check, Minus, MessageSquare, HelpCircle
+  Monitor, PieChart, Activity, X, Check, Minus, MessageSquare, HelpCircle, Upload
 } from 'lucide-react';
+import { SponsorDocsUploadModal } from '@/components/sponsor/SponsorDocsUploadModal';
 
 const sponsorSchema = z.object({
   company_name: z.string().trim().min(2, 'Nome da empresa é obrigatório').max(200),
@@ -466,6 +467,9 @@ export default function SponsorLandingPage() {
   const [contractAccepted, setContractAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [leadId, setLeadId] = useState<string | null>(null);
+  const [docsModalOpen, setDocsModalOpen] = useState(false);
+  const [docsCompleted, setDocsCompleted] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro' | 'premium'>('pro');
   const [hoveredBenefit, setHoveredBenefit] = useState<number | null>(null);
 
@@ -486,7 +490,7 @@ export default function SponsorLandingPage() {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('sponsor_leads' as any).insert({
+      const { data: inserted, error } = await supabase.from('sponsor_leads' as any).insert({
         company_name: data.company_name,
         cnpj: data.cnpj,
         email: data.email,
@@ -494,8 +498,9 @@ export default function SponsorLandingPage() {
         plan: data.plan,
         contract_accepted: true,
         status: 'pending',
-      } as any);
+      } as any).select('id').single();
       if (error) throw error;
+      setLeadId((inserted as any)?.id ?? null);
       setSubmitted(true);
       toast.success('Interesse registrado com sucesso!');
     } catch {
@@ -549,11 +554,40 @@ export default function SponsorLandingPage() {
                 <li>Liberação do painel do patrocinador com métricas em tempo real.</li>
               </ol>
             </div>
-            <Button onClick={() => window.location.href = '/'} size="lg" className="px-8">
-              <ArrowRight className="w-4 h-4 mr-2" /> Voltar ao Início
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              {leadId && (
+                <Button
+                  onClick={() => setDocsModalOpen(true)}
+                  size="lg"
+                  variant={docsCompleted ? 'outline' : 'default'}
+                  className="px-6"
+                >
+                  {docsCompleted ? (
+                    <><CheckCircle2 className="w-4 h-4 mr-2" /> Documentos enviados</>
+                  ) : (
+                    <><Upload className="w-4 h-4 mr-2" /> Anexar CNPJ / Banner</>
+                  )}
+                </Button>
+              )}
+              <Button onClick={() => window.location.href = '/'} size="lg" variant="outline" className="px-6">
+                <ArrowRight className="w-4 h-4 mr-2" /> Voltar ao Início
+              </Button>
+            </div>
+            {leadId && !docsCompleted && (
+              <p className="mt-4 text-xs text-muted-foreground">
+                Dica: anexar o CNPJ e o banner agora acelera a aprovação da sua campanha.
+              </p>
+            )}
           </motion.div>
         </main>
+        {leadId && (
+          <SponsorDocsUploadModal
+            open={docsModalOpen}
+            onOpenChange={setDocsModalOpen}
+            leadId={leadId}
+            onCompleted={() => setDocsCompleted(true)}
+          />
+        )}
         <Footer />
       </>
     );
