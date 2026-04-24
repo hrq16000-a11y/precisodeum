@@ -432,4 +432,3 @@ export function useGeoCity(): GeoStore {
 
   return { ...data, setCity, setRadius, requestPreciseLocation, dismissGeoFailure };
 }
-}
