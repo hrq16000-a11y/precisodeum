@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard, Search as SearchIcon, ChevronDown, Star, Rocket, Receipt, UserPlus, Bell, MessageSquare, Pin } from 'lucide-react';
 import AdminGroupNav, { AdminGroupTabs } from '@/components/admin/AdminGroupNav';
+import PreviewBuildNotice from '@/components/admin/PreviewBuildNotice';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -428,6 +429,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
         <AdminGroupTabs />
+        <PreviewBuildNotice />
         <motion.div
           className="flex-1 p-3 sm:p-6 max-w-full"
           initial={{ opacity: 0, y: 12 }}
