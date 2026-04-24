@@ -112,7 +112,8 @@ interface PageSettings {
 }
 
 const DEFAULT_SETTINGS: PageSettings = {
-  sections_order: ['about', 'portfolio', 'services', 'reviews'],
+  // Hierarquia de confiança: portfólio (prova visual) + bio (autoridade) ANTES dos serviços (preços).
+  sections_order: ['portfolio', 'about', 'services', 'reviews'],
   hidden_sections: [],
   headline: '',
   tagline: '',
