@@ -7,6 +7,7 @@ type TrackEvent = 'card_view' | 'click_whatsapp' | 'click_profile' | 'click_bann
   | 'click_highlight'
   | 'geo_resolved_city' | 'geo_resolved_metro' | 'geo_resolved_uf'
   | 'geo_fallback_text_only' | 'geo_failed_resolution'
+  | 'geo_failed' | 'geo_fallback_used' | 'geo_source_changed'
   | 'sil_intent_detected' | 'sil_route_selected' | 'sil_geo_used'
   | 'sil_fallback_triggered' | 'sil_final_score';
 
