@@ -2426,7 +2426,9 @@ export type Database = {
         Row: {
           account_type_id: string | null
           avatar_url: string | null
+          bio: string | null
           celebration_muted: boolean
+          city: string | null
           commercial_plan: string | null
           created_at: string
           department: string | null
@@ -2441,10 +2443,12 @@ export type Database = {
           onboarding_step: number
           permissions: Json
           phone: string | null
+          preferred_category_ids: string[] | null
           profile_type: string | null
           referral_code: string | null
           role: string | null
           staff_role: Database["public"]["Enums"]["app_role"] | null
+          state: string | null
           status: string
           suspended_at: string | null
           suspended_by: string | null
@@ -2460,7 +2464,9 @@ export type Database = {
         Insert: {
           account_type_id?: string | null
           avatar_url?: string | null
+          bio?: string | null
           celebration_muted?: boolean
+          city?: string | null
           commercial_plan?: string | null
           created_at?: string
           department?: string | null
@@ -2475,10 +2481,12 @@ export type Database = {
           onboarding_step?: number
           permissions?: Json
           phone?: string | null
+          preferred_category_ids?: string[] | null
           profile_type?: string | null
           referral_code?: string | null
           role?: string | null
           staff_role?: Database["public"]["Enums"]["app_role"] | null
+          state?: string | null
           status?: string
           suspended_at?: string | null
           suspended_by?: string | null
@@ -2494,7 +2502,9 @@ export type Database = {
         Update: {
           account_type_id?: string | null
           avatar_url?: string | null
+          bio?: string | null
           celebration_muted?: boolean
+          city?: string | null
           commercial_plan?: string | null
           created_at?: string
           department?: string | null
@@ -2509,10 +2519,12 @@ export type Database = {
           onboarding_step?: number
           permissions?: Json
           phone?: string | null
+          preferred_category_ids?: string[] | null
           profile_type?: string | null
           referral_code?: string | null
           role?: string | null
           staff_role?: Database["public"]["Enums"]["app_role"] | null
+          state?: string | null
           status?: string
           suspended_at?: string | null
           suspended_by?: string | null
