@@ -222,12 +222,18 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               <p className="mt-0.5 truncate text-xs font-medium text-accent sm:text-sm">{provider.category}</p>
             )}
             {hasLocation && (
-              <div className="mt-1 flex min-w-0 max-w-full items-center gap-1 text-xs text-muted-foreground">
+              <div className="mt-1 flex min-w-0 max-w-full flex-wrap items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="h-3 w-3 shrink-0" />
                 <span className="truncate min-w-0 flex-1">{locationText}</span>
                 {provider.distanceKm != null && (
-                  <span className="ml-1 shrink-0 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                  <span
+                    className="ml-1 shrink-0 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
+                    title={`Aproximadamente ${Math.max(1, Math.round((provider.distanceKm / 30) * 60))} min de carro (30 km/h)`}
+                  >
                     {provider.distanceKm < 1 ? '< 1' : provider.distanceKm.toFixed(1)} km
+                    <span className="opacity-70">·</span>
+                    <Clock className="h-2.5 w-2.5" />
+                    {Math.max(1, Math.round((provider.distanceKm / 30) * 60))}min
                   </span>
                 )}
               </div>

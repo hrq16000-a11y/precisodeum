@@ -23,7 +23,7 @@ import { useSearchProvidersGrouped, useCategories, useSearchSuggestions, useGeoC
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List, Circle, Zap } from 'lucide-react';
 import { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchModal';
 const RouteSearchModal = lazy(() => import('@/components/RouteSearchModal'));
 import { calculateDistanceKm } from '@/lib/geoDistance';
@@ -71,7 +71,9 @@ const SearchPage = () => {
   const [sortBy, setSortBy] = useState<SortOption>('relevance');
   const [showFilters, setShowFilters] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  
+  const [onlineOnly, setOnlineOnly] = useState(false);
+  const [acceptingOnly, setAcceptingOnly] = useState(false);
+
   const [showOutOfState, setShowOutOfState] = useState(false);
   const [page, setPage] = useState(1);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
@@ -146,6 +148,10 @@ const SearchPage = () => {
     if (featuredFilter === 'featured') results = results.filter(p => p.featured);
     else if (featuredFilter === 'normal') results = results.filter(p => !p.featured);
 
+    // Availability filters
+    if (onlineOnly) results = results.filter(p => onlineSet.has(p.userId));
+    if (acceptingOnly) results = results.filter(p => !!p.whatsapp && p.whatsapp.trim().length > 0);
+
     // Sort within group — never mix local/other ordering
     if (sortBy === 'nearest') {
       results.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
@@ -186,7 +192,7 @@ const SearchPage = () => {
     }
 
     return results;
-  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet]);
+  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, onlineOnly, acceptingOnly]);
 
   const filteredLocal = useMemo(() => applyClientFilters(localProviders), [applyClientFilters, localProviders]);
   const filteredNearby = useMemo(() => applyClientFilters(nearbyProviders), [applyClientFilters, nearbyProviders]);
@@ -198,7 +204,7 @@ const SearchPage = () => {
   const nearestCity = nearestFiltered?.city;
   const totalDisplay = filteredLocal.length + filteredNearby.length + (showOutOfState ? filteredOutOfState.length : 0);
 
-  const activeFilterCount = [selectedCategory, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter !== 'all' ? 'x' : '', minRating > 0 ? 'x' : ''].filter(Boolean).length;
+  const activeFilterCount = [selectedCategory, selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter !== 'all' ? 'x' : '', minRating > 0 ? 'x' : '', onlineOnly ? 'x' : '', acceptingOnly ? 'x' : ''].filter(Boolean).length;
 
   const clearAllFilters = useCallback(() => {
     setSelectedCategory('');
@@ -210,6 +216,8 @@ const SearchPage = () => {
     setFeaturedFilter('all');
     setMinRating(0);
     setSortBy('relevance');
+    setOnlineOnly(false);
+    setAcceptingOnly(false);
     setPage(1);
   }, []);
 
@@ -339,7 +347,45 @@ const SearchPage = () => {
         </Select>
       </div>
 
-      {/* Rating */}
+      {/* Availability toggles */}
+      <div>
+        <Label className="text-xs text-muted-foreground">Disponibilidade</Label>
+        <div className="mt-1.5 flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => { setOnlineOnly(v => !v); setPage(1); }}
+            className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+              onlineOnly
+                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                : 'border-border bg-background text-muted-foreground hover:bg-muted'
+            }`}
+            aria-pressed={onlineOnly}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Circle className={`h-2 w-2 ${onlineOnly ? 'fill-emerald-500 text-emerald-500' : 'fill-muted-foreground/40 text-muted-foreground/40'}`} />
+              Online agora
+            </span>
+            <span className="text-[10px] font-semibold">{onlineOnly ? 'ATIVO' : 'OFF'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setAcceptingOnly(v => !v); setPage(1); }}
+            className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+              acceptingOnly
+                ? 'border-primary/40 bg-primary/10 text-primary'
+                : 'border-border bg-background text-muted-foreground hover:bg-muted'
+            }`}
+            aria-pressed={acceptingOnly}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Zap className="h-3 w-3" />
+              Aceitando clientes
+            </span>
+            <span className="text-[10px] font-semibold">{acceptingOnly ? 'ATIVO' : 'OFF'}</span>
+          </button>
+        </div>
+      </div>
+
       {reviewsEnabled && (
         <div>
           <Label className="text-xs text-muted-foreground">Avaliação mínima</Label>
@@ -655,6 +701,18 @@ const SearchPage = () => {
                   <Badge variant="secondary" className="gap-1 text-xs">
                     {minRating}+ ⭐
                     <X className="h-3 w-3 cursor-pointer" onClick={() => setMinRating(0)} />
+                  </Badge>
+                )}
+                {onlineOnly && (
+                  <Badge variant="secondary" className="gap-1 text-xs">
+                    <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online agora
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => setOnlineOnly(false)} />
+                  </Badge>
+                )}
+                {acceptingOnly && (
+                  <Badge variant="secondary" className="gap-1 text-xs">
+                    <Zap className="h-3 w-3" /> Aceitando clientes
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => setAcceptingOnly(false)} />
                   </Badge>
                 )}
               </div>
