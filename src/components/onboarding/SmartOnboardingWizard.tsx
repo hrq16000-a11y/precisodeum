@@ -1720,12 +1720,21 @@ const Step3Contact = ({
     </div>
 
     <div className="mt-5 grid gap-3">
-      <Button variant="accent" className="w-full" disabled={!canAdvance || saving} onClick={onNext}>
-        {saving ? 'Salvando seus dados…' : 'Salvar meus dados e continuar'}
+      <Button variant="accent" className="w-full" disabled={!canAdvance || saving || !taxValid} onClick={onNext}>
+        {saving
+          ? 'Salvando…'
+          : taxFilled
+            ? 'Salvar dados e continuar'
+            : 'Continuar (documento depois)'}
       </Button>
-      <Button type="button" variant="outline" className="w-full" onClick={onSkip} disabled={saving}>
-        Continuar sem documento por agora
-      </Button>
+      {!taxFilled && (
+        <Button type="button" variant="outline" className="w-full" onClick={onSkip} disabled={saving}>
+          Pular passo agora
+        </Button>
+      )}
+      <p className="text-center text-[10px] text-muted-foreground">
+        Voltar nunca apaga o que você já preencheu.
+      </p>
     </div>
   </>
   );
