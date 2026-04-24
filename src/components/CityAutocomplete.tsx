@@ -27,18 +27,28 @@ interface CityAutocompleteProps {
   value: { city: string; state: string };
   onChange: (next: { city: string; state: string }) => void;
   placeholder?: string;
+  /** Callback fired whenever the popover closes (selection, click outside, Esc). */
+  onClose?: () => void;
 }
 
 /**
  * Autocomplete controlado, conectado à tabela `cities` (5.5k municípios IBGE).
  * Não permite texto livre — garante integridade dos filtros geográficos.
  */
-const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...' }: CityAutocompleteProps) => {
+const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...', onClose }: CityAutocompleteProps) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<CityRow[]>([]);
   const [loading, setLoading] = useState(false);
   const debouncedQuery = useDebounce(query, 200);
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) {
+      setQuery('');
+      onClose?.();
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -69,7 +79,7 @@ const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...' }:
   }, [value, placeholder]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -118,8 +128,7 @@ const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...' }:
                       value={`${c.name}-${uf || 'NA'}`}
                       onSelect={() => {
                         onChange({ city: c.name, state: uf });
-                        setOpen(false);
-                        setQuery('');
+                        handleOpenChange(false);
                       }}
                     >
                       <Check className={cn('mr-2 h-4 w-4', selected ? 'opacity-100' : 'opacity-0')} />

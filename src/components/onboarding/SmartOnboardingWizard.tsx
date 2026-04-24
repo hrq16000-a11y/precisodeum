@@ -972,6 +972,7 @@ const BasicOnboardingWizard = () => {
             avatarUrl={avatarUrl}
             editingCity={editingCity}
             onEditCity={() => setEditingCity(true)}
+            onCloseEditing={() => setEditingCity(false)}
             onCityChange={(c, s) => { setCity(c); setState(s); if (c) setEditingCity(false); }}
             onAvatarChange={(url) => { setAvatarUrl(url); window.setTimeout(handleStepFieldBlur, 0); }}
             onFieldBlur={handleStepFieldBlur}
@@ -1432,7 +1433,7 @@ TypeButton.displayName = 'TypeButton';
 
 // ─── Passo 2 ───
 const Step2Location = ({
-  city, state, avatarUrl, editingCity, onEditCity, onCityChange, onAvatarChange,
+  city, state, avatarUrl, editingCity, onEditCity, onCloseEditing, onCityChange, onAvatarChange,
   userId, onBack, onNext, onSkip, canAdvance, onFieldBlur, fullName, socialAvatarUrl,
 }: any) => {
   const isFromGoogle = !!socialAvatarUrl && avatarUrl === socialAvatarUrl;
@@ -1578,7 +1579,11 @@ const Step2Location = ({
           </div>
         ) : (
           <div onBlur={onFieldBlur}>
-            <CityAutocomplete value={{ city, state }} onChange={({ city: c, state: s }) => onCityChange(c, s)} />
+            <CityAutocomplete
+              value={{ city, state }}
+              onChange={({ city: c, state: s }) => onCityChange(c, s)}
+              onClose={() => { if (city) onCloseEditing?.(); }}
+            />
           </div>
         )}
       </div>

@@ -92,20 +92,27 @@ describe('CityAutocomplete — fluxo de seleção', () => {
   const autocomplete = read('src/components/CityAutocomplete.tsx');
 
   it('ao selecionar uma cidade, o popover fecha automaticamente', () => {
-    expect(autocomplete).toMatch(/onSelect=\{\(\)\s*=>\s*\{[\s\S]{0,200}setOpen\(false\)/);
+    // Agora o fechamento passa pelo handler central handleOpenChange(false).
+    expect(autocomplete).toMatch(/onSelect=\{\(\)\s*=>\s*\{[\s\S]{0,300}handleOpenChange\(false\)/);
   });
 
   it('ao selecionar a cidade, o modo "editingCity" do wizard é encerrado', () => {
     expect(wizard).toMatch(/onCityChange=\{[\s\S]{0,200}setEditingCity\(false\)/);
   });
 
+  it('CityAutocomplete expõe onClose para limpar editingCity ao fechar por clique fora/Esc', () => {
+    expect(autocomplete).toContain('onClose?.()');
+    expect(wizard).toMatch(/onClose=\{\(\)\s*=>\s*\{\s*if\s*\(city\)\s*onCloseEditing/);
+  });
+
   it('display do autocomplete usa safeUF para evitar lixo como "St"/"Sa"', () => {
     expect(autocomplete).toContain('safeUF(value.state)');
   });
 
-  it('useGeoCity.normalizeUF não inventa UF de 2 letras a partir de string desconhecida', () => {
+  it('useGeoCity usa o normalizador unificado (sem slice) de @/lib/locationFormat', () => {
     const geo = read('src/hooks/useGeoCity.ts');
-    expect(geo).not.toMatch(/trimmed\.toUpperCase\(\)\.slice\(0,\s*2\)/);
-    expect(geo).toMatch(/STATE_NAME_TO_UF\[lower\]\s*\|\|\s*null/);
+    expect(geo).not.toMatch(/\.slice\(0,\s*2\)/);
+    expect(geo).toMatch(/from\s+'@\/lib\/locationFormat'/);
+    expect(geo).toContain('normalizeUF');
   });
 });
