@@ -164,16 +164,7 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
               disabled={cnpjDoc.uploading}
               className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-accent/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-accent hover:file:bg-accent/20"
             />
-            {cnpjDoc.uploading && (
-              <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" /> Enviando...
-              </p>
-            )}
-            {cnpjDoc.path && (
-              <p className="flex items-center gap-1 text-xs text-emerald-600">
-                <CheckCircle2 className="h-3 w-3" /> Enviado: {cnpjDoc.file?.name}
-              </p>
-            )}
+            <SlotFeedback slot={cnpjDoc} onClear={() => setCnpjDoc(initialSlot)} />
           </div>
 
           {/* Banner */}
