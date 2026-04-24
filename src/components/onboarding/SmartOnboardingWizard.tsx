@@ -1348,7 +1348,7 @@ const ReviewSummaryCard = ({
   </div>
 );
 
-const Step1Identity = ({
+export const Step1Identity = ({
   existingProfileType,
   onContinueProfileUpdate,
   onSelectType,
@@ -1440,7 +1440,7 @@ const TypeButton = forwardRef<HTMLButtonElement, {
 TypeButton.displayName = 'TypeButton';
 
 // ─── Passo 2 ───
-const Step2Location = ({
+export const Step2Location = ({
   city, state, avatarUrl, editingCity, onEditCity, onCloseEditing, onCityChange, onAvatarChange,
   userId, onBack, onNext, onSkip, canAdvance, onFieldBlur, fullName, socialAvatarUrl,
 }: any) => {
@@ -1610,7 +1610,7 @@ const Step2Location = ({
 };
 
 // ─── Passo 3 ───
-const Step3Contact = ({
+export const Step3Contact = ({
   profileType, fullName, setFullName, agencyName, setAgencyName,
   whatsapp, setWhatsapp, bio, setBio,
   taxId, setTaxId, taxSavedFeedback,
@@ -1754,7 +1754,7 @@ const Step3Contact = ({
 };
 
 // ─── Passo 4 ───
-const Step4Service = ({
+export const Step4Service = ({
   providerReady, servicesCreated, portfolioAlbumsCreated, creatingAlbum,
   onCreateFirstAlbum, savedProvider, userId, categories,
   onServiceCreated, onContinue, onBack, onSkip,
@@ -1869,7 +1869,7 @@ const Step4Service = ({
 };
 
 // ─── Passo 5 ───
-const Step5Done = ({
+export const Step5Done = ({
   profileType, servicesCreated, saving, onFinish, onBack,
 }: any) => {
   const isProvider = profileType === 'provider';
