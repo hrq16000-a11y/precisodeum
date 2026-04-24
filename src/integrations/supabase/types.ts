@@ -3237,6 +3237,51 @@ export type Database = {
           },
         ]
       }
+      rls_policy_snapshots: {
+        Row: {
+          captured_at: string
+          cmd: string | null
+          id: string
+          is_permissive_write: boolean
+          is_public_or_anon: boolean
+          policyname: string
+          qual: string | null
+          roles: string[] | null
+          schemaname: string
+          snapshot_date: string
+          tablename: string
+          with_check: string | null
+        }
+        Insert: {
+          captured_at?: string
+          cmd?: string | null
+          id?: string
+          is_permissive_write?: boolean
+          is_public_or_anon?: boolean
+          policyname: string
+          qual?: string | null
+          roles?: string[] | null
+          schemaname: string
+          snapshot_date?: string
+          tablename: string
+          with_check?: string | null
+        }
+        Update: {
+          captured_at?: string
+          cmd?: string | null
+          id?: string
+          is_permissive_write?: boolean
+          is_public_or_anon?: boolean
+          policyname?: string
+          qual?: string | null
+          roles?: string[] | null
+          schemaname?: string
+          snapshot_date?: string
+          tablename?: string
+          with_check?: string | null
+        }
+        Relationships: []
+      }
       runtime_component_health: {
         Row: {
           component_name: string
@@ -5279,7 +5324,33 @@ export type Database = {
         Returns: undefined
       }
       admin_ban_suspicious: { Args: { _user_ids: string[] }; Returns: number }
+      admin_capture_rls_snapshot: {
+        Args: never
+        Returns: {
+          out_inserted_count: number
+          out_snapshot_date: string
+        }[]
+      }
       admin_clear_suspicion: { Args: { _user_ids: string[] }; Returns: number }
+      admin_diff_rls_snapshots: {
+        Args: { from_date: string; to_date: string }
+        Returns: {
+          cmd_new: string
+          cmd_old: string
+          is_permissive_write_new: boolean
+          is_public_or_anon_new: boolean
+          policyname: string
+          qual_new: string
+          qual_old: string
+          roles_new: string[]
+          roles_old: string[]
+          schemaname: string
+          status: string
+          tablename: string
+          with_check_new: string
+          with_check_old: string
+        }[]
+      }
       admin_export_audit_logs: {
         Args: { _days?: number }
         Returns: {
@@ -5317,6 +5388,14 @@ export type Database = {
           table_owner: string
           tablename: string
           with_check: string
+        }[]
+      }
+      admin_list_rls_snapshot_dates: {
+        Args: never
+        Returns: {
+          out_snapshot_date: string
+          permissive_write_count: number
+          policy_count: number
         }[]
       }
       admin_log_impersonation_end: {
