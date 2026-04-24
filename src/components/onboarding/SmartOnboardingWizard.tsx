@@ -82,6 +82,12 @@ type AutoSaveAttempt = {
   message: string;
 };
 
+type SecureTaxProfile = {
+  tax_id: string | null;
+  tax_id_kind: string | null;
+  tax_id_last4: string | null;
+};
+
 const TOTAL_STEPS = 5;
 
 const clampWizardStep = (value: unknown): WizardStep => {
@@ -142,6 +148,7 @@ const BasicOnboardingWizard = () => {
   const [bio, setBio] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [taxId, setTaxId] = useState<string>(((profile as any)?.tax_id as string) || '');
+  const [hasAwardedTaxIdPoints, setHasAwardedTaxIdPoints] = useState(false);
 
   // Provider data
   const [savedProvider, setSavedProvider] = useState<any | null>(null);
@@ -182,6 +189,25 @@ const BasicOnboardingWizard = () => {
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
     if (profile.whatsapp || profile.phone) setWhatsapp(profile.whatsapp || profile.phone || '');
   }, [profile]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+
+    const loadSecureTaxId = async () => {
+      const { data, error } = await supabase.rpc('get_profile_tax_id', { _profile_id: user.id });
+      if (error || cancelled) return;
+      const row = Array.isArray(data) ? (data[0] as SecureTaxProfile | undefined) : undefined;
+      if (row?.tax_id) {
+        setTaxId(row.tax_id);
+      }
+    };
+
+    void loadSecureTaxId();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   // ─── Google/social avatar sync (one-shot): copia foto do provedor social para profiles.avatar_url
   // se ainda não houver avatar definido. Guard com ref evita loop.
@@ -313,6 +339,7 @@ const BasicOnboardingWizard = () => {
     avatar_url: avatarUrl,
     whatsapp,
     bio,
+    tax_id: taxId,
     selected_category_ids: selectedCategoryIds,
     services_created: servicesCreated,
     saved_at: new Date().toISOString(),
@@ -331,6 +358,9 @@ const BasicOnboardingWizard = () => {
     if (state) patch.state = state;
     if (selectedCategoryIds && selectedCategoryIds.length > 0) {
       patch.preferred_category_ids = selectedCategoryIds;
+    }
+    if (!selectedCategoryIds?.length) {
+      patch.preferred_category_ids = [];
     }
     if (profileType) {
       patch.profile_type = profileType;
@@ -378,7 +408,7 @@ const BasicOnboardingWizard = () => {
     if (!user?.id) return;
     const { data, error } = await supabase
       .from('profiles')
-      .select('full_name, avatar_url, whatsapp, phone, profile_type, onboarding_step')
+      .select('full_name, avatar_url, whatsapp, phone, profile_type, onboarding_step, bio, city, state, preferred_category_ids')
       .eq('id', user.id)
       .single();
 
@@ -388,23 +418,21 @@ const BasicOnboardingWizard = () => {
     }
 
     const savedProfile = data as any;
-    let savedCity = '';
-    let savedState = '';
-    if (savedProfile.profile_type === 'provider') {
-      const { data: providerRows } = await supabase.from('providers').select('city, state').eq('user_id', user.id).limit(1);
-      savedCity = providerRows?.[0]?.city || '';
-      savedState = providerRows?.[0]?.state || '';
-    } else if (savedProfile.profile_type === 'rh') {
-      const { data: agencyRows } = await (supabase as any).from('agencies').select('city, state').eq('user_id', user.id).limit(1);
-      savedCity = agencyRows?.[0]?.city || '';
-      savedState = agencyRows?.[0]?.state || '';
-    }
+    let savedCity = savedProfile.city || '';
+    let savedState = savedProfile.state || '';
+    const secureTaxResponse = await supabase.rpc('get_profile_tax_id', { _profile_id: user.id });
+    const secureTaxRow = Array.isArray(secureTaxResponse.data)
+      ? (secureTaxResponse.data[0] as SecureTaxProfile | undefined)
+      : undefined;
 
     setFullName(savedProfile.full_name || '');
     setCity(savedCity);
     setState(savedState);
     setAvatarUrl(savedProfile.avatar_url || null);
     setWhatsapp(savedProfile.whatsapp || savedProfile.phone || '');
+    setBio(savedProfile.bio || '');
+    setSelectedCategoryIds(Array.isArray(savedProfile.preferred_category_ids) ? savedProfile.preferred_category_ids : []);
+    setTaxId(secureTaxRow?.tax_id || '');
     if (savedProfile.profile_type) setProfileType(savedProfile.profile_type as ProfileType);
     const savedStep = clampWizardStep(savedProfile.onboarding_step);
     setStep(savedStep);
