@@ -1594,7 +1594,7 @@ const Step2Location = ({
 const Step3Contact = ({
   profileType, fullName, setFullName, agencyName, setAgencyName,
   whatsapp, setWhatsapp, bio, setBio,
-  taxId, setTaxId,
+  taxId, setTaxId, taxSavedFeedback,
   categoriesForPicker, selectedCategoryIds, onToggleCategory,
   saving, canAdvance, onBack, onNext, onSkip, onFieldBlur,
 }: any) => {
