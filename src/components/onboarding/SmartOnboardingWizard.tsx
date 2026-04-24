@@ -5,21 +5,30 @@
  *  1. Não há botão "X" / "fechar". O wizard ocupa a tela inteira.
  *  2. Cada passo persiste no banco (`profiles.onboarding_step`) ao avançar.
  *     Refresh (F5) volta exatamente para o passo atual.
- *  3. `onboarding_completed = true` SÓ é gravado no Passo 5 (conclusão).
- *  4. "Pular" sempre vai para o próximo passo. Nunca fecha o wizard.
- *  5. Provider precisa criar 1 serviço no Passo 4 antes de liberar o Passo 5.
+ *  3. `onboarding_completed = true` SÓ é gravado no Passo 5 (conclusão)
+ *     E SOMENTE quando os requisitos estruturais reais estiverem preenchidos.
+ *     Para provider: pelo menos 1 serviço cadastrado. Pular não burla o gate.
+ *  4. "Pular" sempre vai para o próximo passo. Nunca fecha o wizard nem
+ *     marca onboarding_completed indevidamente.
+ *  5. Provider precisa criar 1 serviço no Passo 4. O Passo 4 inclui também
+ *     uma sub-etapa OPCIONAL de criação do primeiro álbum de portfólio,
+ *     colocando portfólio na esteira principal (não solto no dashboard).
  *
  * Passos:
  *   1. Identidade (tipo de perfil)
  *   2. Localização + Foto
  *   3. Dados de contato (WhatsApp + bio curta)
- *   4. Primeiro serviço (apenas provider — outros tipos pulam direto p/ 5)
- *   5. Conclusão + ganho de pontos
+ *   4. Primeiro serviço + portfólio inicial (apenas provider)
+ *   5. Conclusão
+ *
+ * Mini-celebrações: cada transição bem-sucedida dispara confete leve
+ * via celebrate({intensity:'mini'}) para reforço positivo imediato.
  */
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import {
   Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2,
   PartyPopper, Building2, Megaphone, Camera, Phone, AlertCircle, RefreshCw,
+  Image as ImageIcon, Plus,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -117,6 +126,8 @@ const BasicOnboardingWizard = () => {
   // Provider data
   const [savedProvider, setSavedProvider] = useState<any | null>(null);
   const [servicesCreated, setServicesCreated] = useState(0);
+  const [portfolioAlbumsCreated, setPortfolioAlbumsCreated] = useState(0);
+  const [creatingAlbum, setCreatingAlbum] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -178,6 +189,9 @@ const BasicOnboardingWizard = () => {
             void supabase.from('services').select('id', { count: 'exact', head: true })
               .eq('provider_id', data[0].id)
               .then(({ count }) => setServicesCreated(count ?? 0));
+            void supabase.from('portfolio_albums').select('id', { count: 'exact', head: true })
+              .eq('provider_id', data[0].id)
+              .then(({ count }) => setPortfolioAlbumsCreated(count ?? 0));
           }
         }
       });
@@ -292,9 +306,19 @@ const BasicOnboardingWizard = () => {
 
   const advanceTo = async (nextStep: WizardStep, extraPatch: Record<string, any> = {}) => {
     await flushAutoSave();
+    const isForward = nextStep > step;
     setFurthestStep(prev => Math.max(prev, nextStep) as WizardStep);
     setStep(nextStep);
     await persistStep(nextStep, extraPatch);
+    // Mini-celebração ao avançar (não ao voltar/revisar)
+    if (isForward && user?.id) {
+      try {
+        celebrate({
+          intensity: 'mini',
+          id: `wizard-step-${nextStep}:${user.id}`,
+        });
+      } catch { /* noop */ }
+    }
   };
 
   const saveStepDraft = (targetStep: WizardStep = step) => {
@@ -390,11 +414,47 @@ const BasicOnboardingWizard = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [autoSaveStatus]);
 
-  // Quando provider termina o wizard de serviços, marcamos +1 e avançamos
+  // Quando provider termina o wizard de serviços, marcamos +1 e mantemos
+  // o usuário no Passo 4 para a sub-etapa de portfólio.
   const handleServiceCreated = async (_id: string) => {
     setServicesCreated(c => c + 1);
-    toast.success('Serviço cadastrado!');
-    await advanceTo(5);
+    toast.success('Serviço cadastrado!', { description: 'Agora vamos adicionar seu primeiro álbum de portfólio.' });
+    if (user?.id) {
+      try {
+        celebrate({ intensity: 'mini', id: `wizard-service-created:${user.id}` });
+      } catch { /* noop */ }
+    }
+    // Permanece no Passo 4: o card de portfólio aparece logo abaixo.
+  };
+
+  // Cria o primeiro álbum de portfólio direto no wizard (Passo 4 sub-etapa).
+  const handleCreateFirstAlbum = async (title: string) => {
+    if (!savedProvider?.id || !user?.id) return;
+    const cleanTitle = title.trim();
+    if (!cleanTitle) {
+      toast.error('Dê um nome para o álbum.');
+      return;
+    }
+    setCreatingAlbum(true);
+    try {
+      const albumSlug = slugify(cleanTitle) || `album-${Date.now()}`;
+      const { error } = await (supabase as any).from('portfolio_albums').insert({
+        provider_id: savedProvider.id,
+        title: cleanTitle,
+        slug: albumSlug,
+      });
+      if (error) throw error;
+      setPortfolioAlbumsCreated(c => c + 1);
+      toast.success('Álbum criado!', { description: 'Você poderá adicionar fotos no Dashboard a qualquer momento.' });
+      try {
+        celebrate({ intensity: 'mini', id: `wizard-first-album:${user.id}` });
+      } catch { /* noop */ }
+    } catch (err: any) {
+      console.error('[Wizard album]', err);
+      toast.error(err?.message || 'Não foi possível criar o álbum.');
+    } finally {
+      setCreatingAlbum(false);
+    }
   };
 
   // ─── Passo 1: Identidade ───
@@ -583,8 +643,10 @@ const BasicOnboardingWizard = () => {
   };
 
   // ─── Passo 4: Primeiro serviço (provider apenas) ───
+  // PULAR não pode burlar o gate. Avança visualmente para o Passo 5,
+  // mas onboarding_completed permanece false até existir 1 serviço real.
   const handleSkipStep4 = async () => {
-    toast.info('Você pode cadastrar serviços depois no dashboard.');
+    toast.info('Você pode cadastrar serviços depois no dashboard, mas seu perfil ficará incompleto até lá.');
     await advanceTo(5);
   };
 
@@ -611,12 +673,17 @@ const BasicOnboardingWizard = () => {
   ];
 
   // ─── Passo 5: Conclusão ───
+  // Regra estrutural: para PROVIDER, onboarding_completed=true SOMENTE se
+  // já existe 1 serviço cadastrado. Caso contrário, marca step=5 mas
+  // onboarding_completed=false — o OnboardingGate continuará trazendo o
+  // usuário de volta ao wizard até que ele cumpra o requisito mínimo.
   const finishOnboarding = async () => {
     if (!user?.id) return;
     setSaving(true);
     try {
+      const meetsStructuralMinimum = profileType !== 'provider' || servicesCreated >= 1;
       await supabase.from('profiles').update({
-        onboarding_completed: true,
+        onboarding_completed: meetsStructuralMinimum,
         onboarding_step: 5,
       } as any).eq('id', user.id);
 
@@ -628,11 +695,21 @@ const BasicOnboardingWizard = () => {
         });
       } catch { /* silent */ }
 
-      try {
-        celebrate({ intensity: 'big', id: CELEBRATION_IDS.onboardingComplete(user.id) });
-      } catch { /* noop */ }
+      if (meetsStructuralMinimum) {
+        try {
+          celebrate({ intensity: 'big', id: CELEBRATION_IDS.onboardingComplete(user.id) });
+        } catch { /* noop */ }
+      } else {
+        toast.warning('Cadastre pelo menos 1 serviço para liberar o dashboard completo.');
+      }
 
       await refetchProfile();
+
+      // Se não cumpriu mínimo, mantém no wizard (gate trará de volta de qualquer forma).
+      if (!meetsStructuralMinimum) {
+        setSaving(false);
+        return;
+      }
 
       const target = profileType === 'rh' ? '/dashboard/vagas'
         : profileType === 'sponsor' ? '/quero-ser-patrocinador'
@@ -813,11 +890,14 @@ const BasicOnboardingWizard = () => {
           />
         )}
 
-        {/* ─── PASSO 4 — PROVIDER apenas ─── */}
+        {/* ─── PASSO 4 — PROVIDER apenas (serviço + portfólio inicial) ─── */}
         {!guidedReviewStep && !showFinalSummary && step === 4 && profileType === 'provider' && (
           <Step4Service
             providerReady={!!savedProvider}
             servicesCreated={servicesCreated}
+            portfolioAlbumsCreated={portfolioAlbumsCreated}
+            creatingAlbum={creatingAlbum}
+            onCreateFirstAlbum={handleCreateFirstAlbum}
             savedProvider={savedProvider}
             userId={user?.id}
             categories={categoriesData}
@@ -1353,65 +1433,128 @@ const Step3Contact = ({
 
 // ─── Passo 4 ───
 const Step4Service = ({
-  providerReady, servicesCreated, savedProvider, userId, categories,
+  providerReady, servicesCreated, portfolioAlbumsCreated, creatingAlbum,
+  onCreateFirstAlbum, savedProvider, userId, categories,
   onServiceCreated, onContinue, onBack, onSkip,
-}: any) => (
-  <>
-    <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-      <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-    </button>
+}: any) => {
+  const [albumTitle, setAlbumTitle] = useState('');
+  const hasService = servicesCreated > 0;
+  const hasAlbum = portfolioAlbumsCreated > 0;
 
-    <div className="mb-3 flex justify-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-        <Sparkles className="h-7 w-7" />
-      </div>
-    </div>
-    <h1 className="text-center font-display text-xl font-bold text-foreground">Seu primeiro serviço</h1>
-    <p className="mt-1 text-center text-xs text-muted-foreground">Você precisa cadastrar pelo menos 1 serviço.</p>
-
-    <div className="mt-5">
-      {providerReady ? (
-        servicesCreated > 0 ? (
-          <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 text-center">
-            <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-accent" />
-            <p className="text-sm font-bold text-foreground">
-              {servicesCreated === 1 ? '1 serviço cadastrado!' : `${servicesCreated} serviços cadastrados!`}
-            </p>
-            <Button variant="accent" className="mt-4 w-full" onClick={onContinue}>
-              Continuar para o último passo
-            </Button>
-          </div>
-        ) : (
-          <ServiceWizard
-            providerId={savedProvider.id}
-            userId={userId}
-            provider={savedProvider}
-            categories={categories}
-            onComplete={onServiceCreated}
-            onCancel={onSkip}
-          />
-        )
-      ) : (
-        <p className="text-center text-sm text-muted-foreground">Carregando seu perfil profissional…</p>
-      )}
-    </div>
-
-    {servicesCreated === 0 && (
-      <button type="button" onClick={onSkip} className="mt-4 w-full text-xs font-medium text-muted-foreground hover:text-foreground">
-        Não consigo agora
+  return (
+    <>
+      <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-3.5 w-3.5" /> Voltar
       </button>
-    )}
-  </>
-);
+
+      <div className="mb-3 flex justify-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+          <Sparkles className="h-7 w-7" />
+        </div>
+      </div>
+      <h1 className="text-center font-display text-xl font-bold text-foreground">Seu primeiro serviço</h1>
+      <p className="mt-1 text-center text-xs text-muted-foreground">
+        Cadastre 1 serviço (obrigatório) e seu primeiro álbum de portfólio (recomendado).
+      </p>
+
+      <div className="mt-5">
+        {providerReady ? (
+          hasService ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
+                <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-600" />
+                <p className="text-sm font-bold text-foreground">
+                  {servicesCreated === 1 ? '1 serviço cadastrado!' : `${servicesCreated} serviços cadastrados!`}
+                </p>
+              </div>
+
+              {/* Sub-etapa de portfólio na esteira do wizard */}
+              <div className={`rounded-xl border p-4 ${hasAlbum ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-accent/30 bg-accent/5'}`}>
+                <div className="flex items-start gap-3">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${hasAlbum ? 'bg-emerald-500/15 text-emerald-600' : 'bg-accent/15 text-accent'}`}>
+                    {hasAlbum ? <CheckCircle2 className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-foreground">
+                      {hasAlbum ? 'Álbum criado!' : 'Crie seu primeiro álbum de portfólio'}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {hasAlbum
+                        ? 'Adicione fotos no Dashboard quando quiser.'
+                        : 'Quem mostra trabalho ganha 3× mais contatos. Leva 20 segundos.'}
+                    </p>
+                  </div>
+                </div>
+
+                {!hasAlbum && (
+                  <div className="mt-3 space-y-2">
+                    <Input
+                      placeholder='Ex: "Reformas residenciais", "Casamentos"...'
+                      value={albumTitle}
+                      onChange={(e) => setAlbumTitle(e.target.value)}
+                      maxLength={60}
+                    />
+                    <Button
+                      type="button"
+                      variant="accent"
+                      className="w-full gap-2"
+                      disabled={!albumTitle.trim() || creatingAlbum}
+                      onClick={() => { void onCreateFirstAlbum(albumTitle); setAlbumTitle(''); }}
+                    >
+                      {creatingAlbum
+                        ? <><Loader2 className="h-4 w-4 animate-spin" /> Criando…</>
+                        : <><Plus className="h-4 w-4" /> Criar álbum</>}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <Button variant="accent" className="w-full" onClick={onContinue}>
+                Continuar para o último passo
+              </Button>
+              {!hasAlbum && (
+                <button
+                  type="button"
+                  onClick={onContinue}
+                  className="block w-full text-center text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Pular portfólio por enquanto
+                </button>
+              )}
+            </div>
+          ) : (
+            <ServiceWizard
+              providerId={savedProvider.id}
+              userId={userId}
+              provider={savedProvider}
+              categories={categories}
+              onComplete={onServiceCreated}
+              onCancel={onSkip}
+            />
+          )
+        ) : (
+          <p className="text-center text-sm text-muted-foreground">Carregando seu perfil profissional…</p>
+        )}
+      </div>
+
+      {!hasService && (
+        <button type="button" onClick={onSkip} className="mt-4 w-full text-xs font-medium text-muted-foreground hover:text-foreground">
+          Não consigo agora
+        </button>
+      )}
+    </>
+  );
+};
 
 // ─── Passo 5 ───
 const Step5Done = ({
   profileType, servicesCreated, saving, onFinish, onBack,
 }: any) => {
-  const canFinish = profileType !== 'provider' || servicesCreated > 0;
-  const finishLabel = profileType === 'provider' && servicesCreated === 0
-    ? 'Entrar no Dashboard e concluir depois'
-    : 'Entrar no Dashboard';
+  const isProvider = profileType === 'provider';
+  const meetsMinimum = !isProvider || servicesCreated > 0;
+  const finishLabel = meetsMinimum
+    ? 'Entrar no Dashboard'
+    : 'Voltar e cadastrar 1 serviço';
   return (
     <>
       <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -1425,12 +1568,13 @@ const Step5Done = ({
       </div>
       <h1 className="text-center font-display text-2xl font-bold text-foreground">Tudo pronto!</h1>
       <p className="mt-2 text-center text-sm text-muted-foreground">
-        Você ganhou <span className="font-bold text-accent">+50 pontos</span> de engajamento por concluir seu cadastro.
+        Seu cadastro foi concluído. A pontuação é calculada automaticamente conforme você usa a plataforma.
       </p>
 
-      {!canFinish && (
-        <div className="mt-4 rounded-xl border border-primary/40 bg-primary/10 p-3 text-center text-xs text-primary">
-          Sem serviço cadastrado, seu perfil pode aparecer incompleto. Você pode finalizar agora e completar depois.
+      {!meetsMinimum && (
+        <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-center text-xs text-destructive">
+          Você precisa cadastrar pelo menos 1 serviço para liberar o Dashboard.
+          Volte ao Passo 4 para cadastrar agora.
         </div>
       )}
 

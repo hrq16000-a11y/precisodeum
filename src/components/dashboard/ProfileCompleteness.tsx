@@ -1,6 +1,6 @@
-import { CheckCircle2, Circle, AlertCircle } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { CheckCircle2, Circle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 
 interface ProfileCompletenessProps {
   provider: any;
@@ -9,33 +9,30 @@ interface ProfileCompletenessProps {
   portfolioCount?: number;
 }
 
+/**
+ * Resumo visual da completude do perfil. Usa a MESMA fonte da verdade
+ * (`onboardingChecklist`) que o FirstLeadChecklist e o Wizard, garantindo
+ * que as porcentagens nunca divirjam entre componentes.
+ */
 const ProfileCompleteness = ({ provider, profile, servicesCount, portfolioCount = 0 }: ProfileCompletenessProps) => {
-  const checks = [
-    { label: 'Nome completo', done: !!profile?.full_name && profile.full_name.trim().length > 2 },
-    { label: 'Foto de perfil', done: !!profile?.avatar_url },
-    { label: 'Descrição profissional', done: !!provider?.description && provider.description.length > 20 },
-    { label: 'Cidade informada', done: !!provider?.city },
-    { label: 'WhatsApp cadastrado', done: !!provider?.whatsapp },
-    { label: 'Pelo menos 1 serviço', done: servicesCount > 0 },
-    { label: 'Fotos no portfólio', done: portfolioCount > 0 },
-    { label: 'Categoria definida', done: !!provider?.category_id },
-  ];
+  const items = buildOnboardingChecklist({
+    profile,
+    provider,
+    servicesCount,
+    portfolioAlbumsCount: portfolioCount,
+  });
+  const { pct, firstMissing } = checklistStats(items);
 
-  const doneCount = checks.filter(c => c.done).length;
-  const percentage = Math.round((doneCount / checks.length) * 100);
-
-  // Smart tip based on what's missing
-  const firstMissing = checks.find(c => !c.done);
   const tip = firstMissing
     ? `Dica: Complete "${firstMissing.label}" para melhorar seu ranking.`
-    : '🎉 Perfil 100% completo! Você está no topo dos resultados.';
+    : 'Perfil 100% completo! Você está no topo dos resultados.';
 
   return (
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-        {checks.map((check, i) => (
+        {items.map((check, i) => (
           <motion.div
-            key={check.label}
+            key={check.key}
             className="flex items-center gap-2 text-xs"
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
@@ -52,14 +49,14 @@ const ProfileCompleteness = ({ provider, profile, servicesCount, portfolioCount 
           </motion.div>
         ))}
       </div>
-      {percentage < 100 && (
+      {pct < 100 && (
         <motion.p
           className="mt-3 rounded-lg bg-accent/5 px-3 py-2 text-[11px] text-accent font-medium"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          💡 {tip}
+          {tip}
         </motion.p>
       )}
     </div>
