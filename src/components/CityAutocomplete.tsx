@@ -35,12 +35,20 @@ interface CityAutocompleteProps {
  * Autocomplete controlado, conectado à tabela `cities` (5.5k municípios IBGE).
  * Não permite texto livre — garante integridade dos filtros geográficos.
  */
-const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...' }: CityAutocompleteProps) => {
+const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...', onClose }: CityAutocompleteProps) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<CityRow[]>([]);
   const [loading, setLoading] = useState(false);
   const debouncedQuery = useDebounce(query, 200);
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) {
+      setQuery('');
+      onClose?.();
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
