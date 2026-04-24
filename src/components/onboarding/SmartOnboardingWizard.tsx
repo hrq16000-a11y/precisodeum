@@ -1433,65 +1433,128 @@ const Step3Contact = ({
 
 // ─── Passo 4 ───
 const Step4Service = ({
-  providerReady, servicesCreated, savedProvider, userId, categories,
+  providerReady, servicesCreated, portfolioAlbumsCreated, creatingAlbum,
+  onCreateFirstAlbum, savedProvider, userId, categories,
   onServiceCreated, onContinue, onBack, onSkip,
-}: any) => (
-  <>
-    <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-      <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-    </button>
+}: any) => {
+  const [albumTitle, setAlbumTitle] = useState('');
+  const hasService = servicesCreated > 0;
+  const hasAlbum = portfolioAlbumsCreated > 0;
 
-    <div className="mb-3 flex justify-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-        <Sparkles className="h-7 w-7" />
-      </div>
-    </div>
-    <h1 className="text-center font-display text-xl font-bold text-foreground">Seu primeiro serviço</h1>
-    <p className="mt-1 text-center text-xs text-muted-foreground">Você precisa cadastrar pelo menos 1 serviço.</p>
-
-    <div className="mt-5">
-      {providerReady ? (
-        servicesCreated > 0 ? (
-          <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 text-center">
-            <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-accent" />
-            <p className="text-sm font-bold text-foreground">
-              {servicesCreated === 1 ? '1 serviço cadastrado!' : `${servicesCreated} serviços cadastrados!`}
-            </p>
-            <Button variant="accent" className="mt-4 w-full" onClick={onContinue}>
-              Continuar para o último passo
-            </Button>
-          </div>
-        ) : (
-          <ServiceWizard
-            providerId={savedProvider.id}
-            userId={userId}
-            provider={savedProvider}
-            categories={categories}
-            onComplete={onServiceCreated}
-            onCancel={onSkip}
-          />
-        )
-      ) : (
-        <p className="text-center text-sm text-muted-foreground">Carregando seu perfil profissional…</p>
-      )}
-    </div>
-
-    {servicesCreated === 0 && (
-      <button type="button" onClick={onSkip} className="mt-4 w-full text-xs font-medium text-muted-foreground hover:text-foreground">
-        Não consigo agora
+  return (
+    <>
+      <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-3.5 w-3.5" /> Voltar
       </button>
-    )}
-  </>
-);
+
+      <div className="mb-3 flex justify-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+          <Sparkles className="h-7 w-7" />
+        </div>
+      </div>
+      <h1 className="text-center font-display text-xl font-bold text-foreground">Seu primeiro serviço</h1>
+      <p className="mt-1 text-center text-xs text-muted-foreground">
+        Cadastre 1 serviço (obrigatório) e seu primeiro álbum de portfólio (recomendado).
+      </p>
+
+      <div className="mt-5">
+        {providerReady ? (
+          hasService ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
+                <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-600" />
+                <p className="text-sm font-bold text-foreground">
+                  {servicesCreated === 1 ? '1 serviço cadastrado!' : `${servicesCreated} serviços cadastrados!`}
+                </p>
+              </div>
+
+              {/* Sub-etapa de portfólio na esteira do wizard */}
+              <div className={`rounded-xl border p-4 ${hasAlbum ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-accent/30 bg-accent/5'}`}>
+                <div className="flex items-start gap-3">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${hasAlbum ? 'bg-emerald-500/15 text-emerald-600' : 'bg-accent/15 text-accent'}`}>
+                    {hasAlbum ? <CheckCircle2 className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-foreground">
+                      {hasAlbum ? 'Álbum criado!' : 'Crie seu primeiro álbum de portfólio'}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {hasAlbum
+                        ? 'Adicione fotos no Dashboard quando quiser.'
+                        : 'Quem mostra trabalho ganha 3× mais contatos. Leva 20 segundos.'}
+                    </p>
+                  </div>
+                </div>
+
+                {!hasAlbum && (
+                  <div className="mt-3 space-y-2">
+                    <Input
+                      placeholder='Ex: "Reformas residenciais", "Casamentos"...'
+                      value={albumTitle}
+                      onChange={(e) => setAlbumTitle(e.target.value)}
+                      maxLength={60}
+                    />
+                    <Button
+                      type="button"
+                      variant="accent"
+                      className="w-full gap-2"
+                      disabled={!albumTitle.trim() || creatingAlbum}
+                      onClick={() => { void onCreateFirstAlbum(albumTitle); setAlbumTitle(''); }}
+                    >
+                      {creatingAlbum
+                        ? <><Loader2 className="h-4 w-4 animate-spin" /> Criando…</>
+                        : <><Plus className="h-4 w-4" /> Criar álbum</>}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <Button variant="accent" className="w-full" onClick={onContinue}>
+                Continuar para o último passo
+              </Button>
+              {!hasAlbum && (
+                <button
+                  type="button"
+                  onClick={onContinue}
+                  className="block w-full text-center text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Pular portfólio por enquanto
+                </button>
+              )}
+            </div>
+          ) : (
+            <ServiceWizard
+              providerId={savedProvider.id}
+              userId={userId}
+              provider={savedProvider}
+              categories={categories}
+              onComplete={onServiceCreated}
+              onCancel={onSkip}
+            />
+          )
+        ) : (
+          <p className="text-center text-sm text-muted-foreground">Carregando seu perfil profissional…</p>
+        )}
+      </div>
+
+      {!hasService && (
+        <button type="button" onClick={onSkip} className="mt-4 w-full text-xs font-medium text-muted-foreground hover:text-foreground">
+          Não consigo agora
+        </button>
+      )}
+    </>
+  );
+};
 
 // ─── Passo 5 ───
 const Step5Done = ({
   profileType, servicesCreated, saving, onFinish, onBack,
 }: any) => {
-  const canFinish = profileType !== 'provider' || servicesCreated > 0;
-  const finishLabel = profileType === 'provider' && servicesCreated === 0
-    ? 'Entrar no Dashboard e concluir depois'
-    : 'Entrar no Dashboard';
+  const isProvider = profileType === 'provider';
+  const meetsMinimum = !isProvider || servicesCreated > 0;
+  const finishLabel = meetsMinimum
+    ? 'Entrar no Dashboard'
+    : 'Voltar e cadastrar 1 serviço';
   return (
     <>
       <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -1505,12 +1568,13 @@ const Step5Done = ({
       </div>
       <h1 className="text-center font-display text-2xl font-bold text-foreground">Tudo pronto!</h1>
       <p className="mt-2 text-center text-sm text-muted-foreground">
-        Você ganhou <span className="font-bold text-accent">+50 pontos</span> de engajamento por concluir seu cadastro.
+        Seu cadastro foi concluído. A pontuação é calculada automaticamente conforme você usa a plataforma.
       </p>
 
-      {!canFinish && (
-        <div className="mt-4 rounded-xl border border-primary/40 bg-primary/10 p-3 text-center text-xs text-primary">
-          Sem serviço cadastrado, seu perfil pode aparecer incompleto. Você pode finalizar agora e completar depois.
+      {!meetsMinimum && (
+        <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-center text-xs text-destructive">
+          Você precisa cadastrar pelo menos 1 serviço para liberar o Dashboard.
+          Volte ao Passo 4 para cadastrar agora.
         </div>
       )}
 
