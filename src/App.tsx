@@ -413,6 +413,7 @@ const App = () => {
                 <Route path="/admin/permissoes" element={<Navigate to="/admin/sistema/permissoes" replace />} />
                 <Route path="/admin/gamificacao" element={<AdminGamificationPage />} />
                 <Route path="/admin/rankings" element={<AdminRankingsPage />} />
+                <Route path="/admin/cobertura" element={<AdminCoverageMapPage />} />
                 <Route path="/admin/staff" element={<AdminStaffPage />} />
                 <Route path="/admin/aprovacao" element={<AdminApprovalSettingsPage />} />
                 <Route path="/admin/onboarding" element={<AdminOnboardingPage />} />
