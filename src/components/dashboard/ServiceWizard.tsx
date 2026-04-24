@@ -285,7 +285,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                 {/* City display */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Cidade</label>
-                  <Input value={providerCity} readOnly className="bg-muted/50 text-muted-foreground" />
+                  <Input value={providerCityDisplay} readOnly className="bg-muted/50 text-muted-foreground" />
                   <p className="text-[11px] text-muted-foreground mt-1">Herdado do seu perfil. Altere em "Editar Perfil".</p>
                 </div>
               </>
