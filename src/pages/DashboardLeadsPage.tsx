@@ -488,6 +488,21 @@ const DashboardLeadsPage = () => {
         </AnimatePresence>
       </motion.div>
 
+      {hasMore && (
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <p className="text-xs text-muted-foreground">
+            Mostrando {visibleLeads.length} de {filteredLeads.length} leads filtrados
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+            className="min-w-[180px]"
+          >
+            Carregar mais ({Math.min(PAGE_SIZE, filteredLeads.length - visibleCount)})
+          </Button>
+        </div>
+      )}
+
       <RescheduleFollowupDialog
         leadId={rescheduleLeadId}
         defaultDate={rescheduleDefault}
