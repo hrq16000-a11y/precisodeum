@@ -73,12 +73,22 @@ const AdminSponsorLeadsPage = () => {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
+    const cq = cityFilter.trim().toLowerCase();
     return leads.filter((l: any) => {
       if (statusFilter !== 'all' && l.status !== statusFilter) return false;
+      if (docsStatusFilter !== 'all' && (l.docs_status || 'pending') !== docsStatusFilter) return false;
+      if (categoryFilter !== 'all' && (l.category || '') !== categoryFilter) return false;
+      if (cq && !(l.city || '').toLowerCase().includes(cq)) return false;
       if (q && !l.company_name.toLowerCase().includes(q) && !l.email.toLowerCase().includes(q) && !l.cnpj.includes(q)) return false;
       return true;
     });
-  }, [leads, search, statusFilter]);
+  }, [leads, search, statusFilter, docsStatusFilter, cityFilter, categoryFilter]);
+
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach((l: any) => { if (l.category) set.add(l.category); });
+    return Array.from(set).sort();
+  }, [leads]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
