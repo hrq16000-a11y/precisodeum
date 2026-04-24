@@ -283,6 +283,22 @@ const SponsorDashboardPage = () => {
           />
         )}
 
+        {/* Onboarding progressivo (avança automaticamente conforme docs/status mudam) */}
+        {(onboardingLead || !sponsor?.id) && (
+          <SponsorOnboardingChecklist
+            state={{
+              hasCompanyData: !!(onboardingLead?.company_name && onboardingLead?.cnpj),
+              hasCnpjDoc: !!onboardingLead?.cnpj_document_url,
+              hasBanner: !!onboardingLead?.banner_url,
+              checklistConfirmed: !!onboardingLead?.checklist_confirmed,
+              docsApproved: onboardingLead?.docs_status === 'approved',
+              docsRejected: onboardingLead?.docs_status === 'rejected',
+              hasActiveCampaign: campaigns.some((c: any) => c.status === 'active'),
+              leadId: onboardingLead?.id || null,
+            }}
+          />
+        )}
+
         {/* Alerts */}
         {alerts.length > 0 && (
           <div className="space-y-2">
