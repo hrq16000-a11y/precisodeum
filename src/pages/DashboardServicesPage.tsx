@@ -625,9 +625,30 @@ const DashboardServicesPage = () => {
       {/* Service cards */}
       <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.length === 0 && (
-          <div className="col-span-full rounded-xl border border-border bg-card p-12 text-center">
-            <p className="text-foreground font-semibold">Nenhum serviço encontrado</p>
-            <p className="mt-1 text-sm text-muted-foreground">Crie seu primeiro serviço para começar a receber clientes.</p>
+          <div className="col-span-full rounded-2xl border-2 border-dashed border-accent/30 bg-gradient-to-br from-accent/5 via-card to-card p-10 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+              <Plus className="h-8 w-8" />
+            </div>
+            <h3 className="mt-4 font-display text-lg font-bold text-foreground">
+              {services.length === 0
+                ? 'Você ainda não possui serviços cadastrados'
+                : 'Nenhum serviço encontrado'}
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground max-w-md mx-auto">
+              {services.length === 0
+                ? 'Cadastre seu primeiro serviço para começar a aparecer nas buscas e receber leads de clientes.'
+                : 'Tente ajustar os termos da busca ou limpe o filtro.'}
+            </p>
+            {services.length === 0 && canCreateService && (
+              <Button
+                variant="accent"
+                size="lg"
+                className="mt-5 gap-2"
+                onClick={() => { resetForm(); setShowDialog(true); }}
+              >
+                <Plus className="h-5 w-5" /> Cadastrar primeiro serviço
+              </Button>
+            )}
           </div>
         )}
         {filtered.map(s => {
