@@ -1342,6 +1342,15 @@ const ProviderProfile = () => {
               >
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
+                  {/* Selo de gamification inline ao lado do nome (autoridade visível em qualquer breakpoint) */}
+                  {provider.levelInfo && !(provider.accTypeInfo?.name || '').toLowerCase().includes('admin') && !['usuário', 'usuario', 'user'].includes((provider.levelInfo.name || '').toLowerCase()) && (
+                    <GamificationLevelBadge
+                      levelName={provider.levelInfo.name}
+                      levelColor={provider.levelInfo.color}
+                      size="sm"
+                      showShine={true}
+                    />
+                  )}
                   {isDestaque && (
                     <motion.span
                       className={`inline-flex items-center gap-1 ${tc.badge} border-2 border-accent/40 bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent`}
