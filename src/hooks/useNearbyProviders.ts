@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { DbProvider } from '@/hooks/useProviders';
+import { logCoverageSearch } from '@/lib/coverageLog';
 
 interface NearbyParams {
   lat: number | null | undefined;
@@ -23,6 +24,15 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
       });
 
       if (error) throw error;
+
+      // Fire-and-forget coverage search log (does not block result rendering).
+      logCoverageSearch({
+        lat: lat!,
+        lng: lng!,
+        radius_m: radiusM,
+        category_slug: categorySlug || null,
+        result_count: (data || []).length,
+      });
 
       return (data || []).map((p: any): DbProvider & { distanceKm: number } => ({
         id: p.id,
