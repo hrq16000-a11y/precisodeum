@@ -203,6 +203,84 @@ export default function SponsorStatusPage() {
           </div>
         )}
 
+        {/* Rejection alert: shown prominently when admin rejected docs */}
+        {lead && lead.docs_status === 'rejected' && (
+          <Card className="mb-4 border-red-300 bg-red-50/60">
+            <CardContent className="pt-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-red-100 p-2 shrink-0">
+                  <XCircle className="h-5 w-5 text-red-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-red-800">Documentação rejeitada</h3>
+                  <p className="text-xs text-red-700 mt-1">
+                    O administrador revisou seu envio e identificou pontos a corrigir. Veja o motivo abaixo
+                    e reenvie os documentos solicitados.
+                  </p>
+                  {lead.docs_review_notes && (
+                    <div className="mt-2 rounded-md border border-red-200 bg-white p-2 text-xs text-red-900">
+                      <span className="font-medium">Motivo: </span>{lead.docs_review_notes}
+                    </div>
+                  )}
+                  {lead.docs_reviewed_at && (
+                    <p className="text-[11px] text-red-700/80 mt-1">
+                      Revisado em {format(new Date(lead.docs_reviewed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                {user ? (
+                  isOwner ? (
+                    <Button size="sm" className="gap-2" onClick={() => setResubmitOpen(true)}>
+                      <RefreshCw className="h-4 w-4" /> Reenviar Documentos
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" className="gap-2" onClick={handleClaim} disabled={claiming}>
+                      <Link2 className="h-4 w-4" /> Vincular cadastro para reenviar
+                    </Button>
+                  )
+                ) : (
+                  <Button asChild size="sm" className="gap-2">
+                    <Link to={`/login?next=${encodeURIComponent(`/sponsor/status?id=${lead.id}`)}`}>
+                      <Lock className="h-4 w-4" /> Entrar para reenviar documentos
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Approval celebration banner */}
+        {lead && lead.docs_status === 'approved' && (
+          <Card className="mb-4 border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50">
+            <CardContent className="pt-4">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-emerald-100 p-2 shrink-0">
+                  <Sparkles className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-emerald-800">Parabéns! Sua documentação foi aprovada</h3>
+                  <p className="text-xs text-emerald-700 mt-1">
+                    Tudo certo do seu lado. O próximo passo é configurar sua campanha e ativar seu anúncio.
+                  </p>
+                  <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                    <Button asChild size="sm" className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+                      <Link to="/sponsor-panel">
+                        <ShieldCheck className="h-4 w-4" /> Continuar onboarding
+                      </Link>
+                    </Button>
+                    <Button asChild size="sm" variant="outline" className="gap-2">
+                      <Link to="/sponsor-panel/campanhas">Ver minhas campanhas</Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {lead && statusInfo && (
           <Card className="mb-6">
             <CardHeader className="pb-2">
