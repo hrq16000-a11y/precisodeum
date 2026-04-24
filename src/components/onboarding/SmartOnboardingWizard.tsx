@@ -953,6 +953,8 @@ const BasicOnboardingWizard = () => {
             setWhatsapp={setWhatsapp}
             bio={bio}
             setBio={setBio}
+            taxId={taxId}
+            setTaxId={setTaxId}
             categoriesForPicker={categoriesForPicker}
             selectedCategoryIds={selectedCategoryIds}
             onToggleCategory={(id) => { setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id]); window.setTimeout(handleStepFieldBlur, 0); }}
