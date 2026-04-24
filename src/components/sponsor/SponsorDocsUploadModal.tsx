@@ -44,6 +44,7 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
     kind: 'cnpj' | 'banner',
   ) => {
     if (!file) return;
+    const setter = kind === 'cnpj' ? setCnpjDoc : setBanner;
     const allowed = kind === 'cnpj' ? ALLOWED_DOC : ALLOWED_BANNER;
 
     const logFailure = async (reason: string) => {
@@ -57,21 +58,32 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
       } catch { /* ignore */ }
     };
 
+    // Validação inline (mostra erro no card, sem só toast)
     if (!allowed.includes(file.type)) {
-      const reason = `Tipo não permitido (${file.type || 'desconhecido'}).`;
-      toast.error(`${reason} Use ${kind === 'cnpj' ? 'PDF/JPG/PNG/WEBP' : 'JPG/PNG/WEBP'}.`);
+      const reason = `Tipo não permitido (${file.type || 'desconhecido'}). Use ${kind === 'cnpj' ? 'PDF/JPG/PNG/WEBP' : 'JPG/PNG/WEBP'}.`;
+      setter({ file, uploading: false, progress: 0, path: null, error: reason });
+      toast.error(reason);
       logFailure(reason);
       return;
     }
     if (file.size > MAX_SIZE) {
       const reason = `Arquivo acima de 10MB (${(file.size / (1024*1024)).toFixed(1)}MB).`;
+      setter({ file, uploading: false, progress: 0, path: null, error: reason });
       toast.error(reason);
       logFailure(reason);
       return;
     }
 
-    const setter = kind === 'cnpj' ? setCnpjDoc : setBanner;
-    setter({ file, uploading: true, path: null, error: null });
+    setter({ file, uploading: true, progress: 10, path: null, error: null });
+
+    // Progresso simulado em etapas (Supabase upload não emite eventos nativos)
+    const tick = setInterval(() => {
+      setter((prev: FileSlot) => {
+        if (!prev.uploading) return prev;
+        const next = Math.min(prev.progress + 12, 85);
+        return { ...prev, progress: next };
+      });
+    }, 220);
 
     try {
       const ext = file.name.split('.').pop() || 'bin';
@@ -79,12 +91,16 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
       const { error } = await supabase.storage
         .from('sponsor_assets')
         .upload(path, file, { upsert: true, contentType: file.type });
+      clearInterval(tick);
       if (error) throw error;
-      setter({ file, uploading: false, path, error: null });
+      setter({ file, uploading: false, progress: 100, path, error: null });
       toast.success(`${kind === 'cnpj' ? 'Documento' : 'Banner'} enviado.`);
     } catch (e: any) {
-      setter({ file, uploading: false, path: null, error: e?.message || 'Falha no envio' });
+      clearInterval(tick);
+      const msg = e?.message || 'Falha no envio';
+      setter({ file, uploading: false, progress: 0, path: null, error: msg });
       toast.error('Erro ao enviar arquivo. Tente novamente.');
+      logFailure(msg);
     }
   };
 
