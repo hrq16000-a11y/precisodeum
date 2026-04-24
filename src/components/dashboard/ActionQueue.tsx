@@ -103,7 +103,7 @@ const ActionQueue = ({ servicesCount: servicesOverride, portfolioAlbumsCount: al
     };
 
     buildActions();
-  }, [user, provider, profile]);
+  }, [user, provider, profile, servicesOverride, albumsOverride]);
 
   if (!actions.length) {
     return (
