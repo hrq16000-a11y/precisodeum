@@ -1603,6 +1603,28 @@ const Step3Contact = ({
         </div>
       </div>
 
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-foreground">
+          CPF ou CNPJ <span className="font-normal text-muted-foreground">(opcional)</span>
+        </label>
+        <Input
+          inputMode="numeric"
+          placeholder="Ex: 000.000.000-00 ou 00.000.000/0000-00"
+          value={maskCpfCnpj(taxId || '')}
+          onChange={e => setTaxId(e.target.value.replace(/\D/g, '').slice(0, 14))}
+          onBlur={onFieldBlur}
+          aria-invalid={!taxValid}
+          className={!taxValid ? 'border-destructive focus-visible:ring-destructive' : ''}
+        />
+        <p className={`mt-1 text-[11px] ${!taxValid ? 'text-destructive' : 'text-muted-foreground'}`}>
+          {!taxValid
+            ? `${taxLabel} inválido — confira os dígitos.`
+            : taxFilled
+              ? `${taxLabel} válido. Usado apenas para comprovantes e nunca aparece publicamente.`
+              : 'Você pode adicionar depois. Ajuda na emissão de comprovantes e validação da conta.'}
+        </p>
+      </div>
+
       {profileType === 'provider' && (
         <>
           <div>
