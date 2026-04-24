@@ -998,7 +998,8 @@ const BasicOnboardingWizard = () => {
             bio={bio}
             setBio={setBio}
             taxId={taxId}
-            setTaxId={setTaxId}
+            setTaxId={(v: string) => { setTaxId(v); setTaxIdJustSaved(false); }}
+            taxSavedFeedback={taxIdJustSaved}
             categoriesForPicker={categoriesForPicker}
             selectedCategoryIds={selectedCategoryIds}
             onToggleCategory={(id) => { setSelectedCategoryIds(prev => prev.includes(id) ? [] : [id]); window.setTimeout(handleStepFieldBlur, 0); }}
