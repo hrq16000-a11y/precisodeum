@@ -548,35 +548,7 @@ const DashboardPage = () => {
       <div className="mt-4">
         <ActionQueue />
       </div>
-      {/* Dominant CTA when no services */}
-      <AnimatePresence>
-        {servicesCount !== null && servicesCount === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-4 rounded-2xl border-2 border-accent bg-gradient-to-r from-accent/10 via-accent/5 to-transparent p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 relative overflow-hidden"
-          >
-            <div className="absolute inset-0 shimmer opacity-20" />
-            <motion.div
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-accent-foreground"
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <PlusCircle className="h-6 w-6" />
-            </motion.div>
-            <div className="flex-1 relative">
-              <h2 className="text-base font-bold text-foreground">Crie seu primeiro serviço!</h2>
-              <p className="text-sm text-muted-foreground mt-0.5">Publique seus serviços para que clientes possam encontrá-lo.</p>
-            </div>
-            <Button variant="accent" size="sm" onClick={() => navigate('/dashboard/servicos')} className="shrink-0 relative">
-              <PlusCircle className="mr-1 h-4 w-4" /> Criar Serviço
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      {/* Dominant CTA when no services — REMOVIDO: substituído por EmptyStateBanner persistente acima */}
       {/* Stats with animated counters */}
       <div className="mt-5">
         <StatCardGrid cards={statCards} />
