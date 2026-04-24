@@ -181,16 +181,7 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
               disabled={banner.uploading}
               className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-accent/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-accent hover:file:bg-accent/20"
             />
-            {banner.uploading && (
-              <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" /> Enviando...
-              </p>
-            )}
-            {banner.path && (
-              <p className="flex items-center gap-1 text-xs text-emerald-600">
-                <CheckCircle2 className="h-3 w-3" /> Enviado: {banner.file?.name}
-              </p>
-            )}
+            <SlotFeedback slot={banner} onClear={() => setBanner(initialSlot)} />
           </div>
 
           {/* Checklist */}
