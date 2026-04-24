@@ -283,6 +283,14 @@ const BasicOnboardingWizard = () => {
     patch.full_name = fullName.trim() || null;
     patch.whatsapp = whatsapp || null;
     patch.phone = whatsapp || null;
+    // Persistência expandida: bio + cidade + estado + categorias agora vão para o banco
+    // (antes ficavam só no localStorage, perdiam ao trocar de device).
+    if (bio && bio.trim()) patch.bio = bio.trim();
+    if (city) patch.city = city;
+    if (state) patch.state = state;
+    if (selectedCategoryIds && selectedCategoryIds.length > 0) {
+      patch.preferred_category_ids = selectedCategoryIds;
+    }
     if (profileType) {
       patch.profile_type = profileType;
       patch.role = profileType;
