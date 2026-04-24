@@ -5305,6 +5305,19 @@ export type Database = {
           user_count: number
         }[]
       }
+      admin_list_rls_policies: {
+        Args: never
+        Returns: {
+          cmd: string
+          permissive: string
+          policyname: string
+          qual: string
+          roles: string[]
+          schemaname: string
+          tablename: string
+          with_check: string
+        }[]
+      }
       admin_log_impersonation_end: {
         Args: { _session_id: string }
         Returns: undefined
