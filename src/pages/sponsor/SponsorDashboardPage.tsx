@@ -1,6 +1,7 @@
 import { useMemo, useCallback, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import SponsorLayout from '@/components/sponsor/SponsorLayout';
+import { useAuth } from '@/hooks/useAuth';
 import { useSponsorAuth } from '@/hooks/useSponsorAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +17,7 @@ import {
 import { exportSponsorPdf } from '@/lib/exportSponsorPdf';
 import { SponsorImage } from '@/components/SponsorImage';
 import SponsorApprovalCelebration from '@/components/sponsor/SponsorApprovalCelebration';
+import SponsorOnboardingChecklist from '@/components/sponsor/SponsorOnboardingChecklist';
 import { motion } from 'framer-motion';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -23,8 +25,40 @@ import { toast } from 'sonner';
 
 const SponsorDashboardPage = () => {
   const { sponsor, sponsorContact, subscription, hasActivePlan, loading, refetch } = useSponsorAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const [refreshingSubscription, setRefreshingSubscription] = useState(false);
+
+  // Onboarding lead (sponsor_leads) vinculado ao usuário autenticado — alimenta o checklist progressivo
+  const { data: onboardingLead } = useQuery({
+    queryKey: ['sponsor-onboarding-lead', user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sponsor_leads' as any)
+        .select('id, cnpj_document_url, banner_url, checklist_confirmed, docs_status, docs_submitted_at, company_name, cnpj')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return (data as any) || null;
+    },
+  });
+
+  // Realtime: quando o admin mudar o status, o checklist atualiza sozinho
+  const queryLeadId = (onboardingLead as any)?.id;
+  useMemo(() => {
+    if (!queryLeadId) return;
+    const ch = supabase
+      .channel(`dashboard-lead-${queryLeadId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sponsor_leads', filter: `id=eq.${queryLeadId}` }, () => {
+        // a refetch acontece via key; força invalidação simples
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).dispatchEvent?.(new CustomEvent('sponsor-lead-updated'));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [queryLeadId]);
 
   const { data: campaigns = [] } = useQuery({
     queryKey: ['sponsor-campaigns', sponsor?.id],
@@ -246,6 +280,22 @@ const SponsorDashboardPage = () => {
             lastViewedStatus={(sponsor as any)?.last_viewed_status}
             slotName={sponsor?.position}
             userRef={(sponsor as any)?.user_ref || (sponsorContact as any)?.user_id}
+          />
+        )}
+
+        {/* Onboarding progressivo (avança automaticamente conforme docs/status mudam) */}
+        {(onboardingLead || !sponsor?.id) && (
+          <SponsorOnboardingChecklist
+            state={{
+              hasCompanyData: !!(onboardingLead?.company_name && onboardingLead?.cnpj),
+              hasCnpjDoc: !!onboardingLead?.cnpj_document_url,
+              hasBanner: !!onboardingLead?.banner_url,
+              checklistConfirmed: !!onboardingLead?.checklist_confirmed,
+              docsApproved: onboardingLead?.docs_status === 'approved',
+              docsRejected: onboardingLead?.docs_status === 'rejected',
+              hasActiveCampaign: campaigns.some((c: any) => c.status === 'active'),
+              leadId: onboardingLead?.id || null,
+            }}
           />
         )}
 

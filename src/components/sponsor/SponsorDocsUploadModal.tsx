@@ -3,9 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, ShieldCheck, AlertCircle, X } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -21,11 +22,12 @@ const ALLOWED_BANNER = ['image/jpeg', 'image/png', 'image/webp'];
 interface FileSlot {
   file: File | null;
   uploading: boolean;
+  progress: number;       // 0-100 (simulado por etapa de validação/upload)
   path: string | null;
   error: string | null;
 }
 
-const initialSlot: FileSlot = { file: null, uploading: false, path: null, error: null };
+const initialSlot: FileSlot = { file: null, uploading: false, progress: 0, path: null, error: null };
 
 export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted }: Props) {
   const [cnpjDoc, setCnpjDoc] = useState<FileSlot>(initialSlot);
@@ -42,6 +44,7 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
     kind: 'cnpj' | 'banner',
   ) => {
     if (!file) return;
+    const setter = kind === 'cnpj' ? setCnpjDoc : setBanner;
     const allowed = kind === 'cnpj' ? ALLOWED_DOC : ALLOWED_BANNER;
 
     const logFailure = async (reason: string) => {
@@ -55,21 +58,32 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
       } catch { /* ignore */ }
     };
 
+    // Validação inline (mostra erro no card, sem só toast)
     if (!allowed.includes(file.type)) {
-      const reason = `Tipo não permitido (${file.type || 'desconhecido'}).`;
-      toast.error(`${reason} Use ${kind === 'cnpj' ? 'PDF/JPG/PNG/WEBP' : 'JPG/PNG/WEBP'}.`);
+      const reason = `Tipo não permitido (${file.type || 'desconhecido'}). Use ${kind === 'cnpj' ? 'PDF/JPG/PNG/WEBP' : 'JPG/PNG/WEBP'}.`;
+      setter({ file, uploading: false, progress: 0, path: null, error: reason });
+      toast.error(reason);
       logFailure(reason);
       return;
     }
     if (file.size > MAX_SIZE) {
       const reason = `Arquivo acima de 10MB (${(file.size / (1024*1024)).toFixed(1)}MB).`;
+      setter({ file, uploading: false, progress: 0, path: null, error: reason });
       toast.error(reason);
       logFailure(reason);
       return;
     }
 
-    const setter = kind === 'cnpj' ? setCnpjDoc : setBanner;
-    setter({ file, uploading: true, path: null, error: null });
+    setter({ file, uploading: true, progress: 10, path: null, error: null });
+
+    // Progresso simulado em etapas (Supabase upload não emite eventos nativos)
+    const tick = setInterval(() => {
+      setter((prev: FileSlot) => {
+        if (!prev.uploading) return prev;
+        const next = Math.min(prev.progress + 12, 85);
+        return { ...prev, progress: next };
+      });
+    }, 220);
 
     try {
       const ext = file.name.split('.').pop() || 'bin';
@@ -77,12 +91,16 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
       const { error } = await supabase.storage
         .from('sponsor_assets')
         .upload(path, file, { upsert: true, contentType: file.type });
+      clearInterval(tick);
       if (error) throw error;
-      setter({ file, uploading: false, path, error: null });
+      setter({ file, uploading: false, progress: 100, path, error: null });
       toast.success(`${kind === 'cnpj' ? 'Documento' : 'Banner'} enviado.`);
     } catch (e: any) {
-      setter({ file, uploading: false, path: null, error: e?.message || 'Falha no envio' });
+      clearInterval(tick);
+      const msg = e?.message || 'Falha no envio';
+      setter({ file, uploading: false, progress: 0, path: null, error: msg });
       toast.error('Erro ao enviar arquivo. Tente novamente.');
+      logFailure(msg);
     }
   };
 
@@ -146,16 +164,7 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
               disabled={cnpjDoc.uploading}
               className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-accent/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-accent hover:file:bg-accent/20"
             />
-            {cnpjDoc.uploading && (
-              <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" /> Enviando...
-              </p>
-            )}
-            {cnpjDoc.path && (
-              <p className="flex items-center gap-1 text-xs text-emerald-600">
-                <CheckCircle2 className="h-3 w-3" /> Enviado: {cnpjDoc.file?.name}
-              </p>
-            )}
+            <SlotFeedback slot={cnpjDoc} onClear={() => setCnpjDoc(initialSlot)} />
           </div>
 
           {/* Banner */}
@@ -172,16 +181,7 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
               disabled={banner.uploading}
               className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-accent/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-accent hover:file:bg-accent/20"
             />
-            {banner.uploading && (
-              <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" /> Enviando...
-              </p>
-            )}
-            {banner.path && (
-              <p className="flex items-center gap-1 text-xs text-emerald-600">
-                <CheckCircle2 className="h-3 w-3" /> Enviado: {banner.file?.name}
-              </p>
-            )}
+            <SlotFeedback slot={banner} onClear={() => setBanner(initialSlot)} />
           </div>
 
           {/* Checklist */}
@@ -232,6 +232,56 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted
       </DialogContent>
     </Dialog>
   );
+}
+
+function SlotFeedback({ slot, onClear }: { slot: FileSlot; onClear: () => void }) {
+  if (slot.uploading) {
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Loader2 className="h-3 w-3 animate-spin" /> Enviando {slot.file?.name}...
+          </span>
+          <span className="font-medium">{slot.progress}%</span>
+        </div>
+        <Progress value={slot.progress} className="h-1.5" />
+      </div>
+    );
+  }
+  if (slot.error) {
+    return (
+      <div className="rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+        <div className="flex items-start justify-between gap-2">
+          <p className="flex items-start gap-1">
+            <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <span><strong>Erro:</strong> {slot.error}</span>
+          </p>
+          <button type="button" onClick={onClear} className="text-red-700/70 hover:text-red-900">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <p className="mt-1 text-[11px] text-red-700/80">
+          Ajuste o arquivo (tipo/tamanho permitido) e tente novamente.
+        </p>
+      </div>
+    );
+  }
+  if (slot.path) {
+    return (
+      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-xs text-emerald-700">
+        <div className="flex items-start justify-between gap-2">
+          <p className="flex items-center gap-1">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Enviado: <strong>{slot.file?.name}</strong>
+            {slot.file && <span className="opacity-70 ml-1">({(slot.file.size / 1024).toFixed(1)} KB)</span>}
+          </p>
+          <button type="button" onClick={onClear} className="text-emerald-700/70 hover:text-emerald-900">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+  return null;
 }
 
 export default SponsorDocsUploadModal;

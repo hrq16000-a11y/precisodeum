@@ -15,6 +15,8 @@ import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import SponsorDocsUploadModal from '@/components/sponsor/SponsorDocsUploadModal';
+import SponsorStatusTimeline from '@/components/sponsor/SponsorStatusTimeline';
+import SponsorDocsAuditTrail from '@/components/sponsor/SponsorDocsAuditTrail';
 
 interface HistoryItem {
   id: string;
@@ -335,29 +337,34 @@ export default function SponsorStatusPage() {
         )}
 
         {lead && (
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-base">Histórico</CardTitle></CardHeader>
+          <Card className="mb-6">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" /> Linha do tempo do status
+                <Badge variant="outline" className="ml-auto text-[10px] gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Ao vivo
+                </Badge>
+              </CardTitle>
+            </CardHeader>
             <CardContent>
-              {history.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Nenhum evento registrado ainda.</p>
-              ) : (
-                <ol className="relative border-l border-border ml-2 space-y-3">
-                  {history.map((h) => (
-                    <li key={h.id} className="ml-4">
-                      <span className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full bg-primary"></span>
-                      <p className="text-sm font-medium text-foreground">
-                        {ACTION_LABEL[h.action] || h.action} — {TYPE_LABEL[h.doc_type] || h.doc_type}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {format(new Date(h.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        {h.reason ? <> · {h.reason}</> : null}
-                      </p>
-                    </li>
-                  ))}
-                </ol>
-              )}
+              <SponsorStatusTimeline
+                docsStatus={lead.docs_status}
+                createdAt={lead.created_at}
+                docsSubmittedAt={lead.docs_submitted_at}
+                docsReviewedAt={lead.docs_reviewed_at}
+                reviewNotes={lead.docs_review_notes}
+              />
             </CardContent>
           </Card>
+        )}
+
+        {lead && (
+          <SponsorDocsAuditTrail
+            history={history as any}
+            currentCnpjUrl={(lead as any).cnpj_document_url ?? null}
+            currentBannerUrl={(lead as any).banner_url ?? null}
+          />
         )}
       </main>
       <Footer />
