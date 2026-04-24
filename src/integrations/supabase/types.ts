@@ -5546,7 +5546,7 @@ export type Database = {
         Returns: undefined
       }
       increment_service_view: {
-        Args: { service_id: string }
+        Args: { p_service_id: string }
         Returns: undefined
       }
       increment_sponsor_click: {
