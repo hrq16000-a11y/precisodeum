@@ -64,7 +64,8 @@ const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...' }:
 
   const display = useMemo(() => {
     if (!value.city) return placeholder;
-    return value.state ? `${value.city} • ${value.state}` : value.city;
+    const uf = safeUF(value.state);
+    return uf ? `${value.city} • ${uf}` : value.city;
   }, [value, placeholder]);
 
   return (
