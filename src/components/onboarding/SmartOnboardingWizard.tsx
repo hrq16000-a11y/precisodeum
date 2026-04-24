@@ -1439,6 +1439,13 @@ const Step2Location = ({
               onUploaded={onAvatarChange}
             />
 
+            <div className="w-full rounded-lg border border-border bg-background/60 px-3 py-2 text-[11px]">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-foreground">Origem da foto:</span>
+                <span className="font-medium text-muted-foreground">{photoSourceLabel}</span>
+              </div>
+            </div>
+
             {isFromGoogle && (
               <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-[11px] font-semibold text-accent">
                 <Check className="h-3 w-3" /> Foto sincronizada da sua conta Google
@@ -1446,7 +1453,7 @@ const Step2Location = ({
             )}
 
             {!isFromGoogle && avatarUrl && (
-              <p className="text-[11px] text-muted-foreground">Foto enviada por você</p>
+              <p className="text-[11px] text-muted-foreground">Foto enviada por você (upload manual)</p>
             )}
 
             {hasNoAvatar && initials !== '?' && (
@@ -1455,8 +1462,35 @@ const Step2Location = ({
               </p>
             )}
 
-            {!hasNoAvatar && (
-              <p className="text-[11px] text-muted-foreground">Toque na câmera para trocar a foto a qualquer momento.</p>
+            {/* Ações: confirmar / re-sincronizar / remover */}
+            <div className="grid w-full gap-2 sm:grid-cols-2">
+              {socialAvatarUrl && !isFromGoogle && (
+                <Button type="button" size="sm" variant="outline" disabled={syncing}
+                  onClick={handleResyncFromGoogle} className="text-xs">
+                  Re-sincronizar foto do Google
+                </Button>
+              )}
+              {avatarUrl && (
+                <Button type="button" size="sm" variant="ghost" disabled={syncing}
+                  onClick={handleRemovePhoto} className="text-xs">
+                  Remover foto
+                </Button>
+              )}
+              <Button type="button" size="sm" variant={photoConfirmed ? 'accent' : 'secondary'}
+                onClick={() => setPhotoConfirmed(true)} disabled={syncing}
+                className="text-xs sm:col-span-2">
+                {photoConfirmed ? <><Check className="mr-1 h-3 w-3" /> Origem confirmada</> : 'Confirmar origem da foto'}
+              </Button>
+            </div>
+
+            {syncStatus && (
+              <div className={`w-full rounded-lg border px-3 py-2 text-[11px] ${
+                syncStatus.ok
+                  ? 'border-emerald-300/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                  : 'border-destructive/40 bg-destructive/10 text-destructive'
+              }`}>
+                {syncStatus.message}
+              </div>
             )}
           </div>
         </div>
