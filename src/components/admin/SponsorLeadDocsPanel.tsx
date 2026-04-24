@@ -46,6 +46,16 @@ export default function SponsorLeadDocsPanel({ open, onOpenChange, leadId, compa
   const [reviewing, setReviewing] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [reopenOpen, setReopenOpen] = useState(false);
+  const [reopenReason, setReopenReason] = useState('');
+  const [reopenItems, setReopenItems] = useState<string[]>([]);
+  const REOPEN_ITEM_OPTIONS = [
+    'Reenviar comprovante de CNPJ',
+    'Reenviar banner do anúncio',
+    'Confirmar dados de contato',
+    'Confirmar checklist de aceite',
+    'Documento adicional solicitado',
+  ];
 
   const reload = () => {
     if (!leadId) return;
