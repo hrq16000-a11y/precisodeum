@@ -69,6 +69,72 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // ─── Re-hidratação a partir de draft local (localStorage) ───
+  // Restaura campos quando o usuário recarrega/volta para o wizard
+  const draftKey = `service-wizard-draft-${userId || 'anon'}`;
+  useEffect(() => {
+    if (!userId) return;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d && typeof d === 'object') {
+        if (d.serviceName && !serviceName) setServiceName(d.serviceName);
+        if (d.description && !description) setDescription(d.description);
+        if (d.serviceArea && !serviceArea) setServiceArea(d.serviceArea);
+        if (d.workingHours && !workingHours) setWorkingHours(d.workingHours);
+        if (d.website && !website) setWebsite(d.website);
+        if (d.instagramUrl && !instagramUrl) setInstagramUrl(d.instagramUrl);
+        if (d.facebookUrl && !facebookUrl) setFacebookUrl(d.facebookUrl);
+        if (d.youtubeUrl && !youtubeUrl) setYoutubeUrl(d.youtubeUrl);
+        if (Array.isArray(d.selectedCategoryIds) && d.selectedCategoryIds.length && !selectedCategoryIds.length) {
+          setSelectedCategoryIds(d.selectedCategoryIds.slice(0, 1));
+        }
+        if (d.createdServiceId && !createdServiceId) setCreatedServiceId(d.createdServiceId);
+      }
+    } catch {/* ignore */}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  // Persiste draft a cada alteração relevante
+  useEffect(() => {
+    if (!userId) return;
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({
+        serviceName, description, serviceArea, workingHours,
+        website, instagramUrl, facebookUrl, youtubeUrl,
+        selectedCategoryIds, createdServiceId,
+      }));
+    } catch {/* ignore */}
+  }, [userId, draftKey, serviceName, description, serviceArea, workingHours, website, instagramUrl, facebookUrl, youtubeUrl, selectedCategoryIds, createdServiceId]);
+
+  // Re-hidratação a partir do banco quando já existe um serviço criado
+  useEffect(() => {
+    if (!createdServiceId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('services')
+        .select('service_name, description, whatsapp, service_area, working_hours, website, instagram_url, facebook_url, youtube_url, category_id')
+        .eq('id', createdServiceId)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const row: any = data;
+      if (row.service_name && !serviceName) setServiceName(row.service_name);
+      if (row.description && !description) setDescription(row.description);
+      if (row.whatsapp && !whatsapp) setWhatsapp(row.whatsapp);
+      if (row.service_area && !serviceArea) setServiceArea(row.service_area);
+      if (row.working_hours && !workingHours) setWorkingHours(row.working_hours);
+      if (row.website && !website) setWebsite(row.website);
+      if (row.instagram_url && !instagramUrl) setInstagramUrl(row.instagram_url);
+      if (row.facebook_url && !facebookUrl) setFacebookUrl(row.facebook_url);
+      if (row.youtube_url && !youtubeUrl) setYoutubeUrl(row.youtube_url);
+      if (row.category_id && !selectedCategoryIds.length) setSelectedCategoryIds([row.category_id]);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createdServiceId]);
+
   const filteredCats = useMemo(() => {
     return categories.filter(c =>
       !selectedCategoryIds.includes(c.id) &&
@@ -77,6 +143,10 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   }, [categories, selectedCategoryIds, categorySearch]);
 
   const providerCity = provider?.city || '';
+  const providerState = (provider?.state && provider.state !== 'ST') ? provider.state : '';
+  const providerCityDisplay = providerCity
+    ? `${providerCity}${providerState ? ` - ${providerState}` : ''}`
+    : '';
   const providerSlug = provider?.slug || '';
   const profileUrl = `${window.location.origin}/profissional/${providerSlug}`;
 
@@ -281,7 +351,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                 {/* City display */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Cidade</label>
-                  <Input value={providerCity} readOnly className="bg-muted/50 text-muted-foreground" />
+                  <Input value={providerCityDisplay} readOnly className="bg-muted/50 text-muted-foreground" />
                   <p className="text-[11px] text-muted-foreground mt-1">Herdado do seu perfil. Altere em "Editar Perfil".</p>
                 </div>
               </>
@@ -417,7 +487,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
             <Button
               variant="accent"
               disabled={photoCount === 0}
-              onClick={() => onComplete(createdServiceId!)}
+              onClick={() => { try { localStorage.removeItem(draftKey); } catch {} onComplete(createdServiceId!); }}
               title={photoCount === 0 ? 'Adicione ao menos 1 foto para concluir' : ''}
             >
               {photoCount === 0 ? 'Adicione 1 foto' : 'Concluir'} <Sparkles className="h-4 w-4 ml-1" />

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useDebounce } from '@/hooks/useDebounce';
+import { isUF } from '@/lib/ufIndex';
 
 interface CityRow {
   id: string;
@@ -106,12 +107,13 @@ const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...' }:
             {results.length > 0 && (
               <CommandGroup>
                 {results.map(c => {
-                  const uf = c.state_uf || c.state;
+                  const rawUf = (c.state_uf || c.state || '').toString().trim().toUpperCase();
+                  const uf = isUF(rawUf) ? rawUf : '';
                   const selected = value.city === c.name && value.state === uf;
                   return (
                     <CommandItem
                       key={c.id}
-                      value={`${c.name}-${uf}`}
+                      value={`${c.name}-${uf || 'NA'}`}
                       onSelect={() => {
                         onChange({ city: c.name, state: uf });
                         setOpen(false);

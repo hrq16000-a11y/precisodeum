@@ -537,6 +537,14 @@ const BasicOnboardingWizard = () => {
     setShowFinalSummary(true);
   };
 
+  const goPrevGuidedReviewStep = () => {
+    const current = guidedReviewStep ?? 1;
+    const prev = [...checklistItems].reverse().find(item => item.step < current)?.step;
+    if (prev) {
+      setGuidedReviewStep(prev);
+    }
+  };
+
   const continueReviewAll = () => {
     saveStepDraft(step);
     const next = checklistItems.find(item => item.step > step && item.step <= furthestStep)?.step;
@@ -675,8 +683,8 @@ const BasicOnboardingWizard = () => {
   const reviewItems = buildReviewItems({ profileType, providerSubtype, city, state, avatarUrl, fullName, agencyName, whatsapp, bio, selectedCategoryIds, servicesCreated });
 
   const summaryItems = [
-    { label: 'Tipo de perfil', value: profileType || 'Não definido' },
-    { label: 'Cidade', value: city ? `${city}${state ? ` • ${state}` : ''}` : 'Não informada' },
+    { label: 'Tipo de perfil', value: profileType ? (PROFILE_TYPE_LABEL[profileType] || profileType) : 'Não definido' },
+    { label: 'Cidade', value: city ? `${city}${state && state !== 'ST' ? ` • ${state}` : ''}` : 'Não informada' },
     { label: 'Nome', value: fullName || 'Não informado' },
     { label: 'WhatsApp', value: whatsapp || 'Não informado' },
     { label: 'Serviços', value: profileType === 'provider' ? `${servicesCreated} cadastrado(s)` : 'Não aplicável' },
@@ -784,11 +792,16 @@ const BasicOnboardingWizard = () => {
 
         {reviewReturnStep && !showFinalSummary && (
           <div className="mb-4 rounded-xl border border-accent/25 bg-accent/10 p-3 text-sm text-foreground">
-            <p className="font-bold">Revisando passo antigo</p>
-            <p className="mt-1 text-xs text-muted-foreground">Ao salvar, você volta para seu progresso mais recente.</p>
-            <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={returnToProgress}>
-              Salvar revisão e voltar ao progresso
-            </Button>
+            <p className="font-bold">Revisando passo anterior</p>
+            <p className="mt-1 text-xs text-muted-foreground">Suas alterações são salvas automaticamente. Volte ao seu progresso quando quiser.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <Button type="button" variant="outline" size="sm" onClick={returnToProgress}>
+                Salvar e voltar ao progresso
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => { setReviewReturnStep(null); navigate('/dashboard', { replace: true }); }}>
+                Cancelar e ir ao Dashboard
+              </Button>
+            </div>
           </div>
         )}
 
@@ -812,6 +825,8 @@ const BasicOnboardingWizard = () => {
             items={reviewItems[guidedReviewStep] ?? []}
             onEdit={() => editGuidedReviewStep(guidedReviewStep)}
             onKeep={keepGuidedReviewStep}
+            onPrev={goPrevGuidedReviewStep}
+            canGoPrev={guidedReviewStep > 1}
           />
         )}
 
@@ -953,6 +968,20 @@ const checklistItems: Array<{ step: WizardStep; label: string }> = [
   { step: 5, label: 'Finalizar' },
 ];
 
+const PROFILE_TYPE_LABEL: Record<string, string> = {
+  provider: 'Profissional',
+  client: 'Cliente',
+  agency: 'Agência / RH',
+  hr: 'Agência / RH',
+};
+
+const PROVIDER_SUBTYPE_LABEL: Record<string, string> = {
+  autonomous: 'Autônomo',
+  company: 'Empresa / Agência',
+  agency: 'Empresa / Agência',
+  provider: 'Profissional',
+};
+
 const buildReviewItems = (data: {
   profileType: ProfileType | null;
   providerSubtype: ProviderSubtype | null;
@@ -967,11 +996,11 @@ const buildReviewItems = (data: {
   servicesCreated: number;
 }): Record<WizardStep, Array<{ label: string; value: string }>> => ({
   1: [
-    { label: 'Tipo de perfil', value: data.profileType || 'Não definido' },
-    { label: 'Formato profissional', value: data.providerSubtype || 'Não aplicável' },
+    { label: 'Tipo de perfil', value: data.profileType ? (PROFILE_TYPE_LABEL[data.profileType] || data.profileType) : 'Não definido' },
+    { label: 'Formato profissional', value: data.providerSubtype ? (PROVIDER_SUBTYPE_LABEL[data.providerSubtype] || data.providerSubtype) : 'Não aplicável' },
   ],
   2: [
-    { label: 'Cidade', value: data.city ? `${data.city}${data.state ? ` • ${data.state}` : ''}` : 'Não informada' },
+    { label: 'Cidade', value: data.city ? `${data.city}${data.state && data.state !== 'ST' ? ` • ${data.state}` : ''}` : 'Não informada' },
     { label: 'Foto', value: data.avatarUrl ? 'Carregada' : 'Não enviada' },
   ],
   3: [
@@ -1150,11 +1179,15 @@ const GuidedReviewCard = ({
   items,
   onEdit,
   onKeep,
+  onPrev,
+  canGoPrev,
 }: {
   step: WizardStep;
   items: Array<{ label: string; value: string }>;
   onEdit: () => void;
   onKeep: () => void;
+  onPrev: () => void;
+  canGoPrev: boolean;
 }) => (
   <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4">
     <p className="text-xs font-bold text-accent">Revisão guiada • passo {step}</p>
@@ -1167,7 +1200,8 @@ const GuidedReviewCard = ({
         </div>
       ))}
     </div>
-    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      <Button type="button" variant="ghost" onClick={onPrev} disabled={!canGoPrev}>Voltar item</Button>
       <Button type="button" variant="outline" onClick={onEdit}>Editar novamente</Button>
       <Button type="button" variant="accent" onClick={onKeep}>Manter</Button>
     </div>
@@ -1335,7 +1369,7 @@ const Step2Location = ({
         <label className="mb-1 block text-xs font-semibold text-foreground">Cidade</label>
         {!editingCity && city ? (
           <div className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-3 py-2">
-            <span className="text-sm font-bold text-foreground">{city}{state ? ` • ${state}` : ''}</span>
+            <span className="text-sm font-bold text-foreground">{city}{state && state !== 'ST' ? ` • ${state}` : ''}</span>
             <button onClick={onEditCity} className="text-xs font-medium text-accent hover:underline">Trocar</button>
           </div>
         ) : (
