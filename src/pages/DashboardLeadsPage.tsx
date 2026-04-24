@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, Send, History, Paperclip, Bell, BellOff, Timer, Search, Filter, FileDown, FileText, CalendarClock, ExternalLink, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -61,25 +61,46 @@ const DashboardLeadsPage = () => {
   const { user, provider, loading, profile } = useAuth();
   const { limits, canReceiveMoreLeads, remainingLeads, loading: limitsLoading } = useAccountLimits();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: rawLeads = [], isLoading: leadsLoading } = useProviderLeads(provider?.id);
   const updateStatus = useUpdateLeadStatus();
   const updateWindow = useFollowupWindow(provider?.id, provider?.lead_followup_hours);
   const [history, setHistory] = useState<Record<string, LeadHistoryItem[]>>({});
-  const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | LeadStatus>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | LeadStatus>(
+    (searchParams.get('status') as any) || 'all'
+  );
   const [historyDrafts, setHistoryDrafts] = useState<Record<string, string>>({});
   const [audibleAlerts, setAudibleAlerts] = useState(false);
   const [, setTick] = useState(0);
   const leadsRef = useRef<LeadRow[]>([]);
 
-  // Filtros avançados
-  const [search, setSearch] = useState('');
-  const [createdFrom, setCreatedFrom] = useState('');
-  const [createdTo, setCreatedTo] = useState('');
-  const [followupFrom, setFollowupFrom] = useState('');
-  const [followupTo, setFollowupTo] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  // Filtros avançados — inicializados a partir da URL
+  const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [createdFrom, setCreatedFrom] = useState(searchParams.get('cf') || '');
+  const [createdTo, setCreatedTo] = useState(searchParams.get('ct') || '');
+  const [followupFrom, setFollowupFrom] = useState(searchParams.get('ff') || '');
+  const [followupTo, setFollowupTo] = useState(searchParams.get('ft') || '');
+  const [showAdvanced, setShowAdvanced] = useState(
+    !!(searchParams.get('cf') || searchParams.get('ct') || searchParams.get('ff') || searchParams.get('ft'))
+  );
   const [rescheduleLeadId, setRescheduleLeadId] = useState<string | null>(null);
   const [rescheduleDefault, setRescheduleDefault] = useState<string | null>(null);
+
+  // Paginação client-side (incremental)
+  const PAGE_SIZE = 20;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // Persistir filtros na URL
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (statusFilter !== 'all') params.status = statusFilter;
+    if (search) params.q = search;
+    if (createdFrom) params.cf = createdFrom;
+    if (createdTo) params.ct = createdTo;
+    if (followupFrom) params.ff = followupFrom;
+    if (followupTo) params.ft = followupTo;
+    setSearchParams(params, { replace: true });
+  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, setSearchParams]);
 
   // Re-render minute-by-minute para atualizar relativos e badge "vencido"
   useEffect(() => {
@@ -115,6 +136,14 @@ const DashboardLeadsPage = () => {
     if (followupFrom || followupTo) arr = arr.filter(l => inRange(l.next_followup_at, followupFrom, followupTo));
     return arr;
   }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo]);
+
+  // Reset paginação quando filtros/lista mudarem
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo]);
+
+  const visibleLeads = useMemo(() => filteredLeads.slice(0, visibleCount), [filteredLeads, visibleCount]);
+  const hasMore = filteredLeads.length > visibleCount;
 
   const overdueCount = useMemo(() => leads.filter(isOverdue).length, [leads]);
 
@@ -358,7 +387,7 @@ const DashboardLeadsPage = () => {
               <p className="mt-1 text-sm text-muted-foreground">Quando clientes solicitarem orçamento, os leads aparecerão aqui.</p>
             </motion.div>
           )}
-          {filteredLeads.map((lead) => {
+          {visibleLeads.map((lead) => {
             const meta = STATUS_META[lead.status];
             const overdue = isOverdue(lead);
             const leadHistory = history[lead.id] || [];
@@ -458,6 +487,21 @@ const DashboardLeadsPage = () => {
           })}
         </AnimatePresence>
       </motion.div>
+
+      {hasMore && (
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <p className="text-xs text-muted-foreground">
+            Mostrando {visibleLeads.length} de {filteredLeads.length} leads filtrados
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+            className="min-w-[180px]"
+          >
+            Carregar mais ({Math.min(PAGE_SIZE, filteredLeads.length - visibleCount)})
+          </Button>
+        </div>
+      )}
 
       <RescheduleFollowupDialog
         leadId={rescheduleLeadId}

@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import AvatarUpload from '@/components/AvatarUpload';
+import { getInitials, getSocialAvatarUrl } from '@/lib/avatarUtils';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
@@ -322,9 +323,29 @@ const DashboardProfilePage = () => {
     } finally { setSaving(false); }
   };
 
-  const initials = form.full_name.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
+  const initials = getInitials(form.full_name);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
   useEffect(() => { if (profile?.avatar_url) setAvatarUrl(profile.avatar_url); }, [profile]);
+
+  // One-shot Google/social avatar sync — only if profile has no avatar yet.
+  const socialAvatarSyncedRef = useRef(false);
+  useEffect(() => {
+    if (socialAvatarSyncedRef.current) return;
+    if (!user?.id || !profile) return;
+    if (profile.avatar_url || avatarUrl) { socialAvatarSyncedRef.current = true; return; }
+    const socialUrl = getSocialAvatarUrl(user);
+    if (!socialUrl) return;
+    socialAvatarSyncedRef.current = true;
+    setAvatarUrl(socialUrl);
+    (async () => {
+      try {
+        await supabase.from('profiles').update({ avatar_url: socialUrl }).eq('id', user.id);
+        refetchProfile?.();
+      } catch (err) {
+        console.warn('[profile] failed to persist social avatar', err);
+      }
+    })();
+  }, [user, profile, avatarUrl, refetchProfile]);
 
   // Profile completeness
   const completeness = useMemo(() => {

@@ -49,6 +49,8 @@ import AvatarUpload from '@/components/AvatarUpload';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
+import { getSocialAvatarUrl, getInitials } from '@/lib/avatarUtils';
+import { formatCityState } from '@/lib/locationFormat';
 
 type ProfileType = 'provider' | 'client' | 'rh' | 'sponsor';
 type ProviderSubtype = 'autonomous' | 'company';
@@ -162,6 +164,27 @@ const BasicOnboardingWizard = () => {
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
     if (profile.whatsapp || profile.phone) setWhatsapp(profile.whatsapp || profile.phone || '');
   }, [profile]);
+
+  // ─── Google/social avatar sync (one-shot): copia foto do provedor social para profiles.avatar_url
+  // se ainda não houver avatar definido. Guard com ref evita loop.
+  const socialAvatarSyncedRef = useRef(false);
+  useEffect(() => {
+    if (socialAvatarSyncedRef.current) return;
+    if (!user?.id || !profile) return;
+    if (profile.avatar_url) { socialAvatarSyncedRef.current = true; return; }
+    const socialUrl = getSocialAvatarUrl(user);
+    if (!socialUrl) return;
+    socialAvatarSyncedRef.current = true;
+    setAvatarUrl(socialUrl);
+    (async () => {
+      try {
+        await supabase.from('profiles').update({ avatar_url: socialUrl }).eq('id', user.id);
+      } catch (err) {
+        // silent — UI já mostra a foto e próximo autosave tentará novamente
+        console.warn('[onboarding] failed to persist social avatar', err);
+      }
+    })();
+  }, [user, profile]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -684,7 +707,7 @@ const BasicOnboardingWizard = () => {
 
   const summaryItems = [
     { label: 'Tipo de perfil', value: profileType ? (PROFILE_TYPE_LABEL[profileType] || profileType) : 'Não definido' },
-    { label: 'Cidade', value: city ? `${city}${state && state !== 'ST' ? ` • ${state}` : ''}` : 'Não informada' },
+    { label: 'Cidade', value: formatCityState(city, state, ' • ') || 'Não informada' },
     { label: 'Nome', value: fullName || 'Não informado' },
     { label: 'WhatsApp', value: whatsapp || 'Não informado' },
     { label: 'Serviços', value: profileType === 'provider' ? `${servicesCreated} cadastrado(s)` : 'Não aplicável' },
@@ -888,6 +911,7 @@ const BasicOnboardingWizard = () => {
             onNext={handleStep2Next}
             onSkip={() => advanceTo(3)}
             canAdvance={canAdvanceFromStep2}
+            fullName={fullName}
           />
         )}
 
@@ -1000,7 +1024,7 @@ const buildReviewItems = (data: {
     { label: 'Formato profissional', value: data.providerSubtype ? (PROVIDER_SUBTYPE_LABEL[data.providerSubtype] || data.providerSubtype) : 'Não aplicável' },
   ],
   2: [
-    { label: 'Cidade', value: data.city ? `${data.city}${data.state && data.state !== 'ST' ? ` • ${data.state}` : ''}` : 'Não informada' },
+    { label: 'Cidade', value: formatCityState(data.city, data.state, ' • ') || 'Não informada' },
     { label: 'Foto', value: data.avatarUrl ? 'Carregada' : 'Não enviada' },
   ],
   3: [
@@ -1335,7 +1359,7 @@ TypeButton.displayName = 'TypeButton';
 // ─── Passo 2 ───
 const Step2Location = ({
   city, state, avatarUrl, editingCity, onEditCity, onCityChange, onAvatarChange,
-  userId, onBack, onNext, onSkip, canAdvance, onFieldBlur,
+  userId, onBack, onNext, onSkip, canAdvance, onFieldBlur, fullName,
 }: any) => (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -1358,7 +1382,7 @@ const Step2Location = ({
             <AvatarUpload
               userId={userId}
               currentUrl={avatarUrl}
-              initials={(avatarUrl ? '' : 'U')}
+              initials={getInitials(fullName)}
               onUploaded={onAvatarChange}
             />
           </div>
@@ -1369,7 +1393,7 @@ const Step2Location = ({
         <label className="mb-1 block text-xs font-semibold text-foreground">Cidade</label>
         {!editingCity && city ? (
           <div className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-3 py-2">
-            <span className="text-sm font-bold text-foreground">{city}{state && state !== 'ST' ? ` • ${state}` : ''}</span>
+            <span className="text-sm font-bold text-foreground">{formatCityState(city, state, ' • ')}</span>
             <button onClick={onEditCity} className="text-xs font-medium text-accent hover:underline">Trocar</button>
           </div>
         ) : (
