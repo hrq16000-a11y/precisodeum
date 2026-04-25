@@ -79,6 +79,9 @@ const DashboardPage = () => {
   // Auto-completa a missão "first_contact" quando detectar 1º clique no WhatsApp
   useFirstContactAutoMission();
 
+  // Heartbeat de presença persistido (alimenta get_missed_opportunities)
+  usePresenceHeartbeat(user?.id, !!provider?.id);
+
   // Registra a visita no servidor (substitui flags em localStorage)
   useEffect(() => {
     if (user?.id) void registerVisit();
