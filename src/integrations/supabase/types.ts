@@ -6104,6 +6104,7 @@ export type Database = {
       }
       claim_sponsor_lead: { Args: { _lead_id: string }; Returns: Json }
       close_presence_session: { Args: never; Returns: Json }
+      complete_app_install_mission: { Args: never; Returns: Json }
       complete_first_contact_mission: {
         Args: { _provider_id: string }
         Returns: Json
@@ -6440,6 +6441,10 @@ export type Database = {
             }
             Returns: undefined
           }
+      log_pwa_install_event: {
+        Args: { _event: string; _meta?: Json }
+        Returns: undefined
+      }
       log_sponsor_access_event: {
         Args: {
           _details?: Json
