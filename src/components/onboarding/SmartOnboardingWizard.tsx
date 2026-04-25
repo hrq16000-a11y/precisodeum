@@ -1950,6 +1950,7 @@ export const Step3Contact = ({
   profileType, providerSubtype, setProviderSubtype,
   fullName, setFullName, agencyName, setAgencyName,
   whatsapp, setWhatsapp, bio, setBio,
+  neighborhood, setNeighborhood, errorByField = {},
   taxId, setTaxId, taxSavedFeedback,
   categoriesForPicker, selectedCategoryIds, onToggleCategory,
   saving, canAdvance, onBack, onNext, onSkip, onFieldBlur,
