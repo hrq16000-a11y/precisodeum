@@ -131,3 +131,60 @@ describe('sortProvidersStable — ordenação completa de listas', () => {
     expect(list.map((p) => p.user_id)).toEqual(snapshot);
   });
 });
+
+describe('Ranking v3.1 — empates múltiplos extremos (regressões)', () => {
+  it('vários providers com mesmo score+rating+reviews — desempata por distância e id', () => {
+    const list: RankableProvider[] = [
+      { user_id: 'p3', level_priority: 1, visibility_score: 0.5, engagement_points: 100, rating_avg: 4.8, review_count: 20, distance_m: null },
+      { user_id: 'p1', level_priority: 1, visibility_score: 0.5, engagement_points: 100, rating_avg: 4.8, review_count: 20, distance_m: 800 },
+      { user_id: 'p2', level_priority: 1, visibility_score: 0.5, engagement_points: 100, rating_avg: 4.8, review_count: 20, distance_m: 800 },
+      { user_id: 'p4', level_priority: 1, visibility_score: 0.5, engagement_points: 100, rating_avg: 4.8, review_count: 20, distance_m: null },
+    ];
+    const order = sortProvidersStable(list).map((p) => p.user_id);
+    // p1/p2 (com GPS) antes de p3/p4 (null); dentro do empate, user_id asc
+    expect(order).toEqual(['p1', 'p2', 'p3', 'p4']);
+  });
+
+  it('todos com distance_m null + ratings idênticos — ordena exclusivamente por user_id', () => {
+    const list: RankableProvider[] = [
+      { user_id: 'zeta', level_priority: 1, visibility_score: 0.4, rating_avg: 5, review_count: 100, distance_m: null },
+      { user_id: 'alfa', level_priority: 1, visibility_score: 0.4, rating_avg: 5, review_count: 100, distance_m: null },
+      { user_id: 'beta', level_priority: 1, visibility_score: 0.4, rating_avg: 5, review_count: 100, distance_m: null },
+    ];
+    expect(sortProvidersStable(list).map((p) => p.user_id)).toEqual(['alfa', 'beta', 'zeta']);
+  });
+
+  it('updated_at antigo desempata antes do user_id quando todos os critérios numéricos empatam', () => {
+    const a: RankableProvider = { user_id: 'zzz', visibility_score: 0.5, distance_m: 1000, updated_at: '2024-01-01T00:00:00Z' };
+    const b: RankableProvider = { user_id: 'aaa', visibility_score: 0.5, distance_m: 1000, updated_at: '2026-01-01T00:00:00Z' };
+    // a (mais antigo) vence apesar do user_id maior
+    expect(compareProviders(a, b)).toBeLessThan(0);
+  });
+
+  it('empate absoluto (mesmas chaves, sem updated_at) — comparator é simétrico', () => {
+    const a: RankableProvider = { user_id: 'xx', visibility_score: 0.7, rating_avg: 4.2 };
+    const b: RankableProvider = { user_id: 'yy', visibility_score: 0.7, rating_avg: 4.2 };
+    expect(Math.sign(compareProviders(a, b))).toBe(-Math.sign(compareProviders(b, a)));
+  });
+
+  it('lista grande com ratings iguais e distâncias mistas mantém ordem determinística entre runs', () => {
+    const make = (id: string, dist: number | null): RankableProvider => ({
+      user_id: id, level_priority: 1, visibility_score: 0.5, engagement_points: 200,
+      rating_avg: 4.5, review_count: 30, distance_m: dist,
+    });
+    const list: RankableProvider[] = [
+      make('e', null), make('a', 500), make('d', null), make('b', 500), make('c', 1500),
+    ];
+    const a = sortProvidersStable(list).map((p) => p.user_id);
+    const b = sortProvidersStable([...list].reverse()).map((p) => p.user_id);
+    expect(a).toEqual(b); // determinístico independente da ordem de entrada
+    expect(a).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+
+  it('engagement_points elevado supera distância menor', () => {
+    const longeRico: RankableProvider = { user_id: 'r', visibility_score: 0.5, engagement_points: 900, distance_m: 9000 };
+    const pertoPobre: RankableProvider = { user_id: 'p', visibility_score: 0.5, engagement_points: 100, distance_m: 500 };
+    expect(compareProviders(longeRico, pertoPobre)).toBeLessThan(0);
+  });
+});
+

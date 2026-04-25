@@ -48,6 +48,7 @@ import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingCheckl
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
 import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
 import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
+import CategoryBenchmarkWidget from '@/components/dashboard/CategoryBenchmarkWidget';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
 import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
 import EngagementLoop from '@/components/dashboard/EngagementLoop';
@@ -623,6 +624,11 @@ const DashboardPage = () => {
       <div className="mt-4 grid gap-4 md:grid-cols-2" data-tour="profile-strength">
         <ProfileHealthScore />
         <ProfileStrength />
+      </div>
+
+      {/* Benchmark de engagement vs. média da categoria */}
+      <div className="mt-4">
+        <CategoryBenchmarkWidget />
       </div>
 
       {/* Ranking Status */}

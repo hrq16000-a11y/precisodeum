@@ -293,7 +293,9 @@ const ProviderProfile = () => {
   const [relatedProviders, setRelatedProviders] = useState<any[]>([]);
   const [showStickyContact, setShowStickyContact] = useState(false);
   const [showEmergencyContact, setShowEmergencyContact] = useState(false);
+  const [showStickyName, setShowStickyName] = useState(false);
   const mainWhatsappRef = useRef<HTMLDivElement | null>(null);
+  const nameAnchorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -755,6 +757,21 @@ const ProviderProfile = () => {
       visualViewport?.removeEventListener('scroll', handleVisualViewportScroll);
     };
   }, [isMobile, provider?.whatsapp, provider?.phone]);
+
+  // Sticky header: mostra nome + selo Top quando o título principal sai do viewport
+  useEffect(() => {
+    const target = nameAnchorRef.current;
+    if (!target || typeof IntersectionObserver === 'undefined') {
+      setShowStickyName(false);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      ([entry]) => setShowStickyName(!entry.isIntersecting),
+      { threshold: 0, rootMargin: '-72px 0px 0px 0px' },
+    );
+    obs.observe(target);
+    return () => obs.disconnect();
+  }, [provider?.id]);
 
   // DESTAQUE criteria
   const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
@@ -1348,7 +1365,7 @@ const ProviderProfile = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.25, duration: 0.5 }}
               >
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <div ref={nameAnchorRef} className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
                   {provider.user_id && <ProviderTopBadgeInline userId={provider.user_id} />}
                   {/* Selo de gamification inline ao lado do nome (autoridade visível em qualquer breakpoint) */}
@@ -1843,6 +1860,41 @@ const ProviderProfile = () => {
           </AnimatePresence>
         </DialogContent>
       </Dialog>
+
+      {/* Sticky header: nome do prestador + selo Top fixos no topo durante o scroll */}
+      <AnimatePresence initial={false}>
+        {provider && showStickyName && (
+          <motion.div
+            key="sticky-provider-name"
+            role="banner"
+            aria-label={`Cabeçalho fixo: ${name}`}
+            className="fixed inset-x-0 top-0 z-[998] border-b border-border bg-card/95 px-3 py-2 shadow-sm backdrop-blur-lg"
+            initial={{ y: -40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -40, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 32 }}
+          >
+            <div className="container flex items-center gap-2 min-w-0">
+              {avatarUrl && (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="h-8 w-8 shrink-0 rounded-full object-cover"
+                  loading="lazy"
+                />
+              )}
+              <span className="truncate font-display text-sm font-semibold text-foreground">
+                {name}
+              </span>
+              {provider.user_id && (
+                <span className="shrink-0">
+                  <ProviderTopBadgeInline userId={provider.user_id} />
+                </span>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Sticky CTA bar for mobile */}
       <AnimatePresence initial={false}>
