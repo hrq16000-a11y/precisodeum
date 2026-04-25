@@ -291,7 +291,7 @@ const ProviderProfile = () => {
   const [loading, setLoading] = useState(true);
   const [leadDialogOpen, setLeadDialogOpen] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
-  const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '' });
+  const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '', city: '', state: '' });
   const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
   const [relatedProviders, setRelatedProviders] = useState<any[]>([]);
   const [showStickyContact, setShowStickyContact] = useState(false);
@@ -299,6 +299,22 @@ const ProviderProfile = () => {
   const [showStickyName, setShowStickyName] = useState(false);
   const mainWhatsappRef = useRef<HTMLDivElement | null>(null);
   const nameAnchorRef = useRef<HTMLDivElement | null>(null);
+
+  // Pré-preenche o formulário de lead com contexto da busca (?servico=, ?cidade=, ?uf=)
+  // ou cai no city/state do próprio provider, para o profissional saber de onde vem o contato.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const qService = params.get('servico') || params.get('service') || '';
+    const qCity = params.get('cidade') || params.get('city') || '';
+    const qUf = (params.get('uf') || params.get('state') || '').toUpperCase();
+    setLeadForm(prev => ({
+      ...prev,
+      service: prev.service || qService,
+      city: prev.city || qCity || provider?.city || '',
+      state: prev.state || qUf || (provider?.state || '').toUpperCase(),
+    }));
+  }, [provider?.city, provider?.state]);
 
   useEffect(() => {
     let active = true;
@@ -899,12 +915,23 @@ const ProviderProfile = () => {
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Anexa contexto (cidade/UF + origem) ao final da mensagem para o provider ver
+    // de onde veio o lead, sem depender de novas colunas no banco.
+    const ctxParts: string[] = [];
+    const locStr = [leadForm.city, leadForm.state].filter(Boolean).join(' - ');
+    if (locStr) ctxParts.push(`Localização: ${locStr}`);
+    const origem = getLeadSource();
+    if (origem && origem !== 'direto') ctxParts.push(`Origem: ${origem}`);
+    if (category) ctxParts.push(`Categoria: ${category}`);
+    const ctxBlock = ctxParts.length ? `\n\n— Contexto —\n${ctxParts.join('\n')}` : '';
+    const finalMessage = `${leadForm.message || ''}${ctxBlock}`.trim();
+
     const { error } = await supabase.from('leads').insert({
       provider_id: provider.id,
       client_name: leadForm.name,
       phone: leadForm.phone,
       service_needed: leadForm.service,
-      message: leadForm.message,
+      message: finalMessage,
     });
     if (error) {
       toast.error('Erro ao enviar solicitação');
@@ -1839,13 +1866,27 @@ const ProviderProfile = () => {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Serviço necessário</label>
-                  <input type="text" placeholder="Ex: Reforma de banheiro" required value={leadForm.service}
+                  <input type="text" placeholder={category ? `Ex: ${category}` : 'Ex: Reforma de banheiro'} required value={leadForm.service}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
                     className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
                 </div>
+                <div className="grid grid-cols-[1fr_84px] gap-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Sua cidade</label>
+                    <input type="text" placeholder="Cidade" value={leadForm.city}
+                      onChange={(e) => setLeadForm(prev => ({ ...prev, city: e.target.value }))}
+                      className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">UF</label>
+                    <input type="text" placeholder="UF" maxLength={2} value={leadForm.state}
+                      onChange={(e) => setLeadForm(prev => ({ ...prev, state: e.target.value.toUpperCase().slice(0, 2) }))}
+                      className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm uppercase text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                  </div>
+                </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Mensagem</label>
-                  <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
+                  <textarea placeholder={category ? `Conte rapidamente o que precisa em ${category.toLowerCase()}...` : 'Descreva o que precisa...'} rows={3} value={leadForm.message}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
                     className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none resize-none transition-all`} />
                 </div>
@@ -1922,7 +1963,7 @@ const ProviderProfile = () => {
               onClick={() => {
                 if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'sticky');
                 requestWhatsApp({
-                  url: whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`),
+                  url: whatsappLink(effectiveWhatsApp, `Olá ${name}! Vi seu perfil no Preciso de um e gostaria de conversar sobre uma necessidade.`),
                   targetType: 'provider',
                   targetId: provider?.id ?? null,
                   targetLabel: name,
@@ -1957,7 +1998,7 @@ const ProviderProfile = () => {
               onClick={() => {
                 if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'sticky');
                 requestWhatsApp({
-                  url: whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`),
+                  url: whatsappLink(effectiveWhatsApp, `Olá ${name}! Vi seu perfil no Preciso de um e gostaria de conversar sobre uma necessidade.`),
                   targetType: 'provider',
                   targetId: provider?.id ?? null,
                   targetLabel: name,
@@ -1974,7 +2015,7 @@ const ProviderProfile = () => {
       {/* Floating WhatsApp — desktop only */}
       {effectiveWhatsApp && (
         <motion.a
-          href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)}
+          href={whatsappLink(effectiveWhatsApp, `Olá ${name}! Vi seu perfil no Preciso de um e gostaria de conversar sobre uma necessidade.`)}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => provider?.id && trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'flutuante')}
