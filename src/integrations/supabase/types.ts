@@ -3493,30 +3493,39 @@ export type Database = {
           completed_at: string | null
           created_at: string
           id: string
+          metadata: Json
           points_awarded: number
+          qualified_at: string | null
           referral_code: string
           referred_id: string
           referrer_id: string
+          rewarded_at: string | null
           status: string
         }
         Insert: {
           completed_at?: string | null
           created_at?: string
           id?: string
+          metadata?: Json
           points_awarded?: number
+          qualified_at?: string | null
           referral_code: string
           referred_id: string
           referrer_id: string
+          rewarded_at?: string | null
           status?: string
         }
         Update: {
           completed_at?: string | null
           created_at?: string
           id?: string
+          metadata?: Json
           points_awarded?: number
+          qualified_at?: string | null
           referral_code?: string
           referred_id?: string
           referrer_id?: string
+          rewarded_at?: string | null
           status?: string
         }
         Relationships: []
@@ -6275,6 +6284,7 @@ export type Database = {
           total_searches: number
         }[]
       }
+      get_my_referrals_summary: { Args: never; Returns: Json }
       get_neighborhood_by_point: {
         Args: { _lat: number; _lng: number }
         Returns: string
@@ -6515,10 +6525,12 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      register_referral: {
-        Args: { _referral_code: string; _referred_id: string }
-        Returns: boolean
-      }
+      register_referral:
+        | { Args: { _code: string }; Returns: Json }
+        | {
+            Args: { _referral_code: string; _referred_id: string }
+            Returns: boolean
+          }
       reschedule_lead_followup: {
         Args: { _lead_id: string; _next_at: string; _note?: string }
         Returns: undefined
