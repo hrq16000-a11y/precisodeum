@@ -52,7 +52,6 @@ const DashboardServicesPage = lazy(() => import("./pages/DashboardServicesPage")
 const DashboardReviewsPage = lazy(() => import("./pages/DashboardReviewsPage"));
 const DashboardLeadsPage = lazy(() => import("./pages/DashboardLeadsPage"));
 const DashboardLeadDetailPage = lazy(() => import("./pages/DashboardLeadDetailPage"));
-const DashboardReferralsPage = lazy(() => import("./pages/DashboardReferralsPage"));
 const DashboardNotificationPreferencesPage = lazy(() => import("./pages/DashboardNotificationPreferencesPage"));
 const DashboardMetricsPage = lazy(() => import("./pages/DashboardMetricsPage"));
 const DashboardOpenLeadsPage = lazy(() => import("./pages/DashboardOpenLeadsPage"));
