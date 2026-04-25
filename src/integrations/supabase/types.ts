@@ -1979,6 +1979,69 @@ export type Database = {
           },
         ]
       }
+      mission_completions: {
+        Row: {
+          completed_at: string
+          id: string
+          mission_key: string
+          points_awarded: number
+          provider_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          mission_key: string
+          points_awarded?: number
+          provider_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          mission_key?: string
+          points_awarded?: number
+          provider_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_completions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_completions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "mission_completions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_completions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_completions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
+          },
+        ]
+      }
       neighborhoods: {
         Row: {
           city_id: string
@@ -5956,6 +6019,7 @@ export type Database = {
         Returns: boolean
       }
       claim_sponsor_lead: { Args: { _lead_id: string }; Returns: Json }
+      complete_mission: { Args: { _key: string; _value: Json }; Returns: Json }
       complete_onboarding_checklist: { Args: never; Returns: Json }
       complete_referral: { Args: { _referred_id: string }; Returns: boolean }
       create_album_atomic: {
