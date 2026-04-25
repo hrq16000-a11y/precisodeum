@@ -6237,7 +6237,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      unaccent: { Args: { "": string }; Returns: string }
       update_album_atomic: {
         Args: { p_album_id: string; p_data: Json }
         Returns: Json
