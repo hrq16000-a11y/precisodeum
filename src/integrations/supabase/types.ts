@@ -6272,6 +6272,7 @@ export type Database = {
       }
       is_caller_admin: { Args: never; Returns: boolean }
       is_sponsor: { Args: { _user_id: string }; Returns: boolean }
+      is_top_professional: { Args: { _user_id: string }; Returns: boolean }
       log_provider_public_event:
         | {
             Args: {
@@ -6435,6 +6436,10 @@ export type Database = {
       reschedule_lead_followup: {
         Args: { _lead_id: string; _next_at: string; _note?: string }
         Returns: undefined
+      }
+      resolve_identity_suggestion: {
+        Args: { _action: string; _suggestion_id: string }
+        Returns: Json
       }
       restore_dashboard_widget: {
         Args: { _widget: string }
