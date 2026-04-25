@@ -230,20 +230,60 @@ export default function DailyPostCard() {
               className="resize-none text-sm"
             />
             <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Camera className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="URL da foto (opcional)"
-                  className="w-full rounded-md border border-input bg-background px-8 py-1.5 text-xs outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-              <span className="text-[10px] text-muted-foreground">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || posting}
+                className="h-9 flex-1 gap-1.5 text-xs"
+              >
+                {uploading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : imageUrl ? (
+                  <Camera className="h-3.5 w-3.5 text-emerald-600" />
+                ) : (
+                  <Upload className="h-3.5 w-3.5" />
+                )}
+                {uploading
+                  ? 'Enviando...'
+                  : imageUrl
+                    ? 'Foto pronta — trocar'
+                    : 'Adicionar 1 foto (opcional)'}
+              </Button>
+              {imageUrl && !uploading && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setImageUrl('')}
+                  className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
+                  aria-label="Remover foto"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                 {caption.length}/{MAX_LEN}
               </span>
             </div>
+            {imageUrl && !uploading && (
+              <div className="overflow-hidden rounded-lg border border-fuchsia-500/20">
+                <img
+                  src={imageUrl}
+                  alt="Pré-visualização da Obra do Dia"
+                  className="max-h-40 w-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            )}
             <Button
               size="sm"
               onClick={handlePost}
