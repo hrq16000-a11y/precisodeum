@@ -76,10 +76,13 @@ const STATUS_META: Record<string, { label: string; bg: string; text: string; ico
 
 type FilterKey = 'all' | 'pending' | 'qualified' | 'rewarded';
 
+const PAGE_SIZE = 8;
+
 export default function DashboardReferralsPage() {
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [filter, setFilter] = useState<FilterKey>('all');
+  const [page, setPage] = useState(1);
 
   useSeoHead({
     title: 'Minhas Indicações · Preciso de Um',
@@ -126,6 +129,15 @@ export default function DashboardReferralsPage() {
     if (filter === 'rewarded') return items.filter((i) => i.status === 'rewarded' || i.status === 'completed');
     return items.filter((i) => i.status === filter);
   }, [data, filter]);
+
+  // Reset paginação quando o filtro muda
+  useMemo(() => { setPage(1); }, [filter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  const pagedItems = useMemo(
+    () => filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredItems, page]
+  );
 
   const totals = data?.totals;
 
@@ -218,12 +230,18 @@ export default function DashboardReferralsPage() {
           </p>
         </GlassCard>
 
-        {/* Filters + list */}
-        <GlassCard className="p-4">
+        {/* Filters + paginated history list */}
+        <GlassCard className="p-4" id="historico">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 font-display text-base font-bold text-foreground">
-              <TrendingUp className="h-4 w-4" /> Status por parceiro
-            </h2>
+            <div>
+              <h2 className="flex items-center gap-2 font-display text-base font-bold text-foreground">
+                <TrendingUp className="h-4 w-4" /> Histórico de indicações
+              </h2>
+              <p className="text-[11px] text-muted-foreground">
+                {filteredItems.length} {filteredItems.length === 1 ? 'indicação' : 'indicações'}
+                {filter !== 'all' && ` em ${STATUS_META[filter]?.label?.toLowerCase()}`}
+              </p>
+            </div>
             <div className="flex gap-1 overflow-x-auto">
               {(['all', 'pending', 'qualified', 'rewarded'] as FilterKey[]).map((f) => (
                 <button
@@ -254,48 +272,84 @@ export default function DashboardReferralsPage() {
               </p>
             </div>
           ) : (
-            <ul className="divide-y divide-border">
-              {filteredItems.map((item) => {
-                const meta = STATUS_META[item.status] || STATUS_META.pending;
-                const Icon = meta.icon;
-                const location = [item.referred_city, item.referred_state].filter(Boolean).join(', ');
-                return (
-                  <motion.li
-                    key={item.id}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center justify-between gap-3 py-2.5"
+            <>
+              <ul className="divide-y divide-border">
+                {pagedItems.map((item) => {
+                  const meta = STATUS_META[item.status] || STATUS_META.pending;
+                  const Icon = meta.icon;
+                  const location = [item.referred_city, item.referred_state].filter(Boolean).join(', ');
+                  const fmt = (d: string | null) =>
+                    d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : null;
+                  return (
+                    <motion.li
+                      key={item.id}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">{item.referred_name}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          {location || 'Localização não informada'}
+                        </p>
+                        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
+                          <span>Indicado <strong className="text-foreground/80">{fmt(item.created_at)}</strong></span>
+                          {item.qualified_at && (
+                            <span>Qualificado <strong className="text-blue-600">{fmt(item.qualified_at)}</strong></span>
+                          )}
+                          {item.rewarded_at && (
+                            <span>Pontos creditados <strong className="text-emerald-600">{fmt(item.rewarded_at)}</strong></span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
+                        {item.reward_points > 0 && (
+                          <span className="text-sm font-bold text-emerald-600">+{item.reward_points}</span>
+                        )}
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.bg} ${meta.text}`}
+                        >
+                          <Icon className="h-3 w-3" />
+                          {meta.label}
+                        </span>
+                      </div>
+                    </motion.li>
+                  );
+                })}
+              </ul>
+
+              {totalPages > 1 && (
+                <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="rounded-md border border-border bg-background px-3 py-1 font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">{item.referred_name}</p>
-                      <p className="truncate text-[11px] text-muted-foreground">
-                        {location || 'Localização não informada'} · indicado em{' '}
-                        {new Date(item.created_at).toLocaleDateString('pt-BR')}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      {item.reward_points > 0 && (
-                        <span className="text-xs font-bold text-emerald-600">+{item.reward_points}</span>
-                      )}
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.bg} ${meta.text}`}
-                      >
-                        <Icon className="h-3 w-3" />
-                        {meta.label}
-                      </span>
-                    </div>
-                  </motion.li>
-                );
-              })}
-            </ul>
+                    Anterior
+                  </button>
+                  <span className="text-muted-foreground">
+                    Página <strong className="text-foreground">{page}</strong> de {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="rounded-md border border-border bg-background px-3 py-1 font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Próxima
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </GlassCard>
 
         {/* Evolução dos pontos no tempo (gráfico + filtros + top indicações) */}
-        <ReferralPointsEvolution />
+        <div id="evolucao" className="scroll-mt-20">
+          <ReferralPointsEvolution />
+        </div>
 
-        {/* Points history */}
-        <GlassCard className="p-4" id="historico">
+        {/* Points history (engagement_log) */}
+        <GlassCard className="p-4" id="creditos">
           <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold text-foreground">
             <Award className="h-4 w-4 text-violet-600" /> Histórico de pontos creditados
           </h2>

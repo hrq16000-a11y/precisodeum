@@ -85,8 +85,25 @@ export function applySearchFilters<T extends FilterableProvider>(
 
   if (onlineOnly) results = results.filter((p) => onlineSet.has(p.userId));
   if (activeTodayOnly) {
-    // "Ativo hoje" inclui quem está online agora também
-    results = results.filter((p) => activeTodaySet.has(p.userId) || onlineSet.has(p.userId));
+    // "Ativo hoje" inclui quem está online agora também,
+    // E só vale para profissionais a até 5km do usuário (mesma régua do mapa).
+    results = results.filter((p) => {
+      const isActive = activeTodaySet.has(p.userId) || onlineSet.has(p.userId);
+      if (!isActive) return false;
+      // Sem distância calculada (sem GPS) → mantém para não esvaziar
+      if (p.distanceKm == null) return true;
+      return p.distanceKm < 5;
+    });
+    // Prioriza ATIVO + MAIS PERTO no topo (mesmo em sort 'relevance')
+    results.sort((a, b) => {
+      const aOnline = onlineSet.has(a.userId) ? 0 : 1;
+      const bOnline = onlineSet.has(b.userId) ? 0 : 1;
+      if (aOnline !== bOnline) return aOnline - bOnline;
+      const aActive = activeTodaySet.has(a.userId) ? 0 : 1;
+      const bActive = activeTodaySet.has(b.userId) ? 0 : 1;
+      if (aActive !== bActive) return aActive - bActive;
+      return (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999);
+    });
   }
   if (acceptingOnly) {
     results = results.filter((p) => !!p.whatsapp && p.whatsapp.trim().length > 0);

@@ -109,15 +109,18 @@ const CitySeoBlock = ({ citySlug, cityName, state, providersCount, featuredProvi
     () => ({
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
+      // url canônica garante que crawlers tratem como JSON-LD desta rota
+      url: `${SITE_BASE_URL}/cidade/${citySlug}`,
       mainEntity: faqs.map((f) => ({
         '@type': 'Question',
         name: f.q,
         acceptedAnswer: { '@type': 'Answer', text: f.a },
       })),
     }),
-    [faqs]
+    [faqs, citySlug]
   );
-  useJsonLd(faqLd);
+  // ID único por slug → evita colidir com FAQs de outras rotas (categoria etc.)
+  useJsonLd(faqLd, `json-ld-faq-cidade-${citySlug}`);
 
   return (
     <section className="border-t bg-muted/20" aria-labelledby="cidade-seo-titulo">
