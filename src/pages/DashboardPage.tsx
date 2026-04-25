@@ -533,6 +533,20 @@ const DashboardPage = () => {
         <OnlineStatusFeedback />
       </div>
 
+      {/* Seletor manual de visibilidade online (provider) */}
+      {provider?.id && (
+        <div className="mt-3" data-tour="online-toggle">
+          <OnlineStatusToggle />
+        </div>
+      )}
+
+      {/* Banner de instalação do App (mobile + provider) */}
+      {provider?.id && (
+        <div className="mt-3">
+          <DashboardPwaInstallNudge />
+        </div>
+      )}
+
       {/* Cards de Missão Profissional — gated por tier de maturidade */}
       <div className="mt-4" data-tour="missions">
         <MissionCard />
