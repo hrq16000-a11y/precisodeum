@@ -1384,8 +1384,8 @@ const ProviderProfile = () => {
               >
                 <Avatar className="h-28 w-28 shrink-0 rounded-2xl ring-4 ring-accent/20 shadow-xl">
                   <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
-                  <AvatarFallback className="rounded-2xl bg-primary text-3xl font-bold text-primary-foreground">
-                    {initials}
+                  <AvatarFallback className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 border border-white/10 shadow-inner">
+                    <UserRound className="w-1/2 h-1/2 text-slate-300" />
                   </AvatarFallback>
                 </Avatar>
                 {/* Online indicator pulse */}
