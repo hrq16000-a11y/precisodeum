@@ -686,26 +686,64 @@ const BasicOnboardingWizard = () => {
     setReviewAllMode(false);
   };
 
+  // ─── Validação unificada por passo ───
+  // Cada problema retorna { field, message } — o painel/inline destacam o campo exato
+  // e o botão "Continuar" só fica liberado quando errors está vazio.
+  type WizardFieldError = { field: string; message: string };
+  const validateStep = (target: WizardStep): WizardFieldError[] => {
+    const errors: WizardFieldError[] = [];
+    if (target === 1) {
+      if (!profileType) errors.push({ field: 'profileType', message: 'Escolha o tipo de perfil.' });
+      if (profileType === 'provider' && !providerSubtype) {
+        errors.push({ field: 'providerSubtype', message: 'Indique se o cadastro é como Pessoa Física ou Empresa/PJ.' });
+      }
+    }
+    if (target === 2) {
+      if (!city.trim()) errors.push({ field: 'city', message: 'Informe sua cidade.' });
+      if (!safeUF(state)) errors.push({ field: 'state', message: 'Selecione o estado (UF).' });
+    }
+    if (target === 3) {
+      if (!fullName.trim()) errors.push({ field: 'fullName', message: 'Informe seu nome completo.' });
+      const wa = validateWhatsapp(whatsapp);
+      if (!wa.valid) errors.push({ field: 'whatsapp', message: wa.message });
+      if (profileType === 'provider' && selectedCategoryIds.length === 0) {
+        errors.push({ field: 'category', message: 'Selecione a categoria principal do seu serviço.' });
+      }
+      if (profileType === 'rh' && !agencyName.trim()) {
+        errors.push({ field: 'agencyName', message: 'Informe o nome da agência.' });
+      }
+      // Tax-id: obrigatório só se preenchido — bloqueia se inválido
+      const td = (taxId || '').replace(/\D/g, '');
+      if (td.length > 0) {
+        const expected = profileType === 'provider' && providerSubtype === 'company' ? 14 : 11;
+        if (td.length !== expected || !isValidCpfCnpj(td)) {
+          errors.push({ field: 'taxId', message: `${expected === 14 ? 'CNPJ' : 'CPF'} inválido — confira ou deixe em branco.` });
+        }
+      }
+    }
+    return errors;
+  };
+  const stepErrors = useMemo(() => validateStep(step), [step, profileType, providerSubtype, city, state, fullName, whatsapp, selectedCategoryIds, agencyName, taxId]);
+  const errorByField = useMemo(() => Object.fromEntries(stepErrors.map(e => [e.field, e.message])), [stepErrors]);
+
   // ─── Passo 2: Localização + Foto ───
-  const canAdvanceFromStep2 = !!city.trim();
+  const canAdvanceFromStep2 = validateStep(2).length === 0;
   const handleStep2Next = async () => {
-    if (!canAdvanceFromStep2) {
-      toast.error('Informe sua cidade para continuar.');
+    const errs = validateStep(2);
+    if (errs.length > 0) {
+      toast.error(errs[0].message, errs.length > 1 ? { description: `+${errs.length - 1} campo(s) pendente(s)` } : undefined);
       return;
     }
     await advanceTo(3, {
       city: city || null,
       state: state || null,
       avatar_url: avatarUrl,
-    });
+      neighborhood: neighborhood.trim() || null,
+    } as any);
   };
 
   // ─── Passo 3: Dados de contato + bio + (provider) categoria ───
-  const canAdvanceFromStep3 =
-    !!fullName.trim() &&
-    hasValidWhatsapp(whatsapp) &&
-    (profileType !== 'provider' || selectedCategoryIds.length > 0) &&
-    (profileType !== 'rh' || !!agencyName.trim());
+  const canAdvanceFromStep3 = validateStep(3).length === 0;
 
   const handleStep3Next = async () => {
     if (!fullName.trim()) {
