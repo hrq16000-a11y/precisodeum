@@ -758,6 +758,21 @@ const ProviderProfile = () => {
     };
   }, [isMobile, provider?.whatsapp, provider?.phone]);
 
+  // Sticky header: mostra nome + selo Top quando o título principal sai do viewport
+  useEffect(() => {
+    const target = nameAnchorRef.current;
+    if (!target || typeof IntersectionObserver === 'undefined') {
+      setShowStickyName(false);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      ([entry]) => setShowStickyName(!entry.isIntersecting),
+      { threshold: 0, rootMargin: '-72px 0px 0px 0px' },
+    );
+    obs.observe(target);
+    return () => obs.disconnect();
+  }, [provider?.id]);
+
   // DESTAQUE criteria
   const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
   const destaqueRequirePortfolio = useSettingValue('destaque_require_portfolio') !== 'false';
