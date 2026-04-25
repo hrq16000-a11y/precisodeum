@@ -1645,17 +1645,41 @@ export const Step2Location = ({
 
 // ─── Passo 3 ───
 export const Step3Contact = ({
-  profileType, fullName, setFullName, agencyName, setAgencyName,
+  profileType, providerSubtype, setProviderSubtype,
+  fullName, setFullName, agencyName, setAgencyName,
   whatsapp, setWhatsapp, bio, setBio,
   taxId, setTaxId, taxSavedFeedback,
   categoriesForPicker, selectedCategoryIds, onToggleCategory,
   saving, canAdvance, onBack, onNext, onSkip, onFieldBlur,
 }: any) => {
+  const isProvider = profileType === 'provider';
+  // Para provider, o documento aceito depende do subtipo escolhido no Passo 1.
+  // PF (autônomo) → CPF apenas (11 dígitos). PJ (empresa/agência) → CNPJ apenas (14 dígitos).
+  const docMode: 'cpf' | 'cnpj' | 'auto' = !isProvider
+    ? 'auto'
+    : providerSubtype === 'company'
+      ? 'cnpj'
+      : 'cpf';
+  const taxLabel = docMode === 'cnpj' ? 'CNPJ' : 'CPF';
   const taxDigits = (taxId || '').replace(/\D/g, '');
   const taxFilled = taxDigits.length > 0;
-  const taxValid = !taxFilled || isValidCpfCnpj(taxDigits);
-  const taxLabel = taxDigits.length > 11 ? 'CNPJ' : 'CPF';
-  const isProviderPf = profileType === 'provider';
+  const expectedLen = docMode === 'cnpj' ? 14 : 11;
+  const taxValid = !taxFilled || (taxDigits.length === expectedLen && isValidCpfCnpj(taxDigits));
+
+  // Ao alternar PF↔PJ, garante que o documento existente seja truncado para o novo formato.
+  const switchSubtype = (next: 'autonomous' | 'company') => {
+    if (providerSubtype === next) return;
+    setProviderSubtype?.(next);
+    const max = next === 'company' ? 14 : 11;
+    if (taxDigits.length > max) {
+      setTaxId(taxDigits.slice(0, max));
+    } else if (taxDigits.length > 0 && taxDigits.length < max) {
+      // mantém parcial, mas sinaliza inválido até preencher
+      setTaxId(taxDigits);
+    }
+    window.setTimeout(onFieldBlur, 0);
+  };
+
   return (
   <>
     <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -1670,19 +1694,42 @@ export const Step3Contact = ({
     <h1 className="text-center font-display text-xl font-bold text-foreground">Dados de contato</h1>
     <p className="mt-1 text-center text-xs text-muted-foreground">Como os clientes vão te encontrar.</p>
 
-    {isProviderPf && (
+    {isProvider && (
       <div className="mt-4 rounded-xl border border-border bg-muted/20 p-3">
         <p className="text-xs font-bold text-foreground">Tipo de cadastro profissional</p>
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <div className="rounded-lg border border-accent bg-accent/10 px-3 py-2 text-center">
+          <button
+            type="button"
+            onClick={() => switchSubtype('autonomous')}
+            aria-pressed={providerSubtype !== 'company'}
+            className={`rounded-lg border px-3 py-2 text-center transition-colors ${
+              providerSubtype !== 'company'
+                ? 'border-accent bg-accent/10'
+                : 'border-border bg-background hover:bg-muted/40'
+            }`}
+          >
             <p className="text-xs font-bold text-foreground">PF</p>
             <p className="mt-1 text-[11px] text-muted-foreground">Autônomo ou profissional liberal</p>
-          </div>
-          <div className={`rounded-lg border px-3 py-2 text-center ${taxDigits.length > 11 ? 'border-primary bg-primary/10' : 'border-border bg-background'}`}>
+          </button>
+          <button
+            type="button"
+            onClick={() => switchSubtype('company')}
+            aria-pressed={providerSubtype === 'company'}
+            className={`rounded-lg border px-3 py-2 text-center transition-colors ${
+              providerSubtype === 'company'
+                ? 'border-accent bg-accent/10'
+                : 'border-border bg-background hover:bg-muted/40'
+            }`}
+          >
             <p className="text-xs font-bold text-foreground">PJ</p>
             <p className="mt-1 text-[11px] text-muted-foreground">MEI, empresa ou agência</p>
-          </div>
+          </button>
         </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {providerSubtype === 'company'
+            ? 'Você usará CNPJ para identificar a empresa.'
+            : 'Você usará CPF como autônomo ou profissional liberal.'}
+        </p>
       </div>
     )}
 
@@ -1716,13 +1763,14 @@ export const Step3Contact = ({
       <div>
         <div className="mb-1 flex items-center justify-between gap-3">
           <label className="block text-xs font-semibold text-foreground">
-            CPF ou CNPJ
+            {taxLabel}
           </label>
           <span className="shrink-0 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
             Documento opcional
           </span>
         </div>
         <CpfCnpjInput
+          mode={docMode}
           value={taxId || ''}
           onChange={(digitsOnly) => setTaxId(digitsOnly)}
           onBlur={onFieldBlur}
@@ -1736,7 +1784,7 @@ export const Step3Contact = ({
               ? `${taxLabel} salvo com segurança. Só você e a administração visualizam o documento completo.`
               : taxFilled
                 ? `${taxLabel} válido. Será salvo de forma criptografada ao continuar.`
-                : 'Opcional — você pode deixar em branco e preencher depois. Soma pontos no ranking quando informado.'}
+                : `Opcional — você pode deixar em branco e preencher depois. ${taxLabel} soma pontos no ranking quando informado.`}
         </p>
       </div>
 
