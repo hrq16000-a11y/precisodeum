@@ -918,11 +918,16 @@ const DashboardPage = () => {
 
       {/* Lote 4 — Frescor & Inteligência */}
       {provider?.id && (
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <DailyPostCard />
-          <RegionalDemandWidget />
-          <WeeklySummary />
-        </div>
+        <>
+          <div className="mt-6">
+            <MissedOpportunitiesWidget />
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <DailyPostCard />
+            <RegionalDemandWidget />
+            <WeeklySummary />
+          </div>
+        </>
       )}
 
       {/* Nossa história — referência à luta */}
