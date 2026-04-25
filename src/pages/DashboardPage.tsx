@@ -48,6 +48,7 @@ import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingCheckl
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
 import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
 import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
+import CategoryBenchmarkWidget from '@/components/dashboard/CategoryBenchmarkWidget';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
 import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
 import EngagementLoop from '@/components/dashboard/EngagementLoop';
