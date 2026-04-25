@@ -115,6 +115,50 @@ export default function DailyPostCard() {
     }
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !provider) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecione uma imagem (JPG, PNG ou WebP).');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error('A imagem precisa ter até 8MB.');
+      return;
+    }
+    setUploading(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const { data: { session } } = await supabase.auth.getSession();
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucket', 'portfolio');
+      formData.append('folder', `daily-posts/${provider.user_id}`);
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/optimize-image`,
+        {
+          method: 'POST',
+          headers: session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : undefined,
+          body: formData,
+        },
+      );
+      if (!res.ok) throw new Error(`upload_failed_${res.status}`);
+      const json = await res.json();
+      const url = json?.url || json?.publicUrl || json?.data?.url;
+      if (!url) throw new Error('no_url_returned');
+      setImageUrl(url);
+      toast.success('Foto enviada — pronta para publicar.');
+    } catch (err) {
+      console.error('[DailyPost upload]', err);
+      toast.error('Não foi possível enviar a foto. Tente novamente.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <GlassCard variant="default" className="overflow-hidden">
       <div className="flex items-center gap-3">
