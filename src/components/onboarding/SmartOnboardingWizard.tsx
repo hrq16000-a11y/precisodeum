@@ -24,10 +24,10 @@
  * Mini-celebrações: cada transição bem-sucedida dispara confete leve
  * via celebrate({intensity:'mini'}) para reforço positivo imediato.
  */
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Briefcase, UserRound, MapPin, Sparkles, Loader2, ArrowLeft, CheckCircle2,
-  PartyPopper, Building2, Megaphone, Camera, Phone, AlertCircle, RefreshCw,
+  PartyPopper, Building2, Megaphone, Camera, Phone, AlertCircle, RefreshCw, Navigation,
   Image as ImageIcon, Plus, Check,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -100,7 +100,16 @@ const SmartOnboardingWizard = (_: SmartOnboardingWizardProps = {}) => <BasicOnbo
 
 const BasicOnboardingWizard = () => {
   const { user, profile, refetchProfile } = useAuth();
-  const { city: geoCity, state: geoState } = useGeoCity();
+  const {
+    city: geoCity,
+    state: geoState,
+    precise: geoPrecise,
+    source: geoSource,
+    geoFailed,
+    requestPreciseLocation,
+    dismissGeoFailure,
+    setCity: setGeoManualCity,
+  } = useGeoCity();
   const { data: categoriesData = [] } = useCategoriesWithCount();
   const navigate = useNavigate();
 
@@ -145,6 +154,7 @@ const BasicOnboardingWizard = () => {
   const [creatingAlbum, setCreatingAlbum] = useState(false);
 
   const [saving, setSaving] = useState(false);
+  const [requestingGps, setRequestingGps] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [autoSaveDelay, setAutoSaveDelay] = useState<1000 | 2000 | 3000>(1000);
   const [lastAutoSavePatch, setLastAutoSavePatch] = useState<Record<string, any> | null>(null);
@@ -257,6 +267,33 @@ const BasicOnboardingWizard = () => {
     if (!editingCity && geoCity && !city) setCity(geoCity);
     if (geoState && !state) setState(geoState);
   }, [geoCity, geoState, editingCity, city, state]);
+
+  const cityStatusMessage = useMemo(() => {
+    if (requestingGps) return 'Buscando sua localização precisa por GPS…';
+    if (editingCity && city) return `Cidade selecionada: ${formatCityState(city, state, ' • ')}`;
+    if (geoPrecise && geoCity) return `Localização precisa ativa via GPS em ${formatCityState(geoCity, geoState, ' • ')}`;
+    if (geoCity && geoSource === 'ip') return `Localização aproximada detectada em ${formatCityState(geoCity, geoState, ' • ')}`;
+    if (geoFailed) return 'Não conseguimos detectar automaticamente. Escolha sua cidade manualmente.';
+    return 'Escolha sua cidade ou ative o GPS para preencher automaticamente.';
+  }, [requestingGps, editingCity, city, state, geoPrecise, geoCity, geoState, geoSource, geoFailed]);
+
+  const handleUsePreciseLocation = async () => {
+    setRequestingGps(true);
+    try {
+      const ok = await requestPreciseLocation();
+      if (ok) {
+        toast.success('Localização precisa ativada.');
+        dismissGeoFailure();
+        setEditingCity(false);
+        window.setTimeout(handleStepFieldBlur, 0);
+      } else {
+        toast.error('Não foi possível obter sua localização por GPS agora. Você pode escolher a cidade manualmente.');
+        setEditingCity(true);
+      }
+    } finally {
+      setRequestingGps(false);
+    }
+  };
 
   const categoriesForPicker = categoriesData.map((c: any) => ({
     id: c.id, name: c.name, icon: c.icon, slug: c.slug, parent_id: c.parent_id,
