@@ -133,6 +133,7 @@ const StateProviderPage = lazy(() => import("./pages/StateProviderPage"));
 const CityDetailPage = lazy(() => import("./pages/CityDetailPage"));
 const CategoriesListPage = lazy(() => import("./pages/CategoriesListPage"));
 const EspecialidadesPage = lazy(() => import("./pages/EspecialidadesPage"));
+const EspecialidadeDetailPage = lazy(() => import("./pages/EspecialidadeDetailPage"));
 const AdminConversionMetricsPage = lazy(() => import("./pages/AdminConversionMetricsPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ComoFuncionaPage = lazy(() => import("./pages/ComoFuncionaPage"));
@@ -455,7 +456,7 @@ const App = () => {
                 <Route path="/cidades/:estado/:cidade" element={<CityDetailPage />} />
                 <Route path="/categorias" element={<CategoriesListPage />} />
                 <Route path="/especialidades" element={<EspecialidadesPage />} />
-                <Route path="/especialidades/:slug" element={<EspecialidadeRedirect />} />
+                <Route path="/especialidades/:slug" element={<EspecialidadeDetailPage />} />
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/ajuda" element={<HelpCenterPage />} />
                 <Route path="/privacidade" element={<PrivacyPage />} />
