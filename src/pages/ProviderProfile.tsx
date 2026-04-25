@@ -291,7 +291,7 @@ const ProviderProfile = () => {
   const [loading, setLoading] = useState(true);
   const [leadDialogOpen, setLeadDialogOpen] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
-  const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '' });
+  const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '', city: '', state: '' });
   const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
   const [relatedProviders, setRelatedProviders] = useState<any[]>([]);
   const [showStickyContact, setShowStickyContact] = useState(false);
