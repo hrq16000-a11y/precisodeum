@@ -681,8 +681,9 @@ const BasicOnboardingWizard = () => {
       toast.error('Informe seu nome completo para continuar.');
       return;
     }
-    if (!hasValidWhatsapp(whatsapp)) {
-      toast.error('Informe um WhatsApp válido (com DDD).', {
+    const waCheck = validateWhatsapp(whatsapp);
+    if (!waCheck.valid) {
+      toast.error(waCheck.message, {
         description: 'É como os clientes vão entrar em contato com você.',
       });
       return;
