@@ -1911,12 +1911,21 @@ export const Step3Contact = ({
             name="whatsapp"
             value={whatsapp}
             onChange={(_n: any, val: string) => setWhatsapp(val)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+            className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground ${
+              waTouched && !waCheck.valid ? 'border-destructive focus-visible:ring-destructive' : 'border-input'
+            }`}
           />
         </div>
-        <p className="mt-1 text-[11px] text-muted-foreground">
-          Os clientes só conseguem te chamar se o WhatsApp estiver preenchido.
-        </p>
+        {waTouched && !waCheck.valid ? (
+          <p className="mt-1 flex items-start gap-1 text-[11px] font-medium text-destructive">
+            <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+            <span>{waCheck.message}</span>
+          </p>
+        ) : (
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Inclua DDD. Ex: (41) 99745-2053. Os clientes só conseguem te chamar se o WhatsApp estiver preenchido.
+          </p>
+        )}
       </div>
 
       <div>
