@@ -300,6 +300,22 @@ const ProviderProfile = () => {
   const mainWhatsappRef = useRef<HTMLDivElement | null>(null);
   const nameAnchorRef = useRef<HTMLDivElement | null>(null);
 
+  // Pré-preenche o formulário de lead com contexto da busca (?servico=, ?cidade=, ?uf=)
+  // ou cai no city/state do próprio provider, para o profissional saber de onde vem o contato.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const qService = params.get('servico') || params.get('service') || '';
+    const qCity = params.get('cidade') || params.get('city') || '';
+    const qUf = (params.get('uf') || params.get('state') || '').toUpperCase();
+    setLeadForm(prev => ({
+      ...prev,
+      service: prev.service || qService,
+      city: prev.city || qCity || provider?.city || '',
+      state: prev.state || qUf || (provider?.state || '').toUpperCase(),
+    }));
+  }, [provider?.city, provider?.state]);
+
   useEffect(() => {
     let active = true;
 
