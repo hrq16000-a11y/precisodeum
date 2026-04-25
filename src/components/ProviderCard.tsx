@@ -101,9 +101,15 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     );
   } else if (provider.distanceKm != null && provider.distanceKm < 5) {
     badges.push(
-      <span key="rapido" className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
-        Atendimento Rápido
-      </span>
+      <motion.span
+        key="seu-bairro"
+        animate={{ scale: [1, 1.04, 1] }}
+        transition={{ duration: 2.4, repeat: Infinity }}
+        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+      >
+        <MapPin className="h-2.5 w-2.5" />
+        Atende no seu bairro
+      </motion.span>
     );
   }
   if ((provider as any).response_time) {
@@ -255,6 +261,20 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                   </span>
                 )}
               </div>
+            )}
+            {/* Hiper-local: matador para conversão quando o profissional está a <5km */}
+            {provider.distanceKm != null && provider.distanceKm < 5 && !isFallback && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+              >
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-70" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                </span>
+                Atende agora no seu bairro
+              </motion.div>
             )}
             {/* Badges — limited on mobile */}
             <div className="mt-1.5 flex flex-wrap items-center gap-1 sm:gap-1.5">
