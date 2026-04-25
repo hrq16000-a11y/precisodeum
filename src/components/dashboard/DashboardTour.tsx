@@ -23,6 +23,7 @@ const STEPS: Step[] = [
     body:
       'O botão Online é o coração da sua disponibilidade. Quando ativo, você ganha boost no ranking e aparece antes dos concorrentes nas buscas.',
     highlight: '[data-tour="online-status"]',
+    emptyHint: 'Procure o interruptor "Online" no topo do seu dashboard assim que ele carregar.',
   },
   {
     icon: BarChart3,
@@ -30,6 +31,7 @@ const STEPS: Step[] = [
     body:
       'Aqui você vê em tempo real quantas pessoas viram seu perfil e clicaram no WhatsApp nas últimas 24 horas.',
     highlight: '[data-tour="contact-impact"]',
+    emptyHint: 'Você ainda não recebeu visitas — esse painel aparece assim que o primeiro cliente abrir seu perfil.',
   },
   {
     icon: Target,
@@ -37,6 +39,7 @@ const STEPS: Step[] = [
     body:
       'Responda missões rápidas para ganhar pontos, subir de nível e desbloquear o selo "Profissional Top".',
     highlight: '[data-tour="missions"]',
+    emptyHint: 'O card de Missões abre logo abaixo. Cada missão concluída vira um selo no seu perfil.',
   },
 ];
 
