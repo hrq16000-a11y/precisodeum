@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Smartphone, Download, Eye, MousePointerClick, XCircle, CheckCircle2, BarChart3, Settings, MessageSquare, Monitor, Palette, Clock } from 'lucide-react';
 import type { PwaSettings } from '@/hooks/usePwaInstall';
+import AdminPwaCityStatsCard from '@/components/admin/AdminPwaCityStatsCard';
 
 const AdminPwaPage = () => {
   const { isAdmin, loading: adminLoading } = useAdmin();
