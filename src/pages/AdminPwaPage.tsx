@@ -175,6 +175,9 @@ const AdminPwaPage = () => {
           </div>
         )}
 
+        {/* Adoção do app por cidade (Curitiba/SJP em destaque) */}
+        <AdminPwaCityStatsCard />
+
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Master Toggle + Points */}
           <Card>
