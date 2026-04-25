@@ -671,13 +671,27 @@ const BasicOnboardingWizard = () => {
   // ─── Passo 3: Dados de contato + bio + (provider) categoria ───
   const canAdvanceFromStep3 =
     !!fullName.trim() &&
-    !!whatsapp.trim() &&
+    hasValidWhatsapp(whatsapp) &&
     (profileType !== 'provider' || selectedCategoryIds.length > 0) &&
     (profileType !== 'rh' || !!agencyName.trim());
 
   const handleStep3Next = async () => {
-    if (!canAdvanceFromStep3) {
-      toast.error('Preencha os campos obrigatórios para continuar.');
+    if (!fullName.trim()) {
+      toast.error('Informe seu nome completo para continuar.');
+      return;
+    }
+    if (!hasValidWhatsapp(whatsapp)) {
+      toast.error('Informe um WhatsApp válido (com DDD).', {
+        description: 'É como os clientes vão entrar em contato com você.',
+      });
+      return;
+    }
+    if (profileType === 'provider' && selectedCategoryIds.length === 0) {
+      toast.error('Selecione a categoria principal do seu serviço.');
+      return;
+    }
+    if (profileType === 'rh' && !agencyName.trim()) {
+      toast.error('Informe o nome da agência.');
       return;
     }
     if (!user?.id) return;
