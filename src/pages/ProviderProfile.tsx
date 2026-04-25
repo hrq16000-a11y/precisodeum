@@ -1602,7 +1602,7 @@ const ProviderProfile = () => {
                     onClick={() => {
                       if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'principal');
                       requestWhatsApp({
-                        url: whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`),
+                       url: whatsappLink(effectiveWhatsApp, `Olá ${name}! Vi seu perfil no Preciso de um e gostaria de conversar sobre uma necessidade.`),
                         targetType: 'provider',
                         targetId: provider?.id ?? null,
                         targetLabel: name,
