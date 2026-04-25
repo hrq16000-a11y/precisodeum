@@ -614,14 +614,7 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* 5) Impacto na Rede — métricas movidas para baixo dos blocos de ação */}
-      <div className="mt-6">
-        <ImpactSection
-          views={viewsTotal}
-          whatsappClicks={(provider as any)?.contact_clicks_count ?? 0}
-          leads={leadsCount}
-        />
-      </div>
+      {/* Impacto na Rede movido para o final da página, junto às demais métricas. */}
 
       {/* Online Status Feedback — pulse + toast quando entra em modo Online */}
       <div className="mt-3 flex justify-end" data-tour="online-status">
