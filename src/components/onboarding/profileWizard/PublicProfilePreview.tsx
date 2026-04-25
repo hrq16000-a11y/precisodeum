@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ExternalLink, MapPin, MessageCircle, User, Briefcase, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ExternalLink, MapPin, MessageCircle, User, Briefcase, Image as ImageIcon, Loader2, Pencil } from 'lucide-react';
 import { generateProviderSlug, slugify } from '@/lib/slugify';
 import { supabase } from '@/integrations/supabase/client';
 import type { ProfileWizardData } from './types';
@@ -170,10 +171,21 @@ const PublicProfilePreview = ({ data, slug, userId }: PublicProfilePreviewProps)
                 Meus serviços
               </span>
               {loading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+              <Link
+                to="/dashboard/servicos"
+                className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+              >
+                <Pencil className="h-3 w-3" />
+                Gerenciar
+              </Link>
             </div>
             {services.length === 0 && !loading ? (
               <p className="text-[11px] text-muted-foreground">
-                Você ainda não cadastrou serviços. Adicione na seção "Serviços" do dashboard.
+                Você ainda não cadastrou serviços.{' '}
+                <Link to="/dashboard/servicos" className="text-primary hover:underline">
+                  Adicionar agora
+                </Link>
+                .
               </p>
             ) : (
               <ul className="space-y-1.5">
@@ -201,10 +213,21 @@ const PublicProfilePreview = ({ data, slug, userId }: PublicProfilePreviewProps)
               <span className="text-xs font-semibold text-foreground uppercase tracking-wide">
                 Portfólio
               </span>
+              <Link
+                to="/dashboard/portfolio"
+                className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+              >
+                <Pencil className="h-3 w-3" />
+                Gerenciar
+              </Link>
             </div>
             {media.length === 0 && !loading ? (
               <p className="text-[11px] text-muted-foreground">
-                Sem fotos no portfólio ainda.
+                Sem fotos no portfólio ainda.{' '}
+                <Link to="/dashboard/portfolio" className="text-primary hover:underline">
+                  Enviar fotos
+                </Link>
+                .
               </p>
             ) : (
               <div className="grid grid-cols-3 gap-1.5">
