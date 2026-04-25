@@ -1395,22 +1395,8 @@ const ProviderProfile = () => {
                       <Crown className="h-3 w-3" strokeWidth={1.75} /> DESTAQUE
                     </motion.span>
                   )}
-                  {/* Smart label: Empresa (CNPJ) or Prestador, never Administrador */}
-                  {(() => {
-                    const accName = provider.accTypeInfo?.name || '';
-                    const isAdminLabel = accName.toLowerCase().includes('admin');
-                    if (isAdminLabel) return null;
-                    const hasCnpj = !!(provider as any).cnpj;
-                    const labelText = hasCnpj ? 'Empresa' : 'Prestador';
-                    const LabelIcon = hasCnpj ? Building2 : Wrench;
-                    const labelColor = hasCnpj ? '#6366f1' : (provider.accTypeInfo?.color || 'hsl(var(--accent))');
-                    return (
-                      <span className={`inline-flex items-center gap-1 ${tc.badge} border px-2 py-0.5 text-xs font-medium`} style={{ borderColor: `${labelColor}40`, color: labelColor }}>
-                        <LabelIcon className="h-3 w-3" strokeWidth={1.75} />
-                        {labelText}
-                      </span>
-                    );
-                  })()}
+                  {/* Badge "Prestador"/"Empresa" removido — a categoria já comunica o papel.
+                      Ver pedido do produto: manter apenas a categoria abaixo do nome. */}
                 </div>
 
                 {/* ── PROMINENT LEVEL BADGE (Metallic Design) — hidden for admins and generic "Usuário" level ── */}
