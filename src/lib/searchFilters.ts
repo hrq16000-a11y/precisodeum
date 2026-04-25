@@ -37,9 +37,11 @@ export interface SearchFilterOptions {
   featuredFilter?: FeaturedFilter;
   onlineOnly?: boolean;
   acceptingOnly?: boolean;
+  activeTodayOnly?: boolean;
   sortBy?: SortMode;
   urgencyMode?: boolean;
   onlineSet?: Set<string>;
+  activeTodaySet?: Set<string>;
   routeCorridor?: RouteCorridor | null;
 }
 
@@ -54,9 +56,11 @@ export function applySearchFilters<T extends FilterableProvider>(
     featuredFilter = 'all',
     onlineOnly = false,
     acceptingOnly = false,
+    activeTodayOnly = false,
     sortBy = 'relevance',
     urgencyMode = false,
     onlineSet = new Set<string>(),
+    activeTodaySet = new Set<string>(),
     routeCorridor = null,
   } = opts;
 
@@ -80,6 +84,10 @@ export function applySearchFilters<T extends FilterableProvider>(
   else if (featuredFilter === 'normal') results = results.filter((p) => !p.featured);
 
   if (onlineOnly) results = results.filter((p) => onlineSet.has(p.userId));
+  if (activeTodayOnly) {
+    // "Ativo hoje" inclui quem está online agora também
+    results = results.filter((p) => activeTodaySet.has(p.userId) || onlineSet.has(p.userId));
+  }
   if (acceptingOnly) {
     results = results.filter((p) => !!p.whatsapp && p.whatsapp.trim().length > 0);
   }
@@ -139,6 +147,7 @@ export function countActiveFilters(state: {
   minRating?: number;
   onlineOnly?: boolean;
   acceptingOnly?: boolean;
+  activeTodayOnly?: boolean;
 }): number {
   return [
     state.selectedCategory,
@@ -149,6 +158,7 @@ export function countActiveFilters(state: {
     (state.minRating ?? 0) > 0 ? 'x' : '',
     state.onlineOnly ? 'x' : '',
     state.acceptingOnly ? 'x' : '',
+    state.activeTodayOnly ? 'x' : '',
   ].filter(Boolean).length;
 }
 

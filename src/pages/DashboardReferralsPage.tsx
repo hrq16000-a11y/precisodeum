@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { whatsappLink } from '@/lib/whatsapp';
 import { useSeoHead } from '@/hooks/useSeoHead';
+import ReferralPointsEvolution from '@/components/dashboard/ReferralPointsEvolution';
 
 interface Item {
   id: string;
@@ -290,8 +291,11 @@ export default function DashboardReferralsPage() {
           )}
         </GlassCard>
 
+        {/* Evolução dos pontos no tempo (gráfico + filtros + top indicações) */}
+        <ReferralPointsEvolution />
+
         {/* Points history */}
-        <GlassCard className="p-4">
+        <GlassCard className="p-4" id="historico">
           <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold text-foreground">
             <Award className="h-4 w-4 text-violet-600" /> Histórico de pontos creditados
           </h2>

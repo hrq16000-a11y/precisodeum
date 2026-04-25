@@ -6186,6 +6186,12 @@ export type Database = {
         }[]
       }
       generate_referral_code: { Args: never; Returns: string }
+      get_active_today_providers: {
+        Args: never
+        Returns: {
+          user_id: string
+        }[]
+      }
       get_community_feed: {
         Args: { _limit?: number }
         Returns: {
@@ -6316,6 +6322,10 @@ export type Database = {
           total_participants: number
           total_points: number
         }[]
+      }
+      get_my_referral_points_timeline: {
+        Args: { _period_days?: number }
+        Returns: Json
       }
       get_my_referrals_full: { Args: never; Returns: Json }
       get_my_referrals_summary: { Args: never; Returns: Json }
