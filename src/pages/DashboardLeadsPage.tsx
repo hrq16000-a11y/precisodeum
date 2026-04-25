@@ -335,6 +335,14 @@ const DashboardLeadsPage = () => {
                   {overdueCount} pendente{overdueCount > 1 ? 's' : ''} de follow-up
                 </span>
               )}
+              {clickOnlyCount > 0 && (
+                <span
+                  className="ml-2 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                  title="Cliques diretos em WhatsApp/Ligar — não entram no pipeline principal"
+                >
+                  {clickOnlyCount} clique{clickOnlyCount > 1 ? 's' : ''} direto{clickOnlyCount > 1 ? 's' : ''}
+                </span>
+              )}
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
