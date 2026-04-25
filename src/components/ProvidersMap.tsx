@@ -2,7 +2,7 @@ import 'leaflet/dist/leaflet.css';
 import { useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { MapPin, Star, Circle } from 'lucide-react';
+import { MapPin, Star, Circle, Phone, Clock } from 'lucide-react';
 import { whatsappLink } from '@/lib/whatsapp';
 import type { DbProvider } from '@/hooks/useProviders';
 import { Link } from 'react-router-dom';
@@ -134,15 +134,16 @@ const ProvidersMap = ({
           const icon = isOnline ? onlineIcon : isActiveToday ? activeTodayIcon : defaultIcon;
           return (
             <Marker key={p.id} position={[p.latitude!, p.longitude!]} icon={icon}>
-              <Popup maxWidth={260} minWidth={200}>
+              <Popup maxWidth={280} minWidth={220}>
                 <div className="space-y-1.5 text-sm">
                   <p className="font-bold text-foreground leading-tight">
                     {p.name || p.businessName || 'Profissional'}
                   </p>
                   {p.category && <p className="text-xs text-muted-foreground">{p.category}</p>}
                   {(isOnline || isActiveToday) && (
-                    <p className={`text-[11px] font-semibold ${isOnline ? 'text-emerald-600' : 'text-amber-600'}`}>
-                      {isOnline ? '● Trabalhando agora' : '● Ativo hoje'}
+                    <p className={`flex items-center gap-1 text-[11px] font-semibold ${isOnline ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      <Clock className="h-3 w-3" />
+                      {isOnline ? 'Trabalhando agora' : 'Ativo nas últimas 24h'}
                     </p>
                   )}
                   {p.distanceKm != null && (
@@ -156,7 +157,7 @@ const ProvidersMap = ({
                       {p.rating.toFixed(1)} ({p.reviewCount})
                     </p>
                   )}
-                  <div className="flex gap-1.5 pt-1">
+                  <div className="flex flex-wrap gap-1.5 pt-1.5 border-t border-border/50 mt-1.5">
                     {p.whatsapp && (
                       <a
                         href={whatsappLink(p.whatsapp)}
@@ -165,6 +166,14 @@ const ProvidersMap = ({
                         className="inline-flex items-center gap-1 rounded bg-green-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-green-700"
                       >
                         WhatsApp
+                      </a>
+                    )}
+                    {(p.phone || p.whatsapp) && (
+                      <a
+                        href={`tel:${(p.phone || p.whatsapp).replace(/\D/g, '')}`}
+                        className="inline-flex items-center gap-1 rounded bg-foreground px-2 py-1 text-[11px] font-medium text-background hover:opacity-90"
+                      >
+                        <Phone className="h-3 w-3" /> Ligar
                       </a>
                     )}
                     <Link
