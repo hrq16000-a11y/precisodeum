@@ -523,6 +523,7 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout>
+      <div className="-mx-4 -my-6 bg-slate-50 px-4 py-6 dark:bg-background sm:-mx-6 sm:px-6">
       {debugResetBar}
       <RealtimeEngagementToast />
       <LevelUpBanner />
@@ -536,6 +537,25 @@ const DashboardPage = () => {
         memberSince={profile?.created_at}
         avatarUrl={profile?.avatar_url || undefined}
       />
+
+      {/* 1) Score único de Saúde do Perfil — substitui ProfileHealthScore + Completude duplicada */}
+      <div className="mt-6">
+        <UnifiedHealthScore score={completenessPercent} remaining={remainingItems} />
+      </div>
+
+      {/* 2) Ações Rápidas no topo — primeira coisa visível */}
+      <div className="mt-4">
+        <QuickActionsHero />
+      </div>
+
+      {/* 3) Impacto na Rede — agrupa Views/WhatsApp/Leads, com Empty State quando tudo é zero */}
+      <div className="mt-4">
+        <ImpactSection
+          views={viewsTotal}
+          whatsappClicks={(provider as any)?.contact_clicks_count ?? 0}
+          leads={leadsCount}
+        />
+      </div>
 
       {/* Online Status Feedback — pulse + toast quando entra em modo Online */}
       <div className="mt-3 flex justify-end" data-tour="online-status">
