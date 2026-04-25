@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { ExternalLink, MapPin, MessageCircle, User } from 'lucide-react';
-import { slugify } from '@/lib/slugify';
+import { generateProviderSlug, slugify } from '@/lib/slugify';
 import type { ProfileWizardData } from './types';
 
 interface PublicProfilePreviewProps {
@@ -16,7 +17,14 @@ interface PublicProfilePreviewProps {
  * Não consulta backend — projeta o estado atual do formulário.
  */
 const PublicProfilePreview = ({ data, slug }: PublicProfilePreviewProps) => {
-  const computedSlug = slug || (data.full_name ? slugify(data.full_name) : 'meu-perfil');
+  // Slug consistente com o que a plataforma persiste (nome + cidade).
+  // Recalcula automaticamente quando o usuário muda nome ou cidade no wizard.
+  const computedSlug = useMemo(() => {
+    if (slug) return slug;
+    if (data.full_name && data.city) return generateProviderSlug(data.full_name, data.city);
+    if (data.full_name) return slugify(data.full_name);
+    return 'meu-perfil';
+  }, [slug, data.full_name, data.city]);
   const previewUrl = `/profissional/${computedSlug}`;
   const initials = (data.full_name || '?')
     .trim()
