@@ -196,8 +196,12 @@ const BasicOnboardingWizard = () => {
     details?: string;
     hint?: string;
     payloadKeys?: string[];
+    payload?: Record<string, any>;
+    field?: string;
+    stage?: string;
   };
   const [lastSaveError, setLastSaveError] = useState<WizardSaveError | null>(null);
+  const [debugCopied, setDebugCopied] = useState(false);
 
   // ─── Sync inicial: se profile carrega DEPOIS do mount, atualiza step ───
   const syncedRef = useRef(false);
