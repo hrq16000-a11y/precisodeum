@@ -166,5 +166,6 @@ export default function AdminLocationDebugPage() {
         </table>
       </Card>
     </div>
+    </AdminLayout>
   );
 }
