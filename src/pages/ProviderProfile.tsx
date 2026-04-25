@@ -1757,8 +1757,8 @@ const ProviderProfile = () => {
                           <div className="relative">
                             <Avatar className="h-16 w-16 rounded-xl ring-2 ring-border group-hover:ring-accent/30 transition-all shadow-md">
                               <AvatarImage src={rpAvatar || undefined} alt={rpName} className="rounded-xl" />
-                              <AvatarFallback className="rounded-xl bg-primary/10 text-sm font-bold text-primary">
-                                {rpInitials}
+                              <AvatarFallback className="rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 border border-white/10 shadow-inner">
+                                <UserRound className="w-1/2 h-1/2 text-slate-300" />
                               </AvatarFallback>
                             </Avatar>
                           </div>
