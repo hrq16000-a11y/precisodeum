@@ -742,10 +742,14 @@ const BasicOnboardingWizard = () => {
       }
     }
     setSaving(true);
+    setLastSaveError(null);
+    let currentTable: string = 'profiles';
+    let currentPayloadKeys: string[] = [];
     try {
       const hadTaxIdBefore = !!((profile as any)?.tax_id_last4) || !!taxId.trim();
 
-      const { error: profileError } = await supabase.from('profiles').update({
+      currentTable = 'profiles';
+      const profilesPayload = {
         full_name: fullName.trim(),
         whatsapp,
         phone: whatsapp,
@@ -756,9 +760,13 @@ const BasicOnboardingWizard = () => {
         state: state || null,
         preferred_category_ids: profileType === 'provider' ? selectedCategoryIds : [],
         onboarding_step: 4,
-      } as any).eq('id', user.id);
+      };
+      currentPayloadKeys = Object.keys(profilesPayload);
+      const { error: profileError } = await supabase.from('profiles').update(profilesPayload as any).eq('id', user.id);
       if (profileError) throw profileError;
 
+      currentTable = 'rpc:set_profile_tax_id';
+      currentPayloadKeys = ['_tax_id'];
       const { error: taxError } = await supabase.rpc('set_profile_tax_id', {
         _tax_id: taxIdDigits || null,
       });
@@ -782,20 +790,24 @@ const BasicOnboardingWizard = () => {
 
       // Garante registro provider/agency conforme tipo
       if (profileType === 'provider') {
+        currentTable = 'providers';
         const { data: existing } = await supabase.from('providers').select('*').eq('user_id', user.id).limit(1);
         if (existing && existing[0]) {
-          await supabase.from('providers').update({
+          const updPayload = {
             city: city || existing[0].city,
             state: state || existing[0].state,
             description: bio || existing[0].description,
             whatsapp: whatsapp || existing[0].whatsapp,
             category_id: selectedCategoryIds[0] || existing[0].category_id,
             account_type: providerSubtype || existing[0].account_type || 'autonomous',
-          } as any).eq('id', existing[0].id);
+          };
+          currentPayloadKeys = Object.keys(updPayload);
+          const { error: updErr } = await supabase.from('providers').update(updPayload as any).eq('id', existing[0].id);
+          if (updErr) throw updErr;
           setSavedProvider({ ...existing[0], city, state, description: bio, whatsapp, category_id: selectedCategoryIds[0], account_type: providerSubtype || 'autonomous' });
         } else {
           const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'profissional');
-          const { data: created, error } = await supabase.from('providers').insert({
+          const insPayload = {
             user_id: user.id,
             slug: `${baseSlug}-${user.id.slice(0, 6)}`,
             city: city || null,
@@ -805,22 +817,28 @@ const BasicOnboardingWizard = () => {
             category_id: selectedCategoryIds[0] || null,
             account_type: providerSubtype || 'autonomous',
             status: 'pending',
-          } as any).select('*').single();
+          };
+          currentPayloadKeys = Object.keys(insPayload);
+          const { data: created, error } = await supabase.from('providers').insert(insPayload as any).select('*').single();
           if (error) throw error;
           setSavedProvider(created);
         }
       } else if (profileType === 'rh') {
+        currentTable = 'agencies';
         const { data: existing } = await (supabase as any).from('agencies').select('*').eq('user_id', user.id).limit(1);
         if (!existing || existing.length === 0) {
           const baseSlug = slugify(agencyName || fullName || 'agencia');
-          await (supabase as any).from('agencies').insert({
+          const insPayload = {
             user_id: user.id,
             slug: `${baseSlug}-${user.id.slice(0, 6)}`,
             name: agencyName.trim() || fullName.trim() || 'Minha Agência',
             city: city || null,
             state: state || null,
             status: 'pending',
-          });
+          };
+          currentPayloadKeys = Object.keys(insPayload);
+          const { error: insErr } = await (supabase as any).from('agencies').insert(insPayload);
+          if (insErr) throw insErr;
         }
       }
 
@@ -834,12 +852,33 @@ const BasicOnboardingWizard = () => {
         await finishOnboarding();
       }
     } catch (err: any) {
-      console.error('[Wizard step 3]', err);
-      const detail = err?.message || err?.error_description || err?.details || '';
-      toast.error('Não foi possível salvar.', {
-        description: detail
-          ? `Motivo: ${String(detail).slice(0, 180)}`
-          : 'Confira os campos obrigatórios e tente novamente. Se persistir, tente recarregar a página.',
+      console.error('[Wizard step 3]', { table: currentTable, payloadKeys: currentPayloadKeys, err });
+      const message = String(err?.message || err?.error_description || 'Erro desconhecido');
+      const details = err?.details ? String(err.details) : undefined;
+      const hint = err?.hint ? String(err.hint) : undefined;
+      const code = err?.code ? String(err.code) : undefined;
+      setLastSaveError({
+        step: 3,
+        when: new Date().toISOString(),
+        table: currentTable,
+        code,
+        message,
+        details,
+        hint,
+        payloadKeys: currentPayloadKeys,
+      });
+      // Mensagem amigável + dica do campo provável
+      let friendly = message;
+      const lower = `${message} ${details || ''}`.toLowerCase();
+      if (lower.includes('whatsapp') || lower.includes('phone')) friendly = 'Erro no campo WhatsApp/telefone.';
+      else if (lower.includes('full_name') || lower.includes('name')) friendly = 'Erro no campo Nome.';
+      else if (lower.includes('city')) friendly = 'Erro no campo Cidade.';
+      else if (lower.includes('state')) friendly = 'Erro no campo Estado (UF).';
+      else if (lower.includes('category')) friendly = 'Erro na Categoria selecionada.';
+      else if (lower.includes('tax') || lower.includes('cpf') || lower.includes('cnpj')) friendly = 'Erro no CPF/CNPJ.';
+      else if (lower.includes('slug')) friendly = 'Slug do perfil já em uso — tente novamente.';
+      toast.error(`Não foi possível salvar (${currentTable}).`, {
+        description: `${friendly}${code ? ` [${code}]` : ''} — ${String(message).slice(0, 180)}`,
       });
     } finally {
       setSaving(false);
