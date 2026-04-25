@@ -796,28 +796,36 @@ const DashboardPage = () => {
         <StatCardGrid cards={statCards} />
       </div>
 
-      {/* Analytics Grid: Completeness + Chart + Conversion + Activity */}
+      {/* Analytics Grid: charts/insights — cada bloco já se auto-oculta quando
+          não há dados reais (evita UI estática enganosa). */}
       {provider && (
         <div className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
-          <GlassCard variant="default" hoverEffect={false} delay={0.4} data-tour="leads">
-            <LeadsChart providerId={provider.id} />
-          </GlassCard>
+          {(viewsTotal > 0 || leadsCount > 0) && (
+            <GlassCard variant="default" hoverEffect={false} delay={0.4} data-tour="leads">
+              <LeadsChart providerId={provider.id} />
+            </GlassCard>
+          )}
 
-          <GlassCard variant="default" hoverEffect={false} delay={0.5}>
-            <ConversionInsights views={viewsTotal} leads={leadsCount} services={servicesCount ?? 0} />
-          </GlassCard>
+          {(viewsTotal > 0 || leadsCount > 0) && (
+            <GlassCard variant="default" hoverEffect={false} delay={0.5}>
+              <ConversionInsights views={viewsTotal} leads={leadsCount} services={servicesCount ?? 0} />
+            </GlassCard>
+          )}
 
           <div className="lg:col-span-2">
             <LeadInsights providerId={provider.id} />
           </div>
 
-          <GlassCard variant="bordered" hoverEffect={false} delay={0.6}>
-            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-              <FileText className="h-4 w-4 text-accent" />
-              Atividade Recente
-            </h3>
-            <RecentActivity providerId={provider.id} />
-          </GlassCard>
+          {/* "Atividade Recente": só renderiza o wrapper quando há atividade real. */}
+          {leadsCount > 0 && (
+            <GlassCard variant="bordered" hoverEffect={false} delay={0.6}>
+              <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-accent" />
+                Atividade Recente
+              </h3>
+              <RecentActivity providerId={provider.id} />
+            </GlassCard>
+          )}
 
           <div className="lg:col-span-2">
             <DashboardTipOfDay
