@@ -155,6 +155,7 @@ const CategoryPage = () => {
     description: dynamicDescription,
     canonical: slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined,
     ogImage: categorySocialImage || undefined,
+    noindex: !category,
   });
 
   const breadcrumbLd = useMemo(() => category ? ({
