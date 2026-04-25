@@ -3,9 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Trophy, Crown, Medal, Star, ArrowUpRight, Sparkles } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -87,11 +85,8 @@ const DashboardRankingPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="flex">
-        <DashboardSidebar />
-        <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full">
+    <DashboardLayout>
+      <div className="p-4 md:p-8 max-w-6xl mx-auto w-full">
           <div className="mb-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
               <Link to="/dashboard" className="hover:text-foreground">Dashboard</Link>
