@@ -22,7 +22,7 @@ interface GeoData {
 interface GeoStore extends GeoData {
   setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null) => void;
   setRadius: (km: number) => void;
-  requestPreciseLocation: () => Promise<boolean>;
+  requestPreciseLocation: (options?: { force?: boolean }) => Promise<{ ok: boolean; city: string | null; state: string | null }>;
   /** Limpa o estado de erro (ex.: após o usuário ver o aviso). */
   dismissGeoFailure: () => void;
 }
@@ -346,18 +346,30 @@ export function useGeoCity(): GeoStore {
     });
   }, []);
 
-  const requestPreciseLocation = useCallback(async () => {
-    if (geoState.manualOverride || typeof window === 'undefined' || !navigator.geolocation) return false;
-    if (geoState.precise && geoState.latitude !== null && geoState.longitude !== null) return true;
-
-    try {
-      if (sessionStorage.getItem(GEO_ASKED_KEY)) return false;
-      sessionStorage.setItem(GEO_ASKED_KEY, '1');
-    } catch {
-      return false;
+  const requestPreciseLocation = useCallback(async (options?: { force?: boolean }) => {
+    const force = !!options?.force;
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      return { ok: false, city: null, state: null };
+    }
+    if (!force && geoState.manualOverride) return { ok: false, city: null, state: null };
+    if (!force && geoState.precise && geoState.latitude !== null && geoState.longitude !== null) {
+      return { ok: true, city: geoState.city, state: geoState.state };
     }
 
-    return await new Promise<boolean>((resolve) => {
+    if (!force) {
+      try {
+        if (sessionStorage.getItem(GEO_ASKED_KEY)) return { ok: false, city: null, state: null };
+        sessionStorage.setItem(GEO_ASKED_KEY, '1');
+      } catch {
+        return { ok: false, city: null, state: null };
+      }
+    } else {
+      // Explicit user-triggered request: clear the once-per-session guard so
+      // the navigator prompt (or the cached permission result) runs again.
+      try { sessionStorage.removeItem(GEO_ASKED_KEY); } catch {}
+    }
+
+    return await new Promise<{ ok: boolean; city: string | null; state: string | null }>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const latitude = position.coords.latitude;
@@ -387,12 +399,13 @@ export function useGeoCity(): GeoStore {
           const ts2 = new Date().toISOString();
           safeSet(SOURCE_KEY, 'gps');
           safeSet(LAST_KNOWN_KEY, ts2);
+          // Clear manual override so the GPS reading becomes the canonical source.
+          try { localStorage.removeItem(OVERRIDE_KEY); sessionStorage.removeItem(OVERRIDE_KEY); } catch {}
 
-          setGeoState({ city, state, temp, latitude, longitude, precise: true, source: 'gps', geoFailed: false, lastKnownAt: ts2 });
-          resolve(true);
+          setGeoState({ city, state, temp, latitude, longitude, precise: true, source: 'gps', geoFailed: false, lastKnownAt: ts2, manualOverride: false });
+          resolve({ ok: true, city, state });
         },
         () => {
-          // GPS negado/falhou — se já temos cache, sinaliza fallback; senão, tenta IP.
           if (geoState.latitude === null && !geoState.city) {
             fetchStarted = false;
             startFetchIfNeeded();
@@ -402,7 +415,7 @@ export function useGeoCity(): GeoStore {
           import('@/lib/tracking').then(({ trackGeoEvent }) => {
             trackGeoEvent('geo_failed', { stage: 'gps', had_cache: geoState.city ? 'true' : 'false' });
           }).catch(() => {});
-          resolve(false);
+          resolve({ ok: false, city: null, state: null });
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
       );
