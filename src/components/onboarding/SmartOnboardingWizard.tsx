@@ -186,7 +186,7 @@ const BasicOnboardingWizard = () => {
     if (profile.city) setCity(profile.city);
     if (profile.state) setState(profile.state);
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
-    if (profile.whatsapp || profile.phone) setWhatsapp(profile.whatsapp || profile.phone || '');
+    if (profile.whatsapp || profile.phone) setWhatsapp(sanitizePhone(profile.whatsapp || profile.phone || ''));
   }, [profile]);
 
   useEffect(() => {
