@@ -44,6 +44,7 @@ import { useOnlineProviders } from '@/hooks/useOnlinePresence';
 import { useActiveTodayProviders } from '@/hooks/useActiveTodayProviders';
 import AskSystemDialog from '@/components/search/AskSystemDialog';
 import { logSearchIntent } from '@/lib/searchIntent';
+import { safeUF } from '@/lib/locationFormat';
 
 const ITEMS_PER_PAGE = 12;
 
