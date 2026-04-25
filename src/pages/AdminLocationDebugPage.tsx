@@ -4,7 +4,9 @@ import { formatCityState, normalizeUF, safeUF } from '@/lib/locationFormat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, RefreshCw, Loader2 } from 'lucide-react';
+import AdminLayout from '@/components/AdminLayout';
+import { useAdmin } from '@/hooks/useAdmin';
 
 type Row = {
   source: 'profiles' | 'providers' | 'agencies';
