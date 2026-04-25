@@ -668,13 +668,7 @@ const DashboardPage = () => {
       )}
 
 
-      {/* Histórico cronológico de itens concluídos do onboarding + toasts em tempo real */}
-      <div className="mt-4">
-        <OnboardingCompletionTracker
-          servicesCount={servicesCount ?? 0}
-          portfolioAlbumsCount={portfolioAlbumCount}
-        />
-      </div>
+      {/* OnboardingCompletionTracker movido para o topo (após QuickActionsHero) */}
 
       {/* Lembrete de follow-up de leads em aberto */}
       <div className="mt-4">
@@ -730,10 +724,7 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* Community Feed — Social Proof */}
-      <div className="mt-4">
-        <CommunityFeed />
-      </div>
+      {/* Community Feed desativado — exibia atividades antigas como "Ao vivo". */}
 
       {/* Courses promotion */}
       <div className="mt-4">
