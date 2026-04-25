@@ -6,6 +6,7 @@ import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import { formatLocationString, capitalizeName } from '@/lib/normalize';
+import { formatCityState, safeUF } from '@/lib/locationFormat';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
