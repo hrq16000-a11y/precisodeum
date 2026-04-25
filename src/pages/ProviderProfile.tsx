@@ -1520,37 +1520,40 @@ const ProviderProfile = () => {
               </motion.div>
             </div>
 
-            {/* ── Trust Statistics Section ── */}
-            <motion.div
-              className="mt-5 rounded-xl bg-gradient-to-r from-emerald-500/5 via-accent/5 to-blue-500/5 border border-border/50 p-4"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.45 }}
-            >
-              <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                <Shield className="h-3 w-3" strokeWidth={1.75} /> Estatísticas de Confiança
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="text-center">
-                  <p className="text-xl font-extrabold text-foreground leading-none">
-                    {provider.years_experience > 0 ? `${provider.years_experience}+` : '—'}
-                  </p>
-                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Anos exp.</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-extrabold text-foreground leading-none">{services.length}</p>
-                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Serviços</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-extrabold text-foreground leading-none">{provider.review_count || 0}</p>
-                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Avaliações</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-extrabold text-foreground leading-none">{portfolioImages.length}</p>
-                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Fotos</p>
-                </div>
-              </div>
-            </motion.div>
+            {/* ── Trust Statistics Section ──
+                Regra: só renderiza métricas que o profissional realmente possui.
+                Se TODAS estiverem zeradas, o bloco inteiro é omitido (não mostramos "0 / —"). */}
+            {(() => {
+              const stats = [
+                provider.years_experience > 0 && { label: 'Anos exp.', value: `${provider.years_experience}+` },
+                services.length > 0 && { label: 'Serviços', value: String(services.length) },
+                (provider.review_count || 0) > 0 && { label: 'Avaliações', value: String(provider.review_count) },
+                portfolioImages.length > 0 && { label: 'Fotos', value: String(portfolioImages.length) },
+              ].filter(Boolean) as Array<{ label: string; value: string }>;
+
+              if (stats.length === 0) return null;
+
+              return (
+                <motion.div
+                  className="mt-5 rounded-xl bg-gradient-to-r from-emerald-500/5 via-accent/5 to-blue-500/5 border border-border/50 p-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45 }}
+                >
+                  <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Shield className="h-3 w-3" strokeWidth={1.75} /> Estatísticas de Confiança
+                  </h3>
+                  <div className={`grid gap-3 ${stats.length >= 4 ? 'grid-cols-2 sm:grid-cols-4' : stats.length === 3 ? 'grid-cols-3' : stats.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {stats.map((s) => (
+                      <div key={s.label} className="text-center">
+                        <p className="text-xl font-extrabold text-foreground leading-none">{s.value}</p>
+                        <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              );
+            })()}
 
             {/* ── Stats Mini Cards ── */}
             <div className="mt-5 grid grid-cols-3 gap-2">
