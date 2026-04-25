@@ -101,9 +101,15 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     );
   } else if (provider.distanceKm != null && provider.distanceKm < 5) {
     badges.push(
-      <span key="rapido" className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
-        Atendimento Rápido
-      </span>
+      <motion.span
+        key="seu-bairro"
+        animate={{ scale: [1, 1.04, 1] }}
+        transition={{ duration: 2.4, repeat: Infinity }}
+        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+      >
+        <MapPin className="h-2.5 w-2.5" />
+        Atende no seu bairro
+      </motion.span>
     );
   }
   if ((provider as any).response_time) {
