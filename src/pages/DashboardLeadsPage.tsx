@@ -679,6 +679,15 @@ const DashboardLeadsPage = () => {
         </div>
       )}
 
+      {/* Seção separada: Cliques diretos (WhatsApp / Ligar) — não entram no pipeline */}
+      {clickOnlyCount > 0 && (
+        <ClickOnlySection
+          leads={clickOnlyLeads}
+          totalWhatsapp={clickWhatsappCount}
+          totalPhone={clickPhoneCount}
+        />
+      )}
+
       <RescheduleFollowupDialog
         leadId={rescheduleLeadId}
         defaultDate={rescheduleDefault}
