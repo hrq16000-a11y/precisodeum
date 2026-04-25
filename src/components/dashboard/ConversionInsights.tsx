@@ -12,6 +12,9 @@ const ConversionInsights = ({ views, leads, services }: ConversionInsightsProps)
   const conversionRate = views > 0 ? ((leads / views) * 100) : 0;
   const leadsPerService = services > 0 ? (leads / services) : 0;
 
+  // Não exibir bloco enganoso quando ainda não há dados reais.
+  if (views === 0 && leads === 0) return null;
+
   const metrics = [
     {
       icon: Eye,
