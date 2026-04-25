@@ -976,7 +976,45 @@ const BasicOnboardingWizard = () => {
     if (!user?.id) return;
     setSaving(true);
     try {
-      const meetsStructuralMinimum = profileType !== 'provider' || servicesCreated >= 1;
+      // ─── REVALIDAÇÃO CONTRA O BACKEND ANTES DE CONCLUIR ───
+      // Garante que a tela de revisão reflete a verdade do banco e impede
+      // marcação de onboarding_completed sem que os dados estejam realmente salvos.
+      const [{ data: backendProfile }, { count: realServiceCount }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('full_name, whatsapp, city, state, profile_type, preferred_category_ids')
+          .eq('id', user.id)
+          .maybeSingle(),
+        profileType === 'provider' && savedProvider?.id
+          ? supabase
+              .from('services')
+              .select('id', { count: 'exact', head: true })
+              .eq('provider_id', savedProvider.id)
+          : Promise.resolve({ count: 0 } as any),
+      ]);
+
+      const backendOk =
+        !!backendProfile?.full_name &&
+        !!backendProfile?.whatsapp &&
+        !!backendProfile?.city &&
+        !!backendProfile?.state &&
+        !!backendProfile?.profile_type;
+      const realCount = Number(realServiceCount ?? 0);
+      const meetsStructuralMinimum = backendOk && (profileType !== 'provider' || realCount >= 1);
+
+      if (!backendOk) {
+        toast.error('Alguns dados não foram salvos no servidor.', {
+          description: 'Volte ao passo correspondente para reenviar antes de concluir.',
+        });
+        setSaving(false);
+        return;
+      }
+
+      // Sincroniza contador local com o real do backend (evita resumo enganoso).
+      if (profileType === 'provider' && realCount !== servicesCreated) {
+        setServicesCreated(realCount);
+      }
+
       await supabase.from('profiles').update({
         onboarding_completed: meetsStructuralMinimum,
         onboarding_step: 5,
