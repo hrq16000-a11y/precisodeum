@@ -287,7 +287,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
             </Link>
           </Button>
         </div>
-         <p className="mt-1 text-center text-[10px] text-muted-foreground">Orçamento sem compromisso</p>
+         <p className="mt-1 text-center text-[10px] text-muted-foreground">Negociação direta e transparente</p>
       </div>
     </div>
   );

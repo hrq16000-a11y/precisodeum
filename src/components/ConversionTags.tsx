@@ -29,7 +29,7 @@ const ConversionTags = ({ reviewCount, responseTime, showMicrocopy = true, compa
 
   tags.push({
     icon: <CheckCircle2 className="h-3 w-3" />,
-    text: 'Orçamento sem compromisso',
+    text: 'Negociação direta e transparente',
     className: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
   });
 

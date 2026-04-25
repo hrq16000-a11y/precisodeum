@@ -104,7 +104,7 @@ const DashboardMyPagePage = () => {
   const [hiddenSections, setHiddenSections] = useState<string[]>([]);
   const [headline, setHeadline] = useState('');
   const [tagline, setTagline] = useState('');
-  const [ctaText, setCtaText] = useState('Solicitar Orçamento');
+  const [ctaText, setCtaText] = useState('Falar com o profissional');
   const [ctaWhatsappText, setCtaWhatsappText] = useState('Chamar no WhatsApp');
   const [accentColor, setAccentColor] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
@@ -130,7 +130,7 @@ const DashboardMyPagePage = () => {
         setHiddenSections((data.hidden_sections as string[]) || []);
         setHeadline(data.headline || '');
         setTagline(data.tagline || '');
-        setCtaText(data.cta_text || 'Solicitar Orçamento');
+        setCtaText(data.cta_text || 'Falar com o profissional');
         setCtaWhatsappText(data.cta_whatsapp_text || 'Chamar no WhatsApp');
         setAccentColor(data.accent_color || '');
         setCoverImageUrl(data.cover_image_url || '');
