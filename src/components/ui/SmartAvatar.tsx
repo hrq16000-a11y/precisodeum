@@ -1,3 +1,4 @@
+import { UserRound } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
@@ -7,6 +8,8 @@ interface SmartAvatarProps {
   className?: string;
   fallbackClassName?: string;
   alt?: string;
+  /** When true, render initials instead of the premium icon fallback. */
+  useInitialsFallback?: boolean;
 }
 
 /**
@@ -56,18 +59,36 @@ export function getInitials(name?: string | null): string {
  * SmartAvatar — substitui qualquer dependência de ui-avatars.com.
  * Renderiza iniciais via CSS quando a imagem está vazia, quebrada ou inválida.
  */
-const SmartAvatar = ({ src, name, className, fallbackClassName, alt }: SmartAvatarProps) => {
+const SmartAvatar = ({
+  src,
+  name,
+  className,
+  fallbackClassName,
+  alt,
+  useInitialsFallback = false,
+}: SmartAvatarProps) => {
   const resolved = resolveImageSrc(src);
   const initials = getInitials(name);
 
   return (
     <Avatar className={cn('bg-muted', className)}>
       {resolved && <AvatarImage src={resolved} alt={alt || name || 'Avatar'} />}
-      <AvatarFallback
-        className={cn('bg-primary text-primary-foreground font-bold', fallbackClassName)}
-      >
-        {initials}
-      </AvatarFallback>
+      {useInitialsFallback ? (
+        <AvatarFallback
+          className={cn('bg-primary text-primary-foreground font-bold', fallbackClassName)}
+        >
+          {initials}
+        </AvatarFallback>
+      ) : (
+        <AvatarFallback
+          className={cn(
+            'bg-gradient-to-br from-slate-800 to-slate-950 border border-white/10 shadow-inner',
+            fallbackClassName,
+          )}
+        >
+          <UserRound className="w-1/2 h-1/2 text-slate-300" />
+        </AvatarFallback>
+      )}
     </Avatar>
   );
 };

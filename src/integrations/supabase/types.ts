@@ -1818,6 +1818,7 @@ export type Database = {
           id: string
           last_followup_notified_at: string | null
           last_status_at: string
+          lead_context: Json
           lead_score: number
           message: string | null
           next_followup_at: string | null
@@ -1837,6 +1838,7 @@ export type Database = {
           id?: string
           last_followup_notified_at?: string | null
           last_status_at?: string
+          lead_context?: Json
           lead_score?: number
           message?: string | null
           next_followup_at?: string | null
@@ -1856,6 +1858,7 @@ export type Database = {
           id?: string
           last_followup_notified_at?: string | null
           last_status_at?: string
+          lead_context?: Json
           lead_score?: number
           message?: string | null
           next_followup_at?: string | null

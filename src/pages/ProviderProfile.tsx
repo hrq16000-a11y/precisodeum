@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench, Info } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench, Info, UserRound } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
@@ -926,13 +926,25 @@ const ProviderProfile = () => {
     const ctxBlock = ctxParts.length ? `\n\n— Contexto —\n${ctxParts.join('\n')}` : '';
     const finalMessage = `${leadForm.message || ''}${ctxBlock}`.trim();
 
+    const leadContext = {
+      city: leadForm.city || null,
+      state: leadForm.state || null,
+      category: category || null,
+      origin: getLeadSource() || 'direto',
+      page: 'provider_profile',
+      provider_slug: slug || null,
+      referrer: typeof document !== 'undefined' ? (document.referrer || null) : null,
+      captured_at: new Date().toISOString(),
+    };
+
     const { error } = await supabase.from('leads').insert({
       provider_id: provider.id,
       client_name: leadForm.name,
       phone: leadForm.phone,
       service_needed: leadForm.service,
       message: finalMessage,
-    });
+      lead_context: leadContext,
+    } as any);
     if (error) {
       toast.error('Erro ao enviar solicitação');
       return;
@@ -1384,8 +1396,8 @@ const ProviderProfile = () => {
               >
                 <Avatar className="h-28 w-28 shrink-0 rounded-2xl ring-4 ring-accent/20 shadow-xl">
                   <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
-                  <AvatarFallback className="rounded-2xl bg-primary text-3xl font-bold text-primary-foreground">
-                    {initials}
+                  <AvatarFallback className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 border border-white/10 shadow-inner">
+                    <UserRound className="w-1/2 h-1/2 text-slate-300" />
                   </AvatarFallback>
                 </Avatar>
                 {/* Online indicator pulse */}
@@ -1757,8 +1769,8 @@ const ProviderProfile = () => {
                           <div className="relative">
                             <Avatar className="h-16 w-16 rounded-xl ring-2 ring-border group-hover:ring-accent/30 transition-all shadow-md">
                               <AvatarImage src={rpAvatar || undefined} alt={rpName} className="rounded-xl" />
-                              <AvatarFallback className="rounded-xl bg-primary/10 text-sm font-bold text-primary">
-                                {rpInitials}
+                              <AvatarFallback className="rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 border border-white/10 shadow-inner">
+                                <UserRound className="w-1/2 h-1/2 text-slate-300" />
                               </AvatarFallback>
                             </Avatar>
                           </div>
