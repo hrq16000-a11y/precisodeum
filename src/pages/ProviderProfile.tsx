@@ -1365,7 +1365,7 @@ const ProviderProfile = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.25, duration: 0.5 }}
               >
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <div ref={nameAnchorRef} className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
                   {provider.user_id && <ProviderTopBadgeInline userId={provider.user_id} />}
                   {/* Selo de gamification inline ao lado do nome (autoridade visível em qualquer breakpoint) */}
