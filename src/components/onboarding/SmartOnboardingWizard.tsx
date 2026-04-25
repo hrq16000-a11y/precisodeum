@@ -1782,8 +1782,12 @@ export const Step3Contact = ({
 
   return (
   <>
-    <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-      <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+    <button
+      type="button"
+      onClick={onBack}
+      className="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted/50 transition-colors"
+    >
+      <ArrowLeft className="h-4 w-4" /> Voltar ao passo anterior
     </button>
 
     <div className="mb-3 flex justify-center">
@@ -1794,44 +1798,8 @@ export const Step3Contact = ({
     <h1 className="text-center font-display text-xl font-bold text-foreground">Dados de contato</h1>
     <p className="mt-1 text-center text-xs text-muted-foreground">Como os clientes vão te encontrar.</p>
 
-    {isProvider && (
-      <div className="mt-4 rounded-xl border border-border bg-muted/20 p-3">
-        <p className="text-xs font-bold text-foreground">Tipo de cadastro profissional</p>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => switchSubtype('autonomous')}
-            aria-pressed={providerSubtype !== 'company'}
-            className={`rounded-lg border px-3 py-2 text-center transition-colors ${
-              providerSubtype !== 'company'
-                ? 'border-accent bg-accent/10'
-                : 'border-border bg-background hover:bg-muted/40'
-            }`}
-          >
-            <p className="text-xs font-bold text-foreground">PF</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Autônomo ou profissional liberal</p>
-          </button>
-          <button
-            type="button"
-            onClick={() => switchSubtype('company')}
-            aria-pressed={providerSubtype === 'company'}
-            className={`rounded-lg border px-3 py-2 text-center transition-colors ${
-              providerSubtype === 'company'
-                ? 'border-accent bg-accent/10'
-                : 'border-border bg-background hover:bg-muted/40'
-            }`}
-          >
-            <p className="text-xs font-bold text-foreground">PJ</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">MEI, empresa ou agência</p>
-          </button>
-        </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          {providerSubtype === 'company'
-            ? 'Você usará CNPJ para identificar a empresa.'
-            : 'Você usará CPF como autônomo ou profissional liberal.'}
-        </p>
-      </div>
-    )}
+    {/* Bloco PF/PJ removido daqui — a escolha já é feita no Passo 1 e exibida
+        de forma compacta no rodapé deste passo (badge "Cadastro como PF/PJ"). */}
 
     <div className="mt-5 space-y-4">
       <div>
