@@ -14,6 +14,7 @@ import { whatsappLink } from '@/lib/whatsapp';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import RescheduleFollowupDialog from '@/components/leads/RescheduleFollowupDialog';
+import LeadConcludeActions from '@/components/leads/LeadConcludeActions';
 import { useUpdateLeadStatus, STATUS_META, isOverdue, type LeadStatus, type LeadRow, type LeadHistoryEntry } from '@/hooks/useLeadFollowup';
 
 const STATUS_KEYS: LeadStatus[] = ['new', 'contacted', 'scheduled', 'completed', 'lost'];
@@ -34,7 +35,7 @@ const DashboardLeadDetailPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('leads')
-        .select('id, client_name, phone, service_needed, message, status, lead_score, created_at, last_status_at, next_followup_at, followup_window_hours, last_followup_notified_at, provider_id')
+        .select('id, client_name, phone, service_needed, message, status, lead_score, created_at, last_status_at, next_followup_at, followup_window_hours, last_followup_notified_at, provider_id, closed_at')
         .eq('id', leadId!)
         .eq('provider_id', provider!.id)
         .maybeSingle();
@@ -147,6 +148,15 @@ const DashboardLeadDetailPage = () => {
           <a href={whatsappLink(lead.phone, `Olá ${lead.client_name}, recebi sua solicitação. Como posso ajudar?`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground hover:bg-accent/90"><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</a>
           <Button size="sm" variant="outline" onClick={() => setRescheduleOpen(true)} className="gap-1"><CalendarClock className="h-3.5 w-3.5" /> Reagendar follow-up</Button>
         </div>
+
+        <LeadConcludeActions
+          leadId={lead.id}
+          providerId={(lead as any).provider_id || provider!.id}
+          clientPhone={lead.phone}
+          clientName={lead.client_name}
+          isConcluded={(lead as any).status === 'concluded' || !!(lead as any).closed_at}
+          onConcluded={() => leadQuery.refetch()}
+        />
       </div>
 
       <div className="mt-5 rounded-xl border border-border bg-card p-5 shadow-card">
