@@ -10,7 +10,7 @@ const DashboardIdentitySuggestionsPage = () => {
   useSeoHead({
     title: 'Sugestões de identidade — Painel',
     description: 'Revise e aprove sugestões de alteração de identidade do seu perfil profissional.',
-    noIndex: true,
+    noindex: true,
   });
 
   useEffect(() => {

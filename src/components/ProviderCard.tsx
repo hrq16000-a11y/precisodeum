@@ -21,6 +21,8 @@ import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
 import { useEngagementPoints } from '@/hooks/useEngagementPoints';
 import { getEngagementTier } from '@/lib/engagementTiers';
 import CommunityVerifiedBadge from '@/components/CommunityVerifiedBadge';
+import TopProfessionalBadge from '@/components/TopProfessionalBadge';
+import { useTopProfessional } from '@/hooks/useTopProfessional';
 import FavoriteButton from '@/components/FavoriteButton';
 
 interface ProviderCardProps {

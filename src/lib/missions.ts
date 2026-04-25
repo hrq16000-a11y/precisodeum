@@ -29,6 +29,20 @@ export interface Mission {
  */
 export const MISSIONS: Mission[] = [
   {
+    key: 'verify_name',
+    tiers: ['novato', 'explorador', 'ativo'],
+    question: 'Confirme: o nome exibido no seu perfil é o que você usa profissionalmente?',
+    benefit: 'Necessário para liberar o selo "Profissional Top".',
+    type: 'yes_no',
+  },
+  {
+    key: 'verify_whatsapp',
+    tiers: ['novato', 'explorador', 'ativo'],
+    question: 'Confirme: este é o WhatsApp ativo onde você atende clientes?',
+    benefit: 'Necessário para liberar o selo "Profissional Top".',
+    type: 'yes_no',
+  },
+  {
     key: 'portfolio_complete',
     tiers: ['novato'],
     question: 'Complete seu portfólio com pelo menos 3 fotos',
