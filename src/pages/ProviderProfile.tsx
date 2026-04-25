@@ -915,12 +915,23 @@ const ProviderProfile = () => {
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Anexa contexto (cidade/UF + origem) ao final da mensagem para o provider ver
+    // de onde veio o lead, sem depender de novas colunas no banco.
+    const ctxParts: string[] = [];
+    const locStr = [leadForm.city, leadForm.state].filter(Boolean).join(' - ');
+    if (locStr) ctxParts.push(`Localização: ${locStr}`);
+    const origem = getLeadSource();
+    if (origem && origem !== 'direto') ctxParts.push(`Origem: ${origem}`);
+    if (category) ctxParts.push(`Categoria: ${category}`);
+    const ctxBlock = ctxParts.length ? `\n\n— Contexto —\n${ctxParts.join('\n')}` : '';
+    const finalMessage = `${leadForm.message || ''}${ctxBlock}`.trim();
+
     const { error } = await supabase.from('leads').insert({
       provider_id: provider.id,
       client_name: leadForm.name,
       phone: leadForm.phone,
       service_needed: leadForm.service,
-      message: leadForm.message,
+      message: finalMessage,
     });
     if (error) {
       toast.error('Erro ao enviar solicitação');
