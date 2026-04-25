@@ -34,12 +34,20 @@ const CategorySeoBlock = ({ categorySlug, categoryName, city, state, providersCo
     enabled: !!categorySlug,
     staleTime: 10 * 60_000,
     queryFn: async () => {
+      // join via slug requer subquery: pega category id primeiro
+      const catRes = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', categorySlug)
+        .maybeSingle();
+      const catId = (catRes.data as any)?.id;
+      if (!catId) return [] as Array<{ city: string; state: string; count: number }>;
       const { data } = await supabase
         .from('providers')
         .select('city, state')
-        .eq('categories.slug' as any, categorySlug)
+        .eq('category_id', catId)
         .not('city', 'is', null)
-        .limit(200);
+        .limit(300);
       const counts = new Map<string, { city: string; state: string; count: number }>();
       (data || []).forEach((row: any) => {
         if (!row?.city) return;
