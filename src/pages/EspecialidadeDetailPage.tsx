@@ -11,6 +11,7 @@ import { useCategoryProviders } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { getExpertTips } from '@/lib/expertTips';
+import { getCategoryFaqs } from '@/lib/categoryFaqs';
 
 /**
  * /especialidades/:slug — Página pública SEO de uma especialidade.
