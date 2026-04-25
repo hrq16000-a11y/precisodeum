@@ -278,9 +278,15 @@ const bootstrap = () => {
     });
 
     deferWork(() => {
-      import("./lib/performanceTelemetry").then((module) => module.installPerformanceTelemetry());
-      import("@/styles/deferred-animations.css");
-      import("@/lib/sponsorRanking").then((module) => module.cleanupFrequencyData());
+      // Imports não críticos: falhas aqui NÃO devem disparar auto-heal/reload.
+      import("./lib/performanceTelemetry")
+        .then((module) => module.installPerformanceTelemetry())
+        .catch((err) => console.warn("[bootstrap] performanceTelemetry skip", err));
+      import("@/styles/deferred-animations.css")
+        .catch((err) => console.warn("[bootstrap] deferred-animations skip", err));
+      import("@/lib/sponsorRanking")
+        .then((module) => module.cleanupFrequencyData())
+        .catch((err) => console.warn("[bootstrap] sponsorRanking skip", err));
       startVersionWatcher();
     });
 
