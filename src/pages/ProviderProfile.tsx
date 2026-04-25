@@ -1443,7 +1443,7 @@ const ProviderProfile = () => {
                   <span className="flex items-center gap-1">
                     <MapPin className="h-4 w-4 text-accent" />
                     {provider.city
-                      ? formatLocationString(`${provider.neighborhood ? `${provider.neighborhood}, ` : ''}${provider.city} - ${provider.state}`)
+                      ? `${provider.neighborhood ? `${provider.neighborhood}, ` : ''}${formatCityState(provider.city, provider.state)}`
                       : 'Localização não informada'}
                   </span>
                 </div>
