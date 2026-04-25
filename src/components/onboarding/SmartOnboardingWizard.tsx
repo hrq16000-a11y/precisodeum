@@ -1815,12 +1815,33 @@ export const Step3Contact = ({
     </div>
 
     <div className="mt-5 grid gap-3">
+      {isProvider && (
+        <div
+          aria-live="polite"
+          className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-[11px] ${
+            providerSubtype === 'company'
+              ? 'border-primary/40 bg-primary/5'
+              : 'border-accent/40 bg-accent/5'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className={`h-4 w-4 ${providerSubtype === 'company' ? 'text-primary' : 'text-accent'}`} />
+            <span className="font-semibold text-foreground">
+              {providerSubtype === 'company' ? 'Cadastro como PJ' : 'Cadastro como PF'}
+            </span>
+          </span>
+          <span className="font-mono text-foreground/80">
+            Documento: <span className="font-bold">{taxLabel}</span>
+            {taxFilled && taxValid ? ' ✓' : ''}
+          </span>
+        </div>
+      )}
       <Button variant="accent" className="w-full" disabled={!canAdvance || saving || !taxValid} onClick={onNext}>
         {saving
           ? 'Salvando…'
           : taxFilled
             ? 'Salvar dados e continuar'
-            : 'Continuar (documento depois)'}
+            : `Continuar (${taxLabel} depois)`}
       </Button>
       {!taxFilled && (
         <Button type="button" variant="outline" className="w-full" onClick={onSkip} disabled={saving}>
