@@ -349,6 +349,7 @@ const App = () => {
                 <Route path="/contrato-patrocinio" element={<SponsorContractPage />} />
                 <Route path="/vaga/:slug" element={<JobDetailPage />} />
                 <Route path="/triagem" element={<TriagePage />} />
+                <Route path="/triagem/preview" element={<TriagePreviewPage />} />
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                 <Route path="/dashboard/perfil" element={<ProtectedRoute><ErrorGuard componentName="DashboardProfilePage"><DashboardProfilePage /></ErrorGuard></ProtectedRoute>} />
                 <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><ErrorGuard componentName="DashboardServicesPage"><DashboardServicesPage /></ErrorGuard></ProtectedRoute>} />
