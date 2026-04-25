@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, Send, History, Paperclip, Bell, BellOff, Timer, Search, Filter, FileDown, FileText, CalendarClock, ExternalLink, Settings2 } from 'lucide-react';
+import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, Send, History, Paperclip, Bell, BellOff, Timer, Search, Filter, FileDown, FileText, CalendarClock, ExternalLink, Settings2, MapPin, Tag, Compass } from 'lucide-react';
+import { formatLeadOrigin, formatLeadLocation, hasLeadContext } from '@/lib/leadContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { whatsappLink } from '@/lib/whatsapp';
 import { useAuth } from '@/hooks/useAuth';
@@ -80,6 +81,8 @@ const DashboardLeadsPage = () => {
   const [createdTo, setCreatedTo] = useState(searchParams.get('ct') || '');
   const [followupFrom, setFollowupFrom] = useState(searchParams.get('ff') || '');
   const [followupTo, setFollowupTo] = useState(searchParams.get('ft') || '');
+  const [cityFilter, setCityFilter] = useState<string>(searchParams.get('city') || 'all');
+  const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get('cat') || 'all');
   const [showAdvanced, setShowAdvanced] = useState(
     !!(searchParams.get('cf') || searchParams.get('ct') || searchParams.get('ff') || searchParams.get('ft'))
   );
@@ -99,8 +102,10 @@ const DashboardLeadsPage = () => {
     if (createdTo) params.ct = createdTo;
     if (followupFrom) params.ff = followupFrom;
     if (followupTo) params.ft = followupTo;
+    if (cityFilter !== 'all') params.city = cityFilter;
+    if (categoryFilter !== 'all') params.cat = categoryFilter;
     setSearchParams(params, { replace: true });
-  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, setSearchParams]);
+  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, setSearchParams]);
 
   // Re-render minute-by-minute para atualizar relativos e badge "vencido"
   useEffect(() => {
@@ -118,6 +123,26 @@ const DashboardLeadsPage = () => {
     return true;
   };
 
+  // Opções derivadas dos próprios leads (lê apenas — read-only) — popula os
+  // selects de Cidade e Categoria com valores reais já recebidos.
+  const cityOptions = useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach((l) => {
+      const loc = formatLeadLocation(l.lead_context);
+      if (loc) set.add(loc);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [leads]);
+
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach((l) => {
+      const cat = l.lead_context?.category?.trim();
+      if (cat) set.add(cat);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [leads]);
+
   const filteredLeads = useMemo(() => {
     let arr = leads;
     if (statusFilter === 'overdue') arr = arr.filter(isOverdue);
@@ -134,13 +159,15 @@ const DashboardLeadsPage = () => {
     }
     if (createdFrom || createdTo) arr = arr.filter(l => inRange(l.created_at, createdFrom, createdTo));
     if (followupFrom || followupTo) arr = arr.filter(l => inRange(l.next_followup_at, followupFrom, followupTo));
+    if (cityFilter !== 'all') arr = arr.filter(l => formatLeadLocation(l.lead_context) === cityFilter);
+    if (categoryFilter !== 'all') arr = arr.filter(l => (l.lead_context?.category || '').trim() === categoryFilter);
     return arr;
-  }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo]);
+  }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter]);
 
   // Reset paginação quando filtros/lista mudarem
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo]);
+  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter]);
 
   const visibleLeads = useMemo(() => filteredLeads.slice(0, visibleCount), [filteredLeads, visibleCount]);
   const hasMore = filteredLeads.length > visibleCount;
@@ -148,7 +175,8 @@ const DashboardLeadsPage = () => {
   const overdueCount = useMemo(() => leads.filter(isOverdue).length, [leads]);
 
   const clearFilters = () => {
-    setSearch(''); setCreatedFrom(''); setCreatedTo(''); setFollowupFrom(''); setFollowupTo(''); setStatusFilter('all');
+    setSearch(''); setCreatedFrom(''); setCreatedTo(''); setFollowupFrom(''); setFollowupTo('');
+    setStatusFilter('all'); setCityFilter('all'); setCategoryFilter('all');
   };
 
   const handleExportCsv = () => exportLeadsCsv({
@@ -267,9 +295,9 @@ const DashboardLeadsPage = () => {
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">Leads Recebidos</h1>
+            <h1 className="font-display text-2xl font-bold text-foreground">Solicitações de Serviço</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {filteredLeads.length} de {leads.length} lead(s)
+              {filteredLeads.length} de {leads.length} contato{leads.length !== 1 ? 's' : ''}
               {overdueCount > 0 && (
                 <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive">
                   <AlertTriangle className="h-3 w-3" />
@@ -300,13 +328,43 @@ const DashboardLeadsPage = () => {
 
       {/* Toolbar: busca, filtros avançados e exportação */}
       <div className="mt-4 rounded-xl border border-border bg-card p-3 shadow-card">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="relative min-w-[200px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome, telefone, serviço ou mensagem" className="pl-9" />
           </div>
+          {/* Filtro por Cidade — lê lead_context (read-only) */}
+          <Select value={cityFilter} onValueChange={setCityFilter}>
+            <SelectTrigger className="w-full sm:w-44" aria-label="Filtrar por cidade">
+              <div className="flex items-center gap-1.5">
+                <MapPin size={14} strokeWidth={1.5} />
+                <SelectValue placeholder="Todas as cidades" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as cidades</SelectItem>
+              {cityOptions.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* Filtro por Categoria — lê lead_context (read-only) */}
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full sm:w-44" aria-label="Filtrar por categoria">
+              <div className="flex items-center gap-1.5">
+                <Tag size={14} strokeWidth={1.5} />
+                <SelectValue placeholder="Todas as categorias" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {categoryOptions.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button type="button" variant={showAdvanced ? 'default' : 'outline'} size="sm" onClick={() => setShowAdvanced(v => !v)} className="gap-1">
-            <Filter className="h-4 w-4" /> Filtros
+            <Filter className="h-4 w-4" /> Mais filtros
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={handleExportCsv} className="gap-1"><FileDown className="h-4 w-4" /> CSV</Button>
           <Button type="button" variant="outline" size="sm" onClick={handleExportPdf} className="gap-1"><FileText className="h-4 w-4" /> PDF</Button>
@@ -383,8 +441,8 @@ const DashboardLeadsPage = () => {
           {filteredLeads.length === 0 && (
             <motion.div key="empty" variants={itemVariants} exit={{ opacity: 0, scale: 0.95 }} className="rounded-xl border border-border bg-card p-12 text-center shadow-card">
               <Inbox className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
-              <p className="font-semibold text-foreground">Nenhum lead encontrado</p>
-              <p className="mt-1 text-sm text-muted-foreground">Quando clientes solicitarem orçamento, os leads aparecerão aqui.</p>
+              <p className="font-semibold text-foreground">Nenhum contato encontrado</p>
+              <p className="mt-1 text-sm text-muted-foreground">Quando um cliente enviar uma solicitação de serviço, ela aparecerá aqui.</p>
             </motion.div>
           )}
           {visibleLeads.map((lead) => {
@@ -419,6 +477,33 @@ const DashboardLeadsPage = () => {
                       )}
                     </div>
                     {lead.service_needed && <p className="mt-1 text-xs font-medium text-accent">{lead.service_needed}</p>}
+
+                    {/* Pílulas de contexto — leitura segura de lead_context.
+                        Renderiza apenas quando há informação útil; leads antigos
+                        sem contexto caem no fallback elegante (apenas mensagem). */}
+                    {hasLeadContext(lead.lead_context) && (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        {formatLeadLocation(lead.lead_context) && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                            <MapPin size={12} strokeWidth={1.5} />
+                            {formatLeadLocation(lead.lead_context)}
+                          </span>
+                        )}
+                        {lead.lead_context?.category && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-600 dark:text-violet-400">
+                            <Tag size={12} strokeWidth={1.5} />
+                            {lead.lead_context.category}
+                          </span>
+                        )}
+                        {lead.lead_context?.origin && lead.lead_context.origin !== 'unknown' && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            <Compass size={12} strokeWidth={1.5} />
+                            {formatLeadOrigin(lead.lead_context.origin)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     {lead.message && <p className="mt-2 rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">{lead.message}</p>}
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                       <span className="inline-flex items-center gap-1">

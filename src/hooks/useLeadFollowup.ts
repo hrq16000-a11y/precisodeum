@@ -6,6 +6,17 @@ import { toast } from 'sonner';
 
 export type LeadStatus = 'new' | 'contacted' | 'scheduled' | 'completed' | 'lost';
 
+export interface LeadContext {
+  origin?: string | null;
+  page?: string | null;
+  city?: string | null;
+  state?: string | null;
+  category?: string | null;
+  referrer?: string | null;
+  captured_at?: string | null;
+  [key: string]: unknown;
+}
+
 export interface LeadRow {
   id: string;
   client_name: string;
@@ -19,6 +30,8 @@ export interface LeadRow {
   next_followup_at: string | null;
   followup_window_hours: number;
   last_followup_notified_at: string | null;
+  /** Estruturado pelo backend (trigger trg_ensure_lead_context_fields garante presença). */
+  lead_context: LeadContext | null;
 }
 
 export interface LeadHistoryEntry {
@@ -51,7 +64,7 @@ export function useProviderLeads(providerId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('leads')
-        .select('id, client_name, phone, service_needed, message, status, lead_score, created_at, last_status_at, next_followup_at, followup_window_hours, last_followup_notified_at')
+        .select('id, client_name, phone, service_needed, message, status, lead_score, created_at, last_status_at, next_followup_at, followup_window_hours, last_followup_notified_at, lead_context')
         .eq('provider_id', providerId!)
         .order('created_at', { ascending: false })
         .limit(100);

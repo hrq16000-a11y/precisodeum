@@ -35,7 +35,7 @@ const DashboardLeadDetailPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('leads')
-        .select('id, client_name, phone, service_needed, message, status, lead_score, created_at, last_status_at, next_followup_at, followup_window_hours, last_followup_notified_at, provider_id, closed_at')
+        .select('id, client_name, phone, service_needed, message, status, lead_score, created_at, last_status_at, next_followup_at, followup_window_hours, last_followup_notified_at, lead_context, provider_id, closed_at')
         .eq('id', leadId!)
         .eq('provider_id', provider!.id)
         .maybeSingle();
