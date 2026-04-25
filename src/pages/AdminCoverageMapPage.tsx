@@ -168,7 +168,7 @@ const AdminCoverageMapPage = () => {
               {results.map((r) => (
                 <div key={r.id} className="rounded-lg border border-border p-2 text-sm hover:bg-muted/40">
                   <div className="font-semibold text-foreground">{r.business_name}</div>
-                  <div className="text-xs text-muted-foreground">{r.category_name || '—'} · {r.city}{r.state ? `/${r.state}` : ''}</div>
+                  <div className="text-xs text-muted-foreground">{r.category_name || '—'} · {formatCityState(r.city, r.state, '/')}</div>
                   <div className="text-[11px] text-muted-foreground mt-0.5">
                     {(r.distance_m / 1000).toFixed(1)} km {r.service_radius ? `· cobre ${r.service_radius} km` : ''}
                   </div>

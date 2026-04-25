@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Building2, MapPin, Mail, Phone, Globe, Briefcase } from 'lucide-react';
 import { useSeoHead } from '@/hooks/useSeoHead';
+import { formatCityState } from '@/lib/locationFormat';
 
 const AgencyPublicPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -64,7 +65,7 @@ const AgencyPublicPage = () => {
                   {agency.legal_name && <p className="text-xs text-muted-foreground mt-0.5">{agency.legal_name}</p>}
                   <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
                     {(agency.city || agency.state) && (
-                      <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{agency.city}{agency.state ? ` • ${agency.state}` : ''}</span>
+                      <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{formatCityState(agency.city, agency.state, ' • ')}</span>
                     )}
                     {agency.email && <span className="inline-flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{agency.email}</span>}
                     {agency.whatsapp && <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{agency.whatsapp}</span>}
@@ -87,7 +88,7 @@ const AgencyPublicPage = () => {
                     <li key={j.id} className="rounded-xl border border-border bg-card p-4 hover:border-primary/40 transition-colors">
                       <Link to={`/vaga/${j.slug || j.id}`} className="block">
                         <h3 className="text-sm font-bold text-foreground">{j.title}</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">{j.city}{j.state ? ` • ${j.state}` : ''}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{formatCityState(j.city, j.state, ' • ')}</p>
                       </Link>
                     </li>
                   ))}

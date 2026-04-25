@@ -815,7 +815,7 @@ const ProviderProfile = () => {
       : 'Profissional',
     description: provider
       ? (provider.meta_description?.trim() ||
-          `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Peca seu orcamento gratis!`)
+          `${name}, ${category} em ${formatCityState(provider.city, provider.state) || provider.city}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Peca seu orcamento gratis!`)
       : 'Encontre profissionais na plataforma.',
     canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
     ogImage: providerSocialImage || undefined,
@@ -847,7 +847,7 @@ const ProviderProfile = () => {
       '@type': ['ProfessionalService', 'LocalBusiness'],
       '@id': `${SITE_BASE_URL}/profissional/${slug}`,
       name: provider.business_name || name,
-      description: provider.description || `${name}, ${category} em ${provider.city}-${provider.state}.`,
+      description: provider.description || `${name}, ${category} em ${formatCityState(provider.city, provider.state) || provider.city}.`,
       image: avatarUrl || undefined,
       url: `${SITE_BASE_URL}/profissional/${slug}`,
       telephone: effectiveWhatsApp || provider.phone || undefined,

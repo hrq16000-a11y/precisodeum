@@ -19,6 +19,7 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import CitySeoBlock from '@/components/CitySeoBlock';
+import { formatCityState } from '@/lib/locationFormat';
 
 const SponsorLeaderBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorLeaderBanner')));
 const SponsorTopBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorTopBanner')));
@@ -156,9 +157,9 @@ const CityPage = () => {
   const citySocialImage = providers.find((provider) => provider.photo)?.photo;
 
   useSeoHead({
-    title: city ? `Profissionais em ${city.name} - ${city.state}` : 'Cidade',
+    title: city ? `Profissionais em ${formatCityState(city.name, city.state) || city.name}` : 'Cidade',
     description: city
-      ? `Encontre os melhores profissionais em ${city.name}, ${city.state}. ${providers.length} cadastrados com avaliações verificadas.`
+      ? `Encontre os melhores profissionais em ${formatCityState(city.name, city.state, ', ') || city.name}. ${providers.length} cadastrados com avaliações verificadas.`
       : 'Encontre profissionais na sua cidade.',
     canonical: slug ? `${SITE_BASE_URL}/cidade/${slug}` : undefined,
     ogImage: citySocialImage || undefined,
@@ -224,8 +225,8 @@ const CityPage = () => {
     );
   }
 
-  const title = `Profissionais em ${city!.name} - ${city!.state}`;
-  const description = `Encontre os melhores profissionais em ${city!.name}, ${city!.state}. Compare avaliações e entre em contato.`;
+  const title = `Profissionais em ${formatCityState(city!.name, city!.state) || city!.name}`;
+  const description = `Encontre os melhores profissionais em ${formatCityState(city!.name, city!.state, ', ') || city!.name}. Compare avaliações e entre em contato.`;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -290,7 +291,7 @@ const CityPage = () => {
           </div>
           <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
             <p>
-              Encontre um profissional para qualquer tipo de serviço em {city!.name}, {city!.state}.
+              Encontre um profissional para qualquer tipo de serviço em {formatCityState(city!.name, city!.state, ', ') || city!.name}.
               Nossa plataforma conecta você com os melhores prestadores de serviço da região,
               todos avaliados por clientes reais.
             </p>

@@ -10,6 +10,7 @@ import { whatsappLink } from '@/lib/whatsapp';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatCityState } from '@/lib/locationFormat';
 
 interface OpenLeadInvite {
   id: string;
@@ -107,7 +108,7 @@ const DashboardOpenLeadsPage = () => {
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       {lead.city && (
                         <span className="inline-flex items-center gap-1">
-                          <MapPin className="h-3 w-3" /> {lead.city}{lead.state ? `/${lead.state}` : ''}
+                          <MapPin className="h-3 w-3" /> {formatCityState(lead.city, lead.state, '/')}
                         </span>
                       )}
                       <span className="inline-flex items-center gap-1">

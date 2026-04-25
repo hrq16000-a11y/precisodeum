@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import FadeInSection from '@/components/FadeInSection';
 import AdNativeCard from '@/components/ads/AdNativeCard';
+import { formatCityState } from '@/lib/locationFormat';
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -105,7 +106,7 @@ const FeaturedJobs = () => {
                 <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-auto">
                   {job.city && (
                     <span className="flex items-center gap-0.5 truncate">
-                      <MapPin className="h-3 w-3 shrink-0 text-primary/60" />{job.city}{job.state ? `, ${job.state}` : ''}
+                      <MapPin className="h-3 w-3 shrink-0 text-primary/60" />{formatCityState(job.city, job.state, ', ')}
                     </span>
                   )}
                   {job.whatsapp && (

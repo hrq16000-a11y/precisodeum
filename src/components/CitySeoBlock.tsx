@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { cn } from '@/lib/utils';
+import { formatCityState } from '@/lib/locationFormat';
 
 interface Props {
   citySlug: string;
@@ -84,7 +85,7 @@ const CitySeoBlock = ({ citySlug, cityName, state, providersCount, featuredProvi
 
   // FAQs específicas por cidade
   const faqs = useMemo(() => {
-    const here = `${cityName}${state ? ' / ' + state : ''}`;
+    const here = formatCityState(cityName, state, ' / ') || cityName;
     return [
       {
         q: `Como encontro um profissional confiável em ${cityName}?`,
@@ -131,7 +132,7 @@ const CitySeoBlock = ({ citySlug, cityName, state, providersCount, featuredProvi
             <Sparkles className="h-3.5 w-3.5" /> Guia da cidade
           </div>
           <h2 id="cidade-seo-titulo" className="mb-3 text-2xl font-bold md:text-3xl">
-            Profissionais em {cityName}{state ? ` / ${state}` : ''}: como contratar com segurança
+            Profissionais em {formatCityState(cityName, state, ' / ') || cityName}: como contratar com segurança
           </h2>
           <p className="leading-relaxed text-muted-foreground">
             O Preciso de Um conecta moradores de {cityName} aos melhores profissionais autônomos da
