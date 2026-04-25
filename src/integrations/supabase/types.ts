@@ -6327,6 +6327,10 @@ export type Database = {
           verified_since: string
         }[]
       }
+      get_provider_weekly_stats: {
+        Args: { _provider_id: string }
+        Returns: Json
+      }
       get_review_short_link: { Args: { _provider_id: string }; Returns: Json }
       get_rss_import_headers: { Args: never; Returns: Json }
       get_search_demand_stats: {
