@@ -160,6 +160,7 @@ const DashboardAgencyDataPage = lazy(() => import("./pages/DashboardAgencyDataPa
 const SponsorPublicPage = lazy(() => import("./pages/SponsorPublicPage"));
 const SponsorPublicProfilePage = lazy(() => import("./pages/sponsor/SponsorPublicProfilePage"));
 const TriagePage = lazy(() => import("./pages/TriagePage"));
+const TriagePreviewPage = lazy(() => import("./pages/TriagePreviewPage"));
 
 const CookieConsent = reactLazy(() => importWithRetry(() => import("./components/CookieConsent")));
 const PwaInstallBanner = reactLazy(() => importWithRetry(() => import("./components/PwaInstallBanner")));
