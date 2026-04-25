@@ -902,6 +902,9 @@ const DashboardPage = () => {
       <OurStoryBanner variant="compact" />
 
       <NextStepPrompt open={welcomeOpen} onClose={() => setWelcomeOpen(false)} context="welcome" providerSlug={provider?.slug ?? null} />
+
+      {/* Tour guiado de 3 passos para tier "novato" — respeita dismiss server-side */}
+      <DashboardTour />
     </DashboardLayout>
   );
 };
