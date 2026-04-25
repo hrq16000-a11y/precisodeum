@@ -11,6 +11,9 @@ export type WizardMode = 'create' | 'edit';
 /** Tipo de perfil suportado no cadastro profissional. */
 export type ProfileKind = 'pf' | 'pj';
 
+/** Tipo de conta escolhido no Step 1 (espelha SmartOnboardingWizard). */
+export type ProfileTypeChoice = 'provider' | 'client' | 'rh' | 'sponsor';
+
 /**
  * Estrutura mínima dos dados do profissional manipulados pelo wizard.
  * Mantida intencionalmente enxuta — campos legados continuam vivendo
