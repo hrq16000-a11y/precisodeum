@@ -14,6 +14,7 @@ import ReviewSummary from '@/components/ReviewSummary';
 import ProfileBadge from '@/components/ProfileBadge';
 import ConversionTags from '@/components/ConversionTags';
 import TopProfessionalBadge from '@/components/TopProfessionalBadge';
+import PublicActivityBadges from '@/components/PublicActivityBadges';
 import { useTopProfessional } from '@/hooks/useTopProfessional';
 
 /** Componente isolado para usar o hook sem misturar lifecycle no componente principal. */
