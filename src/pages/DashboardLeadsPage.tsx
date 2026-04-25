@@ -123,6 +123,26 @@ const DashboardLeadsPage = () => {
     return true;
   };
 
+  // Opções derivadas dos próprios leads (lê apenas — read-only) — popula os
+  // selects de Cidade e Categoria com valores reais já recebidos.
+  const cityOptions = useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach((l) => {
+      const loc = formatLeadLocation(l.lead_context);
+      if (loc) set.add(loc);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [leads]);
+
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach((l) => {
+      const cat = l.lead_context?.category?.trim();
+      if (cat) set.add(cat);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [leads]);
+
   const filteredLeads = useMemo(() => {
     let arr = leads;
     if (statusFilter === 'overdue') arr = arr.filter(isOverdue);
@@ -139,13 +159,15 @@ const DashboardLeadsPage = () => {
     }
     if (createdFrom || createdTo) arr = arr.filter(l => inRange(l.created_at, createdFrom, createdTo));
     if (followupFrom || followupTo) arr = arr.filter(l => inRange(l.next_followup_at, followupFrom, followupTo));
+    if (cityFilter !== 'all') arr = arr.filter(l => formatLeadLocation(l.lead_context) === cityFilter);
+    if (categoryFilter !== 'all') arr = arr.filter(l => (l.lead_context?.category || '').trim() === categoryFilter);
     return arr;
-  }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo]);
+  }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter]);
 
   // Reset paginação quando filtros/lista mudarem
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo]);
+  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter]);
 
   const visibleLeads = useMemo(() => filteredLeads.slice(0, visibleCount), [filteredLeads, visibleCount]);
   const hasMore = filteredLeads.length > visibleCount;
@@ -153,7 +175,8 @@ const DashboardLeadsPage = () => {
   const overdueCount = useMemo(() => leads.filter(isOverdue).length, [leads]);
 
   const clearFilters = () => {
-    setSearch(''); setCreatedFrom(''); setCreatedTo(''); setFollowupFrom(''); setFollowupTo(''); setStatusFilter('all');
+    setSearch(''); setCreatedFrom(''); setCreatedTo(''); setFollowupFrom(''); setFollowupTo('');
+    setStatusFilter('all'); setCityFilter('all'); setCategoryFilter('all');
   };
 
   const handleExportCsv = () => exportLeadsCsv({
