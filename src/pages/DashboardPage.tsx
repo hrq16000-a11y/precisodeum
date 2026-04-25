@@ -55,9 +55,21 @@ import AchievementHistory from '@/components/dashboard/AchievementHistory';
 import CelebrationMuteToggle from '@/components/dashboard/CelebrationMuteToggle';
 import LeadAnalytics from '@/components/dashboard/LeadAnalytics';
 import LeadInsights from '@/components/dashboard/LeadInsights';
+import ExpertTipsWidget from '@/components/dashboard/ExpertTipsWidget';
+import DismissibleWidget from '@/components/dashboard/DismissibleWidget';
+import { useDashboardState } from '@/hooks/useDashboardState';
+import { useMaturityTier } from '@/hooks/useMaturityTier';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
+  const { registerVisit } = useDashboardState();
+  const { isAtLeast, tier } = useMaturityTier();
+
+  // Registra a visita no servidor (substitui flags em localStorage)
+  useEffect(() => {
+    if (user?.id) void registerVisit();
+  }, [user?.id, registerVisit]);
+
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [welcomeOpen, setWelcomeOpen] = useState(false);
