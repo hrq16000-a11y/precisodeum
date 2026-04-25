@@ -803,6 +803,36 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_posts: {
+        Row: {
+          caption: string
+          created_at: string
+          expires_at: string
+          id: string
+          image_url: string | null
+          provider_id: string
+          user_id: string
+        }
+        Insert: {
+          caption: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          image_url?: string | null
+          provider_id: string
+          user_id: string
+        }
+        Update: {
+          caption?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          image_url?: string | null
+          provider_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       engagement_log: {
         Row: {
           action_key: string
@@ -6048,6 +6078,10 @@ export type Database = {
         Args: { _description?: string; _name: string }
         Returns: Json
       }
+      create_daily_post: {
+        Args: { _caption: string; _image_url: string }
+        Returns: Json
+      }
       create_service_atomic: {
         Args: {
           _address?: string
@@ -6070,6 +6104,7 @@ export type Database = {
         Args: { _sponsor_id: string }
         Returns: boolean
       }
+      delete_daily_post: { Args: never; Returns: Json }
       derive_user_ref: { Args: { _uuid: string }; Returns: string }
       dismiss_dashboard_widget: {
         Args: { _widget: string }
@@ -6228,6 +6263,17 @@ export type Database = {
           tax_id: string
           tax_id_kind: string
           tax_id_last4: string
+        }[]
+      }
+      get_provider_daily_post: {
+        Args: { _provider_id: string }
+        Returns: {
+          caption: string
+          created_at: string
+          expires_at: string
+          hours_remaining: number
+          id: string
+          image_url: string
         }[]
       }
       get_provider_verification_status: {
