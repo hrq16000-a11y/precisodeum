@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, ChevronsUpDown, MapPin } from 'lucide-react';
+import { Check, ChevronsUpDown, Loader2, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ interface CityAutocompleteProps {
   value: { city: string; state: string };
   onChange: (next: { city: string; state: string }) => void;
   placeholder?: string;
+  statusText?: string;
   /** Callback fired whenever the popover closes (selection, click outside, Esc). */
   onClose?: () => void;
 }
@@ -35,7 +36,7 @@ interface CityAutocompleteProps {
  * Autocomplete controlado, conectado à tabela `cities` (5.5k municípios IBGE).
  * Não permite texto livre — garante integridade dos filtros geográficos.
  */
-const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...', onClose }: CityAutocompleteProps) => {
+const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...', statusText, onClose }: CityAutocompleteProps) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<CityRow[]>([]);
@@ -96,13 +97,13 @@ const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...', o
           role="combobox"
           aria-expanded={open}
           className={cn(
-            'w-full justify-between font-normal',
+            'h-auto min-h-11 w-full justify-between py-3 font-normal',
             !value.city && 'text-muted-foreground'
           )}
         >
-          <span className="flex items-center gap-2 truncate">
+          <span className="flex min-w-0 items-center gap-2 truncate text-left">
             <MapPin className="h-4 w-4 shrink-0 text-accent" />
-            <span className="truncate">{display}</span>
+            <span className="min-w-0 truncate">{display}</span>
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -115,8 +116,15 @@ const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...', o
             onValueChange={setQuery}
           />
           <CommandList>
+            {!loading && statusText && (
+              <div className="border-b border-border bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground">
+                {statusText}
+              </div>
+            )}
             {loading && (
-              <div className="py-6 text-center text-xs text-muted-foreground">Buscando...</div>
+              <div className="flex items-center justify-center gap-2 py-6 text-center text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Buscando...
+              </div>
             )}
             {!loading && debouncedQuery.length < 2 && (
               <div className="py-6 text-center text-xs text-muted-foreground">

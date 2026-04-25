@@ -112,6 +112,12 @@ const SmartCategoryPicker = ({
   const selectedCats = categories.filter((c) => selectedIds.includes(c.id));
 
   const handleToggle = (id: string) => {
+    if (maxSelections === 1 && selectedIds.includes(id)) {
+      setOpen(false);
+      setSearch('');
+      return;
+    }
+
     const isSelecting = !selectedIds.includes(id);
     if (isSelecting && maxSelections && selectedIds.length >= maxSelections) {
       // Single-select mode: replace current selection instead of blocking
@@ -157,15 +163,17 @@ const SmartCategoryPicker = ({
             className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent"
           >
             <CategoryIcon icon={cat.icon || ''} size={12} className="text-accent" /> {cat.name}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggle(cat.id);
-              }}
-            >
-              <X className="h-3 w-3" />
-            </button>
+            {maxSelections !== 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggle(cat.id);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
           </span>
         ))}
         <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
