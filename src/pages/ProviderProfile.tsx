@@ -926,13 +926,25 @@ const ProviderProfile = () => {
     const ctxBlock = ctxParts.length ? `\n\n— Contexto —\n${ctxParts.join('\n')}` : '';
     const finalMessage = `${leadForm.message || ''}${ctxBlock}`.trim();
 
+    const leadContext = {
+      city: leadForm.city || null,
+      state: leadForm.state || null,
+      category: category || null,
+      origin: getLeadSource() || 'direto',
+      page: 'provider_profile',
+      provider_slug: slug || null,
+      referrer: typeof document !== 'undefined' ? (document.referrer || null) : null,
+      captured_at: new Date().toISOString(),
+    };
+
     const { error } = await supabase.from('leads').insert({
       provider_id: provider.id,
       client_name: leadForm.name,
       phone: leadForm.phone,
       service_needed: leadForm.service,
       message: finalMessage,
-    });
+      lead_context: leadContext,
+    } as any);
     if (error) {
       toast.error('Erro ao enviar solicitação');
       return;
