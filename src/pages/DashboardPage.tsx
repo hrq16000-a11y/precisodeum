@@ -625,6 +625,11 @@ const DashboardPage = () => {
         <ProfileStrength />
       </div>
 
+      {/* Benchmark de engagement vs. média da categoria */}
+      <div className="mt-4">
+        <CategoryBenchmarkWidget />
+      </div>
+
       {/* Ranking Status */}
       <div className="mt-4">
         <RankingStatus />
