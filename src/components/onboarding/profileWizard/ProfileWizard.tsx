@@ -9,6 +9,7 @@ import { useWizardDuplicateCheck } from '@/hooks/useWizardDuplicateCheck';
 import WizardScoreHeader from './WizardScoreHeader';
 import PublicProfilePreview from './PublicProfilePreview';
 import Step1ProfileType from './Step1ProfileType';
+import Step2LocationPhoto from './Step2LocationPhoto';
 import type {
   ProfileWizardData,
   ProfileWizardProps,
@@ -208,7 +209,16 @@ const ProfileWizard = ({ mode, initialData, onFinish, onCancel }: ProfileWizardP
           <p className="text-muted-foreground">Passo 4 — Bio e foto de perfil (a portar).</p>
         )}
         {step === 4 && (
-          <p className="text-muted-foreground">Passo 5 — Localização (cidade/UF) (a portar).</p>
+          <Step2LocationPhoto
+            data={data}
+            onChange={(patch) => setData((prev) => ({ ...prev, ...patch }))}
+            onBack={() => setStep((s) => Math.max(startStep, s - 1))}
+            onNext={() => setStep((s) => s + 1)}
+            onSkip={() => setStep((s) => s + 1)}
+            onFieldBlur={() => {
+              /* auto-save já cuida via debounce no shell */
+            }}
+          />
         )}
         {step === LAST_STEP && (
           <div className="space-y-3">
