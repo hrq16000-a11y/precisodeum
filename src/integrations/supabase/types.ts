@@ -6018,6 +6018,15 @@ export type Database = {
           providers: Json
         }[]
       }
+      admin_pwa_install_stats_by_city: {
+        Args: never
+        Returns: {
+          city: string
+          install_rate: number
+          installed_providers: number
+          total_providers: number
+        }[]
+      }
       admin_recalc_provider_levels_from_account: {
         Args: never
         Returns: number
@@ -6208,6 +6217,21 @@ export type Database = {
           search_count: number
         }[]
       }
+      get_engagement_ranking: {
+        Args: { _limit?: number; _period_days?: number }
+        Returns: {
+          avatar_url: string
+          business_name: string
+          city: string
+          full_name: string
+          is_me: boolean
+          rank_position: number
+          slug: string
+          state: string
+          total_points: number
+          user_id: string
+        }[]
+      }
       get_featured_providers: {
         Args: { _limit?: number }
         Returns: {
@@ -6283,6 +6307,14 @@ export type Database = {
           top_location_label: string
           top_neighborhood: string
           total_searches: number
+        }[]
+      }
+      get_my_engagement_rank: {
+        Args: { _period_days?: number }
+        Returns: {
+          rank_position: number
+          total_participants: number
+          total_points: number
         }[]
       }
       get_my_referrals_full: { Args: never; Returns: Json }
