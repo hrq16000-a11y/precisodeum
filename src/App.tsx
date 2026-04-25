@@ -133,6 +133,7 @@ const StateProviderPage = lazy(() => import("./pages/StateProviderPage"));
 const CityDetailPage = lazy(() => import("./pages/CityDetailPage"));
 const CategoriesListPage = lazy(() => import("./pages/CategoriesListPage"));
 const EspecialidadesPage = lazy(() => import("./pages/EspecialidadesPage"));
+const EspecialidadeDetailPage = lazy(() => import("./pages/EspecialidadeDetailPage"));
 const AdminConversionMetricsPage = lazy(() => import("./pages/AdminConversionMetricsPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ComoFuncionaPage = lazy(() => import("./pages/ComoFuncionaPage"));
@@ -297,12 +298,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Redirect 301-style: /especialidades/:slug → /categoria/:slug (canonical SEO)
-const EspecialidadeRedirect = () => {
-  const params = (typeof window !== 'undefined' ? window.location.pathname.split('/').filter(Boolean) : []);
-  const slug = params[1] || '';
-  return <Navigate to={`/categoria/${slug}`} replace />;
-};
+// /especialidades/:slug agora renderiza EspecialidadeDetailPage com Dicas + Top profissionais.
 
 const App = () => {
   useEffect(() => {
@@ -455,7 +451,7 @@ const App = () => {
                 <Route path="/cidades/:estado/:cidade" element={<CityDetailPage />} />
                 <Route path="/categorias" element={<CategoriesListPage />} />
                 <Route path="/especialidades" element={<EspecialidadesPage />} />
-                <Route path="/especialidades/:slug" element={<EspecialidadeRedirect />} />
+                <Route path="/especialidades/:slug" element={<EspecialidadeDetailPage />} />
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/ajuda" element={<HelpCenterPage />} />
                 <Route path="/privacidade" element={<PrivacyPage />} />
