@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Search, Loader2, Target } from 'lucide-react';
+import { formatCityState } from '@/lib/locationFormat';
 import { toast } from 'sonner';
 import CoverageSearchStatsWidget from '@/components/admin/CoverageSearchStatsWidget';
 
