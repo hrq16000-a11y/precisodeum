@@ -134,25 +134,35 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       </motion.span>
     );
   }
-  // Resposta Rápida — híbrido: online agora OU média < 30min
-  const fastByPresence = isOnline;
+  // Frescor de atividade (Lote 4) — prioridade: Trabalhando Agora > Disponível agora > Ativo Hoje > Resposta rápida
   const fastByChat = provider.avgResponseMinutes != null && provider.avgResponseMinutes > 0 && provider.avgResponseMinutes < 30;
-  if (fastByPresence) {
+  if (workingNow) {
+    badges.push(
+      <motion.span
+        key="working-now"
+        animate={{ scale: [1, 1.06, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+      >
+        <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500 animate-pulse" /> Trabalhando agora
+      </motion.span>
+    );
+  } else if (isOnline) {
     badges.push(
       <span key="fast-online" className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
         <Zap className="h-3 w-3" /> Disponível agora
+      </span>
+    );
+  } else if (activeToday) {
+    badges.push(
+      <span key="active-today" className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-400 border border-blue-500/20">
+        <Sparkles className="h-3 w-3" /> Ativo hoje
       </span>
     );
   } else if (fastByChat) {
     badges.push(
       <span key="fast-chat" className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
         <Zap className="h-3 w-3" /> Responde em ~{provider.avgResponseMinutes}min
-      </span>
-    );
-  } else if (isOnline) {
-    badges.push(
-      <span key="online" className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
-        <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online
       </span>
     );
   }
