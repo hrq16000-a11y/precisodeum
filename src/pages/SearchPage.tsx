@@ -41,6 +41,7 @@ import { usePinnedSponsor } from '@/hooks/usePinnedSponsor';
 import UrgencyToggle from '@/components/home/UrgencyToggle';
 import { useUrgencyMode } from '@/hooks/useUrgencyMode';
 import { useOnlineProviders } from '@/hooks/useOnlinePresence';
+import { useActiveTodayProviders } from '@/hooks/useActiveTodayProviders';
 import AskSystemDialog from '@/components/search/AskSystemDialog';
 import { logSearchIntent } from '@/lib/searchIntent';
 
@@ -76,6 +77,7 @@ const SearchPage = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [acceptingOnly, setAcceptingOnly] = useState(false);
+  const [activeTodayOnly, setActiveTodayOnly] = useState(false);
 
   const [showOutOfState, setShowOutOfState] = useState(false);
   const [page, setPage] = useState(1);
@@ -85,6 +87,7 @@ const SearchPage = () => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
   const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
   const onlineSet = useOnlineProviders();
+  const activeTodaySet = useActiveTodayProviders();
 
   const effectiveCity = selectedCity || cityParam || geoCity || '';
 
@@ -141,9 +144,11 @@ const SearchPage = () => {
       featuredFilter: featuredFilter as 'all' | 'featured' | 'normal',
       onlineOnly,
       acceptingOnly,
+      activeTodayOnly,
       sortBy,
       urgencyMode,
       onlineSet,
+      activeTodaySet,
       routeCorridor: routeCorridor
         ? {
             midLat: routeCorridor.midLat,
@@ -152,7 +157,7 @@ const SearchPage = () => {
           }
         : null,
     }) as DbProvider[];
-  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, onlineOnly, acceptingOnly]);
+  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, onlineOnly, acceptingOnly, activeTodayOnly]);
 
   const filteredLocal = useMemo(() => applyClientFilters(localProviders), [applyClientFilters, localProviders]);
   const filteredNearby = useMemo(() => applyClientFilters(nearbyProviders), [applyClientFilters, nearbyProviders]);
@@ -173,6 +178,7 @@ const SearchPage = () => {
     minRating,
     onlineOnly,
     acceptingOnly,
+    activeTodayOnly,
   });
 
   const clearAllFilters = useCallback(() => {
@@ -187,6 +193,7 @@ const SearchPage = () => {
     setSortBy('relevance');
     setOnlineOnly(false);
     setAcceptingOnly(false);
+    setActiveTodayOnly(false);
     setPage(1);
   }, []);
 
@@ -386,6 +393,22 @@ const SearchPage = () => {
               Online agora
             </span>
             <span className="text-[10px] font-semibold">{onlineOnly ? 'ATIVO' : 'OFF'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setActiveTodayOnly(v => !v); setPage(1); }}
+            className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+              activeTodayOnly
+                ? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                : 'border-border bg-background text-muted-foreground hover:bg-muted'
+            }`}
+            aria-pressed={activeTodayOnly}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Circle className={`h-2 w-2 ${activeTodayOnly ? 'fill-amber-500 text-amber-500' : 'fill-muted-foreground/40 text-muted-foreground/40'}`} />
+              Ativo hoje
+            </span>
+            <span className="text-[10px] font-semibold">{activeTodayOnly ? 'ATIVO' : 'OFF'}</span>
           </button>
           <button
             type="button"
