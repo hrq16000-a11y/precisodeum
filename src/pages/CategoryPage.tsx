@@ -507,6 +507,13 @@ const CategoryPage = () => {
         <PaginationControls currentPage={page} totalItems={totalDisplay} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
       </div>
       
+      <CategorySeoBlock
+        categorySlug={slug || ''}
+        categoryName={category.name}
+        city={geoCity}
+        state={geoState}
+        providersCount={totalDisplay}
+      />
       <Suspense fallback={null}><SponsorFooterCTA category={slug} /></Suspense>
       <Footer />
     </div>
