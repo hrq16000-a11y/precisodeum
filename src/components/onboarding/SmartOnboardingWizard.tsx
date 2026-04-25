@@ -1002,6 +1002,50 @@ const BasicOnboardingWizard = () => {
         </div>
       )}
 
+      {debugMode && (
+        <div className="fixed bottom-2 right-2 z-[120] max-h-[60vh] w-[340px] max-w-[95vw] overflow-auto rounded-lg border-2 border-amber-500 bg-zinc-900/95 p-3 text-[10px] font-mono text-amber-100 shadow-2xl">
+          <div className="mb-2 flex items-center justify-between gap-2 border-b border-amber-500/40 pb-1">
+            <span className="font-bold uppercase tracking-wider text-amber-300">Wizard Debug</span>
+            <button
+              type="button"
+              onClick={() => { try { window.localStorage.removeItem('wizard_debug'); } catch {} window.location.search = ''; }}
+              className="rounded bg-amber-500/20 px-2 py-0.5 text-[9px] hover:bg-amber-500/40"
+            >Fechar</button>
+          </div>
+          <div className="space-y-1">
+            <div><span className="text-amber-300">step:</span> {step} / furthest: {furthestStep}</div>
+            <div><span className="text-amber-300">profileType:</span> {String(profileType)} ({providerSubtype || '—'})</div>
+            <div className={fullName.trim() ? 'text-emerald-300' : 'text-rose-300'}>fullName: {fullName ? '✓ "' + fullName + '"' : '✗ vazio'}</div>
+            <div className={city ? 'text-emerald-300' : 'text-rose-300'}>city: {city ? '✓ ' + city : '✗ vazio'}</div>
+            <div className={state ? 'text-emerald-300' : 'text-rose-300'}>state: {state ? '✓ ' + state : '✗ vazio (UF)'}</div>
+            <div className={validateWhatsapp(whatsapp).valid ? 'text-emerald-300' : 'text-rose-300'}>
+              whatsapp: {whatsapp ? whatsapp : '✗ vazio'} {!validateWhatsapp(whatsapp).valid && `(${validateWhatsapp(whatsapp).reason})`}
+            </div>
+            <div className={(profileType !== 'provider' || selectedCategoryIds.length > 0) ? 'text-emerald-300' : 'text-rose-300'}>
+              category: {selectedCategoryIds.length || 0} selecionada(s)
+            </div>
+            <div><span className="text-amber-300">taxId len:</span> {(taxId || '').replace(/\D/g, '').length}</div>
+            <div><span className="text-amber-300">canAdvanceFromStep3:</span> {String(canAdvanceFromStep3)}</div>
+            <div><span className="text-amber-300">saving:</span> {String(saving)}</div>
+          </div>
+          {lastSaveError && (
+            <div className="mt-2 rounded border border-rose-400/60 bg-rose-950/40 p-2 text-rose-100">
+              <div className="font-bold text-rose-300">Último erro de save:</div>
+              <div>step: {lastSaveError.step} · {new Date(lastSaveError.when).toLocaleTimeString()}</div>
+              <div>table: <span className="text-amber-300">{lastSaveError.table}</span></div>
+              {lastSaveError.code && <div>code: {lastSaveError.code}</div>}
+              <div>message: {lastSaveError.message}</div>
+              {lastSaveError.details && <div>details: {lastSaveError.details}</div>}
+              {lastSaveError.hint && <div>hint: {lastSaveError.hint}</div>}
+              {lastSaveError.payloadKeys && <div>payload: [{lastSaveError.payloadKeys.join(', ')}]</div>}
+            </div>
+          )}
+          <div className="mt-2 text-[9px] text-amber-300/60">
+            ?debug=1 OU localStorage.setItem('wizard_debug','1')
+          </div>
+        </div>
+      )}
+
       {/* Área scrollável do conteúdo, com padding inferior para não ficar atrás do footer fixo */}
       <div className="flex-1 overflow-y-auto px-4 pb-40 pt-4 sm:pt-6">
         <div className="relative mx-auto w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl sm:p-8">
