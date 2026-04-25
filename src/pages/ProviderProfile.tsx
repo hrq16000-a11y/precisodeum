@@ -796,12 +796,15 @@ const ProviderProfile = () => {
     ? pageSettings.cover_image_url || portfolioRawUrls.find((url) => !isVideoUrl(url)) || (hasOwnAvatar ? ((provider.profiles as any)?.avatar_url || provider.photo_url) : '')
     : '';
 
-  // DESTAQUE: based on profile completeness (no longer requires legacy 'premium' plan)
+  // DESTAQUE: critério rigoroso — só ganha o selo quem tem perfil REAL e completo.
+  // Avatar próprio + descrição + serviços + portfólio (todos obrigatórios). Evita poluir
+  // a UI com "DESTAQUE" para perfis vazios.
   const isDestaque = !!provider && (
-    hasOwnAvatar ||
-    (provider.services_count || 0) >= (destaqueMinServices || 1) ||
-    (provider.portfolio_album_count || 0) > 0 ||
-    !!(provider.description && provider.description.trim())
+    hasOwnAvatar &&
+    !!(provider.description && provider.description.trim().length >= 40) &&
+    (provider.services_count || 0) >= Math.max(destaqueMinServices || 1, 2) &&
+    (provider.portfolio_album_count || 0) >= (destaqueMinPortfolio || 1) &&
+    (provider.review_count || 0) >= 1
   );
   const effectiveWhatsApp = provider ? toCanonical(provider.whatsapp || provider.phone || '') : '';
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
