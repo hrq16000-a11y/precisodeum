@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Eye, MessageSquare, Send, Sparkles } from 'lucide-react';
+import { Eye, MessageSquare, Send, Sparkles, type LucideIcon } from 'lucide-react';
 
 interface Props {
   views: number;
@@ -12,7 +12,7 @@ const Metric = ({
   value,
   label,
 }: {
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+  icon: LucideIcon;
   value: number;
   label: string;
 }) => (
