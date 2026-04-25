@@ -30,6 +30,7 @@ const audit = (city: string | null, state: string | null, route: string, label: 
 };
 
 export default function AdminLocationSeoAuditPage() {
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const [loading, setLoading] = useState(false);
   const [findings, setFindings] = useState<Finding[]>([]);
   const [summary, setSummary] = useState({ total: 0, ok: 0, fail: 0 });
