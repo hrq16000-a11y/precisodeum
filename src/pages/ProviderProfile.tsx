@@ -1256,6 +1256,7 @@ const ProviderProfile = () => {
 
   const renderAboutWithGuarantee = () => (
     <>
+      {provider?.id ? <div className="mt-6"><DailyPostHighlight providerId={provider.id} /></div> : null}
       {renderAbout()}
       <TrustGuarantee />
     </>
