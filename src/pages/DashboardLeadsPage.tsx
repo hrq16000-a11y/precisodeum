@@ -153,6 +153,15 @@ const DashboardLeadsPage = () => {
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }, [leads]);
 
+  const ufOptions = useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach((l) => {
+      const uf = String(l.lead_context?.state || '').trim().toUpperCase();
+      if (/^[A-Z]{2}$/.test(uf)) set.add(uf);
+    });
+    return Array.from(set).sort();
+  }, [leads]);
+
   const filteredLeads = useMemo(() => {
     let arr = leads;
     if (statusFilter === 'overdue') arr = arr.filter(isOverdue);
@@ -171,13 +180,14 @@ const DashboardLeadsPage = () => {
     if (followupFrom || followupTo) arr = arr.filter(l => inRange(l.next_followup_at, followupFrom, followupTo));
     if (cityFilter !== 'all') arr = arr.filter(l => formatLeadLocation(l.lead_context) === cityFilter);
     if (categoryFilter !== 'all') arr = arr.filter(l => (l.lead_context?.category || '').trim() === categoryFilter);
+    if (ufFilter !== 'all') arr = arr.filter(l => String(l.lead_context?.state || '').trim().toUpperCase() === ufFilter);
     return arr;
-  }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter]);
+  }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, ufFilter]);
 
   // Reset paginação quando filtros/lista mudarem
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter]);
+  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, ufFilter]);
 
   const visibleLeads = useMemo(() => filteredLeads.slice(0, visibleCount), [filteredLeads, visibleCount]);
   const hasMore = filteredLeads.length > visibleCount;
@@ -186,7 +196,7 @@ const DashboardLeadsPage = () => {
 
   const clearFilters = () => {
     setSearch(''); setCreatedFrom(''); setCreatedTo(''); setFollowupFrom(''); setFollowupTo('');
-    setStatusFilter('all'); setCityFilter('all'); setCategoryFilter('all');
+    setStatusFilter('all'); setCityFilter('all'); setCategoryFilter('all'); setUfFilter('all');
   };
 
   const handleExportCsv = () => exportLeadsCsv({
