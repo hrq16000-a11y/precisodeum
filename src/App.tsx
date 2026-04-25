@@ -52,6 +52,7 @@ const DashboardServicesPage = lazy(() => import("./pages/DashboardServicesPage")
 const DashboardReviewsPage = lazy(() => import("./pages/DashboardReviewsPage"));
 const DashboardLeadsPage = lazy(() => import("./pages/DashboardLeadsPage"));
 const DashboardLeadDetailPage = lazy(() => import("./pages/DashboardLeadDetailPage"));
+const DashboardReferralsPage = lazy(() => import("./pages/DashboardReferralsPage"));
 const DashboardNotificationPreferencesPage = lazy(() => import("./pages/DashboardNotificationPreferencesPage"));
 const DashboardMetricsPage = lazy(() => import("./pages/DashboardMetricsPage"));
 const DashboardOpenLeadsPage = lazy(() => import("./pages/DashboardOpenLeadsPage"));
@@ -363,6 +364,7 @@ const App = () => {
                 <Route path="/dashboard/avaliacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReviewsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/leads" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLeadsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/leads/:leadId" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLeadDetailPage /></ProtectedRoute>} />
+                <Route path="/dashboard/indicacoes" element={<ProtectedRoute><DashboardReferralsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/notificacoes/preferencias" element={<ProtectedRoute><DashboardNotificationPreferencesPage /></ProtectedRoute>} />
                 <Route path="/dashboard/metricas" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMetricsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/leads-abertos" element={<ProtectedRoute allowedTypes={['provider']}><DashboardOpenLeadsPage /></ProtectedRoute>} />
