@@ -641,10 +641,23 @@ const BasicOnboardingWizard = () => {
     }
     if (!user?.id) return;
     // Validação amigável do CPF/CNPJ — campo é opcional, mas se preenchido precisa ser válido.
+    // Mensagens são específicas conforme o subtipo escolhido (PF/CPF ou PJ/CNPJ).
     const taxIdDigits = (taxId || '').replace(/\D/g, '');
-    if (taxIdDigits && !isValidCpfCnpj(taxIdDigits)) {
-      toast.error('CPF/CNPJ inválido. Confira os dígitos ou deixe em branco.');
-      return;
+    if (taxIdDigits) {
+      const expected = profileType === 'provider' && providerSubtype === 'company' ? 14 : 11;
+      const expectedLabel = expected === 14 ? 'CNPJ' : 'CPF';
+      if (taxIdDigits.length !== expected) {
+        toast.error(
+          expected === 14
+            ? `CNPJ precisa ter 14 dígitos. Confira ou deixe em branco.`
+            : `CPF precisa ter 11 dígitos. Confira ou deixe em branco.`
+        );
+        return;
+      }
+      if (!isValidCpfCnpj(taxIdDigits)) {
+        toast.error(`${expectedLabel} inválido — confira os dígitos ou deixe em branco para preencher depois.`);
+        return;
+      }
     }
     setSaving(true);
     try {
