@@ -242,14 +242,17 @@ const ProfileWizard = ({ mode, initialData, onFinish, onCancel }: ProfileWizardP
               Voltar
             </Button>
           )}
-          <Button
-            type="button"
-            onClick={handleAdvance}
-            disabled={isSaving || checking.whatsapp || checking.tax_id}
-          >
-            {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {step < LAST_STEP ? 'Avançar' : finishLabel}
-          </Button>
+          {/* Step 0 (seleção de tipo) avança ao clicar nos cards — esconde "Avançar". */}
+          {!(mode === 'create' && step === 0) && (
+            <Button
+              type="button"
+              onClick={handleAdvance}
+              disabled={isSaving || checking.whatsapp || checking.tax_id}
+            >
+              {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {step < LAST_STEP ? 'Avançar' : finishLabel}
+            </Button>
+          )}
         </div>
       </div>
     </div>
