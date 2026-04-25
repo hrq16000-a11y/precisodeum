@@ -15,6 +15,12 @@ import ProfileBadge from '@/components/ProfileBadge';
 import ConversionTags from '@/components/ConversionTags';
 import TopProfessionalBadge from '@/components/TopProfessionalBadge';
 import { useTopProfessional } from '@/hooks/useTopProfessional';
+
+/** Componente isolado para usar o hook sem misturar lifecycle no componente principal. */
+const ProviderTopBadgeInline = ({ userId }: { userId: string }) => {
+  const isTop = useTopProfessional(userId);
+  return isTop ? <TopProfessionalBadge size="md" showLabel /> : null;
+};
 import TrustGuarantee from '@/components/TrustGuarantee';
 import TestimonialsCarousel from '@/components/TestimonialsCarousel';
 import SponsorAd from '@/components/SponsorAd';
