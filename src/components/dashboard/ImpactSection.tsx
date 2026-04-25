@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom';
-import { Eye, MessageSquare, Send, Sparkles, type LucideIcon } from 'lucide-react';
+import { Eye, MessageSquare, Send, type LucideIcon } from 'lucide-react';
 
 interface Props {
   views: number;
