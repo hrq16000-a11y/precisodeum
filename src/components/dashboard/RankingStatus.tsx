@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Link } from 'react-router-dom';
+import { formatCityState } from '@/lib/locationFormat';
 
 const RankingStatus = () => {
   const { provider, profile } = useAuth();
@@ -62,7 +63,7 @@ const RankingStatus = () => {
         <div>
           <h3 className="text-sm font-bold text-foreground">Seu Ranking Local</h3>
           <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-            <MapPin className="h-3 w-3" /> {provider.city} - {provider.state}
+            <MapPin className="h-3 w-3" /> {formatCityState(provider.city, provider.state)}
           </p>
         </div>
       </div>
