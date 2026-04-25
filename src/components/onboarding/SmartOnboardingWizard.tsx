@@ -756,11 +756,14 @@ const BasicOnboardingWizard = () => {
     setSaving(true);
     setLastSaveError(null);
     let currentTable: string = 'profiles';
-    let currentPayloadKeys: string[] = [];
+    let currentStage: string = 'init';
+    let currentPayload: Record<string, any> = {};
+    let currentField: string | undefined;
     try {
       const hadTaxIdBefore = !!((profile as any)?.tax_id_last4) || !!taxId.trim();
 
       currentTable = 'profiles';
+      currentStage = 'profiles.update';
       const profilesPayload = {
         full_name: fullName.trim(),
         whatsapp,
@@ -770,19 +773,23 @@ const BasicOnboardingWizard = () => {
         bio: bio.trim() || null,
         city: city || null,
         state: state || null,
+        neighborhood: neighborhood.trim() || null,
         preferred_category_ids: profileType === 'provider' ? selectedCategoryIds : [],
         onboarding_step: 4,
       };
-      currentPayloadKeys = Object.keys(profilesPayload);
+      currentPayload = profilesPayload;
       const { error: profileError } = await supabase.from('profiles').update(profilesPayload as any).eq('id', user.id);
       if (profileError) throw profileError;
 
       currentTable = 'rpc:set_profile_tax_id';
-      currentPayloadKeys = ['_tax_id'];
+      currentStage = 'rpc.set_profile_tax_id';
+      currentField = 'taxId';
+      currentPayload = { _tax_id: taxIdDigits || null };
       const { error: taxError } = await supabase.rpc('set_profile_tax_id', {
         _tax_id: taxIdDigits || null,
       });
       if (taxError) throw taxError;
+      currentField = undefined;
       if (taxIdDigits) {
         setTaxIdJustSaved(true);
         toast.success(`${taxIdDigits.length === 14 ? 'CNPJ' : 'CPF'} salvo com segurança.`);
@@ -803,42 +810,49 @@ const BasicOnboardingWizard = () => {
       // Garante registro provider/agency conforme tipo
       if (profileType === 'provider') {
         currentTable = 'providers';
+        currentStage = 'providers.lookup';
         const { data: existing } = await supabase.from('providers').select('*').eq('user_id', user.id).limit(1);
         if (existing && existing[0]) {
+          currentStage = 'providers.update';
           const updPayload = {
             city: city || existing[0].city,
             state: state || existing[0].state,
+            neighborhood: neighborhood.trim() || existing[0].neighborhood,
             description: bio || existing[0].description,
             whatsapp: whatsapp || existing[0].whatsapp,
             category_id: selectedCategoryIds[0] || existing[0].category_id,
             account_type: providerSubtype || existing[0].account_type || 'autonomous',
           };
-          currentPayloadKeys = Object.keys(updPayload);
+          currentPayload = updPayload;
           const { error: updErr } = await supabase.from('providers').update(updPayload as any).eq('id', existing[0].id);
           if (updErr) throw updErr;
-          setSavedProvider({ ...existing[0], city, state, description: bio, whatsapp, category_id: selectedCategoryIds[0], account_type: providerSubtype || 'autonomous' });
+          setSavedProvider({ ...existing[0], city, state, neighborhood: neighborhood.trim() || existing[0].neighborhood, description: bio, whatsapp, category_id: selectedCategoryIds[0], account_type: providerSubtype || 'autonomous' });
         } else {
+          currentStage = 'providers.insert';
           const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'profissional');
           const insPayload = {
             user_id: user.id,
             slug: `${baseSlug}-${user.id.slice(0, 6)}`,
             city: city || null,
             state: state || null,
+            neighborhood: neighborhood.trim() || null,
             description: bio || null,
             whatsapp: whatsapp || null,
             category_id: selectedCategoryIds[0] || null,
             account_type: providerSubtype || 'autonomous',
             status: 'pending',
           };
-          currentPayloadKeys = Object.keys(insPayload);
+          currentPayload = insPayload;
           const { data: created, error } = await supabase.from('providers').insert(insPayload as any).select('*').single();
           if (error) throw error;
           setSavedProvider(created);
         }
       } else if (profileType === 'rh') {
         currentTable = 'agencies';
+        currentStage = 'agencies.lookup';
         const { data: existing } = await (supabase as any).from('agencies').select('*').eq('user_id', user.id).limit(1);
         if (!existing || existing.length === 0) {
+          currentStage = 'agencies.insert';
           const baseSlug = slugify(agencyName || fullName || 'agencia');
           const insPayload = {
             user_id: user.id,
@@ -848,7 +862,7 @@ const BasicOnboardingWizard = () => {
             state: state || null,
             status: 'pending',
           };
-          currentPayloadKeys = Object.keys(insPayload);
+          currentPayload = insPayload;
           const { error: insErr } = await (supabase as any).from('agencies').insert(insPayload);
           if (insErr) throw insErr;
         }
@@ -864,31 +878,40 @@ const BasicOnboardingWizard = () => {
         await finishOnboarding();
       }
     } catch (err: any) {
-      console.error('[Wizard step 3]', { table: currentTable, payloadKeys: currentPayloadKeys, err });
+      console.error('[Wizard step 3]', { table: currentTable, stage: currentStage, payload: currentPayload, err });
       const message = String(err?.message || err?.error_description || 'Erro desconhecido');
       const details = err?.details ? String(err.details) : undefined;
       const hint = err?.hint ? String(err.hint) : undefined;
       const code = err?.code ? String(err.code) : undefined;
+      // Mapeia mensagem do Postgres para campo provável
+      const lower = `${message} ${details || ''}`.toLowerCase();
+      let inferredField = currentField;
+      if (!inferredField) {
+        if (lower.includes('whatsapp') || lower.includes('phone')) inferredField = 'whatsapp';
+        else if (lower.includes('full_name') || lower.includes('"name"')) inferredField = 'fullName';
+        else if (lower.includes('city')) inferredField = 'city';
+        else if (lower.includes('state')) inferredField = 'state';
+        else if (lower.includes('neighborhood')) inferredField = 'neighborhood';
+        else if (lower.includes('category')) inferredField = 'category';
+        else if (lower.includes('tax') || lower.includes('cpf') || lower.includes('cnpj')) inferredField = 'taxId';
+        else if (lower.includes('slug')) inferredField = 'slug';
+      }
       setLastSaveError({
         step: 3,
         when: new Date().toISOString(),
         table: currentTable,
+        stage: currentStage,
         code,
         message,
         details,
         hint,
-        payloadKeys: currentPayloadKeys,
+        payloadKeys: Object.keys(currentPayload),
+        payload: currentPayload,
+        field: inferredField,
       });
-      // Mensagem amigável + dica do campo provável
-      let friendly = message;
-      const lower = `${message} ${details || ''}`.toLowerCase();
-      if (lower.includes('whatsapp') || lower.includes('phone')) friendly = 'Erro no campo WhatsApp/telefone.';
-      else if (lower.includes('full_name') || lower.includes('name')) friendly = 'Erro no campo Nome.';
-      else if (lower.includes('city')) friendly = 'Erro no campo Cidade.';
-      else if (lower.includes('state')) friendly = 'Erro no campo Estado (UF).';
-      else if (lower.includes('category')) friendly = 'Erro na Categoria selecionada.';
-      else if (lower.includes('tax') || lower.includes('cpf') || lower.includes('cnpj')) friendly = 'Erro no CPF/CNPJ.';
-      else if (lower.includes('slug')) friendly = 'Slug do perfil já em uso — tente novamente.';
+      const friendly = inferredField
+        ? `Erro no campo ${inferredField}.`
+        : `Erro durante ${currentStage}.`;
       toast.error(`Não foi possível salvar (${currentTable}).`, {
         description: `${friendly}${code ? ` [${code}]` : ''} — ${String(message).slice(0, 180)}`,
       });
