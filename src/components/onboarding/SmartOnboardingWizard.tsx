@@ -920,13 +920,15 @@ const BasicOnboardingWizard = () => {
 
   const reviewItems = buildReviewItems({ profileType, providerSubtype, city, state, avatarUrl, fullName, agencyName, whatsapp, bio, selectedCategoryIds, servicesCreated });
 
+  // Resumo final compacto: NÃO repete perguntas já confirmadas (tipo de perfil, PF/PJ).
+  // Mostra apenas os dados úteis para o usuário conferir antes de concluir.
   const summaryItems = [
-    { label: 'Tipo de perfil', value: profileType ? (PROFILE_TYPE_LABEL[profileType] || profileType) : 'Não definido' },
-    { label: 'Cadastro profissional', value: providerSubtype ? (PROVIDER_SUBTYPE_LABEL[providerSubtype] || providerSubtype) : 'Não aplicável' },
-    { label: 'Cidade', value: formatCityState(city, state, ' • ') || 'Não informada' },
+    { label: 'Localização', value: formatCityState(city, state, ' • ') || 'Não informada' },
     { label: 'Nome', value: fullName || 'Não informado' },
-    { label: 'WhatsApp', value: whatsapp || 'Não informado' },
-    { label: 'Serviços', value: profileType === 'provider' ? `${servicesCreated} cadastrado(s)` : 'Não aplicável' },
+    { label: 'WhatsApp', value: whatsapp ? formatPhoneDisplay(whatsapp) : 'Não informado' },
+    ...(profileType === 'provider'
+      ? [{ label: 'Serviços', value: `${servicesCreated} cadastrado(s)` }]
+      : []),
   ];
 
   // ─── Passo 5: Conclusão ───
