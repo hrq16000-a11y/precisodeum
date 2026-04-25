@@ -71,12 +71,24 @@ export default function ReferralInviteCard() {
     if (newlyRewarded.length > 0) {
       const item = data.recent.find((r) => r.id === newlyRewarded[0]);
       toast.success(
-        `${item?.referred_name || 'Seu parceiro'} começou a trabalhar! Você ganhou +50 pontos de engajamento!`,
-        { duration: 6000, icon: '🎉' },
+        `${item?.referred_name || 'Seu parceiro'} começou a trabalhar! +50 pontos de engajamento!`,
+        {
+          duration: 9000,
+          icon: '🎉',
+          description: 'Motivo: indicação qualificada.',
+          action: {
+            label: 'Ver histórico',
+            onClick: () => {
+              if (typeof window !== 'undefined') window.location.assign('/dashboard/indicacoes');
+            },
+          },
+        },
       );
       // invalida pontos de engajamento para refletir o ganho
       queryClient.invalidateQueries({ queryKey: ['engagement-points'] });
       queryClient.invalidateQueries({ queryKey: ['engagement-level'] });
+      queryClient.invalidateQueries({ queryKey: ['engagement-ranking'] });
+      queryClient.invalidateQueries({ queryKey: ['my-engagement-rank'] });
     }
     seenRewardedIdsRef.current = rewardedNow;
   }, [data, queryClient]);
