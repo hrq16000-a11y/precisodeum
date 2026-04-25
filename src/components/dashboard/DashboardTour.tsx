@@ -137,6 +137,11 @@ const DashboardTour = () => {
               </div>
               <h3 className="mt-1 font-display text-base font-bold text-foreground">{current.title}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{current.body}</p>
+              {!targetRect && current.emptyHint && (
+                <p className="mt-2 rounded-md border border-dashed border-accent/30 bg-accent/5 px-2.5 py-1.5 text-xs text-foreground/80">
+                  💡 {current.emptyHint}
+                </p>
+              )}
             </div>
             <button
               type="button"
