@@ -113,6 +113,8 @@ const AdminGamificationPage = lazy(() => import("./pages/AdminGamificationPage")
 const AdminRankingsPage = lazy(() => import("./pages/AdminRankingsPage"));
 const AdminCoverageMapPage = lazy(() => import("./pages/AdminCoverageMapPage"));
 const AdminSeoAuditPage = lazy(() => import("./pages/AdminSeoAuditPage"));
+const AdminLocationDebugPage = lazy(() => import("./pages/AdminLocationDebugPage"));
+const AdminLocationSeoAuditPage = lazy(() => import("./pages/AdminLocationSeoAuditPage"));
 
 const AdminOverviewPage = lazy(() => import("./pages/AdminOverviewPage"));
 const AdminNotificationsPage = lazy(() => import("./pages/AdminNotificationsPage"));
@@ -434,6 +436,8 @@ const App = () => {
                 <Route path="/admin/rankings" element={<AdminRankingsPage />} />
                 <Route path="/admin/cobertura" element={<AdminCoverageMapPage />} />
                 <Route path="/admin/seo-auditoria" element={<AdminSeoAuditPage />} />
+                <Route path="/admin/debug-localizacao" element={<AdminLocationDebugPage />} />
+                <Route path="/admin/auditoria-cidade-uf" element={<AdminLocationSeoAuditPage />} />
                 <Route path="/admin/staff" element={<AdminStaffPage />} />
                 <Route path="/admin/aprovacao" element={<AdminApprovalSettingsPage />} />
                 <Route path="/admin/onboarding" element={<AdminOnboardingPage />} />
