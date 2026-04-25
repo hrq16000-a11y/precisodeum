@@ -286,22 +286,57 @@ const DashboardProfilePage = () => {
         cnpj: finalCnpj, cpf: finalCpf, birth_date: form.birth_date || null, ibge_code: form.ibge_code || null, latitude, longitude,
       };
 
+      // Slug regen: se nome ou cidade mudaram em relação ao provider salvo,
+      // gera um novo slug e tenta persistir; em caso de colisão única, anexa
+      // sufixo curto. Mantém o slug atual em caso de qualquer falha.
+      const ensureUniqueSlug = async (base: string, ignoreId?: string): Promise<string> => {
+        const tryOne = async (candidate: string) => {
+          let q = supabase.from('providers').select('id', { head: true, count: 'exact' }).eq('slug', candidate);
+          if (ignoreId) q = q.neq('id', ignoreId);
+          const { count } = await q;
+          return (count ?? 0) === 0;
+        };
+        if (await tryOne(base)) return base;
+        for (let i = 0; i < 5; i++) {
+          const suffix = Math.random().toString(36).slice(2, 6);
+          const cand = `${base}-${suffix}`;
+          if (await tryOne(cand)) return cand;
+        }
+        return base; // fallback — trigger sanitize_provider_slug pode ajustar
+      };
+
       if (provider) {
-        const { error } = await supabase.from('providers').update(providerPayload as any).eq('id', provider.id);
+        const nameChanged = (provider as any).business_name !== finalBusinessName ||
+          (profile?.full_name || '') !== form.full_name;
+        const cityChanged = (provider as any).city !== form.city;
+        const updatePayload: any = { ...providerPayload };
+        if (nameChanged || cityChanged) {
+          const newSlug = generateProviderSlug(form.full_name, form.city);
+          if (newSlug && newSlug !== (provider as any).slug) {
+            updatePayload.slug = await ensureUniqueSlug(newSlug, (provider as any).id);
+          }
+        }
+        const { error } = await supabase.from('providers').update(updatePayload).eq('id', provider.id);
         if (error) {
           await showSaveError({ actionContext: 'Salvar dados profissionais', componentName: 'DashboardProfilePage', errorMessage: error.message, retryFn: handleSave });
           setSaving(false); return;
         }
       } else {
-        const { data: existing } = await supabase.from('providers').select('id').eq('user_id', user.id).limit(1);
+        const { data: existing } = await supabase.from('providers').select('id, slug').eq('user_id', user.id).limit(1);
         if (existing && existing.length > 0) {
-          const { error } = await supabase.from('providers').update({ ...providerPayload, phone: finalPhone } as any).eq('id', existing[0].id);
+          const updatePayload: any = { ...providerPayload, phone: finalPhone };
+          const newSlug = generateProviderSlug(form.full_name, form.city);
+          if (newSlug && newSlug !== existing[0].slug) {
+            updatePayload.slug = await ensureUniqueSlug(newSlug, existing[0].id);
+          }
+          const { error } = await supabase.from('providers').update(updatePayload).eq('id', existing[0].id);
           if (error) {
             await showSaveError({ actionContext: 'Atualizar provedor existente', componentName: 'DashboardProfilePage', errorMessage: error.message, retryFn: handleSave });
             setSaving(false); return;
           }
         } else {
-          const slug = generateProviderSlug(form.full_name, form.city);
+          const baseSlug = generateProviderSlug(form.full_name, form.city);
+          const slug = await ensureUniqueSlug(baseSlug);
           const { error } = await supabase.from('providers').insert({ ...providerPayload, user_id: user.id, phone: finalPhone, slug, status: 'pending' } as any);
           if (error) {
             await showSaveError({ actionContext: 'Criar perfil profissional', componentName: 'DashboardProfilePage', errorMessage: error.message, retryFn: handleSave });
