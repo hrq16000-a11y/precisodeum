@@ -959,8 +959,9 @@ const BasicOnboardingWizard = () => {
   // Mostra apenas os dados úteis para o usuário conferir antes de concluir.
   const summaryItems = [
     { label: 'Localização', value: formatCityState(city, state, ' • ') || 'Não informada' },
+    ...(neighborhood.trim() ? [{ label: 'Bairro', value: neighborhood.trim() }] : []),
     { label: 'Nome', value: fullName || 'Não informado' },
-    { label: 'WhatsApp', value: whatsapp ? formatPhoneDisplay(whatsapp) : 'Não informado' },
+    { label: 'WhatsApp', value: validateWhatsapp(whatsapp).valid ? formatPhoneDisplay(whatsapp) : 'Não informado' },
     ...(profileType === 'provider'
       ? [{ label: 'Serviços', value: `${servicesCreated} cadastrado(s)` }]
       : []),
