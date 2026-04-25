@@ -784,6 +784,15 @@ const DashboardPage = () => {
         />
       </div>
       {/* Dominant CTA when no services — REMOVIDO: substituído por EmptyStateBanner persistente acima */}
+      {/* Métricas finais — concentradas no fim da página conforme diretriz UX. */}
+      <div className="mt-6">
+        <ImpactSection
+          views={viewsTotal}
+          whatsappClicks={(provider as any)?.contact_clicks_count ?? 0}
+          leads={leadsCount}
+        />
+      </div>
+
       {/* Stats with animated counters */}
       <div className="mt-5">
         <StatCardGrid cards={statCards} />
