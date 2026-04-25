@@ -36,15 +36,20 @@ const MissionCard = () => {
     if (!provider?.id) return;
     setSubmitting(true);
     try {
-      const next = { ...answers, [currentMission.key]: value };
-      const { error } = await supabase
-        .from('providers')
-        .update({ mission_answers: next as any })
-        .eq('id', provider.id);
-      if (error) throw error;
-      toast.success('Missão concluída!', {
-        description: '+5 pontos de engajamento. Próxima missão liberada.',
+      // Usa RPC dedicada: registra resposta + credita pontos uma única vez via trigger
+      const { data, error } = await supabase.rpc('complete_mission' as any, {
+        _key: currentMission.key,
+        _value: value as any,
       });
+      if (error) throw error;
+      const result = data as { status?: string; points_awarded?: number } | null;
+      if (result?.status === 'already_completed') {
+        toast.info('Resposta atualizada.');
+      } else {
+        toast.success('Missão concluída!', {
+          description: `+${result?.points_awarded ?? 5} pontos de engajamento. Próxima missão liberada.`,
+        });
+      }
       await refetchProfile();
     } catch (e) {
       console.error('[MissionCard] submit error', e);
