@@ -6,6 +6,7 @@ import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import { formatLocationString, capitalizeName } from '@/lib/normalize';
+import { formatCityState, safeUF } from '@/lib/locationFormat';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -795,12 +796,15 @@ const ProviderProfile = () => {
     ? pageSettings.cover_image_url || portfolioRawUrls.find((url) => !isVideoUrl(url)) || (hasOwnAvatar ? ((provider.profiles as any)?.avatar_url || provider.photo_url) : '')
     : '';
 
-  // DESTAQUE: based on profile completeness (no longer requires legacy 'premium' plan)
+  // DESTAQUE: critério rigoroso — só ganha o selo quem tem perfil REAL e completo.
+  // Avatar próprio + descrição + serviços + portfólio (todos obrigatórios). Evita poluir
+  // a UI com "DESTAQUE" para perfis vazios.
   const isDestaque = !!provider && (
-    hasOwnAvatar ||
-    (provider.services_count || 0) >= (destaqueMinServices || 1) ||
-    (provider.portfolio_album_count || 0) > 0 ||
-    !!(provider.description && provider.description.trim())
+    hasOwnAvatar &&
+    !!(provider.description && provider.description.trim().length >= 40) &&
+    (provider.services_count || 0) >= Math.max(destaqueMinServices || 1, 2) &&
+    (provider.portfolio_album_count || 0) >= (destaqueMinPortfolio || 1) &&
+    (provider.review_count || 0) >= 1
   );
   const effectiveWhatsApp = provider ? toCanonical(provider.whatsapp || provider.phone || '') : '';
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
@@ -1011,7 +1015,7 @@ const ProviderProfile = () => {
             <MapPin className="h-4 w-4 text-accent shrink-0" />
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Localização</p>
-              <p className="text-xs font-medium text-foreground">{provider.city} - {provider.state}</p>
+              <p className="text-xs font-medium text-foreground">{formatCityState(provider.city, provider.state)}</p>
             </div>
           </motion.div>
         )}
@@ -1391,22 +1395,8 @@ const ProviderProfile = () => {
                       <Crown className="h-3 w-3" strokeWidth={1.75} /> DESTAQUE
                     </motion.span>
                   )}
-                  {/* Smart label: Empresa (CNPJ) or Prestador, never Administrador */}
-                  {(() => {
-                    const accName = provider.accTypeInfo?.name || '';
-                    const isAdminLabel = accName.toLowerCase().includes('admin');
-                    if (isAdminLabel) return null;
-                    const hasCnpj = !!(provider as any).cnpj;
-                    const labelText = hasCnpj ? 'Empresa' : 'Prestador';
-                    const LabelIcon = hasCnpj ? Building2 : Wrench;
-                    const labelColor = hasCnpj ? '#6366f1' : (provider.accTypeInfo?.color || 'hsl(var(--accent))');
-                    return (
-                      <span className={`inline-flex items-center gap-1 ${tc.badge} border px-2 py-0.5 text-xs font-medium`} style={{ borderColor: `${labelColor}40`, color: labelColor }}>
-                        <LabelIcon className="h-3 w-3" strokeWidth={1.75} />
-                        {labelText}
-                      </span>
-                    );
-                  })()}
+                  {/* Badge "Prestador"/"Empresa" removido — a categoria já comunica o papel.
+                      Ver pedido do produto: manter apenas a categoria abaixo do nome. */}
                 </div>
 
                 {/* ── PROMINENT LEVEL BADGE (Metallic Design) — hidden for admins and generic "Usuário" level ── */}
@@ -1530,37 +1520,40 @@ const ProviderProfile = () => {
               </motion.div>
             </div>
 
-            {/* ── Trust Statistics Section ── */}
-            <motion.div
-              className="mt-5 rounded-xl bg-gradient-to-r from-emerald-500/5 via-accent/5 to-blue-500/5 border border-border/50 p-4"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.45 }}
-            >
-              <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                <Shield className="h-3 w-3" strokeWidth={1.75} /> Estatísticas de Confiança
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="text-center">
-                  <p className="text-xl font-extrabold text-foreground leading-none">
-                    {provider.years_experience > 0 ? `${provider.years_experience}+` : '—'}
-                  </p>
-                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Anos exp.</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-extrabold text-foreground leading-none">{services.length}</p>
-                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Serviços</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-extrabold text-foreground leading-none">{provider.review_count || 0}</p>
-                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Avaliações</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-extrabold text-foreground leading-none">{portfolioImages.length}</p>
-                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">Fotos</p>
-                </div>
-              </div>
-            </motion.div>
+            {/* ── Trust Statistics Section ──
+                Regra: só renderiza métricas que o profissional realmente possui.
+                Se TODAS estiverem zeradas, o bloco inteiro é omitido (não mostramos "0 / —"). */}
+            {(() => {
+              const stats = [
+                provider.years_experience > 0 && { label: 'Anos exp.', value: `${provider.years_experience}+` },
+                services.length > 0 && { label: 'Serviços', value: String(services.length) },
+                (provider.review_count || 0) > 0 && { label: 'Avaliações', value: String(provider.review_count) },
+                portfolioImages.length > 0 && { label: 'Fotos', value: String(portfolioImages.length) },
+              ].filter(Boolean) as Array<{ label: string; value: string }>;
+
+              if (stats.length === 0) return null;
+
+              return (
+                <motion.div
+                  className="mt-5 rounded-xl bg-gradient-to-r from-emerald-500/5 via-accent/5 to-blue-500/5 border border-border/50 p-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45 }}
+                >
+                  <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Shield className="h-3 w-3" strokeWidth={1.75} /> Estatísticas de Confiança
+                  </h3>
+                  <div className={`grid gap-3 ${stats.length >= 4 ? 'grid-cols-2 sm:grid-cols-4' : stats.length === 3 ? 'grid-cols-3' : stats.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {stats.map((s) => (
+                      <div key={s.label} className="text-center">
+                        <p className="text-xl font-extrabold text-foreground leading-none">{s.value}</p>
+                        <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              );
+            })()}
 
             {/* ── Stats Mini Cards ── */}
             <div className="mt-5 grid grid-cols-3 gap-2">

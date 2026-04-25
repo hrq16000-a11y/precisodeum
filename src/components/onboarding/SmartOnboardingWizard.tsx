@@ -671,13 +671,27 @@ const BasicOnboardingWizard = () => {
   // ─── Passo 3: Dados de contato + bio + (provider) categoria ───
   const canAdvanceFromStep3 =
     !!fullName.trim() &&
-    !!whatsapp.trim() &&
+    hasValidWhatsapp(whatsapp) &&
     (profileType !== 'provider' || selectedCategoryIds.length > 0) &&
     (profileType !== 'rh' || !!agencyName.trim());
 
   const handleStep3Next = async () => {
-    if (!canAdvanceFromStep3) {
-      toast.error('Preencha os campos obrigatórios para continuar.');
+    if (!fullName.trim()) {
+      toast.error('Informe seu nome completo para continuar.');
+      return;
+    }
+    if (!hasValidWhatsapp(whatsapp)) {
+      toast.error('Informe um WhatsApp válido (com DDD).', {
+        description: 'É como os clientes vão entrar em contato com você.',
+      });
+      return;
+    }
+    if (profileType === 'provider' && selectedCategoryIds.length === 0) {
+      toast.error('Selecione a categoria principal do seu serviço.');
+      return;
+    }
+    if (profileType === 'rh' && !agencyName.trim()) {
+      toast.error('Informe o nome da agência.');
       return;
     }
     if (!user?.id) return;
@@ -794,7 +808,12 @@ const BasicOnboardingWizard = () => {
       }
     } catch (err: any) {
       console.error('[Wizard step 3]', err);
-      toast.error('Não foi possível salvar. Tente novamente.');
+      const detail = err?.message || err?.error_description || err?.details || '';
+      toast.error('Não foi possível salvar.', {
+        description: detail
+          ? `Motivo: ${String(detail).slice(0, 180)}`
+          : 'Confira os campos obrigatórios e tente novamente. Se persistir, tente recarregar a página.',
+      });
     } finally {
       setSaving(false);
     }
@@ -1777,8 +1796,12 @@ export const Step3Contact = ({
 
   return (
   <>
-    <button onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-      <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+    <button
+      type="button"
+      onClick={onBack}
+      className="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted/50 transition-colors"
+    >
+      <ArrowLeft className="h-4 w-4" /> Voltar ao passo anterior
     </button>
 
     <div className="mb-3 flex justify-center">
@@ -1789,49 +1812,14 @@ export const Step3Contact = ({
     <h1 className="text-center font-display text-xl font-bold text-foreground">Dados de contato</h1>
     <p className="mt-1 text-center text-xs text-muted-foreground">Como os clientes vão te encontrar.</p>
 
-    {isProvider && (
-      <div className="mt-4 rounded-xl border border-border bg-muted/20 p-3">
-        <p className="text-xs font-bold text-foreground">Tipo de cadastro profissional</p>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => switchSubtype('autonomous')}
-            aria-pressed={providerSubtype !== 'company'}
-            className={`rounded-lg border px-3 py-2 text-center transition-colors ${
-              providerSubtype !== 'company'
-                ? 'border-accent bg-accent/10'
-                : 'border-border bg-background hover:bg-muted/40'
-            }`}
-          >
-            <p className="text-xs font-bold text-foreground">PF</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Autônomo ou profissional liberal</p>
-          </button>
-          <button
-            type="button"
-            onClick={() => switchSubtype('company')}
-            aria-pressed={providerSubtype === 'company'}
-            className={`rounded-lg border px-3 py-2 text-center transition-colors ${
-              providerSubtype === 'company'
-                ? 'border-accent bg-accent/10'
-                : 'border-border bg-background hover:bg-muted/40'
-            }`}
-          >
-            <p className="text-xs font-bold text-foreground">PJ</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">MEI, empresa ou agência</p>
-          </button>
-        </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          {providerSubtype === 'company'
-            ? 'Você usará CNPJ para identificar a empresa.'
-            : 'Você usará CPF como autônomo ou profissional liberal.'}
-        </p>
-      </div>
-    )}
+    {/* Bloco PF/PJ removido daqui — a escolha já é feita no Passo 1 e exibida
+        de forma compacta no rodapé deste passo (badge "Cadastro como PF/PJ"). */}
 
     <div className="mt-5 space-y-4">
       <div>
-        <label className="mb-1 block text-xs font-semibold text-foreground">
+        <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-foreground">
           {profileType === 'rh' ? 'Seu nome (responsável)' : 'Seu nome completo'}
+          <span className="text-destructive" aria-hidden="true">*</span>
         </label>
         <Input placeholder="Ex: João Silva" value={fullName} onChange={e => setFullName(e.target.value)} onBlur={onFieldBlur} />
       </div>
@@ -1844,7 +1832,10 @@ export const Step3Contact = ({
       )}
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-foreground">WhatsApp</label>
+        <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+          WhatsApp <span className="text-destructive" aria-hidden="true">*</span>
+          <span className="ml-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-destructive">Obrigatório</span>
+        </label>
         <div onBlur={onFieldBlur}>
           <PhoneMaskedInput
             name="whatsapp"
@@ -1853,6 +1844,9 @@ export const Step3Contact = ({
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
           />
         </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          Os clientes só conseguem te chamar se o WhatsApp estiver preenchido.
+        </p>
       </div>
 
       <div>
