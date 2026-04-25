@@ -29,6 +29,12 @@ export interface Mission {
  */
 export const MISSIONS: Mission[] = [
   {
+    key: 'first_contact',
+    tiers: ['novato', 'explorador'],
+    question: 'Você já recebeu seu primeiro contato pelo WhatsApp?',
+    benefit: 'Marcamos automaticamente assim que detectarmos o primeiro clique recebido.',
+    type: 'yes_no',
+  },
     key: 'verify_name',
     tiers: ['novato', 'explorador', 'ativo'],
     question: 'Confirme: o nome exibido no seu perfil é o que você usa profissionalmente?',

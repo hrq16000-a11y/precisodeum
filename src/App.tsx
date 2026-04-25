@@ -132,6 +132,8 @@ const CitiesListPage = lazy(() => import("./pages/CitiesListPage"));
 const StateProviderPage = lazy(() => import("./pages/StateProviderPage"));
 const CityDetailPage = lazy(() => import("./pages/CityDetailPage"));
 const CategoriesListPage = lazy(() => import("./pages/CategoriesListPage"));
+const EspecialidadesPage = lazy(() => import("./pages/EspecialidadesPage"));
+const AdminConversionMetricsPage = lazy(() => import("./pages/AdminConversionMetricsPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ComoFuncionaPage = lazy(() => import("./pages/ComoFuncionaPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
@@ -377,6 +379,7 @@ const App = () => {
                 <Route path="/admin/crm-usuarios" element={<AdminUsersCrmPage />} />
                 <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
                 <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
+                <Route path="/admin/conversao" element={<AdminConversionMetricsPage />} />
                 <Route path="/admin/cidades" element={<AdminCitiesPage />} />
                 <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
                 <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
@@ -444,6 +447,7 @@ const App = () => {
                 <Route path="/cidades/:estado" element={<StateProviderPage />} />
                 <Route path="/cidades/:estado/:cidade" element={<CityDetailPage />} />
                 <Route path="/categorias" element={<CategoriesListPage />} />
+                <Route path="/especialidades" element={<EspecialidadesPage />} />
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/ajuda" element={<HelpCenterPage />} />
                 <Route path="/privacidade" element={<PrivacyPage />} />
