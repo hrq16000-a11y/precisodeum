@@ -1817,7 +1817,10 @@ export const Step3Contact = ({
       )}
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-foreground">WhatsApp</label>
+        <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+          WhatsApp <span className="text-destructive" aria-hidden="true">*</span>
+          <span className="ml-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-destructive">Obrigatório</span>
+        </label>
         <div onBlur={onFieldBlur}>
           <PhoneMaskedInput
             name="whatsapp"
@@ -1826,6 +1829,9 @@ export const Step3Contact = ({
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
           />
         </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          Os clientes só conseguem te chamar se o WhatsApp estiver preenchido.
+        </p>
       </div>
 
       <div>
