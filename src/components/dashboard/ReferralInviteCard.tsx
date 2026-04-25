@@ -134,6 +134,13 @@ export default function ReferralInviteCard() {
             Indique outro profissional · ganhe <strong className="text-violet-700 dark:text-violet-400">+50 pts</strong> quando ele postar a 1ª Obra do Dia
           </p>
         </div>
+        <Link
+          to="/dashboard/indicacoes"
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-violet-700 hover:bg-violet-500/10 dark:text-violet-400"
+          title="Ver ranking e histórico completo"
+        >
+          Ver tudo <ArrowRight className="h-3 w-3" />
+        </Link>
       </div>
 
       {/* Stats */}
