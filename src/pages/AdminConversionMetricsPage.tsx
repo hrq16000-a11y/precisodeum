@@ -97,23 +97,44 @@ const AdminConversionMetricsPage = () => {
       toast.info('Sem dados para exportar com os filtros atuais.');
       return;
     }
+    const periodDays = Math.max(1, Number(days) || 30);
+    // Formatação numérica consistente (ponto decimal — universal em CSV/Excel via BOM)
+    const num = (v: unknown) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n.toString() : '0';
+    };
+    const dec = (v: unknown, digits = 2) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n.toFixed(digits) : '0.00';
+    };
     const headers = [
       'tier', 'categoria_slug', 'categoria_nome', 'profissionais',
-      'views', 'visitas_dashboard', 'cliques_whatsapp', 'leads',
+      'views_total', 'views_por_dia',
+      'visitas_dashboard_total', 'visitas_por_dia',
+      'cliques_whatsapp_total', 'cliques_por_dia',
+      'leads_total', 'leads_por_dia',
       'widgets_dispensados', 'taxa_conversao_pct',
+      'periodo_dias', 'gerado_em',
     ];
     const escape = (v: unknown) => {
       const s = String(v ?? '');
+      // RFC 4180 + delimitador ; comum em PT-BR — escapamos ambos
       return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
+    const generatedAt = new Date().toISOString();
     const csv = [
       headers.join(','),
       ...rows.map((r) => [
-        r.tier, r.category_slug, r.category_name, r.providers_count,
-        r.total_views, r.total_visits, r.total_whatsapp_clicks, r.total_leads,
-        r.total_dismisses, Number(r.conversion_rate).toFixed(2),
+        r.tier, r.category_slug, r.category_name, num(r.providers_count),
+        num(r.total_views), dec((r.total_views || 0) / periodDays),
+        num(r.total_visits), dec((r.total_visits || 0) / periodDays),
+        num(r.total_whatsapp_clicks), dec((r.total_whatsapp_clicks || 0) / periodDays),
+        num(r.total_leads), dec((r.total_leads || 0) / periodDays),
+        num(r.total_dismisses), dec(r.conversion_rate),
+        periodDays, generatedAt,
       ].map(escape).join(',')),
-    ].join('\n');
+    ].join('\r\n'); // CRLF — máxima compatibilidade Excel/Sheets
+    // BOM UTF-8 + CRLF garante acentos corretos no Excel Windows e leitura uniforme em macOS/Linux
     const bom = '\uFEFF';
     const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
