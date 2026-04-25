@@ -117,7 +117,7 @@ const ServiceDetailPage = () => {
             <div className="flex-1">
               <h1 className="font-display text-2xl font-bold text-foreground md:text-3xl">{svc.service_name}</h1>
               <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1">
-                <MapPin className="h-4 w-4" /> {city} - {state}
+                <MapPin className="h-4 w-4" /> {formatCityState(city, state)}
               </p>
 
               {svc.serviceCategories?.length > 0 && (
