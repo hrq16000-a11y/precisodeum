@@ -81,6 +81,8 @@ const DashboardLeadsPage = () => {
   const [createdTo, setCreatedTo] = useState(searchParams.get('ct') || '');
   const [followupFrom, setFollowupFrom] = useState(searchParams.get('ff') || '');
   const [followupTo, setFollowupTo] = useState(searchParams.get('ft') || '');
+  const [cityFilter, setCityFilter] = useState<string>(searchParams.get('city') || 'all');
+  const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get('cat') || 'all');
   const [showAdvanced, setShowAdvanced] = useState(
     !!(searchParams.get('cf') || searchParams.get('ct') || searchParams.get('ff') || searchParams.get('ft'))
   );
@@ -100,8 +102,10 @@ const DashboardLeadsPage = () => {
     if (createdTo) params.ct = createdTo;
     if (followupFrom) params.ff = followupFrom;
     if (followupTo) params.ft = followupTo;
+    if (cityFilter !== 'all') params.city = cityFilter;
+    if (categoryFilter !== 'all') params.cat = categoryFilter;
     setSearchParams(params, { replace: true });
-  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, setSearchParams]);
+  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, setSearchParams]);
 
   // Re-render minute-by-minute para atualizar relativos e badge "vencido"
   useEffect(() => {
