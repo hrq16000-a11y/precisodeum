@@ -845,8 +845,15 @@ const BasicOnboardingWizard = () => {
   // ═══════════════════════════════════════════════════════════════════
   // RENDER — único container fullscreen, sem botão de fechar
   // ═══════════════════════════════════════════════════════════════════
+  const progressPercent = Math.round((step / TOTAL_STEPS) * 100);
+  const savedBadge =
+    autoSaveStatus === 'saved' ? { text: '✓ Salvo', tone: 'text-accent' as const }
+    : autoSaveStatus === 'saving' ? { text: 'Salvando…', tone: 'text-muted-foreground' as const }
+    : autoSaveStatus === 'error' ? { text: 'Falha ao salvar', tone: 'text-destructive' as const }
+    : null;
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-background p-4">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-background">
       {saving && (
         <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center gap-4 bg-background/90 backdrop-blur-md">
           <Loader2 className="h-12 w-12 animate-spin text-accent" />
@@ -854,33 +861,21 @@ const BasicOnboardingWizard = () => {
         </div>
       )}
 
-      <div className="relative my-6 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl sm:p-8">
-        {/* Stepper animado */}
-        <div className="mb-2 flex items-center justify-between text-[11px] font-semibold">
-          <span className="text-muted-foreground">Passo {step} de {TOTAL_STEPS}</span>
-          <motion.span
-            key={step}
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-accent"
-          >
-            {Math.round((step / TOTAL_STEPS) * 100)}% concluído
-          </motion.span>
-        </div>
-        <div className="mb-6 h-2 w-full overflow-hidden rounded-full bg-muted">
-          <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-accent via-primary to-accent bg-[length:200%_100%]"
-            initial={{ width: 0 }}
-            animate={{
-              width: `${(step / TOTAL_STEPS) * 100}%`,
-              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-            }}
-            transition={{
-              width: { type: 'spring', stiffness: 90, damping: 18 },
-              backgroundPosition: { duration: 3, repeat: Infinity, ease: 'linear' },
-            }}
-          />
-        </div>
+      {/* Área scrollável do conteúdo, com padding inferior para não ficar atrás do footer fixo */}
+      <div className="flex-1 overflow-y-auto px-4 pb-40 pt-4 sm:pt-6">
+        <div className="relative mx-auto w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl sm:p-8">
+          {/* Indicador compacto do passo (a barra principal foi para o rodapé fixo) */}
+          <div className="mb-4 flex items-center justify-between text-[11px] font-semibold">
+            <span className="text-muted-foreground">Passo {step} de {TOTAL_STEPS}</span>
+            <motion.span
+              key={step}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-accent"
+            >
+              {progressPercent}% concluído
+            </motion.span>
+          </div>
 
         <WizardChecklist
           currentStep={step}
@@ -1057,6 +1052,43 @@ const BasicOnboardingWizard = () => {
             onBack={() => advanceTo(profileType === 'provider' ? 4 : 3)}
           />
         )}
+        </div>
+      </div>
+
+      {/* ─── STICKY FOOTER: barra de progresso + status de salvamento ─── */}
+      <div className="fixed inset-x-0 bottom-0 z-[105] border-t border-border bg-card/95 backdrop-blur-md shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.15)]">
+        <div className="mx-auto w-full max-w-md px-4 py-3 sm:px-6">
+          <div className="mb-2 flex items-center justify-between text-[11px] font-semibold">
+            <span className="text-muted-foreground">Passo {step} de {TOTAL_STEPS}</span>
+            <div className="flex items-center gap-3">
+              {savedBadge && (
+                <motion.span
+                  key={savedBadge.text}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={`text-[11px] font-bold ${savedBadge.tone}`}
+                >
+                  {savedBadge.text}
+                </motion.span>
+              )}
+              <span className="text-accent">{progressPercent}%</span>
+            </div>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-accent via-primary to-accent bg-[length:200%_100%]"
+              initial={{ width: 0 }}
+              animate={{
+                width: `${progressPercent}%`,
+                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+              }}
+              transition={{
+                width: { type: 'spring', stiffness: 90, damping: 18 },
+                backgroundPosition: { duration: 3, repeat: Infinity, ease: 'linear' },
+              }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
