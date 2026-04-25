@@ -89,6 +89,21 @@ const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone'
       cta_origin: ctaOrigin,
     }).then(() => {});
   } catch { /* silent */ }
+
+  // Registra um lead 'click_only' (separado do pipeline qualificado) para
+  // que o profissional veja no dashboard quem clicou em WhatsApp/Ligar.
+  try {
+    (supabase.rpc as any)('register_click_lead', {
+      _provider_id: providerId,
+      _contact_kind: contactType,
+      _service_needed: serviceName || null,
+      _lead_context: {
+        page_path: pagePath,
+        cta_origin: ctaOrigin,
+        source_marker: getLeadSource(),
+      },
+    }).then(() => {});
+  } catch { /* silent */ }
 };
 
 /** Fire-and-forget profile view tracker (one entry per session per provider). */
