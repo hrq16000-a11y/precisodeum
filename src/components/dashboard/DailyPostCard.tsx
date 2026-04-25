@@ -76,7 +76,7 @@ export default function DailyPostCard() {
       if (error) throw error;
       const status = (data as any)?.status;
       if (status === 'ok') {
-        celebrate({ intensity: 'subtle', id: `daily-post:${(data as any).post_id}` });
+        celebrate({ intensity: 'mini', id: `daily-post:${(data as any).post_id}` });
         toast.success('Obra do Dia publicada! 🎉', {
           description: 'Visível no seu perfil público por 48h. Você ganha um boost de visibilidade.',
         });
