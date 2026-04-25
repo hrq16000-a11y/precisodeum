@@ -1052,6 +1052,43 @@ const BasicOnboardingWizard = () => {
             onBack={() => advanceTo(profileType === 'provider' ? 4 : 3)}
           />
         )}
+        </div>
+      </div>
+
+      {/* ─── STICKY FOOTER: barra de progresso + status de salvamento ─── */}
+      <div className="fixed inset-x-0 bottom-0 z-[105] border-t border-border bg-card/95 backdrop-blur-md shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.15)]">
+        <div className="mx-auto w-full max-w-md px-4 py-3 sm:px-6">
+          <div className="mb-2 flex items-center justify-between text-[11px] font-semibold">
+            <span className="text-muted-foreground">Passo {step} de {TOTAL_STEPS}</span>
+            <div className="flex items-center gap-3">
+              {savedBadge && (
+                <motion.span
+                  key={savedBadge.text}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={`text-[11px] font-bold ${savedBadge.tone}`}
+                >
+                  {savedBadge.text}
+                </motion.span>
+              )}
+              <span className="text-accent">{progressPercent}%</span>
+            </div>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-accent via-primary to-accent bg-[length:200%_100%]"
+              initial={{ width: 0 }}
+              animate={{
+                width: `${progressPercent}%`,
+                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+              }}
+              transition={{
+                width: { type: 'spring', stiffness: 90, damping: 18 },
+                backgroundPosition: { duration: 3, repeat: Infinity, ease: 'linear' },
+              }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
