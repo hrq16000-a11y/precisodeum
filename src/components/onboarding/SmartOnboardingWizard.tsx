@@ -173,6 +173,31 @@ const BasicOnboardingWizard = () => {
   const latestAutoSaveFingerprintRef = useRef<string | null>(null);
   const autoSaveVersionRef = useRef(0);
 
+  // ─── Modo depuração ───
+  // Ativo via ?debug=1 na URL OU localStorage.wizard_debug = '1'.
+  // Mostra painel com estado de cada campo + última falha do save (table, code, message, details, hint).
+  const debugMode = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('debug') === '1') return true;
+      return window.localStorage.getItem('wizard_debug') === '1';
+    } catch {
+      return false;
+    }
+  }, []);
+  type WizardSaveError = {
+    step: WizardStep;
+    when: string;
+    table: string;
+    code?: string;
+    message: string;
+    details?: string;
+    hint?: string;
+    payloadKeys?: string[];
+  };
+  const [lastSaveError, setLastSaveError] = useState<WizardSaveError | null>(null);
+
   // ─── Sync inicial: se profile carrega DEPOIS do mount, atualiza step ───
   const syncedRef = useRef(false);
   useEffect(() => {
