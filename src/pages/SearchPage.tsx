@@ -66,6 +66,7 @@ const SearchPage = () => {
   const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, requestPreciseLocation, geoFailed, source: geoSource, lastKnownAt, dismissGeoFailure } = useGeoCity();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('categoria') || '');
   const [selectedCity, setSelectedCity] = useState(cityParam);
+  const [selectedState, setSelectedState] = useState(searchParams.get('uf') || '');
   const [selectedNeighborhood, setSelectedNeighborhood] = useState(searchParams.get('bairro') || '');
   const [businessNameFilter, setBusinessNameFilter] = useState('');
   const [phoneFilter, setPhoneFilter] = useState('');
@@ -203,12 +204,18 @@ const SearchPage = () => {
     return cities.sort();
   }, [allProviders]);
 
+  const availableStates = useMemo(() => {
+    const states = [...new Set(allProviders.map(p => safeUF(p.state)).filter(Boolean))];
+    return states.sort();
+  }, [allProviders]);
+
   const availableNeighborhoods = useMemo(() => {
     let source = allProviders;
+    if (selectedState) source = source.filter(p => safeUF(p.state) === selectedState);
     if (effectiveCity) source = source.filter(p => p.city.toLowerCase() === effectiveCity.toLowerCase());
     const nbs = [...new Set(source.map(p => p.neighborhood).filter(Boolean))];
     return nbs.sort();
-  }, [allProviders, effectiveCity]);
+  }, [allProviders, effectiveCity, selectedState]);
 
   // SEO — dynamic title/description/canonical reflecting active filters
   const seoCity = effectiveCity || '';
