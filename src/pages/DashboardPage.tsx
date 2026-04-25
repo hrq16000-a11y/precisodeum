@@ -67,6 +67,9 @@ import DismissibleWidget from '@/components/dashboard/DismissibleWidget';
 import MissionCard from '@/components/dashboard/MissionCard';
 import ContactImpactWidget from '@/components/dashboard/ContactImpactWidget';
 import OnlineStatusFeedback from '@/components/dashboard/OnlineStatusFeedback';
+import OnlineStatusToggle from '@/components/dashboard/OnlineStatusToggle';
+import DashboardPwaInstallNudge from '@/components/dashboard/DashboardPwaInstallNudge';
+import { usePwaMission } from '@/hooks/usePwaMission';
 import IdentitySuggestionsWidget from '@/components/dashboard/IdentitySuggestionsWidget';
 import DashboardTour from '@/components/dashboard/DashboardTour';
 import { useDashboardState } from '@/hooks/useDashboardState';
@@ -83,6 +86,9 @@ const DashboardPage = () => {
 
   // Heartbeat de presença persistido (alimenta get_missed_opportunities)
   usePresenceHeartbeat(user?.id, !!provider?.id);
+
+  // PWA: missão "App Instalado" (+30 pts) + smart reminder ao abrir standalone
+  usePwaMission(user?.id, provider?.id);
 
   // Captura ?ref= e registra indicação após login
   useReferralCapture(user?.id);
@@ -532,6 +538,20 @@ const DashboardPage = () => {
       <div className="mt-3 flex justify-end" data-tour="online-status">
         <OnlineStatusFeedback />
       </div>
+
+      {/* Seletor manual de visibilidade online (provider) */}
+      {provider?.id && (
+        <div className="mt-3" data-tour="online-toggle">
+          <OnlineStatusToggle />
+        </div>
+      )}
+
+      {/* Banner de instalação do App (mobile + provider) */}
+      {provider?.id && (
+        <div className="mt-3">
+          <DashboardPwaInstallNudge />
+        </div>
+      )}
 
       {/* Cards de Missão Profissional — gated por tier de maturidade */}
       <div className="mt-4" data-tour="missions">

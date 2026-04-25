@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -47,10 +47,48 @@ function destroyChannel() {
   notify();
 }
 
-// ─── Hook: track current user as online ──────────────────────────────
-export function usePresenceTracker(userId: string | undefined, meta?: { city?: string }) {
+// ─── Visibility preference (per-user, persisted in localStorage) ─────
+const VISIBILITY_KEY = 'presence_visibility';
+const VISIBILITY_EVENT = 'presence-visibility-changed';
+
+export function getPresenceVisibility(userId: string | undefined): boolean {
+  if (!userId || typeof localStorage === 'undefined') return true;
+  const v = localStorage.getItem(`${VISIBILITY_KEY}_${userId}`);
+  return v === null ? true : v === '1';
+}
+
+export function setPresenceVisibility(userId: string, online: boolean) {
+  localStorage.setItem(`${VISIBILITY_KEY}_${userId}`, online ? '1' : '0');
+  window.dispatchEvent(new CustomEvent(VISIBILITY_EVENT, { detail: { userId, online } }));
+}
+
+export function usePresenceVisibility(userId: string | undefined): [boolean, (v: boolean) => void] {
+  const [visible, setVisible] = useState<boolean>(() => getPresenceVisibility(userId));
+
   useEffect(() => {
+    setVisible(getPresenceVisibility(userId));
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { userId: string; online: boolean };
+      if (detail?.userId === userId) setVisible(detail.online);
+    };
+    window.addEventListener(VISIBILITY_EVENT, handler);
+    return () => window.removeEventListener(VISIBILITY_EVENT, handler);
+  }, [userId]);
+
+  const toggle = useCallback((v: boolean) => {
     if (!userId) return;
+    setPresenceVisibility(userId, v);
+  }, [userId]);
+
+  return [visible, toggle];
+}
+
+// ─── Hook: track current user as online (respeita preferência) ───────
+export function usePresenceTracker(userId: string | undefined, meta?: { city?: string }) {
+  const [visible] = usePresenceVisibility(userId);
+
+  useEffect(() => {
+    if (!userId || !visible) return;
 
     const ch = ensureChannel();
     subscriberCount++;
@@ -68,7 +106,7 @@ export function usePresenceTracker(userId: string | undefined, meta?: { city?: s
         destroyChannel();
       }
     };
-  }, [userId, meta?.city]);
+  }, [userId, visible, meta?.city]);
 }
 
 // ─── Hook: read online user map ──────────────────────────────────────
