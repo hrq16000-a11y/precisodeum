@@ -477,6 +477,24 @@ const DashboardPage = () => {
   // Helper component declared inline below the file for RH public link
 
   // ---- PROVIDER DASHBOARD ----
+  const onboardingProgress = (provider?.onboarding_progress as Record<string, any>) || {};
+  const pageCustomized = !!onboardingProgress.page_customized;
+  const whatsappGroupJoined = !!onboardingProgress.whatsapp_group_joined;
+
+  const markProgress = async (key: string) => {
+    if (!provider?.id) return;
+    if (onboardingProgress[key]) return;
+    try {
+      await supabase
+        .from('providers')
+        .update({ onboarding_progress: { ...onboardingProgress, [key]: true } })
+        .eq('id', provider.id);
+      await refetchProfile();
+    } catch (e) {
+      console.warn('[markProgress]', key, e);
+    }
+  };
+
   const providerSteps = [
     {
       number: '1',
@@ -501,23 +519,27 @@ const DashboardPage = () => {
       title: 'Personalize sua página',
       description: 'Configure sua landing page profissional — escolha temas, cores e adicione portfólio.',
       action: () => navigate('/dashboard/minha-pagina'),
-      actionLabel: 'Minha Página',
+      actionLabel: pageCustomized ? 'Minha Página' : 'Personalizar agora',
       icon: Layout,
-      done: false,
+      done: pageCustomized,
     },
     {
       number: '4',
       title: 'Entre no grupo do WhatsApp',
       description: 'Participe do nosso grupo exclusivo para profissionais.',
-      action: () => whatsappGroupUrl && window.open(whatsappGroupUrl, '_blank'),
-      actionLabel: 'Entrar no Grupo',
+      action: () => {
+        if (!whatsappGroupUrl) return;
+        window.open(whatsappGroupUrl, '_blank');
+        void markProgress('whatsapp_group_joined');
+      },
+      actionLabel: whatsappGroupJoined ? 'Reabrir Grupo' : 'Entrar no Grupo',
       icon: Users,
-      done: false,
+      done: whatsappGroupJoined,
       hidden: !whatsappGroupUrl,
     },
   ];
 
-  const allStepsDone = profileDone && servicesDone;
+  const allStepsDone = profileDone && servicesDone && pageCustomized && (!whatsappGroupUrl || whatsappGroupJoined);
 
   // FONTE ÚNICA da verdade da completude — `onboardingChecklist` (mesma usada pelos
   // componentes filhos). Usar SEMPRE este `pct`/`stats` em qualquer lugar do dashboard.
