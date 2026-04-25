@@ -297,6 +297,13 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Redirect 301-style: /especialidades/:slug → /categoria/:slug (canonical SEO)
+const EspecialidadeRedirect = () => {
+  const params = (typeof window !== 'undefined' ? window.location.pathname.split('/').filter(Boolean) : []);
+  const slug = params[1] || '';
+  return <Navigate to={`/categoria/${slug}`} replace />;
+};
+
 const App = () => {
   useEffect(() => {
     initializeUiFreezeMonitor();
@@ -448,6 +455,7 @@ const App = () => {
                 <Route path="/cidades/:estado/:cidade" element={<CityDetailPage />} />
                 <Route path="/categorias" element={<CategoriesListPage />} />
                 <Route path="/especialidades" element={<EspecialidadesPage />} />
+                <Route path="/especialidades/:slug" element={<EspecialidadeRedirect />} />
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/ajuda" element={<HelpCenterPage />} />
                 <Route path="/privacidade" element={<PrivacyPage />} />
