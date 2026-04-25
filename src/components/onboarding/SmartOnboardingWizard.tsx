@@ -141,7 +141,7 @@ const BasicOnboardingWizard = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url ?? null);
 
   // Contato + bio (Passo 3)
-  const [whatsapp, setWhatsapp] = useState(profile?.whatsapp || profile?.phone || '');
+  const [whatsapp, setWhatsapp] = useState(sanitizePhone(profile?.whatsapp || profile?.phone || ''));
   const [bio, setBio] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [taxId, setTaxId] = useState<string>(((profile as any)?.tax_id as string) || '');
