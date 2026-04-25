@@ -3096,6 +3096,33 @@ export type Database = {
           },
         ]
       }
+      provider_presence_sessions: {
+        Row: {
+          ended_at: string | null
+          id: string
+          last_heartbeat_at: string
+          provider_id: string | null
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          ended_at?: string | null
+          id?: string
+          last_heartbeat_at?: string
+          provider_id?: string | null
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          ended_at?: string | null
+          id?: string
+          last_heartbeat_at?: string
+          provider_id?: string | null
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       providers: {
         Row: {
           account_type: string
@@ -6067,6 +6094,7 @@ export type Database = {
         Returns: boolean
       }
       claim_sponsor_lead: { Args: { _lead_id: string }; Returns: Json }
+      close_presence_session: { Args: never; Returns: Json }
       complete_first_contact_mission: {
         Args: { _provider_id: string }
         Returns: Json
@@ -6235,6 +6263,18 @@ export type Database = {
         }[]
       }
       get_lead_stats: { Args: { provider_id: string }; Returns: Json }
+      get_missed_opportunities: {
+        Args: { _provider_id: string }
+        Returns: {
+          category_name: string
+          hours_offline: number
+          missed_searches: number
+          top_city: string
+          top_location_label: string
+          top_neighborhood: string
+          total_searches: number
+        }[]
+      }
       get_neighborhood_by_point: {
         Args: { _lat: number; _lng: number }
         Returns: string
@@ -6516,6 +6556,7 @@ export type Database = {
         Args: { _sponsor_id: string }
         Returns: boolean
       }
+      track_presence_heartbeat: { Args: never; Returns: Json }
       track_sponsor_metric: {
         Args: {
           _event_type: string

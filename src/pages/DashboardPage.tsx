@@ -52,6 +52,8 @@ import CategoryBenchmarkWidget from '@/components/dashboard/CategoryBenchmarkWid
 import RegionalDemandWidget from '@/components/dashboard/RegionalDemandWidget';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
 import DailyPostCard from '@/components/dashboard/DailyPostCard';
+import MissedOpportunitiesWidget from '@/components/dashboard/MissedOpportunitiesWidget';
+import { usePresenceHeartbeat } from '@/hooks/usePresenceHeartbeat';
 import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
 import EngagementLoop from '@/components/dashboard/EngagementLoop';
 import AchievementHistory from '@/components/dashboard/AchievementHistory';
@@ -76,6 +78,9 @@ const DashboardPage = () => {
 
   // Auto-completa a missão "first_contact" quando detectar 1º clique no WhatsApp
   useFirstContactAutoMission();
+
+  // Heartbeat de presença persistido (alimenta get_missed_opportunities)
+  usePresenceHeartbeat(user?.id, !!provider?.id);
 
   // Registra a visita no servidor (substitui flags em localStorage)
   useEffect(() => {
@@ -913,11 +918,16 @@ const DashboardPage = () => {
 
       {/* Lote 4 — Frescor & Inteligência */}
       {provider?.id && (
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <DailyPostCard />
-          <RegionalDemandWidget />
-          <WeeklySummary />
-        </div>
+        <>
+          <div className="mt-6">
+            <MissedOpportunitiesWidget />
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <DailyPostCard />
+            <RegionalDemandWidget />
+            <WeeklySummary />
+          </div>
+        </>
       )}
 
       {/* Nossa história — referência à luta */}
