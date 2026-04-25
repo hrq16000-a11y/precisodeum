@@ -52,6 +52,7 @@ import { useCategoriesWithCount } from '@/hooks/useProviders';
 import { getSocialAvatarUrl, getInitials } from '@/lib/avatarUtils';
 import { formatCityState } from '@/lib/locationFormat';
 import { isValidCpfCnpj } from '@/lib/cpfCnpj';
+import { validateWhatsapp, sanitizePhone, formatPhoneDisplay } from '@/lib/whatsapp';
 import CpfCnpjInput, { maskCpfCnpj } from './CpfCnpjInput';
 
 
