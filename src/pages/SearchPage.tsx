@@ -796,6 +796,8 @@ const SearchPage = () => {
                   providers={fullyFiltered}
                   userLat={userLat}
                   userLon={userLon}
+                  onlineSet={onlineSet}
+                  activeTodaySet={activeTodaySet}
                   className="mb-4"
                 />
               </Suspense>
