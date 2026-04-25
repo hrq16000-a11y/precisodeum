@@ -61,7 +61,7 @@ const RecentServices = ({ services }: Props) => {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {displayed.map((s, i) => {
             const location = s.provider?.city
-              ? `${s.provider.city}${s.provider.state ? ` - ${s.provider.state}` : ''}`
+              ? formatCityState(s.provider.city, s.provider.state)
               : s.service_area || 'Brasil';
             const catSlug = (s.categories as any)?.slug;
             const catIcon = (s.categories as any)?.icon || 'Wrench';
