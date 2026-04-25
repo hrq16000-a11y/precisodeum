@@ -219,6 +219,7 @@ const SearchPage = () => {
 
   const seoFilterParts: string[] = [];
   if (onlineOnly) seoFilterParts.push('online agora');
+  if (activeTodayOnly) seoFilterParts.push('ativos hoje');
   if (acceptingOnly) seoFilterParts.push('aceitando clientes');
   if (sortBy === 'nearest') seoFilterParts.push('mais próximos');
   else if (sortBy === 'rating') seoFilterParts.push('melhor avaliados');
@@ -764,6 +765,12 @@ const SearchPage = () => {
                   <Badge variant="secondary" className="gap-1 text-xs">
                     <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online agora
                     <X className="h-3 w-3 cursor-pointer" onClick={() => setOnlineOnly(false)} />
+                  </Badge>
+                )}
+                {activeTodayOnly && (
+                  <Badge variant="secondary" className="gap-1 text-xs">
+                    <Circle className="h-2 w-2 fill-amber-500 text-amber-500" /> Ativo hoje
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => setActiveTodayOnly(false)} />
                   </Badge>
                 )}
                 {acceptingOnly && (
