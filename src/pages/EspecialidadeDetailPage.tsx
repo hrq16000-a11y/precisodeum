@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowRight, Lightbulb, ChevronRight } from 'lucide-react';
+import { ArrowRight, Lightbulb, ChevronRight, HelpCircle, ChevronDown } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProviderCard from '@/components/ProviderCard';
@@ -11,6 +11,7 @@ import { useCategoryProviders } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { getExpertTips } from '@/lib/expertTips';
+import { getCategoryFaqs } from '@/lib/categoryFaqs';
 
 /**
  * /especialidades/:slug — Página pública SEO de uma especialidade.
@@ -29,6 +30,7 @@ const EspecialidadeDetailPage = () => {
 
   const tips = useMemo(() => getExpertTips(slug), [slug]);
   const displayName = category?.name || slug.replace(/-/g, ' ');
+  const faqs = useMemo(() => getCategoryFaqs(slug, displayName), [slug, displayName]);
   const top = providers.slice(0, 6);
 
   useSeoHead({
@@ -64,6 +66,14 @@ const EspecialidadeDetailPage = () => {
                 position: idx + 1,
                 url: `${SITE_BASE_URL}/profissional/${p.slug || p.id}`,
                 name: p.businessName || p.name,
+              })),
+            },
+            {
+              '@type': 'FAQPage',
+              mainEntity: faqs.map((f) => ({
+                '@type': 'Question',
+                name: f.q,
+                acceptedAnswer: { '@type': 'Answer', text: f.a },
               })),
             },
           ],
@@ -170,10 +180,34 @@ const EspecialidadeDetailPage = () => {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {top.map((p: any) => (
-                <ProviderCard key={p.id} provider={p} />
+                <ProviderCard key={p.id} provider={p} trackingSource={`especialidade:${slug}`} />
               ))}
             </div>
           )}
+        </section>
+
+        {/* FAQ — Long-tail SEO + JSON-LD FAQPage */}
+        <section aria-labelledby="faq-heading" className="mt-12">
+          <div className="mb-4 flex items-center gap-2">
+            <HelpCircle className="h-5 w-5 text-primary" />
+            <h2 id="faq-heading" className="font-display text-xl font-bold text-foreground">
+              Perguntas frequentes sobre {displayName}
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {faqs.map((f, i) => (
+              <details
+                key={i}
+                className="group rounded-xl border border-border bg-card p-4 [&_summary]:cursor-pointer"
+              >
+                <summary className="flex items-center justify-between gap-4 font-medium text-foreground">
+                  <span>{f.q}</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{f.a}</p>
+              </details>
+            ))}
+          </div>
         </section>
       </main>
 

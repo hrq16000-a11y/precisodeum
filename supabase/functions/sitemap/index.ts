@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   // Sitemap Index — returns links to sub-sitemaps
   if (!type) {
     const sitemaps = [
-      'static', 'categories', 'providers', 'cities',
+      'static', 'categories', 'especialidades', 'providers', 'cities',
       'blog', 'jobs', 'pages', 'popular', 'seo',
     ];
     const entries = sitemaps.map(s =>
@@ -46,6 +46,7 @@ ${entries}
     urls += entry(siteUrl, '/', today, 'daily', '1.0');
     urls += entry(siteUrl, '/buscar', today, 'daily', '0.8');
     urls += entry(siteUrl, '/categorias', today, 'weekly', '0.8');
+    urls += entry(siteUrl, '/especialidades', today, 'weekly', '0.8');
     urls += entry(siteUrl, '/cidades', today, 'weekly', '0.8');
     urls += entry(siteUrl, '/servicos', today, 'weekly', '0.7');
     urls += entry(siteUrl, '/vagas', today, 'daily', '0.7');
@@ -63,6 +64,13 @@ ${entries}
     const { data } = await supabase.from('categories').select('slug, created_at').is('deleted_at', null).range(0, 49999);
     for (const cat of data || []) {
       urls += entry(siteUrl, `/categoria/${cat.slug}`, fmtDate(cat.created_at), 'daily', '0.9');
+    }
+  }
+
+  if (type === 'especialidades') {
+    const { data } = await supabase.from('categories').select('slug, created_at').is('deleted_at', null).range(0, 49999);
+    for (const cat of data || []) {
+      urls += entry(siteUrl, `/especialidades/${cat.slug}`, fmtDate(cat.created_at), 'weekly', '0.85');
     }
   }
 
