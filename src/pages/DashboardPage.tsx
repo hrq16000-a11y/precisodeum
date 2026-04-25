@@ -84,6 +84,9 @@ const DashboardPage = () => {
   // Heartbeat de presença persistido (alimenta get_missed_opportunities)
   usePresenceHeartbeat(user?.id, !!provider?.id);
 
+  // Captura ?ref= e registra indicação após login
+  useReferralCapture(user?.id);
+
   // Registra a visita no servidor (substitui flags em localStorage)
   useEffect(() => {
     if (user?.id) void registerVisit();
