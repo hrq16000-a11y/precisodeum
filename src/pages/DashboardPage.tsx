@@ -548,8 +548,24 @@ const DashboardPage = () => {
         <QuickActionsHero />
       </div>
 
-      {/* 3) Impacto na Rede — agrupa Views/WhatsApp/Leads, com Empty State quando tudo é zero */}
+      {/* 3) "Como funciona" — checklist de onboarding logo abaixo do topo,
+             sincronizado com o estado real (services/portfolio/profile). */}
       <div className="mt-4">
+        <OnboardingCompletionTracker
+          servicesCount={servicesCount ?? 0}
+          portfolioAlbumsCount={portfolioAlbumCount}
+        />
+      </div>
+
+      {/* 4) Obra do Dia — ação principal de frescor, próxima ao topo */}
+      {provider?.id && (
+        <div className="mt-4">
+          <DailyPostCard />
+        </div>
+      )}
+
+      {/* 5) Impacto na Rede — métricas movidas para baixo dos blocos de ação */}
+      <div className="mt-6">
         <ImpactSection
           views={viewsTotal}
           whatsappClicks={(provider as any)?.contact_clicks_count ?? 0}
