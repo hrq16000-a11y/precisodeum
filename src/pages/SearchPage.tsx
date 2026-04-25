@@ -161,9 +161,13 @@ const SearchPage = () => {
     }) as DbProvider[];
   }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, onlineOnly, acceptingOnly, activeTodayOnly]);
 
-  const filteredLocal = useMemo(() => applyClientFilters(localProviders), [applyClientFilters, localProviders]);
-  const filteredNearby = useMemo(() => applyClientFilters(nearbyProviders), [applyClientFilters, nearbyProviders]);
-  const filteredOutOfState = useMemo(() => applyClientFilters(outOfStateProviders), [applyClientFilters, outOfStateProviders]);
+  const stateFilterFn = useCallback((list: DbProvider[]) =>
+    selectedState ? list.filter(p => safeUF(p.state) === selectedState) : list,
+  [selectedState]);
+
+  const filteredLocal = useMemo(() => stateFilterFn(applyClientFilters(localProviders)), [applyClientFilters, localProviders, stateFilterFn]);
+  const filteredNearby = useMemo(() => stateFilterFn(applyClientFilters(nearbyProviders)), [applyClientFilters, nearbyProviders, stateFilterFn]);
+  const filteredOutOfState = useMemo(() => stateFilterFn(applyClientFilters(outOfStateProviders)), [applyClientFilters, outOfStateProviders, stateFilterFn]);
 
   const fullyFiltered = [...filteredLocal, ...filteredNearby, ...filteredOutOfState];
   const nearestFiltered = filteredLocal.length > 0 ? filteredLocal[0] : (filteredNearby.length > 0 ? filteredNearby[0] : undefined);
