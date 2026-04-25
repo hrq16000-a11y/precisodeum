@@ -55,9 +55,21 @@ import AchievementHistory from '@/components/dashboard/AchievementHistory';
 import CelebrationMuteToggle from '@/components/dashboard/CelebrationMuteToggle';
 import LeadAnalytics from '@/components/dashboard/LeadAnalytics';
 import LeadInsights from '@/components/dashboard/LeadInsights';
+import ExpertTipsWidget from '@/components/dashboard/ExpertTipsWidget';
+import DismissibleWidget from '@/components/dashboard/DismissibleWidget';
+import { useDashboardState } from '@/hooks/useDashboardState';
+import { useMaturityTier } from '@/hooks/useMaturityTier';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
+  const { registerVisit } = useDashboardState();
+  const { isAtLeast, tier } = useMaturityTier();
+
+  // Registra a visita no servidor (substitui flags em localStorage)
+  useEffect(() => {
+    if (user?.id) void registerVisit();
+  }, [user?.id, registerVisit]);
+
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [welcomeOpen, setWelcomeOpen] = useState(false);
@@ -534,14 +546,26 @@ const DashboardPage = () => {
         }
         return (
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <FirstLeadChecklist
-              servicesCount={servicesCount ?? 0}
-              portfolioAlbumsCount={portfolioAlbumCount}
-            />
+            <DismissibleWidget widgetKey="first_lead_checklist">
+              <FirstLeadChecklist
+                servicesCount={servicesCount ?? 0}
+                portfolioAlbumsCount={portfolioAlbumCount}
+              />
+            </DismissibleWidget>
             <CommunityVerifiedStatus />
           </div>
         );
       })()}
+
+      {/* Dica de especialista — muda conforme a categoria do prestador */}
+      {provider && (
+        <div className="mt-4">
+          <DismissibleWidget widgetKey="expert_tips">
+            <ExpertTipsWidget />
+          </DismissibleWidget>
+        </div>
+      )}
+
 
       {/* Histórico cronológico de itens concluídos do onboarding + toasts em tempo real */}
       <div className="mt-4">

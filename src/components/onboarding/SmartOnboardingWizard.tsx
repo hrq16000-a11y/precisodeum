@@ -942,13 +942,13 @@ const BasicOnboardingWizard = () => {
         {reviewReturnStep && !showFinalSummary && (
           <div className="mb-4 rounded-xl border border-accent/25 bg-accent/10 p-3 text-sm text-foreground">
             <p className="font-bold">Revisando passo anterior</p>
-            <p className="mt-1 text-xs text-muted-foreground">Suas alterações são salvas automaticamente. Volte ao seu progresso quando quiser.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Suas alterações ficam salvas. Continue ou volte para o painel quando quiser.</p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <Button type="button" variant="outline" size="sm" onClick={returnToProgress}>
-                Salvar e voltar ao progresso
+                Voltar ao progresso
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => { setReviewReturnStep(null); navigate('/dashboard', { replace: true }); }}>
-                Cancelar e ir ao Dashboard
+                Ir para o Dashboard
               </Button>
             </div>
           </div>
@@ -1411,9 +1411,9 @@ const GuidedReviewCard = ({
       ))}
     </div>
     <div className="mt-4 grid gap-2 sm:grid-cols-3">
-      <Button type="button" variant="ghost" onClick={onPrev} disabled={!canGoPrev}>Voltar item</Button>
-      <Button type="button" variant="outline" onClick={onEdit}>Ajustar Informação</Button>
-      <Button type="button" variant="accent" onClick={onKeep}>Manter</Button>
+      <Button type="button" variant="ghost" onClick={onPrev} disabled={!canGoPrev}>Voltar</Button>
+      <Button type="button" variant="outline" onClick={onEdit}>Editar</Button>
+      <Button type="button" variant="accent" onClick={onKeep}>Confirmar</Button>
     </div>
   </div>
 );

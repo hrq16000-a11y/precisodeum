@@ -2522,6 +2522,39 @@ export type Database = {
           },
         ]
       }
+      profile_change_suggestions: {
+        Row: {
+          created_at: string
+          field: string
+          id: string
+          resolved_at: string | null
+          source: string
+          status: string
+          suggested_value: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          field: string
+          id?: string
+          resolved_at?: string | null
+          source: string
+          status?: string
+          suggested_value: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          field?: string
+          id?: string
+          resolved_at?: string | null
+          source?: string
+          status?: string
+          suggested_value?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profile_type_settings: {
         Row: {
           active: boolean
@@ -5158,6 +5191,39 @@ export type Database = {
           },
         ]
       }
+      user_dashboard_state: {
+        Row: {
+          created_at: string
+          dismissed_widgets: string[]
+          first_visit_at: string
+          last_visit_at: string | null
+          preferred_tier: string | null
+          updated_at: string
+          user_id: string
+          visits_count: number
+        }
+        Insert: {
+          created_at?: string
+          dismissed_widgets?: string[]
+          first_visit_at?: string
+          last_visit_at?: string | null
+          preferred_tier?: string | null
+          updated_at?: string
+          user_id: string
+          visits_count?: number
+        }
+        Update: {
+          created_at?: string
+          dismissed_widgets?: string[]
+          first_visit_at?: string
+          last_visit_at?: string | null
+          preferred_tier?: string | null
+          updated_at?: string
+          user_id?: string
+          visits_count?: number
+        }
+        Relationships: []
+      }
       user_favorites: {
         Row: {
           created_at: string
@@ -5661,6 +5727,7 @@ export type Database = {
       }
     }
     Functions: {
+      _sync_in_progress: { Args: never; Returns: boolean }
       add_portfolio_photo_atomic: {
         Args: {
           _album_id: string
@@ -5915,6 +5982,25 @@ export type Database = {
         Returns: boolean
       }
       derive_user_ref: { Args: { _uuid: string }; Returns: string }
+      dismiss_dashboard_widget: {
+        Args: { _widget: string }
+        Returns: {
+          created_at: string
+          dismissed_widgets: string[]
+          first_visit_at: string
+          last_visit_at: string | null
+          preferred_tier: string | null
+          updated_at: string
+          user_id: string
+          visits_count: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_dashboard_state"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       distribute_open_lead: { Args: { _open_lead_id: string }; Returns: number }
       effective_user_permissions: { Args: { _user_id: string }; Returns: Json }
       find_orphan_media: {
@@ -6076,6 +6162,7 @@ export type Database = {
       }
       get_sponsor_docs_status: { Args: { _lead_id: string }; Returns: Json }
       get_staff_permissions: { Args: { _user_id: string }; Returns: Json }
+      get_user_maturity_tier: { Args: { _user_id?: string }; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       get_user_storage_usage: { Args: { _user_ref: string }; Returns: number }
       get_weekly_summary: { Args: { _user_id: string }; Returns: Json }
@@ -6206,6 +6293,25 @@ export type Database = {
       }
       refresh_featured_providers_mv: { Args: never; Returns: undefined }
       register_daily_checkin: { Args: never; Returns: Json }
+      register_dashboard_visit: {
+        Args: never
+        Returns: {
+          created_at: string
+          dismissed_widgets: string[]
+          first_visit_at: string
+          last_visit_at: string | null
+          preferred_tier: string | null
+          updated_at: string
+          user_id: string
+          visits_count: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_dashboard_state"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       register_referral: {
         Args: { _referral_code: string; _referred_id: string }
         Returns: boolean
@@ -6213,6 +6319,25 @@ export type Database = {
       reschedule_lead_followup: {
         Args: { _lead_id: string; _next_at: string; _note?: string }
         Returns: undefined
+      }
+      restore_dashboard_widget: {
+        Args: { _widget: string }
+        Returns: {
+          created_at: string
+          dismissed_widgets: string[]
+          first_visit_at: string
+          last_visit_at: string | null
+          preferred_tier: string | null
+          updated_at: string
+          user_id: string
+          visits_count: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_dashboard_state"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       search_cities: {
         Args: { term: string }
