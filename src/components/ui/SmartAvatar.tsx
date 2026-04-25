@@ -1,3 +1,4 @@
+import { UserRound } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
@@ -7,6 +8,8 @@ interface SmartAvatarProps {
   className?: string;
   fallbackClassName?: string;
   alt?: string;
+  /** When true, render initials instead of the premium icon fallback. */
+  useInitialsFallback?: boolean;
 }
 
 /**
