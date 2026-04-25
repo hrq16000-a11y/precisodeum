@@ -793,10 +793,12 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* Stats with animated counters */}
-      <div className="mt-5">
-        <StatCardGrid cards={statCards} />
-      </div>
+      {/* Stats with animated counters — só renderiza se houver pelo menos 1 contador real >0 */}
+      {(servicesCount ?? 0) + leadsCount + viewsTotal + portfolioCount + jobsCount + reviewCount > 0 && (
+        <div className="mt-5">
+          <StatCardGrid cards={statCards} />
+        </div>
+      )}
 
       {/* Analytics Grid: charts/insights — cada bloco já se auto-oculta quando
           não há dados reais (evita UI estática enganosa). */}
