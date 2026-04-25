@@ -6284,6 +6284,7 @@ export type Database = {
           total_searches: number
         }[]
       }
+      get_my_referrals_full: { Args: never; Returns: Json }
       get_my_referrals_summary: { Args: never; Returns: Json }
       get_neighborhood_by_point: {
         Args: { _lat: number; _lng: number }
@@ -6314,6 +6315,10 @@ export type Database = {
           tax_id_kind: string
           tax_id_last4: string
         }[]
+      }
+      get_provider_activity_signals: {
+        Args: { _user_id: string }
+        Returns: Json
       }
       get_provider_daily_post: {
         Args: { _provider_id: string }
