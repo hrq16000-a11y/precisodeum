@@ -61,13 +61,18 @@ import MissionCard from '@/components/dashboard/MissionCard';
 import ContactImpactWidget from '@/components/dashboard/ContactImpactWidget';
 import OnlineStatusFeedback from '@/components/dashboard/OnlineStatusFeedback';
 import IdentitySuggestionsWidget from '@/components/dashboard/IdentitySuggestionsWidget';
+import DashboardTour from '@/components/dashboard/DashboardTour';
 import { useDashboardState } from '@/hooks/useDashboardState';
 import { useMaturityTier } from '@/hooks/useMaturityTier';
+import { useFirstContactAutoMission } from '@/hooks/useFirstContactAutoMission';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
   const { registerVisit } = useDashboardState();
   const { isAtLeast, tier } = useMaturityTier();
+
+  // Auto-completa a missão "first_contact" quando detectar 1º clique no WhatsApp
+  useFirstContactAutoMission();
 
   // Registra a visita no servidor (substitui flags em localStorage)
   useEffect(() => {
@@ -511,12 +516,12 @@ const DashboardPage = () => {
       />
 
       {/* Online Status Feedback — pulse + toast quando entra em modo Online */}
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex justify-end" data-tour="online-status">
         <OnlineStatusFeedback />
       </div>
 
       {/* Cards de Missão Profissional — gated por tier de maturidade */}
-      <div className="mt-4">
+      <div className="mt-4" data-tour="missions">
         <MissionCard />
       </div>
 
@@ -526,7 +531,7 @@ const DashboardPage = () => {
       </div>
 
       {/* Contador de Impacto Real (24h) — visualizações e cliques de contato */}
-      <div className="mt-4">
+      <div className="mt-4" data-tour="contact-impact">
         <ContactImpactWidget />
       </div>
 
