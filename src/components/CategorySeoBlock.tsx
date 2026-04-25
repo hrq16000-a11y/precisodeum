@@ -82,14 +82,15 @@ const CategorySeoBlock = ({ categorySlug, categoryName, city, state, providersCo
     return {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
+      url: `${SITE_BASE_URL}/categoria/${categorySlug}`,
       mainEntity: faqs.map((f) => ({
         '@type': 'Question',
         name: f.q,
         acceptedAnswer: { '@type': 'Answer', text: f.a },
       })),
     };
-  }, [faqs]);
-  useJsonLd(faqLd);
+  }, [faqs, categorySlug]);
+  useJsonLd(faqLd, `json-ld-faq-categoria-${categorySlug}`);
 
   const locationLabel = city ? `${city}${state ? ' / ' + state : ''}` : null;
   const introTitle = locationLabel
