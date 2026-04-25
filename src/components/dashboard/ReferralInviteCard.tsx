@@ -37,18 +37,49 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
 
 export default function ReferralInviteCard() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
+  const seenRewardedIdsRef = useRef<Set<string> | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['referrals-summary', user?.id],
     enabled: !!user?.id,
     staleTime: 60_000,
+    refetchInterval: 90_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_my_referrals_summary' as any);
       if (error) throw error;
       return data as unknown as Summary;
     },
   });
+
+  // Toast celebrativo: detecta nova indicação que mudou para "rewarded"
+  useEffect(() => {
+    if (!data?.recent) return;
+    const rewardedNow = new Set(
+      data.recent
+        .filter((r) => r.status === 'rewarded' || r.status === 'completed')
+        .map((r) => r.id),
+    );
+    // primeira passagem: só inicializa o snapshot
+    if (seenRewardedIdsRef.current === null) {
+      seenRewardedIdsRef.current = rewardedNow;
+      return;
+    }
+    const prev = seenRewardedIdsRef.current;
+    const newlyRewarded = [...rewardedNow].filter((id) => !prev.has(id));
+    if (newlyRewarded.length > 0) {
+      const item = data.recent.find((r) => r.id === newlyRewarded[0]);
+      toast.success(
+        `${item?.referred_name || 'Seu parceiro'} começou a trabalhar! Você ganhou +50 pontos de engajamento!`,
+        { duration: 6000, icon: '🎉' },
+      );
+      // invalida pontos de engajamento para refletir o ganho
+      queryClient.invalidateQueries({ queryKey: ['engagement-points'] });
+      queryClient.invalidateQueries({ queryKey: ['engagement-level'] });
+    }
+    seenRewardedIdsRef.current = rewardedNow;
+  }, [data, queryClient]);
 
   if (!user?.id) return null;
 
