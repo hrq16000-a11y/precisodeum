@@ -92,13 +92,59 @@ const AdminConversionMetricsPage = () => {
 
   const overallRate = totals.views > 0 ? (totals.leads / totals.views) * 100 : 0;
 
+  const handleExportCsv = () => {
+    if (rows.length === 0) {
+      toast.info('Sem dados para exportar com os filtros atuais.');
+      return;
+    }
+    const headers = [
+      'tier', 'categoria_slug', 'categoria_nome', 'profissionais',
+      'views', 'visitas_dashboard', 'cliques_whatsapp', 'leads',
+      'widgets_dispensados', 'taxa_conversao_pct',
+    ];
+    const escape = (v: unknown) => {
+      const s = String(v ?? '');
+      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [
+      headers.join(','),
+      ...rows.map((r) => [
+        r.tier, r.category_slug, r.category_name, r.providers_count,
+        r.total_views, r.total_visits, r.total_whatsapp_clicks, r.total_leads,
+        r.total_dismisses, Number(r.conversion_rate).toFixed(2),
+      ].map(escape).join(',')),
+    ].join('\n');
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    const tierLabel = tier === 'all' ? 'todos-tiers' : tier;
+    const catLabel = category === 'all' ? 'todas-categorias' : category;
+    a.href = url;
+    a.download = `conversao_${tierLabel}_${catLabel}_${days}d_${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`CSV exportado (${rows.length} linhas).`);
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Conversão por Tier & Categoria</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Acompanhe o impacto das missões e do checklist nos profissionais por nível de maturidade.
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">Conversão por Tier & Categoria</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Acompanhe o impacto das missões e do checklist nos profissionais por nível de maturidade.
+            </p>
+          </div>
+          <Button onClick={handleExportCsv} variant="outline" size="sm" className="gap-2" disabled={loading || rows.length === 0}>
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+        </div>
           </p>
         </div>
 
