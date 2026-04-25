@@ -60,6 +60,7 @@ import DismissibleWidget from '@/components/dashboard/DismissibleWidget';
 import MissionCard from '@/components/dashboard/MissionCard';
 import ContactImpactWidget from '@/components/dashboard/ContactImpactWidget';
 import OnlineStatusFeedback from '@/components/dashboard/OnlineStatusFeedback';
+import IdentitySuggestionsWidget from '@/components/dashboard/IdentitySuggestionsWidget';
 import { useDashboardState } from '@/hooks/useDashboardState';
 import { useMaturityTier } from '@/hooks/useMaturityTier';
 
@@ -517,6 +518,11 @@ const DashboardPage = () => {
       {/* Cards de Missão Profissional — gated por tier de maturidade */}
       <div className="mt-4">
         <MissionCard />
+      </div>
+
+      {/* Sugestões de identidade (governança) — só renderiza se houver pendências */}
+      <div className="mt-4">
+        <IdentitySuggestionsWidget limit={2} />
       </div>
 
       {/* Contador de Impacto Real (24h) — visualizações e cliques de contato */}
