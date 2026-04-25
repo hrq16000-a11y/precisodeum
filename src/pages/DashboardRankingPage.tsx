@@ -201,10 +201,8 @@ const DashboardRankingPage = () => {
               Sua posição (#{myRank.rank_position}) está fora do Top {ranking?.length}. Continue pontuando!
             </div>
           )}
-        </main>
       </div>
-      <Footer />
-    </div>
+    </DashboardLayout>
   );
 };
 
