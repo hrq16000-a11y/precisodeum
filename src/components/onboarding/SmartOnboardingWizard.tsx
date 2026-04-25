@@ -976,7 +976,45 @@ const BasicOnboardingWizard = () => {
     if (!user?.id) return;
     setSaving(true);
     try {
-      const meetsStructuralMinimum = profileType !== 'provider' || servicesCreated >= 1;
+      // ─── REVALIDAÇÃO CONTRA O BACKEND ANTES DE CONCLUIR ───
+      // Garante que a tela de revisão reflete a verdade do banco e impede
+      // marcação de onboarding_completed sem que os dados estejam realmente salvos.
+      const [{ data: backendProfile }, { count: realServiceCount }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('full_name, whatsapp, city, state, profile_type, preferred_category_ids')
+          .eq('id', user.id)
+          .maybeSingle(),
+        profileType === 'provider' && savedProvider?.id
+          ? supabase
+              .from('services')
+              .select('id', { count: 'exact', head: true })
+              .eq('provider_id', savedProvider.id)
+          : Promise.resolve({ count: 0 } as any),
+      ]);
+
+      const backendOk =
+        !!backendProfile?.full_name &&
+        !!backendProfile?.whatsapp &&
+        !!backendProfile?.city &&
+        !!backendProfile?.state &&
+        !!backendProfile?.profile_type;
+      const realCount = Number(realServiceCount ?? 0);
+      const meetsStructuralMinimum = backendOk && (profileType !== 'provider' || realCount >= 1);
+
+      if (!backendOk) {
+        toast.error('Alguns dados não foram salvos no servidor.', {
+          description: 'Volte ao passo correspondente para reenviar antes de concluir.',
+        });
+        setSaving(false);
+        return;
+      }
+
+      // Sincroniza contador local com o real do backend (evita resumo enganoso).
+      if (profileType === 'provider' && realCount !== servicesCreated) {
+        setServicesCreated(realCount);
+      }
+
       await supabase.from('profiles').update({
         onboarding_completed: meetsStructuralMinimum,
         onboarding_step: 5,
@@ -1636,28 +1674,57 @@ const ReviewSummaryCard = ({
   saving: boolean;
   onBack: () => void;
   onFinish: () => void;
-}) => (
-  <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4">
-    <h2 className="font-display text-lg font-bold text-foreground">Resumo final</h2>
-    <p className="mt-1 text-xs text-muted-foreground">Confira seus dados antes de concluir.</p>
-    <div className="mt-4 space-y-2">
-      {items.map((item) => (
-        <div key={item.label} className="flex items-start justify-between gap-3 rounded-lg border border-border bg-background/70 px-3 py-2">
-          <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
-          <span className="text-right text-xs font-bold text-foreground">{item.value}</span>
-        </div>
-      ))}
+}) => {
+  const navigate = useNavigate();
+  return (
+    <div className="mb-5 rounded-xl border border-accent/25 bg-accent/10 p-4">
+      <h2 className="font-display text-lg font-bold text-foreground">Resumo final</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Confira seus dados (sincronizados com o servidor) antes de concluir.
+      </p>
+      <div className="mt-4 space-y-2">
+        {items.map((item) => (
+          <div key={item.label} className="flex items-start justify-between gap-3 rounded-lg border border-border bg-background/70 px-3 py-2">
+            <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+            <span className="text-right text-xs font-bold text-foreground">{item.value}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/dashboard/servicos')}
+          disabled={saving}
+          className="text-xs"
+        >
+          Editar serviços
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/dashboard/minha-pagina')}
+          disabled={saving}
+          className="text-xs"
+        >
+          Editar minha página
+        </Button>
+      </div>
+
+      <div className="mt-3 grid gap-2">
+        <Button type="button" variant="accent" onClick={onFinish} disabled={saving}>
+          {saving ? 'Validando no servidor…' : 'Concluir wizard'}
+        </Button>
+        <Button type="button" variant="outline" onClick={onBack} disabled={saving}>
+          Voltar para revisar
+        </Button>
+      </div>
     </div>
-    <div className="mt-4 grid gap-2">
-      <Button type="button" variant="accent" onClick={onFinish} disabled={saving}>
-        {saving ? 'Concluindo…' : 'Concluir wizard'}
-      </Button>
-      <Button type="button" variant="outline" onClick={onBack} disabled={saving}>
-        Voltar para revisar
-      </Button>
-    </div>
-  </div>
-);
+  );
+};
 
 export const Step1Identity = ({
   existingProfileType,
