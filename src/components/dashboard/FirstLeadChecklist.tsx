@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Phone, MapPin, FileText, Briefcase, Image as ImageIcon, CheckCircle2, Sparkles, Rocket, Loader2, Trophy } from 'lucide-react';
+import { Camera, Phone, MapPin, FileText, Briefcase, Image as ImageIcon, CheckCircle2, Sparkles, Rocket, Loader2, Trophy, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { buildOnboardingChecklist, checklistStats, type ChecklistItem } from '@/lib/onboardingChecklist';
+import { useMaturityTier } from '@/hooks/useMaturityTier';
+import { useDashboardState } from '@/hooks/useDashboardState';
 
 const ICON_BY_KEY: Record<ChecklistItem['key'], typeof Camera> = {
   photo: Camera,
@@ -18,6 +20,8 @@ const ICON_BY_KEY: Record<ChecklistItem['key'], typeof Camera> = {
   portfolio: ImageIcon,
 };
 
+const WIDGET_KEY = 'first_lead_checklist';
+
 interface Props {
   className?: string;
   /** Optional override; if not provided, reads from useAuth(). */
@@ -27,7 +31,44 @@ interface Props {
 
 const FirstLeadChecklist = ({ className = '', servicesCount, portfolioAlbumsCount }: Props) => {
   const { profile, provider, refetchProfile } = useAuth();
+  const { tier, isAtLeast } = useMaturityTier();
+  const { isWidgetDismissed, dismissWidget } = useDashboardState();
   const [submitting, setSubmitting] = useState(false);
+
+  const boostUntil = (profile as any)?.trial_boost_until
+    ? new Date((profile as any).trial_boost_until as string)
+    : null;
+  const boostActive = !!boostUntil && boostUntil.getTime() > Date.now();
+
+  const items = useMemo(
+    () => buildOnboardingChecklist({ profile, provider, servicesCount, portfolioAlbumsCount }),
+    [profile, provider, servicesCount, portfolioAlbumsCount]
+  );
+  const stats = checklistStats(items);
+  const allDone = stats.completed === stats.total;
+
+  // Conta missões já respondidas (jsonb)
+  const missionsAnswered = useMemo(() => {
+    const answers = (provider as any)?.mission_answers ?? {};
+    return Object.values(answers).filter((v) => v !== null && v !== undefined).length;
+  }, [provider]);
+
+  // Gating:
+  // - Sempre exibe se boost ativo (estado celebratório)
+  // - Sempre exibe para 'novato' que ainda não tem o boost (é o trigger principal de progresso)
+  // - Para tiers superiores: só exibe se ainda houver passos pendentes
+  // - Respeita dismiss server-side (mas se boost ativo, ignora dismiss)
+  const dismissed = isWidgetDismissed(WIDGET_KEY);
+  const shouldShow = useMemo(() => {
+    if (boostActive) return true;
+    if (dismissed) return false;
+    if (allDone) return true; // mostra CTA do boost
+    // Para tier 'ativo'/'veterano' já com várias missões, não polui o dashboard
+    if (isAtLeast('ativo') && missionsAnswered >= 3 && stats.pct >= 60) return false;
+    return true;
+  }, [boostActive, dismissed, allDone, isAtLeast, missionsAnswered, stats.pct]);
+
+  if (!shouldShow) return null;
 
   const boostUntil = (profile as any)?.trial_boost_until
     ? new Date((profile as any).trial_boost_until as string)
