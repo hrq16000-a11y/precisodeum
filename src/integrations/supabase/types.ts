@@ -6214,6 +6214,15 @@ export type Database = {
         Args: { _lead_id: string; _next_at: string; _note?: string }
         Returns: undefined
       }
+      search_cities: {
+        Args: { term: string }
+        Returns: {
+          id: string
+          name: string
+          state: string
+          state_uf: string
+        }[]
+      }
       set_profile_tax_id: { Args: { _tax_id: string }; Returns: undefined }
       sponsor_has_active_plan: {
         Args: { _sponsor_id: string }

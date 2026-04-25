@@ -58,15 +58,25 @@ const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...', o
       return;
     }
     setLoading(true);
+    // Busca insensível a acentos via RPC (ex.: "sao jos" encontra "São José...").
     supabase
-      .from('cities')
-      .select('id,name,state,state_uf')
-      .ilike('name', `${term}%`)
-      .order('name', { ascending: true })
-      .limit(20)
-      .then(({ data }) => {
+      .rpc('search_cities', { term })
+      .then(async ({ data, error }) => {
         if (cancelled) return;
-        setResults((data as CityRow[]) || []);
+        if (error || !data) {
+          // Fallback: busca padrão por prefixo (ainda sensível a acentos),
+          // garantindo que o componente nunca quebre se a RPC falhar.
+          const fb = await supabase
+            .from('cities')
+            .select('id,name,state,state_uf')
+            .ilike('name', `${term}%`)
+            .order('name', { ascending: true })
+            .limit(20);
+          if (cancelled) return;
+          setResults((fb.data as CityRow[]) || []);
+        } else {
+          setResults((data as CityRow[]) || []);
+        }
         setLoading(false);
       });
     return () => { cancelled = true; };
