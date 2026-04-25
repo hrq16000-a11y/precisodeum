@@ -794,7 +794,12 @@ const BasicOnboardingWizard = () => {
       }
     } catch (err: any) {
       console.error('[Wizard step 3]', err);
-      toast.error('Não foi possível salvar. Tente novamente.');
+      const detail = err?.message || err?.error_description || err?.details || '';
+      toast.error('Não foi possível salvar.', {
+        description: detail
+          ? `Motivo: ${String(detail).slice(0, 180)}`
+          : 'Confira os campos obrigatórios e tente novamente. Se persistir, tente recarregar a página.',
+      });
     } finally {
       setSaving(false);
     }
