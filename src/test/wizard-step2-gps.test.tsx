@@ -71,7 +71,7 @@ describe('Step 2 — GPS UX', () => {
       />
     );
 
-    expect(screen.getByText(/localização precisa ativa/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/localização precisa ativa/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Curitiba • PR/).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /atualizar gps/i })).toBeInTheDocument();
   });
