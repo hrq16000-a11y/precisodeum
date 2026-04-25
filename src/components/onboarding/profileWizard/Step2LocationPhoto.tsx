@@ -41,19 +41,30 @@ const Step2LocationPhoto = ({
 }: Step2LocationPhotoProps) => {
   const { user } = useAuth();
   const [editingCity, setEditingCity] = useState(false);
+  const [requestingGps, setRequestingGps] = useState(false);
 
   const {
-    requestingGps,
-    requestPreciseGps,
+    requestPreciseLocation,
     precise: geoPrecise,
-    failed: geoFailed,
+    geoFailed,
     source: geoSource,
     city: geoCity,
     state: geoState,
   } = useGeoCity();
 
-  // Texto de status simples (o original calcula numa memo gigante; aqui
-  // mantemos uma versão funcional equivalente).
+  const handleUsePreciseLocation = async () => {
+    setRequestingGps(true);
+    try {
+      const r = await requestPreciseLocation({ force: true });
+      if (r.ok && r.city) {
+        onChange({ city: r.city, state: (r.state || '').toUpperCase().slice(0, 2) });
+      }
+    } finally {
+      setRequestingGps(false);
+    }
+  };
+
+  // Texto de status simples (paridade funcional com o original).
   const geoStatusText = (() => {
     if (requestingGps) return 'Detectando sua localização precisa via GPS...';
     if (geoPrecise && geoCity) return `Localização precisa ativa: ${geoCity} • ${geoState}`;
@@ -95,7 +106,7 @@ const Step2LocationPhoto = ({
       onFieldBlur={onFieldBlur ?? (() => {})}
       fullName={data.full_name}
       socialAvatarUrl={socialAvatarUrl ?? null}
-      onUsePreciseLocation={requestPreciseGps}
+      onUsePreciseLocation={handleUsePreciseLocation}
       gpsLoading={requestingGps}
       geoStatusText={geoStatusText}
       geoPrecise={geoPrecise}
