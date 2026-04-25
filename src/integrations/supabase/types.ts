@@ -3028,6 +3028,7 @@ export type Database = {
           longitude: number | null
           meta_description: string | null
           meta_title: string | null
+          mission_answers: Json
           neighborhood: string
           notification_channels: Json
           onboarding_progress: Json | null
@@ -3079,6 +3080,7 @@ export type Database = {
           longitude?: number | null
           meta_description?: string | null
           meta_title?: string | null
+          mission_answers?: Json
           neighborhood?: string
           notification_channels?: Json
           onboarding_progress?: Json | null
@@ -3130,6 +3132,7 @@ export type Database = {
           longitude?: number | null
           meta_description?: string | null
           meta_title?: string | null
+          mission_answers?: Json
           neighborhood?: string
           notification_channels?: Json
           onboarding_progress?: Json | null
@@ -6029,6 +6032,15 @@ export type Database = {
           profile_type: string
         }[]
       }
+      get_contact_impact_24h: {
+        Args: { _user_id: string }
+        Returns: {
+          phone_clicks: number
+          total_views: number
+          unique_visitors: number
+          whatsapp_clicks: number
+        }[]
+      }
       get_demand_signal: {
         Args: { _user_id: string }
         Returns: {
@@ -6244,42 +6256,82 @@ export type Database = {
         }
         Returns: undefined
       }
-      nearby_providers: {
-        Args: {
-          _category_slug?: string
-          _lat: number
-          _limit?: number
-          _lng: number
-          _radius_m?: number
-        }
-        Returns: {
-          business_name: string
-          category_icon: string
-          category_name: string
-          category_slug: string
-          city: string
-          description: string
-          distance_m: number
-          featured: boolean
-          id: string
-          latitude: number
-          longitude: number
-          neighborhood: string
-          phone: string
-          photo_url: string
-          plan: string
-          portfolio_album_count: number
-          portfolio_photo_count: number
-          rating_avg: number
-          review_count: number
-          services_count: number
-          slug: string
-          state: string
-          user_id: string
-          whatsapp: string
-          years_experience: number
-        }[]
-      }
+      nearby_providers:
+        | {
+            Args: {
+              _category_slug?: string
+              _lat: number
+              _limit?: number
+              _lng: number
+              _radius_m?: number
+            }
+            Returns: {
+              business_name: string
+              category_icon: string
+              category_name: string
+              category_slug: string
+              city: string
+              description: string
+              distance_m: number
+              featured: boolean
+              id: string
+              latitude: number
+              longitude: number
+              neighborhood: string
+              phone: string
+              photo_url: string
+              plan: string
+              portfolio_album_count: number
+              portfolio_photo_count: number
+              rating_avg: number
+              review_count: number
+              services_count: number
+              slug: string
+              state: string
+              user_id: string
+              whatsapp: string
+              years_experience: number
+            }[]
+          }
+        | {
+            Args: {
+              _category_slug?: string
+              _lat: number
+              _limit?: number
+              _lng: number
+              _online_user_ids?: string[]
+              _radius_m?: number
+            }
+            Returns: {
+              business_name: string
+              category_icon: string
+              category_name: string
+              category_slug: string
+              city: string
+              description: string
+              distance_m: number
+              featured: boolean
+              id: string
+              is_online: boolean
+              latitude: number
+              longitude: number
+              neighborhood: string
+              phone: string
+              photo_url: string
+              plan: string
+              portfolio_album_count: number
+              portfolio_photo_count: number
+              rating_avg: number
+              review_count: number
+              services_count: number
+              slug: string
+              state: string
+              user_id: string
+              visibility_score: number
+              whatsapp: string
+              years_experience: number
+            }[]
+          }
       normalize_uf: { Args: { _input: string }; Returns: string }
       process_daily_stats: { Args: never; Returns: number }
       process_lead_followup_reminders: { Args: never; Returns: Json }
