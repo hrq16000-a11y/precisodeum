@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   // Sitemap Index — returns links to sub-sitemaps
   if (!type) {
     const sitemaps = [
-      'static', 'categories', 'providers', 'cities',
+      'static', 'categories', 'especialidades', 'providers', 'cities',
       'blog', 'jobs', 'pages', 'popular', 'seo',
     ];
     const entries = sitemaps.map(s =>
