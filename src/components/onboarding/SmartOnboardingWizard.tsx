@@ -641,10 +641,23 @@ const BasicOnboardingWizard = () => {
     }
     if (!user?.id) return;
     // Validação amigável do CPF/CNPJ — campo é opcional, mas se preenchido precisa ser válido.
+    // Mensagens são específicas conforme o subtipo escolhido (PF/CPF ou PJ/CNPJ).
     const taxIdDigits = (taxId || '').replace(/\D/g, '');
-    if (taxIdDigits && !isValidCpfCnpj(taxIdDigits)) {
-      toast.error('CPF/CNPJ inválido. Confira os dígitos ou deixe em branco.');
-      return;
+    if (taxIdDigits) {
+      const expected = profileType === 'provider' && providerSubtype === 'company' ? 14 : 11;
+      const expectedLabel = expected === 14 ? 'CNPJ' : 'CPF';
+      if (taxIdDigits.length !== expected) {
+        toast.error(
+          expected === 14
+            ? `CNPJ precisa ter 14 dígitos. Confira ou deixe em branco.`
+            : `CPF precisa ter 11 dígitos. Confira ou deixe em branco.`
+        );
+        return;
+      }
+      if (!isValidCpfCnpj(taxIdDigits)) {
+        toast.error(`${expectedLabel} inválido — confira os dígitos ou deixe em branco para preencher depois.`);
+        return;
+      }
     }
     setSaving(true);
     try {
@@ -1815,12 +1828,33 @@ export const Step3Contact = ({
     </div>
 
     <div className="mt-5 grid gap-3">
+      {isProvider && (
+        <div
+          aria-live="polite"
+          className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-[11px] ${
+            providerSubtype === 'company'
+              ? 'border-primary/40 bg-primary/5'
+              : 'border-accent/40 bg-accent/5'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className={`h-4 w-4 ${providerSubtype === 'company' ? 'text-primary' : 'text-accent'}`} />
+            <span className="font-semibold text-foreground">
+              {providerSubtype === 'company' ? 'Cadastro como PJ' : 'Cadastro como PF'}
+            </span>
+          </span>
+          <span className="font-mono text-foreground/80">
+            Documento: <span className="font-bold">{taxLabel}</span>
+            {taxFilled && taxValid ? ' ✓' : ''}
+          </span>
+        </div>
+      )}
       <Button variant="accent" className="w-full" disabled={!canAdvance || saving || !taxValid} onClick={onNext}>
         {saving
           ? 'Salvando…'
           : taxFilled
             ? 'Salvar dados e continuar'
-            : 'Continuar (documento depois)'}
+            : `Continuar (${taxLabel} depois)`}
       </Button>
       {!taxFilled && (
         <Button type="button" variant="outline" className="w-full" onClick={onSkip} disabled={saving}>
