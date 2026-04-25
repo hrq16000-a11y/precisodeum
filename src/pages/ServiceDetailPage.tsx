@@ -16,6 +16,7 @@ import { useMemo, useEffect, useRef } from 'react';
 import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { formatLocationString } from '@/lib/normalize';
+import { formatCityState } from '@/lib/locationFormat';
 
 const ServiceDetailPage = () => {
   const { id } = useParams<{ id: string }>();
