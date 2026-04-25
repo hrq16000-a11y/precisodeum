@@ -22,6 +22,7 @@ const ProviderTopBadgeInline = ({ userId }: { userId: string }) => {
   return isTop ? <TopProfessionalBadge size="md" showLabel /> : null;
 };
 import TrustGuarantee from '@/components/TrustGuarantee';
+import DailyPostHighlight from '@/components/profile/DailyPostHighlight';
 import TestimonialsCarousel from '@/components/TestimonialsCarousel';
 import SponsorAd from '@/components/SponsorAd';
 import GamificationLevelBadge from '@/components/dashboard/GamificationLevelBadge';
@@ -1256,6 +1257,7 @@ const ProviderProfile = () => {
 
   const renderAboutWithGuarantee = () => (
     <>
+      {provider?.id ? <div className="mt-6"><DailyPostHighlight providerId={provider.id} /></div> : null}
       {renderAbout()}
       <TrustGuarantee />
     </>

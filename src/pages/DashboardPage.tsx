@@ -51,6 +51,7 @@ import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
 import CategoryBenchmarkWidget from '@/components/dashboard/CategoryBenchmarkWidget';
 import RegionalDemandWidget from '@/components/dashboard/RegionalDemandWidget';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
+import DailyPostCard from '@/components/dashboard/DailyPostCard';
 import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
 import EngagementLoop from '@/components/dashboard/EngagementLoop';
 import AchievementHistory from '@/components/dashboard/AchievementHistory';
@@ -909,6 +910,15 @@ const DashboardPage = () => {
           )}
         </AnimatePresence>
       </GlassCard>
+
+      {/* Lote 4 — Frescor & Inteligência */}
+      {provider?.id && (
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <DailyPostCard />
+          <RegionalDemandWidget />
+          <WeeklySummary />
+        </div>
+      )}
 
       {/* Nossa história — referência à luta */}
       <OurStoryBanner variant="compact" />
