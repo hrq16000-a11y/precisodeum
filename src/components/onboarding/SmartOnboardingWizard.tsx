@@ -1052,7 +1052,8 @@ const BasicOnboardingWizard = () => {
             <div><span className="text-amber-300">profileType:</span> {String(profileType)} ({providerSubtype || '—'})</div>
             <div className={fullName.trim() ? 'text-emerald-300' : 'text-rose-300'}>fullName: {fullName ? '✓ "' + fullName + '"' : '✗ vazio'}</div>
             <div className={city ? 'text-emerald-300' : 'text-rose-300'}>city: {city ? '✓ ' + city : '✗ vazio'}</div>
-            <div className={state ? 'text-emerald-300' : 'text-rose-300'}>state: {state ? '✓ ' + state : '✗ vazio (UF)'}</div>
+            <div className={safeUF(state) ? 'text-emerald-300' : 'text-rose-300'}>state: {state ? (safeUF(state) ? '✓ ' + safeUF(state) : '✗ inválido "' + state + '"') : '✗ vazio (UF)'}</div>
+            <div className={neighborhood.trim() ? 'text-emerald-300' : 'text-amber-300'}>neighborhood: {neighborhood.trim() ? '✓ ' + neighborhood : '— (opcional)'}</div>
             <div className={validateWhatsapp(whatsapp).valid ? 'text-emerald-300' : 'text-rose-300'}>
               whatsapp: {whatsapp ? whatsapp : '✗ vazio'} {!validateWhatsapp(whatsapp).valid && `(${validateWhatsapp(whatsapp).reason})`}
             </div>
@@ -1060,19 +1061,56 @@ const BasicOnboardingWizard = () => {
               category: {selectedCategoryIds.length || 0} selecionada(s)
             </div>
             <div><span className="text-amber-300">taxId len:</span> {(taxId || '').replace(/\D/g, '').length}</div>
-            <div><span className="text-amber-300">canAdvanceFromStep3:</span> {String(canAdvanceFromStep3)}</div>
+            <div><span className="text-amber-300">canAdvance:</span> step2={String(canAdvanceFromStep2)} · step3={String(canAdvanceFromStep3)}</div>
             <div><span className="text-amber-300">saving:</span> {String(saving)}</div>
+            {stepErrors.length > 0 && (
+              <div className="mt-1 rounded border border-rose-400/60 bg-rose-950/30 p-1.5">
+                <div className="font-bold text-rose-300">Erros do passo {step}:</div>
+                {stepErrors.map((e, i) => (
+                  <div key={i} className="text-rose-100">· {e.field}: {e.message}</div>
+                ))}
+              </div>
+            )}
           </div>
           {lastSaveError && (
             <div className="mt-2 rounded border border-rose-400/60 bg-rose-950/40 p-2 text-rose-100">
-              <div className="font-bold text-rose-300">Último erro de save:</div>
-              <div>step: {lastSaveError.step} · {new Date(lastSaveError.when).toLocaleTimeString()}</div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-rose-300">Último erro de save</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const text = JSON.stringify({
+                        step: lastSaveError.step,
+                        when: lastSaveError.when,
+                        table: lastSaveError.table,
+                        stage: lastSaveError.stage,
+                        field: lastSaveError.field,
+                        code: lastSaveError.code,
+                        message: lastSaveError.message,
+                        details: lastSaveError.details,
+                        hint: lastSaveError.hint,
+                        payload: lastSaveError.payload,
+                      }, null, 2);
+                      await navigator.clipboard.writeText(text);
+                      setDebugCopied(true);
+                      setTimeout(() => setDebugCopied(false), 1800);
+                    } catch {
+                      toast.error('Não foi possível copiar.');
+                    }
+                  }}
+                  className="rounded bg-rose-500/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-50 hover:bg-rose-500/50"
+                >{debugCopied ? '✓ copiado' : 'copiar payload'}</button>
+              </div>
+              <div className="mt-1">step: {lastSaveError.step} · {new Date(lastSaveError.when).toLocaleTimeString()}</div>
               <div>table: <span className="text-amber-300">{lastSaveError.table}</span></div>
+              {lastSaveError.stage && <div>stage: <span className="text-amber-300">{lastSaveError.stage}</span></div>}
+              {lastSaveError.field && <div>field: <span className="text-amber-300">{lastSaveError.field}</span></div>}
               {lastSaveError.code && <div>code: {lastSaveError.code}</div>}
               <div>message: {lastSaveError.message}</div>
               {lastSaveError.details && <div>details: {lastSaveError.details}</div>}
               {lastSaveError.hint && <div>hint: {lastSaveError.hint}</div>}
-              {lastSaveError.payloadKeys && <div>payload: [{lastSaveError.payloadKeys.join(', ')}]</div>}
+              {lastSaveError.payloadKeys && <div>payload keys: [{lastSaveError.payloadKeys.join(', ')}]</div>}
             </div>
           )}
           <div className="mt-2 text-[9px] text-amber-300/60">
