@@ -1861,6 +1861,41 @@ const ProviderProfile = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Sticky header: nome do prestador + selo Top fixos no topo durante o scroll */}
+      <AnimatePresence initial={false}>
+        {provider && showStickyName && (
+          <motion.div
+            key="sticky-provider-name"
+            role="banner"
+            aria-label={`Cabeçalho fixo: ${name}`}
+            className="fixed inset-x-0 top-0 z-[998] border-b border-border bg-card/95 px-3 py-2 shadow-sm backdrop-blur-lg"
+            initial={{ y: -40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -40, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 32 }}
+          >
+            <div className="container flex items-center gap-2 min-w-0">
+              {avatarUrl && (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="h-8 w-8 shrink-0 rounded-full object-cover"
+                  loading="lazy"
+                />
+              )}
+              <span className="truncate font-display text-sm font-semibold text-foreground">
+                {name}
+              </span>
+              {provider.user_id && (
+                <span className="shrink-0">
+                  <ProviderTopBadgeInline userId={provider.user_id} />
+                </span>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Sticky CTA bar for mobile */}
       <AnimatePresence initial={false}>
         {effectiveWhatsApp && showStickyContact && (
