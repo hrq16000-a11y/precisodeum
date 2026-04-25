@@ -139,6 +139,7 @@ const BasicOnboardingWizard = () => {
   const [state, setState] = useState((profile?.state as string) || geoState || '');
   const [editingCity, setEditingCity] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url ?? null);
+  const [neighborhood, setNeighborhood] = useState<string>(((profile as any)?.neighborhood as string) || '');
 
   // Contato + bio (Passo 3)
   const [whatsapp, setWhatsapp] = useState(sanitizePhone(profile?.whatsapp || profile?.phone || ''));
