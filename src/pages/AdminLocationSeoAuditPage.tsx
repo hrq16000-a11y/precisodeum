@@ -141,5 +141,6 @@ export default function AdminLocationSeoAuditPage() {
         </Card>
       )}
     </div>
+    </AdminLayout>
   );
 }
