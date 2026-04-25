@@ -1782,6 +1782,7 @@ export type Database = {
       leads: {
         Row: {
           client_name: string
+          closed_at: string | null
           created_at: string
           followup_window_hours: number
           id: string
@@ -1800,6 +1801,7 @@ export type Database = {
         }
         Insert: {
           client_name: string
+          closed_at?: string | null
           created_at?: string
           followup_window_hours?: number
           id?: string
@@ -1818,6 +1820,7 @@ export type Database = {
         }
         Update: {
           client_name?: string
+          closed_at?: string | null
           created_at?: string
           followup_window_hours?: number
           id?: string
@@ -6238,7 +6241,17 @@ export type Database = {
           verified_since: string
         }[]
       }
+      get_review_short_link: { Args: { _provider_id: string }; Returns: Json }
       get_rss_import_headers: { Args: never; Returns: Json }
+      get_search_demand_stats: {
+        Args: { _provider_id: string }
+        Returns: {
+          city: string
+          location_label: string
+          neighborhood: string
+          search_count: number
+        }[]
+      }
       get_smart_ads: {
         Args: {
           _location_key: string
@@ -6340,6 +6353,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      mark_lead_as_concluded: { Args: { _lead_id: string }; Returns: Json }
       nearby_providers: {
         Args: {
           _category_slug?: string
