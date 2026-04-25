@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Send, Trash2, Loader2, Clock3, Sparkles } from 'lucide-react';
+import { Camera, Send, Trash2, Loader2, Clock3, Sparkles, X, Upload } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,8 @@ export default function DailyPostCard() {
   const [imageUrl, setImageUrl] = useState('');
   const [posting, setPosting] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { data: active, isLoading } = useQuery({
     queryKey: ['daily-post', provider?.id],
@@ -113,6 +115,50 @@ export default function DailyPostCard() {
     }
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !provider) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecione uma imagem (JPG, PNG ou WebP).');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error('A imagem precisa ter até 8MB.');
+      return;
+    }
+    setUploading(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const { data: { session } } = await supabase.auth.getSession();
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucket', 'portfolio');
+      formData.append('folder', `daily-posts/${provider.user_id}`);
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/optimize-image`,
+        {
+          method: 'POST',
+          headers: session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : undefined,
+          body: formData,
+        },
+      );
+      if (!res.ok) throw new Error(`upload_failed_${res.status}`);
+      const json = await res.json();
+      const url = json?.url || json?.publicUrl || json?.data?.url;
+      if (!url) throw new Error('no_url_returned');
+      setImageUrl(url);
+      toast.success('Foto enviada — pronta para publicar.');
+    } catch (err) {
+      console.error('[DailyPost upload]', err);
+      toast.error('Não foi possível enviar a foto. Tente novamente.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <GlassCard variant="default" className="overflow-hidden">
       <div className="flex items-center gap-3">
@@ -184,20 +230,60 @@ export default function DailyPostCard() {
               className="resize-none text-sm"
             />
             <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Camera className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="URL da foto (opcional)"
-                  className="w-full rounded-md border border-input bg-background px-8 py-1.5 text-xs outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-              <span className="text-[10px] text-muted-foreground">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || posting}
+                className="h-9 flex-1 gap-1.5 text-xs"
+              >
+                {uploading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : imageUrl ? (
+                  <Camera className="h-3.5 w-3.5 text-emerald-600" />
+                ) : (
+                  <Upload className="h-3.5 w-3.5" />
+                )}
+                {uploading
+                  ? 'Enviando...'
+                  : imageUrl
+                    ? 'Foto pronta — trocar'
+                    : 'Adicionar 1 foto (opcional)'}
+              </Button>
+              {imageUrl && !uploading && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setImageUrl('')}
+                  className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
+                  aria-label="Remover foto"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                 {caption.length}/{MAX_LEN}
               </span>
             </div>
+            {imageUrl && !uploading && (
+              <div className="overflow-hidden rounded-lg border border-fuchsia-500/20">
+                <img
+                  src={imageUrl}
+                  alt="Pré-visualização da Obra do Dia"
+                  className="max-h-40 w-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            )}
             <Button
               size="sm"
               onClick={handlePost}
