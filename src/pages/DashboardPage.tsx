@@ -1008,15 +1008,13 @@ const DashboardPage = () => {
         </AnimatePresence>
       </GlassCard>
 
-      {/* Lote 4 — Frescor & Inteligência */}
+      {/* Lote 4 — Frescor & Inteligência (sem duplicar widgets já exibidos acima) */}
       {provider?.id && (
         <>
           <div className="mt-6">
             <MissedOpportunitiesWidget />
           </div>
-          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <RegionalDemandWidget />
-            <WeeklySummary />
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
             <ReferralInviteCard />
           </div>
         </>
