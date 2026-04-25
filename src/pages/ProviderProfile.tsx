@@ -293,7 +293,9 @@ const ProviderProfile = () => {
   const [relatedProviders, setRelatedProviders] = useState<any[]>([]);
   const [showStickyContact, setShowStickyContact] = useState(false);
   const [showEmergencyContact, setShowEmergencyContact] = useState(false);
+  const [showStickyName, setShowStickyName] = useState(false);
   const mainWhatsappRef = useRef<HTMLDivElement | null>(null);
+  const nameAnchorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let active = true;
