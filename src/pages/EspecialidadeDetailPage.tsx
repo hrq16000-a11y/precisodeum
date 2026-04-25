@@ -30,6 +30,7 @@ const EspecialidadeDetailPage = () => {
 
   const tips = useMemo(() => getExpertTips(slug), [slug]);
   const displayName = category?.name || slug.replace(/-/g, ' ');
+  const faqs = useMemo(() => getCategoryFaqs(slug, displayName), [slug, displayName]);
   const top = providers.slice(0, 6);
 
   useSeoHead({
