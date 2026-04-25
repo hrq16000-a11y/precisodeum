@@ -698,4 +698,110 @@ const DashboardLeadsPage = () => {
   );
 };
 
+// ---------------------------------------------------------------------------
+// Sub-componente: Cliques diretos (click_only)
+// Lista compacta, separada do pipeline, com filtro por tipo de clique e
+// breakdown de WhatsApp x Ligar. Não polui o funil principal de leads.
+// ---------------------------------------------------------------------------
+type ClickFilter = 'all' | 'whatsapp' | 'phone';
+
+const ClickOnlySection = ({
+  leads,
+  totalWhatsapp,
+  totalPhone,
+}: {
+  leads: LeadRow[];
+  totalWhatsapp: number;
+  totalPhone: number;
+}) => {
+  const [filter, setFilter] = useState<ClickFilter>('all');
+  const filtered = useMemo(() => {
+    if (filter === 'all') return leads;
+    return leads.filter((l) => (l.lead_context as any)?.contact_kind === filter);
+  }, [leads, filter]);
+
+  return (
+    <section className="mt-8 rounded-xl border border-border bg-card/40 p-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+            <Compass className="h-4 w-4 text-muted-foreground" />
+            Cliques diretos
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Visitantes que clicaram em WhatsApp ou Ligar no seu perfil público — não entram no pipeline principal.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <Button
+            size="sm"
+            variant={filter === 'all' ? 'default' : 'outline'}
+            onClick={() => setFilter('all')}
+            className="h-7 px-2.5 text-xs"
+          >
+            Todos <Badge variant="secondary" className="ml-1.5 h-4 px-1.5 text-[10px]">{leads.length}</Badge>
+          </Button>
+          <Button
+            size="sm"
+            variant={filter === 'whatsapp' ? 'default' : 'outline'}
+            onClick={() => setFilter('whatsapp')}
+            className="h-7 px-2.5 text-xs"
+          >
+            <MessageCircle className="h-3 w-3 mr-1" />
+            WhatsApp <Badge variant="secondary" className="ml-1.5 h-4 px-1.5 text-[10px]">{totalWhatsapp}</Badge>
+          </Button>
+          <Button
+            size="sm"
+            variant={filter === 'phone' ? 'default' : 'outline'}
+            onClick={() => setFilter('phone')}
+            className="h-7 px-2.5 text-xs"
+          >
+            <Phone className="h-3 w-3 mr-1" />
+            Ligar <Badge variant="secondary" className="ml-1.5 h-4 px-1.5 text-[10px]">{totalPhone}</Badge>
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-4 divide-y divide-border/60 rounded-lg border border-border/60 bg-background/60">
+        {filtered.length === 0 && (
+          <p className="px-3 py-4 text-xs text-muted-foreground">Nenhum clique deste tipo.</p>
+        )}
+        {filtered.slice(0, 30).map((l) => {
+          const ctx = (l.lead_context || {}) as any;
+          const kind = ctx.contact_kind === 'phone' ? 'phone' : 'whatsapp';
+          const loc = formatLeadLocation(l.lead_context);
+          const cat = ctx.category || ctx.service || null;
+          const when = formatDistanceToNow(new Date(l.created_at), { addSuffix: true, locale: ptBR });
+          return (
+            <div key={l.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5 text-xs">
+              <Badge variant="outline" className="gap-1">
+                {kind === 'whatsapp' ? <MessageCircle className="h-3 w-3" /> : <Phone className="h-3 w-3" />}
+                {kind === 'whatsapp' ? 'WhatsApp' : 'Ligar'}
+              </Badge>
+              {cat && (
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  <Tag className="h-3 w-3" />
+                  {cat}
+                </span>
+              )}
+              {loc && (
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  <MapPin className="h-3 w-3" />
+                  {loc}
+                </span>
+              )}
+              <span className="ml-auto text-muted-foreground">{when}</span>
+            </div>
+          );
+        })}
+      </div>
+      {filtered.length > 30 && (
+        <p className="mt-2 text-[11px] text-muted-foreground text-right">
+          Mostrando os 30 cliques mais recentes de {filtered.length}.
+        </p>
+      )}
+    </section>
+  );
+};
+
 export default DashboardLeadsPage;
