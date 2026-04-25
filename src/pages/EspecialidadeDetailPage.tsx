@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowRight, Lightbulb, ChevronRight } from 'lucide-react';
+import { ArrowRight, Lightbulb, ChevronRight, HelpCircle, ChevronDown } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProviderCard from '@/components/ProviderCard';
