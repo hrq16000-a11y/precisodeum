@@ -1411,9 +1411,9 @@ const GuidedReviewCard = ({
       ))}
     </div>
     <div className="mt-4 grid gap-2 sm:grid-cols-3">
-      <Button type="button" variant="ghost" onClick={onPrev} disabled={!canGoPrev}>Voltar item</Button>
-      <Button type="button" variant="outline" onClick={onEdit}>Ajustar Informação</Button>
-      <Button type="button" variant="accent" onClick={onKeep}>Manter</Button>
+      <Button type="button" variant="ghost" onClick={onPrev} disabled={!canGoPrev}>Voltar</Button>
+      <Button type="button" variant="outline" onClick={onEdit}>Editar</Button>
+      <Button type="button" variant="accent" onClick={onKeep}>Confirmar</Button>
     </div>
   </div>
 );
