@@ -963,6 +963,7 @@ const DashboardPage = () => {
 
       {/* Tour guiado de 3 passos para tier "novato" — respeita dismiss server-side */}
       <DashboardTour />
+      </div>
     </DashboardLayout>
   );
 };
