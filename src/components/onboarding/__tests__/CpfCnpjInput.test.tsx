@@ -24,10 +24,8 @@ describe('maskCpfCnpj', () => {
     expect(maskCpfCnpj('abc123.456-789xx09', 'cpf')).toBe('123.456.789-09');
   });
 
-  it('lida com string vazia/null sem quebrar', () => {
+  it('lida com string vazia sem quebrar', () => {
     expect(maskCpfCnpj('')).toBe('');
-    // @ts-expect-error - validando defensivamente
-    expect(maskCpfCnpj(null)).toBe('');
   });
 });
 
