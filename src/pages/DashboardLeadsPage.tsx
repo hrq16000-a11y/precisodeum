@@ -29,6 +29,7 @@ import {
   type FollowupWindow,
   type LeadRow,
 } from '@/hooks/useLeadFollowup';
+import { useNewLeadAlerts } from '@/hooks/useNewLeadAlerts';
 
 interface LeadHistoryItem {
   id: string;
@@ -83,6 +84,7 @@ const DashboardLeadsPage = () => {
   const [followupTo, setFollowupTo] = useState(searchParams.get('ft') || '');
   const [cityFilter, setCityFilter] = useState<string>(searchParams.get('city') || 'all');
   const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get('cat') || 'all');
+  const [ufFilter, setUfFilter] = useState<string>(searchParams.get('uf') || 'all');
   const [showAdvanced, setShowAdvanced] = useState(
     !!(searchParams.get('cf') || searchParams.get('ct') || searchParams.get('ff') || searchParams.get('ft'))
   );
@@ -93,7 +95,7 @@ const DashboardLeadsPage = () => {
   const PAGE_SIZE = 20;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  // Persistir filtros na URL
+  // Persistir filtros na URL (city/cat/uf são compartilháveis)
   useEffect(() => {
     const params: Record<string, string> = {};
     if (statusFilter !== 'all') params.status = statusFilter;
@@ -104,8 +106,16 @@ const DashboardLeadsPage = () => {
     if (followupTo) params.ft = followupTo;
     if (cityFilter !== 'all') params.city = cityFilter;
     if (categoryFilter !== 'all') params.cat = categoryFilter;
+    if (ufFilter !== 'all') params.uf = ufFilter;
     setSearchParams(params, { replace: true });
-  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, setSearchParams]);
+  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, ufFilter, setSearchParams]);
+
+  // ─── Realtime: novos leads + alerta quando estiver fora do filtro atual ───
+  const { outsideFilterCount, resetOutsideCount } = useNewLeadAlerts(provider?.id, {
+    city: cityFilter,
+    category: categoryFilter,
+    uf: ufFilter,
+  });
 
   // Re-render minute-by-minute para atualizar relativos e badge "vencido"
   useEffect(() => {
@@ -143,6 +153,15 @@ const DashboardLeadsPage = () => {
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }, [leads]);
 
+  const ufOptions = useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach((l) => {
+      const uf = String(l.lead_context?.state || '').trim().toUpperCase();
+      if (/^[A-Z]{2}$/.test(uf)) set.add(uf);
+    });
+    return Array.from(set).sort();
+  }, [leads]);
+
   const filteredLeads = useMemo(() => {
     let arr = leads;
     if (statusFilter === 'overdue') arr = arr.filter(isOverdue);
@@ -161,13 +180,14 @@ const DashboardLeadsPage = () => {
     if (followupFrom || followupTo) arr = arr.filter(l => inRange(l.next_followup_at, followupFrom, followupTo));
     if (cityFilter !== 'all') arr = arr.filter(l => formatLeadLocation(l.lead_context) === cityFilter);
     if (categoryFilter !== 'all') arr = arr.filter(l => (l.lead_context?.category || '').trim() === categoryFilter);
+    if (ufFilter !== 'all') arr = arr.filter(l => String(l.lead_context?.state || '').trim().toUpperCase() === ufFilter);
     return arr;
-  }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter]);
+  }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, ufFilter]);
 
   // Reset paginação quando filtros/lista mudarem
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter]);
+  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, ufFilter]);
 
   const visibleLeads = useMemo(() => filteredLeads.slice(0, visibleCount), [filteredLeads, visibleCount]);
   const hasMore = filteredLeads.length > visibleCount;
@@ -176,7 +196,7 @@ const DashboardLeadsPage = () => {
 
   const clearFilters = () => {
     setSearch(''); setCreatedFrom(''); setCreatedTo(''); setFollowupFrom(''); setFollowupTo('');
-    setStatusFilter('all'); setCityFilter('all'); setCategoryFilter('all');
+    setStatusFilter('all'); setCityFilter('all'); setCategoryFilter('all'); setUfFilter('all');
   };
 
   const handleExportCsv = () => exportLeadsCsv({
@@ -326,6 +346,30 @@ const DashboardLeadsPage = () => {
         </div>
       </motion.div>
 
+      {/* Alerta: novos leads chegaram fora do filtro atual */}
+      {outsideFilterCount > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm"
+        >
+          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+            <Bell className="h-4 w-4" />
+            <span className="font-semibold">
+              {outsideFilterCount} novo(s) lead(s) fora do filtro atual
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" size="sm" variant="ghost" onClick={resetOutsideCount}>
+              Ignorar
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => { clearFilters(); resetOutsideCount(); }}>
+              Limpar filtros
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Toolbar: busca, filtros avançados e exportação */}
       <div className="mt-4 rounded-xl border border-border bg-card p-3 shadow-card">
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -363,6 +407,23 @@ const DashboardLeadsPage = () => {
               ))}
             </SelectContent>
           </Select>
+          {/* Filtro por UF (estado) — lê lead_context.state */}
+          {ufOptions.length > 0 && (
+            <Select value={ufFilter} onValueChange={setUfFilter}>
+              <SelectTrigger className="w-full sm:w-28" aria-label="Filtrar por UF">
+                <div className="flex items-center gap-1.5">
+                  <Compass size={14} strokeWidth={1.5} />
+                  <SelectValue placeholder="UF" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas UF</SelectItem>
+                {ufOptions.map((uf) => (
+                  <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button type="button" variant={showAdvanced ? 'default' : 'outline'} size="sm" onClick={() => setShowAdvanced(v => !v)} className="gap-1">
             <Filter className="h-4 w-4" /> Mais filtros
           </Button>

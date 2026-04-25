@@ -15,4 +15,19 @@
   <sitemap>
     <loc>https://precisodeum.com.br/sitemap?type=cities</loc>
   </sitemap>
+  <sitemap>
+    <loc>https://precisodeum.com.br/sitemap?type=blog</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://precisodeum.com.br/sitemap?type=jobs</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://precisodeum.com.br/sitemap?type=pages</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://precisodeum.com.br/sitemap?type=popular</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://precisodeum.com.br/sitemap?type=seo</loc>
+  </sitemap>
 </sitemapindex>
