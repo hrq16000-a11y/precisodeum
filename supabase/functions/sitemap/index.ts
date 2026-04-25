@@ -46,6 +46,7 @@ ${entries}
     urls += entry(siteUrl, '/', today, 'daily', '1.0');
     urls += entry(siteUrl, '/buscar', today, 'daily', '0.8');
     urls += entry(siteUrl, '/categorias', today, 'weekly', '0.8');
+    urls += entry(siteUrl, '/especialidades', today, 'weekly', '0.8');
     urls += entry(siteUrl, '/cidades', today, 'weekly', '0.8');
     urls += entry(siteUrl, '/servicos', today, 'weekly', '0.7');
     urls += entry(siteUrl, '/vagas', today, 'daily', '0.7');
