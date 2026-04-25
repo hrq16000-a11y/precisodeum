@@ -8,10 +8,12 @@ import { useWizardAutoSave, readWizardDraft } from '@/hooks/useWizardAutoSave';
 import { useWizardDuplicateCheck } from '@/hooks/useWizardDuplicateCheck';
 import WizardScoreHeader from './WizardScoreHeader';
 import PublicProfilePreview from './PublicProfilePreview';
+import Step1ProfileType from './Step1ProfileType';
 import type {
   ProfileWizardData,
   ProfileWizardProps,
   WizardMode,
+  ProfileTypeChoice,
 } from './types';
 
 /** Estado inicial seguro do wizard. */
@@ -174,10 +176,18 @@ const ProfileWizard = ({ mode, initialData, onFinish, onCancel }: ProfileWizardP
           `handleDocumentBlur` e o estado `data`/`setData` deste shell. */}
       <div className="min-h-[240px] py-2 text-sm">
         {mode === 'create' && step === 0 && (
-          <div className="text-muted-foreground">
-            <p className="font-medium text-foreground mb-1">Passo 1 — Tipo de cadastro</p>
-            <p>Escolha entre Pessoa Física ou Jurídica (formulário a portar).</p>
-          </div>
+          <Step1ProfileType
+            existingProfileType={(data.profile_type as ProfileTypeChoice | undefined) ?? null}
+            onContinueProfileUpdate={() => setStep(1)}
+            onSelectType={(type, subtype) => {
+              setData((prev) => ({
+                ...prev,
+                profile_type: type,
+                kind: subtype === 'company' ? 'pj' : 'pf',
+              }));
+              setStep(1);
+            }}
+          />
         )}
         {step === 1 && (
           <div className="text-muted-foreground space-y-2">
@@ -232,14 +242,17 @@ const ProfileWizard = ({ mode, initialData, onFinish, onCancel }: ProfileWizardP
               Voltar
             </Button>
           )}
-          <Button
-            type="button"
-            onClick={handleAdvance}
-            disabled={isSaving || checking.whatsapp || checking.tax_id}
-          >
-            {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {step < LAST_STEP ? 'Avançar' : finishLabel}
-          </Button>
+          {/* Step 0 (seleção de tipo) avança ao clicar nos cards — esconde "Avançar". */}
+          {!(mode === 'create' && step === 0) && (
+            <Button
+              type="button"
+              onClick={handleAdvance}
+              disabled={isSaving || checking.whatsapp || checking.tax_id}
+            >
+              {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {step < LAST_STEP ? 'Avançar' : finishLabel}
+            </Button>
+          )}
         </div>
       </div>
     </div>
