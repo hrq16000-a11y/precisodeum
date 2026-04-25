@@ -19,6 +19,10 @@ vi.mock('@/integrations/supabase/client', () => {
   };
   return {
     supabase: {
+      rpc: () => Promise.resolve({
+        data: [{ id: 'c1', name: 'Curitiba', state: 'PR', state_uf: 'PR' }],
+        error: null,
+      }),
       from: () => builder,
     },
   };
