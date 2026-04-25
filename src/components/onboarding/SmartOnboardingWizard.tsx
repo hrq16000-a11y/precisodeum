@@ -280,9 +280,13 @@ const BasicOnboardingWizard = () => {
   const handleUsePreciseLocation = async () => {
     setRequestingGps(true);
     try {
-      const ok = await requestPreciseLocation();
-      if (ok) {
-        toast.success('Localização precisa ativada.');
+      const result = await requestPreciseLocation({ force: true });
+      if (result.ok) {
+        // Sincroniza explicitamente o estado local do wizard com o que o GPS resolveu,
+        // mesmo que o usuário já tivesse uma cidade preenchida (manual ou aproximada).
+        if (result.city) setCity(result.city);
+        if (result.state) setState(result.state);
+        toast.success(`Localização precisa ativada${result.city ? `: ${result.city}` : ''}.`);
         dismissGeoFailure();
         setEditingCity(false);
         window.setTimeout(handleStepFieldBlur, 0);
