@@ -1820,6 +1820,7 @@ export type Database = {
           last_status_at: string
           lead_context: Json
           lead_score: number
+          lead_type: string
           message: string | null
           next_followup_at: string | null
           phone: string
@@ -1840,6 +1841,7 @@ export type Database = {
           last_status_at?: string
           lead_context?: Json
           lead_score?: number
+          lead_type?: string
           message?: string | null
           next_followup_at?: string | null
           phone: string
@@ -1860,6 +1862,7 @@ export type Database = {
           last_status_at?: string
           lead_context?: Json
           lead_score?: number
+          lead_type?: string
           message?: string | null
           next_followup_at?: string | null
           phone?: string
@@ -6567,6 +6570,15 @@ export type Database = {
         Returns: number
       }
       refresh_featured_providers_mv: { Args: never; Returns: undefined }
+      register_click_lead: {
+        Args: {
+          _contact_kind: string
+          _lead_context?: Json
+          _provider_id: string
+          _service_needed?: string
+        }
+        Returns: string
+      }
       register_daily_checkin: { Args: never; Returns: Json }
       register_dashboard_visit: {
         Args: never

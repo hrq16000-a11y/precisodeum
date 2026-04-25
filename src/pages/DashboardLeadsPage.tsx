@@ -123,7 +123,18 @@ const DashboardLeadsPage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const leads = useMemo(() => sortLeads(rawLeads), [rawLeads]);
+  // Pipeline principal exclui leads do tipo 'click_only' (cliques diretos em
+  // WhatsApp/Ligar) — eles aparecem em um indicador separado e não poluem o
+  // funil de leads qualificados.
+  const qualifiedRaw = useMemo(
+    () => rawLeads.filter((l) => ((l as any).lead_type ?? 'qualified') !== 'click_only'),
+    [rawLeads],
+  );
+  const clickOnlyCount = useMemo(
+    () => rawLeads.filter((l) => (l as any).lead_type === 'click_only').length,
+    [rawLeads],
+  );
+  const leads = useMemo(() => sortLeads(qualifiedRaw), [qualifiedRaw]);
 
   const inRange = (iso: string | null | undefined, from: string, to: string) => {
     if (!iso) return !from && !to;
@@ -322,6 +333,14 @@ const DashboardLeadsPage = () => {
                 <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive">
                   <AlertTriangle className="h-3 w-3" />
                   {overdueCount} pendente{overdueCount > 1 ? 's' : ''} de follow-up
+                </span>
+              )}
+              {clickOnlyCount > 0 && (
+                <span
+                  className="ml-2 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                  title="Cliques diretos em WhatsApp/Ligar — não entram no pipeline principal"
+                >
+                  {clickOnlyCount} clique{clickOnlyCount > 1 ? 's' : ''} direto{clickOnlyCount > 1 ? 's' : ''}
                 </span>
               )}
             </p>
