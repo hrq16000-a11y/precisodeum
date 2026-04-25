@@ -21,7 +21,9 @@ export type ProfileTypeChoice = 'provider' | 'client' | 'rh' | 'sponsor';
  */
 export interface ProfileWizardData {
   id?: string;
-  kind: ProfileKind;            // PF ou PJ
+  /** Tipo de conta (escolhido no Step 1 em modo create). */
+  profile_type?: ProfileTypeChoice;
+  kind: ProfileKind;            // PF ou PJ (relevante quando profile_type === 'provider')
   full_name: string;
   whatsapp: string;             // somente dígitos (ex: 5541997452053)
   document: string;             // CPF (11) ou CNPJ (14), somente dígitos
