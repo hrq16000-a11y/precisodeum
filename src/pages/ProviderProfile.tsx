@@ -1866,13 +1866,27 @@ const ProviderProfile = () => {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Serviço necessário</label>
-                  <input type="text" placeholder="Ex: Reforma de banheiro" required value={leadForm.service}
+                  <input type="text" placeholder={category ? `Ex: ${category}` : 'Ex: Reforma de banheiro'} required value={leadForm.service}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
                     className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
                 </div>
+                <div className="grid grid-cols-[1fr_84px] gap-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Sua cidade</label>
+                    <input type="text" placeholder="Cidade" value={leadForm.city}
+                      onChange={(e) => setLeadForm(prev => ({ ...prev, city: e.target.value }))}
+                      className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">UF</label>
+                    <input type="text" placeholder="UF" maxLength={2} value={leadForm.state}
+                      onChange={(e) => setLeadForm(prev => ({ ...prev, state: e.target.value.toUpperCase().slice(0, 2) }))}
+                      className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm uppercase text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                  </div>
+                </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Mensagem</label>
-                  <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
+                  <textarea placeholder={category ? `Conte rapidamente o que precisa em ${category.toLowerCase()}...` : 'Descreva o que precisa...'} rows={3} value={leadForm.message}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
                     className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none resize-none transition-all`} />
                 </div>
