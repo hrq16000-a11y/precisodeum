@@ -11,7 +11,7 @@ export interface ServiceTemplate {
 export const SERVICE_TEMPLATES: Record<string, ServiceTemplate[]> = {
   'eletricista': [
     { label: 'Instalação de Chuveiro', description: 'Instalação e manutenção de chuveiros elétricos com segurança e agilidade. Trabalho com todas as marcas e modelos, incluindo troca de resistência e fiação adequada. Atendimento rápido e garantia de serviço.' },
-    { label: 'Troca de Fiação', description: 'Serviço completo de troca e reparo de fiação elétrica residencial e comercial. Adequação às normas da ABNT, instalação de disjuntores, tomadas e quadro de distribuição. Orçamento sem compromisso.' },
+    { label: 'Troca de Fiação', description: 'Serviço completo de troca e reparo de fiação elétrica residencial e comercial. Adequação às normas da ABNT, instalação de disjuntores, tomadas e quadro de distribuição. Negociação direta com o profissional.' },
     { label: 'Instalação Elétrica Completa', description: 'Projeto e execução de instalações elétricas residenciais e comerciais. Instalação de quadros, circuitos, iluminação LED e adequação ao padrão da concessionária. Profissional certificado com garantia.' },
     { label: 'Curto-Circuito e Reparos', description: 'Diagnóstico e reparo de curtos-circuitos, quedas de energia e problemas elétricos em geral. Atendimento de emergência com rapidez e segurança. Prevenção de riscos com manutenção preventiva.' },
   ],
