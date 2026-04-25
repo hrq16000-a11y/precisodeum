@@ -241,9 +241,15 @@ const installBootstrapGuards = () => {
     const reason = event.reason;
     const message = String(reason instanceof Error ? reason.message : reason || "").toLowerCase();
 
+    // Ignora falhas de módulos não-críticos (telemetria/animações/ads ranking)
+    const isNonCritical =
+      message.includes("performancetelemetry")
+      || message.includes("deferred-animations")
+      || message.includes("sponsorranking");
+
     if (
-      message.includes("dynamically imported module")
-      || message.includes("module script")
+      !isNonCritical
+      && (message.includes("dynamically imported module") || message.includes("module script"))
     ) {
       event.preventDefault?.();
       void tryAutomatedRecovery("unhandledrejection", reason);
@@ -278,9 +284,15 @@ const bootstrap = () => {
     });
 
     deferWork(() => {
-      import("./lib/performanceTelemetry").then((module) => module.installPerformanceTelemetry());
-      import("@/styles/deferred-animations.css");
-      import("@/lib/sponsorRanking").then((module) => module.cleanupFrequencyData());
+      // Imports não críticos: falhas aqui NÃO devem disparar auto-heal/reload.
+      import("./lib/performanceTelemetry")
+        .then((module) => module.installPerformanceTelemetry())
+        .catch((err) => console.warn("[bootstrap] performanceTelemetry skip", err));
+      import("@/styles/deferred-animations.css")
+        .catch((err) => console.warn("[bootstrap] deferred-animations skip", err));
+      import("@/lib/sponsorRanking")
+        .then((module) => module.cleanupFrequencyData())
+        .catch((err) => console.warn("[bootstrap] sponsorRanking skip", err));
       startVersionWatcher();
     });
 
