@@ -33,6 +33,8 @@ export default function DailyPostCard() {
   const [imageUrl, setImageUrl] = useState('');
   const [posting, setPosting] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { data: active, isLoading } = useQuery({
     queryKey: ['daily-post', provider?.id],
