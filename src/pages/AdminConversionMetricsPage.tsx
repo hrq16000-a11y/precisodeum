@@ -145,8 +145,6 @@ const AdminConversionMetricsPage = () => {
             Exportar CSV
           </Button>
         </div>
-          </p>
-        </div>
 
         {/* Filters */}
         <Card>
