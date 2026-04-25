@@ -448,6 +448,7 @@ const App = () => {
                 <Route path="/cidades/:estado/:cidade" element={<CityDetailPage />} />
                 <Route path="/categorias" element={<CategoriesListPage />} />
                 <Route path="/especialidades" element={<EspecialidadesPage />} />
+                <Route path="/especialidades/:slug" element={<EspecialidadeRedirect />} />
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/ajuda" element={<HelpCenterPage />} />
                 <Route path="/privacidade" element={<PrivacyPage />} />
