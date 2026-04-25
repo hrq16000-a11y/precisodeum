@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { whatsappLink } from '@/lib/whatsapp';
 import { formatDate, formatDeadline, formatCurrency } from '@/lib/formatters';
 import { Eye, Share2, Facebook, Linkedin } from 'lucide-react';
+import { formatCityState } from '@/lib/locationFormat';
 
 const renderList = (text: string) => {
   if (!text) return null;
@@ -40,7 +41,7 @@ const JobDetailPage = () => {
 
   useSeoHead({
     title: job ? `${job.title} - Vaga em ${job.city || 'Brasil'}` : 'Vaga',
-    description: job ? `${job.title} em ${job.city}-${job.state}. ${(job.description || '').slice(0, 120)}` : 'Vaga de serviço.',
+    description: job ? `${job.title} em ${formatCityState(job.city, job.state) || job.city}. ${(job.description || '').slice(0, 120)}` : 'Vaga de serviço.',
     canonical: pageUrl,
   });
 
@@ -151,7 +152,7 @@ const JobDetailPage = () => {
 
             <div className="flex flex-col gap-[0.625rem] sm:flex-row sm:flex-wrap sm:gap-[1rem] text-sm text-muted-foreground">
               {job.city && (
-                <InfoRow icon={MapPin}>{job.city}{job.state ? `, ${job.state}` : ''}{job.neighborhood ? ` - ${job.neighborhood}` : ''}</InfoRow>
+                <InfoRow icon={MapPin}>{formatCityState(job.city, job.state, ', ')}{job.neighborhood ? ` - ${job.neighborhood}` : ''}</InfoRow>
               )}
               {job.deadline && <InfoRow icon={Clock}>Prazo: {formatDeadline(job.deadline)}</InfoRow>}
               <InfoRow icon={Briefcase}>Publicada em {formatDate(job.created_at)}</InfoRow>

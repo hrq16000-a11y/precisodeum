@@ -8,6 +8,7 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { getCategoryFaqs } from '@/lib/categoryFaqs';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { cn } from '@/lib/utils';
+import { formatCityState } from '@/lib/locationFormat';
 
 interface Props {
   categorySlug: string;
@@ -92,7 +93,7 @@ const CategorySeoBlock = ({ categorySlug, categoryName, city, state, providersCo
   }, [faqs, categorySlug]);
   useJsonLd(faqLd, `json-ld-faq-categoria-${categorySlug}`);
 
-  const locationLabel = city ? `${city}${state ? ' / ' + state : ''}` : null;
+  const locationLabel = city ? (formatCityState(city, state, ' / ') || city) : null;
   const introTitle = locationLabel
     ? `${categoryName} em ${city}: como contratar com segurança`
     : `Como contratar um(a) ${categoryName.toLowerCase()} pelo Preciso de Um`;

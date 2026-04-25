@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { RefreshCw, Loader2, Search, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatCityState } from '@/lib/locationFormat';
 
 interface ProviderRow {
   id: string;
@@ -149,7 +150,7 @@ const AdminSeoAuditPage = () => {
                       <li key={p.id} className="py-2.5 flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="text-sm font-semibold text-foreground truncate">{p.business_name || '(sem nome)'}</div>
-                          <div className="text-xs text-muted-foreground">{p.city || '—'}{p.state ? `/${p.state}` : ''}</div>
+                          <div className="text-xs text-muted-foreground">{p.city ? formatCityState(p.city, p.state, '/') : '—'}</div>
                           <div className="flex gap-1 mt-1">
                             {isEmpty(p.meta_title) && <Badge variant="outline" className="text-[10px]"><AlertCircle className="h-3 w-3 mr-1" />title</Badge>}
                             {isEmpty(p.meta_description) && <Badge variant="outline" className="text-[10px]"><AlertCircle className="h-3 w-3 mr-1" />description</Badge>}

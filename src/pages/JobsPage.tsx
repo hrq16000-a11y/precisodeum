@@ -56,6 +56,7 @@ const PER_PAGE_OPTIONS = [10, 20, 30, 50];
 const NATIVE_AD_INTERVAL = 8;
 
 import { timeAgo } from '@/lib/formatters';
+import { formatCityState } from '@/lib/locationFormat';
 
 const JobsPage = () => {
   const { city: geoCity } = useGeoCity();
@@ -615,7 +616,7 @@ const JobsPage = () => {
                             {job.city && (
                               <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                                 <MapPin className="h-3 w-3 shrink-0 text-primary/60" />
-                                {job.city}{job.state ? `, ${job.state}` : ''}
+                                {formatCityState(job.city, job.state, ', ')}
                               </span>
                             )}
                             {(job as any).job_type && (

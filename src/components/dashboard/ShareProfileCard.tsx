@@ -6,6 +6,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
+import { formatCityState } from '@/lib/locationFormat';
 
 const SITE_BASE = 'https://precisodeum.lovable.app';
 
@@ -88,7 +89,7 @@ const ShareProfileCard = () => {
               {city && (
                 <p className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-1">
                   <MapPin className="h-3 w-3" />
-                  {city}{state ? `, ${state}` : ''}
+                  {formatCityState(city, state, ', ') || city}
                 </p>
               )}
 

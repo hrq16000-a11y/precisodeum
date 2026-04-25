@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Trophy, Briefcase, Image as ImageIcon, Star, MapPin, ShieldCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { formatCityState } from '@/lib/locationFormat';
 
 interface PublicAchievementsStripProps {
   userId: string;
@@ -118,7 +119,7 @@ const PublicAchievementsStrip = ({
   if (city && state) {
     items.push({
       key: 'region',
-      label: `Mestre da Região: ${city} - ${state}`,
+      label: `Mestre da Região: ${formatCityState(city, state) || city}`,
       icon: MapPin,
       cls: 'from-emerald-500/15 to-emerald-600/5 text-emerald-700 border-emerald-500/30',
     });

@@ -52,7 +52,7 @@ const ServiceDetailPage = () => {
 
   useSeoHead({
     title: svc ? `${svc.service_name} em ${city} – ${providerName}` : 'Serviço',
-    description: svc ? `${svc.service_name} em ${city}-${state}. ${svc.description?.slice(0, 120)}` : '',
+    description: svc ? `${svc.service_name} em ${formatCityState(city, state) || city}. ${svc.description?.slice(0, 120)}` : '',
     canonical: id ? `${SITE_BASE_URL}/servico-detalhe/${id}` : undefined,
   });
 

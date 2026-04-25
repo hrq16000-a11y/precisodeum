@@ -4,6 +4,7 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { normalize } from '@/lib/geoUtils';
+import { formatCityState } from '@/lib/locationFormat';
 
 interface GeoLocationChipProps {
   variant?: 'default' | 'hero';
@@ -57,7 +58,7 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
     }
   }, [open]);
 
-  const displayText = city ? `${city}${state ? `, ${state}` : ''}` : 'Definir localização';
+  const displayText = city ? (formatCityState(city, state) || 'Definir localização') : 'Definir localização';
 
   const filteredCities = useMemo(() => {
     const hasGps = latitude != null && longitude != null;

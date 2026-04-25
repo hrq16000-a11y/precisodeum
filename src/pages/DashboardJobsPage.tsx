@@ -15,6 +15,7 @@ import { parseJobText } from '@/lib/jobTextParser';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { formatCityState } from '@/lib/locationFormat';
 
 const OPPORTUNITY_TYPES = [
   { value: 'servico', label: 'Serviço' },
@@ -450,7 +451,7 @@ const DashboardJobsPage = () => {
                    )}
                  </div>
                  <p className="mt-0.5 text-xs text-muted-foreground">
-                   <CategoryIcon icon={(job.categories as any)?.icon} size={12} className="inline-block text-muted-foreground" /> {(job.categories as any)?.name || 'Sem categoria'} · {job.city}{job.state ? `, ${job.state}` : ''}
+                   <CategoryIcon icon={(job.categories as any)?.icon} size={12} className="inline-block text-muted-foreground" /> {(job.categories as any)?.name || 'Sem categoria'} · {formatCityState(job.city, job.state, ', ')}
                    {(job as any).view_count > 0 && <> · 👁 {(job as any).view_count} views</>}
                  </p>
               </div>

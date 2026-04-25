@@ -14,6 +14,7 @@ import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import { sanitizePhone } from '@/lib/whatsapp';
 import CategoryCombobox from '@/components/admin/CategoryCombobox';
 import UFSelect from '@/components/admin/UFSelect';
+import { formatCityState } from '@/lib/locationFormat';
 
 interface Props {
   provider: any;
@@ -43,7 +44,7 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
 
   // City autocomplete
   const [citySearch, setCitySearch] = useState(
-    provider.city ? (provider.state ? `${provider.city}, ${provider.state}` : provider.city) : ''
+    provider.city ? (formatCityState(provider.city, provider.state, ', ') || provider.city) : ''
   );
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [allCities, setAllCities] = useState<CityResult[]>([]);
