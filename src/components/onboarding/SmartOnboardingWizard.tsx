@@ -993,6 +993,8 @@ const BasicOnboardingWizard = () => {
         {!guidedReviewStep && !showFinalSummary && step === 3 && (
           <Step3Contact
             profileType={profileType}
+            providerSubtype={providerSubtype}
+            setProviderSubtype={setProviderSubtype}
             fullName={fullName}
             setFullName={setFullName}
             agencyName={agencyName}
