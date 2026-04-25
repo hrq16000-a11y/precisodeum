@@ -47,6 +47,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const { user } = useAuth();
   const { city: geoCity, state: geoState } = useGeoCity();
   const isOnline = useIsProviderOnline(provider.userId);
+  const isTopProfessional = useTopProfessional(provider.userId);
   const { data: engagementPoints = 0 } = useEngagementPoints(provider.userId);
   const engTier = getEngagementTier(engagementPoints);
   const prefetch = usePrefetchProvider();
@@ -205,6 +206,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                     {provider.communityVerified && (
                       <CommunityVerifiedBadge size="sm" />
                     )}
+                    {isTopProfessional && <TopProfessionalBadge size="sm" />}
                   </span>
                 </h3>
                 {engTier.showCrown && (
