@@ -6188,6 +6188,10 @@ export type Database = {
           user_ref: string
         }[]
       }
+      format_city_state: {
+        Args: { _city: string; _state: string }
+        Returns: string
+      }
       generate_referral_code: { Args: never; Returns: string }
       get_active_today_providers: {
         Args: never

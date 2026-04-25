@@ -828,12 +828,13 @@ const DashboardServicesPage = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-foreground">Preço (R$)</label>
+                    <label className="mb-1 block text-sm font-medium text-foreground">Preço (a partir de R$)</label>
                     <input
                       name="price"
                       value={form.price}
                       onChange={handleChange}
-                      placeholder="A partir de..."
+                      inputMode="decimal"
+                      placeholder="A partir de R$ 150,00"
                       className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
                     />
                   </div>

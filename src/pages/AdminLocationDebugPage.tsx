@@ -4,7 +4,9 @@ import { formatCityState, normalizeUF, safeUF } from '@/lib/locationFormat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, RefreshCw, Loader2 } from 'lucide-react';
+import AdminLayout from '@/components/AdminLayout';
+import { useAdmin } from '@/hooks/useAdmin';
 
 type Row = {
   source: 'profiles' | 'providers' | 'agencies';
@@ -29,6 +31,7 @@ const inspect = (row: Row) => {
 };
 
 export default function AdminLocationDebugPage() {
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'divergent'>('divergent');
@@ -58,7 +61,7 @@ export default function AdminLocationDebugPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (isAdmin) load(); }, [isAdmin]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -76,7 +79,19 @@ export default function AdminLocationDebugPage() {
     return { total, divergent, healthy: total - divergent };
   }, [rows]);
 
+  if (adminLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center p-12 text-muted-foreground">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verificando permissões…
+        </div>
+      </AdminLayout>
+    );
+  }
+  if (!isAdmin) return null;
+
   return (
+    <AdminLayout>
     <div className="container mx-auto max-w-6xl space-y-4 p-4">
       <header className="flex items-center justify-between gap-3">
         <div>
@@ -151,5 +166,6 @@ export default function AdminLocationDebugPage() {
         </table>
       </Card>
     </div>
+    </AdminLayout>
   );
 }

@@ -4,6 +4,8 @@ import { formatCityState, safeUF } from '@/lib/locationFormat';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AlertTriangle, CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
+import AdminLayout from '@/components/AdminLayout';
+import { useAdmin } from '@/hooks/useAdmin';
 
 type Finding = {
   route: string;
@@ -28,6 +30,7 @@ const audit = (city: string | null, state: string | null, route: string, label: 
 };
 
 export default function AdminLocationSeoAuditPage() {
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const [loading, setLoading] = useState(false);
   const [findings, setFindings] = useState<Finding[]>([]);
   const [summary, setSummary] = useState({ total: 0, ok: 0, fail: 0 });
@@ -59,11 +62,23 @@ export default function AdminLocationSeoAuditPage() {
     }
   };
 
-  useEffect(() => { run(); }, []);
+  useEffect(() => { if (isAdmin) run(); }, [isAdmin]);
 
   const failing = findings.filter((f) => !f.ok);
 
+  if (adminLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center p-12 text-muted-foreground">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verificando permissões…
+        </div>
+      </AdminLayout>
+    );
+  }
+  if (!isAdmin) return null;
+
   return (
+    <AdminLayout>
     <div className="container mx-auto max-w-6xl space-y-4 p-4">
       <header className="flex items-center justify-between gap-3">
         <div>
@@ -126,5 +141,6 @@ export default function AdminLocationSeoAuditPage() {
         </Card>
       )}
     </div>
+    </AdminLayout>
   );
 }

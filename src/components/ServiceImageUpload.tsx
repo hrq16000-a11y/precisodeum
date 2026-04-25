@@ -35,9 +35,23 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
     fetchImages();
   }, [serviceId]);
 
+  const MAX_IMAGES = 5; // 1 capa + 4 conteúdos
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+
+    const remaining = MAX_IMAGES - images.length;
+    if (remaining <= 0) {
+      toast.error(`Máximo de ${MAX_IMAGES} fotos por serviço (1 capa + 4 conteúdos).`);
+      e.target.value = '';
+      return;
+    }
+
+    const toUpload = Array.from(files).slice(0, remaining);
+    if (files.length > remaining) {
+      toast.warning(`Só ${remaining} foto(s) restantes. Apenas as primeiras serão enviadas.`);
+    }
 
     setUploading(true);
     try {
@@ -48,7 +62,7 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
 
       let nextOrder = images.length > 0 ? Math.max(...images.map(i => i.display_order)) + 1 : 0;
 
-      for (const raw of Array.from(files)) {
+      for (const raw of toUpload) {
         if (raw.size > 5 * 1024 * 1024) {
           toast.error(`${raw.name} excede 5MB`);
           continue;
@@ -160,23 +174,30 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
     fetchImages();
   };
 
+  const reachedMax = images.length >= MAX_IMAGES;
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground">Fotos do serviço</label>
-        <label className="cursor-pointer">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <label className="text-sm font-medium text-foreground">Fotos do serviço</label>
+          <p className="text-[11px] text-muted-foreground">
+            1 capa + até 4 fotos de conteúdo. {images.length}/{MAX_IMAGES} usadas.
+          </p>
+        </div>
+        <label className={reachedMax ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}>
           <input
             type="file"
             accept="image/*"
             multiple
             onChange={handleUpload}
             className="hidden"
-            disabled={uploading}
+            disabled={uploading || reachedMax}
           />
-          <Button variant="outline" size="sm" asChild disabled={uploading}>
+          <Button variant="outline" size="sm" asChild disabled={uploading || reachedMax}>
             <span>
               <ImagePlus className="mr-1 h-4 w-4" />
-              {uploading ? 'Enviando...' : 'Adicionar'}
+              {uploading ? 'Enviando...' : reachedMax ? 'Limite atingido' : 'Adicionar'}
             </span>
           </Button>
         </label>
@@ -186,15 +207,20 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {images.map((img, idx) => (
             <div key={img.id} className="relative group rounded-lg overflow-hidden border border-border">
+              {idx === 0 && (
+                <span className="absolute left-1 top-1 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground shadow">
+                  Capa
+                </span>
+              )}
               <img
                 src={img.image_url}
-                alt="Foto do serviço"
+                alt={idx === 0 ? 'Capa do serviço' : `Foto ${idx + 1} do serviço`}
                 className="w-full h-28 object-cover"
                 onError={handleImageError}
               />
               <div className="absolute inset-0 bg-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                 {idx > 0 && (
-                  <Button variant="secondary" size="sm" className="h-7 w-7 p-0" onClick={() => handleMove(idx, 'up')}>
+                  <Button variant="secondary" size="sm" className="h-7 w-7 p-0" onClick={() => handleMove(idx, 'up')} title={idx === 1 ? 'Tornar capa' : 'Mover para cima'}>
                     <ArrowUp className="h-3 w-3" />
                   </Button>
                 )}
@@ -209,6 +235,12 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {images.length === 0 && (
+        <div className="rounded-lg border border-dashed border-border bg-muted/20 p-6 text-center text-xs text-muted-foreground">
+          Nenhuma foto ainda. A primeira enviada vira a capa do anúncio.
         </div>
       )}
     </div>

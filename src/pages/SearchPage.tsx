@@ -44,6 +44,7 @@ import { useOnlineProviders } from '@/hooks/useOnlinePresence';
 import { useActiveTodayProviders } from '@/hooks/useActiveTodayProviders';
 import AskSystemDialog from '@/components/search/AskSystemDialog';
 import { logSearchIntent } from '@/lib/searchIntent';
+import { safeUF } from '@/lib/locationFormat';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -66,6 +67,7 @@ const SearchPage = () => {
   const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, requestPreciseLocation, geoFailed, source: geoSource, lastKnownAt, dismissGeoFailure } = useGeoCity();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('categoria') || '');
   const [selectedCity, setSelectedCity] = useState(cityParam);
+  const [selectedState, setSelectedState] = useState(searchParams.get('uf') || '');
   const [selectedNeighborhood, setSelectedNeighborhood] = useState(searchParams.get('bairro') || '');
   const [businessNameFilter, setBusinessNameFilter] = useState('');
   const [phoneFilter, setPhoneFilter] = useState('');
@@ -159,9 +161,13 @@ const SearchPage = () => {
     }) as DbProvider[];
   }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, onlineOnly, acceptingOnly, activeTodayOnly]);
 
-  const filteredLocal = useMemo(() => applyClientFilters(localProviders), [applyClientFilters, localProviders]);
-  const filteredNearby = useMemo(() => applyClientFilters(nearbyProviders), [applyClientFilters, nearbyProviders]);
-  const filteredOutOfState = useMemo(() => applyClientFilters(outOfStateProviders), [applyClientFilters, outOfStateProviders]);
+  const stateFilterFn = useCallback((list: DbProvider[]) =>
+    selectedState ? list.filter(p => safeUF(p.state) === selectedState) : list,
+  [selectedState]);
+
+  const filteredLocal = useMemo(() => stateFilterFn(applyClientFilters(localProviders)), [applyClientFilters, localProviders, stateFilterFn]);
+  const filteredNearby = useMemo(() => stateFilterFn(applyClientFilters(nearbyProviders)), [applyClientFilters, nearbyProviders, stateFilterFn]);
+  const filteredOutOfState = useMemo(() => stateFilterFn(applyClientFilters(outOfStateProviders)), [applyClientFilters, outOfStateProviders, stateFilterFn]);
 
   const fullyFiltered = [...filteredLocal, ...filteredNearby, ...filteredOutOfState];
   const nearestFiltered = filteredLocal.length > 0 ? filteredLocal[0] : (filteredNearby.length > 0 ? filteredNearby[0] : undefined);
@@ -203,12 +209,18 @@ const SearchPage = () => {
     return cities.sort();
   }, [allProviders]);
 
+  const availableStates = useMemo(() => {
+    const states = [...new Set(allProviders.map(p => safeUF(p.state)).filter(Boolean))];
+    return states.sort();
+  }, [allProviders]);
+
   const availableNeighborhoods = useMemo(() => {
     let source = allProviders;
+    if (selectedState) source = source.filter(p => safeUF(p.state) === selectedState);
     if (effectiveCity) source = source.filter(p => p.city.toLowerCase() === effectiveCity.toLowerCase());
     const nbs = [...new Set(source.map(p => p.neighborhood).filter(Boolean))];
     return nbs.sort();
-  }, [allProviders, effectiveCity]);
+  }, [allProviders, effectiveCity, selectedState]);
 
   // SEO — dynamic title/description/canonical reflecting active filters
   const seoCity = effectiveCity || '';
@@ -303,6 +315,24 @@ const SearchPage = () => {
           </SelectContent>
         </Select>
       </div>
+
+      {/* UF / Estado */}
+      {availableStates.length > 1 && (
+        <div>
+          <Label className="text-xs text-muted-foreground flex items-center gap-1">
+            <MapPin className="h-3 w-3" /> Estado (UF)
+          </Label>
+          <Select value={selectedState || 'all'} onValueChange={v => { setSelectedState(v === 'all' ? '' : v); setSelectedCity(''); setSelectedNeighborhood(''); setPage(1); }}>
+            <SelectTrigger className="mt-1"><SelectValue placeholder="Todos" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os estados</SelectItem>
+              {availableStates.map((uf: string) => (
+                <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* City */}
       <div>
