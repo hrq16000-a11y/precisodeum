@@ -217,6 +217,7 @@ const BasicOnboardingWizard = () => {
     if (profile.state) setState(profile.state);
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
     if (profile.whatsapp || profile.phone) setWhatsapp(sanitizePhone(profile.whatsapp || profile.phone || ''));
+    if ((profile as any).neighborhood) setNeighborhood((profile as any).neighborhood);
   }, [profile]);
 
   useEffect(() => {
