@@ -459,7 +459,7 @@ const BasicOnboardingWizard = () => {
     setCity(savedCity);
     setState(savedState);
     setAvatarUrl(savedProfile.avatar_url || null);
-    setWhatsapp(savedProfile.whatsapp || savedProfile.phone || '');
+    setWhatsapp(sanitizePhone(savedProfile.whatsapp || savedProfile.phone || ''));
     setBio(savedProfile.bio || '');
     setSelectedCategoryIds(Array.isArray(savedProfile.preferred_category_ids) ? savedProfile.preferred_category_ids : []);
     setTaxId(secureTaxRow?.tax_id || '');
