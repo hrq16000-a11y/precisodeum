@@ -854,9 +854,11 @@ const ProviderProfile = () => {
       priceRange: '$$',
       address: {
         '@type': 'PostalAddress',
+        ...(provider.neighborhood ? { addressLocality: provider.neighborhood } : {}),
         addressLocality: provider.city,
-        addressRegion: provider.state,
+        addressRegion: safeUF(provider.state) || provider.state,
         addressCountry: 'BR',
+        ...(provider.neighborhood ? { streetAddress: provider.neighborhood } : {}),
       },
       ...(provider.latitude && provider.longitude
         ? {
