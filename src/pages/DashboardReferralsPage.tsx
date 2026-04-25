@@ -83,7 +83,7 @@ export default function DashboardReferralsPage() {
   useSeoHead({
     title: 'Minhas Indicações · Preciso de Um',
     description: 'Acompanhe seu ranking, status de cada indicação e o histórico de pontos creditados.',
-    noIndex: true,
+    noindex: true,
   });
 
   const { data, isLoading } = useQuery({
