@@ -174,7 +174,6 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
     fetchImages();
   };
 
-  const MAX_IMAGES = 5;
   const reachedMax = images.length >= MAX_IMAGES;
 
   return (
