@@ -124,15 +124,26 @@ const DashboardLeadsPage = () => {
   }, []);
 
   // Pipeline principal exclui leads do tipo 'click_only' (cliques diretos em
-  // WhatsApp/Ligar) — eles aparecem em um indicador separado e não poluem o
-  // funil de leads qualificados.
+  // WhatsApp/Ligar) — eles aparecem em uma seção separada própria e não poluem
+  // o funil de leads qualificados.
   const qualifiedRaw = useMemo(
-    () => rawLeads.filter((l) => ((l as any).lead_type ?? 'qualified') !== 'click_only'),
+    () => rawLeads.filter((l) => (l.lead_type ?? 'qualified') !== 'click_only'),
     [rawLeads],
   );
-  const clickOnlyCount = useMemo(
-    () => rawLeads.filter((l) => (l as any).lead_type === 'click_only').length,
+  const clickOnlyLeads = useMemo(
+    () => rawLeads
+      .filter((l) => l.lead_type === 'click_only')
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     [rawLeads],
+  );
+  const clickOnlyCount = clickOnlyLeads.length;
+  const clickWhatsappCount = useMemo(
+    () => clickOnlyLeads.filter((l) => (l.lead_context as any)?.contact_kind === 'whatsapp').length,
+    [clickOnlyLeads],
+  );
+  const clickPhoneCount = useMemo(
+    () => clickOnlyLeads.filter((l) => (l.lead_context as any)?.contact_kind === 'phone').length,
+    [clickOnlyLeads],
   );
   const leads = useMemo(() => sortLeads(qualifiedRaw), [qualifiedRaw]);
 
