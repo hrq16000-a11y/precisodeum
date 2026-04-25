@@ -49,6 +49,7 @@ import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedSta
 import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
 import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
 import CategoryBenchmarkWidget from '@/components/dashboard/CategoryBenchmarkWidget';
+import RegionalDemandWidget from '@/components/dashboard/RegionalDemandWidget';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
 import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
 import EngagementLoop from '@/components/dashboard/EngagementLoop';
@@ -629,6 +630,11 @@ const DashboardPage = () => {
       {/* Benchmark de engagement vs. média da categoria */}
       <div className="mt-4">
         <CategoryBenchmarkWidget />
+      </div>
+
+      {/* Onde estão os Clientes? — top regiões com buscas na categoria */}
+      <div className="mt-4">
+        <RegionalDemandWidget />
       </div>
 
       {/* Ranking Status */}
