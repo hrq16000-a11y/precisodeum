@@ -53,7 +53,9 @@ import RegionalDemandWidget from '@/components/dashboard/RegionalDemandWidget';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
 import DailyPostCard from '@/components/dashboard/DailyPostCard';
 import MissedOpportunitiesWidget from '@/components/dashboard/MissedOpportunitiesWidget';
+import ReferralInviteCard from '@/components/dashboard/ReferralInviteCard';
 import { usePresenceHeartbeat } from '@/hooks/usePresenceHeartbeat';
+import { useReferralCapture } from '@/hooks/useReferralCapture';
 import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
 import EngagementLoop from '@/components/dashboard/EngagementLoop';
 import AchievementHistory from '@/components/dashboard/AchievementHistory';
@@ -81,6 +83,9 @@ const DashboardPage = () => {
 
   // Heartbeat de presença persistido (alimenta get_missed_opportunities)
   usePresenceHeartbeat(user?.id, !!provider?.id);
+
+  // Captura ?ref= e registra indicação após login
+  useReferralCapture(user?.id);
 
   // Registra a visita no servidor (substitui flags em localStorage)
   useEffect(() => {
@@ -926,6 +931,7 @@ const DashboardPage = () => {
             <DailyPostCard />
             <RegionalDemandWidget />
             <WeeklySummary />
+            <ReferralInviteCard />
           </div>
         </>
       )}
