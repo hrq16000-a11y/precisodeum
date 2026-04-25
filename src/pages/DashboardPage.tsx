@@ -675,9 +675,8 @@ const DashboardPage = () => {
         <WeeklySummary />
       </div>
 
-      {/* Saúde do Perfil + Força do Perfil (lado a lado em desktop) */}
-      <div className="mt-4 grid gap-4 md:grid-cols-2" data-tour="profile-strength">
-        <ProfileHealthScore />
+      {/* Força do Perfil — score já exibido no topo via UnifiedHealthScore */}
+      <div className="mt-4" data-tour="profile-strength">
         <ProfileStrength />
       </div>
 
@@ -743,28 +742,6 @@ const DashboardPage = () => {
       {/* Analytics Grid: Completeness + Chart + Conversion + Activity */}
       {provider && (
         <div className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
-          <GlassCard variant="gradient" hoverEffect={false} delay={0.3}>
-            <div className="flex items-center gap-4">
-              <ProgressRing value={completenessPercent} size={80} label="Perfil" />
-              <div className="flex-1">
-                <h3 className="text-sm font-bold text-foreground">Completude do Perfil</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {completenessPercent < 100
-                    ? 'Complete seu perfil para aparecer no topo dos resultados.'
-                    : 'Perfil completo! Você está no máximo destaque.'}
-                </p>
-              </div>
-            </div>
-            <div className="mt-4">
-              <ProfileCompleteness
-                provider={provider}
-                profile={profile}
-                servicesCount={servicesCount ?? 0}
-                portfolioCount={portfolioAlbumCount}
-              />
-            </div>
-          </GlassCard>
-
           <GlassCard variant="default" hoverEffect={false} delay={0.4} data-tour="leads">
             <LeadsChart providerId={provider.id} />
           </GlassCard>
