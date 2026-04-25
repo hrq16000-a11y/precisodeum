@@ -1741,7 +1741,7 @@ const ProviderProfile = () => {
                               </p>
                             )}
                             <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                              <MapPin className="inline h-3 w-3 mr-0.5" />{rp.city}{rp.state ? ` - ${rp.state}` : ''}
+                              <MapPin className="inline h-3 w-3 mr-0.5" />{formatCityState(rp.city, rp.state)}
                             </p>
                             {rp.rating_avg > 0 && (
                               <div className="flex items-center justify-center gap-1 mt-1.5">
