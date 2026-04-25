@@ -62,6 +62,7 @@ const DashboardCommunityPage = lazy(() => import("./pages/DashboardCommunityPage
 const DashboardNotificationsPage = lazy(() => import("./pages/DashboardNotificationsPage"));
 const DashboardPortfolioPage = lazy(() => import("./pages/DashboardPortfolioPage"));
 const DashboardReferralsPage = lazy(() => import("./pages/DashboardReferralsPage"));
+const DashboardRankingPage = lazy(() => import("./pages/DashboardRankingPage"));
 const DashboardIdentitySuggestionsPage = lazy(() => import("./pages/DashboardIdentitySuggestionsPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const AdminProvidersPage = lazy(() => import("./pages/AdminProvidersPage"));
@@ -373,6 +374,7 @@ const App = () => {
                 <Route path="/dashboard/comunidade" element={<ProtectedRoute><DashboardCommunityPage /></ProtectedRoute>} />
                 <Route path="/dashboard/notificacoes" element={<ProtectedRoute><DashboardNotificationsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/indicacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReferralsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/ranking" element={<ProtectedRoute allowedTypes={['provider']}><DashboardRankingPage /></ProtectedRoute>} />
                 <Route path="/dashboard/sugestoes-identidade" element={<ProtectedRoute><DashboardIdentitySuggestionsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/chat" element={<ProtectedRoute><DashboardChatPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminPage />} />
