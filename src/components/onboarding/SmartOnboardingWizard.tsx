@@ -2051,6 +2051,31 @@ export const Step3Contact = ({
       </div>
 
       <div>
+        <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+          Bairro
+          <span className="ml-1 rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Opcional</span>
+        </label>
+        <Input
+          name="neighborhood"
+          placeholder="Ex: Centro, Batel, Água Verde…"
+          value={neighborhood || ''}
+          onChange={(e) => setNeighborhood(e.target.value)}
+          onBlur={onFieldBlur}
+          className={errorByField?.neighborhood ? 'border-destructive focus-visible:ring-destructive' : ''}
+        />
+        {errorByField?.neighborhood ? (
+          <p className="mt-1 flex items-start gap-1 text-[11px] font-medium text-destructive">
+            <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+            <span>{errorByField.neighborhood}</span>
+          </p>
+        ) : (
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Ajuda clientes próximos a te encontrar mais rápido. Pode preencher depois.
+          </p>
+        )}
+      </div>
+
+      <div>
         <div className="mb-1 flex items-center justify-between gap-3">
           <label className="block text-xs font-semibold text-foreground">
             {taxLabel}
