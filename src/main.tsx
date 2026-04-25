@@ -241,9 +241,15 @@ const installBootstrapGuards = () => {
     const reason = event.reason;
     const message = String(reason instanceof Error ? reason.message : reason || "").toLowerCase();
 
+    // Ignora falhas de módulos não-críticos (telemetria/animações/ads ranking)
+    const isNonCritical =
+      message.includes("performancetelemetry")
+      || message.includes("deferred-animations")
+      || message.includes("sponsorranking");
+
     if (
-      message.includes("dynamically imported module")
-      || message.includes("module script")
+      !isNonCritical
+      && (message.includes("dynamically imported module") || message.includes("module script"))
     ) {
       event.preventDefault?.();
       void tryAutomatedRecovery("unhandledrejection", reason);
