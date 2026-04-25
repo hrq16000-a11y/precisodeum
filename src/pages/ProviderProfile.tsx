@@ -1011,7 +1011,7 @@ const ProviderProfile = () => {
             <MapPin className="h-4 w-4 text-accent shrink-0" />
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Localização</p>
-              <p className="text-xs font-medium text-foreground">{provider.city} - {provider.state}</p>
+              <p className="text-xs font-medium text-foreground">{formatCityState(provider.city, provider.state)}</p>
             </div>
           </motion.div>
         )}
