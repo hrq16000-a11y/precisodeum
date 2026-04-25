@@ -62,11 +62,23 @@ export default function AdminLocationSeoAuditPage() {
     }
   };
 
-  useEffect(() => { run(); }, []);
+  useEffect(() => { if (isAdmin) run(); }, [isAdmin]);
 
   const failing = findings.filter((f) => !f.ok);
 
+  if (adminLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center p-12 text-muted-foreground">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verificando permissões…
+        </div>
+      </AdminLayout>
+    );
+  }
+  if (!isAdmin) return null;
+
   return (
+    <AdminLayout>
     <div className="container mx-auto max-w-6xl space-y-4 p-4">
       <header className="flex items-center justify-between gap-3">
         <div>
