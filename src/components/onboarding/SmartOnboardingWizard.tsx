@@ -1847,6 +1847,8 @@ export const Step3Contact = ({
   const taxFilled = taxDigits.length > 0;
   const expectedLen = docMode === 'cnpj' ? 14 : 11;
   const taxValid = !taxFilled || (taxDigits.length === expectedLen && isValidCpfCnpj(taxDigits));
+  const waCheck = validateWhatsapp(whatsapp || '');
+  const waTouched = (whatsapp || '').length > 0;
 
   // Ao alternar PF↔PJ, garante que o documento existente seja truncado para o novo formato.
   const switchSubtype = (next: 'autonomous' | 'company') => {
