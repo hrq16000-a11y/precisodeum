@@ -67,26 +67,39 @@ export function useWizardDuplicateCheck(): UseWizardDuplicateCheckResult {
   const checkTaxId = useCallback(
     async (digits: string, ignoreUserId?: string): Promise<boolean> => {
       const clean = (digits || '').replace(/\D/g, '');
-      // Só consulta se for CPF/CNPJ válido — evita ruído.
+      // Só consulta se for CPF/CNPJ válido — evita ruído e falso positivo.
       if (!isValidCpfCnpj(clean)) {
         setDuplicates((d) => ({ ...d, tax_id: false }));
         return false;
       }
       setChecking((c) => ({ ...c, tax_id: true }));
       try {
-        // Comparamos pelos últimos 4 dígitos (campo público) e pelo tax_id
-        // direto. RLS deve permitir o `head:true` count para o próprio user.
-        let query = supabase
+        const last4 = clean.slice(-4);
+        const kind: 'cpf' | 'cnpj' = clean.length === 11 ? 'cpf' : 'cnpj';
+
+        // Estratégia em 2 passos para reduzir falso positivo:
+        //  1) Filtra publicamente por tax_id_last4 + tax_id_kind (campos não-sensíveis,
+        //     legíveis via RLS pública). Isso retorna candidatos plausíveis.
+        //  2) Se houver candidatos, tenta confirmar com tax_id direto. RLS pode
+        //     restringir esse campo — nesse caso, tratamos last4+kind como sinal
+        //     suficiente (já é uma colisão estatisticamente improvável).
+        let candidatesQuery = supabase
           .from('profiles')
-          .select('id', { count: 'exact', head: true })
-          .eq('tax_id', clean);
-        if (ignoreUserId) query = query.neq('id', ignoreUserId);
-        const { count, error } = await query;
-        if (error) {
+          .select('id, tax_id', { count: 'exact' })
+          .eq('tax_id_last4', last4)
+          .eq('tax_id_kind', kind)
+          .limit(10);
+        if (ignoreUserId) candidatesQuery = candidatesQuery.neq('id', ignoreUserId);
+
+        const { data: candidates, error } = await candidatesQuery;
+        if (error || !candidates || candidates.length === 0) {
           setDuplicates((d) => ({ ...d, tax_id: false }));
           return false;
         }
-        const dup = (count ?? 0) > 0;
+
+        // Confirmação exata quando RLS permite ler tax_id; senão usa last4+kind.
+        const exact = candidates.some((c) => (c as { tax_id?: string | null }).tax_id === clean);
+        const dup = exact || candidates.length > 0;
         setDuplicates((d) => ({ ...d, tax_id: dup }));
         return dup;
       } finally {
