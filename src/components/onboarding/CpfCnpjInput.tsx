@@ -1,20 +1,34 @@
 import { ChangeEvent, forwardRef, useLayoutEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 
-/** Aplica máscara dinâmica de CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00). */
-export const maskCpfCnpj = (raw: string): string => {
+export type CpfCnpjMode = 'auto' | 'cpf' | 'cnpj';
+
+/** Aplica máscara de CPF (000.000.000-00). */
+const maskCpf = (raw: string): string => {
+  const d = (raw || '').replace(/\D/g, '').slice(0, 11);
+  return d
+    .replace(/^(\d{3})(\d)/, '$1.$2')
+    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1-$2');
+};
+
+/** Aplica máscara de CNPJ (00.000.000/0000-00). */
+const maskCnpj = (raw: string): string => {
   const d = (raw || '').replace(/\D/g, '').slice(0, 14);
-  if (d.length <= 11) {
-    return d
-      .replace(/^(\d{3})(\d)/, '$1.$2')
-      .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-      .replace(/\.(\d{3})(\d)/, '.$1-$2');
-  }
   return d
     .replace(/^(\d{2})(\d)/, '$1.$2')
     .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
     .replace(/\.(\d{3})(\d)/, '.$1/$2')
     .replace(/(\d{4})(\d)/, '$1-$2');
+};
+
+/** Aplica máscara dinâmica de CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00). */
+export const maskCpfCnpj = (raw: string, mode: CpfCnpjMode = 'auto'): string => {
+  if (mode === 'cpf') return maskCpf(raw);
+  if (mode === 'cnpj') return maskCnpj(raw);
+  const d = (raw || '').replace(/\D/g, '').slice(0, 14);
+  if (d.length <= 11) return maskCpf(d);
+  return maskCnpj(d);
 };
 
 /** Conta quantos dígitos existem nos primeiros `limit` caracteres da string mascarada. */
