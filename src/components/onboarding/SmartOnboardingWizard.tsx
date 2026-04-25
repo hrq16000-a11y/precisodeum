@@ -1277,6 +1277,9 @@ const BasicOnboardingWizard = () => {
             setWhatsapp={setWhatsapp}
             bio={bio}
             setBio={setBio}
+            neighborhood={neighborhood}
+            setNeighborhood={setNeighborhood}
+            errorByField={errorByField}
             taxId={taxId}
             setTaxId={(v: string) => { setTaxId(v); setTaxIdJustSaved(false); }}
             taxSavedFeedback={taxIdJustSaved}
