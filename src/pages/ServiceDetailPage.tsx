@@ -157,7 +157,7 @@ const ServiceDetailPage = () => {
               <div className="sticky top-20 rounded-xl border border-border bg-card p-6 shadow-card">
                 <h3 className="font-display text-base font-bold text-foreground">Profissional</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{providerName}</p>
-                <p className="text-xs text-muted-foreground">{city} - {state}</p>
+                <p className="text-xs text-muted-foreground">{formatCityState(city, state)}</p>
 
                 <div className="mt-4 space-y-2">
                   <Button variant="accent" className="w-full" asChild>
