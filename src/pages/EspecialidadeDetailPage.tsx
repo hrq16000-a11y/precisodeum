@@ -68,6 +68,14 @@ const EspecialidadeDetailPage = () => {
                 name: p.businessName || p.name,
               })),
             },
+            {
+              '@type': 'FAQPage',
+              mainEntity: faqs.map((f) => ({
+                '@type': 'Question',
+                name: f.q,
+                acceptedAnswer: { '@type': 'Answer', text: f.a },
+              })),
+            },
           ],
         }
       : null,
