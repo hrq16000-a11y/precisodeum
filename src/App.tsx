@@ -297,6 +297,13 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Redirect 301-style: /especialidades/:slug → /categoria/:slug (canonical SEO)
+const EspecialidadeRedirect = () => {
+  const params = (typeof window !== 'undefined' ? window.location.pathname.split('/').filter(Boolean) : []);
+  const slug = params[1] || '';
+  return <Navigate to={`/categoria/${slug}`} replace />;
+};
+
 const App = () => {
   useEffect(() => {
     initializeUiFreezeMonitor();
