@@ -37,7 +37,7 @@ export function useFirstContactAutoMission() {
         if (error) throw error;
         const status = (rpc as any)?.status as string | undefined;
         if (status === 'completed') {
-          celebrate('mission_first_contact');
+          celebrate();
           toast.success('Primeiro contato recebido! 🎉', {
             description: 'Missão "Primeiro Lead" concluída — +5 pontos no seu perfil.',
             duration: 6000,
