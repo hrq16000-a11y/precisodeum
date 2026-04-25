@@ -295,9 +295,9 @@ const DashboardLeadsPage = () => {
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">Leads Recebidos</h1>
+            <h1 className="font-display text-2xl font-bold text-foreground">Solicitações de Serviço</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {filteredLeads.length} de {leads.length} lead(s)
+              {filteredLeads.length} de {leads.length} contato{leads.length !== 1 ? 's' : ''}
               {overdueCount > 0 && (
                 <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive">
                   <AlertTriangle className="h-3 w-3" />
