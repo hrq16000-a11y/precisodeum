@@ -27,6 +27,12 @@ interface CommunityFeedProps {
 }
 
 const CommunityFeed = ({ compact = false }: CommunityFeedProps) => {
+  // DESATIVADO: o feed estava exibindo cadastros de "há 4-5 dias" com selo
+  // "Ao vivo", o que era enganoso. Mantemos o componente importado para não
+  // quebrar referências, mas ele não renderiza nada até termos uma fonte
+  // confiável de atividades em tempo real (<24h).
+  return null;
+  // eslint-disable-next-line no-unreachable
   const [items, setItems] = useState<FeedItem[]>([]);
   const [highlightId, setHighlightId] = useState<string | null>(null);
 
