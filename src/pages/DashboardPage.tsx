@@ -931,6 +931,7 @@ const DashboardPage = () => {
             <DailyPostCard />
             <RegionalDemandWidget />
             <WeeklySummary />
+            <ReferralInviteCard />
           </div>
         </>
       )}
