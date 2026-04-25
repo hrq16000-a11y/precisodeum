@@ -346,6 +346,30 @@ const DashboardLeadsPage = () => {
         </div>
       </motion.div>
 
+      {/* Alerta: novos leads chegaram fora do filtro atual */}
+      {outsideFilterCount > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm"
+        >
+          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+            <Bell className="h-4 w-4" />
+            <span className="font-semibold">
+              {outsideFilterCount} novo(s) lead(s) fora do filtro atual
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" size="sm" variant="ghost" onClick={resetOutsideCount}>
+              Ignorar
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => { clearFilters(); resetOutsideCount(); }}>
+              Limpar filtros
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Toolbar: busca, filtros avançados e exportação */}
       <div className="mt-4 rounded-xl border border-border bg-card p-3 shadow-card">
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
