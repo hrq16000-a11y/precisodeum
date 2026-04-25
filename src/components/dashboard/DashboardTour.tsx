@@ -13,6 +13,7 @@ interface Step {
   title: string;
   body: string;
   highlight?: string;
+  emptyHint?: string;
 }
 
 const STEPS: Step[] = [
