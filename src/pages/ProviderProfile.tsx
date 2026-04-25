@@ -922,8 +922,40 @@ const ProviderProfile = () => {
           }
         : {}),
       ...(sameAs.length > 0 ? { sameAs } : {}),
+      ...(services && services.length > 0
+        ? {
+            hasOfferCatalog: {
+              '@type': 'OfferCatalog',
+              name: `Serviços de ${name}`,
+              itemListElement: services.slice(0, 20).map((s: any, idx: number) => ({
+                '@type': 'Offer',
+                position: idx + 1,
+                itemOffered: {
+                  '@type': 'Service',
+                  name: s.name || s.title || s.service_name || 'Serviço',
+                  ...(s.description ? { description: String(s.description).slice(0, 280) } : {}),
+                  ...(category ? { category } : {}),
+                  areaServed: provider.city
+                    ? { '@type': 'City', name: provider.city }
+                    : undefined,
+                },
+                ...(s.price_min || s.price
+                  ? {
+                      priceSpecification: {
+                        '@type': 'PriceSpecification',
+                        priceCurrency: 'BRL',
+                        ...(s.price_min ? { minPrice: Number(s.price_min) } : {}),
+                        ...(s.price_max ? { maxPrice: Number(s.price_max) } : {}),
+                        ...(s.price && !s.price_min ? { price: Number(s.price) } : {}),
+                      },
+                    }
+                  : {}),
+              })),
+            },
+          }
+        : {}),
     };
-  }, [provider, name, category, avatarUrl, slug, effectiveWhatsApp, pageSettings.instagram_url, pageSettings.facebook_url, pageSettings.youtube_url, pageSettings.tiktok_url]);
+  }, [provider, name, category, avatarUrl, slug, effectiveWhatsApp, services, pageSettings.instagram_url, pageSettings.facebook_url, pageSettings.youtube_url, pageSettings.tiktok_url]);
 
   useJsonLd(breadcrumbLd);
   useJsonLd(localBusinessLd);
