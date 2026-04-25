@@ -614,14 +614,7 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* 5) Impacto na Rede — métricas movidas para baixo dos blocos de ação */}
-      <div className="mt-6">
-        <ImpactSection
-          views={viewsTotal}
-          whatsappClicks={(provider as any)?.contact_clicks_count ?? 0}
-          leads={leadsCount}
-        />
-      </div>
+      {/* Impacto na Rede movido para o final da página, junto às demais métricas. */}
 
       {/* Online Status Feedback — pulse + toast quando entra em modo Online */}
       <div className="mt-3 flex justify-end" data-tour="online-status">
@@ -791,33 +784,50 @@ const DashboardPage = () => {
         />
       </div>
       {/* Dominant CTA when no services — REMOVIDO: substituído por EmptyStateBanner persistente acima */}
+      {/* Métricas finais — concentradas no fim da página conforme diretriz UX. */}
+      <div className="mt-6">
+        <ImpactSection
+          views={viewsTotal}
+          whatsappClicks={(provider as any)?.contact_clicks_count ?? 0}
+          leads={leadsCount}
+        />
+      </div>
+
       {/* Stats with animated counters */}
       <div className="mt-5">
         <StatCardGrid cards={statCards} />
       </div>
 
-      {/* Analytics Grid: Completeness + Chart + Conversion + Activity */}
+      {/* Analytics Grid: charts/insights — cada bloco já se auto-oculta quando
+          não há dados reais (evita UI estática enganosa). */}
       {provider && (
         <div className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
-          <GlassCard variant="default" hoverEffect={false} delay={0.4} data-tour="leads">
-            <LeadsChart providerId={provider.id} />
-          </GlassCard>
+          {(viewsTotal > 0 || leadsCount > 0) && (
+            <GlassCard variant="default" hoverEffect={false} delay={0.4} data-tour="leads">
+              <LeadsChart providerId={provider.id} />
+            </GlassCard>
+          )}
 
-          <GlassCard variant="default" hoverEffect={false} delay={0.5}>
-            <ConversionInsights views={viewsTotal} leads={leadsCount} services={servicesCount ?? 0} />
-          </GlassCard>
+          {(viewsTotal > 0 || leadsCount > 0) && (
+            <GlassCard variant="default" hoverEffect={false} delay={0.5}>
+              <ConversionInsights views={viewsTotal} leads={leadsCount} services={servicesCount ?? 0} />
+            </GlassCard>
+          )}
 
           <div className="lg:col-span-2">
             <LeadInsights providerId={provider.id} />
           </div>
 
-          <GlassCard variant="bordered" hoverEffect={false} delay={0.6}>
-            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-              <FileText className="h-4 w-4 text-accent" />
-              Atividade Recente
-            </h3>
-            <RecentActivity providerId={provider.id} />
-          </GlassCard>
+          {/* "Atividade Recente": só renderiza o wrapper quando há atividade real. */}
+          {leadsCount > 0 && (
+            <GlassCard variant="bordered" hoverEffect={false} delay={0.6}>
+              <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-accent" />
+                Atividade Recente
+              </h3>
+              <RecentActivity providerId={provider.id} />
+            </GlassCard>
+          )}
 
           <div className="lg:col-span-2">
             <DashboardTipOfDay
@@ -998,15 +1008,13 @@ const DashboardPage = () => {
         </AnimatePresence>
       </GlassCard>
 
-      {/* Lote 4 — Frescor & Inteligência */}
+      {/* Lote 4 — Frescor & Inteligência (sem duplicar widgets já exibidos acima) */}
       {provider?.id && (
         <>
           <div className="mt-6">
             <MissedOpportunitiesWidget />
           </div>
-          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <RegionalDemandWidget />
-            <WeeklySummary />
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
             <ReferralInviteCard />
           </div>
         </>

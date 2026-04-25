@@ -61,6 +61,8 @@ const LeadInsights = ({ providerId }: LeadInsightsProps) => {
   const conversion = useMemo(() => (views > 0 ? Math.round((contacts / views) * 100) : 0), [contacts, views]);
 
   if (!providerId) return null;
+  // Oculta o bloco enquanto não há nenhum dado real (evita UI estática).
+  if (!loading && views === 0 && contacts === 0 && topServices.length === 0) return null;
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">

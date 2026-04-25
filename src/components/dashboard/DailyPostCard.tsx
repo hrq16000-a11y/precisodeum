@@ -122,8 +122,8 @@ export default function DailyPostCard() {
       toast.error('Selecione uma imagem (JPG, PNG ou WebP).');
       return;
     }
-    if (file.size > 8 * 1024 * 1024) {
-      toast.error('A imagem precisa ter até 8MB.');
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error('A imagem precisa ter até 4MB.');
       return;
     }
     setUploading(true);

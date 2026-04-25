@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom';
-import { Eye, MessageSquare, Send, Sparkles, type LucideIcon } from 'lucide-react';
+import { Eye, MessageSquare, Send, type LucideIcon } from 'lucide-react';
 
 interface Props {
   views: number;
@@ -35,6 +34,9 @@ const Metric = ({
 const ImpactSection = ({ views, whatsappClicks, leads }: Props) => {
   const allZero = views === 0 && whatsappClicks === 0 && leads === 0;
 
+  // Sem dados reais → não exibir o bloco (evita UI estática enganosa).
+  if (allZero) return null;
+
   return (
     <section
       aria-label="Impacto na Rede"
@@ -45,29 +47,11 @@ const ImpactSection = ({ views, whatsappClicks, leads }: Props) => {
         <span className="text-[11px] text-muted-foreground">Últimos 30 dias</span>
       </header>
 
-      {allZero ? (
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-muted/30 px-4 py-8 text-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
-            <Sparkles size={20} strokeWidth={1.5} />
-          </div>
-          <p className="text-sm font-semibold text-foreground">Sua vitrine está pronta.</p>
-          <p className="max-w-xs text-xs text-muted-foreground">
-            Poste uma obra para começar a atrair clientes!
-          </p>
-          <Link
-            to="/dashboard/portfolio?action=daily-post"
-            className="mt-1 text-xs font-medium text-accent hover:underline"
-          >
-            Postar Obra do Dia
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-3 gap-3">
-          <Metric icon={Eye} value={views} label="Visualizações" />
-          <Metric icon={MessageSquare} value={whatsappClicks} label="WhatsApp" />
-          <Metric icon={Send} value={leads} label="Solicitações" />
-        </div>
-      )}
+      <div className="grid grid-cols-3 gap-3">
+        <Metric icon={Eye} value={views} label="Visualizações" />
+        <Metric icon={MessageSquare} value={whatsappClicks} label="WhatsApp" />
+        <Metric icon={Send} value={leads} label="Solicitações" />
+      </div>
     </section>
   );
 };

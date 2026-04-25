@@ -80,6 +80,8 @@ const LeadAnalytics = ({ providerId }: LeadAnalyticsProps) => {
       </div>
     );
   }
+  // Sem dados reais → não polui o dashboard com "0/0/0%".
+  if (views === 0 && clicks === 0 && phoneClicks === 0) return null;
 
   return (
     <motion.div

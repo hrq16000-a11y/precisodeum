@@ -74,15 +74,8 @@ const RecentActivity = ({ providerId }: RecentActivityProps) => {
   }, [providerId]);
 
   if (loading) return null;
-  if (activities.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-8 text-center">
-        <Clock className="h-8 w-8 text-muted-foreground/30 mb-2" />
-        <p className="text-sm text-muted-foreground">Nenhuma atividade recente</p>
-        <p className="text-xs text-muted-foreground/60 mt-1">Leads e avaliações aparecerão aqui</p>
-      </div>
-    );
-  }
+  // Sem atividades reais → ocultar para não exibir UI estática enganosa.
+  if (activities.length === 0) return null;
 
   return (
     <div className="space-y-1">
