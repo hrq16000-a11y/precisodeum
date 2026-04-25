@@ -84,6 +84,7 @@ const DashboardLeadsPage = () => {
   const [followupTo, setFollowupTo] = useState(searchParams.get('ft') || '');
   const [cityFilter, setCityFilter] = useState<string>(searchParams.get('city') || 'all');
   const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get('cat') || 'all');
+  const [ufFilter, setUfFilter] = useState<string>(searchParams.get('uf') || 'all');
   const [showAdvanced, setShowAdvanced] = useState(
     !!(searchParams.get('cf') || searchParams.get('ct') || searchParams.get('ff') || searchParams.get('ft'))
   );
@@ -94,7 +95,7 @@ const DashboardLeadsPage = () => {
   const PAGE_SIZE = 20;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  // Persistir filtros na URL
+  // Persistir filtros na URL (city/cat/uf são compartilháveis)
   useEffect(() => {
     const params: Record<string, string> = {};
     if (statusFilter !== 'all') params.status = statusFilter;
@@ -105,8 +106,16 @@ const DashboardLeadsPage = () => {
     if (followupTo) params.ft = followupTo;
     if (cityFilter !== 'all') params.city = cityFilter;
     if (categoryFilter !== 'all') params.cat = categoryFilter;
+    if (ufFilter !== 'all') params.uf = ufFilter;
     setSearchParams(params, { replace: true });
-  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, setSearchParams]);
+  }, [statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, ufFilter, setSearchParams]);
+
+  // ─── Realtime: novos leads + alerta quando estiver fora do filtro atual ───
+  const { outsideFilterCount, resetOutsideCount } = useNewLeadAlerts(provider?.id, {
+    city: cityFilter,
+    category: categoryFilter,
+    uf: ufFilter,
+  });
 
   // Re-render minute-by-minute para atualizar relativos e badge "vencido"
   useEffect(() => {
