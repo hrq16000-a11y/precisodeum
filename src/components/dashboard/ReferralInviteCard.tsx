@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Users, Copy, Check, Share2, Gift, Loader2, Trophy } from 'lucide-react';
+import { Users, Copy, Check, Share2, Gift, Loader2, Trophy, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -36,18 +37,49 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
 
 export default function ReferralInviteCard() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
+  const seenRewardedIdsRef = useRef<Set<string> | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['referrals-summary', user?.id],
     enabled: !!user?.id,
     staleTime: 60_000,
+    refetchInterval: 90_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_my_referrals_summary' as any);
       if (error) throw error;
       return data as unknown as Summary;
     },
   });
+
+  // Toast celebrativo: detecta nova indicação que mudou para "rewarded"
+  useEffect(() => {
+    if (!data?.recent) return;
+    const rewardedNow = new Set(
+      data.recent
+        .filter((r) => r.status === 'rewarded' || r.status === 'completed')
+        .map((r) => r.id),
+    );
+    // primeira passagem: só inicializa o snapshot
+    if (seenRewardedIdsRef.current === null) {
+      seenRewardedIdsRef.current = rewardedNow;
+      return;
+    }
+    const prev = seenRewardedIdsRef.current;
+    const newlyRewarded = [...rewardedNow].filter((id) => !prev.has(id));
+    if (newlyRewarded.length > 0) {
+      const item = data.recent.find((r) => r.id === newlyRewarded[0]);
+      toast.success(
+        `${item?.referred_name || 'Seu parceiro'} começou a trabalhar! Você ganhou +50 pontos de engajamento!`,
+        { duration: 6000, icon: '🎉' },
+      );
+      // invalida pontos de engajamento para refletir o ganho
+      queryClient.invalidateQueries({ queryKey: ['engagement-points'] });
+      queryClient.invalidateQueries({ queryKey: ['engagement-level'] });
+    }
+    seenRewardedIdsRef.current = rewardedNow;
+  }, [data, queryClient]);
 
   if (!user?.id) return null;
 
@@ -102,6 +134,13 @@ export default function ReferralInviteCard() {
             Indique outro profissional · ganhe <strong className="text-violet-700 dark:text-violet-400">+50 pts</strong> quando ele postar a 1ª Obra do Dia
           </p>
         </div>
+        <Link
+          to="/dashboard/indicacoes"
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-violet-700 hover:bg-violet-500/10 dark:text-violet-400"
+          title="Ver ranking e histórico completo"
+        >
+          Ver tudo <ArrowRight className="h-3 w-3" />
+        </Link>
       </div>
 
       {/* Stats */}

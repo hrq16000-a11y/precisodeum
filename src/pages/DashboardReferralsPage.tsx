@@ -1,231 +1,325 @@
-import { motion } from 'framer-motion';
-import { Gift, Copy, Share2, Users, Lock, CheckCircle2, TrendingUp, ExternalLink, Clock, Sparkles } from 'lucide-react';
-import DashboardLayout from '@/components/DashboardLayout';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
-import { usePermissions } from '@/hooks/usePermissions';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import {
+  Users,
+  Trophy,
+  Share2,
+  Copy,
+  Check,
+  ArrowLeft,
+  Award,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Sparkles,
+  TrendingUp,
+  Loader2,
+} from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import DashboardLayout from '@/components/DashboardLayout';
 import GlassCard from '@/components/ui/GlassCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import { whatsappLink } from '@/lib/whatsapp';
+import { useSeoHead } from '@/hooks/useSeoHead';
 
-const SITE_URL = typeof window !== 'undefined' ? window.location.origin : '';
+interface Item {
+  id: string;
+  status: string;
+  reward_points: number;
+  created_at: string;
+  qualified_at: string | null;
+  rewarded_at: string | null;
+  referred_name: string;
+  referred_city: string | null;
+  referred_state: string | null;
+  referred_account_type: string | null;
+}
 
-const DashboardReferralsPage = () => {
-  const { user, profile } = useAuth();
-  const { levelName } = usePermissions();
+interface PointsLogEntry {
+  id: string;
+  points: number;
+  action_key: string;
+  created_at: string;
+  metadata: any;
+}
 
-  // Referral code is generated automatically on profile creation (trigger)
-  const referralCode = (profile as any)?.referral_code || null;
+interface FullData {
+  available: boolean;
+  user_ref: string | null;
+  totals: {
+    total: number;
+    pending: number;
+    qualified: number;
+    rewarded: number;
+    revoked: number;
+    points_earned: number;
+  };
+  items: Item[];
+  points_log: PointsLogEntry[];
+  rank: number | null;
+  rank_total: number | null;
+}
 
-  // Stats from referrals table
-  const { data: referralStats } = useQuery({
-    queryKey: ['referral-stats-v2', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return { total: 0, completed: 0, pending: 0, points: 0, recent: [] as any[] };
-      const { data } = await (supabase as any)
-        .from('referrals')
-        .select('id, status, points_awarded, created_at, completed_at, referred_id, profiles!referrals_referred_id_fkey(full_name, avatar_url)')
-        .eq('referrer_id', user.id)
-        .order('created_at', { ascending: false });
-      const list = data || [];
-      const completed = list.filter((r: any) => r.status === 'completed').length;
-      const pending = list.filter((r: any) => r.status === 'pending').length;
-      const points = list.reduce((sum: number, r: any) => sum + (r.points_awarded || 0), 0);
-      return { total: list.length, completed, pending, points, recent: list.slice(0, 5) };
-    },
+const STATUS_META: Record<string, { label: string; bg: string; text: string; icon: any }> = {
+  pending: { label: 'Aguardando', bg: 'bg-muted', text: 'text-muted-foreground', icon: Clock },
+  qualified: { label: 'Qualificado', bg: 'bg-blue-500/15', text: 'text-blue-700 dark:text-blue-400', icon: Sparkles },
+  rewarded: { label: 'Recompensado', bg: 'bg-emerald-500/15', text: 'text-emerald-700 dark:text-emerald-400', icon: CheckCircle2 },
+  completed: { label: 'Recompensado', bg: 'bg-emerald-500/15', text: 'text-emerald-700 dark:text-emerald-400', icon: CheckCircle2 },
+  revoked: { label: 'Revogado', bg: 'bg-red-500/15', text: 'text-red-700 dark:text-red-400', icon: XCircle },
+};
+
+type FilterKey = 'all' | 'pending' | 'qualified' | 'rewarded';
+
+export default function DashboardReferralsPage() {
+  const { user } = useAuth();
+  const [copied, setCopied] = useState(false);
+  const [filter, setFilter] = useState<FilterKey>('all');
+
+  useSeoHead({
+    title: 'Minhas Indicações · Preciso de Um',
+    description: 'Acompanhe seu ranking, status de cada indicação e o histórico de pontos creditados.',
+    noindex: true,
+  });
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['referrals-full', user?.id],
     enabled: !!user?.id,
-  });
-
-  const { data: sponsors = [] } = useQuery({
-    queryKey: ['sponsor-rewards'],
+    staleTime: 30_000,
     queryFn: async () => {
-      const { data } = await supabase
-        .from('sponsors')
-        .select('id, company_name, logo_url, cta_text, link_url')
-        .eq('active', true)
-        .limit(6);
-      return data || [];
+      const { data, error } = await supabase.rpc('get_my_referrals_full' as any);
+      if (error) throw error;
+      return data as unknown as FullData;
     },
   });
 
-  const referralLink = referralCode ? `${SITE_URL}/cadastro?ref=${referralCode}` : '';
+  const ref = data?.user_ref;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://precisodeum.com.br';
+  const link = ref ? `${origin}/login?ref=${encodeURIComponent(ref)}` : '';
+  const message = `Olá! Estou usando o Preciso de Um para ganhar mais clientes. Cadastre-se pelo meu link e ganhe destaque no ranking: ${link}`;
 
-  const copyLink = () => {
-    if (!referralLink) return;
-    navigator.clipboard.writeText(referralLink);
-    toast.success('Link copiado!');
+  const handleCopy = async () => {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      toast.success('Link copiado!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Não foi possível copiar.');
+    }
   };
 
-  const shareWhatsApp = () => {
-    if (!referralLink) return;
-    const text = `Conheça a Preciso de Um — a plataforma para profissionais valorizarem seu trabalho. Cadastre-se com meu link: ${referralLink}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  const handleWhatsApp = () => {
+    if (!link) return;
+    window.open(whatsappLink('', message), '_blank', 'noopener,noreferrer');
   };
 
-  const levelPriority = getLevelPriority(levelName);
+  const filteredItems = useMemo(() => {
+    const items = data?.items || [];
+    if (filter === 'all') return items;
+    if (filter === 'rewarded') return items.filter((i) => i.status === 'rewarded' || i.status === 'completed');
+    return items.filter((i) => i.status === filter);
+  }, [data, filter]);
 
-  const rewards = [
-    { minLevel: 0, label: '+100 pontos por indicação concluída', icon: Sparkles, unlocked: true },
-    { minLevel: 2, label: 'Selo "Indicador" no perfil', icon: CheckCircle2, unlocked: levelPriority >= 2 },
-    { minLevel: 3, label: 'Ofertas exclusivas de Patrocinadores', icon: Gift, unlocked: levelPriority >= 3 },
-    { minLevel: 4, label: 'Destaque VIP nas buscas', icon: TrendingUp, unlocked: levelPriority >= 4 },
-  ];
+  const totals = data?.totals;
 
   return (
     <DashboardLayout>
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent/20 to-accent/5">
-          <Gift className="h-5 w-5 text-accent" />
-        </div>
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Indicações P2P</h1>
-          <p className="text-sm text-muted-foreground">Indique colegas — vocês dois ganham 100 pontos quando o cadastro for concluído</p>
-        </div>
-      </motion.div>
-
-      {/* Referral Link Card */}
-      <GlassCard variant="gradient" className="mt-6">
-        <h2 className="font-display text-base font-bold text-foreground mb-3 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-accent" /> Seu link único
-        </h2>
+      <div className="mx-auto max-w-5xl space-y-5 px-3 py-4 sm:px-4 sm:py-6">
+        {/* Header */}
         <div className="flex items-center gap-2">
-          <input
-            readOnly
-            value={referralLink || 'Gerando código...'}
-            className="flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground truncate"
-          />
-          <Button size="sm" variant="outline" onClick={copyLink} disabled={!referralCode} aria-label="Copiar link">
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button size="sm" variant="accent" onClick={shareWhatsApp} disabled={!referralCode} aria-label="Compartilhar no WhatsApp">
-            <Share2 className="h-4 w-4" />
-          </Button>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-1 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div>
+            <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">Minhas Indicações</h1>
+            <p className="text-xs text-muted-foreground">
+              Acompanhe seus parceiros, status e pontos creditados.
+            </p>
+          </div>
         </div>
-        {referralCode && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Código: <strong className="font-mono text-accent">{referralCode}</strong> · Quando o indicado completar o onboarding, vocês dois ganham +100 pontos.
+
+        {/* Ranking + totals */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <Trophy className="h-3.5 w-3.5 text-amber-500" /> Ranking
+            </div>
+            <p className="mt-2 font-display text-2xl font-bold text-foreground">
+              {isLoading ? '—' : data?.rank ? `#${data.rank}` : '—'}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {data?.rank_total ? `entre ${data.rank_total} indicadores ativos` : 'Indique para entrar no ranking'}
+            </p>
+          </GlassCard>
+
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <Users className="h-3.5 w-3.5" /> Total indicados
+            </div>
+            <p className="mt-2 font-display text-2xl font-bold text-foreground">{totals?.total ?? 0}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {totals?.qualified ?? 0} qualificados
+            </p>
+          </GlassCard>
+
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Recompensados
+            </div>
+            <p className="mt-2 font-display text-2xl font-bold text-emerald-600">{totals?.rewarded ?? 0}</p>
+            <p className="text-[11px] text-muted-foreground">parceiros que postaram a 1ª Obra</p>
+          </GlassCard>
+
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <Award className="h-3.5 w-3.5 text-violet-600" /> Pontos ganhos
+            </div>
+            <p className="mt-2 font-display text-2xl font-bold text-violet-600">+{totals?.points_earned ?? 0}</p>
+            <p className="text-[11px] text-muted-foreground">via indicações qualificadas</p>
+          </GlassCard>
+        </div>
+
+        {/* Link section */}
+        <GlassCard className="p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Seu link único de indicação
+              </label>
+              <Input value={link} readOnly className="font-mono text-xs" />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleCopy} variant="outline" size="sm" disabled={!link} className="gap-1.5">
+                {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? 'Copiado' : 'Copiar'}
+              </Button>
+              <Button
+                onClick={handleWhatsApp}
+                size="sm"
+                disabled={!link}
+                className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                <Share2 className="h-3.5 w-3.5" /> WhatsApp
+              </Button>
+            </div>
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            O bônus de <strong className="text-violet-600">+50 pontos</strong> é creditado automaticamente assim que o seu parceiro postar a primeira <em>Obra do Dia</em>.
           </p>
-        )}
-      </GlassCard>
+        </GlassCard>
 
-      {/* Stats */}
-      <div className="mt-4 grid gap-3 grid-cols-2 sm:grid-cols-4">
-        {[
-          { label: 'Total', value: referralStats?.total ?? 0, icon: Users },
-          { label: 'Concluídas', value: referralStats?.completed ?? 0, icon: CheckCircle2 },
-          { label: 'Pendentes', value: referralStats?.pending ?? 0, icon: Clock },
-          { label: 'Pontos ganhos', value: referralStats?.points ?? 0, icon: Sparkles },
-        ].map((s) => (
-          <Card key={s.label} className="p-4 text-center border-border bg-card">
-            <s.icon className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-            <p className="text-2xl font-black text-foreground tabular-nums">{s.value}</p>
-            <p className="text-[11px] text-muted-foreground mt-1">{s.label}</p>
-          </Card>
-        ))}
-      </div>
-
-      {/* Recent referrals */}
-      {referralStats && referralStats.recent.length > 0 && (
-        <div className="mt-6">
-          <h2 className="font-display text-base font-bold text-foreground mb-3">Indicações recentes</h2>
-          <div className="space-y-2">
-            {referralStats.recent.map((r: any) => (
-              <Card key={r.id} className="p-3 border-border bg-card flex items-center gap-3">
-                {r.profiles?.avatar_url ? (
-                  <img src={r.profiles.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
-                ) : (
-                  <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
-                    {(r.profiles?.full_name || '?').charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{r.profiles?.full_name || 'Usuário'}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {r.status === 'completed'
-                      ? `Concluído · +${r.points_awarded} pts`
-                      : 'Aguardando conclusão do onboarding'}
-                  </p>
-                </div>
-                {r.status === 'completed' ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                ) : (
-                  <Clock className="h-4 w-4 text-amber-500" />
-                )}
-              </Card>
-            ))}
+        {/* Filters + list */}
+        <GlassCard className="p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 font-display text-base font-bold text-foreground">
+              <TrendingUp className="h-4 w-4" /> Status por parceiro
+            </h2>
+            <div className="flex gap-1 overflow-x-auto">
+              {(['all', 'pending', 'qualified', 'rewarded'] as FilterKey[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    filter === f
+                      ? 'bg-foreground text-background'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/70'
+                  }`}
+                >
+                  {f === 'all' ? 'Todos' : STATUS_META[f]?.label || f}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Rewards Section */}
-      <div className="mt-6">
-        <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-          <Gift className="h-5 w-5 text-accent" /> Clube de Vantagens
-        </h2>
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-          {rewards.map((r, i) => (
-            <motion.div
-              key={r.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className={`rounded-xl border p-4 transition-all ${r.unlocked ? 'border-accent/30 bg-accent/5' : 'border-border bg-muted/30 opacity-60'}`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${r.unlocked ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'}`}>
-                  {r.unlocked ? <r.icon className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                </div>
-                <div>
-                  <p className={`text-sm font-semibold ${r.unlocked ? 'text-foreground' : 'text-muted-foreground'}`}>{r.label}</p>
-                  {!r.unlocked && <p className="text-[10px] text-muted-foreground">Nível {r.minLevel}+ necessário</p>}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Sponsor Offers */}
-      {sponsors.length > 0 && (
-        <div className="mt-6">
-          <h2 className="font-display text-lg font-bold text-foreground mb-3">Ofertas de Patrocinadores</h2>
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-            {sponsors.map((s: any) => {
-              const locked = levelPriority < 3;
-              return (
-                <Card key={s.id} className={`p-4 border-border ${locked ? 'opacity-50' : ''}`}>
-                  <div className="flex items-center gap-3">
-                    {s.logo_url && <img src={s.logo_url} alt={s.company_name} className="h-10 w-10 rounded-lg object-contain bg-white border border-border" />}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-foreground truncate">{s.company_name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{s.cta_text || 'Oferta exclusiva'}</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-10 text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando…
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border py-10 text-center">
+              <Users className="mx-auto h-8 w-8 text-muted-foreground/60" />
+              <p className="mt-2 text-sm font-medium text-foreground">Nenhuma indicação por aqui ainda</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Compartilhe seu link e seus pontos começam a subir.
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {filteredItems.map((item) => {
+                const meta = STATUS_META[item.status] || STATUS_META.pending;
+                const Icon = meta.icon;
+                const location = [item.referred_city, item.referred_state].filter(Boolean).join(', ');
+                return (
+                  <motion.li
+                    key={item.id}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-between gap-3 py-2.5"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{item.referred_name}</p>
+                      <p className="truncate text-[11px] text-muted-foreground">
+                        {location || 'Localização não informada'} · indicado em{' '}
+                        {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                      </p>
                     </div>
-                    {locked ? (
-                      <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
-                    ) : (
-                      <a href={s.link_url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-accent hover:underline">
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
+                    <div className="flex shrink-0 items-center gap-2">
+                      {item.reward_points > 0 && (
+                        <span className="text-xs font-bold text-emerald-600">+{item.reward_points}</span>
+                      )}
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.bg} ${meta.text}`}
+                      >
+                        <Icon className="h-3 w-3" />
+                        {meta.label}
+                      </span>
+                    </div>
+                  </motion.li>
+                );
+              })}
+            </ul>
+          )}
+        </GlassCard>
+
+        {/* Points history */}
+        <GlassCard className="p-4">
+          <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold text-foreground">
+            <Award className="h-4 w-4 text-violet-600" /> Histórico de pontos creditados
+          </h2>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-6 text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando…
+            </div>
+          ) : !data?.points_log?.length ? (
+            <p className="py-4 text-center text-xs text-muted-foreground">
+              Nenhum ponto creditado por indicações ainda.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {data.points_log.map((entry) => (
+                <li key={entry.id} className="flex items-center justify-between py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">Indicação qualificada</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {new Date(entry.created_at).toLocaleString('pt-BR')}
+                    </p>
                   </div>
-                  {locked && <p className="mt-2 text-[10px] text-muted-foreground">Disponível a partir do nível Engajado</p>}
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                  <span className="shrink-0 text-sm font-bold text-emerald-600">+{entry.points}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </GlassCard>
+      </div>
     </DashboardLayout>
   );
-};
-
-function getLevelPriority(levelName: string): number {
-  const map: Record<string, number> = {
-    'Iniciante': 0, 'Entusiasta': 1, 'Engajado': 2, 'Ouro': 3, 'Platina': 4, 'Diamante': 5, 'Mestre': 6,
-  };
-  return map[levelName] ?? 0;
 }
-
-export default DashboardReferralsPage;
