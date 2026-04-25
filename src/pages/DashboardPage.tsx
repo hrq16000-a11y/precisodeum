@@ -75,6 +75,9 @@ import DashboardTour from '@/components/dashboard/DashboardTour';
 import { useDashboardState } from '@/hooks/useDashboardState';
 import { useMaturityTier } from '@/hooks/useMaturityTier';
 import { useFirstContactAutoMission } from '@/hooks/useFirstContactAutoMission';
+import UnifiedHealthScore from '@/components/dashboard/UnifiedHealthScore';
+import QuickActionsHero from '@/components/dashboard/QuickActionsHero';
+import ImpactSection from '@/components/dashboard/ImpactSection';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
@@ -520,6 +523,7 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout>
+      <div className="-mx-4 -my-6 bg-slate-50 px-4 py-6 dark:bg-background sm:-mx-6 sm:px-6">
       {debugResetBar}
       <RealtimeEngagementToast />
       <LevelUpBanner />
@@ -533,6 +537,25 @@ const DashboardPage = () => {
         memberSince={profile?.created_at}
         avatarUrl={profile?.avatar_url || undefined}
       />
+
+      {/* 1) Score único de Saúde do Perfil — substitui ProfileHealthScore + Completude duplicada */}
+      <div className="mt-6">
+        <UnifiedHealthScore score={completenessPercent} remaining={remainingItems} />
+      </div>
+
+      {/* 2) Ações Rápidas no topo — primeira coisa visível */}
+      <div className="mt-4">
+        <QuickActionsHero />
+      </div>
+
+      {/* 3) Impacto na Rede — agrupa Views/WhatsApp/Leads, com Empty State quando tudo é zero */}
+      <div className="mt-4">
+        <ImpactSection
+          views={viewsTotal}
+          whatsappClicks={(provider as any)?.contact_clicks_count ?? 0}
+          leads={leadsCount}
+        />
+      </div>
 
       {/* Online Status Feedback — pulse + toast quando entra em modo Online */}
       <div className="mt-3 flex justify-end" data-tour="online-status">
@@ -652,9 +675,8 @@ const DashboardPage = () => {
         <WeeklySummary />
       </div>
 
-      {/* Saúde do Perfil + Força do Perfil (lado a lado em desktop) */}
-      <div className="mt-4 grid gap-4 md:grid-cols-2" data-tour="profile-strength">
-        <ProfileHealthScore />
+      {/* Força do Perfil — score já exibido no topo via UnifiedHealthScore */}
+      <div className="mt-4" data-tour="profile-strength">
         <ProfileStrength />
       </div>
 
@@ -720,28 +742,6 @@ const DashboardPage = () => {
       {/* Analytics Grid: Completeness + Chart + Conversion + Activity */}
       {provider && (
         <div className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
-          <GlassCard variant="gradient" hoverEffect={false} delay={0.3}>
-            <div className="flex items-center gap-4">
-              <ProgressRing value={completenessPercent} size={80} label="Perfil" />
-              <div className="flex-1">
-                <h3 className="text-sm font-bold text-foreground">Completude do Perfil</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {completenessPercent < 100
-                    ? 'Complete seu perfil para aparecer no topo dos resultados.'
-                    : 'Perfil completo! Você está no máximo destaque.'}
-                </p>
-              </div>
-            </div>
-            <div className="mt-4">
-              <ProfileCompleteness
-                provider={provider}
-                profile={profile}
-                servicesCount={servicesCount ?? 0}
-                portfolioCount={portfolioAlbumCount}
-              />
-            </div>
-          </GlassCard>
-
           <GlassCard variant="default" hoverEffect={false} delay={0.4} data-tour="leads">
             <LeadsChart providerId={provider.id} />
           </GlassCard>
@@ -963,6 +963,7 @@ const DashboardPage = () => {
 
       {/* Tour guiado de 3 passos para tier "novato" — respeita dismiss server-side */}
       <DashboardTour />
+      </div>
     </DashboardLayout>
   );
 };
