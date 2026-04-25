@@ -10,6 +10,7 @@ import WizardScoreHeader from './WizardScoreHeader';
 import PublicProfilePreview from './PublicProfilePreview';
 import Step1ProfileType from './Step1ProfileType';
 import Step2LocationPhoto from './Step2LocationPhoto';
+import Step3Identification, { isStep3Valid } from './Step3Identification';
 import type {
   ProfileWizardData,
   ProfileWizardProps,
@@ -90,11 +91,17 @@ const ProfileWizard = ({ mode, initialData, onFinish, onCancel }: ProfileWizardP
     if (dup) toast.error('Este CPF/CNPJ já está cadastrado em outra conta.');
   };
 
-  // Bloqueia avanço se duplicidade detectada nos campos do passo atual
+  // Bloqueia avanço se duplicidade detectada ou validação local falhar.
   const canAdvance = (): boolean => {
-    if (step === 1 && (duplicates.whatsapp || duplicates.tax_id)) {
-      toast.error('Corrija os campos duplicados antes de continuar.');
-      return false;
+    if (step === 1) {
+      if (!isStep3Valid(data)) {
+        toast.error('Preencha nome e WhatsApp válidos antes de continuar.');
+        return false;
+      }
+      if (duplicates.whatsapp || duplicates.tax_id) {
+        toast.error('Corrija os campos duplicados antes de continuar.');
+        return false;
+      }
     }
     return true;
   };
@@ -191,16 +198,14 @@ const ProfileWizard = ({ mode, initialData, onFinish, onCancel }: ProfileWizardP
           />
         )}
         {step === 1 && (
-          <div className="text-muted-foreground space-y-2">
-            <p className="font-medium text-foreground">Passo 2 — Identificação</p>
-            <p>Nome, WhatsApp e CPF/CNPJ — validação de duplicidade ativa via onBlur.</p>
-            {checking.whatsapp && (
-              <p className="text-xs">Verificando WhatsApp no servidor...</p>
-            )}
-            {checking.tax_id && (
-              <p className="text-xs">Verificando CPF/CNPJ no servidor...</p>
-            )}
-          </div>
+          <Step3Identification
+            data={data}
+            onChange={(patch) => setData((prev) => ({ ...prev, ...patch }))}
+            onWhatsappBlur={handleWhatsappBlur}
+            onDocumentBlur={handleDocumentBlur}
+            checking={checking}
+            duplicates={duplicates}
+          />
         )}
         {step === 2 && (
           <p className="text-muted-foreground">Passo 3 — Categoria principal (a portar).</p>
