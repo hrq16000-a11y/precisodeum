@@ -29,6 +29,7 @@ import {
   type FollowupWindow,
   type LeadRow,
 } from '@/hooks/useLeadFollowup';
+import { useNewLeadAlerts } from '@/hooks/useNewLeadAlerts';
 
 interface LeadHistoryItem {
   id: string;
