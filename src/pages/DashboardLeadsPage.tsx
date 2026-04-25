@@ -441,8 +441,8 @@ const DashboardLeadsPage = () => {
           {filteredLeads.length === 0 && (
             <motion.div key="empty" variants={itemVariants} exit={{ opacity: 0, scale: 0.95 }} className="rounded-xl border border-border bg-card p-12 text-center shadow-card">
               <Inbox className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
-              <p className="font-semibold text-foreground">Nenhum lead encontrado</p>
-              <p className="mt-1 text-sm text-muted-foreground">Quando clientes solicitarem orçamento, os leads aparecerão aqui.</p>
+              <p className="font-semibold text-foreground">Nenhum contato encontrado</p>
+              <p className="mt-1 text-sm text-muted-foreground">Quando um cliente enviar uma solicitação de serviço, ela aparecerá aqui.</p>
             </motion.div>
           )}
           {visibleLeads.map((lead) => {
