@@ -70,17 +70,10 @@ const FirstLeadChecklist = ({ className = '', servicesCount, portfolioAlbumsCoun
 
   if (!shouldShow) return null;
 
-  const boostUntil = (profile as any)?.trial_boost_until
-    ? new Date((profile as any).trial_boost_until as string)
-    : null;
-  const boostActive = !!boostUntil && boostUntil.getTime() > Date.now();
-
-  const items = useMemo(
-    () => buildOnboardingChecklist({ profile, provider, servicesCount, portfolioAlbumsCount }),
-    [profile, provider, servicesCount, portfolioAlbumsCount]
-  );
-  const stats = checklistStats(items);
-  const allDone = stats.completed === stats.total;
+  const handleDismiss = async () => {
+    await dismissWidget(WIDGET_KEY);
+    toast.info('Esteira ocultada. Você pode reativá-la nas configurações.');
+  };
 
   const handleActivateBoost = async () => {
     if (!allDone || submitting || boostActive) return;
