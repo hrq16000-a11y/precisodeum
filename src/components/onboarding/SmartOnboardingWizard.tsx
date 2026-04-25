@@ -2060,7 +2060,7 @@ export const Step4Service = ({
 
       {!hasService && (
         <p className="mt-4 w-full text-center text-[11px] font-medium text-muted-foreground">
-          Cadastrar 1 serviço é obrigatório para publicar seu perfil. Os dados já preenchidos nos passos anteriores estão salvos.
+          Cadastrar 1 serviço é obrigatório para concluir seu cadastro. Os dados já preenchidos nos passos anteriores estão salvos.
         </p>
       )}
     </>
@@ -2074,7 +2074,7 @@ export const Step5Done = ({
   const isProvider = profileType === 'provider';
   const meetsMinimum = !isProvider || servicesCreated > 0;
   const finishLabel = meetsMinimum
-    ? 'FINALIZAR E PUBLICAR MEU PERFIL'
+    ? 'FINALIZAR CADASTRO DOS MEUS SERVIÇOS'
     : 'Voltar e cadastrar 1 serviço';
   return (
     <>
@@ -2089,7 +2089,7 @@ export const Step5Done = ({
       </div>
       <h1 className="text-center font-display text-2xl font-bold text-foreground">Tudo pronto!</h1>
       <p className="mt-2 text-center text-sm text-muted-foreground">
-        Revise suas informações e publique seu perfil. A pontuação é calculada automaticamente conforme você usa a plataforma.
+        Revise suas informações e conclua seu cadastro para começar a cadastrar e organizar seus serviços.
       </p>
 
       {!meetsMinimum && (
@@ -2106,7 +2106,7 @@ export const Step5Done = ({
         onClick={onFinish}
       >
         {saving ? (
-          <span className="inline-flex items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /> Publicando…</span>
+          <span className="inline-flex items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /> Finalizando…</span>
         ) : finishLabel}
       </Button>
     </>
