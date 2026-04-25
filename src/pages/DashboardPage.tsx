@@ -259,21 +259,49 @@ const DashboardPage = () => {
   // We only guard against the brief instant where `profile_type` hasn't loaded yet.
   if (profile && !profileType) return null;
 
+  const profileTypeLabel = (() => {
+    switch (profile?.profile_type) {
+      case 'provider': return 'Profissional';
+      case 'client': return 'Cliente';
+      case 'rh': return 'Agência RH';
+      case 'admin': return 'Admin';
+      default: return 'Não definido';
+    }
+  })();
+
   const debugResetBar = (
-    <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2">
-      <div className="flex items-center gap-2 text-[11px] text-amber-700 dark:text-amber-400">
-        <Settings className="h-3.5 w-3.5" />
-        <span>Modo Debug — tipo atual: <strong>{profile?.profile_type || 'não definido'}</strong></span>
+    <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-sm">
+      <div className="flex items-center gap-2 text-[12px] text-foreground min-w-0">
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
+          <User className="h-3.5 w-3.5" />
+        </div>
+        <span className="truncate">
+          Conta: <strong>{profileTypeLabel}</strong>
+        </span>
       </div>
-      <Button
-        size="sm"
-        variant="outline"
-        className="h-7 gap-1.5 border-amber-500/40 text-[11px] text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
-        onClick={handleResetOnboarding}
-      >
-        <RotateCcw className="h-3 w-3" />
-        Reiniciar Cadastro
-      </Button>
+      <div className="flex items-center gap-1.5">
+        <Button
+          size="sm"
+          variant="default"
+          className="h-7 gap-1.5 px-2.5 text-[11px]"
+          onClick={() => navigate('/triagem')}
+          title="Continuar onde parei"
+          aria-label="Wizard — continuar onde parei"
+        >
+          <Sparkles className="h-3 w-3" />
+          Wizard
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+          onClick={handleResetOnboarding}
+          title="Reiniciar cadastro do zero"
+        >
+          <RotateCcw className="h-3 w-3" />
+          Reiniciar
+        </Button>
+      </div>
     </div>
   );
 
