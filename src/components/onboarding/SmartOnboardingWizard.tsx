@@ -89,7 +89,7 @@ const slugify = (s: string) =>
    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 const draftStorageKey = (userId?: string) => `wizard-drafts:${userId ?? 'anonymous'}`;
-const hasValidWhatsapp = (value: string) => value.replace(/\D/g, '').length >= 10;
+const hasValidWhatsapp = (value: string) => validateWhatsapp(value).valid;
 
 export type WizardMode = 'basic';
 
