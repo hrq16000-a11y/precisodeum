@@ -328,13 +328,43 @@ const DashboardLeadsPage = () => {
 
       {/* Toolbar: busca, filtros avançados e exportação */}
       <div className="mt-4 rounded-xl border border-border bg-card p-3 shadow-card">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="relative min-w-[200px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome, telefone, serviço ou mensagem" className="pl-9" />
           </div>
+          {/* Filtro por Cidade — lê lead_context (read-only) */}
+          <Select value={cityFilter} onValueChange={setCityFilter}>
+            <SelectTrigger className="w-full sm:w-44" aria-label="Filtrar por cidade">
+              <div className="flex items-center gap-1.5">
+                <MapPin size={14} strokeWidth={1.5} />
+                <SelectValue placeholder="Todas as cidades" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as cidades</SelectItem>
+              {cityOptions.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* Filtro por Categoria — lê lead_context (read-only) */}
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full sm:w-44" aria-label="Filtrar por categoria">
+              <div className="flex items-center gap-1.5">
+                <Tag size={14} strokeWidth={1.5} />
+                <SelectValue placeholder="Todas as categorias" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {categoryOptions.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button type="button" variant={showAdvanced ? 'default' : 'outline'} size="sm" onClick={() => setShowAdvanced(v => !v)} className="gap-1">
-            <Filter className="h-4 w-4" /> Filtros
+            <Filter className="h-4 w-4" /> Mais filtros
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={handleExportCsv} className="gap-1"><FileDown className="h-4 w-4" /> CSV</Button>
           <Button type="button" variant="outline" size="sm" onClick={handleExportPdf} className="gap-1"><FileText className="h-4 w-4" /> PDF</Button>
