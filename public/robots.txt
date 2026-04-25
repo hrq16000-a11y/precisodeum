@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
+Allow: /especialidades
+Allow: /categoria
+Allow: /como-funciona
 
 Disallow: /admin/
 Disallow: /login
