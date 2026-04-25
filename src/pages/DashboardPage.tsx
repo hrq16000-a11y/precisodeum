@@ -57,6 +57,9 @@ import LeadAnalytics from '@/components/dashboard/LeadAnalytics';
 import LeadInsights from '@/components/dashboard/LeadInsights';
 import ExpertTipsWidget from '@/components/dashboard/ExpertTipsWidget';
 import DismissibleWidget from '@/components/dashboard/DismissibleWidget';
+import MissionCard from '@/components/dashboard/MissionCard';
+import ContactImpactWidget from '@/components/dashboard/ContactImpactWidget';
+import OnlineStatusFeedback from '@/components/dashboard/OnlineStatusFeedback';
 import { useDashboardState } from '@/hooks/useDashboardState';
 import { useMaturityTier } from '@/hooks/useMaturityTier';
 
@@ -505,6 +508,21 @@ const DashboardPage = () => {
         memberSince={profile?.created_at}
         avatarUrl={profile?.avatar_url || undefined}
       />
+
+      {/* Online Status Feedback — pulse + toast quando entra em modo Online */}
+      <div className="mt-3 flex justify-end">
+        <OnlineStatusFeedback />
+      </div>
+
+      {/* Cards de Missão Profissional — gated por tier de maturidade */}
+      <div className="mt-4">
+        <MissionCard />
+      </div>
+
+      {/* Contador de Impacto Real (24h) — visualizações e cliques de contato */}
+      <div className="mt-4">
+        <ContactImpactWidget />
+      </div>
 
       {/* Engagement Loop — guides the user to the next highest-impact action */}
       <div className="mt-4">
