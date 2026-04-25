@@ -67,6 +67,13 @@ ${entries}
     }
   }
 
+  if (type === 'especialidades') {
+    const { data } = await supabase.from('categories').select('slug, created_at').is('deleted_at', null).range(0, 49999);
+    for (const cat of data || []) {
+      urls += entry(siteUrl, `/especialidades/${cat.slug}`, fmtDate(cat.created_at), 'weekly', '0.85');
+    }
+  }
+
   if (type === 'providers') {
     const { data } = await supabase.from('providers').select('slug, updated_at').eq('status', 'approved').not('slug', 'is', null).range(0, 49999);
     for (const p of data || []) {
