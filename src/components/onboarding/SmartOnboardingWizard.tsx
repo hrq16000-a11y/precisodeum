@@ -1026,9 +1026,24 @@ const BasicOnboardingWizard = () => {
             editingCity={editingCity}
             onEditCity={() => setEditingCity(true)}
             onCloseEditing={() => setEditingCity(false)}
-            onCityChange={(c, s) => { setCity(c); setState(s); if (c) setEditingCity(false); }}
+            onCityChange={(c, s) => {
+              setCity(c);
+              setState(s);
+              if (c) {
+                setGeoManualCity(c, s);
+                dismissGeoFailure();
+                setEditingCity(false);
+                window.setTimeout(handleStepFieldBlur, 0);
+              }
+            }}
             onAvatarChange={(url) => { setAvatarUrl(url); window.setTimeout(handleStepFieldBlur, 0); }}
             onFieldBlur={handleStepFieldBlur}
+            onUsePreciseLocation={handleUsePreciseLocation}
+            gpsLoading={requestingGps}
+            geoStatusText={cityStatusMessage}
+            geoPrecise={geoPrecise}
+            geoFailed={geoFailed}
+            geoSource={geoSource}
             userId={user?.id}
             onBack={() => hasExistingCadastro ? navigate('/dashboard', { replace: true }) : advanceTo(1)}
             onNext={handleStep2Next}
@@ -1527,6 +1542,7 @@ TypeButton.displayName = 'TypeButton';
 export const Step2Location = ({
   city, state, avatarUrl, editingCity, onEditCity, onCloseEditing, onCityChange, onAvatarChange,
   userId, onBack, onNext, onSkip, canAdvance, onFieldBlur, fullName, socialAvatarUrl,
+  onUsePreciseLocation, gpsLoading, geoStatusText, geoPrecise, geoFailed, geoSource,
 }: any) => {
   const isFromGoogle = !!socialAvatarUrl && avatarUrl === socialAvatarUrl;
   const hasNoAvatar = !avatarUrl;
@@ -1592,6 +1608,29 @@ export const Step2Location = ({
     <p className="mt-1 text-center text-xs text-muted-foreground">Vamos personalizar seu perfil.</p>
 
     <div className="mt-5 space-y-4">
+      <div className={`rounded-xl border px-3 py-3 ${geoFailed ? 'border-destructive/30 bg-destructive/5' : geoPrecise ? 'border-primary/30 bg-primary/5' : 'border-accent/30 bg-accent/5'}`}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-foreground">
+              {geoPrecise ? 'Localização precisa ativa' : city ? 'Cidade pronta para uso' : 'Defina sua localização'}
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">{geoStatusText}</p>
+            {city && (
+              <p className="mt-2 inline-flex items-center gap-1 rounded-full border border-border bg-background/70 px-2.5 py-1 text-[11px] font-semibold text-foreground">
+                <Check className="h-3 w-3 text-accent" /> {formatCityState(city, state, ' • ')}
+              </p>
+            )}
+            {!geoPrecise && geoSource === 'ip' && (
+              <p className="mt-2 text-[11px] text-muted-foreground">A localização automática por rede é aproximada. Se puder, confirme pelo GPS ou selecione manualmente.</p>
+            )}
+          </div>
+          <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={onUsePreciseLocation} disabled={gpsLoading}>
+            {gpsLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Navigation className="h-3.5 w-3.5" />}
+            {gpsLoading ? 'Buscando…' : geoPrecise ? 'Atualizar GPS' : 'Usar GPS'}
+          </Button>
+        </div>
+      </div>
+
       {userId && (
         <div>
           <label className="mb-2 block text-xs font-semibold text-foreground">Foto de perfil (opcional)</label>
@@ -1674,6 +1713,7 @@ export const Step2Location = ({
             <CityAutocomplete
               value={{ city, state }}
               onChange={({ city: c, state: s }) => onCityChange(c, s)}
+              statusText={geoStatusText}
               onClose={() => { if (city) onCloseEditing?.(); }}
             />
           </div>
@@ -1703,6 +1743,7 @@ export const Step3Contact = ({
   saving, canAdvance, onBack, onNext, onSkip, onFieldBlur,
 }: any) => {
   const isProvider = profileType === 'provider';
+  const selectedCategory = categoriesForPicker.find((category: any) => selectedCategoryIds.includes(category.id));
   // Para provider, o documento aceito depende do subtipo escolhido no Passo 1.
   // PF (autônomo) → CPF apenas (11 dígitos). PJ (empresa/agência) → CNPJ apenas (14 dígitos).
   const docMode: 'cpf' | 'cnpj' | 'auto' = !isProvider
@@ -1851,7 +1892,7 @@ export const Step3Contact = ({
             />
           </div>
           <div>
-            <label className="mb-2 block text-xs font-semibold text-foreground">Sua especialidade principal</label>
+            <label className="mb-2 block text-xs font-semibold text-foreground">Qual é o principal serviço que você vai cadastrar?</label>
             <SmartCategoryPicker
               categories={categoriesForPicker}
               selectedIds={selectedCategoryIds}
@@ -1859,6 +1900,11 @@ export const Step3Contact = ({
               maxSelections={1}
               placeholder="Ex: Eletricista, Pintor…"
             />
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              {selectedCategory
+                ? `Selecionado: ${selectedCategory.name}. Esse será o serviço base do seu cadastro.`
+                : 'Selecione uma especialidade para continuar sem travar no próximo passo.'}
+            </p>
           </div>
         </>
       )}
