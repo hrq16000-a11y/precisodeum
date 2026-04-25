@@ -87,7 +87,15 @@ const CommunityFeed = ({ compact = false }: CommunityFeedProps) => {
     uniqueItems.push(item);
   }
 
-  const displayItems = compact ? uniqueItems.slice(0, 4) : uniqueItems;
+  // Em modo compacto, só mostra atividades realmente recentes (<24h) para
+  // que o selo "Ao vivo" seja sempre verdadeiro. Caso contrário, oculta.
+  const RECENT_WINDOW_MS = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const recentItems = compact
+    ? uniqueItems.filter(i => now - new Date(i.created_at).getTime() <= RECENT_WINDOW_MS)
+    : uniqueItems;
+
+  const displayItems = compact ? recentItems.slice(0, 4) : recentItems;
 
   if (displayItems.length === 0) return null;
 
