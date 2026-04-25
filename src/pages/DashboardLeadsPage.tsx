@@ -477,6 +477,33 @@ const DashboardLeadsPage = () => {
                       )}
                     </div>
                     {lead.service_needed && <p className="mt-1 text-xs font-medium text-accent">{lead.service_needed}</p>}
+
+                    {/* Pílulas de contexto — leitura segura de lead_context.
+                        Renderiza apenas quando há informação útil; leads antigos
+                        sem contexto caem no fallback elegante (apenas mensagem). */}
+                    {hasLeadContext(lead.lead_context) && (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        {formatLeadLocation(lead.lead_context) && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                            <MapPin size={12} strokeWidth={1.5} />
+                            {formatLeadLocation(lead.lead_context)}
+                          </span>
+                        )}
+                        {lead.lead_context?.category && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-600 dark:text-violet-400">
+                            <Tag size={12} strokeWidth={1.5} />
+                            {lead.lead_context.category}
+                          </span>
+                        )}
+                        {lead.lead_context?.origin && lead.lead_context.origin !== 'unknown' && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            <Compass size={12} strokeWidth={1.5} />
+                            {formatLeadOrigin(lead.lead_context.origin)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     {lead.message && <p className="mt-2 rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">{lead.message}</p>}
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
