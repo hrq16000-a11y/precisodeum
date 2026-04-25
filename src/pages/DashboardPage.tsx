@@ -75,6 +75,9 @@ import DashboardTour from '@/components/dashboard/DashboardTour';
 import { useDashboardState } from '@/hooks/useDashboardState';
 import { useMaturityTier } from '@/hooks/useMaturityTier';
 import { useFirstContactAutoMission } from '@/hooks/useFirstContactAutoMission';
+import UnifiedHealthScore from '@/components/dashboard/UnifiedHealthScore';
+import QuickActionsHero from '@/components/dashboard/QuickActionsHero';
+import ImpactSection from '@/components/dashboard/ImpactSection';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
