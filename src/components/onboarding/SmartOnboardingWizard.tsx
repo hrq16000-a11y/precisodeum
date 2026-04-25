@@ -746,45 +746,13 @@ const BasicOnboardingWizard = () => {
   const canAdvanceFromStep3 = validateStep(3).length === 0;
 
   const handleStep3Next = async () => {
-    if (!fullName.trim()) {
-      toast.error('Informe seu nome completo para continuar.');
-      return;
-    }
-    const waCheck = validateWhatsapp(whatsapp);
-    if (!waCheck.valid) {
-      toast.error(waCheck.message, {
-        description: 'É como os clientes vão entrar em contato com você.',
-      });
-      return;
-    }
-    if (profileType === 'provider' && selectedCategoryIds.length === 0) {
-      toast.error('Selecione a categoria principal do seu serviço.');
-      return;
-    }
-    if (profileType === 'rh' && !agencyName.trim()) {
-      toast.error('Informe o nome da agência.');
+    const errs = validateStep(3);
+    if (errs.length > 0) {
+      toast.error(errs[0].message, errs.length > 1 ? { description: `+${errs.length - 1} campo(s) pendente(s)` } : undefined);
       return;
     }
     if (!user?.id) return;
-    // Validação amigável do CPF/CNPJ — campo é opcional, mas se preenchido precisa ser válido.
-    // Mensagens são específicas conforme o subtipo escolhido (PF/CPF ou PJ/CNPJ).
     const taxIdDigits = (taxId || '').replace(/\D/g, '');
-    if (taxIdDigits) {
-      const expected = profileType === 'provider' && providerSubtype === 'company' ? 14 : 11;
-      const expectedLabel = expected === 14 ? 'CNPJ' : 'CPF';
-      if (taxIdDigits.length !== expected) {
-        toast.error(
-          expected === 14
-            ? `CNPJ precisa ter 14 dígitos. Confira ou deixe em branco.`
-            : `CPF precisa ter 11 dígitos. Confira ou deixe em branco.`
-        );
-        return;
-      }
-      if (!isValidCpfCnpj(taxIdDigits)) {
-        toast.error(`${expectedLabel} inválido — confira os dígitos ou deixe em branco para preencher depois.`);
-        return;
-      }
-    }
     setSaving(true);
     setLastSaveError(null);
     let currentTable: string = 'profiles';
