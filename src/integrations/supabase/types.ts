@@ -5824,6 +5824,21 @@ export type Database = {
         }[]
       }
       admin_clear_suspicion: { Args: { _user_ids: string[] }; Returns: number }
+      admin_conversion_metrics: {
+        Args: { _category_slug?: string; _days?: number; _tier?: string }
+        Returns: {
+          category_name: string
+          category_slug: string
+          conversion_rate: number
+          providers_count: number
+          tier: string
+          total_dismisses: number
+          total_leads: number
+          total_views: number
+          total_visits: number
+          total_whatsapp_clicks: number
+        }[]
+      }
       admin_diff_rls_snapshots: {
         Args: { from_date: string; to_date: string }
         Returns: {
@@ -6019,6 +6034,10 @@ export type Database = {
         Returns: boolean
       }
       claim_sponsor_lead: { Args: { _lead_id: string }; Returns: Json }
+      complete_first_contact_mission: {
+        Args: { _provider_id: string }
+        Returns: Json
+      }
       complete_mission: { Args: { _key: string; _value: Json }; Returns: Json }
       complete_onboarding_checklist: { Args: never; Returns: Json }
       complete_referral: { Args: { _referred_id: string }; Returns: boolean }
@@ -6325,45 +6344,9 @@ export type Database = {
         | {
             Args: {
               _category_slug?: string
-              _lat: number
+              _lat?: number
               _limit?: number
-              _lng: number
-              _radius_m?: number
-            }
-            Returns: {
-              business_name: string
-              category_icon: string
-              category_name: string
-              category_slug: string
-              city: string
-              description: string
-              distance_m: number
-              featured: boolean
-              id: string
-              latitude: number
-              longitude: number
-              neighborhood: string
-              phone: string
-              photo_url: string
-              plan: string
-              portfolio_album_count: number
-              portfolio_photo_count: number
-              rating_avg: number
-              review_count: number
-              services_count: number
-              slug: string
-              state: string
-              user_id: string
-              whatsapp: string
-              years_experience: number
-            }[]
-          }
-        | {
-            Args: {
-              _category_slug?: string
-              _lat: number
-              _limit?: number
-              _lng: number
+              _lng?: number
               _online_user_ids?: string[]
               _radius_m?: number
             }
@@ -6393,6 +6376,42 @@ export type Database = {
               state: string
               user_id: string
               visibility_score: number
+              whatsapp: string
+              years_experience: number
+            }[]
+          }
+        | {
+            Args: {
+              _category_slug?: string
+              _lat: number
+              _limit?: number
+              _lng: number
+              _radius_m?: number
+            }
+            Returns: {
+              business_name: string
+              category_icon: string
+              category_name: string
+              category_slug: string
+              city: string
+              description: string
+              distance_m: number
+              featured: boolean
+              id: string
+              latitude: number
+              longitude: number
+              neighborhood: string
+              phone: string
+              photo_url: string
+              plan: string
+              portfolio_album_count: number
+              portfolio_photo_count: number
+              rating_avg: number
+              review_count: number
+              services_count: number
+              slug: string
+              state: string
+              user_id: string
               whatsapp: string
               years_experience: number
             }[]
