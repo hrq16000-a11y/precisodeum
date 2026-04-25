@@ -52,6 +52,7 @@ import { useCategoriesWithCount } from '@/hooks/useProviders';
 import { getSocialAvatarUrl, getInitials } from '@/lib/avatarUtils';
 import { formatCityState } from '@/lib/locationFormat';
 import { isValidCpfCnpj } from '@/lib/cpfCnpj';
+import { validateWhatsapp, sanitizePhone, formatPhoneDisplay } from '@/lib/whatsapp';
 import CpfCnpjInput, { maskCpfCnpj } from './CpfCnpjInput';
 
 
@@ -88,7 +89,7 @@ const slugify = (s: string) =>
    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 const draftStorageKey = (userId?: string) => `wizard-drafts:${userId ?? 'anonymous'}`;
-const hasValidWhatsapp = (value: string) => value.replace(/\D/g, '').length >= 10;
+const hasValidWhatsapp = (value: string) => validateWhatsapp(value).valid;
 
 export type WizardMode = 'basic';
 
@@ -140,7 +141,7 @@ const BasicOnboardingWizard = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url ?? null);
 
   // Contato + bio (Passo 3)
-  const [whatsapp, setWhatsapp] = useState(profile?.whatsapp || profile?.phone || '');
+  const [whatsapp, setWhatsapp] = useState(sanitizePhone(profile?.whatsapp || profile?.phone || ''));
   const [bio, setBio] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [taxId, setTaxId] = useState<string>(((profile as any)?.tax_id as string) || '');
@@ -172,6 +173,31 @@ const BasicOnboardingWizard = () => {
   const latestAutoSaveFingerprintRef = useRef<string | null>(null);
   const autoSaveVersionRef = useRef(0);
 
+  // ─── Modo depuração ───
+  // Ativo via ?debug=1 na URL OU localStorage.wizard_debug = '1'.
+  // Mostra painel com estado de cada campo + última falha do save (table, code, message, details, hint).
+  const debugMode = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('debug') === '1') return true;
+      return window.localStorage.getItem('wizard_debug') === '1';
+    } catch {
+      return false;
+    }
+  }, []);
+  type WizardSaveError = {
+    step: WizardStep;
+    when: string;
+    table: string;
+    code?: string;
+    message: string;
+    details?: string;
+    hint?: string;
+    payloadKeys?: string[];
+  };
+  const [lastSaveError, setLastSaveError] = useState<WizardSaveError | null>(null);
+
   // ─── Sync inicial: se profile carrega DEPOIS do mount, atualiza step ───
   const syncedRef = useRef(false);
   useEffect(() => {
@@ -185,7 +211,7 @@ const BasicOnboardingWizard = () => {
     if (profile.city) setCity(profile.city);
     if (profile.state) setState(profile.state);
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
-    if (profile.whatsapp || profile.phone) setWhatsapp(profile.whatsapp || profile.phone || '');
+    if (profile.whatsapp || profile.phone) setWhatsapp(sanitizePhone(profile.whatsapp || profile.phone || ''));
   }, [profile]);
 
   useEffect(() => {
@@ -458,7 +484,7 @@ const BasicOnboardingWizard = () => {
     setCity(savedCity);
     setState(savedState);
     setAvatarUrl(savedProfile.avatar_url || null);
-    setWhatsapp(savedProfile.whatsapp || savedProfile.phone || '');
+    setWhatsapp(sanitizePhone(savedProfile.whatsapp || savedProfile.phone || ''));
     setBio(savedProfile.bio || '');
     setSelectedCategoryIds(Array.isArray(savedProfile.preferred_category_ids) ? savedProfile.preferred_category_ids : []);
     setTaxId(secureTaxRow?.tax_id || '');
@@ -680,8 +706,9 @@ const BasicOnboardingWizard = () => {
       toast.error('Informe seu nome completo para continuar.');
       return;
     }
-    if (!hasValidWhatsapp(whatsapp)) {
-      toast.error('Informe um WhatsApp válido (com DDD).', {
+    const waCheck = validateWhatsapp(whatsapp);
+    if (!waCheck.valid) {
+      toast.error(waCheck.message, {
         description: 'É como os clientes vão entrar em contato com você.',
       });
       return;
@@ -715,10 +742,14 @@ const BasicOnboardingWizard = () => {
       }
     }
     setSaving(true);
+    setLastSaveError(null);
+    let currentTable: string = 'profiles';
+    let currentPayloadKeys: string[] = [];
     try {
       const hadTaxIdBefore = !!((profile as any)?.tax_id_last4) || !!taxId.trim();
 
-      const { error: profileError } = await supabase.from('profiles').update({
+      currentTable = 'profiles';
+      const profilesPayload = {
         full_name: fullName.trim(),
         whatsapp,
         phone: whatsapp,
@@ -729,9 +760,13 @@ const BasicOnboardingWizard = () => {
         state: state || null,
         preferred_category_ids: profileType === 'provider' ? selectedCategoryIds : [],
         onboarding_step: 4,
-      } as any).eq('id', user.id);
+      };
+      currentPayloadKeys = Object.keys(profilesPayload);
+      const { error: profileError } = await supabase.from('profiles').update(profilesPayload as any).eq('id', user.id);
       if (profileError) throw profileError;
 
+      currentTable = 'rpc:set_profile_tax_id';
+      currentPayloadKeys = ['_tax_id'];
       const { error: taxError } = await supabase.rpc('set_profile_tax_id', {
         _tax_id: taxIdDigits || null,
       });
@@ -755,20 +790,24 @@ const BasicOnboardingWizard = () => {
 
       // Garante registro provider/agency conforme tipo
       if (profileType === 'provider') {
+        currentTable = 'providers';
         const { data: existing } = await supabase.from('providers').select('*').eq('user_id', user.id).limit(1);
         if (existing && existing[0]) {
-          await supabase.from('providers').update({
+          const updPayload = {
             city: city || existing[0].city,
             state: state || existing[0].state,
             description: bio || existing[0].description,
             whatsapp: whatsapp || existing[0].whatsapp,
             category_id: selectedCategoryIds[0] || existing[0].category_id,
             account_type: providerSubtype || existing[0].account_type || 'autonomous',
-          } as any).eq('id', existing[0].id);
+          };
+          currentPayloadKeys = Object.keys(updPayload);
+          const { error: updErr } = await supabase.from('providers').update(updPayload as any).eq('id', existing[0].id);
+          if (updErr) throw updErr;
           setSavedProvider({ ...existing[0], city, state, description: bio, whatsapp, category_id: selectedCategoryIds[0], account_type: providerSubtype || 'autonomous' });
         } else {
           const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'profissional');
-          const { data: created, error } = await supabase.from('providers').insert({
+          const insPayload = {
             user_id: user.id,
             slug: `${baseSlug}-${user.id.slice(0, 6)}`,
             city: city || null,
@@ -778,22 +817,28 @@ const BasicOnboardingWizard = () => {
             category_id: selectedCategoryIds[0] || null,
             account_type: providerSubtype || 'autonomous',
             status: 'pending',
-          } as any).select('*').single();
+          };
+          currentPayloadKeys = Object.keys(insPayload);
+          const { data: created, error } = await supabase.from('providers').insert(insPayload as any).select('*').single();
           if (error) throw error;
           setSavedProvider(created);
         }
       } else if (profileType === 'rh') {
+        currentTable = 'agencies';
         const { data: existing } = await (supabase as any).from('agencies').select('*').eq('user_id', user.id).limit(1);
         if (!existing || existing.length === 0) {
           const baseSlug = slugify(agencyName || fullName || 'agencia');
-          await (supabase as any).from('agencies').insert({
+          const insPayload = {
             user_id: user.id,
             slug: `${baseSlug}-${user.id.slice(0, 6)}`,
             name: agencyName.trim() || fullName.trim() || 'Minha Agência',
             city: city || null,
             state: state || null,
             status: 'pending',
-          });
+          };
+          currentPayloadKeys = Object.keys(insPayload);
+          const { error: insErr } = await (supabase as any).from('agencies').insert(insPayload);
+          if (insErr) throw insErr;
         }
       }
 
@@ -807,12 +852,33 @@ const BasicOnboardingWizard = () => {
         await finishOnboarding();
       }
     } catch (err: any) {
-      console.error('[Wizard step 3]', err);
-      const detail = err?.message || err?.error_description || err?.details || '';
-      toast.error('Não foi possível salvar.', {
-        description: detail
-          ? `Motivo: ${String(detail).slice(0, 180)}`
-          : 'Confira os campos obrigatórios e tente novamente. Se persistir, tente recarregar a página.',
+      console.error('[Wizard step 3]', { table: currentTable, payloadKeys: currentPayloadKeys, err });
+      const message = String(err?.message || err?.error_description || 'Erro desconhecido');
+      const details = err?.details ? String(err.details) : undefined;
+      const hint = err?.hint ? String(err.hint) : undefined;
+      const code = err?.code ? String(err.code) : undefined;
+      setLastSaveError({
+        step: 3,
+        when: new Date().toISOString(),
+        table: currentTable,
+        code,
+        message,
+        details,
+        hint,
+        payloadKeys: currentPayloadKeys,
+      });
+      // Mensagem amigável + dica do campo provável
+      let friendly = message;
+      const lower = `${message} ${details || ''}`.toLowerCase();
+      if (lower.includes('whatsapp') || lower.includes('phone')) friendly = 'Erro no campo WhatsApp/telefone.';
+      else if (lower.includes('full_name') || lower.includes('name')) friendly = 'Erro no campo Nome.';
+      else if (lower.includes('city')) friendly = 'Erro no campo Cidade.';
+      else if (lower.includes('state')) friendly = 'Erro no campo Estado (UF).';
+      else if (lower.includes('category')) friendly = 'Erro na Categoria selecionada.';
+      else if (lower.includes('tax') || lower.includes('cpf') || lower.includes('cnpj')) friendly = 'Erro no CPF/CNPJ.';
+      else if (lower.includes('slug')) friendly = 'Slug do perfil já em uso — tente novamente.';
+      toast.error(`Não foi possível salvar (${currentTable}).`, {
+        description: `${friendly}${code ? ` [${code}]` : ''} — ${String(message).slice(0, 180)}`,
       });
     } finally {
       setSaving(false);
@@ -854,13 +920,15 @@ const BasicOnboardingWizard = () => {
 
   const reviewItems = buildReviewItems({ profileType, providerSubtype, city, state, avatarUrl, fullName, agencyName, whatsapp, bio, selectedCategoryIds, servicesCreated });
 
+  // Resumo final compacto: NÃO repete perguntas já confirmadas (tipo de perfil, PF/PJ).
+  // Mostra apenas os dados úteis para o usuário conferir antes de concluir.
   const summaryItems = [
-    { label: 'Tipo de perfil', value: profileType ? (PROFILE_TYPE_LABEL[profileType] || profileType) : 'Não definido' },
-    { label: 'Cadastro profissional', value: providerSubtype ? (PROVIDER_SUBTYPE_LABEL[providerSubtype] || providerSubtype) : 'Não aplicável' },
-    { label: 'Cidade', value: formatCityState(city, state, ' • ') || 'Não informada' },
+    { label: 'Localização', value: formatCityState(city, state, ' • ') || 'Não informada' },
     { label: 'Nome', value: fullName || 'Não informado' },
-    { label: 'WhatsApp', value: whatsapp || 'Não informado' },
-    { label: 'Serviços', value: profileType === 'provider' ? `${servicesCreated} cadastrado(s)` : 'Não aplicável' },
+    { label: 'WhatsApp', value: whatsapp ? formatPhoneDisplay(whatsapp) : 'Não informado' },
+    ...(profileType === 'provider'
+      ? [{ label: 'Serviços', value: `${servicesCreated} cadastrado(s)` }]
+      : []),
   ];
 
   // ─── Passo 5: Conclusão ───
@@ -931,6 +999,50 @@ const BasicOnboardingWizard = () => {
         <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center gap-4 bg-background/90 backdrop-blur-md">
           <Loader2 className="h-12 w-12 animate-spin text-accent" />
           <p className="text-base font-bold text-foreground">Salvando…</p>
+        </div>
+      )}
+
+      {debugMode && (
+        <div className="fixed bottom-2 right-2 z-[120] max-h-[60vh] w-[340px] max-w-[95vw] overflow-auto rounded-lg border-2 border-amber-500 bg-zinc-900/95 p-3 text-[10px] font-mono text-amber-100 shadow-2xl">
+          <div className="mb-2 flex items-center justify-between gap-2 border-b border-amber-500/40 pb-1">
+            <span className="font-bold uppercase tracking-wider text-amber-300">Wizard Debug</span>
+            <button
+              type="button"
+              onClick={() => { try { window.localStorage.removeItem('wizard_debug'); } catch {} window.location.search = ''; }}
+              className="rounded bg-amber-500/20 px-2 py-0.5 text-[9px] hover:bg-amber-500/40"
+            >Fechar</button>
+          </div>
+          <div className="space-y-1">
+            <div><span className="text-amber-300">step:</span> {step} / furthest: {furthestStep}</div>
+            <div><span className="text-amber-300">profileType:</span> {String(profileType)} ({providerSubtype || '—'})</div>
+            <div className={fullName.trim() ? 'text-emerald-300' : 'text-rose-300'}>fullName: {fullName ? '✓ "' + fullName + '"' : '✗ vazio'}</div>
+            <div className={city ? 'text-emerald-300' : 'text-rose-300'}>city: {city ? '✓ ' + city : '✗ vazio'}</div>
+            <div className={state ? 'text-emerald-300' : 'text-rose-300'}>state: {state ? '✓ ' + state : '✗ vazio (UF)'}</div>
+            <div className={validateWhatsapp(whatsapp).valid ? 'text-emerald-300' : 'text-rose-300'}>
+              whatsapp: {whatsapp ? whatsapp : '✗ vazio'} {!validateWhatsapp(whatsapp).valid && `(${validateWhatsapp(whatsapp).reason})`}
+            </div>
+            <div className={(profileType !== 'provider' || selectedCategoryIds.length > 0) ? 'text-emerald-300' : 'text-rose-300'}>
+              category: {selectedCategoryIds.length || 0} selecionada(s)
+            </div>
+            <div><span className="text-amber-300">taxId len:</span> {(taxId || '').replace(/\D/g, '').length}</div>
+            <div><span className="text-amber-300">canAdvanceFromStep3:</span> {String(canAdvanceFromStep3)}</div>
+            <div><span className="text-amber-300">saving:</span> {String(saving)}</div>
+          </div>
+          {lastSaveError && (
+            <div className="mt-2 rounded border border-rose-400/60 bg-rose-950/40 p-2 text-rose-100">
+              <div className="font-bold text-rose-300">Último erro de save:</div>
+              <div>step: {lastSaveError.step} · {new Date(lastSaveError.when).toLocaleTimeString()}</div>
+              <div>table: <span className="text-amber-300">{lastSaveError.table}</span></div>
+              {lastSaveError.code && <div>code: {lastSaveError.code}</div>}
+              <div>message: {lastSaveError.message}</div>
+              {lastSaveError.details && <div>details: {lastSaveError.details}</div>}
+              {lastSaveError.hint && <div>hint: {lastSaveError.hint}</div>}
+              {lastSaveError.payloadKeys && <div>payload: [{lastSaveError.payloadKeys.join(', ')}]</div>}
+            </div>
+          )}
+          <div className="mt-2 text-[9px] text-amber-300/60">
+            ?debug=1 OU localStorage.setItem('wizard_debug','1')
+          </div>
         </div>
       )}
 
@@ -1779,6 +1891,8 @@ export const Step3Contact = ({
   const taxFilled = taxDigits.length > 0;
   const expectedLen = docMode === 'cnpj' ? 14 : 11;
   const taxValid = !taxFilled || (taxDigits.length === expectedLen && isValidCpfCnpj(taxDigits));
+  const waCheck = validateWhatsapp(whatsapp || '');
+  const waTouched = (whatsapp || '').length > 0;
 
   // Ao alternar PF↔PJ, garante que o documento existente seja truncado para o novo formato.
   const switchSubtype = (next: 'autonomous' | 'company') => {
@@ -1841,12 +1955,21 @@ export const Step3Contact = ({
             name="whatsapp"
             value={whatsapp}
             onChange={(_n: any, val: string) => setWhatsapp(val)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+            className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground ${
+              waTouched && !waCheck.valid ? 'border-destructive focus-visible:ring-destructive' : 'border-input'
+            }`}
           />
         </div>
-        <p className="mt-1 text-[11px] text-muted-foreground">
-          Os clientes só conseguem te chamar se o WhatsApp estiver preenchido.
-        </p>
+        {waTouched && !waCheck.valid ? (
+          <p className="mt-1 flex items-start gap-1 text-[11px] font-medium text-destructive">
+            <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+            <span>{waCheck.message}</span>
+          </p>
+        ) : (
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Inclua DDD. Ex: (41) 99745-2053. Os clientes só conseguem te chamar se o WhatsApp estiver preenchido.
+          </p>
+        )}
       </div>
 
       <div>

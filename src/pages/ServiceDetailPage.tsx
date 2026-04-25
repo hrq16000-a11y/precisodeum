@@ -16,6 +16,7 @@ import { useMemo, useEffect, useRef } from 'react';
 import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { formatLocationString } from '@/lib/normalize';
+import { formatCityState } from '@/lib/locationFormat';
 
 const ServiceDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -116,7 +117,7 @@ const ServiceDetailPage = () => {
             <div className="flex-1">
               <h1 className="font-display text-2xl font-bold text-foreground md:text-3xl">{svc.service_name}</h1>
               <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1">
-                <MapPin className="h-4 w-4" /> {city} - {state}
+                <MapPin className="h-4 w-4" /> {formatCityState(city, state)}
               </p>
 
               {svc.serviceCategories?.length > 0 && (
@@ -156,7 +157,7 @@ const ServiceDetailPage = () => {
               <div className="sticky top-20 rounded-xl border border-border bg-card p-6 shadow-card">
                 <h3 className="font-display text-base font-bold text-foreground">Profissional</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{providerName}</p>
-                <p className="text-xs text-muted-foreground">{city} - {state}</p>
+                <p className="text-xs text-muted-foreground">{formatCityState(city, state)}</p>
 
                 <div className="mt-4 space-y-2">
                   <Button variant="accent" className="w-full" asChild>

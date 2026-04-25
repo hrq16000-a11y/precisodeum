@@ -54,6 +54,59 @@ export const toCanonical = (input: string): string => {
   return '';
 };
 
+/**
+ * Detailed WhatsApp validation with reason. Use this in forms to give users
+ * actionable error messages instead of a generic "inválido".
+ *
+ * Returns:
+ *  - { valid: true }  when the sanitized number passes
+ *  - { valid: false, reason } when invalid. Possible reasons:
+ *      - 'empty'       : nothing typed
+ *      - 'too_short'   : less than 10 digits (missing DDD or number)
+ *      - 'too_long'    : more than 13 digits
+ *      - 'invalid_ddd' : first 2 digits are not a valid Brazilian DDD (11–99, no leading 0)
+ *      - 'invalid_format' : other shape that does not match raw or canonical
+ */
+export type WhatsappValidationReason =
+  | 'empty'
+  | 'too_short'
+  | 'too_long'
+  | 'invalid_ddd'
+  | 'invalid_format';
+
+export type WhatsappValidationResult =
+  | { valid: true; reason?: undefined; message?: undefined }
+  | { valid: false; reason: WhatsappValidationReason; message: string };
+
+const WHATSAPP_REASON_MESSAGE: Record<WhatsappValidationReason, string> = {
+  empty: 'Informe o WhatsApp com DDD. Ex: (41) 99745-2053.',
+  too_short: 'WhatsApp incompleto — inclua DDD + número (10 ou 11 dígitos).',
+  too_long: 'WhatsApp tem dígitos demais. Confira o número.',
+  invalid_ddd: 'DDD inválido. Use um DDD brasileiro válido (11 a 99).',
+  invalid_format: 'Formato de WhatsApp não reconhecido. Use (DD) 9XXXX-XXXX.',
+};
+
+export const validateWhatsapp = (raw: string): WhatsappValidationResult => {
+  const digits = sanitizePhone(raw || '');
+  if (!digits) return { valid: false, reason: 'empty', message: WHATSAPP_REASON_MESSAGE.empty };
+  // Strip 55 prefix to inspect DDD + number
+  let local = digits;
+  if (local.startsWith('55') && (local.length === 12 || local.length === 13)) {
+    local = local.slice(2);
+  }
+  if (local.length < 10) {
+    return { valid: false, reason: 'too_short', message: WHATSAPP_REASON_MESSAGE.too_short };
+  }
+  if (local.length > 11) {
+    return { valid: false, reason: 'too_long', message: WHATSAPP_REASON_MESSAGE.too_long };
+  }
+  const ddd = parseInt(local.slice(0, 2), 10);
+  if (!Number.isFinite(ddd) || ddd < 11 || ddd > 99) {
+    return { valid: false, reason: 'invalid_ddd', message: WHATSAPP_REASON_MESSAGE.invalid_ddd };
+  }
+  return { valid: true };
+};
+
 /** Validate: accepts raw (10-11 digits) or canonical (55 + 10-11 digits) */
 export const isValidWhatsApp = (sanitized: string): boolean => {
   if (/^\d{10,11}$/.test(sanitized)) return true;

@@ -1443,7 +1443,7 @@ const ProviderProfile = () => {
                   <span className="flex items-center gap-1">
                     <MapPin className="h-4 w-4 text-accent" />
                     {provider.city
-                      ? formatLocationString(`${provider.neighborhood ? `${provider.neighborhood}, ` : ''}${provider.city} - ${provider.state}`)
+                      ? `${provider.neighborhood ? `${provider.neighborhood}, ` : ''}${formatCityState(provider.city, provider.state)}`
                       : 'Localização não informada'}
                   </span>
                 </div>
@@ -1741,7 +1741,7 @@ const ProviderProfile = () => {
                               </p>
                             )}
                             <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                              <MapPin className="inline h-3 w-3 mr-0.5" />{rp.city}{rp.state ? ` - ${rp.state}` : ''}
+                              <MapPin className="inline h-3 w-3 mr-0.5" />{formatCityState(rp.city, rp.state)}
                             </p>
                             {rp.rating_avg > 0 && (
                               <div className="flex items-center justify-center gap-1 mt-1.5">

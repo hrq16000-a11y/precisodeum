@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Search, Loader2, Target } from 'lucide-react';
+import { formatCityState } from '@/lib/locationFormat';
 import { toast } from 'sonner';
 import CoverageSearchStatsWidget from '@/components/admin/CoverageSearchStatsWidget';
 
@@ -142,7 +143,7 @@ const AdminCoverageMapPage = () => {
                       <div className="text-sm">
                         <div className="font-semibold">{r.business_name}</div>
                         <div className="text-muted-foreground text-xs">{r.category_name || '—'}</div>
-                        <div className="text-xs mt-1">{r.city}{r.state ? ` - ${r.state}` : ''}</div>
+                        <div className="text-xs mt-1">{formatCityState(r.city, r.state)}</div>
                         <div className="text-xs">Distância: {(r.distance_m / 1000).toFixed(1)} km</div>
                         {r.service_radius ? <div className="text-xs">Cobertura: {r.service_radius} km</div> : null}
                       </div>
