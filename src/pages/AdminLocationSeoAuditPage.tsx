@@ -4,6 +4,8 @@ import { formatCityState, safeUF } from '@/lib/locationFormat';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AlertTriangle, CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
+import AdminLayout from '@/components/AdminLayout';
+import { useAdmin } from '@/hooks/useAdmin';
 
 type Finding = {
   route: string;
