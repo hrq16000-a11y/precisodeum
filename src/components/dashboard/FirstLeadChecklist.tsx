@@ -159,6 +159,16 @@ const FirstLeadChecklist = ({ className = '', servicesCount, portfolioAlbumsCoun
               Complete os {stats.total} passos e ganhe <strong className="text-accent">7 dias de destaque</strong> nas buscas.
             </p>
           </div>
+          {!allDone && isAtLeast('explorador') && (
+            <button
+              type="button"
+              aria-label="Ocultar esteira"
+              onClick={handleDismiss}
+              className="shrink-0 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         <div className="mt-4 space-y-1.5">
