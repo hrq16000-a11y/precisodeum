@@ -242,7 +242,7 @@ const ProfileWizard = ({ mode, initialData, onFinish, onCancel }: ProfileWizardP
         )}
 
         <div className="flex items-center gap-2">
-          {step > startStep && (
+          {step > startStep && step !== 4 && (
             <Button
               variant="outline"
               type="button"
@@ -252,8 +252,9 @@ const ProfileWizard = ({ mode, initialData, onFinish, onCancel }: ProfileWizardP
               Voltar
             </Button>
           )}
-          {/* Step 0 (seleção de tipo) avança ao clicar nos cards — esconde "Avançar". */}
-          {!(mode === 'create' && step === 0) && (
+          {/* Step 0 (seleção de tipo) e Step 4 (Localização+Foto) trazem
+              seus próprios controles de navegação — escondemos "Avançar" do shell. */}
+          {!(mode === 'create' && step === 0) && step !== 4 && (
             <Button
               type="button"
               onClick={handleAdvance}
