@@ -52,6 +52,8 @@ import CategoryBenchmarkWidget from '@/components/dashboard/CategoryBenchmarkWid
 import RegionalDemandWidget from '@/components/dashboard/RegionalDemandWidget';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
 import DailyPostCard from '@/components/dashboard/DailyPostCard';
+import MissedOpportunitiesWidget from '@/components/dashboard/MissedOpportunitiesWidget';
+import { usePresenceHeartbeat } from '@/hooks/usePresenceHeartbeat';
 import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
 import EngagementLoop from '@/components/dashboard/EngagementLoop';
 import AchievementHistory from '@/components/dashboard/AchievementHistory';
