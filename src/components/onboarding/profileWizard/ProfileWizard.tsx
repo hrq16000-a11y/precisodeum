@@ -231,7 +231,7 @@ const ProfileWizard = ({ mode, initialData, onFinish, onCancel }: ProfileWizardP
             <p className="text-xs text-muted-foreground">
               Confira como seu perfil aparecerá publicamente. Volte se algo estiver incorreto.
             </p>
-            <PublicProfilePreview data={data} />
+            <PublicProfilePreview data={data} userId={mode === 'edit' ? user?.id : undefined} />
           </div>
         )}
       </div>
