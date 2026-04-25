@@ -18,6 +18,7 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { importWithRetry } from '@/lib/lazyWithRetry';
+import CitySeoBlock from '@/components/CitySeoBlock';
 
 const SponsorLeaderBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorLeaderBanner')));
 const SponsorTopBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorTopBanner')));
@@ -296,6 +297,21 @@ const CityPage = () => {
           </div>
         </div>
       </section>
+
+      {/* SEO programático: texto único, FAQ JSON-LD, categorias mais buscadas, vizinhas e destaques */}
+      <CitySeoBlock
+        citySlug={city!.slug}
+        cityName={city!.name}
+        state={city!.state}
+        providersCount={providers.length}
+        featuredProviders={providers.slice(0, 12).map((p: any) => ({
+          slug: p.slug,
+          name: p.name,
+          category: p.category,
+          rating: p.rating,
+          reviewCount: p.reviewCount,
+        }))}
+      />
 
       <Suspense fallback={null}><SponsorFooterCTA city={city!.name} /></Suspense>
 
