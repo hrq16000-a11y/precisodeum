@@ -18,6 +18,7 @@ import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
+import { useProviderActivity } from '@/hooks/useProviderActivity';
 import { useEngagementPoints } from '@/hooks/useEngagementPoints';
 import { getEngagementTier } from '@/lib/engagementTiers';
 import CommunityVerifiedBadge from '@/components/CommunityVerifiedBadge';
@@ -47,6 +48,9 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const { user } = useAuth();
   const { city: geoCity, state: geoState } = useGeoCity();
   const isOnline = useIsProviderOnline(provider.userId);
+  const { data: activity } = useProviderActivity(provider.userId);
+  const workingNow = !!activity?.working_now;
+  const activeToday = !!activity?.active_today;
   const isTopProfessional = useTopProfessional(provider.userId);
   const { data: engagementPoints = 0 } = useEngagementPoints(provider.userId);
   const engTier = getEngagementTier(engagementPoints);
