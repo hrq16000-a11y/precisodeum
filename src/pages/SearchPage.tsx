@@ -316,6 +316,24 @@ const SearchPage = () => {
         </Select>
       </div>
 
+      {/* UF / Estado */}
+      {availableStates.length > 1 && (
+        <div>
+          <Label className="text-xs text-muted-foreground flex items-center gap-1">
+            <MapPin className="h-3 w-3" /> Estado (UF)
+          </Label>
+          <Select value={selectedState || 'all'} onValueChange={v => { setSelectedState(v === 'all' ? '' : v); setSelectedCity(''); setSelectedNeighborhood(''); setPage(1); }}>
+            <SelectTrigger className="mt-1"><SelectValue placeholder="Todos" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os estados</SelectItem>
+              {availableStates.map((uf: string) => (
+                <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* City */}
       <div>
         <Label className="text-xs text-muted-foreground flex items-center gap-1">
