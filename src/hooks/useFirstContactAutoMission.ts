@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useContactImpact } from '@/hooks/useContactImpact';
-import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
+import { celebrate } from '@/lib/celebrate';
 
 /**
  * Detecta o primeiro clique de WhatsApp recebido pelo profissional e marca
@@ -37,7 +37,7 @@ export function useFirstContactAutoMission() {
         if (error) throw error;
         const status = (rpc as any)?.status as string | undefined;
         if (status === 'completed') {
-          celebrate(CELEBRATION_IDS.MISSION_COMPLETE ?? 'mission_complete');
+          celebrate('mission_first_contact');
           toast.success('Primeiro contato recebido! 🎉', {
             description: 'Missão "Primeiro Lead" concluída — +5 pontos no seu perfil.',
             duration: 6000,
