@@ -50,7 +50,7 @@ import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
 import { getSocialAvatarUrl, getInitials } from '@/lib/avatarUtils';
-import { formatCityState } from '@/lib/locationFormat';
+import { formatCityState, safeUF } from '@/lib/locationFormat';
 import { isValidCpfCnpj } from '@/lib/cpfCnpj';
 import { validateWhatsapp, sanitizePhone, formatPhoneDisplay } from '@/lib/whatsapp';
 import CpfCnpjInput, { maskCpfCnpj } from './CpfCnpjInput';
@@ -139,6 +139,7 @@ const BasicOnboardingWizard = () => {
   const [state, setState] = useState((profile?.state as string) || geoState || '');
   const [editingCity, setEditingCity] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url ?? null);
+  const [neighborhood, setNeighborhood] = useState<string>(((profile as any)?.neighborhood as string) || '');
 
   // Contato + bio (Passo 3)
   const [whatsapp, setWhatsapp] = useState(sanitizePhone(profile?.whatsapp || profile?.phone || ''));
@@ -195,8 +196,12 @@ const BasicOnboardingWizard = () => {
     details?: string;
     hint?: string;
     payloadKeys?: string[];
+    payload?: Record<string, any>;
+    field?: string;
+    stage?: string;
   };
   const [lastSaveError, setLastSaveError] = useState<WizardSaveError | null>(null);
+  const [debugCopied, setDebugCopied] = useState(false);
 
   // ─── Sync inicial: se profile carrega DEPOIS do mount, atualiza step ───
   const syncedRef = useRef(false);
@@ -212,6 +217,7 @@ const BasicOnboardingWizard = () => {
     if (profile.state) setState(profile.state);
     if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
     if (profile.whatsapp || profile.phone) setWhatsapp(sanitizePhone(profile.whatsapp || profile.phone || ''));
+    if ((profile as any).neighborhood) setNeighborhood((profile as any).neighborhood);
   }, [profile]);
 
   useEffect(() => {
@@ -680,75 +686,84 @@ const BasicOnboardingWizard = () => {
     setReviewAllMode(false);
   };
 
+  // ─── Validação unificada por passo ───
+  // Cada problema retorna { field, message } — o painel/inline destacam o campo exato
+  // e o botão "Continuar" só fica liberado quando errors está vazio.
+  type WizardFieldError = { field: string; message: string };
+  const validateStep = (target: WizardStep): WizardFieldError[] => {
+    const errors: WizardFieldError[] = [];
+    if (target === 1) {
+      if (!profileType) errors.push({ field: 'profileType', message: 'Escolha o tipo de perfil.' });
+      if (profileType === 'provider' && !providerSubtype) {
+        errors.push({ field: 'providerSubtype', message: 'Indique se o cadastro é como Pessoa Física ou Empresa/PJ.' });
+      }
+    }
+    if (target === 2) {
+      if (!city.trim()) errors.push({ field: 'city', message: 'Informe sua cidade.' });
+      if (!safeUF(state)) errors.push({ field: 'state', message: 'Selecione o estado (UF).' });
+    }
+    if (target === 3) {
+      if (!fullName.trim()) errors.push({ field: 'fullName', message: 'Informe seu nome completo.' });
+      const wa = validateWhatsapp(whatsapp);
+      if (!wa.valid) errors.push({ field: 'whatsapp', message: wa.message });
+      if (profileType === 'provider' && selectedCategoryIds.length === 0) {
+        errors.push({ field: 'category', message: 'Selecione a categoria principal do seu serviço.' });
+      }
+      if (profileType === 'rh' && !agencyName.trim()) {
+        errors.push({ field: 'agencyName', message: 'Informe o nome da agência.' });
+      }
+      // Tax-id: obrigatório só se preenchido — bloqueia se inválido
+      const td = (taxId || '').replace(/\D/g, '');
+      if (td.length > 0) {
+        const expected = profileType === 'provider' && providerSubtype === 'company' ? 14 : 11;
+        if (td.length !== expected || !isValidCpfCnpj(td)) {
+          errors.push({ field: 'taxId', message: `${expected === 14 ? 'CNPJ' : 'CPF'} inválido — confira ou deixe em branco.` });
+        }
+      }
+    }
+    return errors;
+  };
+  const stepErrors = useMemo(() => validateStep(step), [step, profileType, providerSubtype, city, state, fullName, whatsapp, selectedCategoryIds, agencyName, taxId]);
+  const errorByField = useMemo(() => Object.fromEntries(stepErrors.map(e => [e.field, e.message])), [stepErrors]);
+
   // ─── Passo 2: Localização + Foto ───
-  const canAdvanceFromStep2 = !!city.trim();
+  const canAdvanceFromStep2 = validateStep(2).length === 0;
   const handleStep2Next = async () => {
-    if (!canAdvanceFromStep2) {
-      toast.error('Informe sua cidade para continuar.');
+    const errs = validateStep(2);
+    if (errs.length > 0) {
+      toast.error(errs[0].message, errs.length > 1 ? { description: `+${errs.length - 1} campo(s) pendente(s)` } : undefined);
       return;
     }
     await advanceTo(3, {
       city: city || null,
       state: state || null,
       avatar_url: avatarUrl,
-    });
+      neighborhood: neighborhood.trim() || null,
+    } as any);
   };
 
   // ─── Passo 3: Dados de contato + bio + (provider) categoria ───
-  const canAdvanceFromStep3 =
-    !!fullName.trim() &&
-    hasValidWhatsapp(whatsapp) &&
-    (profileType !== 'provider' || selectedCategoryIds.length > 0) &&
-    (profileType !== 'rh' || !!agencyName.trim());
+  const canAdvanceFromStep3 = validateStep(3).length === 0;
 
   const handleStep3Next = async () => {
-    if (!fullName.trim()) {
-      toast.error('Informe seu nome completo para continuar.');
-      return;
-    }
-    const waCheck = validateWhatsapp(whatsapp);
-    if (!waCheck.valid) {
-      toast.error(waCheck.message, {
-        description: 'É como os clientes vão entrar em contato com você.',
-      });
-      return;
-    }
-    if (profileType === 'provider' && selectedCategoryIds.length === 0) {
-      toast.error('Selecione a categoria principal do seu serviço.');
-      return;
-    }
-    if (profileType === 'rh' && !agencyName.trim()) {
-      toast.error('Informe o nome da agência.');
+    const errs = validateStep(3);
+    if (errs.length > 0) {
+      toast.error(errs[0].message, errs.length > 1 ? { description: `+${errs.length - 1} campo(s) pendente(s)` } : undefined);
       return;
     }
     if (!user?.id) return;
-    // Validação amigável do CPF/CNPJ — campo é opcional, mas se preenchido precisa ser válido.
-    // Mensagens são específicas conforme o subtipo escolhido (PF/CPF ou PJ/CNPJ).
     const taxIdDigits = (taxId || '').replace(/\D/g, '');
-    if (taxIdDigits) {
-      const expected = profileType === 'provider' && providerSubtype === 'company' ? 14 : 11;
-      const expectedLabel = expected === 14 ? 'CNPJ' : 'CPF';
-      if (taxIdDigits.length !== expected) {
-        toast.error(
-          expected === 14
-            ? `CNPJ precisa ter 14 dígitos. Confira ou deixe em branco.`
-            : `CPF precisa ter 11 dígitos. Confira ou deixe em branco.`
-        );
-        return;
-      }
-      if (!isValidCpfCnpj(taxIdDigits)) {
-        toast.error(`${expectedLabel} inválido — confira os dígitos ou deixe em branco para preencher depois.`);
-        return;
-      }
-    }
     setSaving(true);
     setLastSaveError(null);
     let currentTable: string = 'profiles';
-    let currentPayloadKeys: string[] = [];
+    let currentStage: string = 'init';
+    let currentPayload: Record<string, any> = {};
+    let currentField: string | undefined;
     try {
       const hadTaxIdBefore = !!((profile as any)?.tax_id_last4) || !!taxId.trim();
 
       currentTable = 'profiles';
+      currentStage = 'profiles.update';
       const profilesPayload = {
         full_name: fullName.trim(),
         whatsapp,
@@ -758,19 +773,23 @@ const BasicOnboardingWizard = () => {
         bio: bio.trim() || null,
         city: city || null,
         state: state || null,
+        neighborhood: neighborhood.trim() || null,
         preferred_category_ids: profileType === 'provider' ? selectedCategoryIds : [],
         onboarding_step: 4,
       };
-      currentPayloadKeys = Object.keys(profilesPayload);
+      currentPayload = profilesPayload;
       const { error: profileError } = await supabase.from('profiles').update(profilesPayload as any).eq('id', user.id);
       if (profileError) throw profileError;
 
       currentTable = 'rpc:set_profile_tax_id';
-      currentPayloadKeys = ['_tax_id'];
+      currentStage = 'rpc.set_profile_tax_id';
+      currentField = 'taxId';
+      currentPayload = { _tax_id: taxIdDigits || null };
       const { error: taxError } = await supabase.rpc('set_profile_tax_id', {
         _tax_id: taxIdDigits || null,
       });
       if (taxError) throw taxError;
+      currentField = undefined;
       if (taxIdDigits) {
         setTaxIdJustSaved(true);
         toast.success(`${taxIdDigits.length === 14 ? 'CNPJ' : 'CPF'} salvo com segurança.`);
@@ -791,42 +810,49 @@ const BasicOnboardingWizard = () => {
       // Garante registro provider/agency conforme tipo
       if (profileType === 'provider') {
         currentTable = 'providers';
+        currentStage = 'providers.lookup';
         const { data: existing } = await supabase.from('providers').select('*').eq('user_id', user.id).limit(1);
         if (existing && existing[0]) {
+          currentStage = 'providers.update';
           const updPayload = {
             city: city || existing[0].city,
             state: state || existing[0].state,
+            neighborhood: neighborhood.trim() || existing[0].neighborhood,
             description: bio || existing[0].description,
             whatsapp: whatsapp || existing[0].whatsapp,
             category_id: selectedCategoryIds[0] || existing[0].category_id,
             account_type: providerSubtype || existing[0].account_type || 'autonomous',
           };
-          currentPayloadKeys = Object.keys(updPayload);
+          currentPayload = updPayload;
           const { error: updErr } = await supabase.from('providers').update(updPayload as any).eq('id', existing[0].id);
           if (updErr) throw updErr;
-          setSavedProvider({ ...existing[0], city, state, description: bio, whatsapp, category_id: selectedCategoryIds[0], account_type: providerSubtype || 'autonomous' });
+          setSavedProvider({ ...existing[0], city, state, neighborhood: neighborhood.trim() || existing[0].neighborhood, description: bio, whatsapp, category_id: selectedCategoryIds[0], account_type: providerSubtype || 'autonomous' });
         } else {
+          currentStage = 'providers.insert';
           const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'profissional');
           const insPayload = {
             user_id: user.id,
             slug: `${baseSlug}-${user.id.slice(0, 6)}`,
             city: city || null,
             state: state || null,
+            neighborhood: neighborhood.trim() || null,
             description: bio || null,
             whatsapp: whatsapp || null,
             category_id: selectedCategoryIds[0] || null,
             account_type: providerSubtype || 'autonomous',
             status: 'pending',
           };
-          currentPayloadKeys = Object.keys(insPayload);
+          currentPayload = insPayload;
           const { data: created, error } = await supabase.from('providers').insert(insPayload as any).select('*').single();
           if (error) throw error;
           setSavedProvider(created);
         }
       } else if (profileType === 'rh') {
         currentTable = 'agencies';
+        currentStage = 'agencies.lookup';
         const { data: existing } = await (supabase as any).from('agencies').select('*').eq('user_id', user.id).limit(1);
         if (!existing || existing.length === 0) {
+          currentStage = 'agencies.insert';
           const baseSlug = slugify(agencyName || fullName || 'agencia');
           const insPayload = {
             user_id: user.id,
@@ -836,7 +862,7 @@ const BasicOnboardingWizard = () => {
             state: state || null,
             status: 'pending',
           };
-          currentPayloadKeys = Object.keys(insPayload);
+          currentPayload = insPayload;
           const { error: insErr } = await (supabase as any).from('agencies').insert(insPayload);
           if (insErr) throw insErr;
         }
@@ -852,31 +878,40 @@ const BasicOnboardingWizard = () => {
         await finishOnboarding();
       }
     } catch (err: any) {
-      console.error('[Wizard step 3]', { table: currentTable, payloadKeys: currentPayloadKeys, err });
+      console.error('[Wizard step 3]', { table: currentTable, stage: currentStage, payload: currentPayload, err });
       const message = String(err?.message || err?.error_description || 'Erro desconhecido');
       const details = err?.details ? String(err.details) : undefined;
       const hint = err?.hint ? String(err.hint) : undefined;
       const code = err?.code ? String(err.code) : undefined;
+      // Mapeia mensagem do Postgres para campo provável
+      const lower = `${message} ${details || ''}`.toLowerCase();
+      let inferredField = currentField;
+      if (!inferredField) {
+        if (lower.includes('whatsapp') || lower.includes('phone')) inferredField = 'whatsapp';
+        else if (lower.includes('full_name') || lower.includes('"name"')) inferredField = 'fullName';
+        else if (lower.includes('city')) inferredField = 'city';
+        else if (lower.includes('state')) inferredField = 'state';
+        else if (lower.includes('neighborhood')) inferredField = 'neighborhood';
+        else if (lower.includes('category')) inferredField = 'category';
+        else if (lower.includes('tax') || lower.includes('cpf') || lower.includes('cnpj')) inferredField = 'taxId';
+        else if (lower.includes('slug')) inferredField = 'slug';
+      }
       setLastSaveError({
         step: 3,
         when: new Date().toISOString(),
         table: currentTable,
+        stage: currentStage,
         code,
         message,
         details,
         hint,
-        payloadKeys: currentPayloadKeys,
+        payloadKeys: Object.keys(currentPayload),
+        payload: currentPayload,
+        field: inferredField,
       });
-      // Mensagem amigável + dica do campo provável
-      let friendly = message;
-      const lower = `${message} ${details || ''}`.toLowerCase();
-      if (lower.includes('whatsapp') || lower.includes('phone')) friendly = 'Erro no campo WhatsApp/telefone.';
-      else if (lower.includes('full_name') || lower.includes('name')) friendly = 'Erro no campo Nome.';
-      else if (lower.includes('city')) friendly = 'Erro no campo Cidade.';
-      else if (lower.includes('state')) friendly = 'Erro no campo Estado (UF).';
-      else if (lower.includes('category')) friendly = 'Erro na Categoria selecionada.';
-      else if (lower.includes('tax') || lower.includes('cpf') || lower.includes('cnpj')) friendly = 'Erro no CPF/CNPJ.';
-      else if (lower.includes('slug')) friendly = 'Slug do perfil já em uso — tente novamente.';
+      const friendly = inferredField
+        ? `Erro no campo ${inferredField}.`
+        : `Erro durante ${currentStage}.`;
       toast.error(`Não foi possível salvar (${currentTable}).`, {
         description: `${friendly}${code ? ` [${code}]` : ''} — ${String(message).slice(0, 180)}`,
       });
@@ -924,8 +959,9 @@ const BasicOnboardingWizard = () => {
   // Mostra apenas os dados úteis para o usuário conferir antes de concluir.
   const summaryItems = [
     { label: 'Localização', value: formatCityState(city, state, ' • ') || 'Não informada' },
+    ...(neighborhood.trim() ? [{ label: 'Bairro', value: neighborhood.trim() }] : []),
     { label: 'Nome', value: fullName || 'Não informado' },
-    { label: 'WhatsApp', value: whatsapp ? formatPhoneDisplay(whatsapp) : 'Não informado' },
+    { label: 'WhatsApp', value: validateWhatsapp(whatsapp).valid ? formatPhoneDisplay(whatsapp) : 'Não informado' },
     ...(profileType === 'provider'
       ? [{ label: 'Serviços', value: `${servicesCreated} cadastrado(s)` }]
       : []),
@@ -1017,7 +1053,8 @@ const BasicOnboardingWizard = () => {
             <div><span className="text-amber-300">profileType:</span> {String(profileType)} ({providerSubtype || '—'})</div>
             <div className={fullName.trim() ? 'text-emerald-300' : 'text-rose-300'}>fullName: {fullName ? '✓ "' + fullName + '"' : '✗ vazio'}</div>
             <div className={city ? 'text-emerald-300' : 'text-rose-300'}>city: {city ? '✓ ' + city : '✗ vazio'}</div>
-            <div className={state ? 'text-emerald-300' : 'text-rose-300'}>state: {state ? '✓ ' + state : '✗ vazio (UF)'}</div>
+            <div className={safeUF(state) ? 'text-emerald-300' : 'text-rose-300'}>state: {state ? (safeUF(state) ? '✓ ' + safeUF(state) : '✗ inválido "' + state + '"') : '✗ vazio (UF)'}</div>
+            <div className={neighborhood.trim() ? 'text-emerald-300' : 'text-amber-300'}>neighborhood: {neighborhood.trim() ? '✓ ' + neighborhood : '— (opcional)'}</div>
             <div className={validateWhatsapp(whatsapp).valid ? 'text-emerald-300' : 'text-rose-300'}>
               whatsapp: {whatsapp ? whatsapp : '✗ vazio'} {!validateWhatsapp(whatsapp).valid && `(${validateWhatsapp(whatsapp).reason})`}
             </div>
@@ -1025,19 +1062,56 @@ const BasicOnboardingWizard = () => {
               category: {selectedCategoryIds.length || 0} selecionada(s)
             </div>
             <div><span className="text-amber-300">taxId len:</span> {(taxId || '').replace(/\D/g, '').length}</div>
-            <div><span className="text-amber-300">canAdvanceFromStep3:</span> {String(canAdvanceFromStep3)}</div>
+            <div><span className="text-amber-300">canAdvance:</span> step2={String(canAdvanceFromStep2)} · step3={String(canAdvanceFromStep3)}</div>
             <div><span className="text-amber-300">saving:</span> {String(saving)}</div>
+            {stepErrors.length > 0 && (
+              <div className="mt-1 rounded border border-rose-400/60 bg-rose-950/30 p-1.5">
+                <div className="font-bold text-rose-300">Erros do passo {step}:</div>
+                {stepErrors.map((e, i) => (
+                  <div key={i} className="text-rose-100">· {e.field}: {e.message}</div>
+                ))}
+              </div>
+            )}
           </div>
           {lastSaveError && (
             <div className="mt-2 rounded border border-rose-400/60 bg-rose-950/40 p-2 text-rose-100">
-              <div className="font-bold text-rose-300">Último erro de save:</div>
-              <div>step: {lastSaveError.step} · {new Date(lastSaveError.when).toLocaleTimeString()}</div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-rose-300">Último erro de save</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const text = JSON.stringify({
+                        step: lastSaveError.step,
+                        when: lastSaveError.when,
+                        table: lastSaveError.table,
+                        stage: lastSaveError.stage,
+                        field: lastSaveError.field,
+                        code: lastSaveError.code,
+                        message: lastSaveError.message,
+                        details: lastSaveError.details,
+                        hint: lastSaveError.hint,
+                        payload: lastSaveError.payload,
+                      }, null, 2);
+                      await navigator.clipboard.writeText(text);
+                      setDebugCopied(true);
+                      setTimeout(() => setDebugCopied(false), 1800);
+                    } catch {
+                      toast.error('Não foi possível copiar.');
+                    }
+                  }}
+                  className="rounded bg-rose-500/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-50 hover:bg-rose-500/50"
+                >{debugCopied ? '✓ copiado' : 'copiar payload'}</button>
+              </div>
+              <div className="mt-1">step: {lastSaveError.step} · {new Date(lastSaveError.when).toLocaleTimeString()}</div>
               <div>table: <span className="text-amber-300">{lastSaveError.table}</span></div>
+              {lastSaveError.stage && <div>stage: <span className="text-amber-300">{lastSaveError.stage}</span></div>}
+              {lastSaveError.field && <div>field: <span className="text-amber-300">{lastSaveError.field}</span></div>}
               {lastSaveError.code && <div>code: {lastSaveError.code}</div>}
               <div>message: {lastSaveError.message}</div>
               {lastSaveError.details && <div>details: {lastSaveError.details}</div>}
               {lastSaveError.hint && <div>hint: {lastSaveError.hint}</div>}
-              {lastSaveError.payloadKeys && <div>payload: [{lastSaveError.payloadKeys.join(', ')}]</div>}
+              {lastSaveError.payloadKeys && <div>payload keys: [{lastSaveError.payloadKeys.join(', ')}]</div>}
             </div>
           )}
           <div className="mt-2 text-[9px] text-amber-300/60">
@@ -1203,6 +1277,9 @@ const BasicOnboardingWizard = () => {
             setWhatsapp={setWhatsapp}
             bio={bio}
             setBio={setBio}
+            neighborhood={neighborhood}
+            setNeighborhood={setNeighborhood}
+            errorByField={errorByField}
             taxId={taxId}
             setTaxId={(v: string) => { setTaxId(v); setTaxIdJustSaved(false); }}
             taxSavedFeedback={taxIdJustSaved}
@@ -1873,6 +1950,7 @@ export const Step3Contact = ({
   profileType, providerSubtype, setProviderSubtype,
   fullName, setFullName, agencyName, setAgencyName,
   whatsapp, setWhatsapp, bio, setBio,
+  neighborhood, setNeighborhood, errorByField = {},
   taxId, setTaxId, taxSavedFeedback,
   categoriesForPicker, selectedCategoryIds, onToggleCategory,
   saving, canAdvance, onBack, onNext, onSkip, onFieldBlur,

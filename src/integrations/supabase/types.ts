@@ -2743,6 +2743,7 @@ export type Database = {
           id: string
           is_suspicious: boolean
           level_id: string | null
+          neighborhood: string | null
           onboarding_checklist_completed_at: string | null
           onboarding_completed: boolean
           onboarding_step: number
@@ -2785,6 +2786,7 @@ export type Database = {
           id: string
           is_suspicious?: boolean
           level_id?: string | null
+          neighborhood?: string | null
           onboarding_checklist_completed_at?: string | null
           onboarding_completed?: boolean
           onboarding_step?: number
@@ -2827,6 +2829,7 @@ export type Database = {
           id?: string
           is_suspicious?: boolean
           level_id?: string | null
+          neighborhood?: string | null
           onboarding_checklist_completed_at?: string | null
           onboarding_completed?: boolean
           onboarding_step?: number
