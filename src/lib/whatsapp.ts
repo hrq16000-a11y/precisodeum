@@ -12,7 +12,7 @@
  * - Links always use wa.me/{canonical}
  */
 
-const DEFAULT_MESSAGE = 'Olá, vi o seu perfil no Preciso de um e gostaria de um orçamento.';
+const DEFAULT_MESSAGE = 'Olá, vi seu perfil no Preciso de um e gostaria de conversar sobre uma necessidade.';
 
 /**
  * Build a structured WhatsApp message with provider name, category, and user location.
