@@ -1817,8 +1817,9 @@ export const Step3Contact = ({
 
     <div className="mt-5 space-y-4">
       <div>
-        <label className="mb-1 block text-xs font-semibold text-foreground">
+        <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-foreground">
           {profileType === 'rh' ? 'Seu nome (responsável)' : 'Seu nome completo'}
+          <span className="text-destructive" aria-hidden="true">*</span>
         </label>
         <Input placeholder="Ex: João Silva" value={fullName} onChange={e => setFullName(e.target.value)} onBlur={onFieldBlur} />
       </div>
