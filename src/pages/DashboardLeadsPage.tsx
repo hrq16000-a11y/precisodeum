@@ -383,6 +383,23 @@ const DashboardLeadsPage = () => {
               ))}
             </SelectContent>
           </Select>
+          {/* Filtro por UF (estado) — lê lead_context.state */}
+          {ufOptions.length > 0 && (
+            <Select value={ufFilter} onValueChange={setUfFilter}>
+              <SelectTrigger className="w-full sm:w-28" aria-label="Filtrar por UF">
+                <div className="flex items-center gap-1.5">
+                  <Compass size={14} strokeWidth={1.5} />
+                  <SelectValue placeholder="UF" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas UF</SelectItem>
+                {ufOptions.map((uf) => (
+                  <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button type="button" variant={showAdvanced ? 'default' : 'outline'} size="sm" onClick={() => setShowAdvanced(v => !v)} className="gap-1">
             <Filter className="h-4 w-4" /> Mais filtros
           </Button>
