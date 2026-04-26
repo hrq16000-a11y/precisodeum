@@ -267,7 +267,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 )}
               </div>
             </Link>
-            {provider.businessName && normalizeForCompare(provider.businessName) !== nameNorm && (
+            {provider.businessName && normalizeProviderToken(provider.businessName) !== nameNorm && !isDuplicateCategoryLabel(displayName, provider.businessName) && (
               <p className="truncate text-xs text-muted-foreground">{provider.businessName}</p>
             )}
             {provider.category && !categoryDuplicatesName && (
