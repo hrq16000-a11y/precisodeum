@@ -1082,6 +1082,34 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
   };
 }
 
+export function useSearchAuditComparison(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null, radiusKm?: number) {
+  const baseQuery = useQuery({
+    queryKey: ['search-audit-base'],
+    queryFn: async () => fetchProvidersWithProfiles(
+      supabase
+        .from('providers')
+        .select(providerSelect)
+        .eq('status', 'approved')
+        .order('rating_avg', { ascending: false })
+        .order('review_count', { ascending: false })
+        .limit(SEARCH_RESULT_LIMIT)
+    ),
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+  });
+
+  const data = useMemo(
+    () => filterAndRankProvidersGrouped(baseQuery.data || [], query, city, categorySlug, minRating, state, userLat, userLon, radiusKm),
+    [baseQuery.data, query, city, categorySlug, minRating, state, userLat, userLon, radiusKm]
+  );
+
+  return {
+    ...baseQuery,
+    data,
+  };
+}
+
 export function useSearchSuggestions(enabled = true) {
   return useQuery({
     queryKey: ['search-suggestions'],
