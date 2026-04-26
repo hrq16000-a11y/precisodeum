@@ -391,7 +391,8 @@ async function fetchProvidersLightweight(query: any) {
 
   return (data as any[]).map((p) => {
     const profile = profileMap[p.user_id];
-    const rawPhoto = p.photo_url || profile?.avatar || '';
+    // Priority: profile.avatar (verified selfie) > providers.photo_url > generated fallback
+    const rawPhoto = profile?.avatar || p.photo_url || '';
     const photoCount = p.portfolio_photo_count || 0;
     const albumCount = p.portfolio_album_count || 0;
     const svcCount = p.services_count || 0;
