@@ -358,11 +358,20 @@ const DashboardLeadsPage = () => {
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <label className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground">
-              {audibleAlerts ? <Bell className="h-4 w-4 text-primary" /> : <BellOff className="h-4 w-4" />}
-              Alertas
-              <Switch checked={audibleAlerts} onCheckedChange={setAudibleAlerts} />
-            </label>
+            <Select value={alertMode} onValueChange={(v) => setAlertMode(v as any)}>
+              <SelectTrigger className="w-full sm:w-44" aria-label="Como deseja receber alertas de novos leads">
+                <div className="flex items-center gap-1.5">
+                  {alertMode === 'off' ? <BellOff className="h-4 w-4 text-muted-foreground" /> : <Bell className="h-4 w-4 text-primary" />}
+                  <SelectValue />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="both">Som e toast</SelectItem>
+                <SelectItem value="sound">Apenas som</SelectItem>
+                <SelectItem value="toast">Apenas toast</SelectItem>
+                <SelectItem value="off">Silencioso</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
               <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
