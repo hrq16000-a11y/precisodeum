@@ -31,6 +31,10 @@ import {
 } from '@/hooks/useLeadFollowup';
 import { useNewLeadAlerts } from '@/hooks/useNewLeadAlerts';
 import { useLeadAlertPreference } from '@/hooks/useLeadAlertPreference';
+import LeadsFunnelBoard, { statusToFunnel, type FunnelKey } from '@/components/leads/LeadsFunnelBoard';
+import WhatsappTemplatesModal from '@/components/leads/WhatsappTemplatesModal';
+import SendWhatsappWithTemplates from '@/components/leads/SendWhatsappWithTemplates';
+import { burstConfetti, playCoinsSound } from '@/lib/betDopamine';
 
 interface LeadHistoryItem {
   id: string;
@@ -76,6 +80,8 @@ const DashboardLeadsPage = () => {
   const { mode: alertMode, setMode: setAlertMode } = useLeadAlertPreference();
   const [, setTick] = useState(0);
   const leadsRef = useRef<LeadRow[]>([]);
+  const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
+  const [funnelKey, setFunnelKey] = useState<FunnelKey>('todos');
 
   // Filtros avançados — inicializados a partir da URL
   const [search, setSearch] = useState(searchParams.get('q') || '');
@@ -190,6 +196,9 @@ const DashboardLeadsPage = () => {
     if (statusFilter === 'overdue') arr = arr.filter(isOverdue);
     else if (statusFilter !== 'all') arr = arr.filter((l) => l.status === statusFilter);
 
+    // Funil sobrepõe quando ativo (≠ todos)
+    if (funnelKey !== 'todos') arr = arr.filter((l) => statusToFunnel(l.status) === funnelKey);
+
     const q = search.trim().toLowerCase();
     if (q) {
       arr = arr.filter(l =>
@@ -205,7 +214,7 @@ const DashboardLeadsPage = () => {
     if (categoryFilter !== 'all') arr = arr.filter(l => (l.lead_context?.category || '').trim() === categoryFilter);
     if (ufFilter !== 'all') arr = arr.filter(l => String(l.lead_context?.state || '').trim().toUpperCase() === ufFilter);
     return arr;
-  }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, ufFilter]);
+  }, [leads, statusFilter, funnelKey, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, ufFilter]);
 
   // Reset paginação quando filtros/lista mudarem
   useEffect(() => {
@@ -266,6 +275,14 @@ const DashboardLeadsPage = () => {
     if (lead.status === status) return;
     updateStatus.mutate({ leadId: lead.id, status });
     playAlert();
+    if (status === 'completed') {
+      // Efeito dopamina: confete + moedas + toast de pontos
+      void burstConfetti('mega');
+      playCoinsSound(0.2);
+      toast.success('Lead concluído! +100 pts de engajamento', {
+        description: 'Continue assim para subir no ranking.',
+      });
+    }
   };
 
   const addHistoryMessage = async (leadId: string) => {
@@ -409,6 +426,22 @@ const DashboardLeadsPage = () => {
           </div>
         </motion.div>
       )}
+
+      {/* Funil de vendas (Pipeline) */}
+      <div className="mt-4">
+        <LeadsFunnelBoard leads={leads} active={funnelKey} onChange={setFunnelKey} />
+      </div>
+
+      {/* Botão Modelos de mensagem (acima dos chips) */}
+      <div className="mt-3 flex justify-end">
+        <button
+          type="button"
+          onClick={() => setTemplatesModalOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60"
+        >
+          <MessageCircle className="h-3.5 w-3.5" /> Modelos de mensagem
+        </button>
+      </div>
 
       {/* Quick Filters (chips) — Mobile-first, sempre visíveis acima da toolbar */}
       <div className="mt-4 flex flex-wrap gap-1.5" role="tablist" aria-label="Filtros rápidos de status">
@@ -683,7 +716,14 @@ const DashboardLeadsPage = () => {
                     </Select>
                     <div className="flex items-center gap-2 sm:justify-end">
                       <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"><Phone className="h-3 w-3" /> {lead.phone}</a>
-                      <motion.a href={whatsappLink(lead.phone, `Olá ${lead.client_name}, aqui é ${profile?.full_name?.split(' ')[0] || 'o profissional'} do Preciso de um Profissional. Recebi seu pedido${lead.service_needed ? ` sobre "${lead.service_needed}"` : ''}. Como posso ajudar?`)} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 min-w-[44px] items-center justify-center gap-1 rounded-full bg-emerald-500 px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-600" title="Chamar no WhatsApp" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}><MessageCircle className="h-4 w-4" /><span className="hidden sm:inline">Chamar</span></motion.a>
+                      <SendWhatsappWithTemplates
+                        phone={lead.phone}
+                        clientName={lead.client_name}
+                        serviceNeeded={lead.service_needed}
+                        myFirstName={profile?.full_name?.split(' ')[0] || ''}
+                        defaultMessage={`Olá ${lead.client_name}, aqui é ${profile?.full_name?.split(' ')[0] || 'o profissional'} do Preciso de um Profissional. Recebi seu pedido${lead.service_needed ? ` sobre "${lead.service_needed}"` : ''}. Como posso ajudar?`}
+                        onManageTemplates={() => setTemplatesModalOpen(true)}
+                      />
                       <button onClick={() => { setRescheduleLeadId(lead.id); setRescheduleDefault(lead.next_followup_at); }} className="inline-flex items-center justify-center rounded-full bg-primary/10 p-1.5 text-primary transition-colors hover:bg-primary/20" title="Reagendar follow-up"><CalendarClock className="h-4 w-4" /></button>
                       <Link to={`/dashboard/leads/${lead.id}`} className="inline-flex items-center justify-center rounded-full bg-muted p-1.5 text-foreground transition-colors hover:bg-muted/70" title="Ver detalhes"><ExternalLink className="h-4 w-4" /></Link>
                       <motion.button onClick={() => handleDelete(lead.id)} className="inline-flex items-center justify-center rounded-full bg-destructive/10 p-1.5 text-destructive transition-colors hover:bg-destructive/20" title="Excluir lead" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}><Trash2 className="h-4 w-4" /></motion.button>
@@ -755,6 +795,11 @@ const DashboardLeadsPage = () => {
         defaultDate={rescheduleDefault}
         open={!!rescheduleLeadId}
         onOpenChange={(open) => { if (!open) setRescheduleLeadId(null); }}
+      />
+      <WhatsappTemplatesModal
+        open={templatesModalOpen}
+        onOpenChange={setTemplatesModalOpen}
+        previewVars={{ meu_nome: profile?.full_name?.split(' ')[0] || '' }}
       />
     </DashboardLayout>
   );
