@@ -11,14 +11,16 @@
  * NUNCA usar a palavra "Orçamento" — sempre "Valores (a partir de)".
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, X, Loader2, Plus, MapPin } from 'lucide-react';
+import { ChevronDown, X, Loader2, Plus, MapPin, Sparkles, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { suggestServiceDescription } from '@/lib/serviceDescriptionSuggester';
+import { sanitizeSlug } from '@/lib/slugify';
 import type { OnboardingFirstServiceData, OnboardingProfileData } from './types';
 
 interface CategoryRow { id: string; name: string; icon?: string | null }
@@ -63,10 +65,38 @@ export const Phase2Service = ({
   );
 
   const pickCategory = (id: string, name: string) => {
+    // INVARIANTE: o nome do serviço é SEMPRE o nome da categoria escolhida,
+    // e o primary_category_id do perfil herda esse mesmo id.
     onChangeService({ category_ids: [id], service_name: name });
-    onChangeProfile({ primary_category_id: id }); // herança para o perfil
+    onChangeProfile({ primary_category_id: id });
     setOpen(false);
     setSearch(name);
+  };
+
+  // Auto-save discreto: o estado já é persistido em localStorage + remoto via
+  // hooks no Shell (useOnboardingV2Draft / useOnboardingV2RemoteDraft) com debounce.
+  // Aqui exibimos um micro-indicador visual quando o usuário pausa a digitação.
+  const [savedHint, setSavedHint] = useState(false);
+  const saveTimer = useRef<number | null>(null);
+  useEffect(() => {
+    if (!service.description) return;
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    setSavedHint(false);
+    saveTimer.current = window.setTimeout(() => {
+      setSavedHint(true);
+      window.setTimeout(() => setSavedHint(false), 1800);
+    }, 700);
+    return () => { if (saveTimer.current) window.clearTimeout(saveTimer.current); };
+  }, [service.description]);
+
+  const handleSuggest = () => {
+    const slug = selectedId ? sanitizeSlug(selectedName) : '';
+    const text = suggestServiceDescription({
+      categoryName: selectedName,
+      categorySlug: slug,
+      city: profile.city,
+    });
+    onChangeService({ description: text });
   };
 
   const canAdvance = !!selectedId && service.description.trim().length >= 10;
@@ -109,17 +139,39 @@ export const Phase2Service = ({
         </div>
 
         <div>
-          <Label className="text-xs">Descrição do serviço *</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-xs">Descrição do serviço *</Label>
+            <button
+              type="button"
+              onClick={handleSuggest}
+              disabled={!selectedId}
+              className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/20 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              aria-label="Sugerir descrição com base na categoria"
+            >
+              <Sparkles className="h-3 w-3" />
+              Sugerir descrição
+            </button>
+          </div>
           <textarea
             value={service.description}
             onChange={(e) => onChangeService({ description: e.target.value })}
             placeholder="Conte rapidamente o que você faz, diferenciais e experiência. Ex: Atendo emergências 24h, +10 anos de experiência em redes residenciais e comerciais."
             maxLength={400}
             rows={4}
-            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+            className="mt-1 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
           />
-          <p className="mt-1 text-[10px] text-muted-foreground">
-            {service.description.length}/400 — mínimo 10 caracteres. O título do anúncio será <span className="font-medium text-foreground">{selectedName || 'a categoria escolhida'}</span>.
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <p className="text-[10px] text-muted-foreground">
+              {service.description.length}/400 — mínimo 10 caracteres. O título do anúncio será <span className="font-medium text-foreground">{selectedName || 'a categoria escolhida'}</span>.
+            </p>
+            {savedHint && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600">
+                <Check className="h-3 w-3" /> Salvo
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-[10px] text-muted-foreground/80">
+            Dica: clique em <span className="font-medium">Sugerir descrição</span> para começar com um texto pronto e depois personalize do seu jeito.
           </p>
         </div>
 
