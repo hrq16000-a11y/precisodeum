@@ -202,7 +202,34 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
         )}
       </div>
 
-      {/* Checklist final */}
+      {/* Preview da URL pública SEO (categoria + cidade) */}
+      {publicCategoryUrl && (
+        <div className="rounded-xl border border-accent/30 bg-accent/5 p-3 space-y-2">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Sua página pública (SEO)
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 truncate rounded bg-background px-2 py-1.5 text-[11px] text-foreground border border-border">
+              {publicCategoryUrl}
+            </code>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleCopyUrl}
+              className="h-8 px-2 shrink-0"
+              aria-label="Copiar link público"
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Este link conecta o seu serviço aos clientes que buscam por <span className="font-medium text-foreground">{serviceName || 'esta categoria'}</span>{city ? ` em ${city}` : ''}.
+          </p>
+        </div>
+      )}
+
+
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Confirme o que já ficou pronto
