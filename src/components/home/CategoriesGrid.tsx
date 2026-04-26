@@ -28,8 +28,19 @@ const VISIBLE_COUNT = 6; // 3 colunas x 2 linhas no mobile
 const CARD_MIN_H = 'min-h-[6.5rem]';
 const SHUFFLE_KEY = 'pdu:cats:shuffle:v1';
 
-/** Embaralhamento estável por sessão (usuário/navegação) */
-function getStableShuffleSeed(): number {
+/** Hash determinístico simples (DJB2) para derivar seed estável de uma string */
+function hashSeed(str: string): number {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+  return Math.abs(h) || 1;
+}
+
+/**
+ * Embaralhamento estável: usuários logados → seed derivada do user.id (mesma ordem em qualquer dispositivo).
+ * Anônimos → seed por sessão (sessionStorage).
+ */
+function getStableShuffleSeed(userId?: string | null): number {
+  if (userId) return hashSeed(`pdu:cats:${userId}`);
   try {
     const cached = sessionStorage.getItem(SHUFFLE_KEY);
     if (cached) return Number(cached);
