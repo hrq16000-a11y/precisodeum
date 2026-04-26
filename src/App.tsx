@@ -169,6 +169,7 @@ const SponsorPublicPage = lazy(() => import("./pages/SponsorPublicPage"));
 const SponsorPublicProfilePage = lazy(() => import("./pages/sponsor/SponsorPublicProfilePage"));
 const TriagePage = lazy(() => import("./pages/TriagePage"));
 const OnboardingV2Page = lazy(() => import("./pages/OnboardingV2Page"));
+const CadastroBetPage = lazy(() => import("./pages/CadastroBetPage"));
 const OnboardingV2SuccessPage = lazy(() => import("./pages/OnboardingV2SuccessPage"));
 const TriagePreviewPage = lazy(() => import("./pages/TriagePreviewPage"));
 
@@ -302,7 +303,8 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const isOnboardingRoute =
     location.pathname === '/triagem' ||
     location.pathname === '/onboarding-v2' ||
-    location.pathname === '/onboarding-v2/sucesso';
+    location.pathname === '/onboarding-v2/sucesso' ||
+    location.pathname === '/cadastro-bet';
   if (mustCompleteOnboarding && !isOnboardingRoute) {
     return <Navigate to="/triagem" replace />;
   }
@@ -370,6 +372,7 @@ const App = () => {
                 <Route path="/triagem/preview" element={<TriagePreviewPage />} />
                 <Route path="/onboarding-v2" element={<OnboardingV2Page />} />
                 <Route path="/onboarding-v2/sucesso" element={<ProtectedRoute><OnboardingV2SuccessPage /></ProtectedRoute>} />
+                <Route path="/cadastro-bet" element={<CadastroBetPage />} />
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                 <Route path="/dashboard/perfil" element={<ProtectedRoute><ErrorGuard componentName="DashboardProfilePage"><DashboardProfilePage /></ErrorGuard></ProtectedRoute>} />
                 <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><ErrorGuard componentName="DashboardServicesPage"><DashboardServicesPage /></ErrorGuard></ProtectedRoute>} />
