@@ -178,7 +178,6 @@ const Index = () => {
   const { city: geoCity, latitude: geoLat, longitude: geoLng } = useGeoCity();
   const [postLcpReady, setPostLcpReady] = useState(false);
   const [featuredSort, setFeaturedSort] = useState<FeaturedProviderSort>('proximity');
-  const [featuredCategory, setFeaturedCategory] = useState('');
 
   useSeoHead({
     title: geoCity
@@ -246,7 +245,7 @@ const Index = () => {
     enabled: featuredEnabled && postLcpReady,
     latitude: geoLat,
     longitude: geoLng,
-    categorySlug: featuredCategory || undefined,
+    userCity: geoCity || undefined,
     sortBy: featuredSort,
     limit: 6,
   });
@@ -323,11 +322,8 @@ const Index = () => {
             isLoading={!postLcpReady || provsLoading}
             isFetching={featuredFetching}
             hasError={featuredError}
-            categories={categories}
-            selectedCategory={featuredCategory}
             sortBy={featuredSort}
             updatedAt={featuredUpdatedAt}
-            onCategoryChange={setFeaturedCategory}
             onSortChange={setFeaturedSort}
           />
         ) : null;
@@ -373,8 +369,8 @@ const Index = () => {
     heroBannersEnabled, sponsorsEnabled, featuredEnabled, postLcpReady, jobsEnabled,
     blogEnabled, ctaEnabled, howItWorksEnabled, popularSearchesEnabled,
     reviewsEnabled, faqEnabled,
-    featuredProviders, provsLoading, featuredFetching, featuredError, categories,
-    featuredCategory, featuredSort, featuredUpdatedAt, geoCity,
+    featuredProviders, provsLoading, featuredFetching, featuredError,
+    featuredSort, featuredUpdatedAt, geoCity,
   ]);
 
   const renderWrappedSection = useCallback((slug: string) => {
