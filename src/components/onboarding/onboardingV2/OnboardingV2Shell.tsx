@@ -274,10 +274,33 @@ export const OnboardingV2Shell = () => {
         return false;
       }
       // Sincroniza estado local com o nome canônico (mantém UI consistente).
-      if (resolvedCategoryName !== s.service_name) {
+      const localName = (s.service_name || '').trim();
+      const localPrimary = state.profile.primary_category_id;
+      const nameMismatch = localName.toLowerCase() !== resolvedCategoryName.trim().toLowerCase();
+      const primaryMismatch = localPrimary !== categoryId;
+      if (nameMismatch || primaryMismatch) {
+        // LOG DE DIVERGÊNCIA — registra no console + telemetria para correção imediata.
+        const divergence = {
+          where: 'persistFirstService.invariant_check',
+          categoryId,
+          resolvedCategoryName,
+          localName,
+          localPrimaryCategoryId: localPrimary,
+          nameMismatch,
+          primaryMismatch,
+        };
+        console.warn('[onboardingV2] divergência categoria/serviço detectada e auto-corrigida:', divergence);
+        void trackOnboardingEvent({
+          phase: state.phase,
+          event: 'error',
+          userId: user?.id,
+          meta: { reason: 'category_service_divergence', ...divergence },
+        });
+      }
+      if (nameMismatch) {
         dispatch({ type: 'PATCH_SERVICE', patch: { service_name: resolvedCategoryName } });
       }
-      if (state.profile.primary_category_id !== categoryId) {
+      if (primaryMismatch) {
         dispatch({ type: 'PATCH_PROFILE', patch: { primary_category_id: categoryId } });
       }
 
