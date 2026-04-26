@@ -357,6 +357,30 @@ const DashboardPortfolioPage = () => {
     toast.success('Foto removida');
   };
 
+  const handleOpenCaption = (photo: Photo) => {
+    setCaptionPhoto(photo);
+    setCaptionValue(photo.original_name || '');
+  };
+
+  const handleSaveCaption = async () => {
+    if (!captionPhoto) return;
+    setCaptionSaving(true);
+    const newName = captionValue.trim().slice(0, 140);
+    const { error } = await supabase
+      .from('portfolio_photos')
+      .update({ original_name: newName } as any)
+      .eq('id', captionPhoto.id);
+    if (error) {
+      toast.error('Erro ao salvar legenda: ' + error.message);
+      setCaptionSaving(false);
+      return;
+    }
+    setPhotos(prev => prev.map(p => p.id === captionPhoto.id ? { ...p, original_name: newName } : p));
+    toast.success('Legenda salva');
+    setCaptionPhoto(null);
+    setCaptionSaving(false);
+  };
+
   // ── Album detail view ──
   if (selectedAlbum) {
     return (
