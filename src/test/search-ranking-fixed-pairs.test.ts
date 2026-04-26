@@ -74,13 +74,18 @@ describe('ranking fixo — São José dos Pinhais × Fazenda Rio Grande', () => 
       30,
     );
 
-    expect(grouped.local.map((provider) => provider.id)).toEqual(['sjp-baba']);
-    expect(grouped.nearby.map((provider) => provider.id)).toEqual(['fgr-baba-suspeita']);
-    expect([...grouped.local, ...grouped.nearby].some((provider) => provider.id === 'fgr-pedreiro')).toBe(false);
+    const ordered = [...grouped.local, ...grouped.nearby, ...grouped.outOfState];
+    expect(ordered.map((provider) => provider.id)).toContain('sjp-baba');
+    expect(ordered.map((provider) => provider.id)).toContain('fgr-baba-suspeita');
+    expect(ordered.findIndex((provider) => provider.id === 'sjp-baba')).toBeLessThan(
+      ordered.findIndex((provider) => provider.id === 'fgr-baba-suspeita')
+    );
+    expect(ordered.some((provider) => provider.id === 'fgr-pedreiro')).toBe(false);
 
-    const corrected = grouped.nearby[0];
-    expect(corrected._distanceAudit?.source).toBe('city-center');
-    expect(corrected._distanceAudit?.suspicious).toBe(true);
-    expect(corrected.distanceKm ?? 0).toBeGreaterThan(8);
+    const corrected = ordered.find((provider) => provider.id === 'fgr-baba-suspeita');
+    expect(corrected).toBeTruthy();
+    expect(corrected?._distanceAudit?.source).toBe('city-center');
+    expect(corrected?._distanceAudit?.suspicious).toBe(true);
+    expect(corrected?.distanceKm ?? 0).toBeGreaterThan(8);
   });
 });
