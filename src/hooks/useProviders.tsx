@@ -801,6 +801,9 @@ export function filterAndRankProvidersGrouped(
   radiusKm?: number,
 ): GroupedSearchAuditResult {
   let results = [...providers];
+  const fallbackUserCoords = (!Number.isFinite(userLat) || !Number.isFinite(userLon)) && city ? getCityCoords(city) : null;
+  const effectiveUserLat = Number.isFinite(userLat) ? userLat ?? null : fallbackUserCoords?.lat ?? null;
+  const effectiveUserLon = Number.isFinite(userLon) ? userLon ?? null : fallbackUserCoords?.lon ?? null;
 
   if (minRating > 0) {
     results = results.filter((p) => p.rating >= minRating);
@@ -809,7 +812,7 @@ export function filterAndRankProvidersGrouped(
     results = results.filter((p) => p.categorySlug === categorySlug);
   }
 
-  const sil = SearchIntelligence.analyze(query, city, state, userLat, userLon);
+  const sil = SearchIntelligence.analyze(query, city, state, effectiveUserLat, effectiveUserLon);
   const { intent, geoIntent, geoContext, serviceQuery } = sil;
   if (radiusKm) (geoContext as any).radius = radiusKm;
 
@@ -841,7 +844,7 @@ export function filterAndRankProvidersGrouped(
     const scored = SearchIntelligence.computeFinalScore(gs, relevance, intent);
 
     // Audited distance — keeps source/suspicious flags for UI
-    const audit = calculateAuditedDistanceKm(userLat ?? null, userLon ?? null, p, city);
+    const audit = calculateAuditedDistanceKm(effectiveUserLat, effectiveUserLon, p, city);
     const distanceKm = audit.distanceKm;
 
     // Combined text+distance score: avoids weak match closer beating strong match a bit further
