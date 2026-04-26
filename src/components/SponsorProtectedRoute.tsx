@@ -26,7 +26,7 @@ const SponsorProtectedRoute = ({ children }: SponsorProtectedRouteProps) => {
     }
 
     if (profile && !profile.profile_type) {
-      navigate('/triagem', { replace: true });
+      navigate('/cadastro-bet', { replace: true });
       return;
     }
 

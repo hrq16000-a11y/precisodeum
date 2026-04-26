@@ -308,7 +308,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     location.pathname === '/onboarding-v2/sucesso' ||
     location.pathname === '/cadastro-bet';
   if (mustCompleteOnboarding && !isOnboardingRoute) {
-    return <Navigate to="/triagem" replace />;
+    return <Navigate to="/cadastro-bet" replace />;
   }
 
   return <>{children}</>;

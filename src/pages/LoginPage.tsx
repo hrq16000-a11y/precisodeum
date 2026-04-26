@@ -35,7 +35,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (authLoading || !user) return;
-    navigate('/triagem', { replace: true, state: from ? { from } : undefined });
+    navigate('/cadastro-bet', { replace: true, state: from ? { from } : undefined });
   }, [user, authLoading, from, navigate]);
 
   useSeoHead({ title: 'Entrar', description: 'Acesse a plataforma Preciso de um.', noindex: true });
