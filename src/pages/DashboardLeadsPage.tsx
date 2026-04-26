@@ -31,6 +31,10 @@ import {
 } from '@/hooks/useLeadFollowup';
 import { useNewLeadAlerts } from '@/hooks/useNewLeadAlerts';
 import { useLeadAlertPreference } from '@/hooks/useLeadAlertPreference';
+import LeadsFunnelBoard, { statusToFunnel, type FunnelKey } from '@/components/leads/LeadsFunnelBoard';
+import WhatsappTemplatesModal from '@/components/leads/WhatsappTemplatesModal';
+import SendWhatsappWithTemplates from '@/components/leads/SendWhatsappWithTemplates';
+import { burstConfetti, playCoinsSound } from '@/lib/betDopamine';
 
 interface LeadHistoryItem {
   id: string;
