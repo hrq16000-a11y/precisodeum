@@ -201,23 +201,13 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
   const effectiveWhatsapp = provWhatsapp || provPhone || serviceFallback?.serviceWhatsapp || '';
   const effectivePhone = provPhone || provWhatsapp || serviceFallback?.serviceWhatsapp || '';
 
-  // Filtra business_name "genérico" (igual a categoria/profissão), evitando "Pedreiro" no campo nome.
-  const _norm = (s: string) =>
-    s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
-  const _GENERIC = new Set([
-    'pedreiro','padeiro','padreiro','eletricista','encanador','pintor','autonomo','profissional',
-    'empreiteiro','marceneiro','jardineiro','tecnico','mecanico','servicosgerais','diarista',
-    'cozinheiro','motorista','soldador','vidraceiro','gesseiro','azulejista','prestador',
-    'profissionalautonomo','servico','servicos','autonoma','prestadora','tecnica',
-  ]);
-  const _isGeneric = (s?: string | null) => {
-    if (!s) return true;
-    const n = _norm(s);
-    return !n || _GENERIC.has(n);
-  };
   const _businessName = (p.business_name || '').trim();
-  const _safeBusinessName = _isGeneric(_businessName) ? '' : _businessName;
-  const _resolvedName = (profileName || '').trim() || _safeBusinessName || serviceFallback?.serviceName || 'Profissional';
+  const _safeBusinessName = isGenericProviderName(_businessName) ? '' : _businessName;
+  const _resolvedName =
+    (profileName || '').trim() ||
+    _safeBusinessName ||
+    humanizeProviderSlug(p.slug) ||
+    'Profissional';
 
   return {
     userId: p.user_id,
