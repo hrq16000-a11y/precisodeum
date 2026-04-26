@@ -11,6 +11,24 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { LeadContext } from '@/hooks/useLeadFollowup';
+import { useLeadAlertPreference, type LeadAlertMode } from '@/hooks/useLeadAlertPreference';
+
+// Som curto embutido (mesmo beep usado em DashboardLeadsPage)
+const ALERT_SOUND_DATA_URI =
+  'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
+
+const playSound = () => {
+  try {
+    const audio = new Audio(ALERT_SOUND_DATA_URI);
+    audio.volume = 0.6;
+    void audio.play().catch(() => {});
+  } catch {
+    /* no-op */
+  }
+};
+
+const wantsSound = (mode: LeadAlertMode) => mode === 'sound' || mode === 'both';
+const wantsToast = (mode: LeadAlertMode) => mode === 'toast' || mode === 'both';
 
 interface NewLeadPayload {
   id: string;
@@ -39,6 +57,9 @@ const matchesCityLabel = (ctx: LeadContext | null | undefined, label: string): b
 
 export function useNewLeadAlerts(providerId: string | undefined, filters: Filters) {
   const qc = useQueryClient();
+  const { mode } = useLeadAlertPreference();
+  const modeRef = useRef<LeadAlertMode>(mode);
+  modeRef.current = mode;
   const [outsideFilterCount, setOutsideFilterCount] = useState(0);
   const [lastNewLead, setLastNewLead] = useState<NewLeadPayload | null>(null);
   const filtersRef = useRef(filters);
@@ -58,6 +79,9 @@ export function useNewLeadAlerts(providerId: string | undefined, filters: Filter
         setLastNewLead(lead);
         qc.invalidateQueries({ queryKey: ['provider-leads', providerId] });
 
+        const currentMode = modeRef.current;
+        if (currentMode === 'off') return; // usuário optou por silêncio total
+
         const f = filtersRef.current;
         const ctx = lead.lead_context;
         const cityOk = f.city === 'all' || matchesCityLabel(ctx, f.city);
@@ -65,8 +89,11 @@ export function useNewLeadAlerts(providerId: string | undefined, filters: Filter
         const ufOk = f.uf === 'all' || safeUF(ctx?.state) === f.uf;
         const outsideFilter = !(cityOk && catOk && ufOk);
 
+        if (outsideFilter) setOutsideFilterCount((n) => n + 1);
+        if (wantsSound(currentMode)) playSound();
+        if (!wantsToast(currentMode)) return;
+
         if (outsideFilter) {
-          setOutsideFilterCount((n) => n + 1);
           toast('Novo lead fora do filtro atual', {
             description: `${lead.client_name || 'Cliente'} — ${[ctx?.city, safeUF(ctx?.state)].filter(Boolean).join(' • ') || 'Origem desconhecida'}`,
             action: {
