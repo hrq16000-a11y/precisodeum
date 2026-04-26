@@ -51,6 +51,7 @@ import {
   clearRemoteDraft,
 } from './useOnboardingV2RemoteDraft';
 import { trackOnboardingEvent } from './telemetry';
+import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
 
 function slugify(input: string): string {
   return (input || '')
