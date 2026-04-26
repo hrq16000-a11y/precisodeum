@@ -1,4 +1,4 @@
-import { phaseIndex } from './state';
+import { initialOnboardingState, phaseIndex } from './state';
 import type { AccountKind, OnboardingPhase, OnboardingState } from './types';
 
 type BootstrapInput = {
@@ -74,11 +74,13 @@ export function resolveOnboardingV2SeedState({
     ...(forceBootstrapFromBet ? draft : bootstrap),
     ...(forceBootstrapFromBet ? bootstrap : draft),
     profile: {
+      ...initialOnboardingState.profile,
       ...(bootstrap?.profile || {}),
       ...(draft?.profile || {}),
       ...(forceBootstrapFromBet ? (bootstrap?.profile || {}) : {}),
     },
     service: {
+      ...initialOnboardingState.service,
       ...(bootstrap?.service || {}),
       ...(draft?.service || {}),
       ...(forceBootstrapFromBet ? (bootstrap?.service || {}) : {}),
