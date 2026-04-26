@@ -30,6 +30,7 @@ import {
   type LeadRow,
 } from '@/hooks/useLeadFollowup';
 import { useNewLeadAlerts } from '@/hooks/useNewLeadAlerts';
+import { useLeadAlertPreference } from '@/hooks/useLeadAlertPreference';
 
 interface LeadHistoryItem {
   id: string;
