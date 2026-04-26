@@ -596,10 +596,15 @@ const DashboardPortfolioPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">📸 Meu Portfólio</h1>
-            <p className="text-sm text-muted-foreground">Organize seus trabalhos em até {MAX_ALBUMS} álbuns temáticos</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <ImageIcon className="h-4.5 w-4.5" strokeWidth={2} />
+            </div>
+            <div>
+              <h1 className="font-display text-xl font-bold text-foreground">Meu Portfólio</h1>
+              <p className="text-sm text-muted-foreground">Organize seus trabalhos em até {MAX_ALBUMS} álbuns temáticos</p>
+            </div>
           </div>
           {albums.length < MAX_ALBUMS && (
             <Button variant="accent" size="sm" onClick={handleCreateAlbum}>
@@ -609,18 +614,28 @@ const DashboardPortfolioPage = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
+                <Skeleton className="aspect-video w-full rounded-none" />
+                <div className="p-3 space-y-2">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : albums.length === 0 ? (
           <div className="rounded-xl border-2 border-dashed border-border bg-card p-10 text-center">
-            <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <h3 className="font-display text-lg font-bold text-foreground">Nenhum álbum ainda</h3>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">
-              Crie álbuns para organizar fotos dos seus trabalhos por categoria.
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Camera className="h-8 w-8" strokeWidth={1.8} />
+            </div>
+            <h3 className="font-display text-lg font-bold text-foreground">Ainda sem álbuns</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-5 max-w-sm mx-auto">
+              Crie álbuns temáticos (ex: "Cozinhas", "Banheiros") para organizar seus trabalhos e impressionar clientes.
             </p>
             <Button variant="accent" onClick={handleCreateAlbum}>
-              <Plus className="h-4 w-4 mr-1" /> Criar primeiro álbum
+              <Plus className="h-4 w-4 mr-1" /> Criar meu primeiro álbum
             </Button>
           </div>
         ) : (
