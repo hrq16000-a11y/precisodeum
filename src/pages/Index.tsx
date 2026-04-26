@@ -164,7 +164,7 @@ const LazyViewportSection = ({ children }: { children: ReactNode }) => {
 // sponsor_top/home_featured_ad/ad2/showcase/sponsor_cta/popular/pwa eram
 // concorrentes diretos de outras seções. Admin ainda pode reordenar/exibir
 // via site_settings (sections_order / hidden_sections).
-const DEFAULT_ORDER = 'cms_banners,urgency,highlights,categories,featured,ad1,searches,jobs,courses,blog,cities,cta,sponsors,howitworks,testimonials,faq';
+const DEFAULT_ORDER = 'cms_banners,urgency,categories,featured,ad1,searches,jobs,courses,blog,cities,highlights,cta,sponsors,howitworks,testimonials,faq';
 
 // Sections that appear before 'categories' in the default order load lazily,
 // each one pushing the categories grid down and causing a layout shift.
