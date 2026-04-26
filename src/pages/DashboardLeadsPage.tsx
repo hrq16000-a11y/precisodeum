@@ -400,8 +400,47 @@ const DashboardLeadsPage = () => {
         </motion.div>
       )}
 
-      {/* Toolbar: busca, filtros avançados e exportação */}
-      <div className="mt-4 rounded-xl border border-border bg-card p-3 shadow-card">
+      {/* Quick Filters (chips) — Mobile-first, sempre visíveis acima da toolbar */}
+      <div className="mt-4 flex flex-wrap gap-1.5" role="tablist" aria-label="Filtros rápidos de status">
+        {([
+          { key: 'all', label: 'Todos', count: leads.length },
+          { key: 'new', label: 'Novos', count: leads.filter(l => l.status === 'new').length },
+          { key: 'contacted', label: 'Em atendimento', count: leads.filter(l => ['contacted','scheduled'].includes(l.status)).length },
+          { key: 'completed', label: 'Concluídos', count: leads.filter(l => l.status === 'completed').length },
+          { key: 'lost', label: 'Perdidos', count: leads.filter(l => l.status === 'lost').length },
+          ...(overdueCount > 0 ? [{ key: 'overdue', label: 'Vencidos', count: overdueCount }] : []),
+        ] as Array<{ key: 'all'|'overdue'|LeadStatus; label: string; count: number }>).map((chip) => {
+          const active = statusFilter === chip.key;
+          const isOverdueChip = chip.key === 'overdue';
+          return (
+            <button
+              key={chip.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setStatusFilter(chip.key)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all min-h-[36px] ${
+                active
+                  ? isOverdueChip
+                    ? 'bg-destructive text-destructive-foreground shadow-sm'
+                    : 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-card border border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              {isOverdueChip && <AlertTriangle className="h-3 w-3" />}
+              {chip.label}
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
+                active ? 'bg-background/25' : 'bg-muted text-foreground'
+              }`}>
+                {chip.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Toolbar sticky: busca + filtros + exportação */}
+      <div className="sticky top-0 z-20 mt-3 -mx-4 rounded-none border-y border-border bg-card/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:static sm:mx-0 sm:rounded-xl sm:border sm:px-3 sm:shadow-card">
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="relative min-w-[200px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
