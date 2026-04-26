@@ -222,9 +222,7 @@ const sortFeaturedProviders = (providers: DbProvider[], options: FeaturedProvide
   // - userCity (normalizada): mesma cidade → mesma ordem para todos os visitantes
   // NÃO usamos latitude/longitude (mutáveis a cada amostra de GPS) nem props instáveis,
   // para evitar reordenação visível a cada renderização.
-  const dateKey = new Date().toISOString().slice(0, 10);
-  const cityKey = (userCity || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') || 'all';
-  const seed = hashRotationSeed(`${dateKey}:${sortBy}:${categorySlug || 'all'}:${cityKey}`);
+  const seed = buildFeaturedRotationSeed({ sortBy, categorySlug, userCity });
 
   if (sortBy === 'proximity') {
     const [anchor, ...rest] = topWindow;
