@@ -16,6 +16,7 @@ import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
 import { generateProviderSlug } from '@/lib/slugify';
+import { invalidateProviderProfileCache } from '@/pages/ProviderProfile';
 import { fetchAllMunicipalities, geocodeCity, reverseGeocode, normalize, type CityResult } from '@/lib/geoUtils';
 import { useQuery } from '@tanstack/react-query';
 import { Search, LocateFixed, Loader2, MapPin, CheckCircle2, User, Briefcase, Globe, HelpCircle, Eye } from 'lucide-react';
@@ -305,15 +306,21 @@ const DashboardProfilePage = () => {
         return base; // fallback — trigger sanitize_provider_slug pode ajustar
       };
 
+      // Slugs a invalidar no cache do perfil público após o save (antigo + novo).
+      const slugsToInvalidate = new Set<string>();
+
       if (provider) {
         const nameChanged = (provider as any).business_name !== finalBusinessName ||
           (profile?.full_name || '') !== form.full_name;
         const cityChanged = (provider as any).city !== form.city;
         const updatePayload: any = { ...providerPayload };
+        const previousSlug = (provider as any).slug as string | null;
+        if (previousSlug) slugsToInvalidate.add(previousSlug);
         if (nameChanged || cityChanged) {
           const newSlug = generateProviderSlug(form.full_name, form.city);
-          if (newSlug && newSlug !== (provider as any).slug) {
+          if (newSlug && newSlug !== previousSlug) {
             updatePayload.slug = await ensureUniqueSlug(newSlug, (provider as any).id);
+            slugsToInvalidate.add(updatePayload.slug);
           }
         }
         const { error } = await supabase.from('providers').update(updatePayload).eq('id', provider.id);
@@ -325,9 +332,11 @@ const DashboardProfilePage = () => {
         const { data: existing } = await supabase.from('providers').select('id, slug').eq('user_id', user.id).limit(1);
         if (existing && existing.length > 0) {
           const updatePayload: any = { ...providerPayload, phone: finalPhone };
+          if (existing[0].slug) slugsToInvalidate.add(existing[0].slug);
           const newSlug = generateProviderSlug(form.full_name, form.city);
           if (newSlug && newSlug !== existing[0].slug) {
             updatePayload.slug = await ensureUniqueSlug(newSlug, existing[0].id);
+            slugsToInvalidate.add(updatePayload.slug);
           }
           const { error } = await supabase.from('providers').update(updatePayload).eq('id', existing[0].id);
           if (error) {
@@ -337,6 +346,7 @@ const DashboardProfilePage = () => {
         } else {
           const baseSlug = generateProviderSlug(form.full_name, form.city);
           const slug = await ensureUniqueSlug(baseSlug);
+          slugsToInvalidate.add(slug);
           const { error } = await supabase.from('providers').insert({ ...providerPayload, user_id: user.id, phone: finalPhone, slug, status: 'pending' } as any);
           if (error) {
             await showSaveError({ actionContext: 'Criar perfil profissional', componentName: 'DashboardProfilePage', errorMessage: error.message, retryFn: handleSave });
@@ -344,6 +354,9 @@ const DashboardProfilePage = () => {
           }
         }
       }
+      // Invalida cache em memória do ProviderProfile para que /profissional/{slug}
+      // reflita imediatamente as alterações sem precisar de F5.
+      slugsToInvalidate.forEach((s) => invalidateProviderProfileCache(s));
       await refetchProfile();
       trackAction('profile_save_success', 'Perfil salvo com sucesso');
       toast.success('Perfil salvo com sucesso!');
