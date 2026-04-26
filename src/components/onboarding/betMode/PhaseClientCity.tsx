@@ -18,7 +18,8 @@ export default function PhaseClientCity({ state, patch, finish, addPoints }: Pro
   const [awarded, setAwarded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  function handleCity(city: string, uf: string) {
+  function handleCity(next: { city: string; state: string }) {
+    const { city, state: uf } = next;
     patch({ city, state: uf });
     if (city && uf && !awarded) {
       setAwarded(true);
@@ -68,8 +69,7 @@ export default function PhaseClientCity({ state, patch, finish, addPoints }: Pro
           )}
         </span>
         <CityAutocomplete
-          value={state.city}
-          uf={state.state}
+          value={{ city: state.city, state: state.state }}
           onChange={handleCity}
           placeholder="Digite sua cidade"
         />

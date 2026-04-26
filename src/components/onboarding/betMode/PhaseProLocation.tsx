@@ -18,7 +18,8 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
   const [awarded, setAwarded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  function handleCity(city: string, uf: string) {
+  function handleCity(next: { city: string; state: string }) {
+    const { city, state: uf } = next;
     patch({ city, state: uf });
     if (city && uf && !awarded) {
       setAwarded(true);
@@ -60,7 +61,7 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
             </span>
           )}
         </span>
-        <CityAutocomplete value={state.city} uf={state.state} onChange={handleCity} placeholder="Digite sua cidade" />
+        <CityAutocomplete value={{ city: state.city, state: state.state }} onChange={handleCity} placeholder="Digite sua cidade" />
       </div>
 
       <Button
