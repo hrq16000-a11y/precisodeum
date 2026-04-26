@@ -74,6 +74,7 @@ export interface FeaturedProvidersOptions {
   enabled?: boolean;
   latitude?: number | null;
   longitude?: number | null;
+  userCity?: string;
   categorySlug?: string;
   sortBy?: FeaturedProviderSort;
   limit?: number;
