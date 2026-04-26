@@ -716,7 +716,14 @@ const DashboardLeadsPage = () => {
                     </Select>
                     <div className="flex items-center gap-2 sm:justify-end">
                       <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"><Phone className="h-3 w-3" /> {lead.phone}</a>
-                      <motion.a href={whatsappLink(lead.phone, `Olá ${lead.client_name}, aqui é ${profile?.full_name?.split(' ')[0] || 'o profissional'} do Preciso de um Profissional. Recebi seu pedido${lead.service_needed ? ` sobre "${lead.service_needed}"` : ''}. Como posso ajudar?`)} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 min-w-[44px] items-center justify-center gap-1 rounded-full bg-emerald-500 px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-600" title="Chamar no WhatsApp" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}><MessageCircle className="h-4 w-4" /><span className="hidden sm:inline">Chamar</span></motion.a>
+                      <SendWhatsappWithTemplates
+                        phone={lead.phone}
+                        clientName={lead.client_name}
+                        serviceNeeded={lead.service_needed}
+                        myFirstName={profile?.full_name?.split(' ')[0] || ''}
+                        defaultMessage={`Olá ${lead.client_name}, aqui é ${profile?.full_name?.split(' ')[0] || 'o profissional'} do Preciso de um Profissional. Recebi seu pedido${lead.service_needed ? ` sobre "${lead.service_needed}"` : ''}. Como posso ajudar?`}
+                        onManageTemplates={() => setTemplatesModalOpen(true)}
+                      />
                       <button onClick={() => { setRescheduleLeadId(lead.id); setRescheduleDefault(lead.next_followup_at); }} className="inline-flex items-center justify-center rounded-full bg-primary/10 p-1.5 text-primary transition-colors hover:bg-primary/20" title="Reagendar follow-up"><CalendarClock className="h-4 w-4" /></button>
                       <Link to={`/dashboard/leads/${lead.id}`} className="inline-flex items-center justify-center rounded-full bg-muted p-1.5 text-foreground transition-colors hover:bg-muted/70" title="Ver detalhes"><ExternalLink className="h-4 w-4" /></Link>
                       <motion.button onClick={() => handleDelete(lead.id)} className="inline-flex items-center justify-center rounded-full bg-destructive/10 p-1.5 text-destructive transition-colors hover:bg-destructive/20" title="Excluir lead" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}><Trash2 className="h-4 w-4" /></motion.button>
