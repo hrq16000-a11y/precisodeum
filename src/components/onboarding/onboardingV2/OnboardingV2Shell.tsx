@@ -82,8 +82,10 @@ export const OnboardingV2Shell = () => {
   // Frente 4 — duplicidade inline (whatsapp + tax_id)
   const dup = useWizardDuplicateCheck();
 
-  // Auto-save em localStorage com debounce
+  // Auto-save em localStorage com debounce (rápido)
   useOnboardingV2Draft(state);
+  // Auto-save remoto com debounce (cross-device)
+  useOnboardingV2RemoteDraft(state, user?.id);
 
   // Aviso de "rascunho restaurado" quando aplicável
   useEffect(() => {
@@ -95,6 +97,29 @@ export const OnboardingV2Shell = () => {
     }
   }, []);
 
+  // Restaura rascunho REMOTO se o local estiver vazio (troca de dispositivo)
+  useEffect(() => {
+    if (!user?.id) return;
+    const local = readOnboardingV2Draft();
+    if (local && local.phase && local.phase !== 'phase1_action') return;
+    let alive = true;
+    (async () => {
+      const remote = await fetchRemoteDraft(user.id);
+      if (!alive || !remote) return;
+      dispatch({
+        type: 'HYDRATE',
+        state: {
+          profile: remote.payload.profile,
+          service: remote.payload.service,
+          phase: remote.phase as any,
+        },
+      });
+      setDraftRestored(true);
+      setTimeout(() => setDraftRestored(false), 4000);
+    })();
+    return () => { alive = false; };
+  }, [user?.id]);
+
   // Hidrata nome do auth se vier do Google
   useEffect(() => {
     if (!user) return;
@@ -105,6 +130,15 @@ export const OnboardingV2Shell = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Telemetria: dispara 'enter' a cada troca de fase
+  useEffect(() => {
+    void trackOnboardingEvent({
+      phase: state.phase,
+      event: state.phase === 'done' ? 'complete' : 'enter',
+      userId: user?.id,
+    });
+  }, [state.phase, user?.id]);
 
   /* ───── Persistência: cria/atualiza provider ao fim da Fase 1 ───── */
   const persistPhase1 = async () => {
