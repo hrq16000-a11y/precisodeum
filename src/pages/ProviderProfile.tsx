@@ -32,6 +32,7 @@ import PublicAchievementsStrip from '@/components/PublicAchievementsStrip';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { lazy, Suspense } from 'react';
 import ErrorGuard from '@/components/ErrorGuard';
+import ShareDialog from '@/components/ShareDialog';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 const ImageLightbox = lazy(() => importWithRetry(() => import('@/components/ImageLightbox')));
 const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
