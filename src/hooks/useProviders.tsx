@@ -8,6 +8,7 @@ import type { GeoIntent } from '@/lib/geoEngine';
 import SearchIntelligence from '@/lib/searchIntelligence';
 import { sanitizeSearchTokens } from '@/lib/searchSanitizer';
 import { calculateDistanceKm, hasCoordinates } from '@/lib/geoDistance';
+import { resolveDisplayName as _centralResolveDisplayName } from '@/lib/providerDisplay';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
@@ -391,7 +392,8 @@ async function fetchProvidersLightweight(query: any) {
 
   return (data as any[]).map((p) => {
     const profile = profileMap[p.user_id];
-    const rawPhoto = p.photo_url || profile?.avatar || '';
+    // Priority: profile.avatar (verified selfie) > providers.photo_url > generated fallback
+    const rawPhoto = profile?.avatar || p.photo_url || '';
     const photoCount = p.portfolio_photo_count || 0;
     const albumCount = p.portfolio_album_count || 0;
     const svcCount = p.services_count || 0;
@@ -415,12 +417,22 @@ async function fetchProvidersLightweight(query: any) {
     // Emergency flag: true if any service has is_emergency
     (mapped as any)._hasEmergencyService = provServices.some(s => s.is_emergency === true);
 
-    // Mark incomplete profiles for filtering — use fallback hierarchy so
-    // a missing public_profiles response never hides providers that have
-    // business_name or slug filled in.
-    const displayName = (profile?.name?.trim()) || (p.business_name?.trim()) || (p.slug?.trim()) || '';
+    // Mark incomplete profiles for filtering. A profile is "incomplete" when:
+    //  - it has no usable display name, OR
+    //  - city is missing while admin requires it, OR
+    //  - the only available "name" is a generic profession AND no real avatar
+    //    exists (so the card would render with both a generic name and a
+    //    placeholder avatar — visually weak).
+    const profileNameTrimmed = (profile?.name?.trim()) || '';
+    const businessNameTrimmed = (p.business_name?.trim()) || '';
+    const displayName = profileNameTrimmed || businessNameTrimmed || (p.slug?.trim()) || '';
     const provCity = p.city?.trim() || '';
-    const isIncomplete = !displayName || (requireCityForVisibility && !provCity);
+    const onlyGenericName = !profileNameTrimmed && isGenericProviderName(businessNameTrimmed);
+    const hasRealAvatar = !!rawPhoto;
+    const isIncomplete =
+      !displayName ||
+      (requireCityForVisibility && !provCity) ||
+      (onlyGenericName && !hasRealAvatar);
     (mapped as any)._isIncomplete = isIncomplete;
 
     // Hybrid score with MERITOCRACY weighting
@@ -547,13 +559,18 @@ export function useFeaturedProviders(options: boolean | FeaturedProvidersOptions
         const effectivePhone = provPhone || provWhatsapp || '';
         const profile = profileMap[p.user_id];
 
-        // Prioridade do nome: profile.full_name > business_name (não-genérico) > "Profissional"
+        // Centralized name + avatar resolution (consistent across all feeds)
         const fullName = profile?.name?.trim() || '';
         const businessName = (p.business_name || '').trim();
         const safeBusinessName = isGenericProviderName(businessName) ? '' : businessName;
-        const resolvedName = fullName || safeBusinessName || humanizeProviderSlug(p.slug) || 'Profissional';
+        const resolvedName = _centralResolveDisplayName({
+          profileFullName: fullName,
+          businessName,
+          slug: p.slug,
+          city: p.city,
+        });
 
-        // Foto: avatar real do perfil tem prioridade na home; só cai para photo_url se não houver avatar.
+        // Avatar: profile.avatar_url > providers.photo_url > fallback (handled by ProviderCard)
         const resolvedPhoto = (profile?.avatar || p.photo_url || '').trim();
 
         const mapped: DbProvider = {

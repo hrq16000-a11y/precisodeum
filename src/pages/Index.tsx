@@ -12,6 +12,7 @@ import Header from '@/components/Header';
 import HeroBanner from '@/components/home/HeroBanner';
 import ProSignupStrip from '@/components/home/ProSignupStrip';
 import CategoriesGrid from '@/components/home/CategoriesGrid';
+import GpsScrollPrompt from '@/components/home/GpsScrollPrompt';
 import Footer from '@/components/Footer';
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
@@ -429,6 +430,9 @@ const Index = () => {
 
       {/* Categories rendered eagerly (not lazy) at the configured position to avoid CLS */}
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
+
+      {/* GPS prompt — appears after the user scrolls past categories. */}
+      <GpsScrollPrompt />
 
       {sectionsAfterCategories.map(renderWrappedSection)}
       <Footer />

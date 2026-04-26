@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
 import { compressImage, generateBlurDataUrl } from '@/lib/compressImage';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateProviderCaches } from '@/lib/providerCacheInvalidation';
 
 interface AvatarUploadProps {
   userId: string;
@@ -16,6 +18,7 @@ interface AvatarUploadProps {
 const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(({ userId, currentUrl, initials, onUploaded }, ref) => {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.files?.[0];
@@ -80,6 +83,9 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(({ userId, cu
       }
 
       onUploaded(publicUrl);
+      // Invalidate caches so all feeds (Home Featured, Nearby, search)
+      // immediately reflect the new avatar.
+      invalidateProviderCaches(queryClient, { reason: 'avatar-upload', userId });
       toast.success('Foto atualizada!');
     } catch {
       toast.error('Erro ao enviar imagem');

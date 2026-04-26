@@ -25,6 +25,13 @@ import CommunityVerifiedBadge from '@/components/CommunityVerifiedBadge';
 import TopProfessionalBadge from '@/components/TopProfessionalBadge';
 import { useTopProfessional } from '@/hooks/useTopProfessional';
 import FavoriteButton from '@/components/FavoriteButton';
+import {
+  resolveDisplayName,
+  resolveAvatarUrl,
+  hasRealAvatar as hasRealAvatarFn,
+  isDuplicateCategoryLabel,
+  normalizeProviderToken,
+} from '@/lib/providerDisplay';
 
 interface ProviderCardProps {
   provider: DbProvider;
@@ -63,23 +70,28 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const locationParts = [provider.neighborhood, provider.city, provider.state].filter(Boolean);
   const locationText = locationParts.join(', ');
 
-  const displayName = provider.name || provider.businessName || 'Profissional';
-  const generatedAvatar = `https://api.dicebear.com/9.x/${avatarFallbackStyle}/svg?seed=${encodeURIComponent(provider.userId || provider.id)}`;
-  const hasOwnPhoto = !!(provider.photo || provider.serviceImage);
-  const displayPhoto = provider.photo || provider.serviceImage || generatedAvatar;
+  // Centralized name + avatar resolution (single source of truth across feeds)
+  const displayName = resolveDisplayName({
+    providerName: provider.name,
+    businessName: provider.businessName,
+    slug: provider.slug,
+    city: provider.city,
+  });
+  const hasOwnPhoto = hasRealAvatarFn({
+    providerPhotoUrl: provider.photo,
+    serviceImage: provider.serviceImage,
+  });
+  const displayPhoto = resolveAvatarUrl({
+    providerPhotoUrl: provider.photo,
+    serviceImage: provider.serviceImage,
+    seed: provider.userId || provider.id,
+    fallbackStyle: avatarFallbackStyle,
+  });
 
-  // Evita repetir a mesma palavra no card (ex: nome "Pedreiro" + categoria "Pedreiro").
-  // Normaliza removendo acentos, espaços e pontuação para comparação semântica.
-  const normalizeForCompare = (s: string) =>
-    s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
-  const nameNorm = normalizeForCompare(displayName);
-  const businessNorm = provider.businessName ? normalizeForCompare(provider.businessName) : '';
-  const categoryNorm = provider.category ? normalizeForCompare(provider.category) : '';
-  const categoryDuplicatesName =
-    !!categoryNorm && (categoryNorm === nameNorm || categoryNorm === businessNorm ||
-      nameNorm.includes(categoryNorm) || categoryNorm.includes(nameNorm));
-  // Subtítulo alternativo quando a categoria duplicaria o nome:
-  // prioriza cidade, depois "Profissional verificado".
+  // Hide repeated subtitles (avoid showing "Pedreiro" both as name + category).
+  const nameNorm = normalizeProviderToken(displayName);
+  const businessNorm = provider.businessName ? normalizeProviderToken(provider.businessName) : '';
+  const categoryDuplicatesName = isDuplicateCategoryLabel(displayName, provider.category, provider.businessName);
   const altSubtitle = categoryDuplicatesName
     ? (provider.city ? `Atende em ${provider.city}` : 'Profissional verificado')
     : null;
@@ -255,7 +267,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 )}
               </div>
             </Link>
-            {provider.businessName && normalizeForCompare(provider.businessName) !== nameNorm && (
+            {provider.businessName && normalizeProviderToken(provider.businessName) !== nameNorm && !isDuplicateCategoryLabel(displayName, provider.businessName) && (
               <p className="truncate text-xs text-muted-foreground">{provider.businessName}</p>
             )}
             {provider.category && !categoryDuplicatesName && (
