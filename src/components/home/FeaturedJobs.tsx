@@ -37,13 +37,16 @@ const AD_EVERY = 4;
 
 const FeaturedJobs = () => {
   const { data: jobs = [] } = useQuery({
-    queryKey: ['featured-jobs-home'],
+    queryKey: ['featured-jobs-home-fresh'],
     queryFn: async () => {
+      // Apenas vagas postadas nos últimos 3 dias (frescor garantido).
+      const sinceIso = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
       const { data } = await (supabase
         .from('jobs')
         .select('id, title, city, state, opportunity_type, slug, whatsapp, description, job_type, work_model, created_at, categories(name, icon)') as any)
         .eq('status', 'active')
         .eq('approval_status', 'approved')
+        .gte('created_at', sinceIso)
         .order('created_at', { ascending: false })
         .limit(10);
       return shuffle(data || []).slice(0, 3);
