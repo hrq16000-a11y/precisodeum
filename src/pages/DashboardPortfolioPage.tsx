@@ -328,6 +328,7 @@ const DashboardPortfolioPage = () => {
     await loadPhotos(selectedAlbum.id);
     await loadAlbums();
     setUploading(false);
+    setUploadProgress(null);
     if (successCount > 0) {
       const newPhotoTotal = photos.length + successCount;
       const unlockedNext = newPhotoTotal < MAX_PHOTOS_PER_ALBUM;
