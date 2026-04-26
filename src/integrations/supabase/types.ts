@@ -2171,6 +2171,39 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_events: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          meta: Json
+          phase: string
+          session_id: string
+          user_id: string | null
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          meta?: Json
+          phase: string
+          session_id: string
+          user_id?: string | null
+          variant?: string
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          meta?: Json
+          phase?: string
+          session_id?: string
+          user_id?: string | null
+          variant?: string
+        }
+        Relationships: []
+      }
       onboarding_settings: {
         Row: {
           active: boolean
@@ -2231,6 +2264,27 @@ export type Database = {
           subtitle?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      onboarding_v2_drafts: {
+        Row: {
+          payload: Json
+          phase: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          payload: Json
+          phase: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          payload?: Json
+          phase?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
