@@ -778,21 +778,24 @@ const DashboardServicesPage = () => {
         })()}
       </div>
 
-      {/* ─── New/Edit Dialog ─── */}
-      <Dialog open={showDialog} onOpenChange={(open) => { if (!open) { resetForm(); } setShowDialog(open); }}>
-        <DialogContent className="max-w-md p-0 flex flex-col max-h-[90vh] overflow-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-accent/60 [&::-webkit-scrollbar-thumb]:rounded-full">
-          <DialogHeader className="px-5 pt-5 pb-2 shrink-0">
-            <DialogTitle className="flex items-center gap-2 text-lg">
+      {/* ─── New/Edit Sheet (lateral, espaçoso, full-screen no mobile) ─── */}
+      <Sheet open={showDialog} onOpenChange={(open) => { if (!open) { resetForm(); } setShowDialog(open); }}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl p-0 flex flex-col gap-0 overflow-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-accent/60 [&::-webkit-scrollbar-thumb]:rounded-full"
+        >
+          <SheetHeader className="px-5 pt-5 pb-2 shrink-0 text-left">
+            <SheetTitle className="flex items-center gap-2 text-lg">
               {wizardStep === 'photos'
                 ? <>📸 Adicione Fotos do Serviço</>
                 : <>🔧 {editId ? 'Editar Serviço' : 'Novo Serviço'}</>}
-            </DialogTitle>
+            </SheetTitle>
             {wizardStep === 'photos' && (
               <p className="text-xs text-muted-foreground mt-1">
                 Passo final: envie suas fotos. A primeira será a capa. Anúncios com foto recebem até <strong className="text-accent">3x mais contatos</strong>.
               </p>
             )}
-          </DialogHeader>
+          </SheetHeader>
 
           <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-accent/60 [&::-webkit-scrollbar-thumb]:rounded-full">
 
