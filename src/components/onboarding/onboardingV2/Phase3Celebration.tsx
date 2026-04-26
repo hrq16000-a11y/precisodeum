@@ -50,6 +50,22 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
     });
   }, [userId]);
 
+  // Busca o slug do prestador para o botão "Ver minha página"
+  const [providerSlug, setProviderSlug] = useState<string | null>(null);
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    (async () => {
+      const { data } = await supabase
+        .from('providers')
+        .select('slug')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (alive && data?.slug) setProviderSlug(data.slug);
+    })();
+    return () => { alive = false; };
+  }, [userId]);
+
   // Placar fictício mas plausível — comunica "você está vivo no sistema"
   const reach = useTickerNumber(1280, 1300);
   const score = useTickerNumber(73, 1100);
@@ -110,9 +126,28 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
         )}
       </div>
 
-      <Button type="button" size="lg" onClick={onContinue} className="w-full">
-        Continuar <ArrowRight className="h-4 w-4 ml-2" />
-      </Button>
+      <div className="space-y-2">
+        <Button type="button" size="lg" onClick={onContinue} className="w-full">
+          Continuar <ArrowRight className="h-4 w-4 ml-2" />
+        </Button>
+        {providerSlug && (
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            asChild
+            className="w-full"
+          >
+            <a
+              href={`/profissional/${providerSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Ver minha página pública <ExternalLink className="h-4 w-4 ml-2" />
+            </a>
+          </Button>
+        )}
+      </div>
       <p className="text-[10px] text-muted-foreground">*estimativa com base na sua categoria + região</p>
     </motion.div>
   );
