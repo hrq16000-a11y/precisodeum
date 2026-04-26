@@ -32,6 +32,15 @@ if (typeof (window as any).PointerEvent === "undefined") {
   (window as any).PointerEvent = class extends Event {};
 }
 
+if (typeof (globalThis as any).IntersectionObserver === "undefined") {
+  (globalThis as any).IntersectionObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() { return []; }
+  };
+}
+
 if (typeof (HTMLElement.prototype as any).hasPointerCapture === "undefined") {
   (HTMLElement.prototype as any).hasPointerCapture = () => false;
   (HTMLElement.prototype as any).releasePointerCapture = () => {};
