@@ -722,9 +722,25 @@ const SearchPage = () => {
 
             <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs sm:text-sm text-muted-foreground">
-                {isLoading ? 'Buscando...' : `${totalDisplay} profissional(is) encontrado(s)`}
-                {query && <> para "<span className="font-semibold text-foreground">{query}</span>"</>}
-                {effectiveCity && <> em <span className="font-semibold text-foreground">{effectiveCity}</span></>}
+                {isLoading
+                  ? 'Buscando...'
+                  : isFallback && effectiveCity
+                    ? (
+                        <>
+                          <span className="font-semibold text-foreground">0</span> em{' '}
+                          <span className="font-semibold text-foreground">{effectiveCity}</span>
+                          {totalDisplay > 0 && (
+                            <> · <span className="font-semibold text-foreground">{totalDisplay}</span> em cidades próximas</>
+                          )}
+                        </>
+                      )
+                    : (
+                        <>
+                          {`${totalDisplay} profissional(is) encontrado(s)`}
+                          {query && <> para "<span className="font-semibold text-foreground">{query}</span>"</>}
+                          {effectiveCity && <> em <span className="font-semibold text-foreground">{effectiveCity}</span></>}
+                        </>
+                      )}
               </p>
               <div className="flex items-center gap-2">
                 {!isFallback && filteredLocal.length > 0 && effectiveCity && (
