@@ -188,6 +188,20 @@ interface ProviderProfileSnapshot {
 const PROVIDER_PROFILE_CACHE_TTL = 1000 * 60 * 15;
 const providerProfileCache = new Map<string, { ts: number; snapshot: ProviderProfileSnapshot }>();
 
+/**
+ * Invalida o cache em memória do perfil público para um slug específico
+ * (ou todos, se nenhum for passado). Use após salvar o Wizard ou qualquer
+ * mutação no perfil para garantir que `/profissional/{slug}` reflita as
+ * mudanças sem F5.
+ */
+export const invalidateProviderProfileCache = (slug?: string) => {
+  if (slug) {
+    providerProfileCache.delete(slug);
+  } else {
+    providerProfileCache.clear();
+  }
+};
+
 const THEME_CLASSES: Record<string, ThemeConfig> = {
   default: {
     card: 'rounded-xl border border-border bg-card shadow-card',
