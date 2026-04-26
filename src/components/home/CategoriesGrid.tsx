@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, SearchX, Trophy, Search, Sparkles } from 'lucide-react';
+import { ChevronRight, SearchX, Search } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
