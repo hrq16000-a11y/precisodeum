@@ -70,16 +70,68 @@ export interface FeaturedProvidersOptions {
 }
 
 const FEATURED_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const FEATURED_CACHE_VERSION = 'v3';
+
+const GENERIC_PROVIDER_NAME_TOKENS = new Set([
+  'pedreiro', 'padeiro', 'padreiro', 'eletricista', 'encanador', 'pintor', 'autonomo', 'profissional',
+  'empreiteiro', 'marceneiro', 'jardineiro', 'tecnico', 'mecanico', 'servicosgerais', 'diarista',
+  'cozinheiro', 'motorista', 'soldador', 'vidraceiro', 'gesseiro', 'azulejista', 'prestador',
+  'profissionalautonomo', 'servico', 'servicos', 'autonoma', 'prestadora', 'tecnica',
+]);
+
+const normalizeProviderToken = (s: string) =>
+  s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
+
+const isGenericProviderName = (s?: string | null) => {
+  if (!s) return true;
+  const normalized = normalizeProviderToken(s);
+  return !normalized || GENERIC_PROVIDER_NAME_TOKENS.has(normalized);
+};
+
+const humanizeProviderSlug = (slug?: string | null) => {
+  if (!slug) return '';
+  const base = slug
+    .replace(/-[a-f0-9]{6,}$/i, '')
+    .replace(/\b\d+\b/g, '')
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!base || isGenericProviderName(base)) return '';
+  if (/^profissional(\s+em\s+.+)?$/i.test(base)) return '';
+
+  return base
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+};
 
 const featuredCacheKey = ({ latitude, longitude, categorySlug, sortBy, limit }: FeaturedProvidersOptions) =>
-  `featured-providers:v2:${categorySlug || 'all'}:${sortBy || 'proximity'}:${limit || 6}:${latitude?.toFixed(2) || 'na'}:${longitude?.toFixed(2) || 'na'}`;
+  `featured-providers:${FEATURED_CACHE_VERSION}:${categorySlug || 'all'}:${sortBy || 'proximity'}:${limit || 6}:${latitude?.toFixed(2) || 'na'}:${longitude?.toFixed(2) || 'na'}`;
 
 const readFeaturedCache = (key: string): DbProvider[] | undefined => {
   if (typeof window === 'undefined') return undefined;
   try {
     const cached = JSON.parse(localStorage.getItem(key) || 'null');
     if (!cached?.time || Date.now() - cached.time > FEATURED_CACHE_TTL_MS) return undefined;
-    return Array.isArray(cached.data) ? cached.data : undefined;
+    if (!Array.isArray(cached.data)) return undefined;
+
+    const hasWeakEntry = cached.data.some((provider: DbProvider) => {
+      const displayName = (provider?.name || '').trim();
+      const category = (provider?.category || '').trim();
+      const normalizedName = normalizeProviderToken(displayName);
+      const normalizedCategory = normalizeProviderToken(category);
+
+      return (
+        !displayName ||
+        /^profissional(\s+em\s+.+)?$/i.test(displayName) ||
+        isGenericProviderName(displayName) ||
+        (!!normalizedCategory && normalizedName === normalizedCategory)
+      );
+    });
+
+    return hasWeakEntry ? undefined : cached.data;
   } catch {
     return undefined;
   }
@@ -149,23 +201,13 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
   const effectiveWhatsapp = provWhatsapp || provPhone || serviceFallback?.serviceWhatsapp || '';
   const effectivePhone = provPhone || provWhatsapp || serviceFallback?.serviceWhatsapp || '';
 
-  // Filtra business_name "genérico" (igual a categoria/profissão), evitando "Pedreiro" no campo nome.
-  const _norm = (s: string) =>
-    s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
-  const _GENERIC = new Set([
-    'pedreiro','padeiro','padreiro','eletricista','encanador','pintor','autonomo','profissional',
-    'empreiteiro','marceneiro','jardineiro','tecnico','mecanico','servicosgerais','diarista',
-    'cozinheiro','motorista','soldador','vidraceiro','gesseiro','azulejista','prestador',
-    'profissionalautonomo','servico','servicos','autonoma','prestadora','tecnica',
-  ]);
-  const _isGeneric = (s?: string | null) => {
-    if (!s) return true;
-    const n = _norm(s);
-    return !n || _GENERIC.has(n);
-  };
   const _businessName = (p.business_name || '').trim();
-  const _safeBusinessName = _isGeneric(_businessName) ? '' : _businessName;
-  const _resolvedName = (profileName || '').trim() || _safeBusinessName || serviceFallback?.serviceName || 'Profissional';
+  const _safeBusinessName = isGenericProviderName(_businessName) ? '' : _businessName;
+  const _resolvedName =
+    (profileName || '').trim() ||
+    _safeBusinessName ||
+    humanizeProviderSlug(p.slug) ||
+    'Profissional';
 
   return {
     userId: p.user_id,
@@ -497,21 +539,6 @@ export function useFeaturedProviders(options: boolean | FeaturedProvidersOptions
         });
       }
 
-      // Normaliza para detectar nomes genéricos (com/sem acento, plural, variações de grafia)
-      const normalize = (s: string) =>
-        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
-      const GENERIC_NAMES = new Set([
-        'pedreiro','padeiro','padreiro','eletricista','encanador','pintor','autonomo','profissional',
-        'empreiteiro','marceneiro','jardineiro','tecnico','mecanico','servicosgerais','diarista',
-        'cozinheiro','motorista','soldador','vidraceiro','gesseiro','azulejista','prestador',
-        'profissionalautonomo','servico','servicos','autonoma','prestadora','tecnica',
-      ]);
-      const isGenericName = (s?: string | null) => {
-        if (!s) return true;
-        const n = normalize(s);
-        return !n || GENERIC_NAMES.has(n);
-      };
-
       // Map MV rows (snake_case + flat category fields) to DbProvider shape
       const mappedRows = rows.map((p) => {
         const provWhatsapp = (p.whatsapp || '').trim();
@@ -523,11 +550,11 @@ export function useFeaturedProviders(options: boolean | FeaturedProvidersOptions
         // Prioridade do nome: profile.full_name > business_name (não-genérico) > "Profissional"
         const fullName = profile?.name?.trim() || '';
         const businessName = (p.business_name || '').trim();
-        const safeBusinessName = isGenericName(businessName) ? '' : businessName;
-        const resolvedName = fullName || safeBusinessName || 'Profissional';
+        const safeBusinessName = isGenericProviderName(businessName) ? '' : businessName;
+        const resolvedName = fullName || safeBusinessName || humanizeProviderSlug(p.slug) || 'Profissional';
 
-        // Foto: photo_url do provider OU avatar_url do profile (real, não DiceBear)
-        const resolvedPhoto = (p.photo_url || profile?.avatar || '').trim();
+        // Foto: avatar real do perfil tem prioridade na home; só cai para photo_url se não houver avatar.
+        const resolvedPhoto = (profile?.avatar || p.photo_url || '').trim();
 
         const mapped: DbProvider = {
           id: p.id,
