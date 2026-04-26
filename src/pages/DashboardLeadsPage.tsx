@@ -569,10 +569,23 @@ const DashboardLeadsPage = () => {
       <motion.div className="mt-6 space-y-3" variants={containerVariants} initial="hidden" animate="show">
         <AnimatePresence mode="popLayout">
           {filteredLeads.length === 0 && (
-            <motion.div key="empty" variants={itemVariants} exit={{ opacity: 0, scale: 0.95 }} className="rounded-xl border border-border bg-card p-12 text-center shadow-card">
-              <Inbox className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
-              <p className="font-semibold text-foreground">Nenhum contato encontrado</p>
-              <p className="mt-1 text-sm text-muted-foreground">Quando um cliente enviar uma solicitação de serviço, ela aparecerá aqui.</p>
+            <motion.div key="empty" variants={itemVariants} exit={{ opacity: 0, scale: 0.95 }} className="rounded-2xl border border-border bg-gradient-to-br from-card via-card to-primary/5 p-10 text-center shadow-card">
+              <div className="relative mx-auto mb-4 flex h-16 w-16 items-center justify-center">
+                <span className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
+                <span className="absolute inset-2 rounded-full bg-primary/10" />
+                <Radar className="relative h-8 w-8 text-primary" />
+              </div>
+              <p className="font-display text-lg font-bold text-foreground">Aguardando novos contatos</p>
+              <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted-foreground">
+                Quando um cliente enviar uma solicitação, ela aparecerá aqui em tempo real.
+              </p>
+              <Link
+                to="/dashboard"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-transform hover:scale-105"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Melhorar meu Score de Saúde
+              </Link>
             </motion.div>
           )}
           {visibleLeads.map((lead) => {
