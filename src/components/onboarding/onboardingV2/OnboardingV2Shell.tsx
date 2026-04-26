@@ -19,9 +19,11 @@ import { useEffect, useReducer, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
+import { useWizardDuplicateCheck } from '@/hooks/useWizardDuplicateCheck';
 import {
   initialOnboardingState,
   onboardingReducer,
@@ -35,8 +37,14 @@ import {
   Phase1Contact,
 } from './Phase1Basic';
 import { Phase2Service, Phase2Details } from './Phase2Service';
+import { Phase2Photos } from './Phase2Photos';
 import { Phase3Celebration } from './Phase3Celebration';
 import { Phase4Document, Phase4ExtrasA, Phase4ExtrasB } from './Phase4Final';
+import {
+  useOnboardingV2Draft,
+  readOnboardingV2Draft,
+  clearOnboardingV2Draft,
+} from './useOnboardingV2Draft';
 
 function slugify(input: string): string {
   return (input || '')
@@ -51,8 +59,35 @@ function slugify(input: string): string {
 export const OnboardingV2Shell = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState);
+  // Restaura draft local ao montar (se existir e não estiver expirado)
+  const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState, (init) => {
+    const draft = readOnboardingV2Draft();
+    if (!draft) return init;
+    return {
+      ...init,
+      profile: { ...init.profile, ...(draft.profile || {}) },
+      service: { ...init.service, ...(draft.service || {}) },
+      phase: draft.phase || init.phase,
+    };
+  });
   const [saving, setSaving] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  // Frente 4 — duplicidade inline (whatsapp + tax_id)
+  const dup = useWizardDuplicateCheck();
+
+  // Auto-save em localStorage com debounce
+  useOnboardingV2Draft(state);
+
+  // Aviso de "rascunho restaurado" quando aplicável
+  useEffect(() => {
+    const draft = readOnboardingV2Draft();
+    if (draft && draft.phase && draft.phase !== 'phase1_action') {
+      setDraftRestored(true);
+      const t = setTimeout(() => setDraftRestored(false), 4000);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   // Hidrata nome do auth se vier do Google
   useEffect(() => {
@@ -262,7 +297,24 @@ export const OnboardingV2Shell = () => {
             onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
             onBack={() => dispatch({ type: 'GO_TO', phase: 'phase1_location' })}
             saving={saving}
+            duplicateWhatsapp={dup.duplicates.whatsapp}
+            checkingWhatsapp={dup.checking.whatsapp}
+            onWhatsappBlur={async () => {
+              if (state.profile.whatsapp.replace(/\D/g, '').length >= 10) {
+                const isDup = await dup.checkWhatsapp(state.profile.whatsapp, user?.id);
+                if (isDup) toast.error('Este WhatsApp já está cadastrado em outra conta.');
+              }
+            }}
             onSubmit={async () => {
+              if (dup.duplicates.whatsapp) {
+                toast.error('Corrija o WhatsApp duplicado antes de continuar.');
+                return;
+              }
+              const isDup = await dup.checkWhatsapp(state.profile.whatsapp, user?.id);
+              if (isDup) {
+                toast.error('Este WhatsApp já está cadastrado em outra conta.');
+                return;
+              }
               const ok = await persistPhase1();
               if (ok) dispatch({ type: 'NEXT' });
             }}
@@ -300,6 +352,21 @@ export const OnboardingV2Shell = () => {
               const ok = await persistFirstService();
               if (ok) dispatch({ type: 'NEXT' });
             }}
+          />
+        );
+      case 'phase2_photos':
+        // Sem serviço criado, pula direto pra celebração
+        if (!state.firstServiceId || !user?.id) {
+          dispatch({ type: 'NEXT' });
+          return null;
+        }
+        return (
+          <Phase2Photos
+            serviceId={state.firstServiceId}
+            userId={user.id}
+            serviceName={state.service.service_name}
+            onContinue={() => dispatch({ type: 'NEXT' })}
+            onSkip={() => dispatch({ type: 'NEXT' })}
           />
         );
       case 'phase3_celebration':
@@ -369,13 +436,23 @@ export const OnboardingV2Shell = () => {
           />
         );
       case 'done':
-        // Auto-finaliza
+        // Limpa rascunho local e auto-finaliza
+        clearOnboardingV2Draft();
         setTimeout(finishWizard, 300);
         return null;
     }
   };
 
-  const progress = Math.min(100, ((phaseIndex(state.phase) + 1) / VISIBLE_PHASES_COUNT) * 100);
+  // Progresso: a celebração já é "100%" sensorial, então tudo a partir dela conta como completo.
+  const isCelebrationOrLater =
+    state.phase === 'phase3_celebration' ||
+    state.phase === 'phase4_document' ||
+    state.phase === 'phase4_extras_a' ||
+    state.phase === 'phase4_extras_b' ||
+    state.phase === 'done';
+  const progress = isCelebrationOrLater
+    ? 100
+    : Math.min(95, ((phaseIndex(state.phase) + 1) / VISIBLE_PHASES_COUNT) * 100);
 
   return (
     <div className="min-h-screen bg-background">
@@ -387,6 +464,21 @@ export const OnboardingV2Shell = () => {
           transition={{ type: 'spring', stiffness: 120, damping: 22 }}
         />
       </div>
+
+      {/* Aviso "rascunho restaurado" — auto-some em 4s */}
+      <AnimatePresence>
+        {draftRestored && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="mx-auto mt-3 flex max-w-md items-center gap-2 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-xs text-foreground"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5 text-accent" />
+            <span>Continuamos de onde você parou.</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="mx-auto max-w-md px-4 py-6 sm:py-10">
         <AnimatePresence mode="wait">

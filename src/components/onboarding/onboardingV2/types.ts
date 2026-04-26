@@ -48,6 +48,7 @@ export type OnboardingPhase =
   | 'phase1_contact'       // Step 4 — Nome + WhatsApp
   | 'phase2_service'       // Step 5 — Categoria + Título do serviço
   | 'phase2_details'       // Step 6 — Cidades, Valores (a partir de), Horários
+  | 'phase2_photos'        // Step 6.5 — Upload de até 5 fotos (1 capa)
   | 'phase3_celebration'   // Step 7 — Tela de Sucesso
   | 'phase4_document'      // Step 8 — Upsell CPF/CNPJ
   | 'phase4_extras_a'      // Step 9 — Bairro + Bio
