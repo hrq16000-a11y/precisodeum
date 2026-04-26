@@ -15,11 +15,13 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Sparkles, MapPin, Briefcase, ArrowRight, ExternalLink,
-  CheckCircle2, Camera, Image as ImageIcon, ShieldCheck, Circle,
+  CheckCircle2, Camera, Image as ImageIcon, ShieldCheck, Circle, Copy, Check,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeSlug } from '@/lib/slugify';
 
 interface Phase3Props {
   serviceName: string;
@@ -65,8 +67,10 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
   }, [userId]);
 
   const [providerSlug, setProviderSlug] = useState<string | null>(null);
+  const [categorySlug, setCategorySlug] = useState<string | null>(null);
   const [hasPhotos, setHasPhotos] = useState(false);
   const [hasPortfolio, setHasPortfolio] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -74,13 +78,23 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
     (async () => {
       const { data: prov } = await supabase
         .from('providers')
-        .select('id, slug')
+        .select('id, slug, category_id')
         .eq('user_id', userId)
         .maybeSingle();
       if (!alive || !prov) return;
       if (prov.slug) setProviderSlug(prov.slug);
 
-      // checa fotos do 1º serviço (cast para evitar inferência profunda do TS)
+      if (prov.category_id) {
+        const { data: cat } = await (supabase as any)
+          .from('categories')
+          .select('slug, name')
+          .eq('id', prov.category_id)
+          .maybeSingle();
+        if (alive && cat) {
+          setCategorySlug(cat.slug || sanitizeSlug(cat.name || ''));
+        }
+      }
+
       const photoRes: any = await (supabase as any)
         .from('media')
         .select('id', { count: 'exact', head: true })
@@ -88,7 +102,6 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
         .eq('entity_type', 'service');
       if (alive) setHasPhotos(((photoRes?.count as number) || 0) > 0);
 
-      // checa álbum de portfólio
       const albumRes: any = await (supabase as any)
         .from('portfolio_albums')
         .select('id', { count: 'exact', head: true })
@@ -97,6 +110,25 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
     })();
     return () => { alive = false; };
   }, [userId]);
+
+  // URL pública de SEO: categoria + cidade (cidade vai como query — a CategoryPage filtra).
+  const cityParam = city ? `?cidade=${encodeURIComponent(sanitizeSlug(city))}` : '';
+  const publicCategoryPath = categorySlug ? `/categoria/${categorySlug}${cityParam}` : null;
+  const publicCategoryUrl = publicCategoryPath
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}${publicCategoryPath}`
+    : null;
+
+  const handleCopyUrl = async () => {
+    if (!publicCategoryUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicCategoryUrl);
+      setCopied(true);
+      toast.success('Link copiado!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Não foi possível copiar. Selecione o link manualmente.');
+    }
+  };
 
   // Placar fictício mas plausível
   const reach = useTickerNumber(1280, 1300);
@@ -170,7 +202,34 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
         )}
       </div>
 
-      {/* Checklist final */}
+      {/* Preview da URL pública SEO (categoria + cidade) */}
+      {publicCategoryUrl && (
+        <div className="rounded-xl border border-accent/30 bg-accent/5 p-3 space-y-2">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Sua página pública (SEO)
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 truncate rounded bg-background px-2 py-1.5 text-[11px] text-foreground border border-border">
+              {publicCategoryUrl}
+            </code>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleCopyUrl}
+              className="h-8 px-2 shrink-0"
+              aria-label="Copiar link público"
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Este link conecta o seu serviço aos clientes que buscam por <span className="font-medium text-foreground">{serviceName || 'esta categoria'}</span>{city ? ` em ${city}` : ''}.
+          </p>
+        </div>
+      )}
+
+
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Confirme o que já ficou pronto
