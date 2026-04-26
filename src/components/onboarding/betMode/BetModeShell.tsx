@@ -13,6 +13,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { useSeoHead } from '@/hooks/useSeoHead';
 
@@ -212,7 +213,20 @@ export default function BetModeShell() {
     if (state.intent === 'client') {
       navigate(next, { replace: true });
     } else {
-      navigate('/onboarding-v2', { replace: true });
+      appendWizardResetDebugLog({
+        source: 'bet-celebration-cta',
+        route: '/cadastro-bet',
+        nextRoute: '/onboarding-v2?source=bet-first-service',
+        phase: state.phase,
+        reason: 'provider-clicked-first-service',
+        meta: {
+          city: state.city,
+          state: state.state,
+          hasName: state.full_name.trim().length > 0,
+          hasWhatsapp: state.whatsapp.replace(/\D/g, '').length >= 10,
+        },
+      });
+      navigate('/onboarding-v2?source=bet-first-service', { replace: true });
     }
   }
 
