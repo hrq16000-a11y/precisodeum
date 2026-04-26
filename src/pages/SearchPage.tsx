@@ -25,7 +25,7 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List, Circle, Zap } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List, Circle, Zap, ArrowRight, RefreshCcw } from 'lucide-react';
 import { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchModal';
 const RouteSearchModal = lazy(() => import('@/components/RouteSearchModal'));
 import { calculateDistanceKm } from '@/lib/geoDistance';
@@ -528,6 +528,34 @@ const SearchPage = () => {
             <GeoLocationChip />
           </motion.div>
 
+          {/* CTA topo — buscar perto da cidade detectada */}
+          {(geoCity || effectiveCity) && !cityParam && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-3 flex justify-center sm:justify-start"
+            >
+              <Button
+                size="sm"
+                variant="default"
+                className="rounded-full px-4 text-xs font-semibold shadow-sm"
+                onClick={() => {
+                  const target = (geoCity || effectiveCity).trim();
+                  if (!target) return;
+                  setSelectedCity(target);
+                  setPage(1);
+                  const next = new URLSearchParams(searchParams);
+                  next.set('cidade', target);
+                  setSearchParams(next, { replace: true });
+                }}
+              >
+                <MapPin className="mr-1.5 h-3.5 w-3.5" />
+                Buscar perto de {geoCity || effectiveCity}
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Button>
+            </motion.div>
+          )}
+
           {/* Modo Urgência — só renderiza se houver online na região */}
           <div className="mb-3 sm:mb-4">
             <UrgencyToggle
@@ -990,10 +1018,61 @@ const SearchPage = () => {
                 )}
 
                 {totalDisplay === 0 && (
-                  <EmptyStateFallback
-                    title="Nenhum profissional encontrado"
-                    message="Tente alterar os filtros ou buscar por outro termo."
-                  />
+                  <div className="rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center">
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                      <Search className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-display text-base font-semibold text-foreground">
+                      Nenhum profissional encontrado
+                      {effectiveCity ? ` em ${effectiveCity}` : ''}
+                    </h3>
+                    <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                      {activeFilterCount > 0
+                        ? 'Tente remover alguns filtros ou ampliar a busca para a região vizinha.'
+                        : 'Tente buscar por outra cidade próxima ou outra categoria.'}
+                    </p>
+                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                      {activeFilterCount > 0 && (
+                        <Button size="sm" variant="outline" onClick={clearAllFilters} className="rounded-full">
+                          <X className="mr-1.5 h-3.5 w-3.5" /> Limpar filtros
+                        </Button>
+                      )}
+                      {effectiveCity && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full"
+                          onClick={() => {
+                            setSelectedCity('');
+                            setSelectedNeighborhood('');
+                            setPage(1);
+                            const next = new URLSearchParams(searchParams);
+                            next.delete('cidade');
+                            next.delete('bairro');
+                            setSearchParams(next, { replace: true });
+                          }}
+                        >
+                          <MapPin className="mr-1.5 h-3.5 w-3.5" /> Buscar na região vizinha
+                        </Button>
+                      )}
+                      {selectedCategory && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full"
+                          onClick={() => {
+                            setSelectedCategory('');
+                            setPage(1);
+                            const next = new URLSearchParams(searchParams);
+                            next.delete('categoria');
+                            setSearchParams(next, { replace: true });
+                          }}
+                        >
+                          <RefreshCcw className="mr-1.5 h-3.5 w-3.5" /> Ver todas as categorias
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 )}
 
                 {/* "Pergunte e Compare" — sem leilão */}
