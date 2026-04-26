@@ -6,8 +6,10 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Loader2, FolderOpen, ArrowLeft, ImagePlus, Pencil, AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Plus, Trash2, Loader2, ArrowLeft, ImagePlus, Pencil, AlertTriangle, Camera, Info, Image as ImageIcon } from 'lucide-react';
 import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -57,6 +59,7 @@ const DashboardPortfolioPage = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [photosLoading, setPhotosLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [nextStep, setNextStep] = useState<null | 'album' | 'photo'>(null);
 
   // Album dialog
@@ -65,6 +68,11 @@ const DashboardPortfolioPage = () => {
   const [albumName, setAlbumName] = useState('');
   const [albumDesc, setAlbumDesc] = useState('');
   const [albumSaving, setAlbumSaving] = useState(false);
+
+  // Caption dialog
+  const [captionPhoto, setCaptionPhoto] = useState<Photo | null>(null);
+  const [captionValue, setCaptionValue] = useState('');
+  const [captionSaving, setCaptionSaving] = useState(false);
 
   const loadAlbums = async () => {
     if (!provider) {
@@ -233,6 +241,7 @@ const DashboardPortfolioPage = () => {
     }
 
     setUploading(true);
+    setUploadProgress({ current: 0, total: filesToUpload.length });
     let successCount = 0;
     let failCount = 0;
     const { userRef } = await resolveIdentity(user.id);
@@ -241,7 +250,9 @@ const DashboardPortfolioPage = () => {
     const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     const { data: { session } } = await supabase.auth.getSession();
 
-    for (const file of filesToUpload) {
+    for (let idx = 0; idx < filesToUpload.length; idx++) {
+      const file = filesToUpload[idx];
+      setUploadProgress({ current: idx + 1, total: filesToUpload.length });
       if (file.size > 5 * 1024 * 1024) {
         toast.error(`${file.name}: máximo 5MB`);
         continue;
@@ -317,6 +328,7 @@ const DashboardPortfolioPage = () => {
     await loadPhotos(selectedAlbum.id);
     await loadAlbums();
     setUploading(false);
+    setUploadProgress(null);
     if (successCount > 0) {
       const newPhotoTotal = photos.length + successCount;
       const unlockedNext = newPhotoTotal < MAX_PHOTOS_PER_ALBUM;
@@ -343,6 +355,30 @@ const DashboardPortfolioPage = () => {
     await supabase.from('portfolio_photos').delete().eq('id', photo.id);
     setPhotos(prev => prev.filter(p => p.id !== photo.id));
     toast.success('Foto removida');
+  };
+
+  const handleOpenCaption = (photo: Photo) => {
+    setCaptionPhoto(photo);
+    setCaptionValue(photo.original_name || '');
+  };
+
+  const handleSaveCaption = async () => {
+    if (!captionPhoto) return;
+    setCaptionSaving(true);
+    const newName = captionValue.trim().slice(0, 140);
+    const { error } = await supabase
+      .from('portfolio_photos')
+      .update({ original_name: newName } as any)
+      .eq('id', captionPhoto.id);
+    if (error) {
+      toast.error('Erro ao salvar legenda: ' + error.message);
+      setCaptionSaving(false);
+      return;
+    }
+    setPhotos(prev => prev.map(p => p.id === captionPhoto.id ? { ...p, original_name: newName } : p));
+    toast.success('Legenda salva');
+    setCaptionPhoto(null);
+    setCaptionSaving(false);
   };
 
   // ── Album detail view ──
@@ -392,6 +428,24 @@ const DashboardPortfolioPage = () => {
               </label>
             </div>
 
+            {uploading && uploadProgress && (
+              <div className="space-y-1.5 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="flex items-center justify-between text-xs font-medium text-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Enviando fotos…
+                  </span>
+                  <span className="tabular-nums">{uploadProgress.current} / {uploadProgress.total}</span>
+                </div>
+                <Progress value={(uploadProgress.current / uploadProgress.total) * 100} className="h-1.5" />
+              </div>
+            )}
+
+            <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-2.5 text-[11px] text-muted-foreground">
+              <Info className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
+              <span><strong className="text-foreground">Dica:</strong> clique em uma foto para adicionar uma legenda descrevendo o trabalho realizado — isso melhora seu SEO e autoridade.</span>
+            </div>
+
             {photos.length >= MAX_PHOTOS_PER_ALBUM && (
               <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
                 <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -400,13 +454,24 @@ const DashboardPortfolioPage = () => {
             )}
 
             {photosLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="aspect-square rounded-lg" />
+                ))}
               </div>
             ) : photos.length === 0 ? (
-              <div className="text-center py-8">
-                <ImagePlus className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Nenhuma foto neste álbum. Adicione fotos dos seus trabalhos!</p>
+              <div className="rounded-xl border-2 border-dashed border-border bg-muted/20 px-6 py-12 text-center">
+                <Camera className="h-12 w-12 text-muted-foreground/60 mx-auto mb-3" />
+                <h3 className="font-display text-base font-bold text-foreground">Sem fotos neste álbum</h3>
+                <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-xs mx-auto">
+                  Adicione fotos dos seus trabalhos para mostrar sua qualidade aos clientes.
+                </p>
+                <label className="cursor-pointer inline-block">
+                  <Button variant="accent" size="sm" asChild disabled={uploading}>
+                    <span><Plus className="h-4 w-4 mr-1" /> Adicionar primeira foto</span>
+                  </Button>
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleUploadPhotos} disabled={uploading} />
+                </label>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -415,15 +480,33 @@ const DashboardPortfolioPage = () => {
                     key={photo.id}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="group relative aspect-square overflow-hidden rounded-lg border border-border"
+                    className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted cursor-pointer"
+                    onClick={() => handleOpenCaption(photo)}
                   >
-                    <img src={photo.image_url} alt="Portfolio" loading="lazy" className="h-full w-full object-cover" />
+                    <img src={photo.image_url} alt={photo.original_name || 'Trabalho do portfólio'} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+
+                    {/* Hover overlay com legenda */}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground/80 via-foreground/40 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-[11px] font-medium text-background line-clamp-2 leading-tight">
+                        {photo.original_name?.trim() ? photo.original_name : 'Toque para adicionar legenda'}
+                      </p>
+                    </div>
+
+                    {/* Botão excluir */}
                     <button
-                      onClick={() => handleDeletePhoto(photo)}
-                      className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => { e.stopPropagation(); handleDeletePhoto(photo); }}
+                      aria-label="Excluir foto"
+                      className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
+
+                    {/* Indicador de legenda existente */}
+                    {photo.original_name?.trim() && (
+                      <span className="absolute left-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-background/80 text-foreground backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Pencil className="h-3 w-3" />
+                      </span>
+                    )}
                   </motion.div>
                 ))}
                 {photos.length > 0 && photos.length < MAX_PHOTOS_PER_ALBUM && (
@@ -462,6 +545,43 @@ const DashboardPortfolioPage = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Caption dialog */}
+        <Dialog open={!!captionPhoto} onOpenChange={(o) => !o && setCaptionPhoto(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Legenda da foto</DialogTitle>
+              <DialogDescription>
+                Descreva o trabalho realizado para melhorar seu SEO e autoridade.
+              </DialogDescription>
+            </DialogHeader>
+            {captionPhoto && (
+              <div className="space-y-3">
+                <div className="overflow-hidden rounded-lg border border-border bg-muted">
+                  <img src={captionPhoto.image_url} alt="" className="w-full max-h-64 object-contain bg-foreground/5" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
+                  <Textarea
+                    value={captionValue}
+                    onChange={(e) => setCaptionValue(e.target.value.slice(0, 140))}
+                    placeholder="Ex: Reforma completa de cozinha planejada em MDF, com bancada em granito preto."
+                    rows={3}
+                    autoFocus
+                  />
+                  <p className="mt-1 text-[11px] text-muted-foreground text-right tabular-nums">{captionValue.length}/140</p>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCaptionPhoto(null)} disabled={captionSaving}>Cancelar</Button>
+              <Button variant="accent" onClick={handleSaveCaption} disabled={captionSaving}>
+                {captionSaving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                Salvar legenda
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <NextStepPrompt
           open={!!nextStep}
           onClose={() => setNextStep(null)}
@@ -476,10 +596,15 @@ const DashboardPortfolioPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">📸 Meu Portfólio</h1>
-            <p className="text-sm text-muted-foreground">Organize seus trabalhos em até {MAX_ALBUMS} álbuns temáticos</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <ImageIcon className="h-4.5 w-4.5" strokeWidth={2} />
+            </div>
+            <div>
+              <h1 className="font-display text-xl font-bold text-foreground">Meu Portfólio</h1>
+              <p className="text-sm text-muted-foreground">Organize seus trabalhos em até {MAX_ALBUMS} álbuns temáticos</p>
+            </div>
           </div>
           {albums.length < MAX_ALBUMS && (
             <Button variant="accent" size="sm" onClick={handleCreateAlbum}>
@@ -489,18 +614,28 @@ const DashboardPortfolioPage = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
+                <Skeleton className="aspect-video w-full rounded-none" />
+                <div className="p-3 space-y-2">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : albums.length === 0 ? (
           <div className="rounded-xl border-2 border-dashed border-border bg-card p-10 text-center">
-            <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <h3 className="font-display text-lg font-bold text-foreground">Nenhum álbum ainda</h3>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">
-              Crie álbuns para organizar fotos dos seus trabalhos por categoria.
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Camera className="h-8 w-8" strokeWidth={1.8} />
+            </div>
+            <h3 className="font-display text-lg font-bold text-foreground">Ainda sem álbuns</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-5 max-w-sm mx-auto">
+              Crie álbuns temáticos (ex: "Cozinhas", "Banheiros") para organizar seus trabalhos e impressionar clientes.
             </p>
             <Button variant="accent" onClick={handleCreateAlbum}>
-              <Plus className="h-4 w-4 mr-1" /> Criar primeiro álbum
+              <Plus className="h-4 w-4 mr-1" /> Criar meu primeiro álbum
             </Button>
           </div>
         ) : (
