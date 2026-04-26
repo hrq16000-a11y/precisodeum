@@ -465,18 +465,57 @@ export function useFeaturedProviders(options: boolean | FeaturedProvidersOptions
       const rows = (data || []) as any[];
       if (rows.length === 0) return [];
 
+      // Enriquecimento: busca full_name + avatar_url dos perfis em batch.
+      // Sem isso, business_name genéricos ("Pedreiro", "Autônomo") vazam para o card.
+      const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))];
+      const profileMap: Record<string, { name: string | null; avatar: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: profs } = await supabase
+          .from('public_profiles' as any)
+          .select('id, full_name, avatar_url')
+          .in('id', userIds);
+        (profs as any[] | null)?.forEach((p) => {
+          profileMap[p.id] = { name: p.full_name || null, avatar: p.avatar_url || null };
+        });
+      }
+
+      // Normaliza para detectar nomes genéricos (com/sem acento, plural, variações de grafia)
+      const normalize = (s: string) =>
+        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
+      const GENERIC_NAMES = new Set([
+        'pedreiro','padeiro','padreiro','eletricista','encanador','pintor','autonomo','profissional',
+        'empreiteiro','marceneiro','jardineiro','tecnico','mecanico','servicosgerais','diarista',
+        'cozinheiro','motorista','soldador','vidraceiro','gesseiro','azulejista','prestador',
+        'profissionalautonomo','servico','servicos','autonoma','prestadora','tecnica',
+      ]);
+      const isGenericName = (s?: string | null) => {
+        if (!s) return true;
+        const n = normalize(s);
+        return !n || GENERIC_NAMES.has(n);
+      };
+
       // Map MV rows (snake_case + flat category fields) to DbProvider shape
       const mappedRows = rows.map((p) => {
         const provWhatsapp = (p.whatsapp || '').trim();
         const provPhone = (p.phone || '').trim();
         const effectiveWhatsapp = provWhatsapp || provPhone || '';
         const effectivePhone = provPhone || provWhatsapp || '';
+        const profile = profileMap[p.user_id];
+
+        // Prioridade do nome: profile.full_name > business_name (não-genérico) > "Profissional"
+        const fullName = profile?.name?.trim() || '';
+        const businessName = (p.business_name || '').trim();
+        const safeBusinessName = isGenericName(businessName) ? '' : businessName;
+        const resolvedName = fullName || safeBusinessName || 'Profissional';
+
+        // Foto: photo_url do provider OU avatar_url do profile (real, não DiceBear)
+        const resolvedPhoto = (p.photo_url || profile?.avatar || '').trim();
 
         const mapped: DbProvider = {
           id: p.id,
           userId: p.user_id,
-          name: p.business_name || 'Profissional',
-          businessName: p.business_name || undefined,
+          name: resolvedName,
+          businessName: safeBusinessName || undefined,
           category: p.category_name || '',
           categorySlug: p.category_slug || '',
           categoryIcon: p.category_icon || 'Wrench',
@@ -487,7 +526,7 @@ export function useFeaturedProviders(options: boolean | FeaturedProvidersOptions
           longitude: p.longitude ?? null,
           rating: Number(p.rating_avg) || 0,
           reviewCount: p.review_count || 0,
-          photo: p.photo_url || '',
+          photo: resolvedPhoto,
           serviceImage: undefined,
           hasPortfolio: (p.portfolio_photo_count || 0) > 0,
           description: (p.description || '').trim(),
