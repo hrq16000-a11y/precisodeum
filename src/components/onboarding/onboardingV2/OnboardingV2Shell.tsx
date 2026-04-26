@@ -15,13 +15,14 @@
  * ao concluir a Fase 2 — destravando o usuário para o dashboard.
  */
 
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useMemo, useReducer, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { useWizardDuplicateCheck } from '@/hooks/useWizardDuplicateCheck';
 import {
@@ -52,7 +53,12 @@ import {
 } from './useOnboardingV2RemoteDraft';
 import { trackOnboardingEvent } from './telemetry';
 import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
-import { buildOnboardingV2BootstrapState } from './bootstrap';
+import {
+  buildOnboardingCoreLocks,
+  buildOnboardingV2BootstrapState,
+  getPendingOnboardingCoreFields,
+  resolveOnboardingV2SeedState,
+} from './bootstrap';
 
 function slugify(input: string): string {
   return (input || '')
@@ -67,6 +73,9 @@ function slugify(input: string): string {
 export const OnboardingV2Shell = () => {
   const { user, profile, provider } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const source = searchParams.get('source');
   // Restaura draft local ao montar (se existir e não estiver expirado)
   const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState, (init) => {
     const draft = readOnboardingV2Draft();
@@ -86,6 +95,8 @@ export const OnboardingV2Shell = () => {
     updated_at: string;
   }>(null);
   const [showRemoteModal, setShowRemoteModal] = useState(false);
+  const coreLocks = useMemo(() => buildOnboardingCoreLocks({ profile, provider }), [profile, provider]);
+  const pendingCoreFields = useMemo(() => getPendingOnboardingCoreFields(coreLocks), [coreLocks]);
 
   // Frente 4 — duplicidade inline (whatsapp + tax_id)
   const dup = useWizardDuplicateCheck();
@@ -165,20 +176,42 @@ export const OnboardingV2Shell = () => {
     const bootstrap = buildOnboardingV2BootstrapState({ profile, provider });
     if (!bootstrap) return;
 
-    const currentAtOrAfterService =
-      state.phase === 'phase2_service' ||
-      state.phase === 'phase2_details' ||
-      state.phase === 'phase2_photos' ||
-      state.phase === 'phase3_celebration' ||
-      state.phase === 'phase4_document' ||
-      state.phase === 'phase4_extras_a' ||
-      state.phase === 'phase4_extras_b' ||
-      state.phase === 'done';
+    const draftSnapshot = {
+      phase: state.phase,
+      providerId: state.providerId,
+      firstServiceId: state.firstServiceId,
+      profile: state.profile,
+      service: state.service,
+    };
+    const resolved = resolveOnboardingV2SeedState({ draft: draftSnapshot, bootstrap, source });
 
-    if (currentAtOrAfterService && state.providerId) return;
+    const currentPhase = state.phase || 'phase1_action';
+    const nextPhase = resolved.phase || currentPhase;
+    const isRegression = phaseIndex(nextPhase) < phaseIndex(currentPhase);
 
-    dispatch({ type: 'HYDRATE', state: bootstrap });
-  }, [profile, provider, state.phase, state.providerId]);
+    if (isRegression) {
+      appendWizardResetDebugLog({
+        source: 'onboarding-v2-phase-regression-blocked',
+        route: `${location.pathname}${location.search}`,
+        phase: currentPhase,
+        nextRoute: null,
+        reason: 'bootstrap-attempted-older-phase',
+        meta: { currentPhase, nextPhase, source, pendingCoreFields },
+      });
+      return;
+    }
+
+    appendWizardResetDebugLog({
+      source: 'onboarding-v2-bootstrap',
+      route: `${location.pathname}${location.search}`,
+      phase: nextPhase,
+      nextRoute: null,
+      reason: 'hydrate-from-profile-provider',
+      meta: { source, pendingCoreFields, providerId: resolved.providerId ?? null },
+    });
+
+    dispatch({ type: 'HYDRATE', state: resolved });
+  }, [profile, provider, source]);
 
   // Telemetria: dispara 'enter' a cada troca de fase
   useEffect(() => {
@@ -433,6 +466,7 @@ export const OnboardingV2Shell = () => {
         return (
           <Phase1Location
             data={state.profile}
+            locks={coreLocks}
             onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_kind' }); }}
             onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
@@ -443,6 +477,7 @@ export const OnboardingV2Shell = () => {
         return (
           <Phase1Contact
             data={state.profile}
+            locks={coreLocks}
             onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_location' }); }}
             saving={saving}
@@ -658,6 +693,22 @@ export const OnboardingV2Shell = () => {
       </AnimatePresence>
 
       <main className="mx-auto max-w-md px-4 py-6 sm:py-10">
+        {pendingCoreFields.length < 4 && (
+          <div className="mb-4 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Já preenchido:</span>{' '}
+            {[
+              coreLocks.full_name ? 'nome' : null,
+              coreLocks.whatsapp ? 'WhatsApp' : null,
+              coreLocks.city ? 'cidade' : null,
+            ].filter(Boolean).join(' • ')}
+            {pendingCoreFields.length > 0 && (
+              <>
+                <span className="mx-1">—</span>
+                pendente: {pendingCoreFields.join(', ')}
+              </>
+            )}
+          </div>
+        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={state.phase}
