@@ -10,15 +10,16 @@
  * NÃO são reapresentados — Phase 4 só pede o que ainda está vazio.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, Check } from 'lucide-react';
+import { Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, Check, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import CpfCnpjInput from '@/components/onboarding/CpfCnpjInput';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
+import { supabase } from '@/integrations/supabase/client';
 import type { OnboardingProfileData } from './types';
 
 /* ───── 4.1 Upsell de documento (CPF/CNPJ) ───── */
@@ -39,13 +40,47 @@ function isValidDoc(digits: string, kind: 'pf' | 'pj'): boolean {
 
 export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, userId }: DocumentProps) => {
   const [verified, setVerified] = useState(false);
+  const [providerStatus, setProviderStatus] = useState<string | null>(null);
   const valid = isValidDoc(data.document, data.kind);
 
-  const handleVerify = () => {
+  // Realtime: ouve mudanças no provider para refletir status "online" assim que o backend confirma.
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    (async () => {
+      const { data: prov } = await supabase
+        .from('providers')
+        .select('id, status')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (alive && prov) setProviderStatus(prov.status as string);
+      if (!prov?.id) return;
+      const channel = supabase
+        .channel(`provider-status:${prov.id}`)
+        .on('postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'providers', filter: `id=eq.${prov.id}` },
+          (payload: any) => {
+            if (!alive) return;
+            const next = payload.new?.status;
+            if (next) setProviderStatus(next);
+          })
+        .subscribe();
+      return () => { supabase.removeChannel(channel); };
+    })();
+    return () => { alive = false; };
+  }, [userId]);
+
+  const handleVerify = async () => {
     if (!valid) return;
     setVerified(true);
     celebrate({ intensity: 'mini', id: `doc-verified:${userId || 'anon'}` });
-    setTimeout(() => onContinue(), 1400);
+    // Marca o provider como ativo (online) — o canal realtime acima reflete instantaneamente
+    if (userId) {
+      try {
+        await supabase.from('providers').update({ status: 'active' } as any).eq('user_id', userId);
+      } catch { /* fail-soft */ }
+    }
+    setTimeout(() => onContinue(), 1600);
   };
 
   return (
@@ -108,7 +143,17 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
             <Check className="h-10 w-10 stroke-[3]" />
           </motion.div>
           <h2 className="font-display text-2xl font-bold text-foreground">Veja que legal!</h2>
-          <p className="text-sm text-muted-foreground">Seu perfil está verificado e <span className="font-bold text-emerald-600">ONLINE</span>.</p>
+          <p className="text-sm text-muted-foreground">
+            Seu perfil está verificado e{' '}
+            <span className={`font-bold ${providerStatus === 'active' ? 'text-emerald-600' : 'text-amber-600'}`}>
+              {providerStatus === 'active' ? 'ONLINE' : 'sincronizando…'}
+            </span>
+            .
+          </p>
+          <div className="mx-auto inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/5 px-3 py-1 text-[11px] text-emerald-700">
+            <Wifi className={`h-3 w-3 ${providerStatus === 'active' ? 'animate-pulse' : ''}`} />
+            <span>Status atualizado em tempo real</span>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

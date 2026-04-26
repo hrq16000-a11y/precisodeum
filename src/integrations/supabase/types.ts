@@ -6073,6 +6073,16 @@ export type Database = {
         }
         Returns: number
       }
+      admin_onboarding_funnel: {
+        Args: { _days?: number; _variant?: string }
+        Returns: {
+          event: string
+          phase: string
+          total: number
+          unique_sessions: number
+          unique_users: number
+        }[]
+      }
       admin_providers_same_ip: {
         Args: { _min_count?: number }
         Returns: {

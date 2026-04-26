@@ -77,7 +77,7 @@ export const OnboardingV2Shell = () => {
     };
   });
   const [saving, setSaving] = useState(false);
-  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
 
   // Frente 4 — duplicidade inline (whatsapp + tax_id)
   const dup = useWizardDuplicateCheck();
@@ -87,12 +87,12 @@ export const OnboardingV2Shell = () => {
   // Auto-save remoto com debounce (cross-device)
   useOnboardingV2RemoteDraft(state, user?.id);
 
-  // Aviso de "rascunho restaurado" quando aplicável
+  // Aviso de "rascunho restaurado" do LOCAL (mesmo dispositivo)
   useEffect(() => {
     const draft = readOnboardingV2Draft();
     if (draft && draft.phase && draft.phase !== 'phase1_action') {
-      setDraftRestored(true);
-      const t = setTimeout(() => setDraftRestored(false), 4000);
+      setDraftRestored({ source: 'local' });
+      const t = setTimeout(() => setDraftRestored(null), 5000);
       return () => clearTimeout(t);
     }
   }, []);
@@ -114,8 +114,8 @@ export const OnboardingV2Shell = () => {
           phase: remote.phase as any,
         },
       });
-      setDraftRestored(true);
-      setTimeout(() => setDraftRestored(false), 4000);
+      setDraftRestored({ source: 'remote', at: remote.updated_at });
+      setTimeout(() => setDraftRestored(null), 6000);
     })();
     return () => { alive = false; };
   }, [user?.id]);
@@ -526,17 +526,31 @@ export const OnboardingV2Shell = () => {
         />
       </div>
 
-      {/* Aviso "rascunho restaurado" — auto-some em 4s */}
+      {/* Aviso "rascunho restaurado" — diferencia local x remoto */}
       <AnimatePresence>
         {draftRestored && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="mx-auto mt-3 flex max-w-md items-center gap-2 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-xs text-foreground"
+            className="mx-auto mt-3 flex max-w-md items-start gap-2 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-xs text-foreground"
           >
-            <CheckCircle2 className="h-3.5 w-3.5 text-accent" />
-            <span>Continuamos de onde você parou.</span>
+            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 text-accent shrink-0" />
+            <div className="space-y-0.5">
+              {draftRestored.source === 'remote' ? (
+                <>
+                  <p className="font-semibold">Rascunho de outro dispositivo restaurado.</p>
+                  <p className="text-muted-foreground">
+                    Trouxemos seus dados salvos
+                    {draftRestored.at && (
+                      <> em {new Date(draftRestored.at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</>
+                    )}.
+                  </p>
+                </>
+              ) : (
+                <p>Continuamos de onde você parou neste dispositivo.</p>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
