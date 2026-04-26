@@ -19,9 +19,11 @@ import { useEffect, useReducer, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { CheckCircle2, Loader2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
+import { useWizardDuplicateCheck } from '@/hooks/useWizardDuplicateCheck';
 import {
   initialOnboardingState,
   onboardingReducer,
@@ -35,8 +37,14 @@ import {
   Phase1Contact,
 } from './Phase1Basic';
 import { Phase2Service, Phase2Details } from './Phase2Service';
+import { Phase2Photos } from './Phase2Photos';
 import { Phase3Celebration } from './Phase3Celebration';
 import { Phase4Document, Phase4ExtrasA, Phase4ExtrasB } from './Phase4Final';
+import {
+  useOnboardingV2Draft,
+  readOnboardingV2Draft,
+  clearOnboardingV2Draft,
+} from './useOnboardingV2Draft';
 
 function slugify(input: string): string {
   return (input || '')
@@ -51,8 +59,35 @@ function slugify(input: string): string {
 export const OnboardingV2Shell = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState);
+  // Restaura draft local ao montar (se existir e não estiver expirado)
+  const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState, (init) => {
+    const draft = readOnboardingV2Draft();
+    if (!draft) return init;
+    return {
+      ...init,
+      profile: { ...init.profile, ...(draft.profile || {}) },
+      service: { ...init.service, ...(draft.service || {}) },
+      phase: draft.phase || init.phase,
+    };
+  });
   const [saving, setSaving] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  // Frente 4 — duplicidade inline (whatsapp + tax_id)
+  const dup = useWizardDuplicateCheck();
+
+  // Auto-save em localStorage com debounce
+  useOnboardingV2Draft(state);
+
+  // Aviso de "rascunho restaurado" quando aplicável
+  useEffect(() => {
+    const draft = readOnboardingV2Draft();
+    if (draft && draft.phase && draft.phase !== 'phase1_action') {
+      setDraftRestored(true);
+      const t = setTimeout(() => setDraftRestored(false), 4000);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   // Hidrata nome do auth se vier do Google
   useEffect(() => {
