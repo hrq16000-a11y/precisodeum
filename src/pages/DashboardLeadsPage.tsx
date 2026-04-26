@@ -196,6 +196,9 @@ const DashboardLeadsPage = () => {
     if (statusFilter === 'overdue') arr = arr.filter(isOverdue);
     else if (statusFilter !== 'all') arr = arr.filter((l) => l.status === statusFilter);
 
+    // Funil sobrepõe quando ativo (≠ todos)
+    if (funnelKey !== 'todos') arr = arr.filter((l) => statusToFunnel(l.status) === funnelKey);
+
     const q = search.trim().toLowerCase();
     if (q) {
       arr = arr.filter(l =>
@@ -211,7 +214,7 @@ const DashboardLeadsPage = () => {
     if (categoryFilter !== 'all') arr = arr.filter(l => (l.lead_context?.category || '').trim() === categoryFilter);
     if (ufFilter !== 'all') arr = arr.filter(l => String(l.lead_context?.state || '').trim().toUpperCase() === ufFilter);
     return arr;
-  }, [leads, statusFilter, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, ufFilter]);
+  }, [leads, statusFilter, funnelKey, search, createdFrom, createdTo, followupFrom, followupTo, cityFilter, categoryFilter, ufFilter]);
 
   // Reset paginação quando filtros/lista mudarem
   useEffect(() => {
