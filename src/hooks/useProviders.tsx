@@ -64,6 +64,8 @@ export interface DbProvider {
   communityVerified?: boolean;
   levelName?: string | null;
   levelPriority?: number;
+  /** Audit metadata about how distance was computed (debug/inspection) */
+  _distanceAudit?: DistanceAudit;
 }
 
 export type FeaturedProviderSort = 'proximity' | 'category' | 'availability';
@@ -662,70 +664,23 @@ export { normalizeCityName, matchesGeoContextCompat as matchesGeoContext };
 const MIN_LOCAL_RESULTS = 3;
 const SEARCH_RESULT_LIMIT = 96;
 
-const SEARCH_TERM_EQUIVALENTS: Record<string, string[]> = {
-  baba: ['baba', 'babá', 'nanny', 'cuidadora', 'cuidador', 'crianca', 'criança', 'infantil'],
-  diarista: ['diarista', 'faxina', 'faxineira', 'domestica', 'doméstica', 'limpeza'],
-  freelance: ['freelance', 'free', 'lance', 'free lance'],
-};
-
+// Re-export para retrocompatibilidade interna; lógica agora vive em src/lib/searchNormalization.
 function expandSearchTerms(rawQuery: string): string[] {
-  const baseTerms = sanitizeSearchTokens(rawQuery);
-  const expanded = new Set(baseTerms);
-  const normalizedRaw = rawQuery
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/-/g, ' ')
-    .trim();
-
-  if (normalizedRaw.includes('free lance')) expanded.add('freelance');
-
-  for (const term of baseTerms) {
-    const aliases = SEARCH_TERM_EQUIVALENTS[term] || [];
-    aliases.forEach((alias) => expanded.add(alias));
-  }
-
-  return Array.from(expanded).filter(Boolean);
+  return _expandSearchTermsShared(rawQuery);
 }
 
+/**
+ * Wrapper retrocompatível em torno de `calculateAuditedDistanceKm`.
+ * Mantém a assinatura antiga usada por outras partes do hook.
+ */
 function calculateTrustedDistanceKm(
   userLat: number,
   userLon: number,
   provider: Pick<DbProvider, 'latitude' | 'longitude' | 'city'>,
   userCity?: string,
 ): number {
-  if (!hasCoordinates(provider.latitude, provider.longitude)) return Infinity;
-
-  const directKm = calculateDistanceKmSimple(userLat, userLon, provider.latitude, provider.longitude);
-  const providerCityNorm = normalize(provider.city || '');
-  const userCityNorm = normalize(userCity || '');
-
-  if (!providerCityNorm || !userCityNorm || providerCityNorm === userCityNorm) {
-    return directKm;
-  }
-
-  const providerCityCenter = getCityCoords(provider.city || '');
-  const userCityCenter = getCityCoords(userCity || '');
-  if (!providerCityCenter || !userCityCenter) return directKm;
-
-  const providerToOwnCenterKm = calculateDistanceKm(
-    { latitude: provider.latitude, longitude: provider.longitude },
-    { latitude: providerCityCenter.lat, longitude: providerCityCenter.lon },
-  );
-  const providerToUserCenterKm = calculateDistanceKm(
-    { latitude: provider.latitude, longitude: provider.longitude },
-    { latitude: userCityCenter.lat, longitude: userCityCenter.lon },
-  );
-
-  const suspiciousCrossCityCoords = providerToOwnCenterKm > 8 && providerToUserCenterKm + 2 < providerToOwnCenterKm;
-  if (!suspiciousCrossCityCoords) return directKm;
-
-  const correctedKm = calculateDistanceKm(
-    { latitude: userLat, longitude: userLon },
-    { latitude: providerCityCenter.lat, longitude: providerCityCenter.lon },
-  );
-
-  return Math.max(directKm, correctedKm);
+  const audit = calculateAuditedDistanceKm(userLat, userLon, provider, userCity);
+  return audit.distanceKm;
 }
 
 export function filterAndRankProviders(
