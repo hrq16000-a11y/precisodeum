@@ -143,7 +143,17 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
             <Check className="h-10 w-10 stroke-[3]" />
           </motion.div>
           <h2 className="font-display text-2xl font-bold text-foreground">Veja que legal!</h2>
-          <p className="text-sm text-muted-foreground">Seu perfil está verificado e <span className="font-bold text-emerald-600">ONLINE</span>.</p>
+          <p className="text-sm text-muted-foreground">
+            Seu perfil está verificado e{' '}
+            <span className={`font-bold ${providerStatus === 'active' ? 'text-emerald-600' : 'text-amber-600'}`}>
+              {providerStatus === 'active' ? 'ONLINE' : 'sincronizando…'}
+            </span>
+            .
+          </p>
+          <div className="mx-auto inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/5 px-3 py-1 text-[11px] text-emerald-700">
+            <Wifi className={`h-3 w-3 ${providerStatus === 'active' ? 'animate-pulse' : ''}`} />
+            <span>Status atualizado em tempo real</span>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
