@@ -155,11 +155,33 @@ const writeFeaturedCache = (key: string, data: DbProvider[], metrics: Record<str
   } catch { /* ignore quota */ }
 };
 
+const hashRotationSeed = (input: string) => {
+  let hash = 5381;
+  for (let i = 0; i < input.length; i += 1) hash = ((hash << 5) + hash + input.charCodeAt(i)) | 0;
+  return Math.abs(hash) || 1;
+};
+
+const seededShuffle = <T,>(items: T[], seed: number) => {
+  const arr = [...items];
+  let current = seed || 1;
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    current = (current * 9301 + 49297) % 233280;
+    const j = Math.floor((current / 233280) * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
 const sortFeaturedProviders = (providers: DbProvider[], options: FeaturedProvidersOptions) => {
-  const { latitude, longitude, categorySlug, sortBy = 'proximity' } = options;
+  const { latitude, longitude, categorySlug, sortBy = 'proximity', userCity } = options as FeaturedProvidersOptions & { userCity?: string };
   const withDistance = providers.map((provider) => {
-    if (hasCoordinates(latitude, longitude) && hasCoordinates(provider.latitude, provider.longitude)) {
-      return { ...provider, distanceKm: Math.round(calculateDistanceKm({ latitude, longitude }, { latitude: provider.latitude, longitude: provider.longitude }) * 10) / 10 };
+    if (hasCoordinates(latitude, longitude)) {
+      const audit = calculateAuditedDistanceKm(latitude ?? null, longitude ?? null, provider, userCity);
+      return {
+        ...provider,
+        distanceKm: Number.isFinite(audit.distanceKm) ? Math.round(audit.distanceKm * 10) / 10 : undefined,
+        _distanceAudit: audit,
+      };
     }
     return provider;
   });
@@ -167,13 +189,25 @@ const sortFeaturedProviders = (providers: DbProvider[], options: FeaturedProvide
   const filtered = categorySlug ? withDistance.filter((p) => p.categorySlug === categorySlug) : withDistance;
   const availabilityScore = (p: DbProvider) => (p.whatsapp ? 30 : 0) + (p.avgResponseMinutes != null ? Math.max(0, 30 - p.avgResponseMinutes / 4) : 0) + (p.servicesCount || 0);
 
-  return filtered.sort((a, b) => {
+  const sorted = filtered.sort((a, b) => {
     if (sortBy === 'category') return a.category.localeCompare(b.category) || compareEliteMerit(a, b);
     if (sortBy === 'availability') return availabilityScore(b) - availabilityScore(a) || compareEliteMerit(a, b);
     const aDistance = a.distanceKm ?? Number.MAX_SAFE_INTEGER;
     const bDistance = b.distanceKm ?? Number.MAX_SAFE_INTEGER;
     return aDistance - bDistance || compareEliteMerit(a, b);
   });
+
+  const topWindow = sorted.slice(0, Math.min(12, sorted.length));
+  const remainder = sorted.slice(topWindow.length);
+  const dateKey = new Date().toISOString().slice(0, 10);
+  const seed = hashRotationSeed(`${dateKey}:${sortBy}:${categorySlug || 'all'}:${userCity || 'all'}:${latitude?.toFixed(1) || 'na'}:${longitude?.toFixed(1) || 'na'}`);
+
+  if (sortBy === 'proximity') {
+    const [anchor, ...rest] = topWindow;
+    return anchor ? [anchor, ...seededShuffle(rest, seed), ...remainder] : sorted;
+  }
+
+  return [...seededShuffle(topWindow, seed), ...remainder];
 };
 
 interface ServiceFallback {
