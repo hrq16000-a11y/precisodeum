@@ -10,6 +10,7 @@ import type { FeaturedProviderSort } from '@/hooks/useProviders';
 // Critical path — eagerly loaded for instant render
 import Header from '@/components/Header';
 import HeroBanner from '@/components/home/HeroBanner';
+import ProSignupStrip from '@/components/home/ProSignupStrip';
 import CategoriesGrid from '@/components/home/CategoriesGrid';
 import Footer from '@/components/Footer';
 
@@ -159,7 +160,11 @@ const LazyViewportSection = ({ children }: { children: ReactNode }) => {
 };
 
 // Default section order
-const DEFAULT_ORDER = 'cms_banners,urgency,leader_sponsor,sponsor_top,home_featured_ad,highlights,stats,categories,pwa,dynamic,ad1,featured,popular,ad2,jobs,courses,blog,cities,cta,showcase,sponsors,howitworks,searches,testimonials,faq,sponsor_cta';
+// Default section order — ENXUTO (limpeza visual). Removidos duplicados:
+// sponsor_top/home_featured_ad/ad2/showcase/sponsor_cta/popular/pwa eram
+// concorrentes diretos de outras seções. Admin ainda pode reordenar/exibir
+// via site_settings (sections_order / hidden_sections).
+const DEFAULT_ORDER = 'cms_banners,urgency,highlights,categories,featured,ad1,searches,jobs,courses,blog,cities,cta,sponsors,howitworks,testimonials,faq';
 
 // Sections that appear before 'categories' in the default order load lazily,
 // each one pushing the categories grid down and causing a layout shift.
@@ -373,6 +378,8 @@ const Index = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <HeroBanner />
+      {/* Faixa de captura de prestador — clean, abaixo do Hero (cliente em cima, prestador logo após). */}
+      <ProSignupStrip />
       {sponsorsEnabled && (
         <LazyErrorBoundary>
           <Suspense fallback={<div className="h-24" />}>
