@@ -99,6 +99,7 @@ const CategoryCard = ({ cat }: { cat: CategoryItem }) => (
 
 const CategoriesGrid = (_props: Props) => {
   const geo = useGeoCity();
+  const { user } = useAuth();
   const { data, isLoading } = useCategoriesInRegion(geo.city, geo.state);
 
   const items = data?.items || [];
@@ -107,9 +108,9 @@ const CategoriesGrid = (_props: Props) => {
   const visible = useMemo(() => {
     const subs = items.filter((c) => c.parent_id);
     const pool = subs.length >= VISIBLE_COUNT ? subs : items;
-    const seed = getStableShuffleSeed();
+    const seed = getStableShuffleSeed(user?.id);
     return seededShuffle(pool, seed).slice(0, VISIBLE_COUNT);
-  }, [items]);
+  }, [items, user?.id]);
 
   const gridCls = 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr';
 
