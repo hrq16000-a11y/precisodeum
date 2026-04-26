@@ -113,9 +113,10 @@ const CategoriesGrid = (_props: Props) => {
   const visible = useMemo(() => {
     const subs = items.filter((c) => c.parent_id);
     const pool = subs.length >= VISIBLE_COUNT ? subs : items;
-    const seed = getStableShuffleSeed(user?.id);
+    // Seed estável: data + cidade/UF + usuário (sem Date.now/sessionStorage).
+    const seed = getStableShuffleSeed(user?.id, geo.city, geo.state);
     return seededShuffle(pool, seed).slice(0, VISIBLE_COUNT);
-  }, [items, user?.id]);
+  }, [items, user?.id, geo.city, geo.state]);
 
   const gridCls = 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr';
 
