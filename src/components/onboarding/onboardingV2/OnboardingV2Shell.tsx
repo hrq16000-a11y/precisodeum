@@ -297,7 +297,24 @@ export const OnboardingV2Shell = () => {
             onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
             onBack={() => dispatch({ type: 'GO_TO', phase: 'phase1_location' })}
             saving={saving}
+            duplicateWhatsapp={dup.duplicates.whatsapp}
+            checkingWhatsapp={dup.checking.whatsapp}
+            onWhatsappBlur={async () => {
+              if (state.profile.whatsapp.replace(/\D/g, '').length >= 10) {
+                const isDup = await dup.checkWhatsapp(state.profile.whatsapp, user?.id);
+                if (isDup) toast.error('Este WhatsApp já está cadastrado em outra conta.');
+              }
+            }}
             onSubmit={async () => {
+              if (dup.duplicates.whatsapp) {
+                toast.error('Corrija o WhatsApp duplicado antes de continuar.');
+                return;
+              }
+              const isDup = await dup.checkWhatsapp(state.profile.whatsapp, user?.id);
+              if (isDup) {
+                toast.error('Este WhatsApp já está cadastrado em outra conta.');
+                return;
+              }
               const ok = await persistPhase1();
               if (ok) dispatch({ type: 'NEXT' });
             }}
@@ -335,6 +352,21 @@ export const OnboardingV2Shell = () => {
               const ok = await persistFirstService();
               if (ok) dispatch({ type: 'NEXT' });
             }}
+          />
+        );
+      case 'phase2_photos':
+        // Sem serviço criado, pula direto pra celebração
+        if (!state.firstServiceId || !user?.id) {
+          dispatch({ type: 'NEXT' });
+          return null;
+        }
+        return (
+          <Phase2Photos
+            serviceId={state.firstServiceId}
+            userId={user.id}
+            serviceName={state.service.service_name}
+            onContinue={() => dispatch({ type: 'NEXT' })}
+            onSkip={() => dispatch({ type: 'NEXT' })}
           />
         );
       case 'phase3_celebration':
