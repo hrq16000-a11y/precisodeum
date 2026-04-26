@@ -169,6 +169,7 @@ const SponsorPublicPage = lazy(() => import("./pages/SponsorPublicPage"));
 const SponsorPublicProfilePage = lazy(() => import("./pages/sponsor/SponsorPublicProfilePage"));
 const TriagePage = lazy(() => import("./pages/TriagePage"));
 const OnboardingV2Page = lazy(() => import("./pages/OnboardingV2Page"));
+const OnboardingV2SuccessPage = lazy(() => import("./pages/OnboardingV2SuccessPage"));
 const TriagePreviewPage = lazy(() => import("./pages/TriagePreviewPage"));
 
 const CookieConsent = reactLazy(() => importWithRetry(() => import("./components/CookieConsent")));
