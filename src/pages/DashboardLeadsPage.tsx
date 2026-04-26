@@ -72,7 +72,7 @@ const DashboardLeadsPage = () => {
     (searchParams.get('status') as any) || 'all'
   );
   const [historyDrafts, setHistoryDrafts] = useState<Record<string, string>>({});
-  const [audibleAlerts, setAudibleAlerts] = useState(false);
+  const { mode: alertMode, setMode: setAlertMode } = useLeadAlertPreference();
   const [, setTick] = useState(0);
   const leadsRef = useRef<LeadRow[]>([]);
 
