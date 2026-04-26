@@ -712,7 +712,16 @@ const DashboardServicesPage = () => {
                 )}
               </div>
               <div className="p-3 space-y-1.5">
-                <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">{s.service_name}</h3>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1 flex-1">{s.service_name}</h3>
+                  <div className="flex items-center gap-1.5 shrink-0" title={s.deleted_at ? 'Serviço pausado — ative para aparecer nas buscas' : 'Serviço ativo — clique para pausar'}>
+                    <Switch
+                      checked={!s.deleted_at}
+                      onCheckedChange={() => handlePause(s)}
+                      aria-label={s.deleted_at ? 'Ativar serviço' : 'Pausar serviço'}
+                    />
+                  </div>
+                </div>
                 <div className="flex items-center gap-1">
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
                     s.deleted_at ? 'bg-muted text-muted-foreground' : 'bg-green-100 text-green-700'
@@ -723,22 +732,35 @@ const DashboardServicesPage = () => {
                 {s.description && <p className="text-xs text-muted-foreground line-clamp-1">{s.description}</p>}
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                   {s.service_area && (
-                    <span className="flex items-center gap-0.5"><MapPin className="h-3 w-3" /> {s.service_area}</span>
+                    <span className="flex items-center gap-0.5" title="Cidades atendidas">
+                      <MapPin className="h-3 w-3" /> {s.service_area}
+                    </span>
                   )}
                   <span className="flex items-center gap-0.5"><Eye className="h-3 w-3" /> {s.view_count ?? 0} views</span>
                 </div>
-                <p className="text-[10px] text-muted-foreground">
-                  {format(new Date(s.created_at), 'dd/MM/yyyy')}
-                  {s.price && <span className="ml-2 font-medium text-foreground">R$ {s.price}</span>}
-                </p>
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <p className="text-[10px] text-muted-foreground">
+                    {format(new Date(s.created_at), 'dd/MM/yyyy')}
+                  </p>
+                  {s.price && (
+                    <p className="text-xs font-semibold text-foreground">
+                      <span className="text-[10px] font-normal text-muted-foreground">Valores a partir de</span>{' '}
+                      R$ {s.price}
+                    </p>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 pt-1.5 border-t border-border">
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-8" onClick={() => handleEdit(s)}>
                     <Edit2 className="mr-1 h-3 w-3" /> Editar
                   </Button>
-                  <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => handlePause(s)}>
-                    {s.deleted_at ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs h-8 text-destructive hover:text-destructive" onClick={() => handleDelete(s.id)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/5 focus-visible:ring-destructive/40"
+                    onClick={() => handleDelete(s.id)}
+                    aria-label="Excluir serviço"
+                    title="Excluir serviço"
+                  >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
