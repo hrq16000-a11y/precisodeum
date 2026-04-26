@@ -32,8 +32,8 @@ const OAuthRedirectHandler = () => {
     }
 
     handled.current = true;
-    if (location.pathname !== '/triagem') {
-      navigate('/triagem', { replace: true });
+    if (location.pathname !== '/cadastro-bet') {
+      navigate('/cadastro-bet', { replace: true });
     }
   }, [user, profile, loading, navigate, location.pathname]);
 
