@@ -545,6 +545,43 @@ const DashboardPortfolioPage = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Caption dialog */}
+        <Dialog open={!!captionPhoto} onOpenChange={(o) => !o && setCaptionPhoto(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Legenda da foto</DialogTitle>
+              <DialogDescription>
+                Descreva o trabalho realizado para melhorar seu SEO e autoridade.
+              </DialogDescription>
+            </DialogHeader>
+            {captionPhoto && (
+              <div className="space-y-3">
+                <div className="overflow-hidden rounded-lg border border-border bg-muted">
+                  <img src={captionPhoto.image_url} alt="" className="w-full max-h-64 object-contain bg-foreground/5" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
+                  <Textarea
+                    value={captionValue}
+                    onChange={(e) => setCaptionValue(e.target.value.slice(0, 140))}
+                    placeholder="Ex: Reforma completa de cozinha planejada em MDF, com bancada em granito preto."
+                    rows={3}
+                    autoFocus
+                  />
+                  <p className="mt-1 text-[11px] text-muted-foreground text-right tabular-nums">{captionValue.length}/140</p>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCaptionPhoto(null)} disabled={captionSaving}>Cancelar</Button>
+              <Button variant="accent" onClick={handleSaveCaption} disabled={captionSaving}>
+                {captionSaving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                Salvar legenda
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <NextStepPrompt
           open={!!nextStep}
           onClose={() => setNextStep(null)}
