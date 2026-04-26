@@ -11,6 +11,24 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { LeadContext } from '@/hooks/useLeadFollowup';
+import { useLeadAlertPreference, type LeadAlertMode } from '@/hooks/useLeadAlertPreference';
+
+// Som curto embutido (mesmo beep usado em DashboardLeadsPage)
+const ALERT_SOUND_DATA_URI =
+  'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
+
+const playSound = () => {
+  try {
+    const audio = new Audio(ALERT_SOUND_DATA_URI);
+    audio.volume = 0.6;
+    void audio.play().catch(() => {});
+  } catch {
+    /* no-op */
+  }
+};
+
+const wantsSound = (mode: LeadAlertMode) => mode === 'sound' || mode === 'both';
+const wantsToast = (mode: LeadAlertMode) => mode === 'toast' || mode === 'both';
 
 interface NewLeadPayload {
   id: string;
