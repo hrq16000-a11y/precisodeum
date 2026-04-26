@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, Loader2, FolderOpen, ArrowLeft, ImagePlus, Pencil, AlertTriangle, Camera, Info, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Loader2, ArrowLeft, ImagePlus, Pencil, AlertTriangle, Camera, Info, Image as ImageIcon } from 'lucide-react';
 import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import { motion, AnimatePresence } from 'framer-motion';
