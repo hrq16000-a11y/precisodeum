@@ -188,8 +188,63 @@ export const buildFeaturedRotationSeed = (params: {
   return hashRotationSeed(`${dateKey}:${params.sortBy}:${params.categorySlug || 'all'}:${cityKey}`);
 };
 
+/** Seed por sessão (browser tab) — usado para desempates do top dos destaques.
+ *  Não é "diária": queremos que profissionais com a mesma proximidade+ranking
+ *  alternem entre sessões para garantir visibilidade justa, sem reordenar
+ *  visivelmente durante a navegação atual.
+ */
+const FEATURED_SESSION_SEED_KEY = 'pdu:featured:session-seed';
+const getFeaturedSessionSeed = (): number => {
+  if (typeof window === 'undefined') return 1;
+  try {
+    const cached = window.sessionStorage.getItem(FEATURED_SESSION_SEED_KEY);
+    if (cached) {
+      const n = Number(cached);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+    const seed = Math.floor(Math.random() * 2_147_483_647) || 1;
+    window.sessionStorage.setItem(FEATURED_SESSION_SEED_KEY, String(seed));
+    return seed;
+  } catch {
+    return Math.floor(Math.random() * 2_147_483_647) || 1;
+  }
+};
+
+/** Score de completude do perfil — usado como critério de "ranking" dentro do grupo local. */
+const profileCompletenessScore = (p: DbProvider): number => {
+  let score = 0;
+  if (p.photo) score += 10;
+  if (p.businessName || (p.name && p.name.length > 3)) score += 4;
+  if (p.description && p.description.length > 40) score += 6;
+  if (p.whatsapp) score += 6;
+  if (p.servicesCount > 0) score += Math.min(p.servicesCount, 5) * 3;
+  if (p.portfolioPhotoCount > 0) score += Math.min(p.portfolioPhotoCount, 10) * 2;
+  if (p.portfolioAlbumCount > 0) score += Math.min(p.portfolioAlbumCount, 5) * 3;
+  if (p.yearsExperience > 0) score += Math.min(p.yearsExperience, 20);
+  if (p.communityVerified) score += 10;
+  return score;
+};
+
+/** Score combinado de qualidade/ranking (não inclui distância). */
+const qualityRankScore = (p: DbProvider): number => {
+  const finalScore = (p as any)._finalScore || (p as any)._contentScore || 0;
+  const ratingScore = (p.rating || 0) * 4 + Math.min(p.reviewCount || 0, 50) * 0.5;
+  const merit = (p.levelPriority || 0) * 8;
+  return finalScore + ratingScore + merit + profileCompletenessScore(p);
+};
+
+/** Bucketiza distância em faixas para que pequenas variações (±0.5km) não
+ *  quebrem desempates por ranking — só "salta" depois de 1 km de diferença.
+ */
+const distanceBucket = (distanceKm?: number): number => {
+  if (!Number.isFinite(distanceKm)) return 9999;
+  return Math.floor((distanceKm as number) / 1);
+};
+
 const sortFeaturedProviders = (providers: DbProvider[], options: FeaturedProvidersOptions) => {
   const { latitude, longitude, categorySlug, sortBy = 'proximity', userCity } = options as FeaturedProvidersOptions & { userCity?: string };
+  const userCityNorm = (userCity || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
   const withDistance = providers.map((provider) => {
     if (hasCoordinates(latitude, longitude)) {
       const audit = calculateAuditedDistanceKm(latitude ?? null, longitude ?? null, provider, userCity);
@@ -203,33 +258,52 @@ const sortFeaturedProviders = (providers: DbProvider[], options: FeaturedProvide
   });
 
   const filtered = categorySlug ? withDistance.filter((p) => p.categorySlug === categorySlug) : withDistance;
-  const availabilityScore = (p: DbProvider) => (p.whatsapp ? 30 : 0) + (p.avgResponseMinutes != null ? Math.max(0, 30 - p.avgResponseMinutes / 4) : 0) + (p.servicesCount || 0);
 
-  const sorted = filtered.sort((a, b) => {
-    if (sortBy === 'category') return a.category.localeCompare(b.category) || compareEliteMerit(a, b);
-    if (sortBy === 'availability') return availabilityScore(b) - availabilityScore(a) || compareEliteMerit(a, b);
-    const aDistance = a.distanceKm ?? Number.MAX_SAFE_INTEGER;
-    const bDistance = b.distanceKm ?? Number.MAX_SAFE_INTEGER;
-    return aDistance - bDistance || compareEliteMerit(a, b);
+  // ---- LÓGICA "Local → Ranking → Shuffle por sessão" ----
+  // 1) Marca quem é local (mesma cidade do usuário, quando disponível).
+  const isSameCity = (p: DbProvider) =>
+    !!userCityNorm &&
+    (p.city || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === userCityNorm;
+
+  const annotated = filtered.map((p) => ({
+    p,
+    local: isSameCity(p),
+    bucket: distanceBucket(p.distanceKm),
+    quality: qualityRankScore(p),
+  }));
+
+  // 2) Ordenação determinística:
+  //    - Locais primeiro (sempre).
+  //    - Depois por bucket de distância (±1km).
+  //    - Depois por score de qualidade/completude (decrescente).
+  //    - Empate final: comparator existente.
+  annotated.sort((a, b) => {
+    if (a.local !== b.local) return a.local ? -1 : 1;
+    if (sortBy === 'category') {
+      const cat = a.p.category.localeCompare(b.p.category);
+      if (cat !== 0) return cat;
+    }
+    if (a.bucket !== b.bucket) return a.bucket - b.bucket;
+    if (a.quality !== b.quality) return b.quality - a.quality;
+    return compareEliteMerit(a.p, b.p);
   });
 
-  const topWindow = sorted.slice(0, Math.min(12, sorted.length));
-  const remainder = sorted.slice(topWindow.length);
-  // Rotação determinística usando APENAS variáveis estáveis:
-  // - data (YYYY-MM-DD): rotação diária
-  // - sortBy: cada aba tem sua ordem própria
-  // - categorySlug: cada categoria tem sua ordem própria
-  // - userCity (normalizada): mesma cidade → mesma ordem para todos os visitantes
-  // NÃO usamos latitude/longitude (mutáveis a cada amostra de GPS) nem props instáveis,
-  // para evitar reordenação visível a cada renderização.
-  const seed = buildFeaturedRotationSeed({ sortBy, categorySlug, userCity });
-
-  if (sortBy === 'proximity') {
-    const [anchor, ...rest] = topWindow;
-    return anchor ? [anchor, ...seededShuffle(rest, seed), ...remainder] : sorted;
+  // 3) Para empates verdadeiros (mesmo bucket + mesma quality), aplica
+  //    shuffle determinístico por sessão para garantir fairness.
+  const sessionSeed = getFeaturedSessionSeed();
+  const groups = new Map<string, typeof annotated>();
+  for (const entry of annotated) {
+    const key = `${entry.local ? 'L' : 'O'}:${entry.bucket}:${Math.round(entry.quality)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(entry);
+  }
+  const shuffled: typeof annotated = [];
+  for (const [, group] of groups) {
+    if (group.length <= 1) shuffled.push(...group);
+    else shuffled.push(...seededShuffle(group, sessionSeed));
   }
 
-  return [...seededShuffle(topWindow, seed), ...remainder];
+  return shuffled.map((e) => e.p);
 };
 
 interface ServiceFallback {
