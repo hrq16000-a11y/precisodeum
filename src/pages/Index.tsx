@@ -378,6 +378,8 @@ const Index = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <HeroBanner />
+      {/* Faixa de captura de prestador — clean, abaixo do Hero (cliente em cima, prestador logo após). */}
+      <ProSignupStrip />
       {sponsorsEnabled && (
         <LazyErrorBoundary>
           <Suspense fallback={<div className="h-24" />}>
