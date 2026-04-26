@@ -80,6 +80,8 @@ const DashboardLeadsPage = () => {
   const { mode: alertMode, setMode: setAlertMode } = useLeadAlertPreference();
   const [, setTick] = useState(0);
   const leadsRef = useRef<LeadRow[]>([]);
+  const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
+  const [funnelKey, setFunnelKey] = useState<FunnelKey>('todos');
 
   // Filtros avançados — inicializados a partir da URL
   const [search, setSearch] = useState(searchParams.get('q') || '');
@@ -270,6 +272,14 @@ const DashboardLeadsPage = () => {
     if (lead.status === status) return;
     updateStatus.mutate({ leadId: lead.id, status });
     playAlert();
+    if (status === 'completed') {
+      // Efeito dopamina: confete + moedas + toast de pontos
+      void burstConfetti('mega');
+      playCoinsSound(0.2);
+      toast.success('Lead concluído! +100 pts de engajamento', {
+        description: 'Continue assim para subir no ranking.',
+      });
+    }
   };
 
   const addHistoryMessage = async (leadId: string) => {
