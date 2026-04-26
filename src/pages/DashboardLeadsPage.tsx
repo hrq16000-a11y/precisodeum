@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, Send, History, Paperclip, Bell, BellOff, Timer, Search, Filter, FileDown, FileText, CalendarClock, ExternalLink, Settings2, MapPin, Tag, Compass } from 'lucide-react';
+import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, Send, History, Paperclip, Bell, BellOff, Timer, Search, Filter, FileDown, FileText, CalendarClock, ExternalLink, Settings2, MapPin, Tag, Compass, Radar, Sparkles } from 'lucide-react';
 import { formatLeadOrigin, formatLeadLocation, hasLeadContext } from '@/lib/leadContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { whatsappLink } from '@/lib/whatsapp';
@@ -400,8 +400,47 @@ const DashboardLeadsPage = () => {
         </motion.div>
       )}
 
-      {/* Toolbar: busca, filtros avançados e exportação */}
-      <div className="mt-4 rounded-xl border border-border bg-card p-3 shadow-card">
+      {/* Quick Filters (chips) — Mobile-first, sempre visíveis acima da toolbar */}
+      <div className="mt-4 flex flex-wrap gap-1.5" role="tablist" aria-label="Filtros rápidos de status">
+        {([
+          { key: 'all', label: 'Todos', count: leads.length },
+          { key: 'new', label: 'Novos', count: leads.filter(l => l.status === 'new').length },
+          { key: 'contacted', label: 'Em atendimento', count: leads.filter(l => ['contacted','scheduled'].includes(l.status)).length },
+          { key: 'completed', label: 'Concluídos', count: leads.filter(l => l.status === 'completed').length },
+          { key: 'lost', label: 'Perdidos', count: leads.filter(l => l.status === 'lost').length },
+          ...(overdueCount > 0 ? [{ key: 'overdue', label: 'Vencidos', count: overdueCount }] : []),
+        ] as Array<{ key: 'all'|'overdue'|LeadStatus; label: string; count: number }>).map((chip) => {
+          const active = statusFilter === chip.key;
+          const isOverdueChip = chip.key === 'overdue';
+          return (
+            <button
+              key={chip.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setStatusFilter(chip.key)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all min-h-[36px] ${
+                active
+                  ? isOverdueChip
+                    ? 'bg-destructive text-destructive-foreground shadow-sm'
+                    : 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-card border border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              {isOverdueChip && <AlertTriangle className="h-3 w-3" />}
+              {chip.label}
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
+                active ? 'bg-background/25' : 'bg-muted text-foreground'
+              }`}>
+                {chip.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Toolbar sticky: busca + filtros + exportação */}
+      <div className="sticky top-0 z-20 mt-3 -mx-4 rounded-none border-y border-border bg-card/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:static sm:mx-0 sm:rounded-xl sm:border sm:px-3 sm:shadow-card">
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="relative min-w-[200px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -530,10 +569,23 @@ const DashboardLeadsPage = () => {
       <motion.div className="mt-6 space-y-3" variants={containerVariants} initial="hidden" animate="show">
         <AnimatePresence mode="popLayout">
           {filteredLeads.length === 0 && (
-            <motion.div key="empty" variants={itemVariants} exit={{ opacity: 0, scale: 0.95 }} className="rounded-xl border border-border bg-card p-12 text-center shadow-card">
-              <Inbox className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
-              <p className="font-semibold text-foreground">Nenhum contato encontrado</p>
-              <p className="mt-1 text-sm text-muted-foreground">Quando um cliente enviar uma solicitação de serviço, ela aparecerá aqui.</p>
+            <motion.div key="empty" variants={itemVariants} exit={{ opacity: 0, scale: 0.95 }} className="rounded-2xl border border-border bg-gradient-to-br from-card via-card to-primary/5 p-10 text-center shadow-card">
+              <div className="relative mx-auto mb-4 flex h-16 w-16 items-center justify-center">
+                <span className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
+                <span className="absolute inset-2 rounded-full bg-primary/10" />
+                <Radar className="relative h-8 w-8 text-primary" />
+              </div>
+              <p className="font-display text-lg font-bold text-foreground">Aguardando novos contatos</p>
+              <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted-foreground">
+                Quando um cliente enviar uma solicitação, ela aparecerá aqui em tempo real.
+              </p>
+              <Link
+                to="/dashboard"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-transform hover:scale-105"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Melhorar meu Score de Saúde
+              </Link>
             </motion.div>
           )}
           {visibleLeads.map((lead) => {
@@ -621,7 +673,7 @@ const DashboardLeadsPage = () => {
                     </Select>
                     <div className="flex items-center gap-2 sm:justify-end">
                       <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"><Phone className="h-3 w-3" /> {lead.phone}</a>
-                      <motion.a href={whatsappLink(lead.phone, `Olá ${lead.client_name}, recebi sua solicitação${lead.service_needed ? ` sobre "${lead.service_needed}"` : ''}. Como posso ajudar?`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-full bg-accent p-1.5 text-accent-foreground transition-colors hover:bg-accent/90" title="Responder pelo WhatsApp" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}><MessageCircle className="h-4 w-4" /></motion.a>
+                      <motion.a href={whatsappLink(lead.phone, `Olá ${lead.client_name}, aqui é ${profile?.full_name?.split(' ')[0] || 'o profissional'} do Preciso de um Profissional. Recebi seu pedido${lead.service_needed ? ` sobre "${lead.service_needed}"` : ''}. Como posso ajudar?`)} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 min-w-[44px] items-center justify-center gap-1 rounded-full bg-emerald-500 px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-600" title="Chamar no WhatsApp" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}><MessageCircle className="h-4 w-4" /><span className="hidden sm:inline">Chamar</span></motion.a>
                       <button onClick={() => { setRescheduleLeadId(lead.id); setRescheduleDefault(lead.next_followup_at); }} className="inline-flex items-center justify-center rounded-full bg-primary/10 p-1.5 text-primary transition-colors hover:bg-primary/20" title="Reagendar follow-up"><CalendarClock className="h-4 w-4" /></button>
                       <Link to={`/dashboard/leads/${lead.id}`} className="inline-flex items-center justify-center rounded-full bg-muted p-1.5 text-foreground transition-colors hover:bg-muted/70" title="Ver detalhes"><ExternalLink className="h-4 w-4" /></Link>
                       <motion.button onClick={() => handleDelete(lead.id)} className="inline-flex items-center justify-center rounded-full bg-destructive/10 p-1.5 text-destructive transition-colors hover:bg-destructive/20" title="Excluir lead" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}><Trash2 className="h-4 w-4" /></motion.button>
