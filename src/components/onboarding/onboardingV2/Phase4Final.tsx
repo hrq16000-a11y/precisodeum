@@ -40,13 +40,47 @@ function isValidDoc(digits: string, kind: 'pf' | 'pj'): boolean {
 
 export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, userId }: DocumentProps) => {
   const [verified, setVerified] = useState(false);
+  const [providerStatus, setProviderStatus] = useState<string | null>(null);
   const valid = isValidDoc(data.document, data.kind);
 
-  const handleVerify = () => {
+  // Realtime: ouve mudanças no provider para refletir status "online" assim que o backend confirma.
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    (async () => {
+      const { data: prov } = await supabase
+        .from('providers')
+        .select('id, status')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (alive && prov) setProviderStatus(prov.status as string);
+      if (!prov?.id) return;
+      const channel = supabase
+        .channel(`provider-status:${prov.id}`)
+        .on('postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'providers', filter: `id=eq.${prov.id}` },
+          (payload: any) => {
+            if (!alive) return;
+            const next = payload.new?.status;
+            if (next) setProviderStatus(next);
+          })
+        .subscribe();
+      return () => { supabase.removeChannel(channel); };
+    })();
+    return () => { alive = false; };
+  }, [userId]);
+
+  const handleVerify = async () => {
     if (!valid) return;
     setVerified(true);
     celebrate({ intensity: 'mini', id: `doc-verified:${userId || 'anon'}` });
-    setTimeout(() => onContinue(), 1400);
+    // Marca o provider como ativo (online) — o canal realtime acima reflete instantaneamente
+    if (userId) {
+      try {
+        await supabase.from('providers').update({ status: 'active' } as any).eq('user_id', userId);
+      } catch { /* fail-soft */ }
+    }
+    setTimeout(() => onContinue(), 1600);
   };
 
   return (
