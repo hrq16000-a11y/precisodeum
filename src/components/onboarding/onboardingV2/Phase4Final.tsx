@@ -10,15 +10,16 @@
  * NÃO são reapresentados — Phase 4 só pede o que ainda está vazio.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, Check } from 'lucide-react';
+import { Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, Check, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import CpfCnpjInput from '@/components/onboarding/CpfCnpjInput';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
+import { supabase } from '@/integrations/supabase/client';
 import type { OnboardingProfileData } from './types';
 
 /* ───── 4.1 Upsell de documento (CPF/CNPJ) ───── */
