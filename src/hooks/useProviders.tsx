@@ -928,6 +928,7 @@ export function filterAndRankProvidersGrouped(
     const toProvider = (e: typeof combined[0]) => ({
       ...e.p,
       distanceKm: e.distanceKm !== Infinity ? Math.round(e.distanceKm * 10) / 10 : undefined,
+      _distanceAudit: e.audit,
     });
     return {
       local: [],
@@ -941,6 +942,7 @@ export function filterAndRankProvidersGrouped(
   const toProvider = (e: typeof otherArr[0]) => ({
     ...e.p,
     distanceKm: e.distanceKm !== Infinity ? Math.round(e.distanceKm * 10) / 10 : undefined,
+    _distanceAudit: e.audit,
   });
 
   return {
