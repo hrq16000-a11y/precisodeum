@@ -21,6 +21,7 @@ const ScrollProgressBar = reactLazy(() => importWithRetry(() => import("./compon
 const ImpersonationBanner = reactLazy(() => importWithRetry(() => import("./components/admin/ImpersonationBanner")));
 import { useAuth } from "@/hooks/useAuth";
 import { initializeUiFreezeMonitor } from "@/lib/uiFreezeMonitor";
+import { appendWizardResetDebugLog } from "@/lib/wizardResetDebug";
 import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
@@ -117,6 +118,7 @@ const AdminLocationDebugPage = lazy(() => import("./pages/AdminLocationDebugPage
 const AdminLocationSeoAuditPage = lazy(() => import("./pages/AdminLocationSeoAuditPage"));
 const AdminSearchAuditPage = lazy(() => import("./pages/AdminSearchAuditPage"));
 const AdminHomeRotationPage = lazy(() => import("./pages/AdminHomeRotationPage"));
+const AdminWizardDiagnosticsPage = lazy(() => import("./pages/AdminWizardDiagnosticsPage"));
 
 const AdminOverviewPage = lazy(() => import("./pages/AdminOverviewPage"));
 const AdminNotificationsPage = lazy(() => import("./pages/AdminNotificationsPage"));
@@ -308,6 +310,18 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     location.pathname === '/onboarding-v2/sucesso' ||
     location.pathname === '/cadastro-bet';
   if (mustCompleteOnboarding && !isOnboardingRoute) {
+    appendWizardResetDebugLog({
+      source: 'onboarding-gate-redirect',
+      route: `${location.pathname}${location.search}`,
+      nextRoute: '/cadastro-bet',
+      phase: null,
+      reason: 'global-onboarding-gate',
+      meta: {
+        profile_type: profile?.profile_type ?? null,
+        onboarding_completed: profile?.onboarding_completed ?? null,
+        onboarding_step: onboardingStep,
+      },
+    });
     return <Navigate to="/cadastro-bet" replace />;
   }
 
@@ -435,6 +449,7 @@ const App = () => {
                 <Route path="/admin/menus" element={<AdminMenuPage />} />
                 <Route path="/admin/como-funciona" element={<AdminHomeStepsPage />} />
                 <Route path="/admin/home-rotacao" element={<AdminHomeRotationPage />} />
+                <Route path="/admin/wizard-diagnostico" element={<AdminWizardDiagnosticsPage />} />
                 <Route path="/admin/depoimentos" element={<AdminTestimonialsPage />} />
                 <Route path="/admin/cta-blocos" element={<AdminCtaBlocksPage />} />
                 <Route path="/admin/secoes-home" element={<AdminHomeSectionsPage />} />

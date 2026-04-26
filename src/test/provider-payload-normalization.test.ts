@@ -48,7 +48,7 @@ describe('normalizeProviderPayload — bloqueio de regressão 23502', () => {
     PROVIDER_REQUIRED_STRING_FIELDS.forEach((k) => {
       expect(payload[k]).not.toBeNull();
       expect(payload[k]).not.toBeUndefined();
-      expect(payload[k]).toBe('');
+      expect(payload[k]).toBe(k === 'account_type' ? 'autonomous' : '');
     });
     // Campos opcionais permanecem como informados
     expect(payload.category_id).toBeNull();

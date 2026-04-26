@@ -1,8 +1,18 @@
+import { initialOnboardingState, phaseIndex } from './state';
 import type { AccountKind, OnboardingPhase, OnboardingState } from './types';
 
 type BootstrapInput = {
   profile: any | null;
   provider: any | null;
+};
+
+type DraftLike = Partial<OnboardingState> | null;
+
+export type OnboardingCoreLocks = {
+  full_name: boolean;
+  whatsapp: boolean;
+  city: boolean;
+  state: boolean;
 };
 
 function normalizePhone(value: unknown): string {
@@ -21,6 +31,66 @@ function resolvePhase(fullName: string, whatsapp: string, city: string): Onboard
   if (hasContact && city.trim().length > 0) return 'phase2_service';
   if (city.trim().length > 0 || hasContact) return hasContact ? 'phase2_service' : 'phase1_contact';
   return 'phase1_location';
+}
+
+export function buildOnboardingCoreLocks({ profile, provider }: BootstrapInput): OnboardingCoreLocks {
+  const full_name = String(profile?.full_name || '').trim();
+  const whatsapp = normalizePhone(profile?.whatsapp || provider?.whatsapp || provider?.phone || '');
+  const city = String(provider?.city || profile?.city || '').trim();
+  const state = String(provider?.state || profile?.state || '').trim();
+
+  return {
+    full_name: full_name.length >= 4,
+    whatsapp: whatsapp.length >= 10,
+    city: city.length > 0,
+    state: state.length === 2,
+  };
+}
+
+export function getPendingOnboardingCoreFields(locks: OnboardingCoreLocks): Array<keyof OnboardingCoreLocks> {
+  return (Object.keys(locks) as Array<keyof OnboardingCoreLocks>).filter((key) => !locks[key]);
+}
+
+export function resolveOnboardingV2SeedState({
+  draft,
+  bootstrap,
+  source,
+}: {
+  draft: DraftLike;
+  bootstrap: DraftLike;
+  source?: string | null;
+}): Partial<OnboardingState> {
+  const draftPhase = draft?.phase ? phaseIndex(draft.phase) : -1;
+  const bootstrapPhase = bootstrap?.phase ? phaseIndex(bootstrap.phase) : -1;
+  const forceBootstrapFromBet = source === 'bet-first-service' && bootstrapPhase >= phaseIndex('phase2_service');
+
+  const phase = forceBootstrapFromBet
+    ? bootstrap?.phase
+    : draftPhase >= bootstrapPhase
+      ? draft?.phase ?? bootstrap?.phase
+      : bootstrap?.phase ?? draft?.phase;
+
+  return {
+    ...(forceBootstrapFromBet ? draft : bootstrap),
+    ...(forceBootstrapFromBet ? bootstrap : draft),
+    profile: {
+      ...initialOnboardingState.profile,
+      ...(bootstrap?.profile || {}),
+      ...(draft?.profile || {}),
+      ...(forceBootstrapFromBet ? (bootstrap?.profile || {}) : {}),
+    },
+    service: {
+      ...initialOnboardingState.service,
+      ...(bootstrap?.service || {}),
+      ...(draft?.service || {}),
+      ...(forceBootstrapFromBet ? (bootstrap?.service || {}) : {}),
+    },
+    providerId: forceBootstrapFromBet
+      ? bootstrap?.providerId ?? draft?.providerId ?? null
+      : draft?.providerId ?? bootstrap?.providerId ?? null,
+    firstServiceId: draft?.firstServiceId ?? bootstrap?.firstServiceId ?? null,
+    phase,
+  };
 }
 
 export function buildOnboardingV2BootstrapState({ profile, provider }: BootstrapInput): Partial<OnboardingState> | null {
