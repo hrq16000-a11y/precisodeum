@@ -57,7 +57,7 @@ export function getStableShuffleSeed(
   return hashSeed(`pdu:cats:${day}:${region}:${who}`);
 }
 
-function seededShuffle<T>(arr: T[], seed: number): T[] {
+export function seededShuffle<T>(arr: T[], seed: number): T[] {
   const a = [...arr];
   let s = seed || 1;
   for (let i = a.length - 1; i > 0; i--) {
