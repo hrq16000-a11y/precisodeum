@@ -563,7 +563,7 @@ export function useFeaturedProviders(options: boolean | FeaturedProvidersOptions
         const fullName = profile?.name?.trim() || '';
         const businessName = (p.business_name || '').trim();
         const safeBusinessName = isGenericProviderName(businessName) ? '' : businessName;
-        const resolvedName = (await import('@/lib/providerDisplay')).resolveDisplayName({
+        const resolvedName = _centralResolveDisplayName({
           profileFullName: fullName,
           businessName,
           slug: p.slug,
