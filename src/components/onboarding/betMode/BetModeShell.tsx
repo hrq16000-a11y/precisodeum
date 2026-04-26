@@ -67,7 +67,7 @@ export default function BetModeShell() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = params.get('next') || '/dashboard';
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refetchProfile } = useAuth();
   const [state, dispatch] = useReducer(reducer, initialBetState);
 
   useSeoHead({ title: 'Cadastro express', description: 'Cadastro rápido para começar agora.', noindex: true });
@@ -120,7 +120,7 @@ export default function BetModeShell() {
             : state.points })
           .eq('id', user.id);
       } catch { /* noop */ }
-      await refreshProfile?.();
+      await refetchProfile?.();
       goto('celebration');
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao salvar cadastro');
@@ -175,7 +175,7 @@ export default function BetModeShell() {
           .eq('id', user.id);
       } catch { /* noop */ }
 
-      await refreshProfile?.();
+      await refetchProfile?.();
       goto('celebration');
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao salvar cadastro');
