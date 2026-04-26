@@ -378,9 +378,10 @@ export const OnboardingV2Shell = () => {
             profile={state.profile}
             onChangeService={(patch) => dispatch({ type: 'PATCH_SERVICE', patch })}
             onChangeProfile={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
-            onBack={() => dispatch({ type: 'GO_TO', phase: 'phase1_contact' })}
-            onNext={() => dispatch({ type: 'NEXT' })}
+            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_contact' }); }}
+            onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
             onSkip={() => {
+              track('skip', { exit: 'dashboard_servicos' });
               toast.info('Você pode cadastrar seu primeiro serviço depois pelo Dashboard.');
               navigate('/dashboard/servicos');
             }}
@@ -393,15 +394,19 @@ export const OnboardingV2Shell = () => {
             profile={state.profile}
             onChangeService={(patch) => dispatch({ type: 'PATCH_SERVICE', patch })}
             onChangeProfile={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
-            onBack={() => dispatch({ type: 'GO_TO', phase: 'phase2_service' })}
+            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_service' }); }}
             saving={saving}
             onSkip={async () => {
+              track('skip');
               const ok = await persistFirstService();
               if (ok) dispatch({ type: 'NEXT' });
+              else track('error', { reason: 'persist_service_failed' });
             }}
             onSubmit={async () => {
+              track('submit');
               const ok = await persistFirstService();
-              if (ok) dispatch({ type: 'NEXT' });
+              if (ok) { track('next'); dispatch({ type: 'NEXT' }); }
+              else track('error', { reason: 'persist_service_failed' });
             }}
           />
         );
@@ -416,8 +421,8 @@ export const OnboardingV2Shell = () => {
             serviceId={state.firstServiceId}
             userId={user.id}
             serviceName={state.service.service_name}
-            onContinue={() => dispatch({ type: 'NEXT' })}
-            onSkip={() => dispatch({ type: 'NEXT' })}
+            onContinue={() => { track('next'); dispatch({ type: 'NEXT' }); }}
+            onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
           />
         );
       case 'phase3_celebration':
@@ -427,7 +432,7 @@ export const OnboardingV2Shell = () => {
             city={state.profile.city}
             state={state.profile.state}
             userId={user?.id}
-            onContinue={() => dispatch({ type: 'NEXT' })}
+            onContinue={() => { track('next'); dispatch({ type: 'NEXT' }); }}
           />
         );
       case 'phase4_document':
@@ -437,9 +442,11 @@ export const OnboardingV2Shell = () => {
             onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
             saving={saving}
             userId={user?.id}
-            onSkip={() => dispatch({ type: 'NEXT' })}
+            onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onContinue={async () => {
+              track('submit');
               await persistPatch({ tax_id: state.profile.document });
+              track('next');
               dispatch({ type: 'NEXT' });
             }}
           />
@@ -455,12 +462,14 @@ export const OnboardingV2Shell = () => {
             data={state.profile}
             onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
             saving={saving}
-            onSkip={() => dispatch({ type: 'NEXT' })}
+            onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onContinue={async () => {
+              track('submit');
               await persistPatch({
                 neighborhood: state.profile.neighborhood,
                 description: state.profile.bio,
               });
+              track('next');
               dispatch({ type: 'NEXT' });
             }}
           />
@@ -476,8 +485,9 @@ export const OnboardingV2Shell = () => {
             data={state.profile}
             onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
             saving={saving}
-            onSkip={() => dispatch({ type: 'GO_TO', phase: 'done' })}
+            onSkip={() => { track('skip'); dispatch({ type: 'GO_TO', phase: 'done' }); }}
             onFinish={async () => {
+              track('submit');
               await persistPatch({
                 instagram_url: state.profile.instagram_url,
                 facebook_url: state.profile.facebook_url,
