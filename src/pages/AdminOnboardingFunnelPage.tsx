@@ -182,6 +182,9 @@ const AdminOnboardingFunnelPage = () => {
           <KpiCard label="Erros" value={totals.error || 0} loading={loading} tone="danger" />
         </div>
 
+        {/* Controle de rollout + métricas A/B */}
+        <RolloutControlCard />
+
         {/* Tabela por fase */}
         <Card>
           <CardContent className="p-0 overflow-x-auto">
