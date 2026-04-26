@@ -558,13 +558,18 @@ export function useFeaturedProviders(options: boolean | FeaturedProvidersOptions
         const effectivePhone = provPhone || provWhatsapp || '';
         const profile = profileMap[p.user_id];
 
-        // Prioridade do nome: profile.full_name > business_name (não-genérico) > "Profissional"
+        // Centralized name + avatar resolution (consistent across all feeds)
         const fullName = profile?.name?.trim() || '';
         const businessName = (p.business_name || '').trim();
         const safeBusinessName = isGenericProviderName(businessName) ? '' : businessName;
-        const resolvedName = fullName || safeBusinessName || humanizeProviderSlug(p.slug) || 'Profissional';
+        const resolvedName = (await import('@/lib/providerDisplay')).resolveDisplayName({
+          profileFullName: fullName,
+          businessName,
+          slug: p.slug,
+          city: p.city,
+        });
 
-        // Foto: avatar real do perfil tem prioridade na home; só cai para photo_url se não houver avatar.
+        // Avatar: profile.avatar_url > providers.photo_url > fallback (handled by ProviderCard)
         const resolvedPhoto = (profile?.avatar || p.photo_url || '').trim();
 
         const mapped: DbProvider = {
