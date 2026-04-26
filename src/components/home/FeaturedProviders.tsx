@@ -142,11 +142,33 @@ const FeaturedProviders = ({ providers, isLoading, isFetching, hasError, categor
   );
 };
 
+// Lista de "nomes" genéricos que NÃO devem aparecer como nome do profissional
+// (são profissões/categorias que vazaram para business_name).
+const GENERIC_NAME_TOKENS = new Set([
+  'pedreiro','padeiro','padreiro','eletricista','encanador','pintor','autonomo','autônomo','autonoma','autônoma',
+  'profissional','empreiteiro','marceneiro','jardineiro','tecnico','técnico','tecnica','técnica',
+  'mecanico','mecânico','diarista','cozinheiro','motorista','soldador','vidraceiro','gesseiro','azulejista',
+  'prestador','prestadora','servico','serviço','servicos','serviços','servicosgerais','serviçosgerais',
+]);
+const _normalizeName = (s: string) =>
+  s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
+
+function pickDisplayName(p: DbProvider): string {
+  const candidates = [p.name, p.businessName].filter((v): v is string => !!v && !!v.trim());
+  for (const c of candidates) {
+    const norm = _normalizeName(c);
+    if (norm && !GENERIC_NAME_TOKENS.has(norm)) return c;
+  }
+  // Sem nome real: usa cidade como identificador humano antes de cair em "Profissional"
+  if (p.city) return `Profissional em ${p.city}`;
+  return 'Profissional';
+}
+
 const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
   const impressionRef = useCardImpression(p.id, p.slug, 'featured');
   const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
   const { city: geoCity, state: geoState } = useGeoCity();
-  const displayName = capitalizeName(p.name || p.businessName || p.category || 'Profissional');
+  const displayName = capitalizeName(pickDisplayName(p));
   const hasOwnPhoto = !!(p.photo || p.serviceImage);
   const generatedAvatar = `https://api.dicebear.com/9.x/${avatarFallbackStyle}/svg?seed=${encodeURIComponent(p.userId || p.id)}`;
   const displayPhoto = p.photo || p.serviceImage || generatedAvatar;
