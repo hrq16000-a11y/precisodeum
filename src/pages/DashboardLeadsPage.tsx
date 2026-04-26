@@ -232,10 +232,10 @@ const DashboardLeadsPage = () => {
   });
 
   const playAlert = useCallback(() => {
-    if (!audibleAlerts) return;
+    if (alertMode !== 'sound' && alertMode !== 'both') return;
     const audio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=');
     audio.play().catch(() => {});
-  }, [audibleAlerts]);
+  }, [alertMode]);
 
   const fetchHistory = useCallback(async (leadIds: string[]) => {
     if (leadIds.length === 0) return;
