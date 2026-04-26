@@ -34,9 +34,10 @@ export interface OnboardingProfileData {
 }
 
 export interface OnboardingFirstServiceData {
-  service_name: string;
-  category_ids: string[];       // 1 obrigatório, multi opcional
-  cities_served: string[];      // máx 5
+  service_name: string;          // herdado da categoria escolhida (auto)
+  description: string;           // descrição curta do serviço
+  category_ids: string[];        // 1 obrigatório, multi opcional
+  cities_served: string[];       // máx 5
   starting_price_brl: number | null; // "Valores (a partir de)"
   working_hours: string;
 }
