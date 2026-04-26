@@ -234,6 +234,10 @@ const Index = () => {
     return normalized;
   }, [sectionsOrderRaw, hiddenSectionsRaw]);
 
+  const categoriesIndex = sectionOrder.indexOf('categories');
+  const sectionsBeforeCategories = categoriesIndex >= 0 ? sectionOrder.slice(0, categoriesIndex) : sectionOrder;
+  const sectionsAfterCategories = categoriesIndex >= 0 ? sectionOrder.slice(categoriesIndex + 1) : [];
+
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
   const {
     data: featuredProviders = [],
@@ -376,6 +380,29 @@ const Index = () => {
     featuredCategory, featuredSort, featuredUpdatedAt, geoCity,
   ]);
 
+  const renderWrappedSection = useCallback((slug: string) => {
+    const section = renderSection(slug);
+    if (!section) return null;
+    if (slug === 'featured') {
+      return (
+        <LazyErrorBoundary key={slug}>
+          <Suspense fallback={<FeaturedProvidersFallback />}>
+            {section}
+          </Suspense>
+        </LazyErrorBoundary>
+      );
+    }
+    return (
+      <LazyErrorBoundary key={slug}>
+        <LazyViewportSection>
+          <Suspense fallback={<SectionFallback />}>
+            {section}
+          </Suspense>
+        </LazyViewportSection>
+      </LazyErrorBoundary>
+    );
+  }, [renderSection]);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -402,31 +429,12 @@ const Index = () => {
         </Suspense>
       </DeferredAboveFoldSection>
 
-      {/* Categories rendered eagerly (not lazy) to eliminate CLS caused by lazy sections above */}
+      {sectionsBeforeCategories.map(renderWrappedSection)}
+
+      {/* Categories rendered eagerly (not lazy) at the configured position to avoid CLS */}
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
 
-      {sectionOrder.map((slug) => {
-        const section = renderSection(slug);
-        if (!section) return null;
-        if (slug === 'featured') {
-          return (
-            <LazyErrorBoundary key={slug}>
-              <Suspense fallback={<FeaturedProvidersFallback />}>
-                {section}
-              </Suspense>
-            </LazyErrorBoundary>
-          );
-        }
-        return (
-          <LazyErrorBoundary key={slug}>
-            <LazyViewportSection>
-              <Suspense fallback={<SectionFallback />}>
-                {section}
-              </Suspense>
-            </LazyViewportSection>
-          </LazyErrorBoundary>
-        );
-      })}
+      {sectionsAfterCategories.map(renderWrappedSection)}
       <Footer />
     </div>
   );
