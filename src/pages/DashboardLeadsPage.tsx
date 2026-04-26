@@ -427,6 +427,22 @@ const DashboardLeadsPage = () => {
         </motion.div>
       )}
 
+      {/* Funil de vendas (Pipeline) */}
+      <div className="mt-4">
+        <LeadsFunnelBoard leads={leads} active={funnelKey} onChange={setFunnelKey} />
+      </div>
+
+      {/* Botão Modelos de mensagem (acima dos chips) */}
+      <div className="mt-3 flex justify-end">
+        <button
+          type="button"
+          onClick={() => setTemplatesModalOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60"
+        >
+          <MessageCircle className="h-3.5 w-3.5" /> Modelos de mensagem
+        </button>
+      </div>
+
       {/* Quick Filters (chips) — Mobile-first, sempre visíveis acima da toolbar */}
       <div className="mt-4 flex flex-wrap gap-1.5" role="tablist" aria-label="Filtros rápidos de status">
         {([
@@ -772,6 +788,11 @@ const DashboardLeadsPage = () => {
         defaultDate={rescheduleDefault}
         open={!!rescheduleLeadId}
         onOpenChange={(open) => { if (!open) setRescheduleLeadId(null); }}
+      />
+      <WhatsappTemplatesModal
+        open={templatesModalOpen}
+        onOpenChange={setTemplatesModalOpen}
+        previewVars={{ meu_nome: profile?.full_name?.split(' ')[0] || '' }}
       />
     </DashboardLayout>
   );
