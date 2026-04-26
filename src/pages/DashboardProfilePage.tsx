@@ -250,7 +250,7 @@ const DashboardProfilePage = () => {
     if (!form.category_id && !form.category_custom) { toast.error('Selecione uma categoria ou digite "Outro"'); return; }
     const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.phone);
     if (finalWhatsapp && !isValidWhatsApp(finalWhatsapp)) { toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)'); return; }
-    const finalPhone = toCanonical(form.phone);
+    const finalPhone = toCanonical(form.phone) ?? '';
     if (form.phone.trim() && !finalPhone) { toast.error('Número de telefone inválido (deve ter 10 ou 11 dígitos)'); return; }
     const cnpjDigits = form.cnpj.replace(/\D/g, '');
     if (cnpjDigits && cnpjDigits.length !== 14) { toast.error('CNPJ deve ter 14 dígitos'); return; }
@@ -278,13 +278,25 @@ const DashboardProfilePage = () => {
       const finalCpf = isAutonomo ? (cpfDigits || null) : null;
       const finalBusinessName = isAutonomo ? null : (form.business_name || null);
 
+      // IMPORTANTE: colunas city/state/description/whatsapp/phone em `providers`
+      // são NOT NULL com DEFAULT ''. Forçar coalesce para string vazia evita
+      // erro 23502 (null violates not-null) quando o usuário ainda não preencheu.
       const providerPayload = {
-        business_name: finalBusinessName, description: form.description,
-        city: form.city, state: form.state, neighborhood: form.neighborhood,
-        whatsapp: finalWhatsapp, website: form.website || null, years_experience: form.years_experience,
+        business_name: finalBusinessName,
+        description: form.description ?? '',
+        city: form.city ?? '',
+        state: form.state ?? '',
+        neighborhood: form.neighborhood || null,
+        whatsapp: finalWhatsapp ?? '',
+        website: form.website || null,
+        years_experience: form.years_experience,
         working_hours: form.working_hours || null,
-        category_id: form.category_id || null, category_custom: form.category_custom || null,
-        cnpj: finalCnpj, cpf: finalCpf, birth_date: form.birth_date || null, ibge_code: form.ibge_code || null, latitude, longitude,
+        category_id: form.category_id || null,
+        category_custom: form.category_custom || null,
+        cnpj: finalCnpj, cpf: finalCpf,
+        birth_date: form.birth_date || null,
+        ibge_code: form.ibge_code || null,
+        latitude, longitude,
       };
 
       // Slug regen: se nome ou cidade mudaram em relação ao provider salvo,

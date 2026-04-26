@@ -814,12 +814,13 @@ const BasicOnboardingWizard = () => {
         const { data: existing } = await supabase.from('providers').select('*').eq('user_id', user.id).limit(1);
         if (existing && existing[0]) {
           currentStage = 'providers.update';
+          // Mesma regra do insert: nunca enviar null em colunas NOT NULL com default ''.
           const updPayload = {
-            city: city || existing[0].city,
-            state: state || existing[0].state,
+            city: city || existing[0].city || '',
+            state: state || existing[0].state || '',
             neighborhood: neighborhood.trim() || existing[0].neighborhood,
-            description: bio || existing[0].description,
-            whatsapp: whatsapp || existing[0].whatsapp,
+            description: bio || existing[0].description || '',
+            whatsapp: whatsapp || existing[0].whatsapp || '',
             category_id: selectedCategoryIds[0] || existing[0].category_id,
             account_type: providerSubtype || existing[0].account_type || 'autonomous',
           };
@@ -830,14 +831,19 @@ const BasicOnboardingWizard = () => {
         } else {
           currentStage = 'providers.insert';
           const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'profissional');
+          // IMPORTANTE: as colunas city/state/description/whatsapp/phone são NOT NULL
+          // no banco com DEFAULT ''. NUNCA enviar `null` — usar string vazia para
+          // que o default seja respeitado e o usuário possa "Pular passo" sem
+          // bloquear o cadastro com erro 23502.
           const insPayload = {
             user_id: user.id,
             slug: `${baseSlug}-${user.id.slice(0, 6)}`,
-            city: city || null,
-            state: state || null,
+            city: city || '',
+            state: state || '',
             neighborhood: neighborhood.trim() || null,
-            description: bio || null,
-            whatsapp: whatsapp || null,
+            description: bio || '',
+            whatsapp: whatsapp || '',
+            phone: whatsapp || '',
             category_id: selectedCategoryIds[0] || null,
             account_type: providerSubtype || 'autonomous',
             status: 'pending',
