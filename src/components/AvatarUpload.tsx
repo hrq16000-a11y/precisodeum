@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
 import { compressImage, generateBlurDataUrl } from '@/lib/compressImage';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateProviderCaches } from '@/lib/providerCacheInvalidation';
 
 interface AvatarUploadProps {
   userId: string;
