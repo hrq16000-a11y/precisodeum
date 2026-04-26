@@ -25,6 +25,13 @@ import CommunityVerifiedBadge from '@/components/CommunityVerifiedBadge';
 import TopProfessionalBadge from '@/components/TopProfessionalBadge';
 import { useTopProfessional } from '@/hooks/useTopProfessional';
 import FavoriteButton from '@/components/FavoriteButton';
+import {
+  resolveDisplayName,
+  resolveAvatarUrl,
+  hasRealAvatar as hasRealAvatarFn,
+  isDuplicateCategoryLabel,
+  normalizeProviderToken,
+} from '@/lib/providerDisplay';
 
 interface ProviderCardProps {
   provider: DbProvider;
