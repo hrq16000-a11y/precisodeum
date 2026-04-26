@@ -250,7 +250,7 @@ const DashboardProfilePage = () => {
     if (!form.category_id && !form.category_custom) { toast.error('Selecione uma categoria ou digite "Outro"'); return; }
     const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.phone);
     if (finalWhatsapp && !isValidWhatsApp(finalWhatsapp)) { toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)'); return; }
-    const finalPhone = toCanonical(form.phone);
+    const finalPhone = toCanonical(form.phone) ?? '';
     if (form.phone.trim() && !finalPhone) { toast.error('Número de telefone inválido (deve ter 10 ou 11 dígitos)'); return; }
     const cnpjDigits = form.cnpj.replace(/\D/g, '');
     if (cnpjDigits && cnpjDigits.length !== 14) { toast.error('CNPJ deve ter 14 dígitos'); return; }
