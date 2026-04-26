@@ -10,6 +10,12 @@ import { sanitizeSearchTokens } from '@/lib/searchSanitizer';
 import { calculateDistanceKm, hasCoordinates } from '@/lib/geoDistance';
 import { resolveDisplayName as _centralResolveDisplayName } from '@/lib/providerDisplay';
 import { getCityCoords } from '@/lib/cityCoords';
+import {
+  expandSearchTerms as _expandSearchTermsShared,
+  evaluateTextMatch,
+  normalizeSearchText,
+} from '@/lib/searchNormalization';
+import { calculateAuditedDistanceKm, type DistanceAudit } from '@/lib/distanceAudit';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
