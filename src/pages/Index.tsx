@@ -430,6 +430,9 @@ const Index = () => {
       {/* Categories rendered eagerly (not lazy) at the configured position to avoid CLS */}
       <CategoriesGrid categories={categories} isLoading={catsLoading} />
 
+      {/* GPS prompt — appears after the user scrolls past categories. */}
+      <GpsScrollPrompt />
+
       {sectionsAfterCategories.map(renderWrappedSection)}
       <Footer />
     </div>
