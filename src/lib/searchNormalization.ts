@@ -104,6 +104,23 @@ export function buildProviderSearchBlob(p: {
   );
 }
 
+const WORD_BOUNDARY_SAFE = (term: string) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export function hasSearchTermMatch(blob: string, term: string): boolean {
+  if (!blob || !term) return false;
+
+  const normalizedBlob = normalizeSearchText(blob);
+  const normalizedTerm = normalizeSearchText(term);
+  if (!normalizedTerm) return false;
+
+  if (normalizedTerm.includes(' ')) {
+    return normalizedBlob.includes(normalizedTerm);
+  }
+
+  const matcher = new RegExp(`(^|\\s)${WORD_BOUNDARY_SAFE(normalizedTerm)}(?=\\s|$)`, 'i');
+  return matcher.test(normalizedBlob);
+}
+
 /**
  * Score textual 0..1 — quantos termos da query batem no blob.
  * Bônus pequeno se TODOS os termos baterem.
@@ -112,7 +129,7 @@ export function computeTextRelevanceScore(blob: string, terms: string[]): number
   if (!terms.length) return 0;
   let matched = 0;
   for (const term of terms) {
-    if (term && blob.includes(term)) matched++;
+    if (term && hasSearchTermMatch(blob, term)) matched++;
   }
   const base = matched / terms.length;
   // Bônus de 10% para match completo (ajuda no desempate texto vs distância).
@@ -124,6 +141,7 @@ export interface ProviderTextMatch {
   score: number;
   matchedCount: number;
   termCount: number;
+  strongMatch: boolean;
 }
 
 /**
@@ -133,12 +151,12 @@ export interface ProviderTextMatch {
  */
 export function evaluateTextMatch(provider: Parameters<typeof buildProviderSearchBlob>[0], terms: string[]): ProviderTextMatch {
   if (!terms.length) {
-    return { matched: true, score: 0, matchedCount: 0, termCount: 0 };
+    return { matched: true, score: 0, matchedCount: 0, termCount: 0, strongMatch: false };
   }
   const blob = buildProviderSearchBlob(provider);
   let matched = 0;
   for (const term of terms) {
-    if (term && blob.includes(term)) matched++;
+    if (term && hasSearchTermMatch(blob, term)) matched++;
   }
   const threshold = terms.length === 1 ? 1 : Math.ceil(terms.length * 0.5);
   const score = computeTextRelevanceScore(blob, terms);
@@ -147,5 +165,6 @@ export function evaluateTextMatch(provider: Parameters<typeof buildProviderSearc
     score,
     matchedCount: matched,
     termCount: terms.length,
+    strongMatch: matched === terms.length,
   };
 }
