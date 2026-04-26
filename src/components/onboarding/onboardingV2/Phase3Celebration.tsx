@@ -80,20 +80,20 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
       if (!alive || !prov) return;
       if (prov.slug) setProviderSlug(prov.slug);
 
-      // checa fotos do 1º serviço
-      const { count: photoCount } = await supabase
+      // checa fotos do 1º serviço (cast para evitar inferência profunda do TS)
+      const photoRes: any = await (supabase as any)
         .from('media')
         .select('id', { count: 'exact', head: true })
         .eq('owner_id', userId)
         .eq('entity_type', 'service');
-      if (alive) setHasPhotos((photoCount || 0) > 0);
+      if (alive) setHasPhotos(((photoRes?.count as number) || 0) > 0);
 
       // checa álbum de portfólio
-      const { count: albumCount } = await supabase
+      const albumRes: any = await (supabase as any)
         .from('portfolio_albums')
         .select('id', { count: 'exact', head: true })
         .eq('provider_id', prov.id);
-      if (alive) setHasPortfolio((albumCount || 0) > 0);
+      if (alive) setHasPortfolio(((albumRes?.count as number) || 0) > 0);
     })();
     return () => { alive = false; };
   }, [userId]);
