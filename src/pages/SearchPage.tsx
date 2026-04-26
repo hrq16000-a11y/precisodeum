@@ -1018,10 +1018,61 @@ const SearchPage = () => {
                 )}
 
                 {totalDisplay === 0 && (
-                  <EmptyStateFallback
-                    title="Nenhum profissional encontrado"
-                    message="Tente alterar os filtros ou buscar por outro termo."
-                  />
+                  <div className="rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center">
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                      <Search className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-display text-base font-semibold text-foreground">
+                      Nenhum profissional encontrado
+                      {effectiveCity ? ` em ${effectiveCity}` : ''}
+                    </h3>
+                    <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                      {activeFilterCount > 0
+                        ? 'Tente remover alguns filtros ou ampliar a busca para a região vizinha.'
+                        : 'Tente buscar por outra cidade próxima ou outra categoria.'}
+                    </p>
+                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                      {activeFilterCount > 0 && (
+                        <Button size="sm" variant="outline" onClick={clearAllFilters} className="rounded-full">
+                          <X className="mr-1.5 h-3.5 w-3.5" /> Limpar filtros
+                        </Button>
+                      )}
+                      {effectiveCity && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full"
+                          onClick={() => {
+                            setSelectedCity('');
+                            setSelectedNeighborhood('');
+                            setPage(1);
+                            const next = new URLSearchParams(searchParams);
+                            next.delete('cidade');
+                            next.delete('bairro');
+                            setSearchParams(next, { replace: true });
+                          }}
+                        >
+                          <MapPin className="mr-1.5 h-3.5 w-3.5" /> Buscar na região vizinha
+                        </Button>
+                      )}
+                      {selectedCategory && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full"
+                          onClick={() => {
+                            setSelectedCategory('');
+                            setPage(1);
+                            const next = new URLSearchParams(searchParams);
+                            next.delete('categoria');
+                            setSearchParams(next, { replace: true });
+                          }}
+                        >
+                          <RefreshCcw className="mr-1.5 h-3.5 w-3.5" /> Ver todas as categorias
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 )}
 
                 {/* "Pergunte e Compare" — sem leilão */}
