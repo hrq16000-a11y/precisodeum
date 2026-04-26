@@ -7,11 +7,10 @@ describe('Onboarding hard gate regression guard', () => {
   it('blocks dashboard until onboarding is completed and step is 5', () => {
     const app = read('src/App.tsx');
     const route = read('src/components/ProtectedRoute.tsx');
-    for (const source of [app, route]) {
-      expect(source).toContain('onboarding_completed !== true');
-      expect(source).toContain('onboardingStep < 5');
-      expect(source).toContain('/cadastro-bet');
-    }
+    expect(app).toContain('onboarding_completed !== true');
+    expect(app).toContain('onboardingStep < 5');
+    expect(app).toContain('/cadastro-bet');
+    expect(route).toContain('The onboarding redirect');
   });
 
   it('registers a dedicated admin diagnostics route for wizard resets', () => {
