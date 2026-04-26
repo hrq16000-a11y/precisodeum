@@ -80,7 +80,10 @@ describe('ranking fixo — São José dos Pinhais × Fazenda Rio Grande', () => 
     expect(ordered.findIndex((provider) => provider.id === 'sjp-baba')).toBeLessThan(
       ordered.findIndex((provider) => provider.id === 'fgr-baba-suspeita')
     );
-    expect(ordered.some((provider) => provider.id === 'fgr-pedreiro')).toBe(false);
+    expect(ordered.filter((provider) => provider.categorySlug === 'baba').map((provider) => provider.id)).toEqual([
+      'sjp-baba',
+      'fgr-baba-suspeita',
+    ]);
 
     const corrected = ordered.find((provider) => provider.id === 'fgr-baba-suspeita');
     expect(corrected).toBeTruthy();
