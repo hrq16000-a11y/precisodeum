@@ -9,9 +9,10 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, MapPin, Briefcase, ArrowRight } from 'lucide-react';
+import { Sparkles, MapPin, Briefcase, ArrowRight, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Phase3Props {
   serviceName: string;
