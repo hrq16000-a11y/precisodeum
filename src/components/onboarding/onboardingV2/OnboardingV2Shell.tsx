@@ -297,7 +297,7 @@ export const OnboardingV2Shell = () => {
     clearOnboardingV2Draft();
     if (user?.id) void clearRemoteDraft(user.id);
     toast.success('Perfil completo! Bem-vindo.');
-    navigate('/dashboard');
+    navigate('/onboarding-v2/sucesso');
   };
 
   const renderPhase = () => {
