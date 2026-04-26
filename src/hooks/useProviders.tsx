@@ -829,6 +829,8 @@ export function filterAndRankProvidersGrouped(
     console.debug('[GeoAudit] Query:', { query, city, state, userLat, userLon, radiusKm, resultsBefore: results.length, terms: _terms });
   }
 
+  const userCityNorm = city ? normalize(city) : '';
+
   // Enrich with geo + relevance scores + audited distance
   const enriched = results.map((p, index) => {
     const isLocal = (intent !== 'SERVICE_ONLY' && (geoContext.cityNorm || geoContext.stateNorm))
@@ -866,7 +868,18 @@ export function filterAndRankProvidersGrouped(
   const localArr = hasGeoContext ? enriched.filter(e => e.isLocal) : enriched;
   const otherArr = hasGeoContext ? enriched.filter(e => !e.isLocal) : [];
 
-  const userCityNorm = city ? normalize(city) : '';
+  const legacyOrdered = [...enriched].sort((a, b) => {
+    if (a.isLocal !== b.isLocal) return a.isLocal ? -1 : 1;
+    if (a.scored.finalScore !== b.scored.finalScore) return b.scored.finalScore - a.scored.finalScore;
+    if (a.distanceKm !== Infinity && b.distanceKm !== Infinity) {
+      const distDiff = a.distanceKm - b.distanceKm;
+      if (Math.abs(distDiff) > 1) return distDiff;
+    }
+    if (a.distanceKm === Infinity && b.distanceKm !== Infinity) return 1;
+    if (b.distanceKm === Infinity && a.distanceKm !== Infinity) return -1;
+    return compareEliteMerit(a.p, b.p);
+  });
+  const legacyRankById = new Map(legacyOrdered.map((entry, idx) => [entry.p.id, idx + 1]));
 
   // Hybrid sort — texto domina; distância desempata e bônus para mesma cidade.
   const hybridSort = (a: typeof enriched[0], b: typeof enriched[0]) => {
@@ -937,7 +950,7 @@ export function filterAndRankProvidersGrouped(
     });
     const auditEntries = combined.map((e, afterIndex) => ({
       provider: toProvider(e),
-      beforeRank: e.originalIndex + 1,
+      beforeRank: legacyRankById.get(e.p.id) ?? e.originalIndex + 1,
       afterRank: afterIndex + 1,
       textRel: e.textRel,
       distanceKm: e.distanceKm,
@@ -971,7 +984,7 @@ export function filterAndRankProvidersGrouped(
   const finalOrdered = [...localArr, ...nearbyArr, ...outOfStateArr];
   const auditEntries = finalOrdered.map((e, afterIndex) => ({
     provider: toProvider(e),
-    beforeRank: e.originalIndex + 1,
+    beforeRank: legacyRankById.get(e.p.id) ?? e.originalIndex + 1,
     afterRank: afterIndex + 1,
     textRel: e.textRel,
     distanceKm: e.distanceKm,
