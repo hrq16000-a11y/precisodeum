@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, SearchX, Trophy, Search, Sparkles } from 'lucide-react';
+import { ChevronRight, SearchX, Search } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
@@ -44,70 +44,34 @@ const CategoriesViewAllButton = () => {
 // CSS-only animations — no framer-motion needed for this grid
 
 const CategoriesGrid = ({ categories, isLoading }: Props) => {
-  const [activeChip, setActiveChip] = useState(ALL_CHIP);
-
-  // Derive macro categories (parent_id IS NULL) that have subcategories with providers
-  const macros = useMemo(() => {
-    if (!categories.length) return [];
-    return categories.filter(c => !c.parent_id);
-  }, [categories]);
-
-  // Subcategories (those with parent_id set)
-  const subcategories = useMemo(() => {
-    return categories.filter(c => c.parent_id && c.count > 0);
-  }, [categories]);
-
-  // Top 4 categories: prioritize key macros, then by count
-  const topCategories = useMemo(() => {
-    const prioritySlugs = ['construcao-e-reforma', 'assistencia-tecnica', 'automoveis-e-veiculos'];
-    const priorityCats = prioritySlugs
-      .map(s => categories.find(c => c.slug === s))
-      .filter((c): c is CategoryItem => !!c);
-    const remaining = [...subcategories]
-      .filter(c => !prioritySlugs.includes(c.slug))
-      .sort((a, b) => b.count - a.count);
-    return [...priorityCats, ...remaining].slice(0, 4);
-  }, [categories, subcategories]);
-
-  // Visible items based on chip filter
+  // Subcategories with providers, shuffled randomly (stable per mount)
   const visible = useMemo(() => {
-    if (activeChip === ALL_CHIP) {
-      return subcategories.slice().sort((a, b) => b.count - a.count).slice(0, 6);
+    const subs = categories.filter(c => c.parent_id && c.count > 0);
+    const a = [...subs];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
     }
-    return subcategories.filter(c => c.parent_id === activeChip).slice(0, 9);
-  }, [activeChip, subcategories]);
+    return a.slice(0, 12);
+  }, [categories]);
 
-  // Chips that have at least one subcategory with providers
-  const activeChips = useMemo(() => {
-    const subParentIds = new Set(subcategories.map(s => s.parent_id));
-    return macros.filter(m => subParentIds.has(m.id));
-  }, [macros, subcategories]);
-
-  const CategoryCard = ({ cat, featured = false }: { cat: CategoryItem; featured?: boolean }) => (
+  const CategoryCard = ({ cat }: { cat: CategoryItem }) => (
     <Link
       to={`/categoria/${cat.slug}`}
-      className={`group relative flex flex-col items-center justify-center gap-2 rounded-3xl bg-card text-center shadow-[0_2px_12px_-2px_rgb(0_0_0/0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgb(0_0_0/0.12)] hover:-translate-y-1 h-full ${
-        featured ? 'min-h-[8rem] p-4' : 'min-h-[6.5rem] p-3'
-      }`}
+      className="group relative flex flex-col items-center justify-center gap-2 rounded-3xl bg-card text-center shadow-[0_2px_12px_-2px_rgb(0_0_0/0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgb(0_0_0/0.12)] hover:-translate-y-1 h-full min-h-[6.5rem] p-3"
     >
-      {/* Hover overlay */}
       <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500" />
-
-      <span className={`relative flex items-center justify-center rounded-2xl bg-accent/10 group-hover:bg-accent/20 transition-colors duration-300 ${
-        featured ? 'h-14 w-14' : 'h-12 w-12'
-      }`}>
-        <CategoryIcon icon={cat.icon} size={featured ? 30 : 26} className="text-accent" />
+      <span className="relative flex items-center justify-center rounded-2xl bg-accent/10 group-hover:bg-accent/20 transition-colors duration-300 h-12 w-12">
+        <CategoryIcon icon={cat.icon} size={26} className="text-accent" />
       </span>
-      <span className={`relative font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words w-full ${
-        featured ? 'text-xs' : 'text-[0.6875rem]'
-      }`} style={{ hyphens: 'auto' }}>
+      <span className="relative font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words w-full text-[0.6875rem]" style={{ hyphens: 'auto' }}>
         {cat.name}
       </span>
     </Link>
   );
 
   return (
-    <section className="py-8 md:py-12 min-h-[600px] md:min-h-[500px]">
+    <section className="py-8 md:py-12 min-h-[420px]">
       <div className="container">
         <div className="mb-6 text-center">
           <span className="inline-block rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent mb-2">
@@ -124,88 +88,25 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
         {isLoading ? (
           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" aria-hidden="true">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="aspect-square rounded-3xl" />
+              <Skeleton key={i} className="min-h-[6.5rem] rounded-3xl" />
             ))}
           </div>
-        ) : (
+        ) : visible.length > 0 ? (
           <>
-            {/* Top Categories */}
-            {topCategories.length >= 4 && activeChip === ALL_CHIP && (
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Trophy className="h-4 w-4 text-accent" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Mais Buscadas
-                  </span>
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr">
+              {visible.map((cat) => (
+                <div key={cat.id} className="animate-fade-in" style={{ animationFillMode: 'both' }}>
+                  <CategoryCard cat={cat} />
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {topCategories.map((cat, i) => (
-                    <div key={cat.id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}>
-                      <CategoryCard cat={cat} featured />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Filter Chips */}
-            {activeChips.length > 0 && (
-              <div className="mb-4 flex gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap md:justify-center">
-                <button
-                  onClick={() => setActiveChip(ALL_CHIP)}
-                  className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition-all duration-200 ${
-                    activeChip === ALL_CHIP
-                      ? 'bg-accent text-accent-foreground shadow-sm'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-                >
-                  <Sparkles className="inline h-3.5 w-3.5 mr-1 -mt-0.5" /> Todos
-                </button>
-                {activeChips.map(macro => (
-                  <button
-                    key={macro.id}
-                    onClick={() => setActiveChip(macro.id)}
-                    className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
-                      activeChip === macro.id
-                        ? 'bg-accent text-accent-foreground shadow-sm'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
-                  >
-                    <CategoryIcon icon={macro.icon} size={14} className="inline mr-1 -mt-0.5 text-current" /> {macro.name}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Grid */}
-            {visible.length > 0 ? (
-              <div
-                key={activeChip}
-                className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr"
-              >
-                {visible.map((cat) => (
-                  <div key={cat.id} className="animate-fade-in" style={{ animationFillMode: 'both' }}>
-                    <CategoryCard cat={cat} />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center animate-fade-in">
-                <SearchX className="h-12 w-12 text-muted-foreground/40 mb-3" />
-                <p className="text-sm font-semibold text-muted-foreground">Nenhuma categoria encontrada</p>
-                <a
-                  href="https://wa.me/5500000000000?text=Gostaria%20de%20sugerir%20uma%20categoria"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 rounded-full bg-accent px-4 py-2 text-xs font-bold text-accent-foreground transition-transform hover:scale-105"
-                >
-                  Sugerir Categoria
-                </a>
-              </div>
-            )}
-
+              ))}
+            </div>
             <CategoriesViewAllButton />
           </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center animate-fade-in">
+            <SearchX className="h-12 w-12 text-muted-foreground/40 mb-3" />
+            <p className="text-sm font-semibold text-muted-foreground">Nenhuma categoria encontrada</p>
+          </div>
         )}
       </div>
     </section>
