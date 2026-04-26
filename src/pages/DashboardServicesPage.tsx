@@ -1154,8 +1154,8 @@ const DashboardServicesPage = () => {
               </>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <NextStepPrompt
         open={showNextStepPrompt}
