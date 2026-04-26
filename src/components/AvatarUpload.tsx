@@ -18,6 +18,7 @@ interface AvatarUploadProps {
 const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(({ userId, currentUrl, initials, onUploaded }, ref) => {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.files?.[0];
