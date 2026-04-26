@@ -589,8 +589,13 @@ const DashboardPage = () => {
         avatarUrl={profile?.avatar_url || undefined}
       />
 
-      {/* 1) Score único de Saúde do Perfil — substitui ProfileHealthScore + Completude duplicada */}
+      {/* 1) Painel "Saúde e Performance" — métricas + score gamificado + tendência + atividade */}
       <div className="mt-6">
+        <DashboardAnalytics />
+      </div>
+
+      {/* Mantém UnifiedHealthScore como complemento de completude rápida */}
+      <div className="mt-4">
         <UnifiedHealthScore score={completenessPercent} remaining={remainingItems} />
       </div>
 
