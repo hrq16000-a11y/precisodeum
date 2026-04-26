@@ -49,6 +49,7 @@ export const initialOnboardingState: OnboardingState = {
   },
   service: {
     service_name: '',
+    description: '',
     category_ids: [],
     cities_served: [],
     starting_price_brl: null,
