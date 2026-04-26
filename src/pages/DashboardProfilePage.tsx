@@ -15,6 +15,7 @@ import { getInitials, getSocialAvatarUrl } from '@/lib/avatarUtils';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
+import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { generateProviderSlug } from '@/lib/slugify';
 import { invalidateProviderProfileCache } from '@/pages/ProviderProfile';
 import { fetchAllMunicipalities, geocodeCity, reverseGeocode, normalize, type CityResult } from '@/lib/geoUtils';
@@ -278,16 +279,18 @@ const DashboardProfilePage = () => {
       const finalCpf = isAutonomo ? (cpfDigits || null) : null;
       const finalBusinessName = isAutonomo ? null : (form.business_name || null);
 
-      // IMPORTANTE: colunas city/state/description/whatsapp/phone em `providers`
-      // são NOT NULL com DEFAULT ''. Forçar coalesce para string vazia evita
-      // erro 23502 (null violates not-null) quando o usuário ainda não preencheu.
-      const providerPayload = {
+      // Fonte única de normalização (src/lib/providerPayload.ts) — compartilhada
+      // com SmartOnboardingWizard. Garante que colunas NOT NULL DEFAULT ''
+      // (description/city/state/phone/whatsapp) nunca recebam null/undefined,
+      // evitando erro 23502. Cobertura: src/test/provider-payload-normalization.test.ts.
+      const providerPayload = normalizeProviderPayload({
         business_name: finalBusinessName,
         description: form.description ?? '',
         city: form.city ?? '',
         state: form.state ?? '',
         neighborhood: form.neighborhood || null,
         whatsapp: finalWhatsapp ?? '',
+        phone: finalPhone ?? '',
         website: form.website || null,
         years_experience: form.years_experience,
         working_hours: form.working_hours || null,
@@ -297,7 +300,7 @@ const DashboardProfilePage = () => {
         birth_date: form.birth_date || null,
         ibge_code: form.ibge_code || null,
         latitude, longitude,
-      };
+      });
 
       // Slug regen: se nome ou cidade mudaram em relação ao provider salvo,
       // gera um novo slug e tenta persistir; em caso de colisão única, anexa

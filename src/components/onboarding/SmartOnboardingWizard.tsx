@@ -54,6 +54,11 @@ import { formatCityState, safeUF } from '@/lib/locationFormat';
 import { isValidCpfCnpj } from '@/lib/cpfCnpj';
 import { validateWhatsapp, sanitizePhone, formatPhoneDisplay } from '@/lib/whatsapp';
 import CpfCnpjInput, { maskCpfCnpj } from './CpfCnpjInput';
+import {
+  normalizeProviderPayload,
+  validateProviderCriticalFields,
+  PROVIDER_VALIDATION_MESSAGES,
+} from '@/lib/providerPayload';
 
 
 
@@ -814,16 +819,18 @@ const BasicOnboardingWizard = () => {
         const { data: existing } = await supabase.from('providers').select('*').eq('user_id', user.id).limit(1);
         if (existing && existing[0]) {
           currentStage = 'providers.update';
-          // Mesma regra do insert: nunca enviar null em colunas NOT NULL com default ''.
-          const updPayload = {
+          // Normalização compartilhada com DashboardProfilePage (src/lib/providerPayload.ts)
+          // garante que NUNCA enviaremos null em colunas NOT NULL com default ''.
+          const updPayload = normalizeProviderPayload({
             city: city || existing[0].city || '',
             state: state || existing[0].state || '',
             neighborhood: neighborhood.trim() || existing[0].neighborhood,
             description: bio || existing[0].description || '',
             whatsapp: whatsapp || existing[0].whatsapp || '',
+            phone: whatsapp || existing[0].phone || '',
             category_id: selectedCategoryIds[0] || existing[0].category_id,
             account_type: providerSubtype || existing[0].account_type || 'autonomous',
-          };
+          });
           currentPayload = updPayload;
           const { error: updErr } = await supabase.from('providers').update(updPayload as any).eq('id', existing[0].id);
           if (updErr) throw updErr;
@@ -831,11 +838,10 @@ const BasicOnboardingWizard = () => {
         } else {
           currentStage = 'providers.insert';
           const baseSlug = slugify(fullName || user.email?.split('@')[0] || 'profissional');
-          // IMPORTANTE: as colunas city/state/description/whatsapp/phone são NOT NULL
-          // no banco com DEFAULT ''. NUNCA enviar `null` — usar string vazia para
-          // que o default seja respeitado e o usuário possa "Pular passo" sem
-          // bloquear o cadastro com erro 23502.
-          const insPayload = {
+          // Normalizado por src/lib/providerPayload.ts — fonte única de verdade.
+          // Cobre: erro 23502 (null violates not-null) ao "Pular passo" do bio,
+          // cidade ou whatsapp. Testes em src/test/provider-payload-normalization.test.ts.
+          const insPayload = normalizeProviderPayload({
             user_id: user.id,
             slug: `${baseSlug}-${user.id.slice(0, 6)}`,
             city: city || '',
@@ -847,7 +853,7 @@ const BasicOnboardingWizard = () => {
             category_id: selectedCategoryIds[0] || null,
             account_type: providerSubtype || 'autonomous',
             status: 'pending',
-          };
+          });
           currentPayload = insPayload;
           const { data: created, error } = await supabase.from('providers').insert(insPayload as any).select('*').single();
           if (error) throw error;
@@ -927,7 +933,14 @@ const BasicOnboardingWizard = () => {
   };
 
   const handleSkipStep3 = async () => {
-    toast.info('Você pode completar estes dados depois no dashboard.');
+    // Skip permitido apenas em campos NÃO críticos (bio, categoria, doc).
+    // Nome completo e WhatsApp são obrigatórios — bloqueio inline com toast claro.
+    const issues = validateProviderCriticalFields({ full_name: fullName, whatsapp });
+    if (issues.length > 0) {
+      issues.forEach((i) => toast.error(PROVIDER_VALIDATION_MESSAGES[i]));
+      return;
+    }
+    toast.info('Você pode completar os dados opcionais depois no dashboard.');
     await advanceTo(profileType === 'provider' ? 4 : 5);
   };
 
