@@ -278,13 +278,25 @@ const DashboardProfilePage = () => {
       const finalCpf = isAutonomo ? (cpfDigits || null) : null;
       const finalBusinessName = isAutonomo ? null : (form.business_name || null);
 
+      // IMPORTANTE: colunas city/state/description/whatsapp/phone em `providers`
+      // são NOT NULL com DEFAULT ''. Forçar coalesce para string vazia evita
+      // erro 23502 (null violates not-null) quando o usuário ainda não preencheu.
       const providerPayload = {
-        business_name: finalBusinessName, description: form.description,
-        city: form.city, state: form.state, neighborhood: form.neighborhood,
-        whatsapp: finalWhatsapp, website: form.website || null, years_experience: form.years_experience,
+        business_name: finalBusinessName,
+        description: form.description ?? '',
+        city: form.city ?? '',
+        state: form.state ?? '',
+        neighborhood: form.neighborhood || null,
+        whatsapp: finalWhatsapp ?? '',
+        website: form.website || null,
+        years_experience: form.years_experience,
         working_hours: form.working_hours || null,
-        category_id: form.category_id || null, category_custom: form.category_custom || null,
-        cnpj: finalCnpj, cpf: finalCpf, birth_date: form.birth_date || null, ibge_code: form.ibge_code || null, latitude, longitude,
+        category_id: form.category_id || null,
+        category_custom: form.category_custom || null,
+        cnpj: finalCnpj, cpf: finalCpf,
+        birth_date: form.birth_date || null,
+        ibge_code: form.ibge_code || null,
+        latitude, longitude,
       };
 
       // Slug regen: se nome ou cidade mudaram em relação ao provider salvo,
