@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useCategoriesInRegion } from '@/hooks/useCategoriesInRegion';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CategoryItem {
   id: string;
