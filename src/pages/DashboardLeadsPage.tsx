@@ -34,6 +34,9 @@ import { useLeadAlertPreference } from '@/hooks/useLeadAlertPreference';
 import LeadsFunnelBoard, { statusToFunnel, type FunnelKey } from '@/components/leads/LeadsFunnelBoard';
 import WhatsappTemplatesModal from '@/components/leads/WhatsappTemplatesModal';
 import SendWhatsappWithTemplates from '@/components/leads/SendWhatsappWithTemplates';
+import LeadStatusSelect from '@/components/leads/LeadStatusSelect';
+import LeadHistoryTimeline from '@/components/leads/LeadHistoryTimeline';
+import WeeklyGoalsWidget from '@/components/leads/WeeklyGoalsWidget';
 import { burstConfetti, playCoinsSound } from '@/lib/betDopamine';
 
 interface LeadHistoryItem {
@@ -432,6 +435,11 @@ const DashboardLeadsPage = () => {
         <LeadsFunnelBoard leads={leads} active={funnelKey} onChange={setFunnelKey} />
       </div>
 
+      {/* Widget: metas e performance da semana */}
+      <div className="mt-3">
+        <WeeklyGoalsWidget leads={leads} history={history as any} userId={user?.id} />
+      </div>
+
       {/* Botão Modelos de mensagem (acima dos chips) */}
       <div className="mt-3 flex justify-end">
         <button
@@ -706,14 +714,22 @@ const DashboardLeadsPage = () => {
                     </div>
                   </div>
                   <div className="shrink-0 space-y-2 sm:text-right">
-                    <Select value={lead.status} onValueChange={(value) => handleStatusChange(lead, value as LeadStatus)}>
-                      <SelectTrigger className="h-8 w-full sm:w-44"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {STATUS_KEYS.map((s) => (
-                          <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <LeadStatusSelect
+                      leadId={lead.id}
+                      currentStatus={lead.status}
+                      onChanged={(s) => {
+                        playAlert();
+                        if (s === 'completed') {
+                          void burstConfetti('mega');
+                          playCoinsSound(0.2);
+                          toast.success('Lead concluído! +100 pts de engajamento', {
+                            description: 'Continue assim para subir no ranking.',
+                          });
+                        }
+                      }}
+                      className="h-8 w-full sm:w-44"
+                      size="sm"
+                    />
                     <div className="flex items-center gap-2 sm:justify-end">
                       <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"><Phone className="h-3 w-3" /> {lead.phone}</a>
                       <SendWhatsappWithTemplates
@@ -735,26 +751,12 @@ const DashboardLeadsPage = () => {
                   <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-foreground">
                     <History className="h-4 w-4 text-primary" /> Timeline
                   </div>
-                  <div className="space-y-3">
-                    {leadHistory.length === 0 && <p className="text-xs text-muted-foreground">Nenhuma movimentação registrada ainda.</p>}
-                    {leadHistory.map((item) => {
-                      const isStatus = item.entry_type === 'status_change';
-                      const oldM = isStatus && item.old_status && (STATUS_META as any)[item.old_status];
-                      const newM = isStatus && item.new_status && (STATUS_META as any)[item.new_status];
-                      return (
-                        <div key={item.id} className="border-l-2 border-primary/30 pl-3">
-                          <div className="flex flex-wrap items-center gap-2 text-xs">
-                            <Badge variant="outline">{isStatus ? 'Status' : 'Mensagem'}</Badge>
-                            <span className="text-muted-foreground">{item.author_id === user?.id ? (profile?.full_name || 'Você') : 'Sistema'}</span>
-                            <span className="text-muted-foreground">{new Date(item.created_at).toLocaleString('pt-BR')}</span>
-                          </div>
-                          {isStatus && oldM && newM && <p className="mt-1 text-xs text-muted-foreground">{oldM.label} → <strong className="text-foreground">{newM.label}</strong></p>}
-                          {item.message && <p className="mt-1 text-sm text-foreground">{item.message}</p>}
-                          {item.attachment_url && <a className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline" href={item.attachment_url} target="_blank" rel="noreferrer"><Paperclip className="h-3 w-3" />{item.attachment_name || 'Anexo'}</a>}
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <LeadHistoryTimeline
+                    items={leadHistory as any}
+                    currentUserId={user?.id}
+                    compact
+                    maxItems={4}
+                  />
                   <div className="mt-3 flex gap-2">
                     <Input value={historyDrafts[lead.id] || ''} onChange={(event) => setHistoryDrafts((prev) => ({ ...prev, [lead.id]: event.target.value }))} placeholder="Adicionar nota ao histórico" className="h-9 text-xs" maxLength={500} />
                     <Button size="sm" variant="outline" onClick={() => addHistoryMessage(lead.id)} className="gap-1"><Send className="h-3 w-3" />Salvar</Button>

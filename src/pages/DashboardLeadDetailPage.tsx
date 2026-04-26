@@ -15,6 +15,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import RescheduleFollowupDialog from '@/components/leads/RescheduleFollowupDialog';
 import LeadConcludeActions from '@/components/leads/LeadConcludeActions';
+import LeadStatusSelect from '@/components/leads/LeadStatusSelect';
+import LeadHistoryTimeline from '@/components/leads/LeadHistoryTimeline';
 import { useUpdateLeadStatus, STATUS_META, isOverdue, type LeadStatus, type LeadRow, type LeadHistoryEntry } from '@/hooks/useLeadFollowup';
 
 const STATUS_KEYS: LeadStatus[] = ['new', 'contacted', 'scheduled', 'completed', 'lost'];
@@ -140,10 +142,12 @@ const DashboardLeadDetailPage = () => {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Select value={lead.status} onValueChange={(v) => updateStatus.mutate({ leadId: lead.id, status: v as LeadStatus })}>
-            <SelectTrigger className="h-9 w-44"><SelectValue /></SelectTrigger>
-            <SelectContent>{STATUS_KEYS.map(s => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}</SelectContent>
-          </Select>
+          <LeadStatusSelect
+            leadId={lead.id}
+            currentStatus={lead.status}
+            onChanged={() => leadQuery.refetch()}
+            className="h-9 w-44"
+          />
           <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"><Phone className="h-3.5 w-3.5" /> Ligar</a>
           <a href={whatsappLink(lead.phone, `Olá ${lead.client_name}, recebi sua solicitação. Como posso ajudar?`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground hover:bg-accent/90"><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</a>
           <Button size="sm" variant="outline" onClick={() => setRescheduleOpen(true)} className="gap-1"><CalendarClock className="h-3.5 w-3.5" /> Reagendar follow-up</Button>
@@ -161,25 +165,8 @@ const DashboardLeadDetailPage = () => {
 
       <div className="mt-5 rounded-xl border border-border bg-card p-5 shadow-card">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground"><History className="h-4 w-4 text-primary" /> Histórico e mensagens</div>
-        <div className="mt-3 space-y-3">
-          {history.length === 0 && <p className="text-xs text-muted-foreground">Nenhuma movimentação registrada ainda.</p>}
-          {history.map(item => {
-            const isStatus = item.entry_type === 'status_change';
-            const oldM = isStatus && item.old_status && (STATUS_META as any)[item.old_status];
-            const newM = isStatus && item.new_status && (STATUS_META as any)[item.new_status];
-            return (
-              <div key={item.id} className="border-l-2 border-primary/30 pl-3">
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <Badge variant="outline">{item.entry_type}</Badge>
-                  <span className="text-muted-foreground">{(item as any).author_id === user?.id ? (profile?.full_name || 'Você') : 'Sistema'}</span>
-                  <span className="text-muted-foreground">{new Date(item.created_at).toLocaleString('pt-BR')}</span>
-                </div>
-                {isStatus && oldM && newM && <p className="mt-1 text-xs text-muted-foreground">{oldM.label} → <strong className="text-foreground">{newM.label}</strong></p>}
-                {item.message && <p className="mt-1 text-sm text-foreground">{item.message}</p>}
-                {(item as any).attachment_url && <a className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline" href={(item as any).attachment_url} target="_blank" rel="noreferrer"><Paperclip className="h-3 w-3" />{(item as any).attachment_name || 'Anexo'}</a>}
-              </div>
-            );
-          })}
+        <div className="mt-3">
+          <LeadHistoryTimeline items={history as any} currentUserId={user?.id} />
         </div>
         <div className="mt-4 flex gap-2">
           <Input value={draft} onChange={e => setDraft(e.target.value)} placeholder="Adicionar nota ao histórico" maxLength={500} />

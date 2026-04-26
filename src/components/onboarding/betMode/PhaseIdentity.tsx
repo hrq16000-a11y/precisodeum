@@ -77,7 +77,11 @@ export default function PhaseIdentity({ state, patch, next, addPoints }: Props) 
             onChange={(e) => patch({ full_name: e.target.value })}
             onBlur={() => phoneRef.current?.focus()}
             placeholder="Seu nome aqui"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
+            className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:ring-2 ${
+              nameAwarded
+                ? 'border-emerald-500 ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] focus:border-emerald-500 focus:ring-emerald-300/50'
+                : 'border-input focus:border-amber-400 focus:ring-amber-300/40'
+            }`}
           />
         </label>
 
@@ -95,7 +99,11 @@ export default function PhaseIdentity({ state, patch, next, addPoints }: Props) 
             name="whatsapp"
             value={state.whatsapp}
             onChange={(_, raw) => patch({ whatsapp: raw })}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
+            className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:ring-2 ${
+              phoneAwarded
+                ? 'border-emerald-500 ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] focus:border-emerald-500 focus:ring-emerald-300/50'
+                : 'border-input focus:border-amber-400 focus:ring-amber-300/40'
+            }`}
           />
           <span className="mt-1 block text-[11px] text-muted-foreground">
             Usado para receber leads — DDD obrigatório.

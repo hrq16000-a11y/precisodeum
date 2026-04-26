@@ -61,7 +61,9 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
             </span>
           )}
         </span>
-        <CityAutocomplete value={{ city: state.city, state: state.state }} onChange={handleCity} placeholder="Digite sua cidade" />
+        <div className={`rounded-lg transition ${awarded ? 'ring-2 ring-emerald-300/60 shadow-[0_0_14px_rgba(16,185,129,0.35)]' : ''}`}>
+          <CityAutocomplete value={{ city: state.city, state: state.state }} onChange={handleCity} placeholder="Digite sua cidade" />
+        </div>
       </div>
 
       <Button

@@ -94,7 +94,7 @@ export default function BetModeShell() {
     goto(intent === 'client' ? 'client_city' : 'pro_kind');
   }
 
-  /** Cliente fast-pass: salva e libera o gate de onboarding. */
+  /** Cliente fast-pass: salva, libera o gate e redireciona DIRETO ao destino — sem tela extra. */
   async function finishClient() {
     if (!user) { toast.error('Faça login antes de continuar'); return; }
     try {
@@ -111,7 +111,6 @@ export default function BetModeShell() {
         })
         .eq('id', user.id);
       if (error) throw error;
-      // Pontos (best-effort, não bloqueia o fluxo).
       try {
         await (supabase as any)
           .from('profiles')
@@ -121,7 +120,8 @@ export default function BetModeShell() {
           .eq('id', user.id);
       } catch { /* noop */ }
       await refetchProfile?.();
-      goto('celebration');
+      toast.success(`+${state.points} pts conquistados!`, { description: 'Bem-vindo. Levando você ao destino…' });
+      navigate(next, { replace: true });
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao salvar cadastro');
     }
