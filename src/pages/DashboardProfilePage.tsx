@@ -661,6 +661,13 @@ const DashboardProfilePage = () => {
                     )}
                   </div>
 
+                  <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">
+                      Status da verificação de identidade
+                    </p>
+                    <VerificationStatusBadge userId={user?.id} showHistory />
+                  </div>
+
                   {form.account_kind === 'autonomo' && (
                     <div>
                       <label className={labelCls}>CPF <span className="text-muted-foreground font-normal">(opcional · pontua engajamento)</span></label>
