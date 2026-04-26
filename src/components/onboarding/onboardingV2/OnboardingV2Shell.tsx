@@ -77,7 +77,7 @@ export const OnboardingV2Shell = () => {
     };
   });
   const [saving, setSaving] = useState(false);
-  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
 
   // Frente 4 — duplicidade inline (whatsapp + tax_id)
   const dup = useWizardDuplicateCheck();
@@ -87,12 +87,12 @@ export const OnboardingV2Shell = () => {
   // Auto-save remoto com debounce (cross-device)
   useOnboardingV2RemoteDraft(state, user?.id);
 
-  // Aviso de "rascunho restaurado" quando aplicável
+  // Aviso de "rascunho restaurado" do LOCAL (mesmo dispositivo)
   useEffect(() => {
     const draft = readOnboardingV2Draft();
     if (draft && draft.phase && draft.phase !== 'phase1_action') {
-      setDraftRestored(true);
-      const t = setTimeout(() => setDraftRestored(false), 4000);
+      setDraftRestored({ source: 'local' });
+      const t = setTimeout(() => setDraftRestored(null), 5000);
       return () => clearTimeout(t);
     }
   }, []);
@@ -114,8 +114,8 @@ export const OnboardingV2Shell = () => {
           phase: remote.phase as any,
         },
       });
-      setDraftRestored(true);
-      setTimeout(() => setDraftRestored(false), 4000);
+      setDraftRestored({ source: 'remote', at: remote.updated_at });
+      setTimeout(() => setDraftRestored(null), 6000);
     })();
     return () => { alive = false; };
   }, [user?.id]);
