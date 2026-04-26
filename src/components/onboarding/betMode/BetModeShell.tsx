@@ -5,8 +5,8 @@
  *  - Isolado de V1 (/triagem) e V2 (/onboarding-v2) — NÃO os toca.
  *  - Salva direto em profiles (e providers para PJ/PF profissional).
  *  - Cliente: fast-pass, marca onboarding_completed=true e redireciona ao ?next=.
- *  - Profissional: completa identificação básica e empurra para /onboarding-v2
- *    para criar o 1º serviço (mantém ServiceWizard atômico — não duplica lógica).
+ *  - Profissional: completa identificação básica e segue no fluxo único para
+ *    criar o 1º serviço sem repetir nome, WhatsApp e cidade já capturados.
  */
 import { useEffect, useMemo, useReducer } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -212,8 +212,7 @@ export default function BetModeShell() {
     if (state.intent === 'client') {
       navigate(next, { replace: true });
     } else {
-      // V2 conduz a criação do 1º serviço
-      navigate('/onboarding-v2', { replace: true });
+      navigate('/dashboard/servicos?action=new', { replace: true });
     }
   }
 
