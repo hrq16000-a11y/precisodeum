@@ -46,36 +46,75 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
         });
       }
 
-      return (data || []).map((p: any): DbProvider & { distanceKm: number; isOnline: boolean; visibilityScore: number } => ({
-        id: p.id,
-        userId: p.user_id,
-        name: p.business_name || 'Profissional',
-        businessName: p.business_name || undefined,
-        category: p.category_name || '',
-        categorySlug: p.category_slug || '',
-        categoryIcon: p.category_icon || '🔧',
-        city: p.city || '',
-        state: p.state || '',
-        neighborhood: p.neighborhood || '',
-        latitude: p.latitude ?? null,
-        longitude: p.longitude ?? null,
-        rating: Number(p.rating_avg) || 0,
-        reviewCount: p.review_count || 0,
-        photo: p.photo_url || '',
-        description: p.description || '',
-        phone: p.phone || '',
-        whatsapp: p.whatsapp || p.phone || '',
-        yearsExperience: p.years_experience || 0,
-        plan: p.plan || 'free',
-        slug: p.slug || p.id,
-        featured: p.featured || false,
-        servicesCount: p.services_count || 0,
-        portfolioAlbumCount: p.portfolio_album_count || 0,
-        portfolioPhotoCount: p.portfolio_photo_count || 0,
-        distanceKm: p.distance_m != null ? Math.round((p.distance_m / 1000) * 10) / 10 : 0,
-        isOnline: !!p.is_online,
-        visibilityScore: Number(p.visibility_score) || 0,
-      }));
+      const rows = (data || []) as any[];
+
+      // Enriquecimento: nome real + avatar real do profile (a RPC não retorna).
+      const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))];
+      const profileMap: Record<string, { name: string | null; avatar: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: profs } = await supabase
+          .from('public_profiles' as any)
+          .select('id, full_name, avatar_url')
+          .in('id', userIds);
+        (profs as any[] | null)?.forEach((p) => {
+          profileMap[p.id] = { name: p.full_name || null, avatar: p.avatar_url || null };
+        });
+      }
+
+      // Bloqueio de "nomes" genéricos vazados em business_name
+      const _norm = (s: string) =>
+        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
+      const GENERIC = new Set([
+        'pedreiro','padeiro','padreiro','eletricista','encanador','pintor','autonomo','profissional',
+        'empreiteiro','marceneiro','jardineiro','tecnico','mecanico','servicosgerais','diarista',
+        'cozinheiro','motorista','soldador','vidraceiro','gesseiro','azulejista','prestador',
+        'profissionalautonomo','servico','servicos','autonoma','prestadora','tecnica',
+      ]);
+      const isGeneric = (s?: string | null) => {
+        if (!s) return true;
+        const n = _norm(s);
+        return !n || GENERIC.has(n);
+      };
+
+      return rows.map((p: any): DbProvider & { distanceKm: number; isOnline: boolean; visibilityScore: number } => {
+        const profile = profileMap[p.user_id];
+        const fullName = profile?.name?.trim() || '';
+        const businessName = (p.business_name || '').trim();
+        const safeBusinessName = isGeneric(businessName) ? '' : businessName;
+        const resolvedName = fullName || safeBusinessName || (p.city ? `Profissional em ${p.city}` : 'Profissional');
+        const resolvedPhoto = (p.photo_url || profile?.avatar || '').trim();
+
+        return {
+          id: p.id,
+          userId: p.user_id,
+          name: resolvedName,
+          businessName: safeBusinessName || undefined,
+          category: p.category_name || '',
+          categorySlug: p.category_slug || '',
+          categoryIcon: p.category_icon || '🔧',
+          city: p.city || '',
+          state: p.state || '',
+          neighborhood: p.neighborhood || '',
+          latitude: p.latitude ?? null,
+          longitude: p.longitude ?? null,
+          rating: Number(p.rating_avg) || 0,
+          reviewCount: p.review_count || 0,
+          photo: resolvedPhoto,
+          description: p.description || '',
+          phone: p.phone || '',
+          whatsapp: p.whatsapp || p.phone || '',
+          yearsExperience: p.years_experience || 0,
+          plan: p.plan || 'free',
+          slug: p.slug || p.id,
+          featured: p.featured || false,
+          servicesCount: p.services_count || 0,
+          portfolioAlbumCount: p.portfolio_album_count || 0,
+          portfolioPhotoCount: p.portfolio_photo_count || 0,
+          distanceKm: p.distance_m != null ? Math.round((p.distance_m / 1000) * 10) / 10 : 0,
+          isOnline: !!p.is_online,
+          visibilityScore: Number(p.visibility_score) || 0,
+        };
+      });
     },
     // Permite chamar sem GPS — quando lat/lng são null, o RPC retorna ranking
     // dominado por status Online + engagement.
