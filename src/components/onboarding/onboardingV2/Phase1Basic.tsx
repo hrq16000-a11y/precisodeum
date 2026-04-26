@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useAuth } from '@/hooks/useAuth';
-import type { OnboardingProfileData, ProfileTypeChoice } from './types';
+import type { OnboardingCoreField, OnboardingProfileData, ProfileTypeChoice } from './types';
 
 /* ───── 1.1 Atuação ───── */
 
@@ -134,6 +134,7 @@ interface LocationProps {
   onNext: () => void;
   onBack: () => void;
   onSkip: () => void;
+  locks?: Partial<Record<OnboardingCoreField, boolean>>;
 }
 
 function getInitials(name: string): string {
@@ -144,7 +145,7 @@ function getInitials(name: string): string {
   return (first + last).toUpperCase().slice(0, 2);
 }
 
-export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip }: LocationProps) => {
+export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }: LocationProps) => {
   const { user } = useAuth();
   const [requestingGps, setRequestingGps] = useState(false);
   const { requestPreciseLocation } = useGeoCity();
@@ -208,7 +209,9 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip }: Locat
             value={data.city}
             onChange={(e) => onChange({ city: e.target.value })}
             placeholder="Sua cidade"
+            disabled={!!locks?.city}
           />
+          {locks?.city && <p className="mt-1 text-[11px] text-emerald-600">Já preenchido</p>}
         </div>
         <div>
           <Label className="text-xs">UF</Label>
@@ -217,7 +220,9 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip }: Locat
             onChange={(e) => onChange({ state: e.target.value.toUpperCase().slice(0, 2) })}
             maxLength={2}
             placeholder="UF"
+            disabled={!!locks?.state}
           />
+          {locks?.state && <p className="mt-1 text-[11px] text-emerald-600">Já preenchido</p>}
         </div>
       </div>
 
@@ -237,6 +242,7 @@ interface ContactProps {
   onSubmit: () => void;
   onBack: () => void;
   saving: boolean;
+  locks?: Partial<Record<OnboardingCoreField, boolean>>;
   /** Frente 4 — duplicidade inline (whatsapp). */
   duplicateWhatsapp?: boolean;
   checkingWhatsapp?: boolean;
@@ -254,6 +260,7 @@ function formatWhatsappVisible(digits: string): string {
 
 export const Phase1Contact = ({
   data, onChange, onSubmit, onBack, saving,
+  locks,
   duplicateWhatsapp = false, checkingWhatsapp = false, onWhatsappBlur,
 }: ContactProps) => {
   const visibleWhats = useMemo(() => formatWhatsappVisible(data.whatsapp), [data.whatsapp]);
@@ -277,7 +284,9 @@ export const Phase1Contact = ({
             onChange={(e) => onChange({ full_name: e.target.value })}
             placeholder="Ex: Maria Silva"
             autoFocus
+            disabled={!!locks?.full_name}
           />
+          {locks?.full_name && <p className="mt-1 text-[11px] text-emerald-600">Já preenchido</p>}
           {!nameOk && data.full_name.length > 0 && (
             <p className="mt-1 text-xs text-destructive">Informe nome e sobrenome.</p>
           )}
@@ -298,12 +307,14 @@ export const Phase1Contact = ({
               placeholder="41 9 9745 2053"
               inputMode="numeric"
               aria-invalid={duplicateWhatsapp || undefined}
+              disabled={!!locks?.whatsapp}
               className={`pr-20 text-base font-medium tracking-wide ${duplicateWhatsapp ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             />
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
               {checkingWhatsapp ? 'verificando...' : 'somente DDD + número'}
             </span>
           </div>
+          {locks?.whatsapp && <p className="mt-1 text-[11px] text-emerald-600">Já preenchido</p>}
           {!whatsOk && data.whatsapp.length > 0 && (
             <p className="mt-1 text-xs text-destructive">Inclua DDD + número (mínimo 10 dígitos).</p>
           )}
