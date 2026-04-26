@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useCategoriesInRegion } from '@/hooks/useCategoriesInRegion';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CategoryItem {
   id: string;
@@ -27,8 +28,19 @@ const VISIBLE_COUNT = 6; // 3 colunas x 2 linhas no mobile
 const CARD_MIN_H = 'min-h-[6.5rem]';
 const SHUFFLE_KEY = 'pdu:cats:shuffle:v1';
 
-/** Embaralhamento estável por sessão (usuário/navegação) */
-function getStableShuffleSeed(): number {
+/** Hash determinístico simples (DJB2) para derivar seed estável de uma string */
+function hashSeed(str: string): number {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+  return Math.abs(h) || 1;
+}
+
+/**
+ * Embaralhamento estável: usuários logados → seed derivada do user.id (mesma ordem em qualquer dispositivo).
+ * Anônimos → seed por sessão (sessionStorage).
+ */
+function getStableShuffleSeed(userId?: string | null): number {
+  if (userId) return hashSeed(`pdu:cats:${userId}`);
   try {
     const cached = sessionStorage.getItem(SHUFFLE_KEY);
     if (cached) return Number(cached);
@@ -87,6 +99,7 @@ const CategoryCard = ({ cat }: { cat: CategoryItem }) => (
 
 const CategoriesGrid = (_props: Props) => {
   const geo = useGeoCity();
+  const { user } = useAuth();
   const { data, isLoading } = useCategoriesInRegion(geo.city, geo.state);
 
   const items = data?.items || [];
@@ -95,9 +108,9 @@ const CategoriesGrid = (_props: Props) => {
   const visible = useMemo(() => {
     const subs = items.filter((c) => c.parent_id);
     const pool = subs.length >= VISIBLE_COUNT ? subs : items;
-    const seed = getStableShuffleSeed();
+    const seed = getStableShuffleSeed(user?.id);
     return seededShuffle(pool, seed).slice(0, VISIBLE_COUNT);
-  }, [items]);
+  }, [items, user?.id]);
 
   const gridCls = 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr';
 

@@ -288,6 +288,9 @@ const bootstrap = () => {
       import("./lib/performanceTelemetry")
         .then((module) => module.installPerformanceTelemetry())
         .catch((err) => console.warn("[bootstrap] performanceTelemetry skip", err));
+      import("./lib/webVitalsMonitor")
+        .then((module) => module.startWebVitalsMonitor())
+        .catch((err) => console.warn("[bootstrap] webVitalsMonitor skip", err));
       import("@/styles/deferred-animations.css")
         .catch((err) => console.warn("[bootstrap] deferred-animations skip", err));
       import("@/lib/sponsorRanking")
