@@ -15,6 +15,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import RescheduleFollowupDialog from '@/components/leads/RescheduleFollowupDialog';
 import LeadConcludeActions from '@/components/leads/LeadConcludeActions';
+import LeadStatusSelect from '@/components/leads/LeadStatusSelect';
+import LeadHistoryTimeline from '@/components/leads/LeadHistoryTimeline';
 import { useUpdateLeadStatus, STATUS_META, isOverdue, type LeadStatus, type LeadRow, type LeadHistoryEntry } from '@/hooks/useLeadFollowup';
 
 const STATUS_KEYS: LeadStatus[] = ['new', 'contacted', 'scheduled', 'completed', 'lost'];
