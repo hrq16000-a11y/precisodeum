@@ -38,15 +38,17 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
   const docDigits = useMemo(() => state.document.replace(/\D/g, ''), [state.document]);
   const docValid = isPf ? isValidCpf(docDigits) : isValidCnpj(docDigits);
   const companyOk = isPf ? true : state.company_name.trim().length >= 2;
-  const canAdvance = docValid && companyOk;
+  // Documento é OPCIONAL para avançar (briefing Bet Mode). Selo + bônus só para quem preenche.
+  const sealEarned = docValid && companyOk;
+  const canAdvance = true;
 
   useEffect(() => {
-    if (canAdvance && !awarded) {
+    if (sealEarned && !awarded) {
       setAwarded(true);
       addPoints(isPf ? BET_POINTS.cpf_badge : BET_POINTS.cnpj_badge);
       setShowBadge(true);
     }
-  }, [canAdvance, awarded, addPoints, isPf]);
+  }, [sealEarned, awarded, addPoints, isPf]);
 
   function handleDoc(v: string) {
     const digits = v.replace(/\D/g, '');
@@ -88,7 +90,11 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
             value={isPf ? formatCpf(state.document) : formatCnpj(state.document)}
             onChange={(e) => handleDoc(e.target.value)}
             placeholder={isPf ? '000.000.000-00' : '00.000.000/0000-00'}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
+            className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:ring-2 ${
+              docValid
+                ? 'border-emerald-500 ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] focus:border-emerald-500 focus:ring-emerald-300/50'
+                : 'border-input focus:border-amber-400 focus:ring-amber-300/40'
+            }`}
           />
         </label>
 
@@ -102,19 +108,28 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
               value={state.company_name}
               onChange={(e) => patch({ company_name: e.target.value })}
               placeholder="Como a empresa é conhecida"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-300/40"
+              className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:ring-2 ${
+                state.company_name.trim().length >= 2
+                  ? 'border-emerald-500 ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] focus:border-emerald-500 focus:ring-emerald-300/50'
+                  : 'border-input focus:border-indigo-400 focus:ring-indigo-300/40'
+              }`}
             />
           </label>
         )}
+
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          {sealEarned
+            ? `Selo conquistado · +${isPf ? BET_POINTS.cpf_badge : BET_POINTS.cnpj_badge} pts`
+            : `Preenchimento opcional. Quem confirma ganha o ${isPf ? 'Selo de Confiança' : 'Selo Empresa Verificada'} e até +${isPf ? BET_POINTS.cpf_badge : BET_POINTS.cnpj_badge} pts.`}
+        </p>
       </div>
 
       <Button
         size="lg"
-        disabled={!canAdvance}
         onClick={next}
-        className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50"
+        className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95"
       >
-        Resgatar selo e continuar
+        {sealEarned ? 'Resgatar selo e continuar' : 'Continuar (posso preencher depois)'}
         <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" />
       </Button>
     </motion.div>
