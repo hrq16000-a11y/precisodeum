@@ -63,6 +63,10 @@ const PHASE_PROGRESS: Record<BetPhase, number> = {
   done: 1,
 };
 
+// IDs reais das contas em public.account_types
+const ACCOUNT_TYPE_ID_PF = '61f51480-d8c2-4c78-8f44-6a17e8b6b968'; // Profissional Autônomo
+const ACCOUNT_TYPE_ID_PJ = '4e322d19-c999-4563-ac63-45ccefd78736'; // Empresa / Agência
+
 export default function BetModeShell() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -72,16 +76,18 @@ export default function BetModeShell() {
 
   useSeoHead({ title: 'Cadastro express', description: 'Cadastro rápido para começar agora.', noindex: true });
 
-  // Pré-preenche com o que já existe (ex: nome do Google).
+  // Pré-preenche com o que já existe (ex: nome do Google) + hidrata HUD com saldo real do banco.
   useEffect(() => {
     if (!profile) return;
+    const dbPoints = Number((profile as any).engagement_points ?? 0);
     dispatch({ type: 'PATCH', patch: {
       full_name: state.full_name || profile.full_name || '',
       whatsapp: state.whatsapp || (profile as any).whatsapp || '',
       city: state.city || profile.city || '',
       state: state.state || profile.state || '',
+      // Hidrata o contador uma única vez com o total acumulado real (apenas se ainda zero).
+      points: state.points === 0 && dbPoints > 0 ? dbPoints : state.points,
     }});
-    // intencionalmente sem dep state.* para não loopar
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
 
@@ -92,6 +98,20 @@ export default function BetModeShell() {
   function pickIntent(intent: BetIntent) {
     patch({ intent });
     goto(intent === 'client' ? 'client_city' : 'pro_kind');
+  }
+
+  /** Soma incremento de pontos ganhos NESTA sessão ao saldo do banco. */
+  async function addSessionPointsToProfile() {
+    try {
+      const dbPoints = Number((profile as any)?.engagement_points ?? 0);
+      // state.points pode já estar hidratado com dbPoints — garante que só soma o delta.
+      const delta = Math.max(0, state.points - dbPoints);
+      if (delta <= 0) return;
+      await (supabase as any)
+        .from('profiles')
+        .update({ engagement_points: dbPoints + delta })
+        .eq('id', user!.id);
+    } catch { /* noop */ }
   }
 
   /** Cliente fast-pass: salva, libera o gate e redireciona DIRETO ao destino — sem tela extra. */
@@ -111,14 +131,7 @@ export default function BetModeShell() {
         })
         .eq('id', user.id);
       if (error) throw error;
-      try {
-        await (supabase as any)
-          .from('profiles')
-          .update({ engagement_points: (profile as any)?.engagement_points
-            ? (profile as any).engagement_points + state.points
-            : state.points })
-          .eq('id', user.id);
-      } catch { /* noop */ }
+      await addSessionPointsToProfile();
       await refetchProfile?.();
       toast.success(`+${state.points} pts conquistados!`, { description: 'Bem-vindo. Levando você ao destino…' });
       navigate(next, { replace: true });
@@ -132,49 +145,57 @@ export default function BetModeShell() {
     if (!user) { toast.error('Faça login antes de continuar'); return; }
     try {
       const isPj = state.pro_kind === 'pj';
+      const docDigits = (state.document || '').replace(/\D/g, '');
+      const cpf = !isPj && docDigits.length === 11 ? docDigits : null;
+      const cnpj = isPj && docDigits.length === 14 ? docDigits : null;
+      const taxIdKind = cpf ? 'cpf' : cnpj ? 'cnpj' : null;
+      const taxIdValue = cpf || cnpj;
+
+      // ---- profiles: identidade + tipo de conta correto + tax_id (PF/PJ) ----
+      const profilePatch: Record<string, unknown> = {
+        full_name: state.full_name.trim(),
+        whatsapp: state.whatsapp,
+        city: state.city,
+        state: state.state,
+        profile_type: 'provider',
+        onboarding_step: 3, // V2 termina o serviço
+        account_type_id: isPj ? ACCOUNT_TYPE_ID_PJ : ACCOUNT_TYPE_ID_PF,
+      };
+      if (taxIdValue) {
+        profilePatch.tax_id = taxIdValue;
+        profilePatch.tax_id_kind = taxIdKind;
+        profilePatch.tax_id_last4 = taxIdValue.slice(-4);
+      }
+
       const { error: pErr } = await (supabase as any)
         .from('profiles')
-        .update({
-          full_name: state.full_name.trim(),
-          whatsapp: state.whatsapp,
-          city: state.city,
-          state: state.state,
-          profile_type: 'provider',
-          onboarding_step: 3, // ainda falta serviço; V2 conclui
-        })
+        .update(profilePatch)
         .eq('id', user.id);
       if (pErr) throw pErr;
 
+      // ---- providers: documento na coluna certa + business_name (PJ) + neighborhood ----
       const providerPayload = normalizeProviderPayload({
         user_id: user.id,
-        full_name: state.full_name.trim(),
-        company_name: isPj ? state.company_name.trim() : null,
-        kind: state.pro_kind,
-        document: state.document,
+        account_type: isPj ? 'pj' : 'pf',
+        business_name: isPj ? (state.company_name || '').trim() || null : null,
+        legal_name: isPj ? (state.company_name || '').trim() || null : state.full_name.trim(),
+        cpf,
+        cnpj,
         whatsapp: state.whatsapp,
         phone: state.whatsapp,
         city: state.city,
         state: state.state,
+        neighborhood: '', // NOT NULL — wizard não captura ainda; V2/Dashboard refina depois.
         description: '',
       });
 
-      // Tenta upsert por user_id (ON CONFLICT). Se a tabela não tiver constraint,
-      // cai para insert simples — qualquer erro é "best-effort" e o V2 termina depois.
       try {
         await (supabase as any).from('providers').upsert(providerPayload, { onConflict: 'user_id' });
       } catch {
         try { await (supabase as any).from('providers').insert(providerPayload); } catch { /* noop */ }
       }
 
-      try {
-        await (supabase as any)
-          .from('profiles')
-          .update({ engagement_points: (profile as any)?.engagement_points
-            ? (profile as any).engagement_points + state.points
-            : state.points })
-          .eq('id', user.id);
-      } catch { /* noop */ }
-
+      await addSessionPointsToProfile();
       await refetchProfile?.();
       goto('celebration');
     } catch (err: any) {
