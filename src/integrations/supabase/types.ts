@@ -6276,6 +6276,10 @@ export type Database = {
         Returns: boolean
       }
       delete_daily_post: { Args: never; Returns: Json }
+      derive_provider_primary_category: {
+        Args: { _provider_id: string }
+        Returns: string
+      }
       derive_user_ref: { Args: { _uuid: string }; Returns: string }
       dismiss_dashboard_widget: {
         Args: { _widget: string }

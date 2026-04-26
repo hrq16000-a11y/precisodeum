@@ -835,9 +835,26 @@ const ProviderProfile = () => {
   const hasOwnAvatar = !!(provider && ((provider.profiles as any)?.avatar_url || provider.photo_url));
   const diceBearAvatar = provider ? `https://api.dicebear.com/9.x/${avatarFallbackStyle}/svg?seed=${encodeURIComponent(provider.user_id || provider.id)}` : '';
   const avatarUrl = provider ? (hasOwnAvatar ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : diceBearAvatar) : '';
-  const category = provider ? ((provider.categories as any)?.name || '') : '';
-  const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
-  const categoryIcon = provider ? ((provider.categories as any)?.icon || '') : '';
+  // Categoria principal — prioridade:
+  // 1) provider.categories (categoria principal cadastrada)
+  // 2) Primeira categoria do primeiro serviço (fallback universal — corrige perfis
+  //    antigos que ficaram sem category_id mas têm serviços com categorias)
+  // 3) string vazia (renderiza "Categoria não informada" no UI)
+  const _firstServiceCategory = (() => {
+    if (!services || services.length === 0) return null;
+    for (const s of services) {
+      const cats = (s as any)?.serviceCategories;
+      if (Array.isArray(cats) && cats.length > 0) {
+        const first = cats.find((c: any) => c && c.name);
+        if (first) return first;
+      }
+    }
+    return null;
+  })();
+  const _providerCat = provider ? (provider.categories as any) : null;
+  const category = (_providerCat?.name || _firstServiceCategory?.name || '') as string;
+  const categorySlug = (_providerCat?.slug || _firstServiceCategory?.slug || '') as string;
+  const categoryIcon = (_providerCat?.icon || _firstServiceCategory?.icon || '') as string;
   const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
   const providerSocialImage = provider
     ? pageSettings.cover_image_url || portfolioRawUrls.find((url) => !isVideoUrl(url)) || (hasOwnAvatar ? ((provider.profiles as any)?.avatar_url || provider.photo_url) : '')
