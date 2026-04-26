@@ -237,6 +237,10 @@ interface ContactProps {
   onSubmit: () => void;
   onBack: () => void;
   saving: boolean;
+  /** Frente 4 — duplicidade inline (whatsapp). */
+  duplicateWhatsapp?: boolean;
+  checkingWhatsapp?: boolean;
+  onWhatsappBlur?: () => void;
 }
 
 /** Máscara visual: 41 9 9745 2053 (DDD + 9 + 4 + 4). */
@@ -248,11 +252,14 @@ function formatWhatsappVisible(digits: string): string {
   return `${d.slice(0, 2)} ${d.slice(2, 3)} ${d.slice(3, 7)} ${d.slice(7)}`;
 }
 
-export const Phase1Contact = ({ data, onChange, onSubmit, onBack, saving }: ContactProps) => {
+export const Phase1Contact = ({
+  data, onChange, onSubmit, onBack, saving,
+  duplicateWhatsapp = false, checkingWhatsapp = false, onWhatsappBlur,
+}: ContactProps) => {
   const visibleWhats = useMemo(() => formatWhatsappVisible(data.whatsapp), [data.whatsapp]);
   const nameOk = data.full_name.trim().split(/\s+/).length >= 2 && data.full_name.trim().length >= 4;
   const whatsOk = (data.whatsapp || '').replace(/\D/g, '').length >= 10;
-  const canSubmit = nameOk && whatsOk && !saving;
+  const canSubmit = nameOk && whatsOk && !saving && !duplicateWhatsapp && !checkingWhatsapp;
 
   return (
     <div className="space-y-5">
@@ -287,16 +294,23 @@ export const Phase1Contact = ({ data, onChange, onSubmit, onBack, saving }: Cont
                 const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
                 onChange({ whatsapp: digits });
               }}
+              onBlur={onWhatsappBlur}
               placeholder="41 9 9745 2053"
               inputMode="numeric"
-              className="pr-20 text-base font-medium tracking-wide"
+              aria-invalid={duplicateWhatsapp || undefined}
+              className={`pr-20 text-base font-medium tracking-wide ${duplicateWhatsapp ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             />
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
-              somente DDD + número
+              {checkingWhatsapp ? 'verificando...' : 'somente DDD + número'}
             </span>
           </div>
           {!whatsOk && data.whatsapp.length > 0 && (
             <p className="mt-1 text-xs text-destructive">Inclua DDD + número (mínimo 10 dígitos).</p>
+          )}
+          {duplicateWhatsapp && (
+            <p className="mt-1 text-xs text-destructive">
+              Este WhatsApp já está cadastrado em outra conta.
+            </p>
           )}
         </div>
       </div>
