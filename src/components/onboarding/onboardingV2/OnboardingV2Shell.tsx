@@ -436,13 +436,23 @@ export const OnboardingV2Shell = () => {
           />
         );
       case 'done':
-        // Auto-finaliza
+        // Limpa rascunho local e auto-finaliza
+        clearOnboardingV2Draft();
         setTimeout(finishWizard, 300);
         return null;
     }
   };
 
-  const progress = Math.min(100, ((phaseIndex(state.phase) + 1) / VISIBLE_PHASES_COUNT) * 100);
+  // Progresso: a celebração já é "100%" sensorial, então tudo a partir dela conta como completo.
+  const isCelebrationOrLater =
+    state.phase === 'phase3_celebration' ||
+    state.phase === 'phase4_document' ||
+    state.phase === 'phase4_extras_a' ||
+    state.phase === 'phase4_extras_b' ||
+    state.phase === 'done';
+  const progress = isCelebrationOrLater
+    ? 100
+    : Math.min(95, ((phaseIndex(state.phase) + 1) / VISIBLE_PHASES_COUNT) * 100);
 
   return (
     <div className="min-h-screen bg-background">
@@ -454,6 +464,21 @@ export const OnboardingV2Shell = () => {
           transition={{ type: 'spring', stiffness: 120, damping: 22 }}
         />
       </div>
+
+      {/* Aviso "rascunho restaurado" — auto-some em 4s */}
+      <AnimatePresence>
+        {draftRestored && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="mx-auto mt-3 flex max-w-md items-center gap-2 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-xs text-foreground"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5 text-accent" />
+            <span>Continuamos de onde você parou.</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="mx-auto max-w-md px-4 py-6 sm:py-10">
         <AnimatePresence mode="wait">
