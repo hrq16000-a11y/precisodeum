@@ -104,6 +104,15 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
             </p>
           </header>
 
+          {userId && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">
+                Status atual da sua verificação
+              </p>
+              <VerificationStatusBadge userId={userId} showHistory />
+            </div>
+          )}
+
           <div>
             <Label className="text-xs">{data.kind === 'pj' ? 'CNPJ' : 'CPF'}</Label>
             <CpfCnpjInput
