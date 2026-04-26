@@ -18,6 +18,7 @@ import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { generateProviderSlug } from '@/lib/slugify';
 import { invalidateProviderProfileCache } from '@/pages/ProviderProfile';
+import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
 import { fetchAllMunicipalities, geocodeCity, reverseGeocode, normalize, type CityResult } from '@/lib/geoUtils';
 import { useQuery } from '@tanstack/react-query';
 import { Search, LocateFixed, Loader2, MapPin, CheckCircle2, User, Briefcase, Globe, HelpCircle, Eye } from 'lucide-react';
@@ -658,6 +659,13 @@ const DashboardProfilePage = () => {
                     {showCategorySuggestions && (
                       <div className="fixed inset-0 z-10" onClick={() => setShowCategorySuggestions(false)} />
                     )}
+                  </div>
+
+                  <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">
+                      Status da verificação de identidade
+                    </p>
+                    <VerificationStatusBadge userId={user?.id} showHistory />
                   </div>
 
                   {form.account_kind === 'autonomo' && (

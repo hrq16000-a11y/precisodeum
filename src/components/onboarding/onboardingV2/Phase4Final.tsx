@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import CpfCnpjInput from '@/components/onboarding/CpfCnpjInput';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';
+import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
 import type { OnboardingProfileData } from './types';
 
 /* ───── 4.1 Upsell de documento (CPF/CNPJ) ───── */
@@ -102,6 +103,15 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
               Adicione seu {data.kind === 'pj' ? 'CNPJ' : 'CPF'} para receber chamados diretos no WhatsApp.
             </p>
           </header>
+
+          {userId && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">
+                Status atual da sua verificação
+              </p>
+              <VerificationStatusBadge userId={userId} showHistory />
+            </div>
+          )}
 
           <div>
             <Label className="text-xs">{data.kind === 'pj' ? 'CNPJ' : 'CPF'}</Label>
