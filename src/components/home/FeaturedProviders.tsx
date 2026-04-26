@@ -238,7 +238,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
                 ) : null;
               })()}
             </div>
-            {p.category && (
+            {p.category && _normalizeName(p.category) !== _normalizeName(displayName) && (
                <p className="truncate text-[13px] font-medium text-accent sm:text-sm">{p.category}</p>
             )}
             {(p.city || p.state) && (
