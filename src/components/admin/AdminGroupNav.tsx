@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, Megaphone, Globe, HelpCircle, Wrench, Sparkles,
   ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Smartphone, Crown,
   FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList,
-  Target, CreditCard, Shield, Menu as MenuIcon, ImageIcon, ShieldCheck, KeyRound, GitBranch,
+  Target, CreditCard, Shield, Menu as MenuIcon, ImageIcon, ShieldCheck, KeyRound, GitBranch, Shuffle,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
@@ -16,6 +16,7 @@ const iconMap: Record<string, React.ElementType> = {
   ImageIcon, PanelTop, FolderOpen, ClipboardList, Newspaper, Wrench, HelpCircle, Sparkles, Footprints,
   MessageSquareQuote, MousePointerClick, LayoutList, Megaphone, HandshakeIcon, LayoutGrid, MapPin, BarChart3,
   Globe, MenuIcon, ScrollText, FileImage, Smartphone, Blocks, Database, Trash2, ShieldCheck, KeyRound, GitBranch,
+  Shuffle,
 };
 
 interface GroupItem {
