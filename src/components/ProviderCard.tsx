@@ -116,7 +116,10 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       </span>
     );
   }
-  if (provider.distanceKm != null && provider.distanceKm < 2) {
+  const suspiciousDistance = !!provider._distanceAudit?.suspicious;
+  const trustedDistanceKm = provider._distanceAudit?.distanceKm ?? provider.distanceKm;
+
+  if (!suspiciousDistance && trustedDistanceKm != null && trustedDistanceKm < 2) {
     badges.push(
       <motion.span
         key="super-perto"
@@ -127,7 +130,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
         Super Perto!
       </motion.span>
     );
-  } else if (provider.distanceKm != null && provider.distanceKm < 5) {
+  } else if (!suspiciousDistance && trustedDistanceKm != null && trustedDistanceKm < 5) {
     badges.push(
       <motion.span
         key="seu-bairro"
@@ -280,15 +283,17 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               <div className="mt-1 flex min-w-0 max-w-full flex-wrap items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="h-3 w-3 shrink-0" />
                 <span className="truncate min-w-0 flex-1">{locationText}</span>
-                {provider.distanceKm != null && (
+                {trustedDistanceKm != null && (
                   <span
                     className="ml-1 shrink-0 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
-                    title={`Aproximadamente ${Math.max(1, Math.round((provider.distanceKm / 30) * 60))} min de carro (30 km/h)`}
+                    title={provider._distanceAudit?.source === 'city-center'
+                      ? 'Distância estimada com correção pelo centro da cidade declarada'
+                      : `Aproximadamente ${Math.max(1, Math.round((trustedDistanceKm / 30) * 60))} min de carro (30 km/h)`}
                   >
-                    {provider.distanceKm < 1 ? '< 1' : provider.distanceKm.toFixed(1)} km
+                    {trustedDistanceKm < 1 ? '< 1' : trustedDistanceKm.toFixed(1)} km
                     <span className="opacity-70">·</span>
                     <Clock className="h-2.5 w-2.5" />
-                    {Math.max(1, Math.round((provider.distanceKm / 30) * 60))}min
+                    {Math.max(1, Math.round((trustedDistanceKm / 30) * 60))}min
                   </span>
                 )}
                 {/* Audit chip — visível apenas em DEV ou quando ?audit=1 está na URL */}
@@ -308,13 +313,13 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                     }
                   >
                     {provider._distanceAudit.source === 'city-center' ? 'centro-cidade' : 'direta'}
-                    {provider._distanceAudit.suspicious ? ' ⚠' : ''}
+                    {provider._distanceAudit.suspicious ? ' suspeita' : ''}
                   </span>
                 )}
               </div>
             )}
             {/* Hiper-local: matador para conversão quando o profissional está a <5km */}
-            {provider.distanceKm != null && provider.distanceKm < 5 && !isFallback && (
+            {trustedDistanceKm != null && trustedDistanceKm < 5 && !isFallback && !suspiciousDistance && (
               <motion.div
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -326,6 +331,11 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 </span>
                 Atende agora no seu bairro
               </motion.div>
+            )}
+            {provider._distanceAudit?.source === 'city-center' && (
+              <div className="mt-1.5 text-[11px] text-muted-foreground">
+                Distância estimada pela cidade declarada{provider._distanceAudit.suspicious ? ' após correção de coordenadas inconsistentes' : ''}.
+              </div>
             )}
             {/* Badges — limited on mobile */}
             <div className="mt-1.5 flex flex-wrap items-center gap-1 sm:gap-1.5">
