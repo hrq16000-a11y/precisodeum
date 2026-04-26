@@ -308,9 +308,29 @@ export const Phase1Contact = ({
             <p className="mt-1 text-xs text-destructive">Inclua DDD + número (mínimo 10 dígitos).</p>
           )}
           {duplicateWhatsapp && (
-            <p className="mt-1 text-xs text-destructive">
-              Este WhatsApp já está cadastrado em outra conta.
-            </p>
+            <div
+              role="alert"
+              className="mt-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs"
+            >
+              <p className="font-semibold text-destructive">
+                Este WhatsApp já está vinculado a outra conta.
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                Cada número só pode pertencer a um perfil para garantir que o cliente fale com a pessoa certa.
+              </p>
+              <ul className="mt-2 space-y-1 list-disc pl-4 text-muted-foreground">
+                <li>Confira se digitou o DDD certo (ex.: <span className="font-mono">41</span> para Curitiba).</li>
+                <li>Use um número exclusivo seu — número comercial é a melhor escolha.</li>
+                <li>Se o número é seu mas você esqueceu a conta, faça login pelo e-mail original.</li>
+              </ul>
+              <button
+                type="button"
+                onClick={() => onChange({ whatsapp: '' })}
+                className="mt-2 inline-flex items-center text-[11px] font-semibold text-destructive underline-offset-2 hover:underline"
+              >
+                Limpar e digitar outro número
+              </button>
+            </div>
           )}
         </div>
       </div>
