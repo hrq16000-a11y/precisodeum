@@ -70,16 +70,68 @@ export interface FeaturedProvidersOptions {
 }
 
 const FEATURED_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const FEATURED_CACHE_VERSION = 'v3';
+
+const GENERIC_PROVIDER_NAME_TOKENS = new Set([
+  'pedreiro', 'padeiro', 'padreiro', 'eletricista', 'encanador', 'pintor', 'autonomo', 'profissional',
+  'empreiteiro', 'marceneiro', 'jardineiro', 'tecnico', 'mecanico', 'servicosgerais', 'diarista',
+  'cozinheiro', 'motorista', 'soldador', 'vidraceiro', 'gesseiro', 'azulejista', 'prestador',
+  'profissionalautonomo', 'servico', 'servicos', 'autonoma', 'prestadora', 'tecnica',
+]);
+
+const normalizeProviderToken = (s: string) =>
+  s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
+
+const isGenericProviderName = (s?: string | null) => {
+  if (!s) return true;
+  const normalized = normalizeProviderToken(s);
+  return !normalized || GENERIC_PROVIDER_NAME_TOKENS.has(normalized);
+};
+
+const humanizeProviderSlug = (slug?: string | null) => {
+  if (!slug) return '';
+  const base = slug
+    .replace(/-[a-f0-9]{6,}$/i, '')
+    .replace(/\b\d+\b/g, '')
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!base || isGenericProviderName(base)) return '';
+  if (/^profissional(\s+em\s+.+)?$/i.test(base)) return '';
+
+  return base
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+};
 
 const featuredCacheKey = ({ latitude, longitude, categorySlug, sortBy, limit }: FeaturedProvidersOptions) =>
-  `featured-providers:v2:${categorySlug || 'all'}:${sortBy || 'proximity'}:${limit || 6}:${latitude?.toFixed(2) || 'na'}:${longitude?.toFixed(2) || 'na'}`;
+  `featured-providers:${FEATURED_CACHE_VERSION}:${categorySlug || 'all'}:${sortBy || 'proximity'}:${limit || 6}:${latitude?.toFixed(2) || 'na'}:${longitude?.toFixed(2) || 'na'}`;
 
 const readFeaturedCache = (key: string): DbProvider[] | undefined => {
   if (typeof window === 'undefined') return undefined;
   try {
     const cached = JSON.parse(localStorage.getItem(key) || 'null');
     if (!cached?.time || Date.now() - cached.time > FEATURED_CACHE_TTL_MS) return undefined;
-    return Array.isArray(cached.data) ? cached.data : undefined;
+    if (!Array.isArray(cached.data)) return undefined;
+
+    const hasWeakEntry = cached.data.some((provider: DbProvider) => {
+      const displayName = (provider?.name || '').trim();
+      const category = (provider?.category || '').trim();
+      const normalizedName = normalizeProviderToken(displayName);
+      const normalizedCategory = normalizeProviderToken(category);
+
+      return (
+        !displayName ||
+        /^profissional(\s+em\s+.+)?$/i.test(displayName) ||
+        isGenericProviderName(displayName) ||
+        (!!normalizedCategory && normalizedName === normalizedCategory)
+      );
+    });
+
+    return hasWeakEntry ? undefined : cached.data;
   } catch {
     return undefined;
   }
