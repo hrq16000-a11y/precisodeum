@@ -772,6 +772,23 @@ export interface GroupedSearchResult {
   isFallback: boolean;
 }
 
+export interface SearchAuditEntry {
+  provider: DbProvider;
+  beforeRank: number;
+  afterRank: number;
+  textRel: number;
+  distanceKm: number;
+  distanceScore: number;
+  combinedScore: number;
+  isLocal: boolean;
+  distanceAudit: DistanceAudit;
+  reasons: string[];
+}
+
+export interface GroupedSearchAuditResult extends GroupedSearchResult {
+  auditEntries: SearchAuditEntry[];
+}
+
 export function filterAndRankProvidersGrouped(
   providers: DbProvider[],
   query: string,
@@ -782,7 +799,7 @@ export function filterAndRankProvidersGrouped(
   userLat?: number | null,
   userLon?: number | null,
   radiusKm?: number,
-): GroupedSearchResult {
+): GroupedSearchAuditResult {
   let results = [...providers];
 
   if (minRating > 0) {
