@@ -15,6 +15,7 @@ import { trackEvent } from './tracking';
 import GovernanceEngine from './governanceEngine';
 import { ControlPlane, ControlRegistry } from '@/core/governance';
 import { matchNaturalLanguage } from './naturalLanguageMap';
+import { evaluateTextMatch, expandSearchTerms } from './searchNormalization';
 
 // ═══════════════════════════════════════════════════════════════════════
 // SECTION 1: Types
@@ -261,27 +262,15 @@ function computeFinalScore(
  * Returns 0–1 based on how many terms match.
  */
 function computeRelevanceScore(
-  provider: { name: string; category: string; description: string; businessName?: string },
+  provider: { name: string; category: string; description: string; businessName?: string; categorySlug?: string; city?: string; neighborhood?: string; state?: string; _searchableServices?: string },
   serviceQuery: string,
 ): number {
   if (!serviceQuery) return 0.5; // neutral when no service query
 
-  const terms = serviceQuery.toLowerCase().split(/\s+/).filter(Boolean);
+  const terms = expandSearchTerms(serviceQuery);
   if (terms.length === 0) return 0.5;
 
-  const searchable = [
-    provider.name,
-    provider.category,
-    provider.description,
-    provider.businessName || '',
-  ].join(' ').toLowerCase();
-
-  let matched = 0;
-  for (const term of terms) {
-    if (searchable.includes(term)) matched++;
-  }
-
-  return terms.length > 0 ? matched / terms.length : 0.5;
+  return evaluateTextMatch(provider as any, terms).score;
 }
 
 // ═══════════════════════════════════════════════════════════════════════

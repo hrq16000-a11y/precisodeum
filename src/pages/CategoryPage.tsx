@@ -16,7 +16,7 @@ import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import { Button } from '@/components/ui/button';
-import { useCategoryProviders, matchesGeoContext, normalizeCityName, type DbProvider } from '@/hooks/useProviders';
+import { useCategoryProviders, filterAndRankProvidersGrouped, type DbProvider } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useGeoCity } from '@/hooks/useGeoCity';
@@ -66,72 +66,26 @@ const CategoryPage = () => {
       return { localProviders: allProviders, nearbyProviders: [] as DbProvider[], outOfStateProviders: [] as DbProvider[], isFallback: false, expansionLevel: null };
     }
 
-    const cityNorm = normalizeCityName(geoCity);
-    const stateNorm = geoState ? normalizeCityName(geoState) : undefined;
-    const userStateNorm = geoState ? normalizeCityName(geoState) : '';
+    const ranked = filterAndRankProvidersGrouped(
+      allProviders,
+      category?.name || '',
+      geoCity,
+      slug || '',
+      0,
+      geoState || '',
+      userLat,
+      userLon,
+      radiusKm,
+    );
 
-    const local: (DbProvider & { _dist?: number })[] = [];
-    const other: (DbProvider & { _dist?: number })[] = [];
-    allProviders.forEach((p) => {
-      let dist: number | undefined;
-      if (userLat != null && userLon != null && p.latitude != null && p.longitude != null) {
-        dist = Math.round(haversine(userLat, userLon, p.latitude, p.longitude) * 10) / 10;
-      }
-      if (matchesGeoContext(p, cityNorm, stateNorm, userLat, userLon, radiusKm)) {
-        local.push({ ...p, distanceKm: dist, _dist: dist });
-      } else {
-        other.push({ ...p, distanceKm: dist, _dist: dist });
-      }
-    });
-
-    const distSort = (a: { _dist?: number; city?: string }, b: { _dist?: number; city?: string }) => {
-      // Tier 1: same city as user always ranks first
-      if (cityNorm) {
-        const aMatch = normalizeCityName(a.city || '') === cityNorm;
-        const bMatch = normalizeCityName(b.city || '') === cityNorm;
-        if (aMatch !== bMatch) return aMatch ? -1 : 1;
-      }
-      // Tier 2: sort by distance
-      const distA = a._dist ?? Infinity;
-      const distB = b._dist ?? Infinity;
-      if (distA !== Infinity && distB !== Infinity) {
-        const diff = distA - distB;
-        if (Math.abs(diff) > 1) return diff;
-      }
-      if (distA === Infinity && distB !== Infinity) return 1;
-      if (distB === Infinity && distA !== Infinity) return -1;
-      return 0;
+    return {
+      localProviders: ranked.local,
+      nearbyProviders: ranked.nearby,
+      outOfStateProviders: ranked.outOfState,
+      isFallback: ranked.isFallback,
+      expansionLevel: ranked.isFallback ? 'all' as const : null,
     };
-
-    if (userLat != null && userLon != null) {
-      local.sort(distSort);
-      other.sort(distSort);
-    }
-
-    // Split other into nearby (same state or <100km) vs outOfState
-    const splitNearbyOutOfState = (arr: typeof other) => {
-      const nearby: typeof other = [];
-      const outOfState: typeof other = [];
-      arr.forEach(p => {
-        const provStateNorm = normalizeCityName(p.state);
-        const isNearby = (userStateNorm && provStateNorm === userStateNorm) || ((p._dist ?? Infinity) < 100);
-        if (isNearby) nearby.push(p);
-        else outOfState.push(p);
-      });
-      return { nearby, outOfState };
-    };
-
-    if (local.length > 0) {
-      const { nearby, outOfState } = splitNearbyOutOfState(other);
-      return { localProviders: local as DbProvider[], nearbyProviders: nearby as DbProvider[], outOfStateProviders: outOfState as DbProvider[], isFallback: false, expansionLevel: null };
-    }
-
-    // Fallback: 0 local → combine and split
-    const allSorted = [...local, ...other];
-    if (userLat != null && userLon != null) allSorted.sort(distSort);
-    const { nearby, outOfState } = splitNearbyOutOfState(allSorted);
-    return { localProviders: [] as DbProvider[], nearbyProviders: nearby as DbProvider[], outOfStateProviders: outOfState as DbProvider[], isFallback: true, expansionLevel: 'all' as const };
-  }, [allProviders, geoCity, geoState, userLat, userLon, radiusKm]);
+  }, [allProviders, category?.name, geoCity, geoState, radiusKm, slug, userLat, userLon]);
 
   const nearestProvider = localProviders.length > 0 ? localProviders[0] : (nearbyProviders.length > 0 ? nearbyProviders[0] : undefined);
   const nearestDistanceKm = (nearestProvider as any)?._dist;

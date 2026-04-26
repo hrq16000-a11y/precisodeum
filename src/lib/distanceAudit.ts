@@ -26,6 +26,10 @@ export interface DistanceAudit {
   providerCity: string;
   /** Cidade do usuário (para logs) */
   userCity: string;
+  /** Distância entre centros das cidades do usuário e do provider */
+  cityToCityKm: number | null;
+  /** Divergência das coords do provider para o centro da cidade declarada */
+  providerToOwnCenterKm: number | null;
 }
 
 /**
@@ -52,6 +56,8 @@ export function calculateAuditedDistanceKm(
     cityCenterKm: null,
     providerCity,
     userCity: userCityStr,
+    cityToCityKm: null,
+    providerToOwnCenterKm: null,
   };
 
   if (!Number.isFinite(userLat) || !Number.isFinite(userLon)) return baseAudit;
@@ -80,9 +86,14 @@ export function calculateAuditedDistanceKm(
     { latitude: provider.latitude, longitude: provider.longitude },
     { latitude: providerCityCenter.lat, longitude: providerCityCenter.lon },
   );
+  baseAudit.providerToOwnCenterKm = providerToOwnCenterKm;
   const providerToUserCenterKm = calculateDistanceKm(
     { latitude: provider.latitude, longitude: provider.longitude },
     { latitude: userCityCenter.lat, longitude: userCityCenter.lon },
+  );
+  baseAudit.cityToCityKm = calculateDistanceKm(
+    { latitude: userCityCenter.lat, longitude: userCityCenter.lon },
+    { latitude: providerCityCenter.lat, longitude: providerCityCenter.lon },
   );
   baseAudit.cityCenterKm = calculateDistanceKm(
     { latitude: userLat as number, longitude: userLon as number },
@@ -96,7 +107,11 @@ export function calculateAuditedDistanceKm(
     return { ...baseAudit, distanceKm: directKm, source: 'direct' };
   }
 
-  const corrected = Math.max(directKm, baseAudit.cityCenterKm ?? directKm);
+  const corrected = Math.max(
+    directKm,
+    baseAudit.cityCenterKm ?? directKm,
+    baseAudit.cityToCityKm ?? directKm,
+  );
 
   // Telemetria leve: registra discrepâncias para detectar piora por cidade/CEP.
   recordGeoDiscrepancy({

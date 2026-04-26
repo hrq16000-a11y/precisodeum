@@ -772,6 +772,23 @@ export interface GroupedSearchResult {
   isFallback: boolean;
 }
 
+export interface SearchAuditEntry {
+  provider: DbProvider;
+  beforeRank: number;
+  afterRank: number;
+  textRel: number;
+  distanceKm: number;
+  distanceScore: number;
+  combinedScore: number;
+  isLocal: boolean;
+  distanceAudit: DistanceAudit;
+  reasons: string[];
+}
+
+export interface GroupedSearchAuditResult extends GroupedSearchResult {
+  auditEntries: SearchAuditEntry[];
+}
+
 export function filterAndRankProvidersGrouped(
   providers: DbProvider[],
   query: string,
@@ -782,8 +799,11 @@ export function filterAndRankProvidersGrouped(
   userLat?: number | null,
   userLon?: number | null,
   radiusKm?: number,
-): GroupedSearchResult {
+): GroupedSearchAuditResult {
   let results = [...providers];
+  const fallbackUserCoords = (!Number.isFinite(userLat) || !Number.isFinite(userLon)) && city ? getCityCoords(city) : null;
+  const effectiveUserLat = Number.isFinite(userLat) ? userLat ?? null : fallbackUserCoords?.lat ?? null;
+  const effectiveUserLon = Number.isFinite(userLon) ? userLon ?? null : fallbackUserCoords?.lon ?? null;
 
   if (minRating > 0) {
     results = results.filter((p) => p.rating >= minRating);
@@ -792,17 +812,17 @@ export function filterAndRankProvidersGrouped(
     results = results.filter((p) => p.categorySlug === categorySlug);
   }
 
-  const sil = SearchIntelligence.analyze(query, city, state, userLat, userLon);
+  const sil = SearchIntelligence.analyze(query, city, state, effectiveUserLat, effectiveUserLon);
   const { intent, geoIntent, geoContext, serviceQuery } = sil;
   if (radiusKm) (geoContext as any).radius = radiusKm;
 
   // Text filter (unified normalization + synonym expansion)
   const _terms = serviceQuery ? expandSearchTerms(serviceQuery) : [];
-  const _textMatches = new Map<string, { matched: boolean; score: number }>();
+  const _textMatches = new Map<string, { matched: boolean; score: number; strongMatch: boolean }>();
   if (_terms.length > 0) {
     results = results.filter((p) => {
       const m = evaluateTextMatch(p as any, _terms);
-      _textMatches.set(p.id, { matched: m.matched, score: m.score });
+      _textMatches.set(p.id, { matched: m.matched, score: m.score, strongMatch: m.strongMatch });
       return m.matched;
     });
   }
@@ -812,8 +832,10 @@ export function filterAndRankProvidersGrouped(
     console.debug('[GeoAudit] Query:', { query, city, state, userLat, userLon, radiusKm, resultsBefore: results.length, terms: _terms });
   }
 
+  const userCityNorm = city ? normalize(city) : '';
+
   // Enrich with geo + relevance scores + audited distance
-  const enriched = results.map((p) => {
+  const enriched = results.map((p, index) => {
     const isLocal = (intent !== 'SERVICE_ONLY' && (geoContext.cityNorm || geoContext.stateNorm))
       ? SearchIntelligence.matchesGeo(p, geoContext)
       : false;
@@ -822,15 +844,17 @@ export function filterAndRankProvidersGrouped(
     const scored = SearchIntelligence.computeFinalScore(gs, relevance, intent);
 
     // Audited distance — keeps source/suspicious flags for UI
-    const audit = calculateAuditedDistanceKm(userLat ?? null, userLon ?? null, p, city);
+    const audit = calculateAuditedDistanceKm(effectiveUserLat, effectiveUserLon, p, city);
     const distanceKm = audit.distanceKm;
 
     // Combined text+distance score: avoids weak match closer beating strong match a bit further
     const textRel = _textMatches.get(p.id)?.score ?? (relevance || 0);
+    const strongTextMatch = _textMatches.get(p.id)?.strongMatch ?? textRel >= 0.99;
     // Distance score in [0..1]: 1 if very close, 0 if 30km+ away
-    const distScore = distanceKm === Infinity ? 0 : Math.max(0, 1 - distanceKm / 30);
+    const distScore = distanceKm === Infinity ? 0 : Math.max(0, 1 - distanceKm / 60);
     // Texto pesa mais (0.7) que distância (0.3) — relevância nunca é dominada por proximidade
-    const combinedScore = textRel * 0.7 + distScore * 0.3;
+    const cityPriority = userCityNorm && normalize(p.city) === userCityNorm ? 0.08 : 0;
+    const combinedScore = textRel * 0.82 + distScore * 0.18 + cityPriority;
 
     if (import.meta.env.DEV) {
       // eslint-disable-next-line no-console
@@ -839,7 +863,7 @@ export function filterAndRankProvidersGrouped(
       );
     }
 
-    return { p, isLocal, scored, distanceKm, audit, textRel, combinedScore };
+    return { p, isLocal, scored, distanceKm, audit, textRel, strongTextMatch, distScore, combinedScore, originalIndex: index };
   });
 
   const hasGeoContext = !!(geoContext.cityNorm || geoContext.stateNorm);
@@ -847,14 +871,25 @@ export function filterAndRankProvidersGrouped(
   const localArr = hasGeoContext ? enriched.filter(e => e.isLocal) : enriched;
   const otherArr = hasGeoContext ? enriched.filter(e => !e.isLocal) : [];
 
-  const userCityNorm = city ? normalize(city) : '';
+  const legacyOrdered = [...enriched].sort((a, b) => {
+    if (a.isLocal !== b.isLocal) return a.isLocal ? -1 : 1;
+    if (a.scored.finalScore !== b.scored.finalScore) return b.scored.finalScore - a.scored.finalScore;
+    if (a.distanceKm !== Infinity && b.distanceKm !== Infinity) {
+      const distDiff = a.distanceKm - b.distanceKm;
+      if (Math.abs(distDiff) > 1) return distDiff;
+    }
+    if (a.distanceKm === Infinity && b.distanceKm !== Infinity) return 1;
+    if (b.distanceKm === Infinity && a.distanceKm !== Infinity) return -1;
+    return compareEliteMerit(a.p, b.p);
+  });
+  const legacyRankById = new Map(legacyOrdered.map((entry, idx) => [entry.p.id, idx + 1]));
 
   // Hybrid sort — texto domina; distância desempata e bônus para mesma cidade.
   const hybridSort = (a: typeof enriched[0], b: typeof enriched[0]) => {
     // Tier 1: bater todos os termos vence quem bate parcial (apenas quando há query)
     if (_terms.length > 0) {
-      const aFull = (a.textRel >= 0.99) ? 1 : 0;
-      const bFull = (b.textRel >= 0.99) ? 1 : 0;
+      const aFull = a.strongTextMatch ? 1 : 0;
+      const bFull = b.strongTextMatch ? 1 : 0;
       if (aFull !== bFull) return bFull - aFull;
     }
     // Tier 2: mesma cidade do usuário
@@ -864,7 +899,7 @@ export function filterAndRankProvidersGrouped(
       if (aMatch !== bMatch) return bMatch - aMatch;
     }
     // Tier 3: combined score (texto * 0.7 + distância * 0.3)
-    if (Math.abs(a.combinedScore - b.combinedScore) > 0.05) {
+    if (Math.abs(a.combinedScore - b.combinedScore) > 0.025) {
       return b.combinedScore - a.combinedScore;
     }
     // Tier 4: distância pura quando combined empata
@@ -916,11 +951,29 @@ export function filterAndRankProvidersGrouped(
       distanceKm: e.distanceKm !== Infinity ? Math.round(e.distanceKm * 10) / 10 : undefined,
       _distanceAudit: e.audit,
     });
+    const auditEntries = combined.map((e, afterIndex) => ({
+      provider: toProvider(e),
+      beforeRank: legacyRankById.get(e.p.id) ?? e.originalIndex + 1,
+      afterRank: afterIndex + 1,
+      textRel: e.textRel,
+      distanceKm: e.distanceKm,
+      distanceScore: e.distScore,
+      combinedScore: e.combinedScore,
+      isLocal: e.isLocal,
+      distanceAudit: e.audit,
+      reasons: [
+        e.strongTextMatch ? 'match textual completo' : 'match textual parcial',
+        e.isLocal ? 'mesma cidade/região' : 'fora da cidade-base',
+        e.audit.source === 'city-center' ? 'distância corrigida por centro da cidade' : e.audit.source === 'direct' ? 'distância por coordenadas diretas' : 'distância indisponível',
+        e.audit.suspicious ? 'coordenadas suspeitas detectadas' : 'coordenadas sem suspeita',
+      ],
+    }));
     return {
       local: [],
       nearby: nearbyArr.map(toProvider),
       outOfState: outOfStateArr.map(toProvider),
       isFallback,
+      auditEntries,
     };
   }
 
@@ -931,11 +984,31 @@ export function filterAndRankProvidersGrouped(
     _distanceAudit: e.audit,
   });
 
+  const finalOrdered = [...localArr, ...nearbyArr, ...outOfStateArr];
+  const auditEntries = finalOrdered.map((e, afterIndex) => ({
+    provider: toProvider(e),
+    beforeRank: legacyRankById.get(e.p.id) ?? e.originalIndex + 1,
+    afterRank: afterIndex + 1,
+    textRel: e.textRel,
+    distanceKm: e.distanceKm,
+    distanceScore: e.distScore,
+    combinedScore: e.combinedScore,
+    isLocal: e.isLocal,
+    distanceAudit: e.audit,
+    reasons: [
+      e.strongTextMatch ? 'match textual completo' : 'match textual parcial',
+      normalize(e.p.city) === userCityNorm ? 'cidade exata do usuário' : e.isLocal ? 'mesma região' : 'cidade próxima/fallback',
+      e.audit.source === 'city-center' ? 'distância corrigida por centro da cidade' : e.audit.source === 'direct' ? 'distância por coordenadas diretas' : 'distância indisponível',
+      e.audit.suspicious ? 'coordenadas suspeitas detectadas' : 'coordenadas sem suspeita',
+    ],
+  }));
+
   return {
     local: localArr.map(toProvider),
     nearby: nearbyArr.map(toProvider),
     outOfState: outOfStateArr.map(toProvider),
     isFallback,
+    auditEntries,
   };
 }
 
@@ -1009,6 +1082,34 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
   return {
     ...baseQuery,
     data: grouped,
+  };
+}
+
+export function useSearchAuditComparison(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null, radiusKm?: number) {
+  const baseQuery = useQuery({
+    queryKey: ['search-audit-base'],
+    queryFn: async () => fetchProvidersWithProfiles(
+      supabase
+        .from('providers')
+        .select(providerSelect)
+        .eq('status', 'approved')
+        .order('rating_avg', { ascending: false })
+        .order('review_count', { ascending: false })
+        .limit(SEARCH_RESULT_LIMIT)
+    ),
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+  });
+
+  const data = useMemo(
+    () => filterAndRankProvidersGrouped(baseQuery.data || [], query, city, categorySlug, minRating, state, userLat, userLon, radiusKm),
+    [baseQuery.data, query, city, categorySlug, minRating, state, userLat, userLon, radiusKm]
+  );
+
+  return {
+    ...baseQuery,
+    data,
   };
 }
 
