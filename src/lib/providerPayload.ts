@@ -21,8 +21,10 @@ export const PROVIDER_REQUIRED_STRING_FIELDS = [
   'description',
   'city',
   'state',
+  'neighborhood',
   'phone',
   'whatsapp',
+  'account_type',
 ] as const;
 
 export type ProviderRequiredStringField =
