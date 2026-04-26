@@ -31,6 +31,7 @@ const PHASE_LABEL: Record<OnboardingState['phase'], string> = {
   phase2_photos: 'Fotos do serviço',
   phase3_celebration: 'Celebração',
   phase4_document: 'Documento',
+  phase4_avatar: 'Foto de perfil',
   phase4_extras_a: 'Bairro e bio',
   phase4_extras_b: 'Redes sociais',
   done: 'Concluído',

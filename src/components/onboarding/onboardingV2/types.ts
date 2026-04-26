@@ -54,6 +54,7 @@ export type OnboardingPhase =
   | 'phase2_photos'        // Step 6.5 — Upload de até 5 fotos (1 capa)
   | 'phase3_celebration'   // Step 7 — Tela de Sucesso
   | 'phase4_document'      // Step 8 — Upsell CPF/CNPJ
+  | 'phase4_avatar'        // Step 8.5 — Foto de perfil (se ainda faltar)
   | 'phase4_extras_a'      // Step 9 — Bairro + Bio
   | 'phase4_extras_b'      // Step 10 — Redes sociais
   | 'done';

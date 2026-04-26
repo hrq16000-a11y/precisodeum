@@ -25,6 +25,7 @@ const PHASE_ORDER: OnboardingPhase[] = [
   'phase2_photos',
   'phase3_celebration',
   'phase4_document',
+  'phase4_avatar',
   'phase4_extras_a',
   'phase4_extras_b',
   'done',
