@@ -253,7 +253,7 @@ export const OnboardingV2Shell = () => {
       const { data, error } = await (supabase as any).rpc('create_service_atomic', {
         _provider_id: state.providerId,
         _service_name: s.service_name,
-        _description: '',
+        _description: s.description || '',
         _whatsapp: p.whatsapp,
         _service_area: serviceArea,
         _address: cityForAddress,
