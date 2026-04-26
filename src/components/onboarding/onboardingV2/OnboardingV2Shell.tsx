@@ -79,6 +79,12 @@ export const OnboardingV2Shell = () => {
   });
   const [saving, setSaving] = useState(false);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
+  const [remoteDraft, setRemoteDraft] = useState<null | {
+    payload: { profile: any; service: any };
+    phase: any;
+    updated_at: string;
+  }>(null);
+  const [showRemoteModal, setShowRemoteModal] = useState(false);
 
   // Frente 4 — duplicidade inline (whatsapp + tax_id)
   const dup = useWizardDuplicateCheck();
