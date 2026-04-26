@@ -11,14 +11,16 @@
  * NUNCA usar a palavra "Orçamento" — sempre "Valores (a partir de)".
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, X, Loader2, Plus, MapPin } from 'lucide-react';
+import { ChevronDown, X, Loader2, Plus, MapPin, Sparkles, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { suggestServiceDescription } from '@/lib/serviceDescriptionSuggester';
+import { sanitizeSlug } from '@/lib/slugify';
 import type { OnboardingFirstServiceData, OnboardingProfileData } from './types';
 
 interface CategoryRow { id: string; name: string; icon?: string | null }
