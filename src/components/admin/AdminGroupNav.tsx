@@ -98,6 +98,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Busca Audit.', icon: 'GitBranch', path: '/admin/busca-auditoria' },
       { label: 'Auditoria Ref', icon: 'Shield', path: '/admin/auditoria-ref' },
       { label: 'Políticas RLS', icon: 'ShieldCheck', path: '/admin/auditoria-rls' },
+      { label: 'Wizard Debug', icon: 'GitBranch', path: '/admin/wizard-diagnostico' },
     ],
   },
   {

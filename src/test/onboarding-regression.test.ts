@@ -10,8 +10,15 @@ describe('Onboarding hard gate regression guard', () => {
     for (const source of [app, route]) {
       expect(source).toContain('onboarding_completed !== true');
       expect(source).toContain('onboardingStep < 5');
-      expect(source).toContain('/triagem');
+      expect(source).toContain('/cadastro-bet');
     }
+  });
+
+  it('registers a dedicated admin diagnostics route for wizard resets', () => {
+    const app = read('src/App.tsx');
+    const adminNav = read('src/components/admin/AdminGroupNav.tsx');
+    expect(app).toContain('/admin/wizard-diagnostico');
+    expect(adminNav).toContain('/admin/wizard-diagnostico');
   });
 
   it('does not mount legacy onboarding overlays in DashboardPage', () => {
