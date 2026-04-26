@@ -65,10 +65,38 @@ export const Phase2Service = ({
   );
 
   const pickCategory = (id: string, name: string) => {
+    // INVARIANTE: o nome do serviço é SEMPRE o nome da categoria escolhida,
+    // e o primary_category_id do perfil herda esse mesmo id.
     onChangeService({ category_ids: [id], service_name: name });
-    onChangeProfile({ primary_category_id: id }); // herança para o perfil
+    onChangeProfile({ primary_category_id: id });
     setOpen(false);
     setSearch(name);
+  };
+
+  // Auto-save discreto: o estado já é persistido em localStorage + remoto via
+  // hooks no Shell (useOnboardingV2Draft / useOnboardingV2RemoteDraft) com debounce.
+  // Aqui exibimos um micro-indicador visual quando o usuário pausa a digitação.
+  const [savedHint, setSavedHint] = useState(false);
+  const saveTimer = useRef<number | null>(null);
+  useEffect(() => {
+    if (!service.description) return;
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    setSavedHint(false);
+    saveTimer.current = window.setTimeout(() => {
+      setSavedHint(true);
+      window.setTimeout(() => setSavedHint(false), 1800);
+    }, 700);
+    return () => { if (saveTimer.current) window.clearTimeout(saveTimer.current); };
+  }, [service.description]);
+
+  const handleSuggest = () => {
+    const slug = selectedId ? sanitizeSlug(selectedName) : '';
+    const text = suggestServiceDescription({
+      categoryName: selectedName,
+      categorySlug: slug,
+      city: profile.city,
+    });
+    onChangeService({ description: text });
   };
 
   const canAdvance = !!selectedId && service.description.trim().length >= 10;
