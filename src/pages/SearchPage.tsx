@@ -528,6 +528,34 @@ const SearchPage = () => {
             <GeoLocationChip />
           </motion.div>
 
+          {/* CTA topo — buscar perto da cidade detectada */}
+          {(geoCity || effectiveCity) && !cityParam && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-3 flex justify-center sm:justify-start"
+            >
+              <Button
+                size="sm"
+                variant="default"
+                className="rounded-full px-4 text-xs font-semibold shadow-sm"
+                onClick={() => {
+                  const target = (geoCity || effectiveCity).trim();
+                  if (!target) return;
+                  setSelectedCity(target);
+                  setPage(1);
+                  const next = new URLSearchParams(searchParams);
+                  next.set('cidade', target);
+                  setSearchParams(next, { replace: true });
+                }}
+              >
+                <MapPin className="mr-1.5 h-3.5 w-3.5" />
+                Buscar perto de {geoCity || effectiveCity}
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Button>
+            </motion.div>
+          )}
+
           {/* Modo Urgência — só renderiza se houver online na região */}
           <div className="mb-3 sm:mb-4">
             <UrgencyToggle
