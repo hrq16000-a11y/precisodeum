@@ -170,51 +170,6 @@ const HowItWorksSection = () => {
           </p>
         </FadeInSection>
 
-        {/* Filtro rápido em 2 passos — Categoria + Cidade → /buscar */}
-        <FadeInSection delay={0.28} className="mt-5">
-          <form
-            onSubmit={handleQuickSearch}
-            className="rounded-2xl border border-border bg-card p-3 shadow-sm md:p-4"
-            aria-label="Filtro rápido"
-          >
-            <div className="mb-2 flex items-center gap-2">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                ?
-              </span>
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Filtro rápido
-              </p>
-            </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
-              <select
-                value={quickCategory}
-                onChange={(e) => setQuickCategory(e.target.value)}
-                className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                aria-label="Categoria"
-              >
-                <option value="">Todas as categorias</option>
-                {topCategories.map((c) => (
-                  <option key={c.id} value={c.slug}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="text"
-                value={quickCity}
-                onChange={(e) => setQuickCity(e.target.value)}
-                placeholder={geoCity ? `Cidade (${geoCity})` : 'Cidade ou CEP'}
-                className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                aria-label="Cidade ou CEP"
-              />
-              <Button type="submit" className="h-10 rounded-lg px-5 font-semibold">
-                Buscar
-                <ArrowRight className="ml-1.5 h-4 w-4" />
-              </Button>
-            </div>
-          </form>
-        </FadeInSection>
-
         <div className="mt-8">
           <OurStoryBanner variant="compact" />
         </div>
