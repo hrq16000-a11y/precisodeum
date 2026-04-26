@@ -539,21 +539,6 @@ export function useFeaturedProviders(options: boolean | FeaturedProvidersOptions
         });
       }
 
-      // Normaliza para detectar nomes genéricos (com/sem acento, plural, variações de grafia)
-      const normalize = (s: string) =>
-        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
-      const GENERIC_NAMES = new Set([
-        'pedreiro','padeiro','padreiro','eletricista','encanador','pintor','autonomo','profissional',
-        'empreiteiro','marceneiro','jardineiro','tecnico','mecanico','servicosgerais','diarista',
-        'cozinheiro','motorista','soldador','vidraceiro','gesseiro','azulejista','prestador',
-        'profissionalautonomo','servico','servicos','autonoma','prestadora','tecnica',
-      ]);
-      const isGenericName = (s?: string | null) => {
-        if (!s) return true;
-        const n = normalize(s);
-        return !n || GENERIC_NAMES.has(n);
-      };
-
       // Map MV rows (snake_case + flat category fields) to DbProvider shape
       const mappedRows = rows.map((p) => {
         const provWhatsapp = (p.whatsapp || '').trim();
@@ -565,11 +550,11 @@ export function useFeaturedProviders(options: boolean | FeaturedProvidersOptions
         // Prioridade do nome: profile.full_name > business_name (não-genérico) > "Profissional"
         const fullName = profile?.name?.trim() || '';
         const businessName = (p.business_name || '').trim();
-        const safeBusinessName = isGenericName(businessName) ? '' : businessName;
-        const resolvedName = fullName || safeBusinessName || 'Profissional';
+        const safeBusinessName = isGenericProviderName(businessName) ? '' : businessName;
+        const resolvedName = fullName || safeBusinessName || humanizeProviderSlug(p.slug) || 'Profissional';
 
-        // Foto: photo_url do provider OU avatar_url do profile (real, não DiceBear)
-        const resolvedPhoto = (p.photo_url || profile?.avatar || '').trim();
+        // Foto: avatar real do perfil tem prioridade na home; só cai para photo_url se não houver avatar.
+        const resolvedPhoto = (profile?.avatar || p.photo_url || '').trim();
 
         const mapped: DbProvider = {
           id: p.id,
