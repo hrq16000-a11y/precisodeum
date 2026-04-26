@@ -113,7 +113,36 @@ export const Phase2Service = ({
     onChangeService({ description: text });
   };
 
-  const canAdvance = !!selectedId && service.description.trim().length >= 10;
+  // Invariante: o nome do serviço precisa ser exatamente o nome da categoria
+  // selecionada e o primary_category_id do perfil precisa apontar para o mesmo id.
+  const invariantOk =
+    !!selectedId &&
+    service.service_name.trim().toLowerCase() === selectedName.trim().toLowerCase() &&
+    profile.primary_category_id === selectedId;
+
+  const canAdvance =
+    !!selectedId &&
+    service.description.trim().length >= 10 &&
+    invariantOk;
+
+  const handleAdvance = () => {
+    if (!selectedId) {
+      toast.error('Escolha uma categoria antes de continuar.');
+      return;
+    }
+    if (!invariantOk) {
+      // Auto-corrige silenciosamente e bloqueia o avanço com aviso claro.
+      onChangeService({ category_ids: [selectedId], service_name: selectedName });
+      onChangeProfile({ primary_category_id: selectedId });
+      toast.error('Categoria e nome do serviço estavam fora de sincronia. Já corrigimos — confirme e clique em Continuar de novo.');
+      return;
+    }
+    if (service.description.trim().length < 10) {
+      toast.error('Escreva uma descrição com pelo menos 10 caracteres.');
+      return;
+    }
+    onNext();
+  };
 
   return (
     <div className="space-y-5">
@@ -150,6 +179,12 @@ export const Phase2Service = ({
               ))}
             </div>
           )}
+          {selectedId && !invariantOk && (
+            <p className="mt-1 inline-flex items-start gap-1 text-[11px] text-destructive">
+              <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
+              O título do serviço deve ser igual à categoria escolhida. Reselecione a categoria para corrigir.
+            </p>
+          )}
         </div>
 
         <div>
@@ -160,19 +195,42 @@ export const Phase2Service = ({
               onClick={handleSuggest}
               disabled={!selectedId}
               className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/20 disabled:opacity-40 disabled:cursor-not-allowed transition"
-              aria-label="Sugerir descrição com base na categoria"
+              aria-label="Gerar 3 sugestões de descrição"
             >
-              <Sparkles className="h-3 w-3" />
-              Sugerir descrição
+              <Wand2 className="h-3 w-3" />
+              Gerar 3 sugestões
             </button>
           </div>
+
+          {variants.length > 0 && (
+            <div className="mt-1 grid gap-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Escolha uma variação ou edite à vontade</p>
+              <div className="flex flex-wrap gap-1.5">
+                {variants.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => pickVariant(idx)}
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] transition ${
+                      selectedVariantIdx === idx
+                        ? 'border-accent bg-accent/15 font-medium text-foreground'
+                        : 'border-border hover:border-accent/50 text-muted-foreground'
+                    }`}
+                  >
+                    <Sparkles className="h-3 w-3" /> Variação {idx + 1}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <textarea
             value={service.description}
-            onChange={(e) => onChangeService({ description: e.target.value })}
+            onChange={(e) => { onChangeService({ description: e.target.value }); setSelectedVariantIdx(null); }}
             placeholder="Conte rapidamente o que você faz, diferenciais e experiência. Ex: Atendo emergências 24h, +10 anos de experiência em redes residenciais e comerciais."
             maxLength={400}
             rows={4}
-            className="mt-1 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+            className="mt-2 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
           />
           <div className="mt-1 flex items-center justify-between gap-2">
             <p className="text-[10px] text-muted-foreground">
@@ -185,7 +243,7 @@ export const Phase2Service = ({
             )}
           </div>
           <p className="mt-1 text-[10px] text-muted-foreground/80">
-            Dica: clique em <span className="font-medium">Sugerir descrição</span> para começar com um texto pronto e depois personalize do seu jeito.
+            Dica: clique em <span className="font-medium">Gerar 3 sugestões</span> e troque entre as variações até encontrar a que mais combina com você.
           </p>
         </div>
 
@@ -196,7 +254,7 @@ export const Phase2Service = ({
 
       <div className="flex gap-2 pt-2">
         <Button type="button" variant="ghost" onClick={onSkip} className="flex-1">Pular por enquanto</Button>
-        <Button type="button" onClick={onNext} disabled={!canAdvance} className="flex-1">Continuar</Button>
+        <Button type="button" onClick={handleAdvance} disabled={!canAdvance} className="flex-1">Continuar</Button>
       </div>
     </div>
   );
