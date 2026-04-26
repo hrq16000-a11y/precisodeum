@@ -1842,6 +1842,7 @@ export type Database = {
           lead_context: Json
           lead_score: number
           lead_type: string
+          lost_reason: string | null
           message: string | null
           next_followup_at: string | null
           phone: string
@@ -1863,6 +1864,7 @@ export type Database = {
           lead_context?: Json
           lead_score?: number
           lead_type?: string
+          lost_reason?: string | null
           message?: string | null
           next_followup_at?: string | null
           phone: string
@@ -1884,6 +1886,7 @@ export type Database = {
           lead_context?: Json
           lead_score?: number
           lead_type?: string
+          lost_reason?: string | null
           message?: string | null
           next_followup_at?: string | null
           phone?: string
@@ -6425,6 +6428,14 @@ export type Database = {
           os: string
           region: string
           user_id: string
+        }[]
+      }
+      get_lead_history_authors: {
+        Args: { p_author_ids: string[] }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
         }[]
       }
       get_lead_stats: { Args: { provider_id: string }; Returns: Json }
