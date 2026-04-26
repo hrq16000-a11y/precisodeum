@@ -10,6 +10,12 @@ import { sanitizeSearchTokens } from '@/lib/searchSanitizer';
 import { calculateDistanceKm, hasCoordinates } from '@/lib/geoDistance';
 import { resolveDisplayName as _centralResolveDisplayName } from '@/lib/providerDisplay';
 import { getCityCoords } from '@/lib/cityCoords';
+import {
+  expandSearchTerms as _expandSearchTermsShared,
+  evaluateTextMatch,
+  normalizeSearchText,
+} from '@/lib/searchNormalization';
+import { calculateAuditedDistanceKm, type DistanceAudit } from '@/lib/distanceAudit';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
@@ -58,6 +64,8 @@ export interface DbProvider {
   communityVerified?: boolean;
   levelName?: string | null;
   levelPriority?: number;
+  /** Audit metadata about how distance was computed (debug/inspection) */
+  _distanceAudit?: DistanceAudit;
 }
 
 export type FeaturedProviderSort = 'proximity' | 'category' | 'availability';
@@ -656,70 +664,23 @@ export { normalizeCityName, matchesGeoContextCompat as matchesGeoContext };
 const MIN_LOCAL_RESULTS = 3;
 const SEARCH_RESULT_LIMIT = 96;
 
-const SEARCH_TERM_EQUIVALENTS: Record<string, string[]> = {
-  baba: ['baba', 'babá', 'nanny', 'cuidadora', 'cuidador', 'crianca', 'criança', 'infantil'],
-  diarista: ['diarista', 'faxina', 'faxineira', 'domestica', 'doméstica', 'limpeza'],
-  freelance: ['freelance', 'free', 'lance', 'free lance'],
-};
-
+// Re-export para retrocompatibilidade interna; lógica agora vive em src/lib/searchNormalization.
 function expandSearchTerms(rawQuery: string): string[] {
-  const baseTerms = sanitizeSearchTokens(rawQuery);
-  const expanded = new Set(baseTerms);
-  const normalizedRaw = rawQuery
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/-/g, ' ')
-    .trim();
-
-  if (normalizedRaw.includes('free lance')) expanded.add('freelance');
-
-  for (const term of baseTerms) {
-    const aliases = SEARCH_TERM_EQUIVALENTS[term] || [];
-    aliases.forEach((alias) => expanded.add(alias));
-  }
-
-  return Array.from(expanded).filter(Boolean);
+  return _expandSearchTermsShared(rawQuery);
 }
 
+/**
+ * Wrapper retrocompatível em torno de `calculateAuditedDistanceKm`.
+ * Mantém a assinatura antiga usada por outras partes do hook.
+ */
 function calculateTrustedDistanceKm(
   userLat: number,
   userLon: number,
   provider: Pick<DbProvider, 'latitude' | 'longitude' | 'city'>,
   userCity?: string,
 ): number {
-  if (!hasCoordinates(provider.latitude, provider.longitude)) return Infinity;
-
-  const directKm = calculateDistanceKmSimple(userLat, userLon, provider.latitude, provider.longitude);
-  const providerCityNorm = normalize(provider.city || '');
-  const userCityNorm = normalize(userCity || '');
-
-  if (!providerCityNorm || !userCityNorm || providerCityNorm === userCityNorm) {
-    return directKm;
-  }
-
-  const providerCityCenter = getCityCoords(provider.city || '');
-  const userCityCenter = getCityCoords(userCity || '');
-  if (!providerCityCenter || !userCityCenter) return directKm;
-
-  const providerToOwnCenterKm = calculateDistanceKm(
-    { latitude: provider.latitude, longitude: provider.longitude },
-    { latitude: providerCityCenter.lat, longitude: providerCityCenter.lon },
-  );
-  const providerToUserCenterKm = calculateDistanceKm(
-    { latitude: provider.latitude, longitude: provider.longitude },
-    { latitude: userCityCenter.lat, longitude: userCityCenter.lon },
-  );
-
-  const suspiciousCrossCityCoords = providerToOwnCenterKm > 8 && providerToUserCenterKm + 2 < providerToOwnCenterKm;
-  if (!suspiciousCrossCityCoords) return directKm;
-
-  const correctedKm = calculateDistanceKm(
-    { latitude: userLat, longitude: userLon },
-    { latitude: providerCityCenter.lat, longitude: providerCityCenter.lon },
-  );
-
-  return Math.max(directKm, correctedKm);
+  const audit = calculateAuditedDistanceKm(userLat, userLon, provider, userCity);
+  return audit.distanceKm;
 }
 
 export function filterAndRankProviders(
@@ -750,25 +711,11 @@ export function filterAndRankProviders(
   // Override radius if explicitly provided
   if (radiusKm) (geoContext as any).radius = radiusKm;
 
-  // Apply textual filter using sanitized service tokens (stop words removed)
+  // Apply textual filter using the unified normalization + sinônimos
   if (serviceQuery) {
     const terms = expandSearchTerms(serviceQuery);
     if (terms.length > 0) {
-      results = results.filter((p) => {
-        const searchable = [
-          p.name, p.category, p.description,
-          p.businessName || '', p.city, p.neighborhood, p.state,
-          (p as any)._searchableServices || '',
-        ].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/-/g, ' ');
-
-        let matched = 0;
-        for (const term of terms) {
-          if (searchable.includes(term)) matched++;
-        }
-        // 1 term: must match; 2+ terms: at least 50% must match
-        const threshold = terms.length === 1 ? 1 : Math.ceil(terms.length * 0.5);
-        return matched >= threshold;
-      });
+      results = results.filter((p) => evaluateTextMatch(p as any, terms).matched);
     }
   }
 
@@ -849,26 +796,23 @@ export function filterAndRankProvidersGrouped(
   const { intent, geoIntent, geoContext, serviceQuery } = sil;
   if (radiusKm) (geoContext as any).radius = radiusKm;
 
-  // Text filter
-  if (serviceQuery) {
-    const terms = expandSearchTerms(serviceQuery);
-    if (terms.length > 0) {
-      results = results.filter((p) => {
-        const searchable = [p.name, p.category, p.categorySlug, p.description, p.businessName || '', p.city, p.neighborhood, p.state, (p as any)._searchableServices || '']
-          .join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/-/g, ' ');
-        let matched = 0;
-        for (const term of terms) { if (searchable.includes(term)) matched++; }
-        const threshold = terms.length === 1 ? 1 : Math.ceil(terms.length * 0.5);
-        return matched >= threshold;
-      });
-    }
+  // Text filter (unified normalization + synonym expansion)
+  const _terms = serviceQuery ? expandSearchTerms(serviceQuery) : [];
+  const _textMatches = new Map<string, { matched: boolean; score: number }>();
+  if (_terms.length > 0) {
+    results = results.filter((p) => {
+      const m = evaluateTextMatch(p as any, _terms);
+      _textMatches.set(p.id, { matched: m.matched, score: m.score });
+      return m.matched;
+    });
   }
 
   if (import.meta.env.DEV) {
-    console.debug('[GeoAudit] Query:', { query, city, state, userLat, userLon, radiusKm, resultsBefore: results.length });
+    // eslint-disable-next-line no-console
+    console.debug('[GeoAudit] Query:', { query, city, state, userLat, userLon, radiusKm, resultsBefore: results.length, terms: _terms });
   }
 
-  // Enrich with geo + relevance scores
+  // Enrich with geo + relevance scores + audited distance
   const enriched = results.map((p) => {
     const isLocal = (intent !== 'SERVICE_ONLY' && (geoContext.cityNorm || geoContext.stateNorm))
       ? SearchIntelligence.matchesGeo(p, geoContext)
@@ -877,18 +821,25 @@ export function filterAndRankProvidersGrouped(
     const relevance = SearchIntelligence.computeRelevanceScore(p, serviceQuery);
     const scored = SearchIntelligence.computeFinalScore(gs, relevance, intent);
 
-    // Real distance in km for proximity sorting
-    let distanceKm = Infinity;
-    if (userLat != null && userLon != null && Number.isFinite(userLat) && Number.isFinite(userLon)
-        && p.latitude != null && p.longitude != null && Number.isFinite(p.latitude) && Number.isFinite(p.longitude)) {
-      distanceKm = calculateTrustedDistanceKm(userLat, userLon, p, city);
-    }
+    // Audited distance — keeps source/suspicious flags for UI
+    const audit = calculateAuditedDistanceKm(userLat ?? null, userLon ?? null, p, city);
+    const distanceKm = audit.distanceKm;
+
+    // Combined text+distance score: avoids weak match closer beating strong match a bit further
+    const textRel = _textMatches.get(p.id)?.score ?? (relevance || 0);
+    // Distance score in [0..1]: 1 if very close, 0 if 30km+ away
+    const distScore = distanceKm === Infinity ? 0 : Math.max(0, 1 - distanceKm / 30);
+    // Texto pesa mais (0.7) que distância (0.3) — relevância nunca é dominada por proximidade
+    const combinedScore = textRel * 0.7 + distScore * 0.3;
 
     if (import.meta.env.DEV) {
-      console.debug(`[GeoAudit] Provider: ${p.name} (${p.latitude}, ${p.longitude}) | Dist: ${distanceKm === Infinity ? 'N/A' : distanceKm.toFixed(1) + ' km'} | Local: ${isLocal}`);
+      // eslint-disable-next-line no-console
+      console.debug(
+        `[GeoAudit] ${p.name} | dist=${distanceKm === Infinity ? 'N/A' : distanceKm.toFixed(1) + 'km'} src=${audit.source}${audit.suspicious ? ' SUSPICIOUS' : ''} | text=${textRel.toFixed(2)} combined=${combinedScore.toFixed(2)} local=${isLocal}`
+      );
     }
 
-    return { p, isLocal, scored, distanceKm };
+    return { p, isLocal, scored, distanceKm, audit, textRel, combinedScore };
   });
 
   const hasGeoContext = !!(geoContext.cityNorm || geoContext.stateNorm);
@@ -896,38 +847,39 @@ export function filterAndRankProvidersGrouped(
   const localArr = hasGeoContext ? enriched.filter(e => e.isLocal) : enriched;
   const otherArr = hasGeoContext ? enriched.filter(e => !e.isLocal) : [];
 
-  // Sort local by distance first (if available), then by score
-  // City-match priority: providers in user's exact city sort first
   const userCityNorm = city ? normalize(city) : '';
-  localArr.sort((a, b) => {
-    // Tier 1: same city as user
-    if (userCityNorm) {
-      const aMatch = normalize(a.p.city) === userCityNorm;
-      const bMatch = normalize(b.p.city) === userCityNorm;
-      if (aMatch !== bMatch) return aMatch ? -1 : 1;
-    }
-    // Tier 2: distance
-    if (a.distanceKm !== Infinity && b.distanceKm !== Infinity) {
-      const distDiff = a.distanceKm - b.distanceKm;
-      if (Math.abs(distDiff) > 1) return distDiff;
-    }
-    if (a.scored.finalScore !== b.scored.finalScore) return b.scored.finalScore - a.scored.finalScore;
-    const aS = (a.p as any)._finalScore || 0;
-    const bS = (b.p as any)._finalScore || 0;
-    if (aS !== bS) return bS - aS;
-    return compareEliteMerit(a.p, b.p);
-  });
 
-  // Sort other by distance first when available, then by score
-  otherArr.sort((a, b) => {
+  // Hybrid sort — texto domina; distância desempata e bônus para mesma cidade.
+  const hybridSort = (a: typeof enriched[0], b: typeof enriched[0]) => {
+    // Tier 1: bater todos os termos vence quem bate parcial (apenas quando há query)
+    if (_terms.length > 0) {
+      const aFull = (a.textRel >= 0.99) ? 1 : 0;
+      const bFull = (b.textRel >= 0.99) ? 1 : 0;
+      if (aFull !== bFull) return bFull - aFull;
+    }
+    // Tier 2: mesma cidade do usuário
+    if (userCityNorm) {
+      const aMatch = normalize(a.p.city) === userCityNorm ? 1 : 0;
+      const bMatch = normalize(b.p.city) === userCityNorm ? 1 : 0;
+      if (aMatch !== bMatch) return bMatch - aMatch;
+    }
+    // Tier 3: combined score (texto * 0.7 + distância * 0.3)
+    if (Math.abs(a.combinedScore - b.combinedScore) > 0.05) {
+      return b.combinedScore - a.combinedScore;
+    }
+    // Tier 4: distância pura quando combined empata
     if (a.distanceKm !== Infinity && b.distanceKm !== Infinity) {
       const distDiff = a.distanceKm - b.distanceKm;
       if (Math.abs(distDiff) > 1) return distDiff;
     }
     if (a.distanceKm === Infinity && b.distanceKm !== Infinity) return 1;
     if (b.distanceKm === Infinity && a.distanceKm !== Infinity) return -1;
+    if (a.scored.finalScore !== b.scored.finalScore) return b.scored.finalScore - a.scored.finalScore;
     return compareEliteMerit(a.p, b.p);
-  });
+  };
+
+  localArr.sort(hybridSort);
+  otherArr.sort(hybridSort);
 
   const isFallback = hasGeoContext && localArr.length === 0;
 
@@ -962,6 +914,7 @@ export function filterAndRankProvidersGrouped(
     const toProvider = (e: typeof combined[0]) => ({
       ...e.p,
       distanceKm: e.distanceKm !== Infinity ? Math.round(e.distanceKm * 10) / 10 : undefined,
+      _distanceAudit: e.audit,
     });
     return {
       local: [],
@@ -975,6 +928,7 @@ export function filterAndRankProvidersGrouped(
   const toProvider = (e: typeof otherArr[0]) => ({
     ...e.p,
     distanceKm: e.distanceKm !== Infinity ? Math.round(e.distanceKm * 10) / 10 : undefined,
+    _distanceAudit: e.audit,
   });
 
   return {

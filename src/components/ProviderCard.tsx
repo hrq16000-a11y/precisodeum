@@ -291,6 +291,26 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                     {Math.max(1, Math.round((provider.distanceKm / 30) * 60))}min
                   </span>
                 )}
+                {/* Audit chip — visível apenas em DEV ou quando ?audit=1 está na URL */}
+                {provider._distanceAudit && (typeof window !== 'undefined') && (
+                  (import.meta as any)?.env?.DEV || window.location.search.includes('audit=1')
+                ) && (
+                  <span
+                    className={`ml-1 shrink-0 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wide ${
+                      provider._distanceAudit.suspicious
+                        ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/40'
+                        : 'bg-muted text-muted-foreground border border-border'
+                    }`}
+                    title={
+                      provider._distanceAudit.suspicious
+                        ? `Suspeito: coords do provider divergem do centro de ${provider._distanceAudit.providerCity}. Usando distância via centro da cidade.`
+                        : `Distância calculada por coordenadas diretas (origem: ${provider._distanceAudit.source}).`
+                    }
+                  >
+                    {provider._distanceAudit.source === 'city-center' ? 'centro-cidade' : 'direta'}
+                    {provider._distanceAudit.suspicious ? ' ⚠' : ''}
+                  </span>
+                )}
               </div>
             )}
             {/* Hiper-local: matador para conversão quando o profissional está a <5km */}

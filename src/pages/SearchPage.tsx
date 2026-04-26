@@ -722,25 +722,52 @@ const SearchPage = () => {
 
             <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs sm:text-sm text-muted-foreground">
-                {isLoading
-                  ? 'Buscando...'
-                  : isFallback && effectiveCity
-                    ? (
-                        <>
-                          <span className="font-semibold text-foreground">0</span> em{' '}
-                          <span className="font-semibold text-foreground">{effectiveCity}</span>
-                          {totalDisplay > 0 && (
-                            <> · <span className="font-semibold text-foreground">{totalDisplay}</span> em cidades próximas</>
-                          )}
-                        </>
-                      )
-                    : (
-                        <>
-                          {`${totalDisplay} profissional(is) encontrado(s)`}
-                          {query && <> para "<span className="font-semibold text-foreground">{query}</span>"</>}
-                          {effectiveCity && <> em <span className="font-semibold text-foreground">{effectiveCity}</span></>}
-                        </>
+                {isLoading ? (
+                  'Buscando...'
+                ) : (() => {
+                  const localCount = filteredLocal.length;
+                  const nearbyCount = filteredNearby.length;
+                  const outCount = showOutOfState ? filteredOutOfState.length : 0;
+                  const fmt = (n: number) => `${n} profissional${n === 1 ? '' : 'is'}`;
+
+                  // Sem cidade definida → contagem geral
+                  if (!effectiveCity) {
+                    return (
+                      <>
+                        {`${totalDisplay} profissional${totalDisplay === 1 ? '' : 'is'} encontrado${totalDisplay === 1 ? '' : 's'}`}
+                        {query && <> para "<span className="font-semibold text-foreground">{query}</span>"</>}
+                      </>
+                    );
+                  }
+
+                  // Fallback: 0 na cidade, mostra só vizinhança
+                  if (isFallback) {
+                    return (
+                      <>
+                        <span className="font-semibold text-foreground">0</span> em{' '}
+                        <span className="font-semibold text-foreground">{effectiveCity}</span>
+                        {nearbyCount + outCount > 0 && (
+                          <> · <span className="font-semibold text-foreground">{nearbyCount + outCount}</span> em cidades próximas</>
+                        )}
+                      </>
+                    );
+                  }
+
+                  // Caso normal: tem resultados na cidade. Mostra ambos quando houver vizinhos.
+                  return (
+                    <>
+                      <span className="font-semibold text-foreground">{fmt(localCount)}</span>{' '}
+                      em <span className="font-semibold text-foreground">{effectiveCity}</span>
+                      {nearbyCount > 0 && (
+                        <> · <span className="font-semibold text-foreground">{nearbyCount}</span> em cidades próximas</>
                       )}
+                      {outCount > 0 && (
+                        <> · <span className="font-semibold text-foreground">{outCount}</span> em outros estados</>
+                      )}
+                      {query && <> para "<span className="font-semibold text-foreground">{query}</span>"</>}
+                    </>
+                  );
+                })()}
               </p>
               <div className="flex items-center gap-2">
                 {!isFallback && filteredLocal.length > 0 && effectiveCity && (
