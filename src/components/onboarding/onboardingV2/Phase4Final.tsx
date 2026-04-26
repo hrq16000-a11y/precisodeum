@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CpfCnpjInput, maskCpfCnpj } from '@/components/onboarding/CpfCnpjInput';
+import CpfCnpjInput from '@/components/onboarding/CpfCnpjInput';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import type { OnboardingProfileData } from './types';
 
@@ -71,9 +71,9 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
           <div>
             <Label className="text-xs">{data.kind === 'pj' ? 'CNPJ' : 'CPF'}</Label>
             <CpfCnpjInput
-              value={maskCpfCnpj(data.document, data.kind)}
-              onValueChange={(masked, raw) => onChange({ document: raw })}
-              mode={data.kind}
+              value={data.document}
+              onChange={(digitsOnly) => onChange({ document: digitsOnly })}
+              mode={data.kind === 'pj' ? 'cnpj' : 'cpf'}
               placeholder={data.kind === 'pj' ? '00.000.000/0000-00' : '000.000.000-00'}
             />
             <p className="mt-1 text-[10px] text-muted-foreground">
