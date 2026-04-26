@@ -9,6 +9,7 @@ import SearchIntelligence from '@/lib/searchIntelligence';
 import { sanitizeSearchTokens } from '@/lib/searchSanitizer';
 import { calculateDistanceKm, hasCoordinates } from '@/lib/geoDistance';
 import { resolveDisplayName as _centralResolveDisplayName } from '@/lib/providerDisplay';
+import { getCityCoords } from '@/lib/cityCoords';
 
 /** Track impression for fairness system — fire-and-forget */
 export function trackProviderImpressions(providerIds: string[]) {
@@ -655,6 +656,72 @@ export { normalizeCityName, matchesGeoContextCompat as matchesGeoContext };
 const MIN_LOCAL_RESULTS = 3;
 const SEARCH_RESULT_LIMIT = 96;
 
+const SEARCH_TERM_EQUIVALENTS: Record<string, string[]> = {
+  baba: ['baba', 'babá', 'nanny', 'cuidadora', 'cuidador', 'crianca', 'criança', 'infantil'],
+  diarista: ['diarista', 'faxina', 'faxineira', 'domestica', 'doméstica', 'limpeza'],
+  freelance: ['freelance', 'free', 'lance', 'free lance'],
+};
+
+function expandSearchTerms(rawQuery: string): string[] {
+  const baseTerms = sanitizeSearchTokens(rawQuery);
+  const expanded = new Set(baseTerms);
+  const normalizedRaw = rawQuery
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/-/g, ' ')
+    .trim();
+
+  if (normalizedRaw.includes('free lance')) expanded.add('freelance');
+
+  for (const term of baseTerms) {
+    const aliases = SEARCH_TERM_EQUIVALENTS[term] || [];
+    aliases.forEach((alias) => expanded.add(alias));
+  }
+
+  return Array.from(expanded).filter(Boolean);
+}
+
+function calculateTrustedDistanceKm(
+  userLat: number,
+  userLon: number,
+  provider: Pick<DbProvider, 'latitude' | 'longitude' | 'city'>,
+  userCity?: string,
+): number {
+  if (!hasCoordinates(provider.latitude, provider.longitude)) return Infinity;
+
+  const directKm = calculateDistanceKmSimple(userLat, userLon, provider.latitude, provider.longitude);
+  const providerCityNorm = normalize(provider.city || '');
+  const userCityNorm = normalize(userCity || '');
+
+  if (!providerCityNorm || !userCityNorm || providerCityNorm === userCityNorm) {
+    return directKm;
+  }
+
+  const providerCityCenter = getCityCoords(provider.city || '');
+  const userCityCenter = getCityCoords(userCity || '');
+  if (!providerCityCenter || !userCityCenter) return directKm;
+
+  const providerToOwnCenterKm = calculateDistanceKm(
+    { latitude: provider.latitude, longitude: provider.longitude },
+    { latitude: providerCityCenter.lat, longitude: providerCityCenter.lon },
+  );
+  const providerToUserCenterKm = calculateDistanceKm(
+    { latitude: provider.latitude, longitude: provider.longitude },
+    { latitude: userCityCenter.lat, longitude: userCityCenter.lon },
+  );
+
+  const suspiciousCrossCityCoords = providerToOwnCenterKm > 8 && providerToUserCenterKm + 2 < providerToOwnCenterKm;
+  if (!suspiciousCrossCityCoords) return directKm;
+
+  const correctedKm = calculateDistanceKm(
+    { latitude: userLat, longitude: userLon },
+    { latitude: providerCityCenter.lat, longitude: providerCityCenter.lon },
+  );
+
+  return Math.max(directKm, correctedKm);
+}
+
 export function filterAndRankProviders(
   providers: DbProvider[],
   query: string,
@@ -685,7 +752,7 @@ export function filterAndRankProviders(
 
   // Apply textual filter using sanitized service tokens (stop words removed)
   if (serviceQuery) {
-    const terms = sanitizeSearchTokens(serviceQuery);
+    const terms = expandSearchTerms(serviceQuery);
     if (terms.length > 0) {
       results = results.filter((p) => {
         const searchable = [
@@ -784,10 +851,10 @@ export function filterAndRankProvidersGrouped(
 
   // Text filter
   if (serviceQuery) {
-    const terms = sanitizeSearchTokens(serviceQuery);
+    const terms = expandSearchTerms(serviceQuery);
     if (terms.length > 0) {
       results = results.filter((p) => {
-        const searchable = [p.name, p.category, p.description, p.businessName || '', p.city, p.neighborhood, p.state, (p as any)._searchableServices || '']
+        const searchable = [p.name, p.category, p.categorySlug, p.description, p.businessName || '', p.city, p.neighborhood, p.state, (p as any)._searchableServices || '']
           .join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/-/g, ' ');
         let matched = 0;
         for (const term of terms) { if (searchable.includes(term)) matched++; }
@@ -814,7 +881,7 @@ export function filterAndRankProvidersGrouped(
     let distanceKm = Infinity;
     if (userLat != null && userLon != null && Number.isFinite(userLat) && Number.isFinite(userLon)
         && p.latitude != null && p.longitude != null && Number.isFinite(p.latitude) && Number.isFinite(p.longitude)) {
-      distanceKm = calculateDistanceKmSimple(userLat, userLon, p.latitude, p.longitude);
+      distanceKm = calculateTrustedDistanceKm(userLat, userLon, p, city);
     }
 
     if (import.meta.env.DEV) {
