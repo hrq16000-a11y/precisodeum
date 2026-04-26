@@ -747,7 +747,7 @@ const SearchPage = () => {
                         <span className="font-semibold text-foreground">0</span> em{' '}
                         <span className="font-semibold text-foreground">{effectiveCity}</span>
                         {nearbyCount + outCount > 0 && (
-                          <> · <span className="font-semibold text-foreground">{nearbyCount + outCount}</span> em cidades próximas</>
+                          <> · <span className="font-semibold text-foreground">{nearbyCount + outCount}</span> em cidades próximas auditadas</>
                         )}
                       </>
                     );
@@ -759,7 +759,7 @@ const SearchPage = () => {
                       <span className="font-semibold text-foreground">{fmt(localCount)}</span>{' '}
                       em <span className="font-semibold text-foreground">{effectiveCity}</span>
                       {nearbyCount > 0 && (
-                        <> · <span className="font-semibold text-foreground">{nearbyCount}</span> em cidades próximas</>
+                        <> · <span className="font-semibold text-foreground">{nearbyCount}</span> em cidades próximas auditadas</>
                       )}
                       {outCount > 0 && (
                         <> · <span className="font-semibold text-foreground">{outCount}</span> em outros estados</>
