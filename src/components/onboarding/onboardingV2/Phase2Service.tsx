@@ -63,13 +63,13 @@ export const Phase2Service = ({
   );
 
   const pickCategory = (id: string, name: string) => {
-    onChangeService({ category_ids: [id] });
+    onChangeService({ category_ids: [id], service_name: name });
     onChangeProfile({ primary_category_id: id }); // herança para o perfil
     setOpen(false);
     setSearch(name);
   };
 
-  const canAdvance = selectedId && service.service_name.trim().length >= 3;
+  const canAdvance = !!selectedId && service.description.trim().length >= 10;
 
   return (
     <div className="space-y-5">
