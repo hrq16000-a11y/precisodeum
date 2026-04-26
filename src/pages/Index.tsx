@@ -226,11 +226,7 @@ const Index = () => {
   const sectionOrder = useMemo(() => {
     const order = (sectionsOrderRaw || DEFAULT_ORDER).split(',').map(s => s.trim()).filter(Boolean);
     const hidden = new Set((hiddenSectionsRaw || '').split(',').map(s => s.trim()).filter(Boolean));
-    const normalized = order.filter(s => !hidden.has(s) && s !== 'leader_sponsor' && s !== 'featured');
-    if (!hidden.has('featured')) {
-      const popularIndex = normalized.indexOf('popular');
-      normalized.splice(popularIndex >= 0 ? popularIndex : normalized.length, 0, 'featured');
-    }
+    const normalized = order.filter(s => !hidden.has(s) && s !== 'leader_sponsor');
     return normalized;
   }, [sectionsOrderRaw, hiddenSectionsRaw]);
 
