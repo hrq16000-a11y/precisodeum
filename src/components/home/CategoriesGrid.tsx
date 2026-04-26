@@ -4,6 +4,8 @@ import { ChevronRight, SearchX, Search } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useGeoCity } from '@/hooks/useGeoCity';
+import { useCategoriesInRegion } from '@/hooks/useCategoriesInRegion';
 
 interface CategoryItem {
   id: string;
@@ -15,13 +17,40 @@ interface CategoryItem {
 }
 
 interface Props {
-  categories: CategoryItem[];
-  isLoading: boolean;
+  // Mantido por compatibilidade (Index.tsx ainda passa), mas agora usamos hook próprio
+  categories?: CategoryItem[];
+  isLoading?: boolean;
 }
 
-const ALL_CHIP = '__all__';
+// Constantes de layout — mantidas em sync entre skeleton e grid real
+const VISIBLE_COUNT = 6; // 3 colunas x 2 linhas no mobile
+const CARD_MIN_H = 'min-h-[6.5rem]';
+const SHUFFLE_KEY = 'pdu:cats:shuffle:v1';
 
-/** Full-width CTA button — text & bg from admin */
+/** Embaralhamento estável por sessão (usuário/navegação) */
+function getStableShuffleSeed(): number {
+  try {
+    const cached = sessionStorage.getItem(SHUFFLE_KEY);
+    if (cached) return Number(cached);
+    const seed = Date.now();
+    sessionStorage.setItem(SHUFFLE_KEY, String(seed));
+    return seed;
+  } catch {
+    return 1;
+  }
+}
+
+function seededShuffle<T>(arr: T[], seed: number): T[] {
+  const a = [...arr];
+  let s = seed || 1;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 9301 + 49297) % 233280;
+    const j = Math.floor((s / 233280) * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 const CategoriesViewAllButton = () => {
   const { data } = useSiteSettings();
   const text = data?.values?.['categories_cta_text'] || 'Ver Todas as Categorias';
@@ -41,34 +70,36 @@ const CategoriesViewAllButton = () => {
   );
 };
 
-// CSS-only animations — no framer-motion needed for this grid
+const CategoryCard = ({ cat }: { cat: CategoryItem }) => (
+  <Link
+    to={`/categoria/${cat.slug}`}
+    className={`group relative flex flex-col items-center justify-center gap-2 rounded-3xl bg-card text-center shadow-[0_2px_12px_-2px_rgb(0_0_0/0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgb(0_0_0/0.12)] hover:-translate-y-1 h-full ${CARD_MIN_H} p-3`}
+  >
+    <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500" />
+    <span className="relative flex items-center justify-center rounded-2xl bg-accent/10 group-hover:bg-accent/20 transition-colors duration-300 h-12 w-12">
+      <CategoryIcon icon={cat.icon} size={26} className="text-accent" />
+    </span>
+    <span className="relative font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words w-full text-[0.6875rem]" style={{ hyphens: 'auto' }}>
+      {cat.name}
+    </span>
+  </Link>
+);
 
-const CategoriesGrid = ({ categories, isLoading }: Props) => {
-  // Subcategories with providers, shuffled randomly (stable per mount)
+const CategoriesGrid = (_props: Props) => {
+  const geo = useGeoCity();
+  const { data, isLoading } = useCategoriesInRegion(geo.city, geo.state);
+
+  const items = data?.items || [];
+  const scope = data?.scope;
+
   const visible = useMemo(() => {
-    const subs = categories.filter(c => c.parent_id && c.count > 0);
-    const a = [...subs];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a.slice(0, 12);
-  }, [categories]);
+    const subs = items.filter((c) => c.parent_id);
+    const pool = subs.length >= VISIBLE_COUNT ? subs : items;
+    const seed = getStableShuffleSeed();
+    return seededShuffle(pool, seed).slice(0, VISIBLE_COUNT);
+  }, [items]);
 
-  const CategoryCard = ({ cat }: { cat: CategoryItem }) => (
-    <Link
-      to={`/categoria/${cat.slug}`}
-      className="group relative flex flex-col items-center justify-center gap-2 rounded-3xl bg-card text-center shadow-[0_2px_12px_-2px_rgb(0_0_0/0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgb(0_0_0/0.12)] hover:-translate-y-1 h-full min-h-[6.5rem] p-3"
-    >
-      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/0 to-primary/0 group-hover:from-accent/5 group-hover:to-primary/5 transition-all duration-500" />
-      <span className="relative flex items-center justify-center rounded-2xl bg-accent/10 group-hover:bg-accent/20 transition-colors duration-300 h-12 w-12">
-        <CategoryIcon icon={cat.icon} size={26} className="text-accent" />
-      </span>
-      <span className="relative font-bold leading-tight text-foreground group-hover:text-accent transition-colors line-clamp-2 break-words w-full text-[0.6875rem]" style={{ hyphens: 'auto' }}>
-        {cat.name}
-      </span>
-    </Link>
-  );
+  const gridCls = 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr';
 
   return (
     <section className="py-8 md:py-12 min-h-[420px]">
@@ -81,19 +112,23 @@ const CategoriesGrid = ({ categories, isLoading }: Props) => {
             Encontre Profissionais por Categoria
           </h2>
           <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-            Escolha a categoria do serviço que você precisa
+            {scope === 'city' && geo.city
+              ? `Profissionais ativos em ${geo.city}`
+              : scope === 'state' && geo.state
+              ? `Profissionais ativos em ${geo.state}`
+              : 'Escolha a categoria do serviço que você precisa'}
           </p>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" aria-hidden="true">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="min-h-[6.5rem] rounded-3xl" />
+          <div className={gridCls} aria-hidden="true">
+            {Array.from({ length: VISIBLE_COUNT }).map((_, i) => (
+              <Skeleton key={i} className={`${CARD_MIN_H} rounded-3xl`} />
             ))}
           </div>
         ) : visible.length > 0 ? (
           <>
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr">
+            <div className={gridCls}>
               {visible.map((cat) => (
                 <div key={cat.id} className="animate-fade-in" style={{ animationFillMode: 'both' }}>
                   <CategoryCard cat={cat} />
