@@ -167,6 +167,7 @@ const DashboardAgencyDataPage = lazy(() => import("./pages/DashboardAgencyDataPa
 const SponsorPublicPage = lazy(() => import("./pages/SponsorPublicPage"));
 const SponsorPublicProfilePage = lazy(() => import("./pages/sponsor/SponsorPublicProfilePage"));
 const TriagePage = lazy(() => import("./pages/TriagePage"));
+const OnboardingV2Page = lazy(() => import("./pages/OnboardingV2Page"));
 const TriagePreviewPage = lazy(() => import("./pages/TriagePreviewPage"));
 
 const CookieConsent = reactLazy(() => importWithRetry(() => import("./components/CookieConsent")));
@@ -294,7 +295,10 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     onboardingStep < 5
   );
 
-  if (mustCompleteOnboarding && location.pathname !== '/triagem') {
+  // Permitimos /triagem (Smart) E /onboarding-v2 (fluxo novo) — usuário em onboarding
+  // pode estar em qualquer um dos dois sem ser empurrado de volta.
+  const isOnboardingRoute = location.pathname === '/triagem' || location.pathname === '/onboarding-v2';
+  if (mustCompleteOnboarding && !isOnboardingRoute) {
     return <Navigate to="/triagem" replace />;
   }
 
@@ -359,6 +363,7 @@ const App = () => {
                 <Route path="/vaga/:slug" element={<JobDetailPage />} />
                 <Route path="/triagem" element={<TriagePage />} />
                 <Route path="/triagem/preview" element={<TriagePreviewPage />} />
+                <Route path="/onboarding-v2" element={<OnboardingV2Page />} />
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                 <Route path="/dashboard/perfil" element={<ProtectedRoute><ErrorGuard componentName="DashboardProfilePage"><DashboardProfilePage /></ErrorGuard></ProtectedRoute>} />
                 <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><ErrorGuard componentName="DashboardServicesPage"><DashboardServicesPage /></ErrorGuard></ProtectedRoute>} />
