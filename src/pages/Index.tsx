@@ -166,7 +166,7 @@ const LazyViewportSection = ({ children }: { children: ReactNode }) => {
 // via site_settings (sections_order / hidden_sections).
 // "howitworks" promovido para antes de "categories" — serve de orientação
 // imediata ao visitante (passo a passo + filtro rápido) antes da grade.
-const DEFAULT_ORDER = 'cms_banners,urgency,howitworks,categories,featured,ad1,searches,jobs,courses,blog,cities,highlights,cta,sponsors,testimonials,faq';
+const DEFAULT_ORDER = 'cms_banners,urgency,howitworks,categories,searches,featured,ad1,jobs,courses,blog,cities,highlights,cta,sponsors,testimonials,faq';
 
 // Sections that appear before 'categories' in the default order load lazily,
 // each one pushing the categories grid down and causing a layout shift.
@@ -226,11 +226,7 @@ const Index = () => {
   const sectionOrder = useMemo(() => {
     const order = (sectionsOrderRaw || DEFAULT_ORDER).split(',').map(s => s.trim()).filter(Boolean);
     const hidden = new Set((hiddenSectionsRaw || '').split(',').map(s => s.trim()).filter(Boolean));
-    const normalized = order.filter(s => !hidden.has(s) && s !== 'leader_sponsor' && s !== 'featured');
-    if (!hidden.has('featured')) {
-      const popularIndex = normalized.indexOf('popular');
-      normalized.splice(popularIndex >= 0 ? popularIndex : normalized.length, 0, 'featured');
-    }
+    const normalized = order.filter(s => !hidden.has(s) && s !== 'leader_sponsor');
     return normalized;
   }, [sectionsOrderRaw, hiddenSectionsRaw]);
 
