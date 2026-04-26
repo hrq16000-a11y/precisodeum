@@ -15,11 +15,13 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Sparkles, MapPin, Briefcase, ArrowRight, ExternalLink,
-  CheckCircle2, Camera, Image as ImageIcon, ShieldCheck, Circle,
+  CheckCircle2, Camera, Image as ImageIcon, ShieldCheck, Circle, Copy, Check,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeSlug } from '@/lib/slugify';
 
 interface Phase3Props {
   serviceName: string;
