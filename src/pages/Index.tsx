@@ -323,11 +323,8 @@ const Index = () => {
             isLoading={!postLcpReady || provsLoading}
             isFetching={featuredFetching}
             hasError={featuredError}
-            categories={categories}
-            selectedCategory={featuredCategory}
             sortBy={featuredSort}
             updatedAt={featuredUpdatedAt}
-            onCategoryChange={setFeaturedCategory}
             onSortChange={setFeaturedSort}
           />
         ) : null;
