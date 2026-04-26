@@ -116,6 +116,7 @@ const AdminSeoAuditPage = lazy(() => import("./pages/AdminSeoAuditPage"));
 const AdminLocationDebugPage = lazy(() => import("./pages/AdminLocationDebugPage"));
 const AdminLocationSeoAuditPage = lazy(() => import("./pages/AdminLocationSeoAuditPage"));
 const AdminSearchAuditPage = lazy(() => import("./pages/AdminSearchAuditPage"));
+const AdminHomeRotationPage = lazy(() => import("./pages/AdminHomeRotationPage"));
 
 const AdminOverviewPage = lazy(() => import("./pages/AdminOverviewPage"));
 const AdminNotificationsPage = lazy(() => import("./pages/AdminNotificationsPage"));
@@ -433,6 +434,7 @@ const App = () => {
                 <Route path="/admin/paginas" element={<AdminInstitutionalPagesPage />} />
                 <Route path="/admin/menus" element={<AdminMenuPage />} />
                 <Route path="/admin/como-funciona" element={<AdminHomeStepsPage />} />
+                <Route path="/admin/home-rotacao" element={<AdminHomeRotationPage />} />
                 <Route path="/admin/depoimentos" element={<AdminTestimonialsPage />} />
                 <Route path="/admin/cta-blocos" element={<AdminCtaBlocksPage />} />
                 <Route path="/admin/secoes-home" element={<AdminHomeSectionsPage />} />
