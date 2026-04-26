@@ -814,12 +814,13 @@ const BasicOnboardingWizard = () => {
         const { data: existing } = await supabase.from('providers').select('*').eq('user_id', user.id).limit(1);
         if (existing && existing[0]) {
           currentStage = 'providers.update';
+          // Mesma regra do insert: nunca enviar null em colunas NOT NULL com default ''.
           const updPayload = {
-            city: city || existing[0].city,
-            state: state || existing[0].state,
+            city: city || existing[0].city || '',
+            state: state || existing[0].state || '',
             neighborhood: neighborhood.trim() || existing[0].neighborhood,
-            description: bio || existing[0].description,
-            whatsapp: whatsapp || existing[0].whatsapp,
+            description: bio || existing[0].description || '',
+            whatsapp: whatsapp || existing[0].whatsapp || '',
             category_id: selectedCategoryIds[0] || existing[0].category_id,
             account_type: providerSubtype || existing[0].account_type || 'autonomous',
           };
