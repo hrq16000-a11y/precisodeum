@@ -872,13 +872,36 @@ const ProviderProfile = () => {
         `${name}, ${category} em ${formatCityState(provider.city, provider.state) || provider.city}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Peca seu orcamento gratis!`)
     : 'Encontre profissionais na plataforma.';
 
+  const seoTitle = truncateAt(seoTitleRaw, 60);
+  const seoDescription = truncateAt(seoDescriptionRaw, 160);
+
   useSeoHead({
-    title: truncateAt(seoTitleRaw, 60),
-    description: truncateAt(seoDescriptionRaw, 160),
+    title: seoTitle,
+    description: seoDescription,
     canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
     ogImage: providerSocialImage || undefined,
     ogType: 'profile',
   });
+
+  // Validação automática de SEO em desenvolvimento.
+  // Avisa (sem quebrar produção) se title/description fugirem dos limites
+  // recomendados, ou se faltar slug/cidade/categoria, evitando regressões.
+  useEffect(() => {
+    if (!import.meta.env.DEV || !provider) return;
+    const issues: string[] = [];
+    if (!slug) issues.push('slug ausente — canonical e JSON-LD ficarão inconsistentes');
+    if (!provider.city) issues.push('cidade ausente — areaServed e SEO local prejudicados');
+    if (!category || category === 'all') issues.push('categoria não definida — serviceType vazio');
+    if (seoTitle.length < 20) issues.push(`title muito curto (${seoTitle.length} chars)`);
+    if (seoTitle.length > 60) issues.push(`title acima de 60 chars (${seoTitle.length})`);
+    if (seoDescription.length < 70) issues.push(`description muito curta (${seoDescription.length})`);
+    if (seoDescription.length > 160) issues.push(`description acima de 160 chars (${seoDescription.length})`);
+    if (issues.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(`[SEO][ProviderProfile slug=${slug || '?'}]`, issues);
+    }
+  }, [provider, slug, category, seoTitle, seoDescription]);
+
 
   const breadcrumbLd = useMemo(() => provider ? ({
     '@context': 'https://schema.org',
