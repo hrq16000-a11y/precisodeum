@@ -10,6 +10,7 @@ import type { FeaturedProviderSort } from '@/hooks/useProviders';
 // Critical path — eagerly loaded for instant render
 import Header from '@/components/Header';
 import HeroBanner from '@/components/home/HeroBanner';
+import ProSignupStrip from '@/components/home/ProSignupStrip';
 import CategoriesGrid from '@/components/home/CategoriesGrid';
 import Footer from '@/components/Footer';
 
