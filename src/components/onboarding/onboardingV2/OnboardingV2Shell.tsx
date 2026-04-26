@@ -52,6 +52,7 @@ import {
 } from './useOnboardingV2RemoteDraft';
 import { trackOnboardingEvent } from './telemetry';
 import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
+import { buildOnboardingV2BootstrapState } from './bootstrap';
 
 function slugify(input: string): string {
   return (input || '')
@@ -64,7 +65,7 @@ function slugify(input: string): string {
 }
 
 export const OnboardingV2Shell = () => {
-  const { user } = useAuth();
+  const { user, profile, provider } = useAuth();
   const navigate = useNavigate();
   // Restaura draft local ao montar (se existir e não estiver expirado)
   const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState, (init) => {
@@ -157,6 +158,27 @@ export const OnboardingV2Shell = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Bootstrap do fluxo único: se o V3 já coletou nome/WhatsApp/cidade,
+  // o V2 deve entrar direto na criação do primeiro serviço sem repetir perguntas.
+  useEffect(() => {
+    const bootstrap = buildOnboardingV2BootstrapState({ profile, provider });
+    if (!bootstrap) return;
+
+    const currentAtOrAfterService =
+      state.phase === 'phase2_service' ||
+      state.phase === 'phase2_details' ||
+      state.phase === 'phase2_photos' ||
+      state.phase === 'phase3_celebration' ||
+      state.phase === 'phase4_document' ||
+      state.phase === 'phase4_extras_a' ||
+      state.phase === 'phase4_extras_b' ||
+      state.phase === 'done';
+
+    if (currentAtOrAfterService && state.providerId) return;
+
+    dispatch({ type: 'HYDRATE', state: bootstrap });
+  }, [profile, provider, state.phase, state.providerId]);
 
   // Telemetria: dispara 'enter' a cada troca de fase
   useEffect(() => {
