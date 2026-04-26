@@ -711,25 +711,11 @@ export function filterAndRankProviders(
   // Override radius if explicitly provided
   if (radiusKm) (geoContext as any).radius = radiusKm;
 
-  // Apply textual filter using sanitized service tokens (stop words removed)
+  // Apply textual filter using the unified normalization + sinônimos
   if (serviceQuery) {
     const terms = expandSearchTerms(serviceQuery);
     if (terms.length > 0) {
-      results = results.filter((p) => {
-        const searchable = [
-          p.name, p.category, p.description,
-          p.businessName || '', p.city, p.neighborhood, p.state,
-          (p as any)._searchableServices || '',
-        ].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/-/g, ' ');
-
-        let matched = 0;
-        for (const term of terms) {
-          if (searchable.includes(term)) matched++;
-        }
-        // 1 term: must match; 2+ terms: at least 50% must match
-        const threshold = terms.length === 1 ? 1 : Math.ceil(terms.length * 0.5);
-        return matched >= threshold;
-      });
+      results = results.filter((p) => evaluateTextMatch(p as any, terms).matched);
     }
   }
 
