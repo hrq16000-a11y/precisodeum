@@ -41,9 +41,9 @@ const FeaturedProviders = ({ providers, isLoading, isFetching, hasError, sortBy 
       providersRendered: providers.length,
       fallbackMode: hasError,
       sortBy,
-      selectedCategory: selectedCategory || 'all',
+      featuredMode: 'tabs-only',
     };
-  }, [providers.length, hasError, sortBy, selectedCategory]);
+  }, [providers.length, hasError, sortBy]);
 
   const items: ({ type: 'provider'; data: DbProvider; index: number } | { type: 'ad'; adIndex: number })[] = [];
   let adCounter = 0;
