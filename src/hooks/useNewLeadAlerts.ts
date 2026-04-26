@@ -57,6 +57,9 @@ const matchesCityLabel = (ctx: LeadContext | null | undefined, label: string): b
 
 export function useNewLeadAlerts(providerId: string | undefined, filters: Filters) {
   const qc = useQueryClient();
+  const { mode } = useLeadAlertPreference();
+  const modeRef = useRef<LeadAlertMode>(mode);
+  modeRef.current = mode;
   const [outsideFilterCount, setOutsideFilterCount] = useState(0);
   const [lastNewLead, setLastNewLead] = useState<NewLeadPayload | null>(null);
   const filtersRef = useRef(filters);
@@ -76,6 +79,9 @@ export function useNewLeadAlerts(providerId: string | undefined, filters: Filter
         setLastNewLead(lead);
         qc.invalidateQueries({ queryKey: ['provider-leads', providerId] });
 
+        const currentMode = modeRef.current;
+        if (currentMode === 'off') return; // usuário optou por silêncio total
+
         const f = filtersRef.current;
         const ctx = lead.lead_context;
         const cityOk = f.city === 'all' || matchesCityLabel(ctx, f.city);
@@ -83,8 +89,11 @@ export function useNewLeadAlerts(providerId: string | undefined, filters: Filter
         const ufOk = f.uf === 'all' || safeUF(ctx?.state) === f.uf;
         const outsideFilter = !(cityOk && catOk && ufOk);
 
+        if (outsideFilter) setOutsideFilterCount((n) => n + 1);
+        if (wantsSound(currentMode)) playSound();
+        if (!wantsToast(currentMode)) return;
+
         if (outsideFilter) {
-          setOutsideFilterCount((n) => n + 1);
           toast('Novo lead fora do filtro atual', {
             description: `${lead.client_name || 'Cliente'} — ${[ctx?.city, safeUF(ctx?.state)].filter(Boolean).join(' • ') || 'Origem desconhecida'}`,
             action: {
