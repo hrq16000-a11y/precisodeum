@@ -212,7 +212,7 @@ export default function BetModeShell() {
     if (state.intent === 'client') {
       navigate(next, { replace: true });
     } else {
-      navigate('/dashboard/servicos?action=new', { replace: true });
+      navigate('/onboarding-v2', { replace: true });
     }
   }
 
