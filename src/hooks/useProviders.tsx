@@ -200,8 +200,16 @@ const sortFeaturedProviders = (providers: DbProvider[], options: FeaturedProvide
 
   const topWindow = sorted.slice(0, Math.min(12, sorted.length));
   const remainder = sorted.slice(topWindow.length);
+  // Rotação determinística usando APENAS variáveis estáveis:
+  // - data (YYYY-MM-DD): rotação diária
+  // - sortBy: cada aba tem sua ordem própria
+  // - categorySlug: cada categoria tem sua ordem própria
+  // - userCity (normalizada): mesma cidade → mesma ordem para todos os visitantes
+  // NÃO usamos latitude/longitude (mutáveis a cada amostra de GPS) nem props instáveis,
+  // para evitar reordenação visível a cada renderização.
   const dateKey = new Date().toISOString().slice(0, 10);
-  const seed = hashRotationSeed(`${dateKey}:${sortBy}:${categorySlug || 'all'}:${userCity || 'all'}:${latitude?.toFixed(1) || 'na'}:${longitude?.toFixed(1) || 'na'}`);
+  const cityKey = (userCity || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') || 'all';
+  const seed = hashRotationSeed(`${dateKey}:${sortBy}:${categorySlug || 'all'}:${cityKey}`);
 
   if (sortBy === 'proximity') {
     const [anchor, ...rest] = topWindow;
