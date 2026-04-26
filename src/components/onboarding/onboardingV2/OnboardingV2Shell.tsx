@@ -595,6 +595,15 @@ export const OnboardingV2Shell = () => {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      <RemoteDraftRecoveryModal
+        open={showRemoteModal}
+        payload={remoteDraft?.payload || null}
+        phase={(remoteDraft?.phase as any) || null}
+        updatedAt={remoteDraft?.updated_at || null}
+        onContinue={handleRemoteContinue}
+        onDiscard={handleRemoteDiscard}
+      />
     </div>
   );
 };
