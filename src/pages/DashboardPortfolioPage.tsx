@@ -59,6 +59,7 @@ const DashboardPortfolioPage = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [photosLoading, setPhotosLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [nextStep, setNextStep] = useState<null | 'album' | 'photo'>(null);
 
   // Album dialog
@@ -67,6 +68,11 @@ const DashboardPortfolioPage = () => {
   const [albumName, setAlbumName] = useState('');
   const [albumDesc, setAlbumDesc] = useState('');
   const [albumSaving, setAlbumSaving] = useState(false);
+
+  // Caption dialog
+  const [captionPhoto, setCaptionPhoto] = useState<Photo | null>(null);
+  const [captionValue, setCaptionValue] = useState('');
+  const [captionSaving, setCaptionSaving] = useState(false);
 
   const loadAlbums = async () => {
     if (!provider) {
