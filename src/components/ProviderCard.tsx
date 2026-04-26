@@ -255,11 +255,14 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 )}
               </div>
             </Link>
-            {provider.businessName && provider.businessName !== displayName && (
+            {provider.businessName && normalizeForCompare(provider.businessName) !== nameNorm && (
               <p className="truncate text-xs text-muted-foreground">{provider.businessName}</p>
             )}
-            {provider.category && (
+            {provider.category && !categoryDuplicatesName && (
               <p className="mt-0.5 truncate text-xs font-medium text-accent sm:text-sm">{provider.category}</p>
+            )}
+            {altSubtitle && (
+              <p className="mt-0.5 truncate text-xs text-muted-foreground sm:text-sm">{altSubtitle}</p>
             )}
             {hasLocation && (
               <div className="mt-1 flex min-w-0 max-w-full flex-wrap items-center gap-1 text-xs text-muted-foreground">
