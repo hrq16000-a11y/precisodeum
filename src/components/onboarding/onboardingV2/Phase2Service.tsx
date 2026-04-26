@@ -92,11 +92,24 @@ export const Phase2Service = ({
 
   const handleSuggest = () => {
     const slug = selectedId ? sanitizeSlug(selectedName) : '';
-    const text = suggestServiceDescription({
+    const list = suggestServiceDescriptionVariants({
       categoryName: selectedName,
       categorySlug: slug,
       city: profile.city,
+      neighborhood: profile.neighborhood,
     });
+    setVariants(list);
+    if (list[0]) onChangeService({ description: list[0] });
+    setSelectedVariantIdx(0);
+  };
+
+  const [variants, setVariants] = useState<string[]>([]);
+  const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null);
+
+  const pickVariant = (idx: number) => {
+    const text = variants[idx];
+    if (!text) return;
+    setSelectedVariantIdx(idx);
     onChangeService({ description: text });
   };
 
