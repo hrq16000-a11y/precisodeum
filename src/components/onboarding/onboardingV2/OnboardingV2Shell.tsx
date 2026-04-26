@@ -308,9 +308,10 @@ export const OnboardingV2Shell = () => {
       if (s.starting_price_brl != null) updates.starting_price = s.starting_price_brl;
       await supabase.from('providers').update(updates).eq('id', state.providerId);
 
-      // 3) primary_category_id também no profile (fonte de verdade do perfil)
+      // 3) Marca onboarding completo. A categoria principal vive em providers.category_id
+      // (já atualizada acima); profiles.primary_category_id é apenas estado de UI no wizard.
       await supabase.from('profiles')
-        .update({ primary_category_id: categoryId, onboarding_step: 5, onboarding_completed: true })
+        .update({ onboarding_step: 5, onboarding_completed: true })
         .eq('id', user.id);
 
       return true;
