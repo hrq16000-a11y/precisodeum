@@ -109,18 +109,22 @@ export const Phase2Service = ({
         </div>
 
         <div>
-          <Label className="text-xs">Título do serviço *</Label>
-          <Input
-            value={service.service_name}
-            onChange={(e) => onChangeService({ service_name: e.target.value })}
-            placeholder="Ex: Encanador residencial 24h"
-            maxLength={80}
+          <Label className="text-xs">Descrição do serviço *</Label>
+          <textarea
+            value={service.description}
+            onChange={(e) => onChangeService({ description: e.target.value })}
+            placeholder="Conte rapidamente o que você faz, diferenciais e experiência. Ex: Atendo emergências 24h, +10 anos de experiência em redes residenciais e comerciais."
+            maxLength={400}
+            rows={4}
+            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
           />
-          <p className="mt-1 text-[10px] text-muted-foreground">{service.service_name.length}/80</p>
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            {service.description.length}/400 — mínimo 10 caracteres. O título do anúncio será <span className="font-medium text-foreground">{selectedName || 'a categoria escolhida'}</span>.
+          </p>
         </div>
 
         <p className="text-[10px] text-muted-foreground">
-          Você poderá adicionar até 5 fotos depois — vamos te avisar.
+          Você poderá adicionar até 5 fotos no próximo passo.
         </p>
       </div>
 
