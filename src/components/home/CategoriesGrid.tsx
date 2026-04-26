@@ -26,8 +26,6 @@ interface Props {
 // Constantes de layout — mantidas em sync entre skeleton e grid real
 const VISIBLE_COUNT = 6; // 3 colunas x 2 linhas no mobile
 const CARD_MIN_H = 'min-h-[6.5rem]';
-const SHUFFLE_KEY = 'pdu:cats:shuffle:v1';
-
 /** Hash determinístico simples (DJB2) para derivar seed estável de uma string */
 function hashSeed(str: string): number {
   let h = 5381;
@@ -35,21 +33,28 @@ function hashSeed(str: string): number {
   return Math.abs(h) || 1;
 }
 
+const normalizeKey = (value?: string | null) =>
+  (value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
 /**
- * Embaralhamento estável: usuários logados → seed derivada do user.id (mesma ordem em qualquer dispositivo).
- * Anônimos → seed por sessão (sessionStorage).
+ * Seed 100% determinística baseada APENAS em variáveis estáveis:
+ * - data (YYYY-MM-DD) → rotação diária previsível
+ * - cidade/UF normalizadas → mesma região vê a mesma ordem
+ * - userId (opcional) → personalização estável entre dispositivos
+ *
+ * Não usamos Date.now() nem sessionStorage para evitar reordenação aleatória
+ * a cada navegação ou re-render.
  */
-function getStableShuffleSeed(userId?: string | null): number {
-  if (userId) return hashSeed(`pdu:cats:${userId}`);
-  try {
-    const cached = sessionStorage.getItem(SHUFFLE_KEY);
-    if (cached) return Number(cached);
-    const seed = Date.now();
-    sessionStorage.setItem(SHUFFLE_KEY, String(seed));
-    return seed;
-  } catch {
-    return 1;
-  }
+export function getStableShuffleSeed(
+  userId?: string | null,
+  city?: string | null,
+  state?: string | null,
+  dateKey?: string,
+): number {
+  const day = dateKey || new Date().toISOString().slice(0, 10);
+  const region = `${normalizeKey(city)}|${normalizeKey(state)}` || 'br';
+  const who = userId ? `u:${userId}` : 'anon';
+  return hashSeed(`pdu:cats:${day}:${region}:${who}`);
 }
 
 function seededShuffle<T>(arr: T[], seed: number): T[] {
