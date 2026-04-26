@@ -156,13 +156,13 @@ const writeFeaturedCache = (key: string, data: DbProvider[], metrics: Record<str
   } catch { /* ignore quota */ }
 };
 
-const hashRotationSeed = (input: string) => {
+export const hashRotationSeed = (input: string) => {
   let hash = 5381;
   for (let i = 0; i < input.length; i += 1) hash = ((hash << 5) + hash + input.charCodeAt(i)) | 0;
   return Math.abs(hash) || 1;
 };
 
-const seededShuffle = <T,>(items: T[], seed: number) => {
+export const seededShuffle = <T,>(items: T[], seed: number) => {
   const arr = [...items];
   let current = seed || 1;
   for (let i = arr.length - 1; i > 0; i -= 1) {
@@ -171,6 +171,21 @@ const seededShuffle = <T,>(items: T[], seed: number) => {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+};
+
+/**
+ * Constrói a seed estável usada para rotação dos destaques.
+ * Usa APENAS variáveis estáveis (data, sortBy, categoria, cidade) — nunca lat/lng cruas.
+ */
+export const buildFeaturedRotationSeed = (params: {
+  dateKey?: string;
+  sortBy: FeaturedProviderSort;
+  categorySlug?: string | null;
+  userCity?: string | null;
+}) => {
+  const dateKey = params.dateKey || new Date().toISOString().slice(0, 10);
+  const cityKey = (params.userCity || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') || 'all';
+  return hashRotationSeed(`${dateKey}:${params.sortBy}:${params.categorySlug || 'all'}:${cityKey}`);
 };
 
 const sortFeaturedProviders = (providers: DbProvider[], options: FeaturedProvidersOptions) => {
