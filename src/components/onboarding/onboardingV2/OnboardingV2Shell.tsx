@@ -249,10 +249,42 @@ export const OnboardingV2Shell = () => {
       const cityForAddress = [p.city, p.state].filter(Boolean).join(' - ');
       const serviceArea = s.cities_served.join('; ');
 
+      // ── INVARIANTE OBRIGATÓRIA ─────────────────────────────────────────────
+      // O nome do 1º serviço é SEMPRE o nome oficial da categoria escolhida e
+      // o primary_category_id do prestador recebe o MESMO category_id.
+      // Resolvemos o nome via banco para evitar divergência de cache local.
+      const categoryId = s.category_ids[0] || null;
+      if (!categoryId) {
+        toast.error('Selecione uma categoria antes de publicar o serviço.');
+        setSaving(false);
+        return false;
+      }
+      let resolvedCategoryName = (s.service_name || '').trim();
+      try {
+        const { data: catRow } = await supabase
+          .from('categories')
+          .select('name')
+          .eq('id', categoryId)
+          .maybeSingle();
+        if (catRow?.name) resolvedCategoryName = catRow.name;
+      } catch { /* fallback no nome local */ }
+      if (!resolvedCategoryName) {
+        toast.error('Categoria inválida. Escolha novamente.');
+        setSaving(false);
+        return false;
+      }
+      // Sincroniza estado local com o nome canônico (mantém UI consistente).
+      if (resolvedCategoryName !== s.service_name) {
+        dispatch({ type: 'PATCH_SERVICE', patch: { service_name: resolvedCategoryName } });
+      }
+      if (state.profile.primary_category_id !== categoryId) {
+        dispatch({ type: 'PATCH_PROFILE', patch: { primary_category_id: categoryId } });
+      }
+
       // 1) RPC oficial — cria serviço atomicamente
       const { data, error } = await (supabase as any).rpc('create_service_atomic', {
         _provider_id: state.providerId,
-        _service_name: s.service_name,
+        _service_name: resolvedCategoryName, // ← invariante reforçada
         _description: s.description || '',
         _whatsapp: p.whatsapp,
         _service_area: serviceArea,
@@ -262,26 +294,23 @@ export const OnboardingV2Shell = () => {
         _instagram_url: '',
         _facebook_url: '',
         _youtube_url: '',
-        _category_id: s.category_ids[0] || null,
-        _category_ids: s.category_ids,
+        _category_id: categoryId,
+        _category_ids: [categoryId, ...s.category_ids.slice(1)],
       });
       if (error || !data?.success) {
         throw new Error(error?.message || data?.error || 'Falha ao criar serviço');
       }
       dispatch({ type: 'SET_FIRST_SERVICE_ID', id: data.service_id });
 
-      // 2) Herança — categoria+horário do serviço sobem para o provider
-      const updates: any = {};
-      if (s.category_ids[0]) updates.category_id = s.category_ids[0];
+      // 2) Herança — categoria principal + horário sobem para o provider
+      const updates: any = { category_id: categoryId };
       if (s.working_hours) updates.working_hours = s.working_hours;
       if (s.starting_price_brl != null) updates.starting_price = s.starting_price_brl;
-      if (Object.keys(updates).length > 0) {
-        await supabase.from('providers').update(updates).eq('id', state.providerId);
-      }
+      await supabase.from('providers').update(updates).eq('id', state.providerId);
 
-      // 3) Marca onboarding completo (estrutural: já existe ≥1 serviço)
+      // 3) primary_category_id também no profile (fonte de verdade do perfil)
       await supabase.from('profiles')
-        .update({ onboarding_step: 5, onboarding_completed: true })
+        .update({ primary_category_id: categoryId, onboarding_step: 5, onboarding_completed: true })
         .eq('id', user.id);
 
       return true;
