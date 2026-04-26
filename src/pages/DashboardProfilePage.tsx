@@ -18,6 +18,7 @@ import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { generateProviderSlug } from '@/lib/slugify';
 import { invalidateProviderProfileCache } from '@/pages/ProviderProfile';
+import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
 import { fetchAllMunicipalities, geocodeCity, reverseGeocode, normalize, type CityResult } from '@/lib/geoUtils';
 import { useQuery } from '@tanstack/react-query';
 import { Search, LocateFixed, Loader2, MapPin, CheckCircle2, User, Briefcase, Globe, HelpCircle, Eye } from 'lucide-react';
