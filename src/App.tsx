@@ -299,7 +299,10 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
 
   // Permitimos /triagem (Smart) E /onboarding-v2 (fluxo novo) — usuário em onboarding
   // pode estar em qualquer um dos dois sem ser empurrado de volta.
-  const isOnboardingRoute = location.pathname === '/triagem' || location.pathname === '/onboarding-v2';
+  const isOnboardingRoute =
+    location.pathname === '/triagem' ||
+    location.pathname === '/onboarding-v2' ||
+    location.pathname === '/onboarding-v2/sucesso';
   if (mustCompleteOnboarding && !isOnboardingRoute) {
     return <Navigate to="/triagem" replace />;
   }
