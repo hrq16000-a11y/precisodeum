@@ -588,9 +588,36 @@ export const OnboardingV2Shell = () => {
             }}
           />
         );
+      case 'phase4_avatar':
+        // Pula apenas se já tem foto. Caso contrário, é OBRIGATÓRIO mostrar.
+        if (state.profile.avatar_url) {
+          dispatch({ type: 'NEXT' });
+          return null;
+        }
+        return (
+          <Phase4Avatar
+            data={state.profile}
+            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            saving={saving}
+            userId={user?.id}
+            onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
+            onContinue={async () => {
+              track('submit');
+              if (state.profile.avatar_url) {
+                await persistPatch({ photo_url: state.profile.avatar_url });
+                await supabase.from('profiles')
+                  .update({ avatar_url: state.profile.avatar_url })
+                  .eq('id', user!.id);
+              }
+              track('next');
+              dispatch({ type: 'NEXT' });
+            }}
+          />
+        );
       case 'phase4_extras_a':
-        // Regra de Ouro da Memória: pula se ambos já preenchidos
-        if (state.profile.neighborhood && state.profile.bio) {
+        // Regra de Ouro: só pula se AMBOS já estão preenchidos.
+        // (Antes pulava com apenas um, deixando perfil incompleto.)
+        if (state.profile.neighborhood && state.profile.bio && state.profile.bio.length >= 20) {
           dispatch({ type: 'NEXT' });
           return null;
         }
@@ -612,7 +639,7 @@ export const OnboardingV2Shell = () => {
           />
         );
       case 'phase4_extras_b':
-        // Regra de Ouro: pula se já preenchidos
+        // Só pula se AMBAS as redes já existem.
         if (state.profile.instagram_url && state.profile.facebook_url) {
           dispatch({ type: 'GO_TO', phase: 'done' });
           return null;
