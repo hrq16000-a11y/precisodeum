@@ -241,6 +241,7 @@ const DashboardPortfolioPage = () => {
     }
 
     setUploading(true);
+    setUploadProgress({ current: 0, total: filesToUpload.length });
     let successCount = 0;
     let failCount = 0;
     const { userRef } = await resolveIdentity(user.id);
