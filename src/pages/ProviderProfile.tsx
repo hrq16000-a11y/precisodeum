@@ -840,14 +840,27 @@ const ProviderProfile = () => {
   const effectiveWhatsApp = provider ? toCanonical(provider.whatsapp || provider.phone || '') : '';
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
+  // Helpers de SEO: garantem limites recomendados (title <=60, description <=160).
+  // Truncam em palavra completa, evitando cortar no meio de uma palavra.
+  const truncateAt = (text: string, max: number) => {
+    const clean = text.replace(/\s+/g, ' ').trim();
+    if (clean.length <= max) return clean;
+    const slice = clean.slice(0, max - 1);
+    const lastSpace = slice.lastIndexOf(' ');
+    return (lastSpace > max * 0.6 ? slice.slice(0, lastSpace) : slice).replace(/[\s,.;:-]+$/, '') + '…';
+  };
+
+  const seoTitleRaw = provider
+    ? (provider.meta_title?.trim() || `${name} - ${category} em ${provider.city} | Preciso de um`)
+    : 'Profissional';
+  const seoDescriptionRaw = provider
+    ? (provider.meta_description?.trim() ||
+        `${name}, ${category} em ${formatCityState(provider.city, provider.state) || provider.city}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Peca seu orcamento gratis!`)
+    : 'Encontre profissionais na plataforma.';
+
   useSeoHead({
-    title: provider
-      ? (provider.meta_title?.trim() || `${name} - ${category} em ${provider.city} | Preciso de um`)
-      : 'Profissional',
-    description: provider
-      ? (provider.meta_description?.trim() ||
-          `${name}, ${category} em ${formatCityState(provider.city, provider.state) || provider.city}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Peca seu orcamento gratis!`)
-      : 'Encontre profissionais na plataforma.',
+    title: truncateAt(seoTitleRaw, 60),
+    description: truncateAt(seoDescriptionRaw, 160),
     canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
     ogImage: providerSocialImage || undefined,
     ogType: 'profile',
