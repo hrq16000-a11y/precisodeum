@@ -416,12 +416,22 @@ async function fetchProvidersLightweight(query: any) {
     // Emergency flag: true if any service has is_emergency
     (mapped as any)._hasEmergencyService = provServices.some(s => s.is_emergency === true);
 
-    // Mark incomplete profiles for filtering — use fallback hierarchy so
-    // a missing public_profiles response never hides providers that have
-    // business_name or slug filled in.
-    const displayName = (profile?.name?.trim()) || (p.business_name?.trim()) || (p.slug?.trim()) || '';
+    // Mark incomplete profiles for filtering. A profile is "incomplete" when:
+    //  - it has no usable display name, OR
+    //  - city is missing while admin requires it, OR
+    //  - the only available "name" is a generic profession AND no real avatar
+    //    exists (so the card would render with both a generic name and a
+    //    placeholder avatar — visually weak).
+    const profileNameTrimmed = (profile?.name?.trim()) || '';
+    const businessNameTrimmed = (p.business_name?.trim()) || '';
+    const displayName = profileNameTrimmed || businessNameTrimmed || (p.slug?.trim()) || '';
     const provCity = p.city?.trim() || '';
-    const isIncomplete = !displayName || (requireCityForVisibility && !provCity);
+    const onlyGenericName = !profileNameTrimmed && isGenericProviderName(businessNameTrimmed);
+    const hasRealAvatar = !!rawPhoto;
+    const isIncomplete =
+      !displayName ||
+      (requireCityForVisibility && !provCity) ||
+      (onlyGenericName && !hasRealAvatar);
     (mapped as any)._isIncomplete = isIncomplete;
 
     // Hybrid score with MERITOCRACY weighting
