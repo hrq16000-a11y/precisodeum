@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
+import ProfileHealthChecklist from '@/components/dashboard/ProfileHealthChecklist';
 
 interface SeriesDay {
   label: string;
@@ -16,7 +17,6 @@ interface SeriesDay {
   views: number;
   whatsapp_clicks: number;
   phone_clicks: number;
-  leads?: number;
 }
 
 interface RecentClick {
@@ -24,6 +24,14 @@ interface RecentClick {
   contact_type: string;
   created_at: string;
 }
+
+const PERIODS = [
+  { label: '7 dias', value: 7 },
+  { label: '30 dias', value: 30 },
+  { label: '90 dias', value: 90 },
+] as const;
+
+type Period = (typeof PERIODS)[number]['value'];
 
 const tone = {
   reach: { ring: 'from-primary/15 to-primary/5', icon: 'text-primary', dot: 'bg-primary' },
@@ -37,6 +45,7 @@ const DashboardAnalytics = () => {
   const [leadsCount, setLeadsCount] = useState(0);
   const [recent, setRecent] = useState<RecentClick[]>([]);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<Period>(30);
 
   const loadData = async (providerId: string) => {
     const [statsRes, leadsRes, clicksRes] = await Promise.all([
@@ -104,25 +113,29 @@ const DashboardAnalytics = () => {
     };
   }, [provider?.id]);
 
-  const last30 = useMemo(() => series.slice(-30), [series]);
+  const windowed = useMemo(() => series.slice(-period), [series, period]);
 
   const totals = useMemo(
     () =>
-      last30.reduce(
+      windowed.reduce(
         (acc, d) => ({
           reach: acc.reach + d.views,
-          interest: acc.interest + d.whatsapp_clicks + d.phone_clicks,
+          whatsapp: acc.whatsapp + d.whatsapp_clicks,
+          phone: acc.phone + d.phone_clicks,
         }),
-        { reach: 0, interest: 0 },
+        { reach: 0, whatsapp: 0, phone: 0 },
       ),
-    [last30],
+    [windowed],
   );
+  const interestTotal = totals.whatsapp + totals.phone;
+  const wppPct = interestTotal > 0 ? Math.round((totals.whatsapp / interestTotal) * 100) : 0;
+  const phonePct = interestTotal > 0 ? 100 - wppPct : 0;
 
-  const whatsappTrend = useMemo(
-    () => last30.map((d) => ({ label: d.label, whatsapp: d.whatsapp_clicks })),
-    [last30],
+  const trendData = useMemo(
+    () => windowed.map((d) => ({ label: d.label, whatsapp: d.whatsapp_clicks, phone: d.phone_clicks })),
+    [windowed],
   );
-  const hasWhatsappData = whatsappTrend.some((d) => d.whatsapp > 0);
+  const hasTrendData = trendData.some((d) => d.whatsapp + d.phone > 0);
 
   if (loading) {
     return (
@@ -141,17 +154,46 @@ const DashboardAnalytics = () => {
 
   return (
     <section className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-2.5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-accent/10">
-          <TrendingUp className="h-5 w-5 text-primary" />
+      {/* Header + Period selector */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-accent/10">
+            <TrendingUp className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-1.5">
+              Saúde e Performance
+              <Sparkles className="h-3.5 w-3.5 text-accent" />
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Últimos {period} dias · atualizado em tempo real
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-1.5">
-            Saúde e Performance
-            <Sparkles className="h-3.5 w-3.5 text-accent" />
-          </h2>
-          <p className="text-xs text-muted-foreground">Últimos 30 dias · atualizado em tempo real</p>
+
+        <div
+          role="tablist"
+          aria-label="Selecionar período"
+          className="inline-flex self-start rounded-xl border border-border bg-card p-1 sm:self-auto"
+        >
+          {PERIODS.map((p) => {
+            const active = period === p.value;
+            return (
+              <button
+                key={p.value}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setPeriod(p.value)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  active
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                {p.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -167,9 +209,17 @@ const DashboardAnalytics = () => {
         <MetricCard
           icon={MessageCircle}
           label="Interesses"
-          hint="Cliques em WhatsApp e telefone"
-          value={totals.interest}
+          hint={`${interestTotal} cliques de contato`}
+          value={interestTotal}
           tone={tone.interest}
+          breakdown={
+            interestTotal > 0
+              ? [
+                  { label: 'WhatsApp', value: totals.whatsapp, pct: wppPct, color: 'bg-primary' },
+                  { label: 'Telefone', value: totals.phone, pct: phonePct, color: 'bg-amber-500' },
+                ]
+              : undefined
+          }
         />
         <MetricCard
           icon={Activity}
@@ -180,33 +230,47 @@ const DashboardAnalytics = () => {
         />
       </div>
 
-      {/* 2) Score de Saúde do Perfil (gauge + próximos passos) */}
+      {/* 2) Score de Saúde do Perfil + Checklist navegável */}
       <ProfileHealthScore />
+      <ProfileHealthChecklist />
 
-      {/* 3) Tendência de cliques no WhatsApp (30d) */}
+      {/* 3) Tendência de cliques (WhatsApp vs Telefone) */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         className="rounded-2xl border border-border bg-card p-4 sm:p-5"
       >
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="font-display text-base font-bold text-foreground">Cliques no WhatsApp</h3>
-            <p className="text-[11px] text-muted-foreground">Tendência dos últimos 30 dias</p>
+            <h3 className="font-display text-base font-bold text-foreground">Cliques de contato</h3>
+            <p className="text-[11px] text-muted-foreground">
+              WhatsApp vs telefone nos últimos {period} dias
+            </p>
           </div>
-          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-            <span className="h-2 w-2 rounded-sm bg-primary" /> WhatsApp
-          </span>
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm bg-primary" /> WhatsApp{' '}
+              <strong className="text-foreground tabular-nums">{wppPct}%</strong>
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm bg-amber-500" /> Telefone{' '}
+              <strong className="text-foreground tabular-nums">{phonePct}%</strong>
+            </span>
+          </div>
         </div>
 
-        {hasWhatsappData ? (
+        {hasTrendData ? (
           <div className="h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={whatsappTrend} margin={{ top: 8, right: 8, left: -22, bottom: 0 }}>
+              <AreaChart data={trendData} margin={{ top: 8, right: 8, left: -22, bottom: 0 }}>
                 <defs>
                   <linearGradient id="wppGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.45} />
                     <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="phoneGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(38 92% 50%)" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="hsl(38 92% 50%)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis
@@ -234,9 +298,20 @@ const DashboardAnalytics = () => {
                 <Area
                   type="monotone"
                   dataKey="whatsapp"
+                  name="WhatsApp"
+                  stackId="1"
                   stroke="hsl(var(--primary))"
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   fill="url(#wppGrad)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="phone"
+                  name="Telefone"
+                  stackId="1"
+                  stroke="hsl(38 92% 50%)"
+                  strokeWidth={2}
+                  fill="url(#phoneGrad)"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -246,7 +321,7 @@ const DashboardAnalytics = () => {
             <MessageCircle className="mb-2 h-8 w-8 text-muted-foreground/50" />
             <p className="text-sm font-semibold text-foreground">Sem cliques ainda</p>
             <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-              Seu gráfico aparecerá aqui assim que receber os primeiros cliques no WhatsApp.
+              Seu gráfico aparecerá aqui assim que receber os primeiros cliques.
             </p>
           </div>
         )}
@@ -302,18 +377,27 @@ const DashboardAnalytics = () => {
   );
 };
 
+interface BreakdownItem {
+  label: string;
+  value: number;
+  pct: number;
+  color: string;
+}
+
 const MetricCard = ({
   icon: Icon,
   label,
   hint,
   value,
   tone,
+  breakdown,
 }: {
   icon: typeof Eye;
   label: string;
   hint: string;
   value: number;
   tone: { ring: string; icon: string; dot: string };
+  breakdown?: BreakdownItem[];
 }) => (
   <motion.div
     initial={{ opacity: 0, y: 8 }}
@@ -333,7 +417,30 @@ const MetricCard = ({
         value={value}
         className="mt-1 block font-display text-3xl font-bold leading-none text-foreground"
       />
-      <p className="mt-1.5 text-[11px] text-muted-foreground">{hint}</p>
+      {breakdown && breakdown.length > 0 ? (
+        <div className="mt-3 space-y-1.5">
+          <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            {breakdown.map((b) => (
+              <div
+                key={b.label}
+                className={b.color}
+                style={{ width: `${b.pct}%` }}
+                aria-label={`${b.label} ${b.pct}%`}
+              />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
+            {breakdown.map((b) => (
+              <span key={b.label} className="inline-flex items-center gap-1">
+                <span className={`h-1.5 w-1.5 rounded-sm ${b.color}`} />
+                {b.label} <strong className="text-foreground tabular-nums">{b.pct}%</strong>
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="mt-1.5 text-[11px] text-muted-foreground">{hint}</p>
+      )}
     </div>
   </motion.div>
 );
