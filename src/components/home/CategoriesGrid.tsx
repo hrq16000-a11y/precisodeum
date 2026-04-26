@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, SearchX, Search } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useSettingValue, useSiteSettings } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useCategoriesInRegion } from '@/hooks/useCategoriesInRegion';
 import { useAuth } from '@/hooks/useAuth';
@@ -36,22 +36,44 @@ function hashSeed(str: string): number {
 const normalizeKey = (value?: string | null) =>
   (value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+export type CategoriesRotationStrategy = 'daily' | 'session' | 'fixed';
+
+const SESSION_SEED_KEY = 'pdu:cats:session-seed';
+
+/** Pega (ou cria) uma seed estável durante toda a sessão do navegador. */
+function getOrCreateSessionSeed(): number {
+  if (typeof window === 'undefined') return 1;
+  try {
+    const cached = window.sessionStorage.getItem(SESSION_SEED_KEY);
+    if (cached) {
+      const n = Number(cached);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+    const seed = Math.floor(Math.random() * 2_147_483_647) || 1;
+    window.sessionStorage.setItem(SESSION_SEED_KEY, String(seed));
+    return seed;
+  } catch {
+    return Math.floor(Math.random() * 2_147_483_647) || 1;
+  }
+}
+
 /**
- * Seed 100% determinística baseada APENAS em variáveis estáveis:
- * - data (YYYY-MM-DD) → rotação diária previsível
- * - cidade/UF normalizadas → mesma região vê a mesma ordem
- * - userId (opcional) → personalização estável entre dispositivos
- *
- * Não usamos Date.now() nem sessionStorage para evitar reordenação aleatória
- * a cada navegação ou re-render.
+ * Gera a seed de embaralhamento das categorias respeitando a estratégia
+ * configurada pelo admin em `home_categories_rotation_strategy`:
+ *  - 'daily'   → mesma ordem por dia + cidade/UF (default).
+ *  - 'session' → nova ordem por aba/sessão do navegador.
+ *  - 'fixed'   → seed = 0 → ordem original (alfabética da query).
  */
 export function getStableShuffleSeed(
   userId?: string | null,
   city?: string | null,
   state?: string | null,
-  dateKey?: string,
+  dateKeyOrStrategy?: string,
+  strategy: CategoriesRotationStrategy = 'daily',
 ): number {
-  const day = dateKey || new Date().toISOString().slice(0, 10);
+  if (strategy === 'fixed') return 0;
+  if (strategy === 'session') return getOrCreateSessionSeed();
+  const day = dateKeyOrStrategy || new Date().toISOString().slice(0, 10);
   const region = `${normalizeKey(city)}|${normalizeKey(state)}` || 'br';
   const who = userId ? `u:${userId}` : 'anon';
   return hashSeed(`pdu:cats:${day}:${region}:${who}`);
@@ -110,13 +132,17 @@ const CategoriesGrid = (_props: Props) => {
   const items = data?.items || [];
   const scope = data?.scope;
 
+  const rotationStrategyRaw = useSettingValue('home_categories_rotation_strategy');
+  const strategy: CategoriesRotationStrategy =
+    rotationStrategyRaw === 'session' || rotationStrategyRaw === 'fixed' ? rotationStrategyRaw : 'daily';
+
   const visible = useMemo(() => {
     const subs = items.filter((c) => c.parent_id);
     const pool = subs.length >= VISIBLE_COUNT ? subs : items;
-    // Seed estável: data + cidade/UF + usuário (sem Date.now/sessionStorage).
-    const seed = getStableShuffleSeed(user?.id, geo.city, geo.state);
+    const seed = getStableShuffleSeed(user?.id, geo.city, geo.state, undefined, strategy);
+    if (strategy === 'fixed' || seed === 0) return pool.slice(0, VISIBLE_COUNT);
     return seededShuffle(pool, seed).slice(0, VISIBLE_COUNT);
-  }, [items, user?.id, geo.city, geo.state]);
+  }, [items, user?.id, geo.city, geo.state, strategy]);
 
   const gridCls = 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr';
 
