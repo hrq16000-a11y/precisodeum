@@ -68,6 +68,22 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const hasOwnPhoto = !!(provider.photo || provider.serviceImage);
   const displayPhoto = provider.photo || provider.serviceImage || generatedAvatar;
 
+  // Evita repetir a mesma palavra no card (ex: nome "Pedreiro" + categoria "Pedreiro").
+  // Normaliza removendo acentos, espaços e pontuação para comparação semântica.
+  const normalizeForCompare = (s: string) =>
+    s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
+  const nameNorm = normalizeForCompare(displayName);
+  const businessNorm = provider.businessName ? normalizeForCompare(provider.businessName) : '';
+  const categoryNorm = provider.category ? normalizeForCompare(provider.category) : '';
+  const categoryDuplicatesName =
+    !!categoryNorm && (categoryNorm === nameNorm || categoryNorm === businessNorm ||
+      nameNorm.includes(categoryNorm) || categoryNorm.includes(nameNorm));
+  // Subtítulo alternativo quando a categoria duplicaria o nome:
+  // prioriza cidade, depois "Profissional verificado".
+  const altSubtitle = categoryDuplicatesName
+    ? (provider.city ? `Atende em ${provider.city}` : 'Profissional verificado')
+    : null;
+
   // Build badges array for mobile limiting
   const badges: React.ReactNode[] = [];
   badges.push(
