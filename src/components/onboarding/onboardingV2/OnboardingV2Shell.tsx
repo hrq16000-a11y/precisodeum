@@ -45,6 +45,12 @@ import {
   readOnboardingV2Draft,
   clearOnboardingV2Draft,
 } from './useOnboardingV2Draft';
+import {
+  useOnboardingV2RemoteDraft,
+  fetchRemoteDraft,
+  clearRemoteDraft,
+} from './useOnboardingV2RemoteDraft';
+import { trackOnboardingEvent } from './telemetry';
 
 function slugify(input: string): string {
   return (input || '')
