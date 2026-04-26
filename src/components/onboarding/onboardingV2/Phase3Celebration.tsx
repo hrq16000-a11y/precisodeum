@@ -67,8 +67,10 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
   }, [userId]);
 
   const [providerSlug, setProviderSlug] = useState<string | null>(null);
+  const [categorySlug, setCategorySlug] = useState<string | null>(null);
   const [hasPhotos, setHasPhotos] = useState(false);
   const [hasPortfolio, setHasPortfolio] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -76,13 +78,23 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
     (async () => {
       const { data: prov } = await supabase
         .from('providers')
-        .select('id, slug')
+        .select('id, slug, category_id')
         .eq('user_id', userId)
         .maybeSingle();
       if (!alive || !prov) return;
       if (prov.slug) setProviderSlug(prov.slug);
 
-      // checa fotos do 1º serviço (cast para evitar inferência profunda do TS)
+      if (prov.category_id) {
+        const { data: cat } = await (supabase as any)
+          .from('categories')
+          .select('slug, name')
+          .eq('id', prov.category_id)
+          .maybeSingle();
+        if (alive && cat) {
+          setCategorySlug(cat.slug || sanitizeSlug(cat.name || ''));
+        }
+      }
+
       const photoRes: any = await (supabase as any)
         .from('media')
         .select('id', { count: 'exact', head: true })
@@ -90,7 +102,6 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
         .eq('entity_type', 'service');
       if (alive) setHasPhotos(((photoRes?.count as number) || 0) > 0);
 
-      // checa álbum de portfólio
       const albumRes: any = await (supabase as any)
         .from('portfolio_albums')
         .select('id', { count: 'exact', head: true })
@@ -99,6 +110,25 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
     })();
     return () => { alive = false; };
   }, [userId]);
+
+  // URL pública de SEO: categoria + cidade (cidade vai como query — a CategoryPage filtra).
+  const cityParam = city ? `?cidade=${encodeURIComponent(sanitizeSlug(city))}` : '';
+  const publicCategoryPath = categorySlug ? `/categoria/${categorySlug}${cityParam}` : null;
+  const publicCategoryUrl = publicCategoryPath
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}${publicCategoryPath}`
+    : null;
+
+  const handleCopyUrl = async () => {
+    if (!publicCategoryUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicCategoryUrl);
+      setCopied(true);
+      toast.success('Link copiado!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Não foi possível copiar. Selecione o link manualmente.');
+    }
+  };
 
   // Placar fictício mas plausível
   const reach = useTickerNumber(1280, 1300);
