@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import CpfCnpjInput from '@/components/onboarding/CpfCnpjInput';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';
+import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
 import type { OnboardingProfileData } from './types';
 
 /* ───── 4.1 Upsell de documento (CPF/CNPJ) ───── */
