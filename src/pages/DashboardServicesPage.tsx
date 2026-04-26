@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import { compressImage } from '@/lib/compressImage';
 import { getSuggestedTags } from '@/data/tagSuggestions';
 import { getTemplatesForCategory, DIFFERENTIAL_TAGS, buildExternalPrompt } from '@/data/serviceTemplates';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -167,6 +167,7 @@ const DashboardServicesPage = () => {
   const { user, provider, profile, loading, refetchProfile } = useAuth();
   const { canCreateService, remainingServices, limits, loading: limitsLoading, refetch: refetchLimits } = useAccountLimits();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const geo = useGeoCity();
   const [services, setServices] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -263,6 +264,16 @@ const DashboardServicesPage = () => {
   useEffect(() => {
     if (provider) fetchServices();
   }, [provider]);
+
+  useEffect(() => {
+    if (loading || !user || !provider) return;
+    if (searchParams.get('action') !== 'new') return;
+    resetForm();
+    setShowDialog(true);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('action');
+    setSearchParams(nextParams, { replace: true });
+  }, [loading, user, provider, searchParams, setSearchParams]);
 
   // Suggested tags based on selected categories
   const suggestedTags = useMemo(() => {
