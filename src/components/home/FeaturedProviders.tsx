@@ -153,6 +153,20 @@ const GENERIC_NAME_TOKENS = new Set([
 const _normalizeName = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
 
+const isDuplicateCategoryLabel = (displayName: string, category?: string, businessName?: string) => {
+  const nameNorm = _normalizeName(displayName || '');
+  const categoryNorm = _normalizeName(category || '');
+  const businessNorm = _normalizeName(businessName || '');
+
+  if (!categoryNorm) return false;
+  return (
+    categoryNorm === nameNorm ||
+    categoryNorm === businessNorm ||
+    (!!nameNorm && (nameNorm.includes(categoryNorm) || categoryNorm.includes(nameNorm))) ||
+    (!!businessNorm && (businessNorm.includes(categoryNorm) || categoryNorm.includes(businessNorm)))
+  );
+};
+
 function pickDisplayName(p: DbProvider): string {
   const candidates = [p.name, p.businessName].filter((v): v is string => !!v && !!v.trim());
   for (const c of candidates) {
@@ -238,7 +252,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
                 ) : null;
               })()}
             </div>
-            {p.category && _normalizeName(p.category) !== _normalizeName(displayName) && (
+            {p.category && !isDuplicateCategoryLabel(displayName, p.category, p.businessName) && (
                <p className="truncate text-[13px] font-medium text-accent sm:text-sm">{p.category}</p>
             )}
             {(p.city || p.state) && (
