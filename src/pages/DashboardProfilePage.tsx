@@ -346,7 +346,7 @@ const DashboardProfilePage = () => {
       } else {
         const { data: existing } = await supabase.from('providers').select('id, slug').eq('user_id', user.id).limit(1);
         if (existing && existing.length > 0) {
-          const updatePayload: any = { ...providerPayload, phone: finalPhone };
+          const updatePayload: any = normalizeProviderPayload({ ...providerPayload, phone: finalPhone ?? '' });
           if (existing[0].slug) slugsToInvalidate.add(existing[0].slug);
           const newSlug = generateProviderSlug(form.full_name, form.city);
           if (newSlug && newSlug !== existing[0].slug) {
@@ -362,7 +362,8 @@ const DashboardProfilePage = () => {
           const baseSlug = generateProviderSlug(form.full_name, form.city);
           const slug = await ensureUniqueSlug(baseSlug);
           slugsToInvalidate.add(slug);
-          const { error } = await supabase.from('providers').insert({ ...providerPayload, user_id: user.id, phone: finalPhone, slug, status: 'pending' } as any);
+          const insertPayload = normalizeProviderPayload({ ...providerPayload, user_id: user.id, phone: finalPhone ?? '', slug, status: 'pending' });
+          const { error } = await supabase.from('providers').insert(insertPayload as any);
           if (error) {
             await showSaveError({ actionContext: 'Criar perfil profissional', componentName: 'DashboardProfilePage', errorMessage: error.message, retryFn: handleSave });
             setSaving(false); return;
