@@ -250,7 +250,9 @@ const DashboardPortfolioPage = () => {
     const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     const { data: { session } } = await supabase.auth.getSession();
 
-    for (const file of filesToUpload) {
+    for (let idx = 0; idx < filesToUpload.length; idx++) {
+      const file = filesToUpload[idx];
+      setUploadProgress({ current: idx + 1, total: filesToUpload.length });
       if (file.size > 5 * 1024 * 1024) {
         toast.error(`${file.name}: máximo 5MB`);
         continue;
