@@ -83,6 +83,9 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(({ userId, cu
       }
 
       onUploaded(publicUrl);
+      // Invalidate caches so all feeds (Home Featured, Nearby, search)
+      // immediately reflect the new avatar.
+      invalidateProviderCaches(queryClient, { reason: 'avatar-upload', userId });
       toast.success('Foto atualizada!');
     } catch {
       toast.error('Erro ao enviar imagem');
