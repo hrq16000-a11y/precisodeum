@@ -104,7 +104,8 @@ export const OnboardingV2Shell = () => {
     }
   }, []);
 
-  // Restaura rascunho REMOTO se o local estiver vazio (troca de dispositivo)
+  // Detecta rascunho REMOTO (troca de dispositivo) e ABRE MODAL para o usuário decidir.
+  // Não auto-hidrata mais — evita "salto" silencioso de etapa.
   useEffect(() => {
     if (!user?.id) return;
     const local = readOnboardingV2Draft();
@@ -113,19 +114,38 @@ export const OnboardingV2Shell = () => {
     (async () => {
       const remote = await fetchRemoteDraft(user.id);
       if (!alive || !remote) return;
-      dispatch({
-        type: 'HYDRATE',
-        state: {
-          profile: remote.payload.profile,
-          service: remote.payload.service,
-          phase: remote.phase as any,
-        },
-      });
-      setDraftRestored({ source: 'remote', at: remote.updated_at });
-      setTimeout(() => setDraftRestored(null), 6000);
+      // Se já está vazio (phase inicial), só oferece restaurar; caso contrário pergunta.
+      setRemoteDraft(remote);
+      setShowRemoteModal(true);
     })();
     return () => { alive = false; };
   }, [user?.id]);
+
+  const handleRemoteContinue = () => {
+    if (remoteDraft) {
+      dispatch({
+        type: 'HYDRATE',
+        state: {
+          profile: remoteDraft.payload.profile,
+          service: remoteDraft.payload.service,
+          phase: remoteDraft.phase as any,
+        },
+      });
+      setDraftRestored({ source: 'remote', at: remoteDraft.updated_at });
+      setTimeout(() => setDraftRestored(null), 6000);
+    }
+    setShowRemoteModal(false);
+    setRemoteDraft(null);
+  };
+
+  const handleRemoteDiscard = async () => {
+    if (user?.id) await clearRemoteDraft(user.id);
+    clearOnboardingV2Draft();
+    toast.success('Rascunho descartado. Vamos começar do zero.');
+    setShowRemoteModal(false);
+    setRemoteDraft(null);
+  };
+
 
   // Hidrata nome do auth se vier do Google
   useEffect(() => {
