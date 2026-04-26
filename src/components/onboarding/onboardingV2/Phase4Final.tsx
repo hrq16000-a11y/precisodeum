@@ -21,7 +21,66 @@ import CpfCnpjInput from '@/components/onboarding/CpfCnpjInput';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';
 import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
+import AvatarUpload from '@/components/AvatarUpload';
 import type { OnboardingProfileData } from './types';
+
+/* ───── 4.0 Foto de perfil (se ainda faltar) ───── */
+
+interface AvatarProps {
+  data: OnboardingProfileData;
+  onChange: (patch: Partial<OnboardingProfileData>) => void;
+  onContinue: () => void;
+  onSkip: () => void;
+  saving: boolean;
+  userId?: string;
+}
+
+export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userId }: AvatarProps) => {
+  const initials = (data.full_name || 'EU')
+    .split(' ')
+    .map((s) => s[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  return (
+    <div className="space-y-5">
+      <header className="text-center space-y-1">
+        <h1 className="font-display text-2xl font-bold text-foreground">Coloca uma foto sua.</h1>
+        <p className="text-sm text-muted-foreground">
+          Perfis com foto recebem até <span className="font-semibold text-foreground">3x mais chamados</span>.
+        </p>
+      </header>
+
+      <div className="flex justify-center py-2">
+        {userId && (
+          <AvatarUpload
+            userId={userId}
+            currentUrl={data.avatar_url}
+            initials={initials}
+            onUploaded={(url) => onChange({ avatar_url: url })}
+          />
+        )}
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className="flex-1">
+          Agora não
+        </Button>
+        <Button
+          type="button"
+          onClick={onContinue}
+          disabled={saving || !data.avatar_url}
+          className="flex-1"
+        >
+          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Continuar <ArrowRight className="h-4 w-4 ml-1" />
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 /* ───── 4.1 Upsell de documento (CPF/CNPJ) ───── */
 
