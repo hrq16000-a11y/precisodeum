@@ -320,6 +320,7 @@ const ProviderProfile = () => {
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [leadDialogOpen, setLeadDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
   const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '', city: '', state: '' });
   const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
@@ -1762,26 +1763,19 @@ const ProviderProfile = () => {
                     <Phone className="h-5 w-5" /> Ligar
                   </Button>
                 )}
-                <Button variant="ghost" size="lg" onClick={async () => {
-                  const profileUrl = window.location.href;
-                  const shareTitle = `${name} - ${category} em ${provider.city}`;
-                  const shareText = `Veja o perfil de ${name}, ${category} no Preciso de um!`;
-                  if (navigator.share) {
-                    try {
-                      await navigator.share({ title: shareTitle, text: shareText, url: profileUrl });
-                    } catch (e) {
-                      if ((e as any)?.name !== 'AbortError') {
-                        navigator.clipboard.writeText(profileUrl).then(() => toast.success('Link do perfil copiado!'));
-                      }
-                    }
-                  } else {
-                    navigator.clipboard.writeText(profileUrl).then(() => toast.success('Link do perfil copiado!')).catch(() => window.prompt('Copie o link:', profileUrl));
-                  }
-                }}>
+                <Button variant="ghost" size="lg" onClick={() => setShareDialogOpen(true)}>
                   <Share2 className="h-4 w-4" /> Compartilhar
                 </Button>
               </div>
             </motion.div>
+
+            <ShareDialog
+              open={shareDialogOpen}
+              onOpenChange={setShareDialogOpen}
+              url={typeof window !== 'undefined' ? window.location.href : ''}
+              title={`${name} — ${category}${provider.city ? ` em ${provider.city}` : ''}`}
+              text={`Recomendo ${name}, ${category} no Preciso de um!`}
+            />
 
             {/* ── Owner: Pedir Avaliação ── */}
             {user?.id === provider.user_id && (
