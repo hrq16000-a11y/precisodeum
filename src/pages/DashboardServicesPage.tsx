@@ -5,8 +5,9 @@ import { getTemplatesForCategory, DIFFERENTIAL_TAGS, buildExternalPrompt } from 
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Edit2, X, Search, ImagePlus, MapPin, Eye, Pause, Play, Zap, Tag, MapPinned, Copy, ExternalLink, FileText, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
@@ -586,7 +587,39 @@ const DashboardServicesPage = () => {
     return true;
   });
 
-  if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-7 w-40" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <Skeleton className="h-10 w-32" />
+          </div>
+          <Skeleton className="h-11 w-full" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
+                <Skeleton className="aspect-[4/3] w-full rounded-none" />
+                <div className="p-3 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-3 w-2/3" />
+                  <div className="flex gap-2 pt-2">
+                    <Skeleton className="h-8 flex-1" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -679,7 +712,16 @@ const DashboardServicesPage = () => {
                 )}
               </div>
               <div className="p-3 space-y-1.5">
-                <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">{s.service_name}</h3>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1 flex-1">{s.service_name}</h3>
+                  <div className="flex items-center gap-1.5 shrink-0" title={s.deleted_at ? 'Serviço pausado — ative para aparecer nas buscas' : 'Serviço ativo — clique para pausar'}>
+                    <Switch
+                      checked={!s.deleted_at}
+                      onCheckedChange={() => handlePause(s)}
+                      aria-label={s.deleted_at ? 'Ativar serviço' : 'Pausar serviço'}
+                    />
+                  </div>
+                </div>
                 <div className="flex items-center gap-1">
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
                     s.deleted_at ? 'bg-muted text-muted-foreground' : 'bg-green-100 text-green-700'
@@ -690,22 +732,35 @@ const DashboardServicesPage = () => {
                 {s.description && <p className="text-xs text-muted-foreground line-clamp-1">{s.description}</p>}
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                   {s.service_area && (
-                    <span className="flex items-center gap-0.5"><MapPin className="h-3 w-3" /> {s.service_area}</span>
+                    <span className="flex items-center gap-0.5" title="Cidades atendidas">
+                      <MapPin className="h-3 w-3" /> {s.service_area}
+                    </span>
                   )}
                   <span className="flex items-center gap-0.5"><Eye className="h-3 w-3" /> {s.view_count ?? 0} views</span>
                 </div>
-                <p className="text-[10px] text-muted-foreground">
-                  {format(new Date(s.created_at), 'dd/MM/yyyy')}
-                  {s.price && <span className="ml-2 font-medium text-foreground">R$ {s.price}</span>}
-                </p>
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <p className="text-[10px] text-muted-foreground">
+                    {format(new Date(s.created_at), 'dd/MM/yyyy')}
+                  </p>
+                  {s.price && (
+                    <p className="text-xs font-semibold text-foreground">
+                      <span className="text-[10px] font-normal text-muted-foreground">Valores a partir de</span>{' '}
+                      R$ {s.price}
+                    </p>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 pt-1.5 border-t border-border">
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-8" onClick={() => handleEdit(s)}>
                     <Edit2 className="mr-1 h-3 w-3" /> Editar
                   </Button>
-                  <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => handlePause(s)}>
-                    {s.deleted_at ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs h-8 text-destructive hover:text-destructive" onClick={() => handleDelete(s.id)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/5 focus-visible:ring-destructive/40"
+                    onClick={() => handleDelete(s.id)}
+                    aria-label="Excluir serviço"
+                    title="Excluir serviço"
+                  >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
@@ -723,21 +778,24 @@ const DashboardServicesPage = () => {
         })()}
       </div>
 
-      {/* ─── New/Edit Dialog ─── */}
-      <Dialog open={showDialog} onOpenChange={(open) => { if (!open) { resetForm(); } setShowDialog(open); }}>
-        <DialogContent className="max-w-md p-0 flex flex-col max-h-[90vh] overflow-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-accent/60 [&::-webkit-scrollbar-thumb]:rounded-full">
-          <DialogHeader className="px-5 pt-5 pb-2 shrink-0">
-            <DialogTitle className="flex items-center gap-2 text-lg">
+      {/* ─── New/Edit Sheet (lateral, espaçoso, full-screen no mobile) ─── */}
+      <Sheet open={showDialog} onOpenChange={(open) => { if (!open) { resetForm(); } setShowDialog(open); }}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl p-0 flex flex-col gap-0 overflow-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-accent/60 [&::-webkit-scrollbar-thumb]:rounded-full"
+        >
+          <SheetHeader className="px-5 pt-5 pb-2 shrink-0 text-left">
+            <SheetTitle className="flex items-center gap-2 text-lg">
               {wizardStep === 'photos'
                 ? <>📸 Adicione Fotos do Serviço</>
                 : <>🔧 {editId ? 'Editar Serviço' : 'Novo Serviço'}</>}
-            </DialogTitle>
+            </SheetTitle>
             {wizardStep === 'photos' && (
               <p className="text-xs text-muted-foreground mt-1">
                 Passo final: envie suas fotos. A primeira será a capa. Anúncios com foto recebem até <strong className="text-accent">3x mais contatos</strong>.
               </p>
             )}
-          </DialogHeader>
+          </SheetHeader>
 
           <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-accent/60 [&::-webkit-scrollbar-thumb]:rounded-full">
 
@@ -1096,8 +1154,8 @@ const DashboardServicesPage = () => {
               </>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <NextStepPrompt
         open={showNextStepPrompt}
