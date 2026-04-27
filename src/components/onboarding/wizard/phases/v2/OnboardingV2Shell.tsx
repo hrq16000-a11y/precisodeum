@@ -85,9 +85,11 @@ interface OnboardingV2ShellProps {
    * de progresso global (Consolidação Fase 1).
    */
   onPhaseChange?: (phase: import('./types').OnboardingPhase) => void;
+  /** Quando true, o shell V2 não navega sozinho para a tela de sucesso; devolve o controle ao wizard unificado. */
+  deferCompletionToParent?: boolean;
 }
 
-export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState, onPhaseChange }: OnboardingV2ShellProps = {}) => {
+export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState, onPhaseChange, deferCompletionToParent = false }: OnboardingV2ShellProps = {}) => {
   const { user, profile, provider, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -489,6 +491,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       if (patch.tax_id) {
         await supabase.from('profiles').update({ tax_id: patch.tax_id }).eq('id', user.id);
       }
+      if (Object.prototype.hasOwnProperty.call(patch, 'years_experience')) {
+        await supabase.from('profiles').update({ years_experience: patch.years_experience }).eq('id', user.id);
+      }
       return true;
     } catch (e: any) {
       toast.error('Não consegui salvar este passo agora. ' + (e?.message || ''));
@@ -739,6 +744,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onContinue={async () => {
               track('submit');
               await persistPatch({
+                years_experience: state.profile.years_experience,
                 neighborhood: state.profile.neighborhood,
                 description: state.profile.bio,
               });
@@ -753,18 +759,20 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             data={state.profile}
             onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
             saving={saving}
-            onSkip={() => { track('skip'); dispatch({ type: 'GO_TO', phase: 'done' }); }}
+            onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onFinish={async () => {
               track('submit');
               await persistPatch({
                 instagram_url: state.profile.instagram_url,
                 facebook_url: state.profile.facebook_url,
               });
-              dispatch({ type: 'GO_TO', phase: 'done' });
+              track('next');
+              dispatch({ type: 'NEXT' });
             }}
           />
         );
       case 'done':
+        if (deferCompletionToParent) return null;
         // Limpa rascunho local e auto-finaliza
         clearOnboardingV2Draft();
         setTimeout(finishWizard, 300);
