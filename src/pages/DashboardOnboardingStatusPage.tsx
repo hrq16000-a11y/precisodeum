@@ -6,14 +6,21 @@
  * + toast de "100% pronto para publicar".
  */
 
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   CheckCircle2, AlertTriangle, Loader2, ArrowRight, RefreshCw,
-  User, Phone, MapPin, Briefcase, Camera, ImageIcon, ShieldCheck, Sparkles, Globe,
+  User, Phone, MapPin, Briefcase, Camera, ImageIcon, ShieldCheck, Sparkles, Globe, Rocket,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { useOnboardingStatus, type OnboardingChecklistItem } from '@/hooks/useOnboardingStatus';
 
 const ITEM_ICONS: Record<string, typeof User> = {
