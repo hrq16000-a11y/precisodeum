@@ -93,7 +93,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const menuItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: hasProfilePermission('dashboard'), badge: 0 },
     { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil', show: hasProfilePermission('profile'), badge: 0 },
-    { label: 'Status do Cadastro', icon: ClipboardCheck, path: '/dashboard/status', show: !isClient && !isRH, badge: 0 },
+    { label: 'Status do Cadastro', icon: ClipboardCheck, path: '/dashboard/status', show: !isClient && !isRH, badge: 0, percent: isProvider ? onbPercent : undefined },
     { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos', show: !isClient && !isRH && hasProfilePermission('services'), badge: 0 },
     { label: 'Portfólio', icon: Camera, path: '/dashboard/portfolio', show: !isClient && !isRH && hasProfilePermission('services'), badge: 0 },
     { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina', show: !isClient && !isRH && hasProfilePermission('my_page'), badge: 0 },
