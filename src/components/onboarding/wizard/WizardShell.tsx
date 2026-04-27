@@ -175,38 +175,48 @@ export default function WizardShell() {
           onPhaseChange={handleTriagePhaseChange}
         />
       ) : stage === 'extras-services' ? (
-        <div className="mx-auto w-full max-w-md px-4 py-6">
+        <BetCardShell>
           <Step20_MoreServices
             onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
             onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
           />
-        </div>
+        </BetCardShell>
       ) : stage === 'extras-portfolio' ? (
-        <div className="mx-auto w-full max-w-md px-4 py-6">
+        <BetCardShell>
           <Step21_PortfolioAlbums
             onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
             onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
           />
-        </div>
+        </BetCardShell>
       ) : stage === 'done' ? (
         <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-8">
-          <div className="rounded-[28px] border border-border/60 bg-gradient-to-b from-card/95 via-background to-amber-50/20 p-6 text-center shadow-[0_24px_80px_-36px_hsl(var(--foreground)/0.3)]">
-            <h2 className="text-xl font-semibold text-foreground">Tudo pronto.</h2>
+          <BetCardShell className="text-center">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400 shadow-[0_0_24px_rgba(251,146,60,0.7)]">
+              <Sparkles className="h-7 w-7 text-white" />
+            </div>
+            <h2 className="text-2xl font-extrabold tracking-tight text-foreground">Tudo pronto!</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Seu perfil base foi concluído. Agora você pode ir para o dashboard, continuar com seus serviços ou abrir seu portfólio.
+              Seu perfil base foi concluído com <span className="font-semibold text-amber-600 dark:text-amber-400">{realPoints} pts</span>.
+              Escolha por onde quer continuar:
             </p>
             <div className="mt-5 flex flex-col gap-2">
-              <Button asChild className="w-full">
-                <Link to="/dashboard">Ir para o dashboard</Link>
+              <Button asChild className="w-full gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(251,146,60,0.7)] hover:opacity-95">
+                <Link to="/dashboard">
+                  <LayoutDashboard className="h-4 w-4" /> Conhecer o dashboard
+                </Link>
               </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/dashboard/servicos">Continuar cadastrando serviços</Link>
+              <Button asChild variant="outline" className="w-full gap-2">
+                <Link to="/dashboard/servicos">
+                  <Briefcase className="h-4 w-4" /> Continuar cadastrando serviços
+                </Link>
               </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/dashboard/portfolio">Abrir portfólio</Link>
+              <Button asChild variant="outline" className="w-full gap-2">
+                <Link to="/dashboard/portfolio">
+                  <FolderOpen className="h-4 w-4" /> Abrir portfólio
+                </Link>
               </Button>
             </div>
-          </div>
+          </BetCardShell>
           <InstallAppCard source="wizard-unified-done" />
         </div>
       ) : (
