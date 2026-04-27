@@ -71,6 +71,8 @@ export interface OnboardingState {
   profile: OnboardingProfileData;
   service: OnboardingFirstServiceData;
   phase: OnboardingPhase;
+  /** user_ref imutável do profissional, usado para reidratar vínculo com records já existentes. */
+  userRef: string | null;
   /** providerId criado/atualizado durante a Fase 1. */
   providerId: string | null;
   /** serviceId criado durante a Fase 2. */
