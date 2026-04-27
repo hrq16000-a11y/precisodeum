@@ -71,7 +71,7 @@ function slugify(input: string): string {
 }
 
 export const OnboardingV2Shell = () => {
-  const { user, profile, provider } = useAuth();
+  const { user, profile, provider, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -428,11 +428,52 @@ export const OnboardingV2Shell = () => {
 
   /* ───── Render por fase ───── */
 
-  const finishWizard = () => {
+  const finishWizard = async () => {
     clearOnboardingV2Draft();
     if (user?.id) void clearRemoteDraft(user.id);
+
+    if (user?.id && !state.firstServiceId) {
+      const { error } = await supabase.from('profiles')
+        .update({ onboarding_step: 5, onboarding_completed: true })
+        .eq('id', user.id);
+
+      if (error) {
+        toast.error('Não consegui concluir seu perfil agora. ' + (error.message || 'Tente de novo.'));
+        return;
+      }
+
+      await refetchProfile?.();
+    }
+
     toast.success('Perfil completo! Bem-vindo.');
     navigate('/onboarding-v2/sucesso');
+  };
+
+  const continueWithoutFirstService = async () => {
+    if (!user?.id) return;
+
+    appendWizardResetDebugLog({
+      source: 'onboarding-v2-skip-first-service',
+      route: `${location.pathname}${location.search}`,
+      phase: state.phase,
+      nextRoute: 'phase4_document',
+      reason: 'continue-profile-without-first-service',
+      meta: {
+        providerId: state.providerId,
+        source,
+        pendingCoreFields,
+      },
+    });
+
+    setSaving(true);
+    try {
+      dispatch({ type: 'GO_TO', phase: 'phase4_document' });
+    } catch (e: any) {
+      track('error', { reason: 'skip_first_service_failed', message: e?.message || null });
+      toast.error('Não consegui continuar sem o serviço agora. ' + (e?.message || 'Tente de novo.'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const renderPhase = () => {
@@ -518,9 +559,9 @@ export const OnboardingV2Shell = () => {
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_contact' }); }}
             onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
             onSkip={() => {
-              track('skip', { exit: 'dashboard_servicos' });
-              toast.info('Você pode cadastrar seu primeiro serviço depois pelo Dashboard.');
-              navigate('/dashboard/servicos');
+              track('skip', { exit: 'phase4_document' });
+              toast.info('Tudo certo. Vamos continuar seu perfil e você cadastra o serviço depois.');
+              void continueWithoutFirstService();
             }}
           />
         );
