@@ -430,7 +430,9 @@ const SearchPage = () => {
           <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="featured">⭐ Destaques</SelectItem>
+            <SelectItem value="featured">
+              <span className="inline-flex items-center gap-1.5"><Star className="h-3 w-3 fill-current" strokeWidth={1.75} /> Destaques</span>
+            </SelectItem>
             <SelectItem value="normal">Normais</SelectItem>
           </SelectContent>
         </Select>
@@ -516,7 +518,9 @@ const SearchPage = () => {
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="relevance">Relevância</SelectItem>
-              <SelectItem value="nearest">📍 Mais Perto</SelectItem>
+              <SelectItem value="nearest">
+                <span className="inline-flex items-center gap-1.5"><Compass className="h-3 w-3" strokeWidth={1.75} /> Mais perto</span>
+              </SelectItem>
               <SelectItem value="rating">Melhor avaliação</SelectItem>
               <SelectItem value="reviews">Mais avaliações</SelectItem>
               <SelectItem value="experience">Mais experiência</SelectItem>
@@ -914,13 +918,15 @@ const SearchPage = () => {
                 )}
                 {featuredFilter !== 'all' && (
                   <Badge variant="secondary" className="gap-1 text-xs">
-                    {featuredFilter === 'featured' ? '⭐ Destaques' : 'Normais'}
+                    <span className="inline-flex items-center gap-1">
+                      {featuredFilter === 'featured' ? (<><Star className="h-3 w-3 fill-current" strokeWidth={1.75} /> Destaques</>) : 'Normais'}
+                    </span>
                     <X className="h-3 w-3 cursor-pointer" onClick={() => setFeaturedFilter('all')} />
                   </Badge>
                 )}
                 {minRating > 0 && (
                   <Badge variant="secondary" className="gap-1 text-xs">
-                    {minRating}+ ⭐
+                    <span className="inline-flex items-center gap-1">{minRating}+ <Star className="h-3 w-3 fill-current" strokeWidth={1.75} /></span>
                     <X className="h-3 w-3 cursor-pointer" onClick={() => setMinRating(0)} />
                   </Badge>
                 )}
