@@ -147,6 +147,23 @@ export default function WizardShell() {
           onInternalHandoff={handleTriageDone}
           onPhaseChange={handleTriagePhaseChange}
         />
+      ) : stage === 'extras-services' ? (
+        <Step20_MoreServices
+          onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
+          onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
+        />
+      ) : stage === 'extras-portfolio' ? (
+        <Step21_PortfolioAlbums
+          onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
+          onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
+        />
+      ) : stage === 'done' ? (
+        <div className="mx-auto w-full max-w-md px-4 py-8 text-center">
+          <h2 className="text-xl font-semibold">Cadastro concluído!</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Seu perfil está pronto. Você já pode acessar o painel para gerenciar seus serviços, portfólio e leads.
+          </p>
+        </div>
       ) : (
         <MainOrchestrator
           internalHandoffFromTriage
