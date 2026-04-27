@@ -121,6 +121,15 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
     goto(intent === 'client' ? 'client_city' : 'pro_kind');
   }
 
+  /**
+   * Após escolher PF/PJ, pular direto para cidade base.
+   * O CPF/CNPJ é coletado APÓS o 1º serviço estar criado (Phase4Document),
+   * conforme reordenação do fluxo linear (cadastro completo só depois do serviço).
+   */
+  function afterProKind() {
+    goto('pro_location');
+  }
+
   /** Soma incremento de pontos ganhos NESTA sessão ao saldo do banco. */
   async function addSessionPointsToProfile() {
     try {
