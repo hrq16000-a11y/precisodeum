@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
@@ -136,9 +137,16 @@ const OnboardingV2SuccessPage = () => {
   // Link de afiliado: quem se cadastra por aqui credita pontos via user_ref.
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://precisodeum.com.br';
   const affiliateLink = userRef ? `${origin}/login?ref=${encodeURIComponent(userRef)}` : '';
-  const shareMessage = affiliateLink
+  const defaultMessage = affiliateLink
     ? `Acabei de criar meu perfil no Preciso de Um! Cadastre-se pelo meu link: ${affiliateLink}`
     : '';
+  const [shareMessage, setShareMessage] = useState(defaultMessage);
+
+  // Hidrata o textarea quando o link chegar (e mantém edição do usuário).
+  useEffect(() => {
+    if (defaultMessage && !shareMessage) setShareMessage(defaultMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultMessage]);
 
   const handleCopy = async () => {
     if (!affiliateLink) return;
@@ -153,9 +161,12 @@ const OnboardingV2SuccessPage = () => {
   };
 
   const handleWhatsApp = () => {
-    if (!shareMessage) return;
-    window.open(whatsappLink('', shareMessage), '_blank', 'noopener,noreferrer');
+    const msg = (shareMessage || defaultMessage).trim();
+    if (!msg) return;
+    window.open(whatsappLink('', msg), '_blank', 'noopener,noreferrer');
   };
+
+  const resetMessage = () => setShareMessage(defaultMessage);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5 px-4 py-8 sm:py-12">
@@ -304,12 +315,36 @@ const OnboardingV2SuccessPage = () => {
                   </p>
                 </div>
               </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-medium text-muted-foreground">
+                    Personalize sua mensagem antes de enviar
+                  </label>
+                  {shareMessage !== defaultMessage && (
+                    <button
+                      type="button"
+                      onClick={resetMessage}
+                      className="text-[10px] text-primary hover:underline"
+                    >
+                      restaurar padrão
+                    </button>
+                  )}
+                </div>
+                <Textarea
+                  value={shareMessage}
+                  onChange={(e) => setShareMessage(e.target.value.slice(0, 600))}
+                  rows={3}
+                  placeholder={defaultMessage}
+                  className="text-xs resize-none"
+                />
+                <p className="text-right text-[10px] text-muted-foreground">{shareMessage.length}/600</p>
+              </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <Button onClick={handleWhatsApp} size="sm" className="w-full">
                   <Share2 className="h-4 w-4 mr-2" /> Compartilhar no WhatsApp
                 </Button>
                 <Button onClick={handleCopy} size="sm" variant="outline" className="w-full">
-                  {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                  {copied ? <Check className="h-4 w-4 mr-2 text-emerald-600" /> : <Copy className="h-4 w-4 mr-2" />}
                   {copied ? 'Copiado!' : 'Copiar link'}
                 </Button>
               </div>

@@ -11,6 +11,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { OnboardingState } from './types';
+import { broadcastDraftChange } from './crossTabSync';
 
 const DRAFT_KEY = 'onboarding_v2_draft_v1';
 const DEBOUNCE_MS = 600;
@@ -72,6 +73,7 @@ export function useOnboardingV2Draft(state: OnboardingState) {
           phase: state.phase,
         };
         localStorage.setItem(DRAFT_KEY, JSON.stringify(envelope));
+        broadcastDraftChange('local-write');
       } catch {
         /* quota cheia — ignora */
       }

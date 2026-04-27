@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
 import AvatarUpload from '@/components/AvatarUpload';
 import type { OnboardingProfileData } from './types';
+import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 
 /* ───── 4.0 Foto de perfil (se ainda faltar) ───── */
 
@@ -254,7 +255,10 @@ interface ExtrasAProps {
   saving: boolean;
 }
 
-export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: ExtrasAProps) => (
+export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: ExtrasAProps) => {
+  const focusBio = useFocusFieldFromReview('bio');
+  const focusNeighborhood = useFocusFieldFromReview('neighborhood');
+  return (
   <div className="space-y-5">
     <header className="text-center space-y-1">
       <h1 className="font-display text-2xl font-bold text-foreground">Quase lá — falta só ajustar seu perfil.</h1>
@@ -281,6 +285,8 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
       <div>
         <Label className="text-xs">Bairro <span className="text-muted-foreground">(opcional)</span></Label>
         <Input
+          ref={focusNeighborhood.ref}
+          className={focusNeighborhood.highlightClass}
           value={data.neighborhood}
           onChange={(e) => onChange({ neighborhood: e.target.value })}
           placeholder="Ex: Centro"
@@ -290,6 +296,8 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
       <div>
         <Label className="text-xs">Bio curta <span className="text-muted-foreground">(opcional)</span></Label>
         <Textarea
+          ref={focusBio.ref}
+          className={focusBio.highlightClass}
           value={data.bio}
           onChange={(e) => onChange({ bio: e.target.value.slice(0, 280) })}
           placeholder="Em uma frase, o que te diferencia."
@@ -308,7 +316,8 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
       </Button>
     </div>
   </div>
-);
+  );
+};
 
 /* ───── 4.3 Redes sociais ───── */
 
@@ -320,7 +329,10 @@ interface ExtrasBProps {
   saving: boolean;
 }
 
-export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: ExtrasBProps) => (
+export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: ExtrasBProps) => {
+  const focusInsta = useFocusFieldFromReview('instagram_url');
+  const focusFb = useFocusFieldFromReview('facebook_url');
+  return (
   <div className="space-y-5">
     <header className="text-center space-y-1">
       <h1 className="font-display text-2xl font-bold text-foreground">Suas redes (opcional)</h1>
@@ -329,16 +341,20 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: Extr
 
     <div className="space-y-4">
       <div>
-        <Label className="text-xs flex items-center gap-1"><Instagram className="h-3 w-3" /> Instagram</Label>
+        <Label className="text-xs flex items-center gap-1"><Instagram className="h-3 w-3 text-primary" /> Instagram</Label>
         <Input
+          ref={focusInsta.ref}
+          className={focusInsta.highlightClass}
           value={data.instagram_url}
           onChange={(e) => onChange({ instagram_url: e.target.value })}
           placeholder="@seuusuario ou link"
         />
       </div>
       <div>
-        <Label className="text-xs flex items-center gap-1"><Facebook className="h-3 w-3" /> Facebook</Label>
+        <Label className="text-xs flex items-center gap-1"><Facebook className="h-3 w-3 text-primary" /> Facebook</Label>
         <Input
+          ref={focusFb.ref}
+          className={focusFb.highlightClass}
           value={data.facebook_url}
           onChange={(e) => onChange({ facebook_url: e.target.value })}
           placeholder="Link da sua página"
@@ -354,4 +370,5 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: Extr
       </Button>
     </div>
   </div>
-);
+  );
+};

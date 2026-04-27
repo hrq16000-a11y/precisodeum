@@ -43,6 +43,8 @@ import { Phase3Celebration } from './Phase3Celebration';
 import { Phase4Document, Phase4Avatar, Phase4ExtrasA, Phase4ExtrasB } from './Phase4Final';
 import { Phase4Review } from './Phase4Review';
 import { nullifyEmpty } from './optionalPatch';
+import { mergePreservingTouched, markPatchTouched, clearSessionTouched } from './sessionTouched';
+import { subscribeDraftChange } from './crossTabSync';
 import {
   useOnboardingV2Draft,
   readOnboardingV2Draft,
@@ -114,6 +116,18 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       phase: draft.phase || seedState?.phase || seeded.phase,
     };
   });
+
+  // Wrappers que registram quais campos o usuário tocou nesta sessão
+  // (usado pelo Review para merge não-destrutivo).
+  const patchProfile = (patch: Partial<typeof state.profile>) => {
+    markPatchTouched('profile', patch);
+    dispatch({ type: 'PATCH_PROFILE', patch });
+  };
+  const patchService = (patch: Partial<typeof state.service>) => {
+    markPatchTouched('service', patch);
+    dispatch({ type: 'PATCH_SERVICE', patch });
+  };
+
   const [saving, setSaving] = useState(false);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
   const [remoteDraft, setRemoteDraft] = useState<null | {
@@ -260,18 +274,26 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     onPhaseChange?.(state.phase);
   }, [state.phase, onPhaseChange]);
 
-  // Re-hidrata estado pelo draft local ao entrar no Review (garante dados frescos).
+  // Re-hidrata estado pelo draft local ao entrar no Review (garante dados frescos),
+  // PRESERVANDO campos que o usuário já alterou nesta sessão (anti-stale + anti-overwrite).
   useEffect(() => {
     if (state.phase !== 'phase4_review') return;
-    const draft = readOnboardingV2Draft();
-    if (!draft) return;
-    dispatch({
-      type: 'HYDRATE',
-      state: {
-        profile: { ...state.profile, ...(draft.profile || {}) },
-        service: { ...state.service, ...(draft.service || {}) },
-      },
-    });
+    const apply = () => {
+      const draft = readOnboardingV2Draft();
+      if (!draft) return;
+      dispatch({
+        type: 'HYDRATE',
+        state: {
+          profile: mergePreservingTouched('profile', state.profile, draft.profile as any),
+          service: mergePreservingTouched('service', state.service, draft.service as any),
+        },
+      });
+    };
+    apply();
+    // Cross-tab: se outra aba atualizar o draft enquanto o Review está aberto,
+    // re-aplica o merge (sempre preservando o que o usuário tocou aqui).
+    const off = subscribeDraftChange(() => apply());
+    return off;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase]);
 
@@ -529,6 +551,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   const finishWizard = async () => {
     clearOnboardingV2Draft();
+    clearSessionTouched();
     if (user?.id) void clearRemoteDraft(user.id);
 
     if (user?.id && !state.firstServiceId) {
@@ -607,7 +630,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           <Phase1Location
             data={state.profile}
             locks={coreLocks}
-            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChange={patchProfile}
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_kind' }); }}
             onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
             onSkip={() => { track('skip'); dispatch({ type: 'SKIP_TO_NEXT' }); }}
@@ -618,7 +641,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           <Phase1Contact
             data={state.profile}
             locks={coreLocks}
-            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChange={patchProfile}
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_location' }); }}
             saving={saving}
             duplicateWhatsapp={dup.duplicates.whatsapp}
@@ -653,8 +676,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           <Phase2Service
             service={state.service}
             profile={state.profile}
-            onChangeService={(patch) => dispatch({ type: 'PATCH_SERVICE', patch })}
-            onChangeProfile={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChangeService={patchService}
+            onChangeProfile={patchProfile}
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_contact' }); }}
             onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
             onSkip={() => {
@@ -669,8 +692,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           <Phase2Details
             service={state.service}
             profile={state.profile}
-            onChangeService={(patch) => dispatch({ type: 'PATCH_SERVICE', patch })}
-            onChangeProfile={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChangeService={patchService}
+            onChangeProfile={patchProfile}
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_service' }); }}
             saving={saving}
             onSkip={async () => {
@@ -717,7 +740,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           <Phase4Document
             data={state.profile}
             locked={!!coreLocks.document}
-            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChange={patchProfile}
             saving={saving}
             userId={user?.id}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
@@ -735,7 +758,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         return (
           <Phase4Avatar
             data={state.profile}
-            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChange={patchProfile}
             saving={saving}
             userId={user?.id}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
@@ -756,7 +779,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         return (
           <Phase4ExtrasA
             data={state.profile}
-            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChange={patchProfile}
             saving={saving}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onContinue={async () => {
@@ -775,7 +798,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         return (
           <Phase4ExtrasB
             data={state.profile}
-            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChange={patchProfile}
             saving={saving}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onFinish={async () => {
