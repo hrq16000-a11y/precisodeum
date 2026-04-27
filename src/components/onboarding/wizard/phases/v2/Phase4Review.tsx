@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { OnboardingProfileData, OnboardingFirstServiceData, OnboardingPhase } from './types';
 import { setFocusFieldForNextPhase } from './useFocusFieldFromReview';
+import { REVIEW_SECTIONS, type ReviewSectionConfig } from './reviewSectionMap';
 
 interface Phase4ReviewProps {
   profile: OnboardingProfileData;
