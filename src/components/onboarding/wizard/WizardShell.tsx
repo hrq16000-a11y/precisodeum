@@ -23,7 +23,7 @@
  */
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Briefcase, FolderOpen, Sparkles } from 'lucide-react';
 import TriageOrchestrator from '@/components/onboarding/wizard/phases/bet/BetModeShell';
 import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
 import Step20_MoreServices from '@/components/onboarding/wizard/phases/Step20_MoreServices';
@@ -31,6 +31,9 @@ import Step21_PortfolioAlbums from '@/components/onboarding/wizard/phases/Step21
 import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
 import { Button } from '@/components/ui/button';
 import PointsHud from '@/components/onboarding/wizard/phases/bet/PointsHud';
+import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
+import { useEngagementPointsValue } from '@/hooks/useEngagementPoints';
+import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { WizardProgressBar } from './WizardProgressBar';
 import { trackOnboardingEvent } from './phases/v2/telemetry';
@@ -50,6 +53,8 @@ import type { BetState } from './phases/bet/types';
 type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-portfolio' | 'done';
 
 export default function WizardShell() {
+  const { user } = useAuth();
+  const realPoints = useEngagementPointsValue(user?.id);
   const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
   // Stage continua como "qual orquestrador renderizar" — é derivado da fase.
   const stage: Stage =
@@ -134,11 +139,12 @@ export default function WizardShell() {
     window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: state.phase } }));
   }, [state.phase]);
 
-  // Pontos derivados da posição global (cada fase concluída ≈ 280 pts), só para o HUD
-  // de fora da triagem. Dentro da triagem, o BetModeShell já renderiza seu próprio HUD
-  // com pontos reais somados pelas ações.
+  // Pontos REAIS lidos de profiles.engagement_points (atualizados pelos triggers
+  // de banco a cada ação concluída). Fora da triagem usamos o valor do banco;
+  // dentro da triagem o BetModeShell já renderiza seu próprio HUD com pontos
+  // somados localmente em tempo real.
   const phaseIdx = unifiedPhaseIndex(state.phase);
-  const hudPoints = Math.max(0, phaseIdx * 280);
+  const hudPoints = realPoints;
   const hudProgress = Math.min(1, (phaseIdx + 1) / UNIFIED_VISIBLE_PHASES);
   const hudLabel = UNIFIED_PHASE_LABELS[state.phase] ?? '';
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
@@ -169,38 +175,48 @@ export default function WizardShell() {
           onPhaseChange={handleTriagePhaseChange}
         />
       ) : stage === 'extras-services' ? (
-        <div className="mx-auto w-full max-w-md px-4 py-6">
+        <BetCardShell>
           <Step20_MoreServices
             onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
             onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
           />
-        </div>
+        </BetCardShell>
       ) : stage === 'extras-portfolio' ? (
-        <div className="mx-auto w-full max-w-md px-4 py-6">
+        <BetCardShell>
           <Step21_PortfolioAlbums
             onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
             onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
           />
-        </div>
+        </BetCardShell>
       ) : stage === 'done' ? (
         <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-8">
-          <div className="rounded-[28px] border border-border/60 bg-gradient-to-b from-card/95 via-background to-amber-50/20 p-6 text-center shadow-[0_24px_80px_-36px_hsl(var(--foreground)/0.3)]">
-            <h2 className="text-xl font-semibold text-foreground">Tudo pronto.</h2>
+          <BetCardShell className="text-center">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400 shadow-[0_0_24px_rgba(251,146,60,0.7)]">
+              <Sparkles className="h-7 w-7 text-white" />
+            </div>
+            <h2 className="text-2xl font-extrabold tracking-tight text-foreground">Tudo pronto!</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Seu perfil base foi concluído. Agora você pode ir para o dashboard, continuar com seus serviços ou abrir seu portfólio.
+              Seu perfil base foi concluído com <span className="font-semibold text-amber-600 dark:text-amber-400">{realPoints} pts</span>.
+              Escolha por onde quer continuar:
             </p>
             <div className="mt-5 flex flex-col gap-2">
-              <Button asChild className="w-full">
-                <Link to="/dashboard">Ir para o dashboard</Link>
+              <Button asChild className="w-full gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(251,146,60,0.7)] hover:opacity-95">
+                <Link to="/dashboard">
+                  <LayoutDashboard className="h-4 w-4" /> Conhecer o dashboard
+                </Link>
               </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/dashboard/servicos">Continuar cadastrando serviços</Link>
+              <Button asChild variant="outline" className="w-full gap-2">
+                <Link to="/dashboard/servicos">
+                  <Briefcase className="h-4 w-4" /> Continuar cadastrando serviços
+                </Link>
               </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/dashboard/portfolio">Abrir portfólio</Link>
+              <Button asChild variant="outline" className="w-full gap-2">
+                <Link to="/dashboard/portfolio">
+                  <FolderOpen className="h-4 w-4" /> Abrir portfólio
+                </Link>
               </Button>
             </div>
-          </div>
+          </BetCardShell>
           <InstallAppCard source="wizard-unified-done" />
         </div>
       ) : (
