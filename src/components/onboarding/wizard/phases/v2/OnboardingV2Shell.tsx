@@ -110,6 +110,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       ...seedState,
       profile: { ...init.profile, ...(seedState?.profile || {}) },
       service: { ...init.service, ...(seedState?.service || {}) },
+      userRef: seedState?.userRef ?? init.userRef,
+      providerId: seedState?.providerId ?? init.providerId,
+      firstServiceId: seedState?.firstServiceId ?? init.firstServiceId,
     };
     if (!draft) return seeded;
     return {
@@ -117,6 +120,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       profile: { ...seeded.profile, ...(draft.profile || {}) },
       service: { ...seeded.service, ...(draft.service || {}) },
       phase: draft.phase || seedState?.phase || seeded.phase,
+      userRef: draft.userRef ?? seeded.userRef,
+      providerId: draft.providerId ?? seeded.providerId,
+      firstServiceId: draft.firstServiceId ?? seeded.firstServiceId,
     };
   });
 
@@ -134,7 +140,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   const [saving, setSaving] = useState(false);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
   const [remoteDraft, setRemoteDraft] = useState<null | {
-    payload: { profile: any; service: any; providerId?: string | null; firstServiceId?: string | null };
+    payload: { profile: any; service: any; userRef?: string | null; providerId?: string | null; firstServiceId?: string | null };
     phase: any;
     updated_at: string;
   }>(null);
@@ -204,6 +210,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         state: {
           profile: remoteDraft.payload.profile,
           service: remoteDraft.payload.service,
+          userRef: remoteDraft.payload.userRef ?? null,
           providerId: remoteDraft.payload.providerId ?? null,
           firstServiceId: remoteDraft.payload.firstServiceId ?? null,
           phase: remoteDraft.phase as any,
@@ -235,6 +242,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  useEffect(() => {
+    const nextUserRef = profile?.user_ref || null;
+    if (nextUserRef && nextUserRef !== state.userRef) {
+      dispatch({ type: 'SET_USER_REF', userRef: nextUserRef });
+    }
+  }, [profile?.user_ref, state.userRef]);
 
   // Bootstrap do fluxo único: se o V3 já coletou nome/WhatsApp/cidade,
   // o V2 deve entrar direto na criação do primeiro serviço sem repetir perguntas.
