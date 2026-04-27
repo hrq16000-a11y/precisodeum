@@ -3998,6 +3998,7 @@ export type Database = {
           service_area: string
           service_name: string
           service_radius: string
+          updated_at: string
           user_ref: string | null
           view_count: number
           website: string | null
@@ -4023,6 +4024,7 @@ export type Database = {
           service_area?: string
           service_name: string
           service_radius?: string
+          updated_at?: string
           user_ref?: string | null
           view_count?: number
           website?: string | null
@@ -4048,6 +4050,7 @@ export type Database = {
           service_area?: string
           service_name?: string
           service_radius?: string
+          updated_at?: string
           user_ref?: string | null
           view_count?: number
           website?: string | null
