@@ -71,7 +71,7 @@ function slugify(input: string): string {
 }
 
 export const OnboardingV2Shell = () => {
-  const { user, profile, provider } = useAuth();
+  const { user, profile, provider, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -442,7 +442,7 @@ export const OnboardingV2Shell = () => {
       source: 'onboarding-v2-skip-first-service',
       route: `${location.pathname}${location.search}`,
       phase: state.phase,
-      nextRoute: 'phase3_celebration',
+      nextRoute: 'phase4_document',
       reason: 'continue-profile-without-first-service',
       meta: {
         providerId: state.providerId,
@@ -453,20 +453,16 @@ export const OnboardingV2Shell = () => {
 
     setSaving(true);
     try {
-      await supabase.from('profiles')
+      const { error } = await supabase.from('profiles')
         .update({ onboarding_step: 5, onboarding_completed: true })
         .eq('id', user.id);
+      if (error) throw error;
 
-      await supabase.from('providers')
-        .update({
-          city: state.profile.city || null,
-          state: state.profile.state || null,
-          whatsapp: state.profile.whatsapp || null,
-          phone: state.profile.whatsapp || null,
-        })
-        .eq('id', state.providerId);
-
-      dispatch({ type: 'GO_TO', phase: 'phase3_celebration' });
+      await refetchProfile?.();
+      dispatch({ type: 'GO_TO', phase: 'phase4_document' });
+    } catch (e: any) {
+      track('error', { reason: 'skip_first_service_failed', message: e?.message || null });
+      toast.error('Não consegui continuar sem o serviço agora. ' + (e?.message || 'Tente de novo.'));
     } finally {
       setSaving(false);
     }
