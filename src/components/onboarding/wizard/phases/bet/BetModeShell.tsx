@@ -1,9 +1,20 @@
 /**
- * Bet Mode Shell — orquestra as fases do cadastro V3 "Bet Mode".
+ * BetModeShell — ORQUESTRADOR INTERNO da TRIAGEM do wizard unificado.
  *
- * Filosofia:
- *  - Porta única do cadastro: V1 (/triagem) e o flag de A/B foram removidos.
- *  - Salva direto em profiles (e providers para PJ/PF profissional).
+ * ⚠️ NÃO É UM WRAPPER. Contém:
+ *  - Reducer próprio do estado da triagem (identity → who → city → ...)
+ *  - Lógica de pontos/dopamine HUD
+ *  - Persistência atômica em profiles + providers (PF/PJ)
+ *  - Fast-pass do cliente (marca onboarding_completed e redireciona ao ?next=)
+ *  - Handoff interno para o orquestrador principal (OnboardingV2Shell) quando
+ *    o usuário é profissional, via prop `onInternalHandoff`.
+ *
+ * É consumido EXCLUSIVAMENTE por `WizardShell` sob o alias `TriageOrchestrator`.
+ * Não exportar publicamente, não usar fora do WizardShell, não inlinar — a
+ * separação existe para isolar o reducer e os efeitos de persistência.
+ *
+ * Filosofia do fluxo:
+ *  - Porta única do cadastro: /triagem e o A/B antigo foram removidos.
  *  - Cliente: fast-pass, marca onboarding_completed=true e redireciona ao ?next=.
  *  - Profissional: completa identificação básica e segue no fluxo único para
  *    criar o 1º serviço sem repetir nome, WhatsApp e cidade já capturados.

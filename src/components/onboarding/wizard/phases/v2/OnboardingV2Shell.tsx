@@ -1,12 +1,17 @@
 /**
- * OnboardingV2Shell — orquestrador das 4 fases.
+ * OnboardingV2Shell — ORQUESTRADOR INTERNO da FASE PRINCIPAL do wizard unificado.
  *
- * Persistência:
- *  - Final da Fase 1 (sub-passo 4: Nome+WhatsApp) → cria/atualiza provider
- *    via normalizeProviderPayload (mesma fonte do SmartOnboardingWizard).
- *  - Final da Fase 2 → cria 1º serviço via RPC create_service_atomic
- *    e PROPAGA category_id + working_hours para o provider (herança).
- *  - Fase 4 → patches incrementais para provider/profile (idempotentes).
+ * ⚠️ NÃO É UM WRAPPER. Contém:
+ *  - Reducer próprio (`onboardingReducer`) com 13 sub-fases
+ *  - Autosave local (localStorage) + remoto (`onboarding_v2_drafts`)
+ *  - Persistência idempotente em providers/profiles via `normalizeProviderPayload`
+ *  - Criação atômica do 1º serviço via RPC `create_service_atomic`
+ *  - Hidratação a partir de `seedState` quando vem da triagem (handoff interno)
+ *  - Detecção de duplicidade via `useWizardDuplicateCheck`
+ *
+ * É consumido EXCLUSIVAMENTE por `WizardShell` sob o alias `MainOrchestrator`.
+ * Não exportar publicamente, não usar fora do WizardShell, não inlinar — manter
+ * a separação preserva ~1000 linhas de lógica isoladas e testáveis.
  *
  * Telemetria mínima e segura: usa apenas o que já existe (audit_log via celebrate).
  *
