@@ -30,18 +30,36 @@ describe('Onboarding V3 — fluxo unificado', () => {
     expect(exists('src/hooks/useWizardCompleteness.ts')).toBe(false);
   });
 
-  it('App.tsx só conhece /cadastro-bet e /onboarding-v2 como rotas de onboarding', () => {
+  it('App.tsx aceita /cadastro-inicial (Wizard unificado) e legados como compat', () => {
     const app = read('src/App.tsx');
     // /triagem agora é redirect, não mais TriagePage.
     expect(app).not.toMatch(/element=\{<TriagePage/);
     expect(app).not.toMatch(/element=\{<TriagePreviewPage/);
     expect(app).not.toMatch(/element=\{<AdminOnboardingPage/);
-    // Gate aceita apenas as rotas V3/V2.
+    // Gate aceita a porta única + rotas legadas (Fase A da fusão).
+    expect(app).toContain("location.pathname === '/cadastro-inicial'");
     expect(app).toContain("location.pathname === '/cadastro-bet'");
     expect(app).toContain("location.pathname === '/onboarding-v2'");
     expect(app).toContain("location.pathname === '/onboarding-v2/sucesso'");
-    // Sempre redireciona para /cadastro-bet quando incompleto.
-    expect(app).toContain('to="/cadastro-bet"');
+    // Sempre redireciona para a porta única quando incompleto.
+    expect(app).toContain('to="/cadastro-inicial"');
+    expect(app).toContain('path="/cadastro-inicial"');
+  });
+
+  it('Existe WizardShell único na pasta wizard/ (Fase A da fusão estrutural)', () => {
+    expect(exists('src/components/onboarding/wizard/WizardShell.tsx')).toBe(true);
+    expect(exists('src/components/onboarding/wizard/InstallAppCard.tsx')).toBe(true);
+    expect(exists('src/pages/CadastroInicialPage.tsx')).toBe(true);
+    const shell = read('src/components/onboarding/wizard/WizardShell.tsx');
+    expect(shell).toContain('BetModeShell');
+    expect(shell).toContain('OnboardingV2Shell');
+    expect(shell).toContain('onInternalHandoff');
+  });
+
+  it('PhaseCelebration (Fase 2) sugere instalar o app via InstallAppCard', () => {
+    const phase3 = read('src/components/onboarding/onboardingV2/Phase3Celebration.tsx');
+    expect(phase3).toContain('InstallAppCard');
+    expect(phase3).toContain('wizard-phase3-celebration');
   });
 
   it('LoginPage e OAuth handler levam o usuário para /cadastro-bet (V3)', () => {

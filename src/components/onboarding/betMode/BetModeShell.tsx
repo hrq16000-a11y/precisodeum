@@ -68,7 +68,16 @@ const PHASE_PROGRESS: Record<BetPhase, number> = {
 const ACCOUNT_TYPE_ID_PF = '61f51480-d8c2-4c78-8f44-6a17e8b6b968'; // Profissional Autônomo
 const ACCOUNT_TYPE_ID_PJ = '4e322d19-c999-4563-ac63-45ccefd78736'; // Empresa / Agência
 
-export default function BetModeShell() {
+interface BetModeShellProps {
+  /**
+   * Callback opcional usado pelo WizardShell unificado para fazer o handoff
+   * V3 → V2 sem trocar de URL. Quando fornecido, substitui o
+   * `navigate('/onboarding-v2?source=bet-first-service')` legado.
+   */
+  onInternalHandoff?: () => void;
+}
+
+export default function BetModeShell({ onInternalHandoff }: BetModeShellProps = {}) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = params.get('next') || '/dashboard';
@@ -212,20 +221,25 @@ export default function BetModeShell() {
   function handleCelebrationCta() {
     if (state.intent === 'client') {
       navigate(next, { replace: true });
+      return;
+    }
+    appendWizardResetDebugLog({
+      source: 'bet-celebration-cta',
+      route: onInternalHandoff ? '/cadastro-inicial' : '/cadastro-bet',
+      nextRoute: onInternalHandoff ? '/cadastro-inicial' : '/onboarding-v2?source=bet-first-service',
+      phase: state.phase,
+      reason: 'provider-clicked-first-service',
+      meta: {
+        city: state.city,
+        state: state.state,
+        hasName: state.full_name.trim().length > 0,
+        hasWhatsapp: state.whatsapp.replace(/\D/g, '').length >= 10,
+        unified: !!onInternalHandoff,
+      },
+    });
+    if (onInternalHandoff) {
+      onInternalHandoff();
     } else {
-      appendWizardResetDebugLog({
-        source: 'bet-celebration-cta',
-        route: '/cadastro-bet',
-        nextRoute: '/onboarding-v2?source=bet-first-service',
-        phase: state.phase,
-        reason: 'provider-clicked-first-service',
-        meta: {
-          city: state.city,
-          state: state.state,
-          hasName: state.full_name.trim().length > 0,
-          hasWhatsapp: state.whatsapp.replace(/\D/g, '').length >= 10,
-        },
-      });
       navigate('/onboarding-v2?source=bet-first-service', { replace: true });
     }
   }

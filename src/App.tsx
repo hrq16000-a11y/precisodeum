@@ -172,6 +172,7 @@ const SponsorPublicPage = lazy(() => import("./pages/SponsorPublicPage"));
 const SponsorPublicProfilePage = lazy(() => import("./pages/sponsor/SponsorPublicProfilePage"));
 const OnboardingV2Page = lazy(() => import("./pages/OnboardingV2Page"));
 const CadastroBetPage = lazy(() => import("./pages/CadastroBetPage"));
+const CadastroInicialPage = lazy(() => import("./pages/CadastroInicialPage"));
 const OnboardingV2SuccessPage = lazy(() => import("./pages/OnboardingV2SuccessPage"));
 
 const CookieConsent = reactLazy(() => importWithRetry(() => import("./components/CookieConsent")));
@@ -299,9 +300,10 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     onboardingStep < 5
   );
 
-  // V3 unificado: /cadastro-bet é a porta única; /onboarding-v2 é o motor
-  // interno (1º serviço + perfil completo) usado após a identificação.
+  // Wizard unificado (Fase A): /cadastro-inicial é a porta única.
+  // /cadastro-bet e /onboarding-v2 permanecem como redirects compat\u00edveis.
   const isOnboardingRoute =
+    location.pathname === '/cadastro-inicial' ||
     location.pathname === '/cadastro-bet' ||
     location.pathname === '/onboarding-v2' ||
     location.pathname === '/onboarding-v2/sucesso';
@@ -309,7 +311,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     appendWizardResetDebugLog({
       source: 'onboarding-gate-redirect',
       route: `${location.pathname}${location.search}`,
-      nextRoute: '/cadastro-bet',
+      nextRoute: '/cadastro-inicial',
       phase: null,
       reason: 'global-onboarding-gate',
       meta: {
@@ -318,7 +320,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
         onboarding_step: onboardingStep,
       },
     });
-    return <Navigate to="/cadastro-bet" replace />;
+    return <Navigate to="/cadastro-inicial" replace />;
   }
 
   return <>{children}</>;
@@ -380,9 +382,11 @@ const App = () => {
                 <Route path="/espacos-patrocinio" element={<SponsorSlotsPage />} />
                 <Route path="/contrato-patrocinio" element={<SponsorContractPage />} />
                 <Route path="/vaga/:slug" element={<JobDetailPage />} />
-                {/* V3 unificado — /triagem e /triagem/preview removidos. */}
-                <Route path="/triagem" element={<Navigate to="/cadastro-bet" replace />} />
-                <Route path="/triagem/preview" element={<Navigate to="/cadastro-bet" replace />} />
+                {/* Wizard unificado (Fase A) — porta única /cadastro-inicial. */}
+                <Route path="/triagem" element={<Navigate to="/cadastro-inicial" replace />} />
+                <Route path="/triagem/preview" element={<Navigate to="/cadastro-inicial" replace />} />
+                <Route path="/cadastro-inicial" element={<CadastroInicialPage />} />
+                {/* Compat: rotas legadas continuam funcionando, mas a porta oficial é /cadastro-inicial. */}
                 <Route path="/onboarding-v2" element={<OnboardingV2Page />} />
                 <Route path="/onboarding-v2/sucesso" element={<ProtectedRoute><OnboardingV2SuccessPage /></ProtectedRoute>} />
                 <Route path="/cadastro-bet" element={<CadastroBetPage />} />
