@@ -128,7 +128,6 @@ const AdminSystemHealthPage = lazy(() => import("./pages/AdminSystemHealthPage")
 const AdminPermissionsPage = lazy(() => import("./pages/AdminPermissionsPage"));
 const AdminStaffPage = lazy(() => import("./pages/AdminStaffPage"));
 const AdminApprovalSettingsPage = lazy(() => import("./pages/AdminApprovalSettingsPage"));
-const AdminOnboardingPage = lazy(() => import("./pages/AdminOnboardingPage"));
 const AdminOrphanProfilesPage = lazy(() => import("./pages/AdminOrphanProfilesPage"));
 const DashboardChatPage = lazy(() => import("./pages/DashboardChatPage"));
 const InstitutionalPage = lazy(() => import("./pages/InstitutionalPage"));
@@ -171,11 +170,9 @@ const AgencyPublicPage = lazy(() => import("./pages/AgencyPublicPage"));
 const DashboardAgencyDataPage = lazy(() => import("./pages/DashboardAgencyDataPage"));
 const SponsorPublicPage = lazy(() => import("./pages/SponsorPublicPage"));
 const SponsorPublicProfilePage = lazy(() => import("./pages/sponsor/SponsorPublicProfilePage"));
-const TriagePage = lazy(() => import("./pages/TriagePage"));
 const OnboardingV2Page = lazy(() => import("./pages/OnboardingV2Page"));
 const CadastroBetPage = lazy(() => import("./pages/CadastroBetPage"));
 const OnboardingV2SuccessPage = lazy(() => import("./pages/OnboardingV2SuccessPage"));
-const TriagePreviewPage = lazy(() => import("./pages/TriagePreviewPage"));
 
 const CookieConsent = reactLazy(() => importWithRetry(() => import("./components/CookieConsent")));
 const PwaInstallBanner = reactLazy(() => importWithRetry(() => import("./components/PwaInstallBanner")));
@@ -302,13 +299,12 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     onboardingStep < 5
   );
 
-  // Permitimos /triagem (Smart) E /onboarding-v2 (fluxo novo) — usuário em onboarding
-  // pode estar em qualquer um dos dois sem ser empurrado de volta.
+  // V3 unificado: /cadastro-bet é a porta única; /onboarding-v2 é o motor
+  // interno (1º serviço + perfil completo) usado após a identificação.
   const isOnboardingRoute =
-    location.pathname === '/triagem' ||
+    location.pathname === '/cadastro-bet' ||
     location.pathname === '/onboarding-v2' ||
-    location.pathname === '/onboarding-v2/sucesso' ||
-    location.pathname === '/cadastro-bet';
+    location.pathname === '/onboarding-v2/sucesso';
   if (mustCompleteOnboarding && !isOnboardingRoute) {
     appendWizardResetDebugLog({
       source: 'onboarding-gate-redirect',
@@ -384,8 +380,9 @@ const App = () => {
                 <Route path="/espacos-patrocinio" element={<SponsorSlotsPage />} />
                 <Route path="/contrato-patrocinio" element={<SponsorContractPage />} />
                 <Route path="/vaga/:slug" element={<JobDetailPage />} />
-                <Route path="/triagem" element={<TriagePage />} />
-                <Route path="/triagem/preview" element={<TriagePreviewPage />} />
+                {/* V3 unificado — /triagem e /triagem/preview removidos. */}
+                <Route path="/triagem" element={<Navigate to="/cadastro-bet" replace />} />
+                <Route path="/triagem/preview" element={<Navigate to="/cadastro-bet" replace />} />
                 <Route path="/onboarding-v2" element={<OnboardingV2Page />} />
                 <Route path="/onboarding-v2/sucesso" element={<ProtectedRoute><OnboardingV2SuccessPage /></ProtectedRoute>} />
                 <Route path="/cadastro-bet" element={<CadastroBetPage />} />
@@ -474,7 +471,8 @@ const App = () => {
                 <Route path="/admin/busca-auditoria" element={<AdminSearchAuditPage />} />
                 <Route path="/admin/staff" element={<AdminStaffPage />} />
                 <Route path="/admin/aprovacao" element={<AdminApprovalSettingsPage />} />
-                <Route path="/admin/onboarding" element={<AdminOnboardingPage />} />
+                {/* /admin/onboarding removido — V1 obsoleto. Diagnóstico unificado em /admin/wizard-diagnostico. */}
+                <Route path="/admin/onboarding" element={<Navigate to="/admin/wizard-diagnostico" replace />} />
                 <Route path="/admin/perfis-orfaos" element={<AdminOrphanProfilesPage />} />
                 <Route path="/admin/cursos" element={<AdminCoursesPage />} />
                 <Route path="/cursos" element={<CoursesPage />} />

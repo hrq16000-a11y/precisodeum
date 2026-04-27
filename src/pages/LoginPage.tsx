@@ -30,7 +30,7 @@ const LoginPage = () => {
   const location = useLocation();
   const { user, profile, loading: authLoading } = useAuth();
 
-  // Mantemos a rota salva apenas para jornadas futuras; o pós-auth cai sempre na triagem.
+  // Mantemos a rota salva apenas para jornadas futuras; o pós-auth cai sempre no V3 (/cadastro-bet).
   const from = (location.state as any)?.from || null;
 
   useEffect(() => {
@@ -42,7 +42,7 @@ const LoginPage = () => {
 
   /**
    * Porta única: tenta login. Se a conta não existir, cria silenciosamente.
-   * Em ambos os casos, o Hard Gate /triagem assume daqui.
+   * Em ambos os casos, o Hard Gate /cadastro-bet (V3) assume daqui.
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +66,7 @@ const LoginPage = () => {
       const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/triagem` },
+        options: { emailRedirectTo: `${window.location.origin}/cadastro-bet` },
       });
       setLoading(false);
       if (signUpError) {
@@ -75,7 +75,7 @@ const LoginPage = () => {
       }
       if (signUpData.session) {
         toast.success('Conta criada! Vamos configurar seu perfil.');
-        // useEffect redireciona para /triagem automaticamente
+        // useEffect redireciona para /cadastro-bet automaticamente
       } else {
         toast.success('Conta criada! Verifique seu e-mail para confirmar.');
       }
