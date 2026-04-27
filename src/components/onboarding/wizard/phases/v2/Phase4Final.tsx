@@ -50,17 +50,20 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
     .toUpperCase();
 
   return (
-    <div className="space-y-5">
-      <header className="text-center space-y-1">
-        <h1 className="font-display text-2xl font-bold text-foreground">Coloca uma foto sua.</h1>
-        <p className="text-sm text-muted-foreground">
-          Perfis com foto recebem até <span className="font-semibold text-foreground">3x mais chamados</span>.
+    <motion.div {...wizardEnter} className={ws.container}>
+      <header className={ws.headerWrap}>
+        <div className={ws.chip}>
+          <CameraIcon className="h-3 w-3" /> Foto de perfil
+        </div>
+        <h1 className={ws.title}>Coloca uma foto sua.</h1>
+        <p className={ws.subtitle}>
+          Perfis com foto recebem até <span className="font-semibold text-foreground">3× mais chamados</span>.
         </p>
       </header>
 
       <div
         ref={focusAvatar.ref as any}
-        className={`flex justify-center py-2 rounded-2xl ${focusAvatar.highlightClass}`}
+        className={`flex justify-center rounded-2xl border border-border bg-card p-4 shadow-card ${focusAvatar.highlightClass}`}
       >
         {userId && (
           <AvatarUpload
@@ -72,21 +75,16 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
         )}
       </div>
 
-      <div className="flex gap-2 pt-2">
-        <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className="flex-1">
+      <div className="flex flex-col gap-2 pt-1">
+        <Button type="button" size="lg" onClick={onContinue} disabled={saving || !data.avatar_url} className={ws.cta}>
+          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Salvar e continuar <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+        <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
           Agora não
         </Button>
-        <Button
-          type="button"
-          onClick={onContinue}
-          disabled={saving || !data.avatar_url}
-          className="flex-1"
-        >
-          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          Salvar e continuar <ArrowRight className="h-4 w-4 ml-1" />
-        </Button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
