@@ -46,12 +46,12 @@ export default function PortfolioAlbumPhotoUploader({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refresh = async () => {
-    const { data } = await supabase
-      .from('portfolio_photos' as any)
+    const { data } = await (supabase as any)
+      .from('portfolio_photos')
       .select('id, image_url, storage_path')
       .eq('album_id', albumId)
       .order('display_order', { ascending: true });
-    setPhotos((data || []) as AlbumPhoto[]);
+    setPhotos(((data as AlbumPhoto[]) || []));
     setLoading(false);
   };
 
