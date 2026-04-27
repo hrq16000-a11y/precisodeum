@@ -350,7 +350,7 @@ export const Phase2Details = ({
       </header>
 
       {/* Cidades atendidas */}
-      <div>
+      <div ref={focusCities.ref as any} className={`rounded-md ${focusCities.highlightClass}`}>
         <Label className="text-xs flex items-center gap-1">
           <MapPin className="h-3 w-3" /> Cidades atendidas <span className="text-muted-foreground">(até 5)</span>
         </Label>
