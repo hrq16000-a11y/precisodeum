@@ -77,9 +77,14 @@ interface OnboardingV2ShellProps {
    * que não existe mais agora que o handoff é interno (sem trocar de URL).
    */
   internalHandoffFromTriage?: boolean;
+  /**
+   * Reporta a fase interna corrente para o WizardShell exibir a barra
+   * de progresso global (Consolidação Fase 1).
+   */
+  onPhaseChange?: (phase: import('./types').OnboardingPhase) => void;
 }
 
-export const OnboardingV2Shell = ({ internalHandoffFromTriage = false }: OnboardingV2ShellProps = {}) => {
+export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, onPhaseChange }: OnboardingV2ShellProps = {}) => {
   const { user, profile, provider, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

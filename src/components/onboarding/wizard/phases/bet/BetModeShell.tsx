@@ -76,9 +76,14 @@ interface BetModeShellProps {
    * é o único caminho válido pós-triagem para profissionais.
    */
   onInternalHandoff?: () => void;
+  /**
+   * Reporta a fase interna corrente para o WizardShell exibir a barra
+   * de progresso global (Consolidação Fase 1).
+   */
+  onPhaseChange?: (phase: BetPhase) => void;
 }
 
-export default function BetModeShell({ onInternalHandoff }: BetModeShellProps = {}) {
+export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetModeShellProps = {}) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = params.get('next') || '/dashboard';
@@ -86,6 +91,11 @@ export default function BetModeShell({ onInternalHandoff }: BetModeShellProps = 
   const [state, dispatch] = useReducer(reducer, initialBetState);
 
   useSeoHead({ title: 'Cadastro express', description: 'Cadastro rápido para começar agora.', noindex: true });
+
+  // Reporta mudanças de fase para a barra de progresso global do WizardShell.
+  useEffect(() => {
+    onPhaseChange?.(state.phase);
+  }, [state.phase, onPhaseChange]);
 
   // Pré-preenche com o que já existe (ex: nome do Google) + hidrata HUD com saldo real do banco.
   useEffect(() => {
