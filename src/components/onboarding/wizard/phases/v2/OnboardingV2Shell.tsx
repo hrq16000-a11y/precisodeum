@@ -390,8 +390,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
       // 2) provider apenas se for prestador
       if ((p.profile_type || 'provider') === 'provider') {
+        // ANTI-DUPLICAÇÃO: query ignora qualquer ID local e busca direto no DB
+        // por user_id. Se já existir, atualiza; senão, insere uma única vez.
         const { data: existing } = await supabase
-          .from('providers').select('*').eq('user_id', user.id).limit(1);
+          .from('providers').select('*').eq('user_id', user.id).is('deleted_at', null).limit(1);
 
         if (existing && existing[0]) {
           const updPayload = normalizeProviderPayload({
@@ -405,20 +407,26 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           if (error) throw error;
           dispatch({ type: 'SET_PROVIDER_ID', id: existing[0].id });
         } else {
-          const baseSlug = slugify(p.full_name || user.email?.split('@')[0] || 'profissional');
-          const insPayload = normalizeProviderPayload({
-            user_id: user.id,
-            slug: `${baseSlug}-${user.id.slice(0, 6)}`,
-            city: p.city || '',
-            state: p.state || '',
-            whatsapp: p.whatsapp || '',
-            phone: p.whatsapp || '',
-            account_type: p.kind === 'pj' ? 'company' : 'autonomous',
-            status: 'pending',
-          });
-          const { data: created, error } = await supabase.from('providers').insert(insPayload as any).select('id').single();
-          if (error) throw error;
-          dispatch({ type: 'SET_PROVIDER_ID', id: created!.id });
+          // Double-check via helper (cobre raça entre tabs concorrentes)
+          const reusedId = await findExistingProvider(user.id);
+          if (reusedId) {
+            dispatch({ type: 'SET_PROVIDER_ID', id: reusedId });
+          } else {
+            const baseSlug = slugify(p.full_name || user.email?.split('@')[0] || 'profissional');
+            const insPayload = normalizeProviderPayload({
+              user_id: user.id,
+              slug: `${baseSlug}-${user.id.slice(0, 6)}`,
+              city: p.city || '',
+              state: p.state || '',
+              whatsapp: p.whatsapp || '',
+              phone: p.whatsapp || '',
+              account_type: p.kind === 'pj' ? 'company' : 'autonomous',
+              status: 'pending',
+            });
+            const { data: created, error } = await supabase.from('providers').insert(insPayload as any).select('id').single();
+            if (error) throw error;
+            dispatch({ type: 'SET_PROVIDER_ID', id: created!.id });
+          }
         }
       }
       return true;
