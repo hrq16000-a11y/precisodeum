@@ -192,7 +192,7 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
           )}
 
           <div ref={focusDoc.ref as any} className={`rounded-md ${focusDoc.highlightClass}`}>
-            <Label className="text-xs">{data.kind === 'pj' ? 'CNPJ' : 'CPF'}</Label>
+            <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{data.kind === 'pj' ? 'CNPJ' : 'CPF'}</span>
             <CpfCnpjInput
               value={data.document}
               onChange={(digitsOnly) => { if (!locked) onChange({ document: digitsOnly }); }}
@@ -275,7 +275,7 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
 
     <div className="space-y-4">
       <div>
-        <Label className="text-xs">Tempo de experiência</Label>
+        <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Tempo de experiência</span>
         <Input
           type="number"
           min={0}
@@ -291,7 +291,7 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
       </div>
 
       <div>
-        <Label className="text-xs">Bairro <span className="text-muted-foreground">(opcional)</span></Label>
+        <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Bairro <span className="text-muted-foreground">(opcional)</span></span>
         <Input
           ref={focusNeighborhood.ref}
           className={focusNeighborhood.highlightClass}
@@ -302,7 +302,7 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
       </div>
 
       <div>
-        <Label className="text-xs">Bio curta <span className="text-muted-foreground">(opcional)</span></Label>
+        <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Bio curta <span className="text-muted-foreground">(opcional)</span></span>
         <Textarea
           ref={focusBio.ref}
           className={focusBio.highlightClass}
@@ -349,7 +349,7 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: Extr
 
     <div className="space-y-4">
       <div>
-        <Label className="text-xs flex items-center gap-1"><Instagram className="h-3 w-3 text-primary" /> Instagram</Label>
+        <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Instagram className="h-3 w-3 text-primary" /> Instagram</span>
         <Input
           ref={focusInsta.ref}
           className={focusInsta.highlightClass}
@@ -359,7 +359,7 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: Extr
         />
       </div>
       <div>
-        <Label className="text-xs flex items-center gap-1"><Facebook className="h-3 w-3 text-primary" /> Facebook</Label>
+        <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Facebook className="h-3 w-3 text-primary" /> Facebook</span>
         <Input
           ref={focusFb.ref}
           className={focusFb.highlightClass}
