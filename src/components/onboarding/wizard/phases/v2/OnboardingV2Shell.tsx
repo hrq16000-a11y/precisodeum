@@ -791,7 +791,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   void isCelebrationOrLater;
 
   return (
-    <BetCardShell className="min-h-[70vh] px-0 py-0" animated={false}>
+    <>
       {/* Aviso "rascunho restaurado" — diferencia local x remoto */}
       <AnimatePresence>
         {draftRestored && (
@@ -821,7 +821,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         )}
       </AnimatePresence>
 
-      <main className="mx-auto max-w-md px-4 py-6 sm:py-10">
+      <BetCardShell animated={false}>
         {pendingCoreFields.length < 5 && (
           <div className="mb-4 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">Já preenchido:</span>{' '}
@@ -851,7 +851,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             {renderPhase()}
           </motion.div>
         </AnimatePresence>
-      </main>
+      </BetCardShell>
 
       <RemoteDraftRecoveryModal
         open={showRemoteModal}
@@ -861,7 +861,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         onContinue={handleRemoteContinue}
         onDiscard={handleRemoteDiscard}
       />
-    </BetCardShell>
+    </>
   );
 };
 
