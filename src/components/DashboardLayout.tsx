@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, Briefcase, Star, MessageSquare, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera, LifeBuoy, AlertTriangle, ChevronRight, Building2, ExternalLink, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, User, Briefcase, Star, MessageSquare, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera, LifeBuoy, AlertTriangle, ChevronRight, Building2, ExternalLink, BarChart3, ClipboardCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -88,6 +88,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const menuItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: hasProfilePermission('dashboard'), badge: 0 },
     { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil', show: hasProfilePermission('profile'), badge: 0 },
+    { label: 'Status do Cadastro', icon: ClipboardCheck, path: '/dashboard/status', show: !isClient && !isRH, badge: 0 },
     { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos', show: !isClient && !isRH && hasProfilePermission('services'), badge: 0 },
     { label: 'Portfólio', icon: Camera, path: '/dashboard/portfolio', show: !isClient && !isRH && hasProfilePermission('services'), badge: 0 },
     { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina', show: !isClient && !isRH && hasProfilePermission('my_page'), badge: 0 },
