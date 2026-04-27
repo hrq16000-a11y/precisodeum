@@ -296,6 +296,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         case 'phase4_extras_b':
           dispatch({ type: 'GO_TO', phase: 'phase4_extras_a' });
           break;
+        case 'phase4_review':
+          dispatch({ type: 'GO_TO', phase: 'phase4_extras_b' });
+          break;
       }
     };
     window.addEventListener('wizard:request-back', goBack as EventListener);
