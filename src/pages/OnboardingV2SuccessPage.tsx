@@ -291,6 +291,35 @@ const OnboardingV2SuccessPage = () => {
           )}
         </div>
 
+        {/* Compartilhar perfil + link de afiliado */}
+        {affiliateLink && (
+          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10">
+            <CardContent className="p-4 sm:p-5 space-y-3">
+              <div className="flex items-start gap-2">
+                <Share2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <h2 className="font-display text-base font-bold text-foreground">Compartilhe e ganhe pontos</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Cada pessoa que se cadastrar pelo seu link te credita pontos no ranking.
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button onClick={handleWhatsApp} size="sm" className="w-full">
+                  <Share2 className="h-4 w-4 mr-2" /> Compartilhar no WhatsApp
+                </Button>
+                <Button onClick={handleCopy} size="sm" variant="outline" className="w-full">
+                  {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                  {copied ? 'Copiado!' : 'Copiar link'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Instalar app (PWA) */}
+        <InstallAppCard source="onboarding-v2-success" />
+
         {/* Próximos passos opcionais */}
         {!loading && (!hasPhotos || !hasPortfolio) && (
           <Card>
