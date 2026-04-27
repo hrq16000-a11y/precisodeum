@@ -378,12 +378,10 @@ const App = () => {
                 <Route path="/espacos-patrocinio" element={<SponsorSlotsPage />} />
                 <Route path="/contrato-patrocinio" element={<SponsorContractPage />} />
                 <Route path="/vaga/:slug" element={<JobDetailPage />} />
-                {/* Wizard unificado — porta ÚNICA /cadastro-inicial. Rotas legadas viram redirect 301. */}
+                {/* Wizard unificado — porta ÚNICA /cadastro-inicial. Rotas legadas /cadastro-bet,
+                    /onboarding-v2 e /triagem foram REMOVIDAS na Consolidação Fase 2. Acessos
+                    diretos caem em /404 — tracking de tentativas via NotFound + telemetria. */}
                 <Route path="/cadastro-inicial" element={<CadastroInicialPage />} />
-                <Route path="/triagem" element={<Navigate to="/cadastro-inicial" replace />} />
-                <Route path="/triagem/preview" element={<Navigate to="/cadastro-inicial" replace />} />
-                <Route path="/cadastro-bet" element={<Navigate to="/cadastro-inicial" replace />} />
-                <Route path="/onboarding-v2" element={<Navigate to="/cadastro-inicial" replace />} />
                 <Route path="/onboarding-v2/sucesso" element={<ProtectedRoute><OnboardingV2SuccessPage /></ProtectedRoute>} />
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                 <Route path="/dashboard/perfil" element={<ProtectedRoute><ErrorGuard componentName="DashboardProfilePage"><DashboardProfilePage /></ErrorGuard></ProtectedRoute>} />
