@@ -59,6 +59,7 @@ import {
   getPendingOnboardingCoreFields,
   resolveOnboardingV2SeedState,
 } from './bootstrap';
+import { buildWorkingHoursSummary } from './workingHours';
 
 function slugify(input: string): string {
   return (input || '')
@@ -90,9 +91,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   const { user, profile, provider, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const skipDraftRestore = internalHandoffFromTriage && (seedState?.phase === 'phase2_service' || seedState?.phase === 'phase1_action');
   // Restaura draft local ao montar (se existir e não estiver expirado)
   const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState, (init) => {
-    const draft = readOnboardingV2Draft();
+    const draft = skipDraftRestore ? null : readOnboardingV2Draft();
     const seeded = {
       ...init,
       ...seedState,
@@ -128,18 +130,20 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   // Aviso de "rascunho restaurado" do LOCAL (mesmo dispositivo)
   useEffect(() => {
+    if (skipDraftRestore) return;
     const draft = readOnboardingV2Draft();
     if (draft && draft.phase && draft.phase !== 'phase1_action') {
       setDraftRestored({ source: 'local' });
       const t = setTimeout(() => setDraftRestored(null), 5000);
       return () => clearTimeout(t);
     }
-  }, []);
+  }, [skipDraftRestore]);
 
   // Detecta rascunho REMOTO (troca de dispositivo) e ABRE MODAL para o usuário decidir.
   // Não auto-hidrata mais — evita "salto" silencioso de etapa.
   useEffect(() => {
     if (!user?.id) return;
+    if (skipDraftRestore) return;
     const local = readOnboardingV2Draft();
     if (local && local.phase && local.phase !== 'phase1_action') return;
     let alive = true;
@@ -151,7 +155,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       setShowRemoteModal(true);
     })();
     return () => { alive = false; };
-  }, [user?.id]);
+  }, [user?.id, skipDraftRestore]);
 
   const handleRemoteContinue = () => {
     if (remoteDraft) {
@@ -374,6 +378,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       const p = state.profile;
       const cityForAddress = [p.city, p.state].filter(Boolean).join(' - ');
       const serviceArea = s.cities_served.join('; ');
+      const workingHoursSummary = buildWorkingHoursSummary(s.working_hours, s.working_days);
 
       // ── INVARIANTE OBRIGATÓRIA ─────────────────────────────────────────────
       // O nome do 1º serviço é SEMPRE o nome oficial da categoria escolhida e
@@ -438,7 +443,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         _whatsapp: p.whatsapp,
         _service_area: serviceArea,
         _address: cityForAddress,
-        _working_hours: s.working_hours,
+        _working_hours: workingHoursSummary,
         _website: '',
         _instagram_url: '',
         _facebook_url: '',
@@ -453,7 +458,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
       // 2) Herança — categoria principal + horário sobem para o provider
       const updates: any = { category_id: categoryId };
-      if (s.working_hours) updates.working_hours = s.working_hours;
+      if (workingHoursSummary) updates.working_hours = workingHoursSummary;
       if (s.starting_price_brl != null) updates.starting_price = s.starting_price_brl;
       await supabase.from('providers').update(updates).eq('id', state.providerId);
 
