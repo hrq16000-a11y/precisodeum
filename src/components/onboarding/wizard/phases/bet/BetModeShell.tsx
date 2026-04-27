@@ -116,9 +116,69 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
   const goto = (phase: BetPhase) => dispatch({ type: 'GOTO', phase });
   const addPoints = (n: number) => dispatch({ type: 'POINTS', n });
 
+  async function finishRh() {
+    if (!user) { toast.error('Faça login antes de continuar'); return; }
+    try {
+      const { error } = await (supabase as any)
+        .from('profiles')
+        .update({
+          full_name: state.full_name.trim(),
+          whatsapp: state.whatsapp,
+          city: state.city || null,
+          state: state.state || null,
+          profile_type: 'rh',
+          onboarding_step: 5,
+          onboarding_completed: true,
+        })
+        .eq('id', user.id);
+      if (error) throw error;
+      await addSessionPointsToProfile();
+      await refetchProfile?.();
+      navigate('/dashboard/agencia', { replace: true });
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao salvar cadastro da agência');
+    }
+  }
+
+  async function finishSponsor() {
+    if (!user) { toast.error('Faça login antes de continuar'); return; }
+    try {
+      const { error } = await (supabase as any)
+        .from('profiles')
+        .update({
+          full_name: state.full_name.trim(),
+          whatsapp: state.whatsapp,
+          city: state.city || null,
+          state: state.state || null,
+          profile_type: 'client',
+          onboarding_step: 5,
+          onboarding_completed: true,
+        })
+        .eq('id', user.id);
+      if (error) throw error;
+      await addSessionPointsToProfile();
+      await refetchProfile?.();
+      navigate('/quero-ser-patrocinador', { replace: true });
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao iniciar fluxo de patrocinador');
+    }
+  }
+
   function pickIntent(intent: BetIntent) {
     patch({ intent });
-    goto(intent === 'client' ? 'client_city' : 'pro_kind');
+    if (intent === 'professional') {
+      goto('pro_kind');
+      return;
+    }
+    if (intent === 'client') {
+      goto('client_city');
+      return;
+    }
+    if (intent === 'rh') {
+      void finishRh();
+      return;
+    }
+    void finishSponsor();
   }
 
   /**
