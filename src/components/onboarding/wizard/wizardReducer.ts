@@ -257,6 +257,7 @@ export const initialWizardState: WizardState = {
     category_ids: [],
     cities_served: [],
     starting_price_brl: null,
+    working_days: [],
     working_hours: '',
   },
   providerId: null,
