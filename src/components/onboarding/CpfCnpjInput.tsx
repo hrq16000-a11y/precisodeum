@@ -66,6 +66,7 @@ interface CpfCnpjInputProps {
   name?: string;
   /** Restringe o documento aceito ('cpf' = 11, 'cnpj' = 14, 'auto' = ambos). */
   mode?: CpfCnpjMode;
+  disabled?: boolean;
 }
 
 /**
