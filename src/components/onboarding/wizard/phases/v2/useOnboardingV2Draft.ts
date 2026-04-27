@@ -73,6 +73,7 @@ export function useOnboardingV2Draft(state: OnboardingState) {
           phase: state.phase,
         };
         localStorage.setItem(DRAFT_KEY, JSON.stringify(envelope));
+        broadcastDraftChange('local-write');
       } catch {
         /* quota cheia — ignora */
       }
