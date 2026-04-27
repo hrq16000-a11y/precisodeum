@@ -19,6 +19,8 @@ export function flushLocalDraft(state: OnboardingState) {
       profile: state.profile,
       service: state.service,
       phase: state.phase,
+      providerId: state.providerId,
+      firstServiceId: state.firstServiceId,
     };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(envelope));
     broadcastDraftChange('local-write');
@@ -33,7 +35,12 @@ export async function flushRemoteDraft(
   try {
     await supabase.from('onboarding_v2_drafts' as any).upsert({
       user_id: userId,
-      payload: { profile: state.profile, service: state.service },
+      payload: {
+        profile: state.profile,
+        service: state.service,
+        providerId: state.providerId,
+        firstServiceId: state.firstServiceId,
+      },
       phase: state.phase,
     } as any, { onConflict: 'user_id' });
   } catch { /* fail-soft */ }
