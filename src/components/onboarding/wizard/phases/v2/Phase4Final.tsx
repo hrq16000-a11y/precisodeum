@@ -266,63 +266,71 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
   const focusBio = useFocusFieldFromReview('bio');
   const focusNeighborhood = useFocusFieldFromReview('neighborhood');
   return (
-  <div className="space-y-5">
-    <header className="text-center space-y-1">
-      <h1 className="font-display text-2xl font-bold text-foreground">Quase lá — falta só ajustar seu perfil.</h1>
-      <p className="text-sm text-muted-foreground">Ajuda quem busca por você na sua região.</p>
-    </header>
+    <motion.div {...wizardEnter} className={ws.container}>
+      <header className={ws.headerWrap}>
+        <h1 className={ws.title}>Quase lá — falta só ajustar seu perfil.</h1>
+        <p className={ws.subtitle}>Ajuda quem busca por você na sua região.</p>
+      </header>
 
-    <div className="space-y-4">
-      <div>
-        <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Tempo de experiência</span>
-        <Input
-          type="number"
-          min={0}
-          max={60}
-          inputMode="numeric"
-          value={data.years_experience ?? ''}
-          onChange={(e) => {
-            const value = e.target.value;
-            onChange({ years_experience: value === '' ? null : Math.max(0, Number(value)) });
-          }}
-          placeholder="Ex: 5 anos"
-        />
+      <div className={ws.card}>
+        <label className="block">
+          <span className={ws.fieldLabel}>
+            <Calendar className="h-3.5 w-3.5" /> Tempo de experiência
+          </span>
+          <Input
+            type="number"
+            min={0}
+            max={60}
+            inputMode="numeric"
+            value={data.years_experience ?? ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              onChange({ years_experience: value === '' ? null : Math.max(0, Number(value)) });
+            }}
+            placeholder="Ex: 5"
+          />
+        </label>
+
+        <label className="block">
+          <span className={ws.fieldLabel}>
+            <MapPin className="h-3.5 w-3.5" /> Bairro <span className="text-muted-foreground">(opcional)</span>
+          </span>
+          <Input
+            ref={focusNeighborhood.ref}
+            className={focusNeighborhood.highlightClass}
+            value={data.neighborhood}
+            onChange={(e) => onChange({ neighborhood: e.target.value })}
+            placeholder="Ex: Centro"
+          />
+        </label>
+
+        <label className="block">
+          <span className={ws.fieldLabel}>
+            <FileText className="h-3.5 w-3.5" /> Bio curta <span className="text-muted-foreground">(opcional)</span>
+          </span>
+          <Textarea
+            ref={focusBio.ref}
+            className={focusBio.highlightClass}
+            value={data.bio}
+            onChange={(e) => onChange({ bio: e.target.value.slice(0, 280) })}
+            placeholder="Em uma frase, o que te diferencia."
+            rows={3}
+            maxLength={280}
+          />
+          <p className="mt-1 text-right text-[10px] text-muted-foreground">{data.bio.length}/280</p>
+        </label>
       </div>
 
-      <div>
-        <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Bairro <span className="text-muted-foreground">(opcional)</span></span>
-        <Input
-          ref={focusNeighborhood.ref}
-          className={focusNeighborhood.highlightClass}
-          value={data.neighborhood}
-          onChange={(e) => onChange({ neighborhood: e.target.value })}
-          placeholder="Ex: Centro"
-        />
+      <div className="flex flex-col gap-2 pt-1">
+        <Button type="button" size="lg" onClick={onContinue} disabled={saving} className={ws.cta}>
+          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Salvar e continuar <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+        <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
+          Pular
+        </Button>
       </div>
-
-      <div>
-        <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Bio curta <span className="text-muted-foreground">(opcional)</span></span>
-        <Textarea
-          ref={focusBio.ref}
-          className={focusBio.highlightClass}
-          value={data.bio}
-          onChange={(e) => onChange({ bio: e.target.value.slice(0, 280) })}
-          placeholder="Em uma frase, o que te diferencia."
-          rows={3}
-          maxLength={280}
-        />
-        <p className="mt-1 text-right text-[10px] text-muted-foreground">{data.bio.length}/280</p>
-      </div>
-    </div>
-
-    <div className="flex gap-2 pt-2">
-      <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className="flex-1">Pular</Button>
-      <Button type="button" onClick={onContinue} disabled={saving} className="flex-1">
-        {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-        Salvar e continuar <ArrowRight className="h-4 w-4 ml-1" />
-      </Button>
-    </div>
-  </div>
+    </motion.div>
   );
 };
 
