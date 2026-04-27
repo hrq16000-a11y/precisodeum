@@ -42,6 +42,7 @@ import { Phase2Photos } from './Phase2Photos';
 import { Phase3Celebration } from './Phase3Celebration';
 import { Phase4Document, Phase4Avatar, Phase4ExtrasA, Phase4ExtrasB } from './Phase4Final';
 import { Phase4Review } from './Phase4Review';
+import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
 import { mergePreservingTouched, markPatchTouched, clearSessionTouched } from './sessionTouched';
 import { subscribeDraftChange } from './crossTabSync';
