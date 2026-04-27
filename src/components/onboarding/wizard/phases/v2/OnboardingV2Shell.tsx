@@ -500,26 +500,43 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         dispatch({ type: 'PATCH_PROFILE', patch: { primary_category_id: categoryId } });
       }
 
-      // 1) RPC oficial — cria serviço atomicamente
-      const { data, error } = await (supabase as any).rpc('create_service_atomic', {
-        _provider_id: state.providerId,
-        _service_name: resolvedCategoryName, // ← invariante reforçada
-        _description: s.description || '',
-        _whatsapp: p.whatsapp,
-        _service_area: serviceArea,
-        _address: cityForAddress,
-        _working_hours: workingHoursSummary,
-        _website: '',
-        _instagram_url: '',
-        _facebook_url: '',
-        _youtube_url: '',
-        _category_id: categoryId,
-        _category_ids: [categoryId, ...s.category_ids.slice(1)],
-      });
-      if (error || !data?.success) {
-        throw new Error(error?.message || data?.error || 'Falha ao criar serviço');
+      // ── ANTI-DUPLICAÇÃO ────────────────────────────────────────────────────
+      // Antes de criar, verifica se este provider já tem serviço dessa
+      // categoria (ou nome). Se tiver, reusa o ID — evita duplicar registros
+      // e estourar a cota de serviços do plano.
+      if (state.firstServiceId) {
+        // Estado local já tem ID → confiar e seguir para herança/conclusão.
+      } else {
+        const reusedId = await findExistingFirstService(
+          state.providerId,
+          categoryId,
+          resolvedCategoryName,
+        );
+        if (reusedId) {
+          dispatch({ type: 'SET_FIRST_SERVICE_ID', id: reusedId });
+        } else {
+          // 1) RPC oficial — cria serviço atomicamente
+          const { data, error } = await (supabase as any).rpc('create_service_atomic', {
+            _provider_id: state.providerId,
+            _service_name: resolvedCategoryName, // ← invariante reforçada
+            _description: s.description || '',
+            _whatsapp: p.whatsapp,
+            _service_area: serviceArea,
+            _address: cityForAddress,
+            _working_hours: workingHoursSummary,
+            _website: '',
+            _instagram_url: '',
+            _facebook_url: '',
+            _youtube_url: '',
+            _category_id: categoryId,
+            _category_ids: [categoryId, ...s.category_ids.slice(1)],
+          });
+          if (error || !data?.success) {
+            throw new Error(error?.message || data?.error || 'Falha ao criar serviço');
+          }
+          dispatch({ type: 'SET_FIRST_SERVICE_ID', id: data.service_id });
+        }
       }
-      dispatch({ type: 'SET_FIRST_SERVICE_ID', id: data.service_id });
 
       // 2) Herança — categoria principal + horário sobem para o provider
       const updates: any = { category_id: categoryId };
