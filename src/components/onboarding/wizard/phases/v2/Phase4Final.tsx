@@ -12,10 +12,12 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, Check, Wifi } from 'lucide-react';
+import {
+  Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, Check, Wifi,
+  MapPin, FileText, Calendar, Camera as CameraIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import CpfCnpjInput from '@/components/onboarding/CpfCnpjInput';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
@@ -24,6 +26,7 @@ import VerificationStatusBadge from '@/components/profile/VerificationStatusBadg
 import AvatarUpload from '@/components/AvatarUpload';
 import type { OnboardingProfileData } from './types';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
+import { wizardStyles as ws, wizardEnter } from './wizardStyles';
 
 /* ───── 4.0 Foto de perfil (se ainda faltar) ───── */
 
