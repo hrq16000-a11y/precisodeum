@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { suggestServiceDescriptionVariants } from '@/lib/serviceDescriptionSuggester';
 import { sanitizeSlug } from '@/lib/slugify';
 import type { OnboardingFirstServiceData, OnboardingProfileData } from './types';
+import { WEEKDAY_OPTIONS, buildWorkingHoursSummary } from './workingHours';
 
 interface CategoryRow { id: string; name: string; icon?: string | null }
 
@@ -290,6 +291,7 @@ export const Phase2Details = ({
   service, profile, onChangeService, onChangeProfile, onSubmit, onBack, onSkip, saving,
 }: DetailsProps) => {
   const [priceText, setPriceText] = useState(service.starting_price_brl != null ? String(service.starting_price_brl) : '');
+  const [customHours, setCustomHours] = useState(service.working_hours);
 
   // Pré-popula com cidade do perfil
   useEffect(() => {
@@ -311,8 +313,20 @@ export const Phase2Details = ({
   };
 
   const setHours = (h: string) => {
+    setCustomHours(h);
+    const summary = buildWorkingHoursSummary(h, service.working_days);
     onChangeService({ working_hours: h });
-    onChangeProfile({ working_hours: h }); // herança
+    onChangeProfile({ working_hours: summary }); // herança
+  };
+
+  const toggleDay = (day: string) => {
+    const nextDays = service.working_days.includes(day)
+      ? service.working_days.filter((current) => current !== day)
+      : [...service.working_days, day];
+
+    const summary = buildWorkingHoursSummary(customHours, nextDays);
+    onChangeService({ working_days: nextDays });
+    onChangeProfile({ working_hours: summary });
   };
 
   const onPriceChange = (raw: string) => {
@@ -394,18 +408,42 @@ export const Phase2Details = ({
               type="button"
               onClick={() => setHours(h)}
               whileTap={{ scale: 0.95 }}
-              className={`rounded-full border px-3 py-1.5 text-xs transition ${service.working_hours === h ? 'border-accent bg-accent/15 font-medium' : 'border-border hover:border-accent/50'}`}
+              className={`rounded-full border px-3 py-1.5 text-xs transition ${customHours === h ? 'border-accent bg-accent/15 font-medium' : 'border-border hover:border-accent/50'}`}
             >
               {h}
             </motion.button>
           ))}
         </div>
+        <div className="mt-3">
+          <Label className="text-xs">Dias de atendimento</Label>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {WEEKDAY_OPTIONS.map((day) => {
+              const active = service.working_days.includes(day);
+              return (
+                <motion.button
+                  key={day}
+                  type="button"
+                  onClick={() => toggleDay(day)}
+                  whileTap={{ scale: 0.95 }}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition ${active ? 'border-accent bg-accent/15 font-medium' : 'border-border hover:border-accent/50'}`}
+                >
+                  {day}
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
         <Input
           className="mt-2"
-          value={service.working_hours}
+          value={customHours}
           onChange={(e) => setHours(e.target.value)}
           placeholder="Ou descreva no seu jeito"
         />
+        {(service.working_days.length > 0 || customHours.trim()) && (
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Será exibido como <span className="font-medium text-foreground">{buildWorkingHoursSummary(customHours, service.working_days)}</span>
+          </p>
+        )}
       </div>
 
       <div className="flex gap-2 pt-2">
