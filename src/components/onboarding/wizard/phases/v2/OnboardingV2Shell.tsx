@@ -52,7 +52,7 @@ import {
   clearOnboardingV2Draft,
 } from './useOnboardingV2Draft';
 import { flushOnboardingV2Draft, flushLocalDraft } from './flushDraft';
-import { findExistingFirstService, findExistingProvider } from './findExistingRecords';
+import { findExistingFirstService, findExistingProvider, fetchExistingFirstService } from './findExistingRecords';
 import {
   useOnboardingV2RemoteDraft,
   fetchRemoteDraft,
