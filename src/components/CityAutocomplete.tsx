@@ -57,6 +57,7 @@ const CityAutocomplete = ({
   const [loading, setLoading] = useState(false);
   const debouncedQuery = useDebounce(query, 200);
   const normalizedStateFilter = safeUF(stateFilter);
+  const normalizedPreferredUF = safeUF(preferredUF);
 
   const applyStateFilter = (rows: CityRow[]) => {
     if (!normalizedStateFilter) return rows;
