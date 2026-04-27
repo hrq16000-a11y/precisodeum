@@ -925,6 +925,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       </AnimatePresence>
 
       <BetCardShell animated={false}>
+        {state.phase !== 'phase1_action' && state.phase !== 'done' && (
+          <div className="mb-2 flex items-center justify-end">
+            <AutoSaveBadge signal={state.profile} />
+          </div>
+        )}
         {pendingCoreFields.length < 5 && (
           <div className="mb-4 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">Já preenchido:</span>{' '}
