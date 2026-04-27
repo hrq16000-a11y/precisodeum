@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { OnboardingProfileData, OnboardingFirstServiceData, OnboardingPhase } from './types';
 import { setFocusFieldForNextPhase } from './useFocusFieldFromReview';
+import { REVIEW_SECTIONS, type ReviewSectionConfig } from './reviewSectionMap';
 
 interface Phase4ReviewProps {
   profile: OnboardingProfileData;
@@ -36,24 +37,23 @@ function fmtDoc(kind: string, doc: string) {
 }
 
 interface SectionProps {
-  title: string;
-  editPhase: OnboardingPhase;
-  focusField?: string;
+  config: ReviewSectionConfig;
   onEdit: (p: OnboardingPhase, focusField?: string) => void;
   children: React.ReactNode;
 }
 
-const Section = ({ title, editPhase, focusField, onEdit, children }: SectionProps) => (
+const Section = ({ config, onEdit, children }: SectionProps) => (
   <div className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm">
     <div className="mb-2 flex items-center justify-between">
-      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <h3 className="text-sm font-semibold text-foreground">{config.label}</h3>
       <button
         type="button"
         onClick={() => {
-          if (focusField) setFocusFieldForNextPhase(focusField);
-          onEdit(editPhase, focusField);
+          if (config.focusField) setFocusFieldForNextPhase(config.focusField);
+          onEdit(config.phase, config.focusField);
         }}
         className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+        aria-label={`Editar ${config.label}`}
       >
         <Pencil className="h-3 w-3" /> Editar
       </button>
@@ -86,27 +86,27 @@ export const Phase4Review = ({ profile, service, saving, onEdit, onConfirm }: Ph
         <p className="text-sm text-muted-foreground">Tudo certo? Você pode editar qualquer seção.</p>
       </div>
 
-      <Section title="Identidade" editPhase="phase1_contact" focusField="full_name" onEdit={onEdit}>
+      <Section config={REVIEW_SECTIONS.identity} onEdit={onEdit}>
         <Row label="Nome" value={profile.full_name} />
         <Row label="WhatsApp" value={profile.whatsapp} />
       </Section>
 
-      <Section title="Documento" editPhase="phase4_document" focusField="document" onEdit={onEdit}>
+      <Section config={REVIEW_SECTIONS.document} onEdit={onEdit}>
         <Row label={profile.kind === 'pj' ? 'CNPJ' : 'CPF'} value={docFormatted} />
       </Section>
 
-      <Section title="Serviço" editPhase="phase2_service" focusField="service_name" onEdit={onEdit}>
+      <Section config={REVIEW_SECTIONS.service} onEdit={onEdit}>
         <Row label="Categoria" value={service.service_name} />
       </Section>
 
-      <Section title="Logística" editPhase="phase2_details" focusField="cities_served" onEdit={onEdit}>
+      <Section config={REVIEW_SECTIONS.logistics} onEdit={onEdit}>
         <Row label="Cidade base" value={[profile.city, profile.state].filter(Boolean).join(' - ')} />
         <Row label="Atende em" value={cities} />
         <Row label="Dias" value={days} />
         <Row label="Horário" value={service.working_hours} />
       </Section>
 
-      <Section title="Bairro & Bio" editPhase="phase4_extras_a" focusField="bio" onEdit={onEdit}>
+      <Section config={REVIEW_SECTIONS.bioBairro} onEdit={onEdit}>
         <Row label="Bairro" value={profile.neighborhood} />
         <Row
           label="Experiência"
@@ -115,7 +115,7 @@ export const Phase4Review = ({ profile, service, saving, onEdit, onConfirm }: Ph
         <Row label="Bio" value={profile.bio} />
       </Section>
 
-      <Section title="Foto de perfil" editPhase="phase4_avatar" focusField="avatar_url" onEdit={onEdit}>
+      <Section config={REVIEW_SECTIONS.avatar} onEdit={onEdit}>
         <Row
           label="Avatar"
           value={profile.avatar_url ? (
@@ -126,7 +126,7 @@ export const Phase4Review = ({ profile, service, saving, onEdit, onConfirm }: Ph
         />
       </Section>
 
-      <Section title="Redes sociais" editPhase="phase4_extras_b" focusField="instagram_url" onEdit={onEdit}>
+      <Section config={REVIEW_SECTIONS.socials} onEdit={onEdit}>
         <Row label="Instagram" value={profile.instagram_url} />
         <Row label="Facebook" value={profile.facebook_url} />
       </Section>

@@ -9,7 +9,7 @@
  * Aqui criamos os "espaços" temáticos; o usuário enche depois ou via painel.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, ArrowRight, SkipForward, X, FolderPlus } from 'lucide-react';
+import { ArrowRight, SkipForward, X, FolderPlus, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import PortfolioAlbumPhotoUploader from './PortfolioAlbumPhotoUploader';
 
 const MAX_ALBUMS = 5;
 
@@ -36,6 +37,7 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
   const [desc, setDesc] = useState('');
   const [saving, setSaving] = useState(false);
   const [providerId, setProviderId] = useState<string | null>(provider?.id ?? null);
+  const [expandedAlbumId, setExpandedAlbumId] = useState<string | null>(null);
 
   // Garante providerId mesmo se o context ainda não tiver carregado
   useEffect(() => {
@@ -72,18 +74,24 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
     if (!user?.id || !providerId || !name.trim()) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from('portfolio_albums').insert({
-        user_id: user.id,
-        provider_id: providerId,
-        name: name.trim(),
-        description: desc.trim(),
-      });
+      const { data: created, error } = await supabase
+        .from('portfolio_albums')
+        .insert({
+          user_id: user.id,
+          provider_id: providerId,
+          name: name.trim(),
+          description: desc.trim(),
+        })
+        .select('id')
+        .single();
       if (error) throw error;
       setName('');
       setDesc('');
       setCreating(false);
       await refresh();
-      toast.success('Álbum criado');
+      // Auto-expande o álbum recém-criado para o usuário já enviar fotos
+      if (created?.id) setExpandedAlbumId(created.id);
+      toast.success('Álbum criado — agora envie suas fotos');
     } catch (e: any) {
       toast.error('Não foi possível criar o álbum', { description: e?.message });
     } finally {
@@ -105,9 +113,9 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
       <header className="text-center space-y-1">
         <h2 className="text-xl font-semibold">Crie seus álbuns de portfólio</h2>
         <p className="text-sm text-muted-foreground">
-          Organize seus trabalhos por tema (ex: "Reformas", "Eventos"). Você pode ter até{' '}
+          Organize seus trabalhos por tema (ex: "Reformas", "Eventos"). Até{' '}
           <span className="font-medium text-foreground">{MAX_ALBUMS} álbuns</span>.
-          As fotos são adicionadas depois pelo painel.
+          Toque em um álbum para enviar fotos agora mesmo.
         </p>
       </header>
 
@@ -122,24 +130,53 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
           <p className="mt-2 text-xs text-muted-foreground">Nenhum álbum ainda — crie o primeiro abaixo.</p>
         ) : (
           <ul className="mt-2 divide-y divide-border">
-            {albums.map(a => (
-              <li key={a.id} className="flex items-center justify-between gap-2 py-2">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{a.name}</p>
-                  {a.description && (
-                    <p className="truncate text-xs text-muted-foreground">{a.description}</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleRemove(a.id)}
-                  className="rounded p-1 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-                  aria-label="Remover álbum"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
+            {albums.map(a => {
+              const expanded = expandedAlbumId === a.id;
+              return (
+                <li key={a.id} className="py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedAlbumId(expanded ? null : a.id)}
+                      className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                    >
+                      {expanded
+                        ? <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{a.name}</p>
+                        {a.description && (
+                          <p className="truncate text-xs text-muted-foreground">{a.description}</p>
+                        )}
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(a.id)}
+                      className="rounded p-1 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                      aria-label="Remover álbum"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <AnimatePresence initial={false}>
+                    {expanded && user?.id && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden pt-2"
+                      >
+                        <PortfolioAlbumPhotoUploader
+                          albumId={a.id}
+                          userId={user.id}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
