@@ -25,7 +25,7 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List, Circle, Zap, ArrowRight, RefreshCcw } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List, Circle, Zap, ArrowRight, RefreshCcw, Star, Compass, Award, Trophy, GraduationCap } from 'lucide-react';
 import { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchModal';
 const RouteSearchModal = lazy(() => import('@/components/RouteSearchModal'));
 import { calculateDistanceKm } from '@/lib/geoDistance';
@@ -50,12 +50,21 @@ const ITEMS_PER_PAGE = 12;
 
 type SortOption = 'relevance' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
 
-const SORT_CHIPS: { value: SortOption; label: string }[] = [
-  { value: 'relevance', label: 'Relevância' },
-  { value: 'nearest', label: '📍 Mais Perto' },
-  { value: 'rating', label: '⭐ Avaliação' },
-  { value: 'reviews', label: 'Avaliações' },
-  { value: 'experience', label: 'Experiência' },
+const SORT_CHIPS: { value: SortOption; label: string; icon: typeof Star }[] = [
+  { value: 'relevance', label: 'Relevância', icon: Trophy },
+  { value: 'nearest', label: 'Mais perto', icon: Compass },
+  { value: 'rating', label: 'Avaliação', icon: Star },
+  { value: 'reviews', label: 'Avaliações', icon: Award },
+  { value: 'experience', label: 'Experiência', icon: GraduationCap },
+];
+
+/** Raios disponíveis (km) para o seletor de proximidade. */
+const RADIUS_CHIPS: { km: number; label: string }[] = [
+  { km: 5, label: '5 km' },
+  { km: 10, label: '10 km' },
+  { km: 25, label: '25 km' },
+  { km: 50, label: '50 km' },
+  { km: 100, label: '100 km' },
 ];
 
 const SearchPage = () => {
@@ -64,7 +73,7 @@ const SearchPage = () => {
   const isMobile = useIsMobile();
   const query = searchParams.get('q') || '';
   const cityParam = searchParams.get('cidade') || '';
-  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, requestPreciseLocation, geoFailed, source: geoSource, lastKnownAt, dismissGeoFailure } = useGeoCity();
+  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, setRadius, requestPreciseLocation, geoFailed, source: geoSource, lastKnownAt, dismissGeoFailure } = useGeoCity();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('categoria') || '');
   const [selectedCity, setSelectedCity] = useState(cityParam);
   const [selectedState, setSelectedState] = useState(searchParams.get('uf') || '');
@@ -74,7 +83,10 @@ const SearchPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [featuredFilter, setFeaturedFilter] = useState('all');
   const [minRating, setMinRating] = useState(0);
-  const [sortBy, setSortBy] = useState<SortOption>('relevance');
+  // Default sort: 'nearest' quando há GPS preciso, senão 'relevance'.
+  // O usuário pode sobrescrever via ?ordem=... ou pelos chips.
+  const initialSort = (searchParams.get('ordem') as SortOption) || (userLat && userLon ? 'nearest' : 'relevance');
+  const [sortBy, setSortBy] = useState<SortOption>(initialSort);
   const [showFilters, setShowFilters] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [onlineOnly, setOnlineOnly] = useState(false);
@@ -290,6 +302,25 @@ const SearchPage = () => {
   const paginatedNearby = filteredNearby;
   const paginatedOutOfState = showOutOfState ? filteredOutOfState : [];
 
+  // Sub-agrupamento por bairro dentro do bloco "local" — só aplica
+  // quando há GPS, ordenação 'nearest' e diversidade de bairros (>=2).
+  const localGroupedByNeighborhood = useMemo(() => {
+    if (!userLat || !userLon || sortBy !== 'nearest') return null;
+    const groups = new Map<string, DbProvider[]>();
+    for (const p of paginatedLocal) {
+      const key = (p.neighborhood || '').trim() || 'Outros';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(p);
+    }
+    if (groups.size < 2) return null;
+    // Ordena bairros pela menor distância do primeiro card (já vem ordenado por distância).
+    return Array.from(groups.entries()).sort((a, b) => {
+      const da = a[1][0]?.distanceKm ?? Number.MAX_VALUE;
+      const db = b[1][0]?.distanceKm ?? Number.MAX_VALUE;
+      return da - db;
+    });
+  }, [paginatedLocal, userLat, userLon, sortBy]);
+
   // Quick suggestion chips
   const suggestionChips = useMemo(() => {
     return geoCategories.slice(0, 8).map(c => ({
@@ -399,7 +430,9 @@ const SearchPage = () => {
           <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="featured">⭐ Destaques</SelectItem>
+            <SelectItem value="featured">
+              <span className="inline-flex items-center gap-1.5"><Star className="h-3 w-3 fill-current" strokeWidth={1.75} /> Destaques</span>
+            </SelectItem>
             <SelectItem value="normal">Normais</SelectItem>
           </SelectContent>
         </Select>
@@ -485,7 +518,9 @@ const SearchPage = () => {
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="relevance">Relevância</SelectItem>
-              <SelectItem value="nearest">📍 Mais Perto</SelectItem>
+              <SelectItem value="nearest">
+                <span className="inline-flex items-center gap-1.5"><Compass className="h-3 w-3" strokeWidth={1.75} /> Mais perto</span>
+              </SelectItem>
               <SelectItem value="rating">Melhor avaliação</SelectItem>
               <SelectItem value="reviews">Mais avaliações</SelectItem>
               <SelectItem value="experience">Mais experiência</SelectItem>
@@ -590,20 +625,51 @@ const SearchPage = () => {
           <div className="mb-3 space-y-2">
             {/* Sort chips — horizontal scroll */}
             <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
-              {SORT_CHIPS.map(chip => (
-                <button
-                  key={chip.value}
-                  onClick={() => { setSortBy(chip.value); setPage(1); }}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                    sortBy === chip.value
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-                >
-                  {chip.label}
-                </button>
-              ))}
+              {SORT_CHIPS.map(chip => {
+                const ChipIcon = chip.icon;
+                const isActive = sortBy === chip.value;
+                return (
+                  <button
+                    key={chip.value}
+                    onClick={() => { setSortBy(chip.value); setPage(1); }}
+                    className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    <ChipIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                    {chip.label}
+                  </button>
+                );
+              })}
             </div>
+            {/* Radius chips — só fazem sentido com GPS */}
+            {userLat != null && userLon != null && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+                <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                  <Compass className="h-3 w-3" strokeWidth={1.75} />
+                  Raio:
+                </span>
+                {RADIUS_CHIPS.map(r => {
+                  const isActive = radiusKm === r.km;
+                  return (
+                    <button
+                      key={r.km}
+                      onClick={() => { setRadius(r.km); setPage(1); }}
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                        isActive
+                          ? 'bg-accent text-accent-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                      aria-pressed={isActive}
+                    >
+                      {r.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             {/* Filter + Route buttons */}
             <div className="flex gap-2">
               <Button
@@ -852,13 +918,15 @@ const SearchPage = () => {
                 )}
                 {featuredFilter !== 'all' && (
                   <Badge variant="secondary" className="gap-1 text-xs">
-                    {featuredFilter === 'featured' ? '⭐ Destaques' : 'Normais'}
+                    <span className="inline-flex items-center gap-1">
+                      {featuredFilter === 'featured' ? (<><Star className="h-3 w-3 fill-current" strokeWidth={1.75} /> Destaques</>) : 'Normais'}
+                    </span>
                     <X className="h-3 w-3 cursor-pointer" onClick={() => setFeaturedFilter('all')} />
                   </Badge>
                 )}
                 {minRating > 0 && (
                   <Badge variant="secondary" className="gap-1 text-xs">
-                    {minRating}+ ⭐
+                    <span className="inline-flex items-center gap-1">{minRating}+ <Star className="h-3 w-3 fill-current" strokeWidth={1.75} /></span>
                     <X className="h-3 w-3 cursor-pointer" onClick={() => setMinRating(0)} />
                   </Badge>
                 )}
@@ -934,37 +1002,78 @@ const SearchPage = () => {
                         <div className="h-px flex-1 bg-border" />
                       </div>
                     )}
-                    <motion.div
-                      className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2"
-                      initial="hidden"
-                      animate="show"
-                      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
-                    >
-                      {paginatedLocal.map((p, idx) => (
-                        <Fragment key={p.id}>
-                          <motion.div
-                            variants={{ hidden: { opacity: 0, y: 16, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1 } }}
-                            transition={{ duration: 0.35 }}
-                            layout
-                          >
-                            <ProviderCard provider={p} isFallback={isFallback} />
-                          </motion.div>
-                          {/* Inject sponsor ad every 5 results */}
-                          {(idx + 1) % 5 === 0 && (
+                    {localGroupedByNeighborhood ? (
+                      // Sub-agrupado por bairro (GPS + sort=nearest + >=2 bairros)
+                      <div className="space-y-5">
+                        {localGroupedByNeighborhood.map(([bairro, items]) => (
+                          <div key={bairro}>
+                            <div className="mb-2 flex items-center gap-2">
+                              <Building2 className="h-3 w-3 text-muted-foreground" strokeWidth={1.75} />
+                              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {bairro}
+                              </span>
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{items.length}</Badge>
+                              {items[0]?.distanceKm != null && items[0].distanceKm > 0 && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  ~{items[0].distanceKm.toFixed(1)} km
+                                </span>
+                              )}
+                              <div className="h-px flex-1 bg-border" />
+                            </div>
                             <motion.div
-                              variants={{ hidden: { opacity: 0 }, show: { opacity: 1 } }}
-                              className="col-span-full"
+                              className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2"
+                              initial="hidden"
+                              animate="show"
+                              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
                             >
-                              <Suspense fallback={null}>
-                                <SponsorAdSlot locationKey="search-inline" layout="card" maxAds={1} />
-                              </Suspense>
+                              {items.map((p) => (
+                                <motion.div
+                                  key={p.id}
+                                  variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
+                                  transition={{ duration: 0.3 }}
+                                  layout
+                                >
+                                  <ProviderCard provider={p} isFallback={isFallback} />
+                                </motion.div>
+                              ))}
                             </motion.div>
-                          )}
-                        </Fragment>
-                      ))}
-                    </motion.div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <motion.div
+                        className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2"
+                        initial="hidden"
+                        animate="show"
+                        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
+                      >
+                        {paginatedLocal.map((p, idx) => (
+                          <Fragment key={p.id}>
+                            <motion.div
+                              variants={{ hidden: { opacity: 0, y: 16, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1 } }}
+                              transition={{ duration: 0.35 }}
+                              layout
+                            >
+                              <ProviderCard provider={p} isFallback={isFallback} />
+                            </motion.div>
+                            {/* Inject sponsor ad every 5 results */}
+                            {(idx + 1) % 5 === 0 && (
+                              <motion.div
+                                variants={{ hidden: { opacity: 0 }, show: { opacity: 1 } }}
+                                className="col-span-full"
+                              >
+                                <Suspense fallback={null}>
+                                  <SponsorAdSlot locationKey="search-inline" layout="card" maxAds={1} />
+                                </Suspense>
+                              </motion.div>
+                            )}
+                          </Fragment>
+                        ))}
+                      </motion.div>
+                    )}
                   </>
                 )}
+
 
                 {/* Nearby cities section (same state / <100km) */}
                 {paginatedNearby.length > 0 && (
