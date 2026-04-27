@@ -12,10 +12,10 @@
  * Seguro por desenho: apenas SELECTs filtrados por user_id (RLS-friendly).
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
-  CheckCircle2, Circle, AlertTriangle, Loader2, ArrowRight,
+  CheckCircle2, Circle, AlertTriangle, Loader2, ArrowRight, RefreshCw,
   User, Phone, MapPin, Briefcase, Camera, ImageIcon, ShieldCheck, Sparkles,
 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -40,44 +40,114 @@ interface Counts {
   albums: number;
 }
 
+/**
+ * isValidCpf — checa formato (11 dígitos, não todos iguais) + DV.
+ * Não valida origem RF; só evita falso-positivo de "11111111111".
+ */
+function isValidCpf(raw: string | null | undefined): boolean {
+  const d = (raw || '').replace(/\D/g, '');
+  if (d.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(d)) return false;
+  const calc = (slice: number) => {
+    let sum = 0;
+    for (let i = 0; i < slice; i++) sum += parseInt(d[i], 10) * (slice + 1 - i);
+    const r = (sum * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  return calc(9) === parseInt(d[9], 10) && calc(10) === parseInt(d[10], 10);
+}
+
+/**
+ * isValidCnpj — checa formato (14 dígitos, não todos iguais) + DV.
+ */
+function isValidCnpj(raw: string | null | undefined): boolean {
+  const d = (raw || '').replace(/\D/g, '');
+  if (d.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(d)) return false;
+  const calc = (slice: number) => {
+    const weights = slice === 12
+      ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+      : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    let sum = 0;
+    for (let i = 0; i < slice; i++) sum += parseInt(d[i], 10) * weights[i];
+    const r = sum % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+  return calc(12) === parseInt(d[12], 10) && calc(13) === parseInt(d[13], 10);
+}
+
 const DashboardOnboardingStatusPage = () => {
-  const { user, profile, provider } = useAuth();
+  const { user, profile, provider, refetchProfile } = useAuth();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [counts, setCounts] = useState<Counts>({ servicesActive: 0, photos: 0, albums: 0 });
+  const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
+  const lastFetchRef = useRef(0);
 
   useEffect(() => {
     document.title = 'Status do cadastro | Preciso de Um';
   }, []);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      if (!user?.id) { setLoading(false); return; }
-      try {
-        const providerId = provider?.id;
+  const fetchCounts = useCallback(async (silent = false) => {
+    if (!user?.id) { setLoading(false); return; }
+    if (!silent) setRefreshing(true);
+    try {
+      const providerId = provider?.id;
 
-        const [svcRes, photoRes, albumRes] = await Promise.all([
-          providerId
-            ? (supabase as any).from('services').select('id', { count: 'exact', head: true }).eq('provider_id', providerId).is('deleted_at', null)
-            : Promise.resolve({ count: 0 }),
-          (supabase as any).from('media').select('id', { count: 'exact', head: true }).eq('owner_id', user.id).eq('entity_type', 'service'),
-          providerId
-            ? (supabase as any).from('portfolio_albums').select('id', { count: 'exact', head: true }).eq('provider_id', providerId)
-            : Promise.resolve({ count: 0 }),
-        ]);
+      const [svcRes, photoRes, albumRes] = await Promise.all([
+        providerId
+          ? (supabase as any).from('services').select('id', { count: 'exact', head: true }).eq('provider_id', providerId).is('deleted_at', null)
+          : Promise.resolve({ count: 0 }),
+        (supabase as any).from('media').select('id', { count: 'exact', head: true }).eq('owner_id', user.id).eq('entity_type', 'service'),
+        providerId
+          ? (supabase as any).from('portfolio_albums').select('id', { count: 'exact', head: true }).eq('provider_id', providerId)
+          : Promise.resolve({ count: 0 }),
+      ]);
 
-        if (!alive) return;
-        setCounts({
-          servicesActive: (svcRes as any)?.count ?? 0,
-          photos: (photoRes as any)?.count ?? 0,
-          albums: (albumRes as any)?.count ?? 0,
-        });
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => { alive = false; };
+      setCounts({
+        servicesActive: (svcRes as any)?.count ?? 0,
+        photos: (photoRes as any)?.count ?? 0,
+        albums: (albumRes as any)?.count ?? 0,
+      });
+      setLastRefresh(Date.now());
+      lastFetchRef.current = Date.now();
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [user?.id, provider?.id]);
+
+  // Carga inicial + quando user/provider mudam
+  useEffect(() => {
+    void fetchCounts(true);
+  }, [fetchCounts]);
+
+  // Auto-refresh quando a aba volta a ficar visível ou ganha foco
+  // (ex.: usuário voltou do /onboarding-v2). Throttle de 4s.
+  useEffect(() => {
+    const refresh = () => {
+      if (Date.now() - lastFetchRef.current < 4000) return;
+      void Promise.all([refetchProfile?.(), fetchCounts(false)]);
+    };
+    const onVisibility = () => { if (document.visibilityState === 'visible') refresh(); };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [fetchCounts, refetchProfile]);
+
+  // Auto-refresh ao navegar de volta para esta rota
+  useEffect(() => {
+    if (location.pathname === '/dashboard/status') {
+      if (Date.now() - lastFetchRef.current < 1500) return;
+      void Promise.all([refetchProfile?.(), fetchCounts(false)]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, location.key]);
+
 
   const items: ChecklistItem[] = useMemo(() => [
     {
