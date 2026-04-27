@@ -108,6 +108,7 @@ function isValidDoc(digits: string, kind: 'pf' | 'pj'): boolean {
 export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, userId, locked }: DocumentProps) => {
   const [verified, setVerified] = useState(false);
   const [providerStatus, setProviderStatus] = useState<string | null>(null);
+  const focusDoc = useFocusFieldFromReview('document');
   const valid = isValidDoc(data.document, data.kind);
 
   // Auto-avança quando o documento já foi capturado no V3 (não re-perguntar).
