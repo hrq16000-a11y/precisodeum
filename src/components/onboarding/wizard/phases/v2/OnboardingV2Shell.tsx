@@ -629,7 +629,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           <Phase1Location
             data={state.profile}
             locks={coreLocks}
-            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChange={patchProfile}
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_kind' }); }}
             onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
             onSkip={() => { track('skip'); dispatch({ type: 'SKIP_TO_NEXT' }); }}
@@ -640,7 +640,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           <Phase1Contact
             data={state.profile}
             locks={coreLocks}
-            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChange={patchProfile}
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_location' }); }}
             saving={saving}
             duplicateWhatsapp={dup.duplicates.whatsapp}
@@ -675,8 +675,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           <Phase2Service
             service={state.service}
             profile={state.profile}
-            onChangeService={(patch) => dispatch({ type: 'PATCH_SERVICE', patch })}
-            onChangeProfile={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChangeService={patchService}
+            onChangeProfile={patchProfile}
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_contact' }); }}
             onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
             onSkip={() => {
@@ -691,8 +691,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           <Phase2Details
             service={state.service}
             profile={state.profile}
-            onChangeService={(patch) => dispatch({ type: 'PATCH_SERVICE', patch })}
-            onChangeProfile={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChangeService={patchService}
+            onChangeProfile={patchProfile}
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_service' }); }}
             saving={saving}
             onSkip={async () => {
@@ -739,7 +739,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           <Phase4Document
             data={state.profile}
             locked={!!coreLocks.document}
-            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChange={patchProfile}
             saving={saving}
             userId={user?.id}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
@@ -757,7 +757,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         return (
           <Phase4Avatar
             data={state.profile}
-            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChange={patchProfile}
             saving={saving}
             userId={user?.id}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
@@ -778,7 +778,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         return (
           <Phase4ExtrasA
             data={state.profile}
-            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChange={patchProfile}
             saving={saving}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onContinue={async () => {
@@ -797,7 +797,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         return (
           <Phase4ExtrasB
             data={state.profile}
-            onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
+            onChange={patchProfile}
             saving={saving}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onFinish={async () => {
