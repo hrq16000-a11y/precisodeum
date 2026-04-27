@@ -18,6 +18,8 @@ interface Props {
 export default function PhaseClientCity({ state, patch, finish, addPoints }: Props) {
   const [awarded, setAwarded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const geo = useGeoCity();
+  const preferredUF = state.state || geo.state || '';
 
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
