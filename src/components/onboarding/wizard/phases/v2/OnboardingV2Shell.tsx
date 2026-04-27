@@ -374,7 +374,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, state.providerId, state.firstServiceId]);
+  }, [user?.id, state.userRef, state.providerId, state.firstServiceId]);
 
   // Telemetria: dispara 'enter' a cada troca de fase
   useEffect(() => {
