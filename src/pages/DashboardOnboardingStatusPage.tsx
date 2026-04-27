@@ -229,8 +229,22 @@ const DashboardOnboardingStatusPage = () => {
 
       <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6">
         <header className="space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
-            <Sparkles className="h-3 w-3" /> Status do cadastro
+          <div className="flex items-center justify-between gap-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
+              <Sparkles className="h-3 w-3" /> Status do cadastro
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => { void Promise.all([refetchProfile?.(), fetchCounts(false)]); }}
+              disabled={refreshing || loading}
+              className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+              aria-label="Atualizar status"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              <span className="ml-1 hidden sm:inline">Atualizar</span>
+            </Button>
           </div>
           <h1 className="font-display text-2xl font-extrabold text-foreground">
             {publishable ? 'Seu perfil está publicado' : 'Quase lá — falta pouco para publicar'}
