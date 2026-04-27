@@ -551,6 +551,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   const finishWizard = async () => {
     clearOnboardingV2Draft();
+    clearSessionTouched();
     if (user?.id) void clearRemoteDraft(user.id);
 
     if (user?.id && !state.firstServiceId) {
