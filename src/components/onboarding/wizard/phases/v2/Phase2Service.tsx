@@ -25,6 +25,7 @@ import { suggestServiceDescriptionVariants } from '@/lib/serviceDescriptionSugge
 import { sanitizeSlug } from '@/lib/slugify';
 import type { OnboardingFirstServiceData, OnboardingProfileData } from './types';
 import { WEEKDAY_OPTIONS, buildWorkingHoursSummary } from './workingHours';
+import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 
 interface CategoryRow { id: string; name: string; icon?: string | null }
 
@@ -46,6 +47,7 @@ export const Phase2Service = ({
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
+  const focusCategory = useFocusFieldFromReview('service_name');
 
   useEffect(() => {
     let mounted = true;
@@ -159,6 +161,8 @@ export const Phase2Service = ({
           <Label className="text-xs">Categoria *</Label>
           <div className="relative">
             <Input
+              ref={focusCategory.ref as any}
+              className={focusCategory.highlightClass}
               value={search || selectedName}
               onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
               onFocus={() => setOpen(true)}
@@ -292,6 +296,7 @@ export const Phase2Details = ({
 }: DetailsProps) => {
   const [priceText, setPriceText] = useState(service.starting_price_brl != null ? String(service.starting_price_brl) : '');
   const [customHours, setCustomHours] = useState(service.working_hours);
+  const focusCities = useFocusFieldFromReview('cities_served');
 
   // Pré-popula com cidade do perfil
   useEffect(() => {
@@ -345,7 +350,7 @@ export const Phase2Details = ({
       </header>
 
       {/* Cidades atendidas */}
-      <div>
+      <div ref={focusCities.ref as any} className={`rounded-md ${focusCities.highlightClass}`}>
         <Label className="text-xs flex items-center gap-1">
           <MapPin className="h-3 w-3" /> Cidades atendidas <span className="text-muted-foreground">(até 5)</span>
         </Label>

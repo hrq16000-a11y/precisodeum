@@ -37,6 +37,7 @@ interface AvatarProps {
 }
 
 export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userId }: AvatarProps) => {
+  const focusAvatar = useFocusFieldFromReview('avatar_url');
   const initials = (data.full_name || 'EU')
     .split(' ')
     .map((s) => s[0])
@@ -54,7 +55,10 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
         </p>
       </header>
 
-      <div className="flex justify-center py-2">
+      <div
+        ref={focusAvatar.ref as any}
+        className={`flex justify-center py-2 rounded-2xl ${focusAvatar.highlightClass}`}
+      >
         {userId && (
           <AvatarUpload
             userId={userId}
@@ -104,6 +108,7 @@ function isValidDoc(digits: string, kind: 'pf' | 'pj'): boolean {
 export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, userId, locked }: DocumentProps) => {
   const [verified, setVerified] = useState(false);
   const [providerStatus, setProviderStatus] = useState<string | null>(null);
+  const focusDoc = useFocusFieldFromReview('document');
   const valid = isValidDoc(data.document, data.kind);
 
   // Auto-avança quando o documento já foi capturado no V3 (não re-perguntar).
@@ -183,7 +188,7 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
             </div>
           )}
 
-          <div>
+          <div ref={focusDoc.ref as any} className={`rounded-md ${focusDoc.highlightClass}`}>
             <Label className="text-xs">{data.kind === 'pj' ? 'CNPJ' : 'CPF'}</Label>
             <CpfCnpjInput
               value={data.document}
