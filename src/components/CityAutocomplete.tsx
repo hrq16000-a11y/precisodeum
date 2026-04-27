@@ -47,6 +47,7 @@ const CityAutocomplete = ({
   placeholder = 'Buscar cidade...',
   statusText,
   stateFilter,
+  preferredUF,
   disabled = false,
   onClose,
 }: CityAutocompleteProps) => {
