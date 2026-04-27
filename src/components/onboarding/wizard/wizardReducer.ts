@@ -1,26 +1,30 @@
 /**
- * Wizard Reducer Unificado — fonte única de verdade da ordem das fases.
+ * Wizard Reducer Unificado — fonte ÚNICA de verdade do onboarding linear.
  *
- * Combina as fases da Triagem (ex-V3 Bet Mode) e da Criação de Serviço
- * & Perfil (ex-V2) em uma única sequência linear `OnboardingPhase`, usada
- * pelo WizardShell para calcular progresso global e por testes E2E como
- * referência canônica do fluxo.
+ * Consolidação Fase 2:
+ *  - Define `UnifiedPhase` (enum linear das 19 etapas + 'done').
+ *  - Define `WizardState` consolidando dados de Triagem (ex-V3) +
+ *    Criação de Serviço & Perfil (ex-V2) num único contrato.
+ *  - Define `WizardAction` (NEXT/BACK/GO_TO/PATCH/HYDRATE/SET_*).
+ *  - Expõe `wizardReducer`, `initialWizardState` e helpers de mapeamento.
  *
- * IMPORTANTE — esta é a Fase 1 (conservadora) da consolidação:
- *  - Os reducers internos `BetModeShell.reducer` e `onboardingReducer` (V2)
- *    continuam vivos e ainda alimentam seus respectivos sub-shells. Este
- *    arquivo NÃO os substitui ainda.
- *  - O WizardShell usa esta lista apenas para:
- *      a) calcular a barra de progresso global (índice da fase atual);
- *      b) expor um único enum/array consultável pelo restante do app
- *         (testes, telemetria, debug logs).
- *  - A fusão profunda (reducer único, eliminação do flag
- *    `internalHandoffFromTriage` e do `resolveOnboardingV2SeedState`)
- *    acontece no próximo turno, com atualização dos testes E2E.
+ * Compatibilidade: os sub-reducers internos `betReducer` e `onboardingReducer`
+ * (V2) seguem vivos como detalhe de implementação encapsulado pelos
+ * orquestradores `TriageOrchestrator` e `MainOrchestrator` (componentes
+ * privados dentro do WizardShell). A persistência (createProvider,
+ * create_service_atomic, patches) também permanece encapsulada nesses
+ * orquestradores — o WizardShell continua sendo a única fachada pública.
  */
 
+import type { OnboardingPhase, OnboardingProfileData, OnboardingFirstServiceData } from './phases/v2/types';
+import type { BetState } from './phases/bet/types';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enum unificado (19 fases visíveis + 'done')
+// ─────────────────────────────────────────────────────────────────────────────
+
 export type UnifiedPhase =
-  // Triagem (ex-V3 Bet Mode)
+  // Triagem (ex-V3 Bet Mode) — fases 1..7
   | 'triage_identity'
   | 'triage_who'
   | 'triage_client_city'
@@ -28,7 +32,7 @@ export type UnifiedPhase =
   | 'triage_pro_document'
   | 'triage_pro_location'
   | 'triage_celebration'
-  // Criação de Serviço & Perfil (ex-V2)
+  // Criação de Serviço & Perfil (ex-V2) — fases 8..19
   | 'main_action'
   | 'main_kind'
   | 'main_location'
@@ -43,11 +47,6 @@ export type UnifiedPhase =
   | 'main_extras_b'
   | 'done';
 
-/**
- * Ordem oficial e linear de TODAS as fases do onboarding unificado.
- * Usada para calcular progresso global e para testes E2E que validam
- * que o wizard nunca retrocede para uma fase anterior.
- */
 export const UNIFIED_PHASE_ORDER: UnifiedPhase[] = [
   'triage_identity',
   'triage_who',
@@ -78,10 +77,39 @@ export function unifiedPhaseIndex(phase: UnifiedPhase): number {
   return Math.max(0, UNIFIED_PHASE_ORDER.indexOf(phase));
 }
 
-/**
- * Mapeia a fase interna do BetModeShell (sub-reducer da Triagem) para a
- * fase unificada usada pela barra de progresso global.
- */
+/** Próxima fase unificada (linear). */
+export function nextUnifiedPhase(phase: UnifiedPhase): UnifiedPhase {
+  const i = unifiedPhaseIndex(phase);
+  if (i === -1 || i === UNIFIED_PHASE_ORDER.length - 1) return 'done';
+  return UNIFIED_PHASE_ORDER[i + 1];
+}
+
+/** Fase anterior unificada (linear, sem retroceder antes do início). */
+export function prevUnifiedPhase(phase: UnifiedPhase): UnifiedPhase {
+  const i = unifiedPhaseIndex(phase);
+  if (i <= 0) return UNIFIED_PHASE_ORDER[0];
+  return UNIFIED_PHASE_ORDER[i - 1];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Estado consolidado
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface WizardState {
+  phase: UnifiedPhase;
+  /** Dados coletados na triagem (Bet Mode). */
+  triage: BetState;
+  /** Dados coletados na criação de serviço & perfil (V2). */
+  profile: OnboardingProfileData;
+  service: OnboardingFirstServiceData;
+  providerId: string | null;
+  firstServiceId: string | null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mapeamentos legacy ↔ unified (mantidos até a fusão profunda da persistência)
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function mapTriagePhaseToUnified(betPhase: string): UnifiedPhase {
   switch (betPhase) {
     case 'identity': return 'triage_identity';
@@ -96,12 +124,8 @@ export function mapTriagePhaseToUnified(betPhase: string): UnifiedPhase {
   }
 }
 
-/**
- * Mapeia a fase interna do OnboardingV2Shell (sub-reducer da Criação de
- * Serviço & Perfil) para a fase unificada.
- */
 export function mapMainPhaseToUnified(v2Phase: string): UnifiedPhase {
-  switch (v2Phase) {
+  switch (v2Phase as OnboardingPhase) {
     case 'phase1_action': return 'main_action';
     case 'phase1_kind': return 'main_kind';
     case 'phase1_location': return 'main_location';
@@ -119,7 +143,6 @@ export function mapMainPhaseToUnified(v2Phase: string): UnifiedPhase {
   }
 }
 
-/** Rótulos legíveis para UI (barra de progresso global). */
 export const UNIFIED_PHASE_LABELS: Record<UnifiedPhase, string> = {
   triage_identity: 'Identificação',
   triage_who: 'Quem é você',
@@ -142,3 +165,118 @@ export const UNIFIED_PHASE_LABELS: Record<UnifiedPhase, string> = {
   main_extras_b: 'Redes sociais',
   done: 'Concluído',
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reducer linear unificado
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type WizardAction =
+  | { type: 'NEXT_PHASE' }
+  | { type: 'PREV_PHASE' }
+  | { type: 'GO_TO_PHASE'; phase: UnifiedPhase }
+  | { type: 'PATCH_TRIAGE'; patch: Partial<BetState> }
+  | { type: 'PATCH_PROFILE'; patch: Partial<OnboardingProfileData> }
+  | { type: 'PATCH_SERVICE'; patch: Partial<OnboardingFirstServiceData> }
+  | { type: 'SET_PROVIDER_ID'; id: string }
+  | { type: 'SET_FIRST_SERVICE_ID'; id: string }
+  | { type: 'HYDRATE'; state: Partial<WizardState> };
+
+export const initialWizardState: WizardState = {
+  phase: 'triage_identity',
+  triage: {
+    full_name: '',
+    whatsapp: '',
+    intent: null,
+    city: '',
+    state: '',
+    pro_kind: null,
+    document: '',
+    company_name: '',
+    points: 0,
+    phase: 'identity',
+  },
+  profile: {
+    profile_type: undefined,
+    kind: 'pf',
+    full_name: '',
+    whatsapp: '',
+    document: '',
+    city: '',
+    state: '',
+    avatar_url: null,
+    neighborhood: '',
+    bio: '',
+    instagram_url: '',
+    facebook_url: '',
+    primary_category_id: null,
+    working_hours: '',
+  },
+  service: {
+    service_name: '',
+    description: '',
+    category_ids: [],
+    cities_served: [],
+    starting_price_brl: null,
+    working_hours: '',
+  },
+  providerId: null,
+  firstServiceId: null,
+};
+
+export function wizardReducer(state: WizardState, action: WizardAction): WizardState {
+  switch (action.type) {
+    case 'NEXT_PHASE':
+      return { ...state, phase: nextUnifiedPhase(state.phase) };
+    case 'PREV_PHASE':
+      return { ...state, phase: prevUnifiedPhase(state.phase) };
+    case 'GO_TO_PHASE':
+      return { ...state, phase: action.phase };
+    case 'PATCH_TRIAGE':
+      return { ...state, triage: { ...state.triage, ...action.patch } };
+    case 'PATCH_PROFILE':
+      return { ...state, profile: { ...state.profile, ...action.patch } };
+    case 'PATCH_SERVICE':
+      return { ...state, service: { ...state.service, ...action.patch } };
+    case 'SET_PROVIDER_ID':
+      return { ...state, providerId: action.id };
+    case 'SET_FIRST_SERVICE_ID':
+      return { ...state, firstServiceId: action.id };
+    case 'HYDRATE':
+      return {
+        ...state,
+        ...action.state,
+        triage: { ...state.triage, ...(action.state.triage || {}) },
+        profile: { ...state.profile, ...(action.state.profile || {}) },
+        service: { ...state.service, ...(action.state.service || {}) },
+      };
+    default:
+      return state;
+  }
+}
+
+/**
+ * hydrateWizardState — substituto único do antigo
+ * `resolveOnboardingV2SeedState` + `internalHandoffFromTriage` flag.
+ *
+ * Resolve a fase inicial a partir de dados já gravados em
+ * profile/provider, sem nunca regredir uma fase já alcançada localmente.
+ */
+export function hydrateWizardState(input: {
+  current?: Partial<WizardState> | null;
+  fromProfile?: { phase: UnifiedPhase; patch: Partial<WizardState> } | null;
+}): Partial<WizardState> {
+  const current = input.current || {};
+  const fromProfile = input.fromProfile;
+  if (!fromProfile) return current;
+
+  const currentIdx = current.phase ? unifiedPhaseIndex(current.phase) : -1;
+  const seedIdx = unifiedPhaseIndex(fromProfile.phase);
+  // Anti-regressão: se o usuário já está numa fase >= seed, mantém.
+  const phase = currentIdx >= seedIdx ? (current.phase as UnifiedPhase) : fromProfile.phase;
+
+  return {
+    ...fromProfile.patch,
+    ...current,
+    phase,
+  };
+}
