@@ -1,5 +1,5 @@
 /** Bet Mode V3 — tipos do estado central. */
-export type BetIntent = 'client' | 'professional';
+export type BetIntent = 'client' | 'professional' | 'rh' | 'sponsor';
 export type BetProKind = 'pf' | 'pj';
 
 export type BetPhase =

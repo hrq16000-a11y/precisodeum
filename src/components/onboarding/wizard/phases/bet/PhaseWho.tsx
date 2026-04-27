@@ -1,6 +1,6 @@
 /** Phase Who — Sou Profissional / Sou Cliente. */
 import { motion } from 'framer-motion';
-import { Briefcase, Search, Sparkles } from 'lucide-react';
+import { Briefcase, Search, Sparkles, Building2, Megaphone } from 'lucide-react';
 import { fieldWin } from '@/lib/betDopamine';
 import { BET_POINTS, type BetIntent, type BetState } from './types';
 
@@ -74,6 +74,46 @@ export default function PhaseWho({ patch, goto, addPoints }: Props) {
               </h2>
               <p className="text-xs text-muted-foreground">
                 Quero contratar alguém para um serviço
+              </p>
+            </div>
+          </div>
+        </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={() => pick('rh')}
+          className="group relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-accent/5 to-secondary/10 p-5 text-left shadow-card transition hover:shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
+              <Building2 className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-base font-extrabold text-foreground">
+                Sou Agência de RH
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Quero publicar vagas e gerenciar minha agência
+              </p>
+            </div>
+          </div>
+        </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={() => pick('sponsor')}
+          className="group relative overflow-hidden rounded-2xl border border-secondary/40 bg-gradient-to-br from-secondary/10 via-muted/40 to-background p-5 text-left shadow-card transition hover:shadow-[0_0_30px_hsl(var(--secondary)/0.25)]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-lg">
+              <Megaphone className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-base font-extrabold text-foreground">
+                Sou Patrocinador
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Quero anunciar minha marca na plataforma
               </p>
             </div>
           </div>
