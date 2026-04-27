@@ -19,6 +19,7 @@ export async function fetchRemoteDraft(userId: string): Promise<{
   payload: {
     profile: OnboardingState['profile'];
     service: OnboardingState['service'];
+    userRef?: OnboardingState['userRef'];
     providerId?: OnboardingState['providerId'];
     firstServiceId?: OnboardingState['firstServiceId'];
   };
@@ -61,6 +62,7 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
           payload: {
             profile: state.profile,
             service: state.service,
+            userRef: state.userRef,
             providerId: state.providerId,
             firstServiceId: state.firstServiceId,
           },
@@ -74,5 +76,5 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
-  }, [state.profile, state.service, state.phase, state.providerId, state.firstServiceId, userId]);
+  }, [state.profile, state.service, state.phase, state.userRef, state.providerId, state.firstServiceId, userId]);
 }

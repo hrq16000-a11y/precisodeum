@@ -60,6 +60,7 @@ export const initialOnboardingState: OnboardingState = {
     working_hours: '',
   },
   phase: 'phase1_action',
+  userRef: null,
   providerId: null,
   firstServiceId: null,
 };
@@ -70,6 +71,7 @@ export type OnboardingAction =
   | { type: 'GO_TO'; phase: OnboardingPhase }
   | { type: 'NEXT' }
   | { type: 'SKIP_TO_NEXT' }
+  | { type: 'SET_USER_REF'; userRef: string }
   | { type: 'SET_PROVIDER_ID'; id: string }
   | { type: 'SET_FIRST_SERVICE_ID'; id: string }
   | { type: 'HYDRATE'; state: Partial<OnboardingState> };
@@ -94,6 +96,8 @@ export function onboardingReducer(
     case 'NEXT':
     case 'SKIP_TO_NEXT':
       return { ...state, phase: nextPhase(state.phase) };
+    case 'SET_USER_REF':
+      return { ...state, userRef: action.userRef };
     case 'SET_PROVIDER_ID':
       return { ...state, providerId: action.id };
     case 'SET_FIRST_SERVICE_ID':

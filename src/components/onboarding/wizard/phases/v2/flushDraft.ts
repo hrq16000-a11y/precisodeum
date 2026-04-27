@@ -19,6 +19,7 @@ export function flushLocalDraft(state: OnboardingState) {
       profile: state.profile,
       service: state.service,
       phase: state.phase,
+      userRef: state.userRef,
       providerId: state.providerId,
       firstServiceId: state.firstServiceId,
     };
@@ -38,6 +39,7 @@ export async function flushRemoteDraft(
       payload: {
         profile: state.profile,
         service: state.service,
+        userRef: state.userRef,
         providerId: state.providerId,
         firstServiceId: state.firstServiceId,
       },

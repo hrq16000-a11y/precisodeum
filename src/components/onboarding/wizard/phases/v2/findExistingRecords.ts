@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ExistingServiceRecord {
   id: string;
+  provider_id?: string | null;
   service_name: string | null;
   description: string | null;
   category_id: string | null;
@@ -80,18 +81,23 @@ export async function findExistingFirstService(
  * ativo do provider (mais antigo), para hidratar o Wizard em modo revisão.
  */
 export async function fetchExistingFirstService(
-  providerId: string,
+  providerId: string | null,
+  userRef?: string | null,
   preferredCategoryId?: string | null,
 ): Promise<ExistingServiceRecord | null> {
-  if (!providerId) return null;
+  if (!providerId && !userRef) return null;
   try {
-    const { data } = await supabase
+    let query = supabase
       .from('services')
-      .select('id, service_name, description, category_id, service_area, address, working_hours, price, created_at')
-      .eq('provider_id', providerId)
+      .select('id, provider_id, service_name, description, category_id, service_area, address, working_hours, price, created_at')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(12);
+
+    if (providerId) query = query.eq('provider_id', providerId);
+    else if (userRef) query = query.eq('user_ref', userRef);
+
+    const { data } = await query;
 
     const rows = ((data as ExistingServiceRecord[] | null) ?? []).slice();
     if (!rows.length) return null;
@@ -114,16 +120,20 @@ export async function fetchExistingFirstService(
  * findExistingProvider — verifica se o usuário já tem provider criado
  * (mesmo que o estado local tenha perdido o ID).
  */
-export async function findExistingProvider(userId: string): Promise<string | null> {
-  if (!userId) return null;
+export async function findExistingProvider(userId?: string | null, userRef?: string | null): Promise<string | null> {
+  if (!userId && !userRef) return null;
   try {
-    const { data } = await supabase
+    let query = supabase
       .from('providers')
       .select('id')
-      .eq('user_id', userId)
       .is('deleted_at', null)
       .order('created_at', { ascending: true })
       .limit(1);
+
+    if (userId) query = query.eq('user_id', userId);
+    else if (userRef) query = query.eq('user_ref', userRef);
+
+    const { data } = await query;
     return data?.[0]?.id ?? null;
   } catch {
     return null;
