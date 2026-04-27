@@ -53,6 +53,8 @@ import type { BetState } from './phases/bet/types';
 type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-portfolio' | 'done';
 
 export default function WizardShell() {
+  const { user } = useAuth();
+  const realPoints = useEngagementPointsValue(user?.id);
   const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
   // Stage continua como "qual orquestrador renderizar" — é derivado da fase.
   const stage: Stage =
