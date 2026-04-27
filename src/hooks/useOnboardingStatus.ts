@@ -196,6 +196,15 @@ export function useOnboardingStatus(): OnboardingStatus {
     return () => { try { (supabase as any).removeChannel(channel); } catch { /* noop */ } };
   }, [user?.id, provider?.id, fetchCounts, refetchProfile]);
 
+  // Custom event "onboarding-progress-changed" — disparado pelo Wizard ao
+  // salvar serviço/foto/perfil. Garante refresh imediato mesmo sem realtime
+  // habilitado nas tabelas correspondentes.
+  useEffect(() => {
+    const handler = () => { void refresh(); };
+    window.addEventListener('onboarding-progress-changed', handler);
+    return () => window.removeEventListener('onboarding-progress-changed', handler);
+  }, [refresh]);
+
   /* ── Itens do checklist ── */
 
   const items: OnboardingChecklistItem[] = useMemo(() => {
