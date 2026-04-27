@@ -346,8 +346,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </Link>
           </motion.div>
         )}
-          );
-        })()}
         <AnimatePresence mode="wait">
           <motion.div
             className="p-4 pb-20 sm:p-6 sm:pb-6"
