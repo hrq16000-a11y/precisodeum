@@ -43,6 +43,45 @@ const DashboardOnboardingStatusPage = () => {
     missingRequired, refresh,
   } = status;
 
+  const { provider, refetchProfile } = useAuth();
+  const navigate = useNavigate();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+
+  const isPublished = (provider as any)?.status === 'approved' || (provider as any)?.status === 'active';
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      const { data, error } = await (supabase as any).rpc('publish_my_provider');
+      if (error) throw error;
+      const res = (data || {}) as { ok?: boolean; reason?: string; status?: string; missing?: string[]; already?: boolean };
+      if (!res.ok) {
+        toast.error('Não foi possível publicar', {
+          description: res.reason === 'missing_required'
+            ? `Faltam itens obrigatórios: ${(res.missing || []).join(', ')}`
+            : 'Verifique seus dados e tente novamente.',
+        });
+        return;
+      }
+      await refetchProfile?.();
+      await refresh();
+      setConfirmOpen(false);
+      if (res.already) {
+        toast.success('Seu perfil já está publicado.');
+      } else {
+        toast.success('Perfil publicado com sucesso!', {
+          description: 'Você já aparece nas buscas. Boa sorte!',
+          action: { label: 'Ver minha página', onClick: () => navigate('/dashboard/minha-pagina') },
+        });
+      }
+    } catch (e: any) {
+      toast.error('Erro ao publicar', { description: e?.message || 'Tente novamente em instantes.' });
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   useEffect(() => { document.title = 'Status do cadastro | Preciso de Um'; }, []);
 
   return (
