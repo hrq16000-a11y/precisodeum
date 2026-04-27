@@ -123,8 +123,18 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(shell).not.toContain("searchParams.get('source')");
     expect(shell).not.toContain('bet-first-service');
     expect(shell).toContain('internalHandoffFromTriage');
+    expect(shell).toContain('deferCompletionToParent');
     expect(shell).toContain('resolveOnboardingV2SeedState');
     expect(shell).toContain('onboarding-v2-phase-regression-blocked');
+  });
+
+  it('WizardShell segura a conclusão final e oferece saídas para dashboard, serviços, portfólio e app', () => {
+    const shell = read('src/components/onboarding/wizard/WizardShell.tsx');
+    expect(shell).toContain('deferCompletionToParent');
+    expect(shell).toContain('Continuar cadastrando serviços');
+    expect(shell).toContain('Abrir portfólio');
+    expect(shell).toContain('Ir para o dashboard');
+    expect(shell).toContain('InstallAppCard');
   });
 
   it('Pular 1º serviço mantém o usuário dentro do wizard', () => {

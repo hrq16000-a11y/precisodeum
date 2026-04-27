@@ -98,4 +98,13 @@ describe('Skip 1º serviço — E2E unificado', () => {
     expect(shell).toContain('locked={!!coreLocks.document}');
     expect(shell).toMatch(/if \(!coreLocks\.document\)\s*\{\s*await persistPatch/);
   });
+
+  it('Phase4ExtrasA pede tempo de experiência e Phase4ExtrasB avança para extras finais do wizard', () => {
+    const finalPhase = read('src/components/onboarding/wizard/phases/v2/Phase4Final.tsx');
+    const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
+    expect(finalPhase).toContain('Tempo de experiência');
+    expect(finalPhase).toContain('years_experience');
+    expect(shell).toMatch(/phase4_extras_b[\s\S]*onSkip=\{\(\) => \{ track\('skip'\); dispatch\(\{ type: 'NEXT' \}\); \}\}/);
+    expect(shell).toMatch(/phase4_extras_b[\s\S]*dispatch\(\{ type: 'NEXT' \}\);/);
+  });
 });
