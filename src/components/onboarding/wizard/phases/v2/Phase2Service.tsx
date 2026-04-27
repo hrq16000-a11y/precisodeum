@@ -47,6 +47,7 @@ export const Phase2Service = ({
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
+  const focusCategory = useFocusFieldFromReview('service_name');
 
   useEffect(() => {
     let mounted = true;
