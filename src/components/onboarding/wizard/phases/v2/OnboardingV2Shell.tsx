@@ -238,6 +238,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, onPhaseCh
     });
   }, [state.phase, user?.id]);
 
+  // Reporta a fase para a barra de progresso global do WizardShell.
+  useEffect(() => {
+    onPhaseChange?.(state.phase);
+  }, [state.phase, onPhaseChange]);
+
   /* ───── Persistência: cria/atualiza provider ao fim da Fase 1 ───── */
   const persistPhase1 = async () => {
     if (!user) {
