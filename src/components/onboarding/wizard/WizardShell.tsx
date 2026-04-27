@@ -1,16 +1,17 @@
 /**
- * WizardShell — fachada única do onboarding (Fase A da fusão).
+ * WizardShell — fachada única do onboarding (Fusão V3 + V2 — Fase B).
  *
- * Encapsula o handoff V3 (BetMode) → V2 (OnboardingV2) sob um único componente,
- * sem trocar de URL. O contrato anterior (`?source=bet-first-service`) deixa de
- * ser exposto na rota — o WizardShell sinaliza a transição internamente.
+ * Encapsula o handoff Triagem (ex-V3) → Criação de Serviço & Perfil (ex-V2)
+ * sob um único componente, sem trocar de URL. O contrato anterior baseado em
+ * `?source=bet-first-service` foi REMOVIDO — o stage agora é controlado 100%
+ * internamente, em memória.
  *
- * Os steps continuam vivendo em `betMode/` e `onboardingV2/` durante a Fase A;
- * a Fase B moverá tudo para `wizard/steps/` e remover\u00e1 essas pastas.
+ * Steps vivem em `wizard/phases/bet/` (triagem) e `wizard/phases/v2/`
+ * (serviço + perfil completo).
  */
 import { useState, useCallback } from 'react';
 import BetModeShell from '@/components/onboarding/wizard/phases/bet/BetModeShell';
-import OnboardingV2Shell from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
+import { OnboardingV2Shell } from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 
 type Stage = 'triage' | 'service-and-profile';
@@ -18,30 +19,21 @@ type Stage = 'triage' | 'service-and-profile';
 export default function WizardShell() {
   const [stage, setStage] = useState<Stage>('triage');
 
-  // BetModeShell já dispara navigate('/onboarding-v2?source=bet-first-service')
-  // ao concluir a triagem (provider). Interceptamos via query param sumiço:
-  // como o WizardShell vive em /cadastro-inicial, a navegação não dispara —
-  // por isso, expomos um hook de transição interno via window event.
-  // (Compatibilidade: durante Fase A, os shells existentes ainda tentam
-  // navegar; o gate em App.tsx redireciona /onboarding-v2 → /cadastro-inicial,
-  // e o WizardShell remonta no stage correto baseado no profile do banco.)
-
   const handleTriageDone = useCallback(() => {
     appendWizardResetDebugLog({
       source: 'wizard-shell-handoff',
       route: '/cadastro-inicial',
       nextRoute: '/cadastro-inicial',
       phase: 'phase2_service',
-      reason: 'internal-handoff-bet-to-v2',
+      reason: 'internal-handoff-triage-to-service',
       meta: { stage: 'service-and-profile' },
     });
     setStage('service-and-profile');
   }, []);
 
   if (stage === 'triage') {
-    // BetModeShell aceita um callback opcional de handoff interno.
     return <BetModeShell onInternalHandoff={handleTriageDone} />;
   }
 
-  return <OnboardingV2Shell />;
+  return <OnboardingV2Shell internalHandoffFromTriage />;
 }

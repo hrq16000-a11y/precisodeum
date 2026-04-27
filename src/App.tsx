@@ -170,8 +170,6 @@ const AgencyPublicPage = lazy(() => import("./pages/AgencyPublicPage"));
 const DashboardAgencyDataPage = lazy(() => import("./pages/DashboardAgencyDataPage"));
 const SponsorPublicPage = lazy(() => import("./pages/SponsorPublicPage"));
 const SponsorPublicProfilePage = lazy(() => import("./pages/sponsor/SponsorPublicProfilePage"));
-const OnboardingV2Page = lazy(() => import("./pages/OnboardingV2Page"));
-const CadastroBetPage = lazy(() => import("./pages/CadastroBetPage"));
 const CadastroInicialPage = lazy(() => import("./pages/CadastroInicialPage"));
 const OnboardingV2SuccessPage = lazy(() => import("./pages/OnboardingV2SuccessPage"));
 
