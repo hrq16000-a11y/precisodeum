@@ -25,6 +25,7 @@ import { suggestServiceDescriptionVariants } from '@/lib/serviceDescriptionSugge
 import { sanitizeSlug } from '@/lib/slugify';
 import type { OnboardingFirstServiceData, OnboardingProfileData } from './types';
 import { WEEKDAY_OPTIONS, buildWorkingHoursSummary } from './workingHours';
+import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 
 interface CategoryRow { id: string; name: string; icon?: string | null }
 
