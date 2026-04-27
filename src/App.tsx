@@ -50,6 +50,7 @@ const JobDetailPage = lazy(() => import("./pages/JobDetailPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const DashboardProfilePage = lazy(() => import("./pages/DashboardProfilePage"));
 const DashboardServicesPage = lazy(() => import("./pages/DashboardServicesPage"));
+const DashboardOnboardingStatusPage = lazy(() => import("./pages/DashboardOnboardingStatusPage"));
 const DashboardReviewsPage = lazy(() => import("./pages/DashboardReviewsPage"));
 const DashboardLeadsPage = lazy(() => import("./pages/DashboardLeadsPage"));
 const DashboardLeadDetailPage = lazy(() => import("./pages/DashboardLeadDetailPage"));
@@ -387,6 +388,7 @@ const App = () => {
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                 <Route path="/dashboard/perfil" element={<ProtectedRoute><ErrorGuard componentName="DashboardProfilePage"><DashboardProfilePage /></ErrorGuard></ProtectedRoute>} />
                 <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><ErrorGuard componentName="DashboardServicesPage"><DashboardServicesPage /></ErrorGuard></ProtectedRoute>} />
+                <Route path="/dashboard/status" element={<ProtectedRoute allowedTypes={['provider']}><DashboardOnboardingStatusPage /></ProtectedRoute>} />
                 <Route path="/dashboard/portfolio" element={<ProtectedRoute allowedTypes={['provider']}><ErrorGuard componentName="DashboardPortfolioPage"><DashboardPortfolioPage /></ErrorGuard></ProtectedRoute>} />
                 <Route path="/dashboard/avaliacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReviewsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/leads" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLeadsPage /></ProtectedRoute>} />

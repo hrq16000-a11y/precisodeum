@@ -241,13 +241,42 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
           <span className={ws.fieldLabel}>
             <MapPin className="h-3.5 w-3.5" /> Bairro <span className="font-normal normal-case text-muted-foreground">(opcional)</span>
           </span>
-          <input
-            type="text"
-            value={data.neighborhood}
-            onChange={(e) => onChange({ neighborhood: e.target.value })}
-            placeholder="Ex: Centro, Vila Mariana..."
-            className="flex h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
-          />
+          {(() => {
+            const raw = data.neighborhood || '';
+            const trimmed = raw.trim();
+            const tooShort = trimmed.length > 0 && trimmed.length < 3;
+            const invalidChars = trimmed.length > 0 && !/^[A-Za-zÀ-ÿ0-9\s.,'\-/]+$/.test(trimmed);
+            const tooLong = trimmed.length > 80;
+            const looksOk = trimmed.length >= 3 && !invalidChars && !tooLong;
+            return (
+              <>
+                <input
+                  type="text"
+                  value={raw}
+                  onChange={(e) => onChange({ neighborhood: e.target.value.slice(0, 80) })}
+                  placeholder="Ex: Centro, Vila Mariana..."
+                  maxLength={80}
+                  aria-invalid={tooShort || invalidChars || tooLong}
+                  className={`flex h-11 w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:ring-2 ${
+                    looksOk
+                      ? 'border-emerald-500 ring-1 ring-emerald-300/40 focus:border-emerald-500 focus:ring-emerald-300/50'
+                      : tooShort || invalidChars || tooLong
+                        ? 'border-amber-400 focus:border-amber-500 focus:ring-amber-300/40'
+                        : 'border-input focus:border-amber-400 focus:ring-amber-300/40'
+                  }`}
+                />
+                {tooShort && (
+                  <p className="mt-1 text-[11px] text-amber-600">Tente um nome com pelo menos 3 letras (não bloqueia avançar).</p>
+                )}
+                {invalidChars && (
+                  <p className="mt-1 text-[11px] text-amber-600">Use apenas letras, números, espaços ou hífen.</p>
+                )}
+                {tooLong && (
+                  <p className="mt-1 text-[11px] text-amber-600">Máximo 80 caracteres.</p>
+                )}
+              </>
+            );
+          })()}
         </label>
       </div>
 
