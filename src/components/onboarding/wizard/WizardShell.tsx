@@ -25,6 +25,8 @@ import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import TriageOrchestrator from '@/components/onboarding/wizard/phases/bet/BetModeShell';
 import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
+import Step20_MoreServices from '@/components/onboarding/wizard/phases/Step20_MoreServices';
+import Step21_PortfolioAlbums from '@/components/onboarding/wizard/phases/Step21_PortfolioAlbums';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { WizardProgressBar } from './WizardProgressBar';
 import { trackOnboardingEvent } from './phases/v2/telemetry';
@@ -37,12 +39,21 @@ import {
 } from './wizardReducer';
 import type { BetState } from './phases/bet/types';
 
-type Stage = 'triage' | 'service-and-profile';
+type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-portfolio' | 'done';
 
 export default function WizardShell() {
   const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
   // Stage continua como "qual orquestrador renderizar" — é derivado da fase.
-  const stage: Stage = state.phase.startsWith('triage_') ? 'triage' : 'service-and-profile';
+  const stage: Stage =
+    state.phase.startsWith('triage_')
+      ? 'triage'
+      : state.phase === 'main_more_services'
+      ? 'extras-services'
+      : state.phase === 'main_portfolio_albums'
+      ? 'extras-portfolio'
+      : state.phase === 'done'
+      ? 'done'
+      : 'service-and-profile';
   const lastTrackedPhase = useRef<UnifiedPhase | null>(null);
 
   // Telemetria: registra cada avanço de fase unificada UMA vez.
@@ -136,6 +147,23 @@ export default function WizardShell() {
           onInternalHandoff={handleTriageDone}
           onPhaseChange={handleTriagePhaseChange}
         />
+      ) : stage === 'extras-services' ? (
+        <Step20_MoreServices
+          onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
+          onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
+        />
+      ) : stage === 'extras-portfolio' ? (
+        <Step21_PortfolioAlbums
+          onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
+          onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
+        />
+      ) : stage === 'done' ? (
+        <div className="mx-auto w-full max-w-md px-4 py-8 text-center">
+          <h2 className="text-xl font-semibold">Cadastro concluído!</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Seu perfil está pronto. Você já pode acessar o painel para gerenciar seus serviços, portfólio e leads.
+          </p>
+        </div>
       ) : (
         <MainOrchestrator
           internalHandoffFromTriage

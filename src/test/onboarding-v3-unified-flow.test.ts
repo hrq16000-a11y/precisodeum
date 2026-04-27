@@ -155,11 +155,14 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
 });
 
 describe('wizardReducer — máquina linear unificada', () => {
-  it('possui 19 fases visíveis + done', () => {
-    expect(UNIFIED_VISIBLE_PHASES).toBe(19);
-    expect(UNIFIED_PHASE_ORDER).toHaveLength(20);
+  it('possui 21 fases visíveis + done', () => {
+    expect(UNIFIED_VISIBLE_PHASES).toBe(21);
+    expect(UNIFIED_PHASE_ORDER).toHaveLength(22);
     expect(UNIFIED_PHASE_ORDER[0]).toBe('triage_identity');
     expect(UNIFIED_PHASE_ORDER[UNIFIED_PHASE_ORDER.length - 1]).toBe('done');
+    // Garante que extras de serviços e portfólio são as últimas antes do done
+    expect(UNIFIED_PHASE_ORDER[UNIFIED_PHASE_ORDER.length - 3]).toBe('main_more_services');
+    expect(UNIFIED_PHASE_ORDER[UNIFIED_PHASE_ORDER.length - 2]).toBe('main_portfolio_albums');
   });
 
   it('NEXT_PHASE avança linearmente até done sem regredir', () => {

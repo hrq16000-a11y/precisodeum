@@ -45,6 +45,8 @@ export type UnifiedPhase =
   | 'main_avatar'
   | 'main_extras_a'
   | 'main_extras_b'
+  | 'main_more_services'
+  | 'main_portfolio_albums'
   | 'done';
 
 export const UNIFIED_PHASE_ORDER: UnifiedPhase[] = [
@@ -67,6 +69,8 @@ export const UNIFIED_PHASE_ORDER: UnifiedPhase[] = [
   'main_avatar',
   'main_extras_a',
   'main_extras_b',
+  'main_more_services',
+  'main_portfolio_albums',
   'done',
 ];
 
@@ -138,7 +142,7 @@ export function mapMainPhaseToUnified(v2Phase: string): UnifiedPhase {
     case 'phase4_avatar': return 'main_avatar';
     case 'phase4_extras_a': return 'main_extras_a';
     case 'phase4_extras_b': return 'main_extras_b';
-    case 'done': return 'done';
+    case 'done': return 'main_more_services';
     default: return 'main_action';
   }
 }
@@ -195,6 +199,8 @@ export const UNIFIED_PHASE_LABELS: Record<UnifiedPhase, string> = {
   main_avatar: 'Foto de perfil',
   main_extras_a: 'Bairro e bio',
   main_extras_b: 'Redes sociais',
+  main_more_services: 'Mais serviços (opcional)',
+  main_portfolio_albums: 'Álbuns de portfólio (opcional)',
   done: 'Concluído',
 };
 
