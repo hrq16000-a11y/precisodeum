@@ -9,7 +9,7 @@
  * Aqui criamos os "espaços" temáticos; o usuário enche depois ou via painel.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, ArrowRight, SkipForward, X, FolderPlus } from 'lucide-react';
+import { ArrowRight, SkipForward, X, FolderPlus, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import PortfolioAlbumPhotoUploader from './PortfolioAlbumPhotoUploader';
 
 const MAX_ALBUMS = 5;
 
