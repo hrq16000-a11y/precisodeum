@@ -118,6 +118,13 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
 
   async function finishRh() {
     if (!user) { toast.error('Faça login antes de continuar'); return; }
+    // Defesa: nome/WhatsApp deveriam estar preenchidos pela fase 'identity'.
+    // Se por qualquer motivo estiverem vazios, devolve para corrigir.
+    if (!state.full_name?.trim() || !state.whatsapp?.trim()) {
+      toast.error('Preencha nome e WhatsApp antes de continuar.');
+      goto('identity');
+      return;
+    }
     try {
       const { error } = await (supabase as any)
         .from('profiles')
