@@ -41,6 +41,7 @@ export interface OnboardingFirstServiceData {
   category_ids: string[];        // 1 obrigatório, multi opcional
   cities_served: string[];       // máx 5
   starting_price_brl: number | null; // "Valores (a partir de)"
+  working_days: string[];
   working_hours: string;
 }
 
