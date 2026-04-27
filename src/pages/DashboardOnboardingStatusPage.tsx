@@ -1,232 +1,45 @@
 /**
  * DashboardOnboardingStatusPage — Status do onboarding do profissional.
  *
- * Mostra progresso visual + checklist do que falta para o perfil ficar
- * 100% publicado. Reusa a mesma fonte de verdade da Phase3Celebration:
- *  - profiles (full_name, whatsapp, city, state)
- *  - providers (slug, document)
- *  - services (1+ ativos)
- *  - media (fotos do serviço)
- *  - portfolio_albums (álbum criado)
- *
- * Seguro por desenho: apenas SELECTs filtrados por user_id (RLS-friendly).
+ * Renderiza o checklist e a barra de progresso a partir de `useOnboardingStatus`,
+ * que centraliza fetch + validação + auto-refresh (foco/visibility/realtime)
+ * + toast de "100% pronto para publicar".
  */
 
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  CheckCircle2, Circle, AlertTriangle, Loader2, ArrowRight, RefreshCw,
-  User, Phone, MapPin, Briefcase, Camera, ImageIcon, ShieldCheck, Sparkles,
+  CheckCircle2, AlertTriangle, Loader2, ArrowRight, RefreshCw,
+  User, Phone, MapPin, Briefcase, Camera, ImageIcon, ShieldCheck, Sparkles, Globe,
 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useOnboardingStatus, type OnboardingChecklistItem } from '@/hooks/useOnboardingStatus';
 
-
-interface ChecklistItem {
-  key: string;
-  label: string;
-  description: string;
-  icon: typeof User;
-  done: boolean;
-  required: boolean;
-  cta?: { label: string; to: string };
-}
-
-interface Counts {
-  servicesActive: number;
-  photos: number;
-  albums: number;
-}
-
-/**
- * isValidCpf — checa formato (11 dígitos, não todos iguais) + DV.
- * Não valida origem RF; só evita falso-positivo de "11111111111".
- */
-function isValidCpf(raw: string | null | undefined): boolean {
-  const d = (raw || '').replace(/\D/g, '');
-  if (d.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(d)) return false;
-  const calc = (slice: number) => {
-    let sum = 0;
-    for (let i = 0; i < slice; i++) sum += parseInt(d[i], 10) * (slice + 1 - i);
-    const r = (sum * 10) % 11;
-    return r === 10 ? 0 : r;
-  };
-  return calc(9) === parseInt(d[9], 10) && calc(10) === parseInt(d[10], 10);
-}
-
-/**
- * isValidCnpj — checa formato (14 dígitos, não todos iguais) + DV.
- */
-function isValidCnpj(raw: string | null | undefined): boolean {
-  const d = (raw || '').replace(/\D/g, '');
-  if (d.length !== 14) return false;
-  if (/^(\d)\1{13}$/.test(d)) return false;
-  const calc = (slice: number) => {
-    const weights = slice === 12
-      ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-      : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-    let sum = 0;
-    for (let i = 0; i < slice; i++) sum += parseInt(d[i], 10) * weights[i];
-    const r = sum % 11;
-    return r < 2 ? 0 : 11 - r;
-  };
-  return calc(12) === parseInt(d[12], 10) && calc(13) === parseInt(d[13], 10);
-}
+const ITEM_ICONS: Record<string, typeof User> = {
+  name: User,
+  whatsapp: Phone,
+  location: MapPin,
+  service: Briefcase,
+  photos: Camera,
+  portfolio: ImageIcon,
+  phone: Phone,
+  website: Globe,
+  document: ShieldCheck,
+};
 
 const DashboardOnboardingStatusPage = () => {
-  const { user, profile, provider, refetchProfile } = useAuth();
-  const location = useLocation();
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [counts, setCounts] = useState<Counts>({ servicesActive: 0, photos: 0, albums: 0 });
-  const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
-  const lastFetchRef = useRef(0);
+  const status = useOnboardingStatus();
+  const {
+    loading, refreshing, items, requiredItems, optionalItems,
+    requiredDone, optionalDone, totalDone, percent, publishable,
+    missingRequired, refresh,
+  } = status;
 
-  useEffect(() => {
-    document.title = 'Status do cadastro | Preciso de Um';
-  }, []);
-
-  const fetchCounts = useCallback(async (silent = false) => {
-    if (!user?.id) { setLoading(false); return; }
-    if (!silent) setRefreshing(true);
-    try {
-      const providerId = provider?.id;
-
-      const [svcRes, photoRes, albumRes] = await Promise.all([
-        providerId
-          ? (supabase as any).from('services').select('id', { count: 'exact', head: true }).eq('provider_id', providerId).is('deleted_at', null)
-          : Promise.resolve({ count: 0 }),
-        (supabase as any).from('media').select('id', { count: 'exact', head: true }).eq('owner_id', user.id).eq('entity_type', 'service'),
-        providerId
-          ? (supabase as any).from('portfolio_albums').select('id', { count: 'exact', head: true }).eq('provider_id', providerId)
-          : Promise.resolve({ count: 0 }),
-      ]);
-
-      setCounts({
-        servicesActive: (svcRes as any)?.count ?? 0,
-        photos: (photoRes as any)?.count ?? 0,
-        albums: (albumRes as any)?.count ?? 0,
-      });
-      setLastRefresh(Date.now());
-      lastFetchRef.current = Date.now();
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [user?.id, provider?.id]);
-
-  // Carga inicial + quando user/provider mudam
-  useEffect(() => {
-    void fetchCounts(true);
-  }, [fetchCounts]);
-
-  // Auto-refresh quando a aba volta a ficar visível ou ganha foco
-  // (ex.: usuário voltou do /onboarding-v2). Throttle de 4s.
-  useEffect(() => {
-    const refresh = () => {
-      if (Date.now() - lastFetchRef.current < 4000) return;
-      void Promise.all([refetchProfile?.(), fetchCounts(false)]);
-    };
-    const onVisibility = () => { if (document.visibilityState === 'visible') refresh(); };
-    window.addEventListener('focus', refresh);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      window.removeEventListener('focus', refresh);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [fetchCounts, refetchProfile]);
-
-  // Auto-refresh ao navegar de volta para esta rota
-  useEffect(() => {
-    if (location.pathname === '/dashboard/status') {
-      if (Date.now() - lastFetchRef.current < 1500) return;
-      void Promise.all([refetchProfile?.(), fetchCounts(false)]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname, location.key]);
-
-
-  const items: ChecklistItem[] = useMemo(() => [
-    {
-      key: 'name',
-      label: 'Nome completo',
-      description: 'Como seus clientes vão te encontrar.',
-      icon: User,
-      done: !!(profile?.full_name && String(profile.full_name).trim().length >= 3),
-      required: true,
-      cta: { label: 'Editar perfil', to: '/dashboard/perfil' },
-    },
-    {
-      key: 'whatsapp',
-      label: 'WhatsApp',
-      description: 'Canal principal de contato dos leads.',
-      icon: Phone,
-      done: !!(profile?.whatsapp && String(profile.whatsapp).replace(/\D/g, '').length >= 10),
-      required: true,
-      cta: { label: 'Editar perfil', to: '/dashboard/perfil' },
-    },
-    {
-      key: 'location',
-      label: 'Cidade e estado',
-      description: 'Define em quais regiões você aparece.',
-      icon: MapPin,
-      done: !!(profile?.city && profile?.state),
-      required: true,
-      cta: { label: 'Editar perfil', to: '/dashboard/perfil' },
-    },
-    {
-      key: 'service',
-      label: '1º serviço publicado',
-      description: 'Sem serviço, você não aparece nas buscas.',
-      icon: Briefcase,
-      done: counts.servicesActive >= 1,
-      required: true,
-      cta: { label: 'Gerenciar serviços', to: '/dashboard/servicos' },
-    },
-    {
-      key: 'photos',
-      label: 'Fotos no serviço',
-      description: 'Anúncios com foto recebem até 3x mais leads.',
-      icon: Camera,
-      done: counts.photos >= 1,
-      required: false,
-      cta: { label: 'Adicionar fotos', to: '/dashboard/servicos' },
-    },
-    {
-      key: 'portfolio',
-      label: 'Álbum de portfólio',
-      description: 'Mostre trabalhos anteriores e gere confiança.',
-      icon: ImageIcon,
-      done: counts.albums >= 1,
-      required: false,
-      cta: { label: 'Criar portfólio', to: '/dashboard/portfolio' },
-    },
-    {
-      key: 'document',
-      label: 'CPF ou CNPJ',
-      description: 'Aumenta a credibilidade e desbloqueia recursos.',
-      icon: ShieldCheck,
-      done: isValidCpf((provider as any)?.cpf) || isValidCpf((profile as any)?.tax_id) || isValidCnpj((provider as any)?.cnpj) || isValidCnpj((profile as any)?.tax_id),
-      required: false,
-      cta: { label: 'Editar perfil', to: '/dashboard/perfil' },
-    },
-  ], [profile, provider, counts]);
-
-  const requiredItems = items.filter((i) => i.required);
-  const optionalItems = items.filter((i) => !i.required);
-  const requiredDone = requiredItems.filter((i) => i.done).length;
-  const optionalDone = optionalItems.filter((i) => i.done).length;
-  const totalDone = items.filter((i) => i.done).length;
-  const percent = Math.round((totalDone / items.length) * 100);
-  const publishable = requiredDone === requiredItems.length;
-  const missingRequired = requiredItems.filter((i) => !i.done);
+  useEffect(() => { document.title = 'Status do cadastro | Preciso de Um'; }, []);
 
   return (
     <DashboardLayout>
-
       <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6">
         <header className="space-y-1.5">
           <div className="flex items-center justify-between gap-2">
@@ -237,7 +50,7 @@ const DashboardOnboardingStatusPage = () => {
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => { void Promise.all([refetchProfile?.(), fetchCounts(false)]); }}
+              onClick={() => { void refresh(); }}
               disabled={refreshing || loading}
               className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
               aria-label="Atualizar status"
@@ -247,11 +60,11 @@ const DashboardOnboardingStatusPage = () => {
             </Button>
           </div>
           <h1 className="font-display text-2xl font-extrabold text-foreground">
-            {publishable ? 'Seu perfil está publicado' : 'Quase lá — falta pouco para publicar'}
+            {publishable ? 'Tudo pronto para publicar' : 'Quase lá — falta pouco para publicar'}
           </h1>
           <p className="text-sm text-muted-foreground">
             {publishable
-              ? 'Você já aparece nas buscas. Complete os opcionais para ganhar mais visibilidade.'
+              ? 'Você completou os itens obrigatórios. Continue com os opcionais para ganhar mais visibilidade.'
               : 'Conclua os itens obrigatórios para começar a receber clientes.'}
           </p>
         </header>
@@ -281,6 +94,26 @@ const DashboardOnboardingStatusPage = () => {
             />
           </div>
         </section>
+
+        {/* CTA verde quando 100% obrigatórios */}
+        {!loading && publishable && (
+          <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/5 p-3">
+            <div className="flex items-start gap-2">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600 shrink-0" />
+              <div className="space-y-1 flex-1">
+                <p className="text-sm font-semibold text-foreground">Você está pronto para publicar</p>
+                <p className="text-xs text-muted-foreground">
+                  Revise as informações no Wizard e confirme a publicação.
+                </p>
+                <Button asChild size="sm" className="mt-2 h-9 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white hover:opacity-95">
+                  <Link to="/onboarding-v2?step=review">
+                    Revisar e publicar <ArrowRight className="ml-1.5 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Bloqueio publicação */}
         {!loading && !publishable && (
@@ -317,8 +150,8 @@ const DashboardOnboardingStatusPage = () => {
   );
 };
 
-const ItemRow = ({ item, loading }: { item: ChecklistItem; loading: boolean }) => {
-  const Icon = item.icon;
+const ItemRow = ({ item, loading }: { item: OnboardingChecklistItem; loading: boolean }) => {
+  const Icon = ITEM_ICONS[item.key] || User;
   return (
     <div className={`flex items-center gap-3 rounded-xl border p-3 transition ${
       item.done ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-border bg-card'
