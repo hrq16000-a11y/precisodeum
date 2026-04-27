@@ -107,9 +107,9 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
       <header className="text-center space-y-1">
         <h2 className="text-xl font-semibold">Crie seus álbuns de portfólio</h2>
         <p className="text-sm text-muted-foreground">
-          Organize seus trabalhos por tema (ex: "Reformas", "Eventos"). Você pode ter até{' '}
+          Organize seus trabalhos por tema (ex: "Reformas", "Eventos"). Até{' '}
           <span className="font-medium text-foreground">{MAX_ALBUMS} álbuns</span>.
-          As fotos são adicionadas depois pelo painel.
+          Toque em um álbum para enviar fotos agora mesmo.
         </p>
       </header>
 
@@ -124,24 +124,53 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
           <p className="mt-2 text-xs text-muted-foreground">Nenhum álbum ainda — crie o primeiro abaixo.</p>
         ) : (
           <ul className="mt-2 divide-y divide-border">
-            {albums.map(a => (
-              <li key={a.id} className="flex items-center justify-between gap-2 py-2">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{a.name}</p>
-                  {a.description && (
-                    <p className="truncate text-xs text-muted-foreground">{a.description}</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleRemove(a.id)}
-                  className="rounded p-1 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-                  aria-label="Remover álbum"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
+            {albums.map(a => {
+              const expanded = expandedAlbumId === a.id;
+              return (
+                <li key={a.id} className="py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedAlbumId(expanded ? null : a.id)}
+                      className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                    >
+                      {expanded
+                        ? <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{a.name}</p>
+                        {a.description && (
+                          <p className="truncate text-xs text-muted-foreground">{a.description}</p>
+                        )}
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(a.id)}
+                      className="rounded p-1 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                      aria-label="Remover álbum"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <AnimatePresence initial={false}>
+                    {expanded && user?.id && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden pt-2"
+                      >
+                        <PortfolioAlbumPhotoUploader
+                          albumId={a.id}
+                          userId={user.id}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
