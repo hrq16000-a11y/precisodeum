@@ -51,6 +51,7 @@ import {
   clearOnboardingV2Draft,
 } from './useOnboardingV2Draft';
 import { flushOnboardingV2Draft, flushLocalDraft } from './flushDraft';
+import { findExistingFirstService, findExistingProvider } from './findExistingRecords';
 import {
   useOnboardingV2RemoteDraft,
   fetchRemoteDraft,
@@ -389,8 +390,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
       // 2) provider apenas se for prestador
       if ((p.profile_type || 'provider') === 'provider') {
+        // ANTI-DUPLICAÇÃO: query ignora qualquer ID local e busca direto no DB
+        // por user_id. Se já existir, atualiza; senão, insere uma única vez.
         const { data: existing } = await supabase
-          .from('providers').select('*').eq('user_id', user.id).limit(1);
+          .from('providers').select('*').eq('user_id', user.id).is('deleted_at', null).limit(1);
 
         if (existing && existing[0]) {
           const updPayload = normalizeProviderPayload({
@@ -404,20 +407,26 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           if (error) throw error;
           dispatch({ type: 'SET_PROVIDER_ID', id: existing[0].id });
         } else {
-          const baseSlug = slugify(p.full_name || user.email?.split('@')[0] || 'profissional');
-          const insPayload = normalizeProviderPayload({
-            user_id: user.id,
-            slug: `${baseSlug}-${user.id.slice(0, 6)}`,
-            city: p.city || '',
-            state: p.state || '',
-            whatsapp: p.whatsapp || '',
-            phone: p.whatsapp || '',
-            account_type: p.kind === 'pj' ? 'company' : 'autonomous',
-            status: 'pending',
-          });
-          const { data: created, error } = await supabase.from('providers').insert(insPayload as any).select('id').single();
-          if (error) throw error;
-          dispatch({ type: 'SET_PROVIDER_ID', id: created!.id });
+          // Double-check via helper (cobre raça entre tabs concorrentes)
+          const reusedId = await findExistingProvider(user.id);
+          if (reusedId) {
+            dispatch({ type: 'SET_PROVIDER_ID', id: reusedId });
+          } else {
+            const baseSlug = slugify(p.full_name || user.email?.split('@')[0] || 'profissional');
+            const insPayload = normalizeProviderPayload({
+              user_id: user.id,
+              slug: `${baseSlug}-${user.id.slice(0, 6)}`,
+              city: p.city || '',
+              state: p.state || '',
+              whatsapp: p.whatsapp || '',
+              phone: p.whatsapp || '',
+              account_type: p.kind === 'pj' ? 'company' : 'autonomous',
+              status: 'pending',
+            });
+            const { data: created, error } = await supabase.from('providers').insert(insPayload as any).select('id').single();
+            if (error) throw error;
+            dispatch({ type: 'SET_PROVIDER_ID', id: created!.id });
+          }
         }
       }
       return true;
@@ -499,26 +508,43 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         dispatch({ type: 'PATCH_PROFILE', patch: { primary_category_id: categoryId } });
       }
 
-      // 1) RPC oficial — cria serviço atomicamente
-      const { data, error } = await (supabase as any).rpc('create_service_atomic', {
-        _provider_id: state.providerId,
-        _service_name: resolvedCategoryName, // ← invariante reforçada
-        _description: s.description || '',
-        _whatsapp: p.whatsapp,
-        _service_area: serviceArea,
-        _address: cityForAddress,
-        _working_hours: workingHoursSummary,
-        _website: '',
-        _instagram_url: '',
-        _facebook_url: '',
-        _youtube_url: '',
-        _category_id: categoryId,
-        _category_ids: [categoryId, ...s.category_ids.slice(1)],
-      });
-      if (error || !data?.success) {
-        throw new Error(error?.message || data?.error || 'Falha ao criar serviço');
+      // ── ANTI-DUPLICAÇÃO ────────────────────────────────────────────────────
+      // Antes de criar, verifica se este provider já tem serviço dessa
+      // categoria (ou nome). Se tiver, reusa o ID — evita duplicar registros
+      // e estourar a cota de serviços do plano.
+      if (state.firstServiceId) {
+        // Estado local já tem ID → confiar e seguir para herança/conclusão.
+      } else {
+        const reusedId = await findExistingFirstService(
+          state.providerId,
+          categoryId,
+          resolvedCategoryName,
+        );
+        if (reusedId) {
+          dispatch({ type: 'SET_FIRST_SERVICE_ID', id: reusedId });
+        } else {
+          // 1) RPC oficial — cria serviço atomicamente
+          const { data, error } = await (supabase as any).rpc('create_service_atomic', {
+            _provider_id: state.providerId,
+            _service_name: resolvedCategoryName, // ← invariante reforçada
+            _description: s.description || '',
+            _whatsapp: p.whatsapp,
+            _service_area: serviceArea,
+            _address: cityForAddress,
+            _working_hours: workingHoursSummary,
+            _website: '',
+            _instagram_url: '',
+            _facebook_url: '',
+            _youtube_url: '',
+            _category_id: categoryId,
+            _category_ids: [categoryId, ...s.category_ids.slice(1)],
+          });
+          if (error || !data?.success) {
+            throw new Error(error?.message || data?.error || 'Falha ao criar serviço');
+          }
+          dispatch({ type: 'SET_FIRST_SERVICE_ID', id: data.service_id });
+        }
       }
-      dispatch({ type: 'SET_FIRST_SERVICE_ID', id: data.service_id });
 
       // 2) Herança — categoria principal + horário sobem para o provider
       const updates: any = { category_id: categoryId };
