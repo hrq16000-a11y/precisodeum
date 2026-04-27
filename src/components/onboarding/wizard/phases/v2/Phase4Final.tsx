@@ -55,7 +55,10 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
         </p>
       </header>
 
-      <div className="flex justify-center py-2">
+      <div
+        ref={focusAvatar.ref as any}
+        className={`flex justify-center py-2 rounded-2xl ${focusAvatar.highlightClass}`}
+      >
         {userId && (
           <AvatarUpload
             userId={userId}
