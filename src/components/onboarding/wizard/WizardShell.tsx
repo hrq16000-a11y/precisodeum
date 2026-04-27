@@ -21,7 +21,7 @@
  * implementação. Toda persistência (provider, create_service_atomic,
  * patches incrementais, drafts local + remote) permanece encapsulada lá.
  */
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import TriageOrchestrator from '@/components/onboarding/wizard/phases/bet/BetModeShell';
 import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
@@ -40,6 +40,7 @@ type Stage = 'triage' | 'service-and-profile';
 
 export default function WizardShell() {
   const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
+  const [backSignal, setBackSignal] = useState(0);
   // Stage continua como "qual orquestrador renderizar" — é derivado da fase.
   const stage: Stage = state.phase.startsWith('triage_') ? 'triage' : 'service-and-profile';
   const lastTrackedPhase = useRef<UnifiedPhase | null>(null);
@@ -91,7 +92,8 @@ export default function WizardShell() {
     });
     // Dispara um evento DOM que os steps podem opcionalmente capturar.
     // Como fallback, o usuário também tem o botão "Voltar" interno do step.
-    window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: state.phase } }));
+    dispatch({ type: 'PREV_PHASE' });
+    setBackSignal((value) => value + 1);
   }, [state.phase]);
 
   return (
@@ -112,11 +114,13 @@ export default function WizardShell() {
       )}
       {stage === 'triage' ? (
         <TriageOrchestrator
+          key={`triage-${backSignal}`}
           onInternalHandoff={handleTriageDone}
           onPhaseChange={handleTriagePhaseChange}
         />
       ) : (
         <MainOrchestrator
+          key={`main-${backSignal}`}
           internalHandoffFromTriage
           onPhaseChange={handleMainPhaseChange}
         />
