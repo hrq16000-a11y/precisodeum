@@ -764,13 +764,15 @@ export const OnboardingV2Shell = () => {
       </AnimatePresence>
 
       <main className="mx-auto max-w-md px-4 py-6 sm:py-10">
-        {pendingCoreFields.length < 4 && (
+        {pendingCoreFields.length < 5 && (
           <div className="mb-4 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">Já preenchido:</span>{' '}
             {[
               coreLocks.full_name ? 'nome' : null,
               coreLocks.whatsapp ? 'WhatsApp' : null,
               coreLocks.city ? 'cidade' : null,
+              coreLocks.state ? 'UF' : null,
+              coreLocks.document ? 'documento' : null,
             ].filter(Boolean).join(' • ')}
             {pendingCoreFields.length > 0 && (
               <>
