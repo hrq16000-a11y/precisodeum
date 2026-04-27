@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
 import AvatarUpload from '@/components/AvatarUpload';
 import type { OnboardingProfileData } from './types';
+import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 
 /* ───── 4.0 Foto de perfil (se ainda faltar) ───── */
 
