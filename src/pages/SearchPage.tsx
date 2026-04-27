@@ -996,37 +996,78 @@ const SearchPage = () => {
                         <div className="h-px flex-1 bg-border" />
                       </div>
                     )}
-                    <motion.div
-                      className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2"
-                      initial="hidden"
-                      animate="show"
-                      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
-                    >
-                      {paginatedLocal.map((p, idx) => (
-                        <Fragment key={p.id}>
-                          <motion.div
-                            variants={{ hidden: { opacity: 0, y: 16, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1 } }}
-                            transition={{ duration: 0.35 }}
-                            layout
-                          >
-                            <ProviderCard provider={p} isFallback={isFallback} />
-                          </motion.div>
-                          {/* Inject sponsor ad every 5 results */}
-                          {(idx + 1) % 5 === 0 && (
+                    {localGroupedByNeighborhood ? (
+                      // Sub-agrupado por bairro (GPS + sort=nearest + >=2 bairros)
+                      <div className="space-y-5">
+                        {localGroupedByNeighborhood.map(([bairro, items]) => (
+                          <div key={bairro}>
+                            <div className="mb-2 flex items-center gap-2">
+                              <Building2 className="h-3 w-3 text-muted-foreground" strokeWidth={1.75} />
+                              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {bairro}
+                              </span>
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{items.length}</Badge>
+                              {items[0]?.distanceKm != null && items[0].distanceKm > 0 && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  ~{items[0].distanceKm.toFixed(1)} km
+                                </span>
+                              )}
+                              <div className="h-px flex-1 bg-border" />
+                            </div>
                             <motion.div
-                              variants={{ hidden: { opacity: 0 }, show: { opacity: 1 } }}
-                              className="col-span-full"
+                              className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2"
+                              initial="hidden"
+                              animate="show"
+                              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
                             >
-                              <Suspense fallback={null}>
-                                <SponsorAdSlot locationKey="search-inline" layout="card" maxAds={1} />
-                              </Suspense>
+                              {items.map((p) => (
+                                <motion.div
+                                  key={p.id}
+                                  variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
+                                  transition={{ duration: 0.3 }}
+                                  layout
+                                >
+                                  <ProviderCard provider={p} isFallback={isFallback} />
+                                </motion.div>
+                              ))}
                             </motion.div>
-                          )}
-                        </Fragment>
-                      ))}
-                    </motion.div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <motion.div
+                        className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2"
+                        initial="hidden"
+                        animate="show"
+                        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
+                      >
+                        {paginatedLocal.map((p, idx) => (
+                          <Fragment key={p.id}>
+                            <motion.div
+                              variants={{ hidden: { opacity: 0, y: 16, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1 } }}
+                              transition={{ duration: 0.35 }}
+                              layout
+                            >
+                              <ProviderCard provider={p} isFallback={isFallback} />
+                            </motion.div>
+                            {/* Inject sponsor ad every 5 results */}
+                            {(idx + 1) % 5 === 0 && (
+                              <motion.div
+                                variants={{ hidden: { opacity: 0 }, show: { opacity: 1 } }}
+                                className="col-span-full"
+                              >
+                                <Suspense fallback={null}>
+                                  <SponsorAdSlot locationKey="search-inline" layout="card" maxAds={1} />
+                                </Suspense>
+                              </motion.div>
+                            )}
+                          </Fragment>
+                        ))}
+                      </motion.div>
+                    )}
                   </>
                 )}
+
 
                 {/* Nearby cities section (same state / <100km) */}
                 {paginatedNearby.length > 0 && (
