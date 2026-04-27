@@ -76,6 +76,8 @@ export default function PhaseClientCity({ state, patch, finish, addPoints }: Pro
             value={{ city: state.city, state: state.state }}
             onChange={handleCity}
             placeholder="Digite sua cidade"
+            preferredUF={preferredUF}
+            statusText={preferredUF ? `Mostrando primeiro cidades de ${preferredUF}` : undefined}
           />
         </div>
       </div>
