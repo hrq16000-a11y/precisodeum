@@ -709,11 +709,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           />
         );
       case 'phase4_avatar':
-        // Pula apenas se já tem foto. Caso contrário, é OBRIGATÓRIO mostrar.
-        if (state.profile.avatar_url) {
-          dispatch({ type: 'NEXT' });
-          return null;
-        }
         return (
           <Phase4Avatar
             data={state.profile}
@@ -735,12 +730,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           />
         );
       case 'phase4_extras_a':
-        // Regra de Ouro: só pula se AMBOS já estão preenchidos.
-        // (Antes pulava com apenas um, deixando perfil incompleto.)
-        if (state.profile.neighborhood && state.profile.bio && state.profile.bio.length >= 20) {
-          dispatch({ type: 'NEXT' });
-          return null;
-        }
         return (
           <Phase4ExtrasA
             data={state.profile}
@@ -759,11 +748,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           />
         );
       case 'phase4_extras_b':
-        // Só pula se AMBAS as redes já existem.
-        if (state.profile.instagram_url && state.profile.facebook_url) {
-          dispatch({ type: 'GO_TO', phase: 'done' });
-          return null;
-        }
         return (
           <Phase4ExtrasB
             data={state.profile}
@@ -801,7 +785,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   void isCelebrationOrLater;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen rounded-[28px] border border-border/60 bg-gradient-to-b from-card/95 via-background to-amber-50/20 shadow-[0_24px_80px_-36px_hsl(var(--foreground)/0.3)]">
       {/* Aviso "rascunho restaurado" — diferencia local x remoto */}
       <AnimatePresence>
         {draftRestored && (
