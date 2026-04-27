@@ -27,6 +27,7 @@ import TriageOrchestrator from '@/components/onboarding/wizard/phases/bet/BetMod
 import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
 import Step20_MoreServices from '@/components/onboarding/wizard/phases/Step20_MoreServices';
 import Step21_PortfolioAlbums from '@/components/onboarding/wizard/phases/Step21_PortfolioAlbums';
+import PointsHud from '@/components/onboarding/wizard/phases/bet/PointsHud';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { WizardProgressBar } from './WizardProgressBar';
 import { trackOnboardingEvent } from './phases/v2/telemetry';
@@ -34,6 +35,9 @@ import {
   initialWizardState,
   mapMainPhaseToUnified,
   mapTriagePhaseToUnified,
+  unifiedPhaseIndex,
+  UNIFIED_PHASE_LABELS,
+  UNIFIED_VISIBLE_PHASES,
   wizardReducer,
   type UnifiedPhase,
 } from './wizardReducer';
