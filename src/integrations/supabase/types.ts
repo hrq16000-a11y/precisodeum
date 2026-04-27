@@ -6794,6 +6794,7 @@ export type Database = {
       normalize_uf: { Args: { _input: string }; Returns: string }
       process_daily_stats: { Args: never; Returns: number }
       process_lead_followup_reminders: { Args: never; Returns: Json }
+      publish_my_provider: { Args: never; Returns: Json }
       recalc_provider_community_verified: {
         Args: { _provider_id: string }
         Returns: boolean

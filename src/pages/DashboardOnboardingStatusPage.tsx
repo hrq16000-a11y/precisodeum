@@ -6,14 +6,21 @@
  * + toast de "100% pronto para publicar".
  */
 
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   CheckCircle2, AlertTriangle, Loader2, ArrowRight, RefreshCw,
-  User, Phone, MapPin, Briefcase, Camera, ImageIcon, ShieldCheck, Sparkles, Globe,
+  User, Phone, MapPin, Briefcase, Camera, ImageIcon, ShieldCheck, Sparkles, Globe, Rocket,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { useOnboardingStatus, type OnboardingChecklistItem } from '@/hooks/useOnboardingStatus';
 
 const ITEM_ICONS: Record<string, typeof User> = {
@@ -35,6 +42,45 @@ const DashboardOnboardingStatusPage = () => {
     requiredDone, optionalDone, totalDone, percent, publishable,
     missingRequired, refresh,
   } = status;
+
+  const { provider, refetchProfile } = useAuth();
+  const navigate = useNavigate();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+
+  const isPublished = (provider as any)?.status === 'approved' || (provider as any)?.status === 'active';
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      const { data, error } = await (supabase as any).rpc('publish_my_provider');
+      if (error) throw error;
+      const res = (data || {}) as { ok?: boolean; reason?: string; status?: string; missing?: string[]; already?: boolean };
+      if (!res.ok) {
+        toast.error('Não foi possível publicar', {
+          description: res.reason === 'missing_required'
+            ? `Faltam itens obrigatórios: ${(res.missing || []).join(', ')}`
+            : 'Verifique seus dados e tente novamente.',
+        });
+        return;
+      }
+      await refetchProfile?.();
+      await refresh();
+      setConfirmOpen(false);
+      if (res.already) {
+        toast.success('Seu perfil já está publicado.');
+      } else {
+        toast.success('Perfil publicado com sucesso!', {
+          description: 'Você já aparece nas buscas. Boa sorte!',
+          action: { label: 'Ver minha página', onClick: () => navigate('/dashboard/minha-pagina') },
+        });
+      }
+    } catch (e: any) {
+      toast.error('Erro ao publicar', { description: e?.message || 'Tente novamente em instantes.' });
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   useEffect(() => { document.title = 'Status do cadastro | Preciso de Um'; }, []);
 
@@ -95,25 +141,83 @@ const DashboardOnboardingStatusPage = () => {
           </div>
         </section>
 
-        {/* CTA verde quando 100% obrigatórios */}
+        {/* CTA — pronto para publicar (ou já publicado) */}
         {!loading && publishable && (
-          <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/5 p-3">
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600 shrink-0" />
-              <div className="space-y-1 flex-1">
-                <p className="text-sm font-semibold text-foreground">Você está pronto para publicar</p>
-                <p className="text-xs text-muted-foreground">
-                  Revise as informações no Wizard e confirme a publicação.
+          <div className={`rounded-2xl border p-4 ${isPublished ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-emerald-500/40 bg-gradient-to-br from-emerald-500/10 via-card to-amber-500/5'}`}>
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-md">
+                {isPublished ? <CheckCircle2 className="h-5 w-5" /> : <Rocket className="h-5 w-5" />}
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <p className="text-sm font-bold text-foreground">
+                  {isPublished ? 'Seu perfil está publicado' : 'Tudo pronto para publicar'}
                 </p>
-                <Button asChild size="sm" className="mt-2 h-9 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white hover:opacity-95">
-                  <Link to="/onboarding-v2?step=review">
-                    Revisar e publicar <ArrowRight className="ml-1.5 h-4 w-4" />
-                  </Link>
-                </Button>
+                <p className="text-xs text-muted-foreground">
+                  {isPublished
+                    ? 'Você já aparece nas buscas. Continue evoluindo seu perfil para ganhar mais visibilidade.'
+                    : 'Confirme abaixo para publicar seu perfil e começar a aparecer nas buscas. Você pode editar tudo depois.'}
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {isPublished ? (
+                    <Button asChild size="sm" variant="outline" className="h-9">
+                      <Link to="/dashboard/minha-pagina">
+                        Ver minha página <ArrowRight className="ml-1.5 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => setConfirmOpen(true)}
+                        className="h-9 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white hover:opacity-95"
+                      >
+                        <Rocket className="mr-1.5 h-4 w-4" /> Publicar meu perfil
+                      </Button>
+                      <Button asChild size="sm" variant="outline" className="h-9">
+                        <Link to="/onboarding-v2?step=review">
+                          Revisar antes
+                        </Link>
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         )}
+
+        {/* Diálogo de confirmação de publicação */}
+        <AlertDialog open={confirmOpen} onOpenChange={(o) => { if (!publishing) setConfirmOpen(o); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Publicar seu perfil agora?</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>Ao confirmar, seu perfil ficará visível nas buscas e poderá receber leads.</p>
+                  <ul className="rounded-lg border border-border bg-muted/40 p-3 text-xs space-y-1">
+                    <li>• Nome: <strong className="text-foreground">{requiredItems.find(i => i.key === 'name')?.done ? 'OK' : '—'}</strong></li>
+                    <li>• WhatsApp: <strong className="text-foreground">{requiredItems.find(i => i.key === 'whatsapp')?.done ? 'OK' : '—'}</strong></li>
+                    <li>• Cidade/Estado: <strong className="text-foreground">{requiredItems.find(i => i.key === 'location')?.done ? 'OK' : '—'}</strong></li>
+                    <li>• 1º serviço: <strong className="text-foreground">{requiredItems.find(i => i.key === 'service')?.done ? 'OK' : '—'}</strong></li>
+                  </ul>
+                  <p className="text-[11px]">Você pode editar ou despublicar a qualquer momento pelo seu perfil.</p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={publishing}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={publishing}
+                onClick={(e) => { e.preventDefault(); void handlePublish(); }}
+                className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white hover:opacity-95"
+              >
+                {publishing ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Rocket className="mr-1.5 h-4 w-4" />}
+                Confirmar publicação
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Bloqueio publicação */}
         {!loading && !publishable && (
