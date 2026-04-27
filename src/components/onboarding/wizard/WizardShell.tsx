@@ -35,6 +35,7 @@ import {
   initialWizardState,
   mapMainPhaseToUnified,
   mapTriagePhaseToUnified,
+  PROVIDER_WIZARD_PHASE_ORDER,
   unifiedPhaseIndex,
   UNIFIED_PHASE_LABELS,
   UNIFIED_VISIBLE_PHASES,
@@ -138,10 +139,11 @@ export default function WizardShell() {
   const hudProgress = Math.min(1, (phaseIdx + 1) / UNIFIED_VISIBLE_PHASES);
   const hudLabel = UNIFIED_PHASE_LABELS[state.phase] ?? '';
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
+  const progressOrder = state.triage.intent === 'professional' ? PROVIDER_WIZARD_PHASE_ORDER : undefined;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
-      <WizardProgressBar phase={state.phase} />
+      <WizardProgressBar phase={state.phase} phaseOrder={progressOrder} />
       {showGlobalHud && (
         <PointsHud points={hudPoints} phaseLabel={hudLabel} progress={hudProgress} />
       )}

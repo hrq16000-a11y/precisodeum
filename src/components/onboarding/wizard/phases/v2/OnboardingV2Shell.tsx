@@ -59,6 +59,7 @@ import {
   getPendingOnboardingCoreFields,
   resolveOnboardingV2SeedState,
 } from './bootstrap';
+import { buildWorkingHoursSummary } from './workingHours';
 
 function slugify(input: string): string {
   return (input || '')
@@ -90,9 +91,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   const { user, profile, provider, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const skipDraftRestore = internalHandoffFromTriage && (seedState?.phase === 'phase2_service' || seedState?.phase === 'phase1_action');
   // Restaura draft local ao montar (se existir e não estiver expirado)
   const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState, (init) => {
-    const draft = readOnboardingV2Draft();
+    const draft = skipDraftRestore ? null : readOnboardingV2Draft();
     const seeded = {
       ...init,
       ...seedState,
@@ -128,18 +130,20 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   // Aviso de "rascunho restaurado" do LOCAL (mesmo dispositivo)
   useEffect(() => {
+    if (skipDraftRestore) return;
     const draft = readOnboardingV2Draft();
     if (draft && draft.phase && draft.phase !== 'phase1_action') {
       setDraftRestored({ source: 'local' });
       const t = setTimeout(() => setDraftRestored(null), 5000);
       return () => clearTimeout(t);
     }
-  }, []);
+  }, [skipDraftRestore]);
 
   // Detecta rascunho REMOTO (troca de dispositivo) e ABRE MODAL para o usuário decidir.
   // Não auto-hidrata mais — evita "salto" silencioso de etapa.
   useEffect(() => {
     if (!user?.id) return;
+    if (skipDraftRestore) return;
     const local = readOnboardingV2Draft();
     if (local && local.phase && local.phase !== 'phase1_action') return;
     let alive = true;
@@ -151,7 +155,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       setShowRemoteModal(true);
     })();
     return () => { alive = false; };
-  }, [user?.id]);
+  }, [user?.id, skipDraftRestore]);
 
   const handleRemoteContinue = () => {
     if (remoteDraft) {
@@ -374,6 +378,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       const p = state.profile;
       const cityForAddress = [p.city, p.state].filter(Boolean).join(' - ');
       const serviceArea = s.cities_served.join('; ');
+      const workingHoursSummary = buildWorkingHoursSummary(s.working_hours, s.working_days);
 
       // ── INVARIANTE OBRIGATÓRIA ─────────────────────────────────────────────
       // O nome do 1º serviço é SEMPRE o nome oficial da categoria escolhida e
@@ -438,7 +443,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         _whatsapp: p.whatsapp,
         _service_area: serviceArea,
         _address: cityForAddress,
-        _working_hours: s.working_hours,
+        _working_hours: workingHoursSummary,
         _website: '',
         _instagram_url: '',
         _facebook_url: '',
@@ -453,7 +458,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
       // 2) Herança — categoria principal + horário sobem para o provider
       const updates: any = { category_id: categoryId };
-      if (s.working_hours) updates.working_hours = s.working_hours;
+      if (workingHoursSummary) updates.working_hours = workingHoursSummary;
       if (s.starting_price_brl != null) updates.starting_price = s.starting_price_brl;
       await supabase.from('providers').update(updates).eq('id', state.providerId);
 
@@ -704,11 +709,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           />
         );
       case 'phase4_avatar':
-        // Pula apenas se já tem foto. Caso contrário, é OBRIGATÓRIO mostrar.
-        if (state.profile.avatar_url) {
-          dispatch({ type: 'NEXT' });
-          return null;
-        }
         return (
           <Phase4Avatar
             data={state.profile}
@@ -730,12 +730,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           />
         );
       case 'phase4_extras_a':
-        // Regra de Ouro: só pula se AMBOS já estão preenchidos.
-        // (Antes pulava com apenas um, deixando perfil incompleto.)
-        if (state.profile.neighborhood && state.profile.bio && state.profile.bio.length >= 20) {
-          dispatch({ type: 'NEXT' });
-          return null;
-        }
         return (
           <Phase4ExtrasA
             data={state.profile}
@@ -754,11 +748,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           />
         );
       case 'phase4_extras_b':
-        // Só pula se AMBAS as redes já existem.
-        if (state.profile.instagram_url && state.profile.facebook_url) {
-          dispatch({ type: 'GO_TO', phase: 'done' });
-          return null;
-        }
         return (
           <Phase4ExtrasB
             data={state.profile}
@@ -796,7 +785,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   void isCelebrationOrLater;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen rounded-[28px] border border-border/60 bg-gradient-to-b from-card/95 via-background to-amber-50/20 shadow-[0_24px_80px_-36px_hsl(var(--foreground)/0.3)]">
       {/* Aviso "rascunho restaurado" — diferencia local x remoto */}
       <AnimatePresence>
         {draftRestored && (

@@ -151,6 +151,7 @@ export function buildOnboardingV2BootstrapState({ profile, provider }: Bootstrap
       category_ids: primary_category_id ? [primary_category_id] : [],
       cities_served: city ? [city] : [],
       starting_price_brl: typeof provider?.starting_price === 'number' ? provider.starting_price : null,
+      working_days: [],
       working_hours,
     },
   };
