@@ -37,6 +37,7 @@ interface AvatarProps {
 }
 
 export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userId }: AvatarProps) => {
+  const focusAvatar = useFocusFieldFromReview('avatar_url');
   const initials = (data.full_name || 'EU')
     .split(' ')
     .map((s) => s[0])
