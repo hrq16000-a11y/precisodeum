@@ -260,7 +260,7 @@ export const Phase2Service = ({
 
       <div className="flex gap-2 pt-2">
         <Button type="button" variant="ghost" onClick={onSkip} className="flex-1">Pular por enquanto</Button>
-        <Button type="button" onClick={handleAdvance} disabled={!canAdvance} className="flex-1">Continuar</Button>
+        <Button type="button" onClick={handleAdvance} disabled={!canAdvance} className="flex-1">Salvar e continuar</Button>
       </div>
     </div>
   );
