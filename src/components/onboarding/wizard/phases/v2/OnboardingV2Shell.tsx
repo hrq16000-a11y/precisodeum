@@ -50,6 +50,7 @@ import {
   readOnboardingV2Draft,
   clearOnboardingV2Draft,
 } from './useOnboardingV2Draft';
+import { flushOnboardingV2Draft, flushLocalDraft } from './flushDraft';
 import {
   useOnboardingV2RemoteDraft,
   fetchRemoteDraft,
