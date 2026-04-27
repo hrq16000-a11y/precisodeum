@@ -22,6 +22,7 @@ interface DraftEnvelope {
   profile: OnboardingState['profile'];
   service: OnboardingState['service'];
   phase: OnboardingState['phase'];
+  userRef: OnboardingState['userRef'];
   providerId: OnboardingState['providerId'];
   firstServiceId: OnboardingState['firstServiceId'];
 }
@@ -41,6 +42,7 @@ export function readOnboardingV2Draft(): Partial<OnboardingState> | null {
       profile: parsed.profile,
       service: parsed.service,
       phase: parsed.phase,
+      userRef: parsed.userRef ?? null,
       providerId: parsed.providerId ?? null,
       firstServiceId: parsed.firstServiceId ?? null,
     };
@@ -75,6 +77,7 @@ export function useOnboardingV2Draft(state: OnboardingState) {
           profile: state.profile,
           service: state.service,
           phase: state.phase,
+          userRef: state.userRef,
           providerId: state.providerId,
           firstServiceId: state.firstServiceId,
         };
@@ -87,5 +90,5 @@ export function useOnboardingV2Draft(state: OnboardingState) {
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
-  }, [state.profile, state.service, state.phase, state.providerId, state.firstServiceId]);
+  }, [state.profile, state.service, state.phase, state.userRef, state.providerId, state.firstServiceId]);
 }
