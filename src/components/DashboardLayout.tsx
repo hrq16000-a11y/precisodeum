@@ -11,6 +11,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import TopLoadingBar from '@/components/ui/TopLoadingBar';
 import Logo from '@/components/Logo';
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 
 const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
