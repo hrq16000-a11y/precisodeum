@@ -12,7 +12,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Sparkles, ExternalLink, ArrowRight, Briefcase, MapPin, Camera,
-  ImageIcon, ShieldCheck, CheckCircle2, Circle,
+  ImageIcon, ShieldCheck, CheckCircle2, Circle, Share2, Copy, Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,6 +21,9 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
+import { toast } from 'sonner';
+import { whatsappLink } from '@/lib/whatsapp';
+import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
 
 interface ProviderSummary {
   id: string;
