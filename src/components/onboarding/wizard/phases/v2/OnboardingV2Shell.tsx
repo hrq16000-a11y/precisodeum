@@ -77,9 +77,14 @@ interface OnboardingV2ShellProps {
    * que não existe mais agora que o handoff é interno (sem trocar de URL).
    */
   internalHandoffFromTriage?: boolean;
+  /**
+   * Reporta a fase interna corrente para o WizardShell exibir a barra
+   * de progresso global (Consolidação Fase 1).
+   */
+  onPhaseChange?: (phase: import('./types').OnboardingPhase) => void;
 }
 
-export const OnboardingV2Shell = ({ internalHandoffFromTriage = false }: OnboardingV2ShellProps = {}) => {
+export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, onPhaseChange }: OnboardingV2ShellProps = {}) => {
   const { user, profile, provider, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -232,6 +237,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false }: Onboard
       userId: user?.id,
     });
   }, [state.phase, user?.id]);
+
+  // Reporta a fase para a barra de progresso global do WizardShell.
+  useEffect(() => {
+    onPhaseChange?.(state.phase);
+  }, [state.phase, onPhaseChange]);
 
   /* ───── Persistência: cria/atualiza provider ao fim da Fase 1 ───── */
   const persistPhase1 = async () => {
@@ -724,27 +734,19 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false }: Onboard
   };
 
   // Progresso: a celebração já é "100%" sensorial, então tudo a partir dela conta como completo.
+  // A barra de progresso GLOBAL agora vive no WizardShell. Mantemos apenas
+  // o cálculo interno por compat (testes), mas não renderizamos mais a barra
+  // local — evita duplicidade visual quando aberto via /cadastro-inicial.
   const isCelebrationOrLater =
     state.phase === 'phase3_celebration' ||
     state.phase === 'phase4_document' ||
     state.phase === 'phase4_extras_a' ||
     state.phase === 'phase4_extras_b' ||
     state.phase === 'done';
-  const progress = isCelebrationOrLater
-    ? 100
-    : Math.min(95, ((phaseIndex(state.phase) + 1) / VISIBLE_PHASES_COUNT) * 100);
+  void isCelebrationOrLater;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Barra de progresso fixa no topo */}
-      <div className="sticky top-0 z-50 h-1 w-full bg-muted">
-        <motion.div
-          className="h-full bg-gradient-to-r from-accent to-primary"
-          animate={{ width: `${progress}%` }}
-          transition={{ type: 'spring', stiffness: 120, damping: 22 }}
-        />
-      </div>
-
       {/* Aviso "rascunho restaurado" — diferencia local x remoto */}
       <AnimatePresence>
         {draftRestored && (
