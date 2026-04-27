@@ -28,13 +28,29 @@ interface Step21Props {
 }
 
 const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
-  const { user } = useAuth();
+  const { user, provider } = useAuth();
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [saving, setSaving] = useState(false);
+  const [providerId, setProviderId] = useState<string | null>(provider?.id ?? null);
+
+  // Garante providerId mesmo se o context ainda não tiver carregado
+  useEffect(() => {
+    if (providerId || !user?.id) return;
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from('providers')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (active && data?.id) setProviderId(data.id);
+    })();
+    return () => { active = false; };
+  }, [providerId, user?.id]);
 
   const refresh = useCallback(async () => {
     if (!user?.id) return;
@@ -44,7 +60,7 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
       .select('id, name, description')
       .eq('user_id', user.id)
       .order('created_at', { ascending: true });
-    setAlbums(data || []);
+    setAlbums((data || []) as Album[]);
     setLoading(false);
   }, [user?.id]);
 
@@ -53,13 +69,14 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
   const reachedCap = albums.length >= MAX_ALBUMS;
 
   const handleSave = useCallback(async () => {
-    if (!user?.id || !name.trim()) return;
+    if (!user?.id || !providerId || !name.trim()) return;
     setSaving(true);
     try {
       const { error } = await supabase.from('portfolio_albums').insert({
         user_id: user.id,
+        provider_id: providerId,
         name: name.trim(),
-        description: desc.trim() || null,
+        description: desc.trim(),
       });
       if (error) throw error;
       setName('');
@@ -72,7 +89,7 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
     } finally {
       setSaving(false);
     }
-  }, [user?.id, name, desc, refresh]);
+  }, [user?.id, providerId, name, desc, refresh]);
 
   const handleRemove = useCallback(async (id: string) => {
     const { error } = await supabase.from('portfolio_albums').delete().eq('id', id);
