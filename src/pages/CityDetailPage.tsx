@@ -126,7 +126,7 @@ const CityDetailPage = () => {
         phone: p.phone,
         whatsapp: p.whatsapp,
         yearsExperience: p.years_experience,
-        plan: p.plan,
+
         slug: p.slug || p.id,
         featured: p.featured,
         servicesCount: p.services_count || 0,
