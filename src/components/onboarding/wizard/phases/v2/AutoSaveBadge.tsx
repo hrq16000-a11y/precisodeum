@@ -3,7 +3,7 @@
  * salva automaticamente. Some após 4s de inatividade do estado.
  */
 import { useEffect, useState } from 'react';
-import { CloudCheck, Loader2 } from 'lucide-react';
+import { CloudCheck as CloudCheckMissing, Cloud, Check, Loader2 } from 'lucide-react';
 
 interface AutoSaveBadgeProps {
   /** Qualquer dependência cuja mudança signifique "novo dado para salvar". */
