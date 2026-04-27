@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeSlug } from '@/lib/slugify';
@@ -255,6 +256,9 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
           </p>
         )}
       </div>
+
+      {/* Convite para instalar o app — Fase 2 concluída. */}
+      <InstallAppCard source="wizard-phase3-celebration" />
 
       {/* Próximos passos */}
       <div className="space-y-2">
