@@ -13,6 +13,7 @@ export type OnboardingCoreLocks = {
   whatsapp: boolean;
   city: boolean;
   state: boolean;
+  document: boolean;
 };
 
 function normalizePhone(value: unknown): string {
@@ -38,12 +39,16 @@ export function buildOnboardingCoreLocks({ profile, provider }: BootstrapInput):
   const whatsapp = normalizePhone(profile?.whatsapp || provider?.whatsapp || provider?.phone || '');
   const city = String(provider?.city || profile?.city || '').trim();
   const state = String(provider?.state || profile?.state || '').trim();
+  const documentDigits = String(
+    profile?.tax_id || provider?.cpf || provider?.cnpj || ''
+  ).replace(/\D/g, '');
 
   return {
     full_name: full_name.length >= 4,
     whatsapp: whatsapp.length >= 10,
     city: city.length > 0,
     state: state.length === 2,
+    document: documentDigits.length === 11 || documentDigits.length === 14,
   };
 }
 
@@ -62,7 +67,13 @@ export function resolveOnboardingV2SeedState({
 }): Partial<OnboardingState> {
   const draftPhase = draft?.phase ? phaseIndex(draft.phase) : -1;
   const bootstrapPhase = bootstrap?.phase ? phaseIndex(bootstrap.phase) : -1;
-  const forceBootstrapFromBet = source === 'bet-first-service' && bootstrapPhase >= phaseIndex('phase2_service');
+  // "bet-first-service" só FORÇA o bootstrap se o draft ainda não passou da
+  // criação do 1º serviço. Se o draft já está em phase4_*/done (ex.: usuário
+  // pulou o serviço e chegou no upsell de documento), NUNCA regredimos.
+  const forceBootstrapFromBet =
+    source === 'bet-first-service' &&
+    bootstrapPhase >= phaseIndex('phase2_service') &&
+    draftPhase < phaseIndex('phase4_document');
 
   const phase = forceBootstrapFromBet
     ? bootstrap?.phase
@@ -119,7 +130,7 @@ export function buildOnboardingV2BootstrapState({ profile, provider }: Bootstrap
       kind: inferKind(profile, provider),
       full_name,
       whatsapp,
-      document: '',
+      document: String(profile?.tax_id || provider?.cpf || provider?.cnpj || '').replace(/\D/g, ''),
       city,
       state,
       avatar_url: profile?.avatar_url ?? null,

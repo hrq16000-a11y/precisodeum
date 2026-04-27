@@ -91,6 +91,8 @@ interface DocumentProps {
   onSkip: () => void;
   saving: boolean;
   userId?: string;
+  /** Lock vindo do V3: se já preenchido, não pode reabrir/alterar aqui. */
+  locked?: boolean;
 }
 
 function isValidDoc(digits: string, kind: 'pf' | 'pj'): boolean {
@@ -98,10 +100,18 @@ function isValidDoc(digits: string, kind: 'pf' | 'pj'): boolean {
   return kind === 'pj' ? d.length === 14 : d.length === 11;
 }
 
-export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, userId }: DocumentProps) => {
+export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, userId, locked }: DocumentProps) => {
   const [verified, setVerified] = useState(false);
   const [providerStatus, setProviderStatus] = useState<string | null>(null);
   const valid = isValidDoc(data.document, data.kind);
+
+  // Auto-avança quando o documento já foi capturado no V3 (não re-perguntar).
+  useEffect(() => {
+    if (locked && valid) {
+      const t = setTimeout(() => onContinue(), 250);
+      return () => clearTimeout(t);
+    }
+  }, [locked, valid, onContinue]);
 
   // Realtime: ouve mudanças no provider para refletir status "online" assim que o backend confirma.
   useEffect(() => {
@@ -176,13 +186,18 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
             <Label className="text-xs">{data.kind === 'pj' ? 'CNPJ' : 'CPF'}</Label>
             <CpfCnpjInput
               value={data.document}
-              onChange={(digitsOnly) => onChange({ document: digitsOnly })}
+              onChange={(digitsOnly) => { if (!locked) onChange({ document: digitsOnly }); }}
               mode={data.kind === 'pj' ? 'cnpj' : 'cpf'}
               placeholder={data.kind === 'pj' ? '00.000.000/0000-00' : '000.000.000-00'}
+              disabled={!!locked}
             />
-            <p className="mt-1 text-[10px] text-muted-foreground">
-              Usado apenas para validar seu perfil. Nunca exibido publicamente.
-            </p>
+            {locked ? (
+              <p className="mt-1 text-[11px] text-emerald-600">Já preenchido — não pode ser alterado aqui.</p>
+            ) : (
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Usado apenas para validar seu perfil. Nunca exibido publicamente.
+              </p>
+            )}
           </div>
 
           <div className="flex gap-2 pt-2">
