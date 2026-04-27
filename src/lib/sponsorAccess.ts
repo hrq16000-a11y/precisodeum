@@ -14,6 +14,10 @@ export interface SponsorSubscription {
   current_period_start: string | null;
   current_period_end: string | null;
   amount_paid: number | null;
+  plan_id?: string | null;
+  pending_plan_id?: string | null;
+  pending_change_at?: string | null;
+  cancel_at_period_end?: boolean | null;
   sponsor_plans?: SponsorSubscriptionPlan | null;
 }
 
