@@ -23,7 +23,7 @@
  */
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Briefcase, FolderOpen, Sparkles } from 'lucide-react';
 import TriageOrchestrator from '@/components/onboarding/wizard/phases/bet/BetModeShell';
 import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
 import Step20_MoreServices from '@/components/onboarding/wizard/phases/Step20_MoreServices';
@@ -31,6 +31,9 @@ import Step21_PortfolioAlbums from '@/components/onboarding/wizard/phases/Step21
 import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
 import { Button } from '@/components/ui/button';
 import PointsHud from '@/components/onboarding/wizard/phases/bet/PointsHud';
+import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
+import { useEngagementPointsValue } from '@/hooks/useEngagementPoints';
+import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { WizardProgressBar } from './WizardProgressBar';
 import { trackOnboardingEvent } from './phases/v2/telemetry';
