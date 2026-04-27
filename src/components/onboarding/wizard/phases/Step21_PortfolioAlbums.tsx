@@ -37,6 +37,7 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
   const [desc, setDesc] = useState('');
   const [saving, setSaving] = useState(false);
   const [providerId, setProviderId] = useState<string | null>(provider?.id ?? null);
+  const [expandedAlbumId, setExpandedAlbumId] = useState<string | null>(null);
 
   // Garante providerId mesmo se o context ainda não tiver carregado
   useEffect(() => {
