@@ -188,21 +188,21 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               </p>
             </div>
           </div>
-          {/* Mini progress bar for profile completeness (providers only) */}
-          {!isClient && !isRH && (
+          {/* Mini progress bar — usa progresso real do onboarding (providers) */}
+          {isProvider && (
             <div className="mt-2">
               <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[9px] text-sidebar-foreground/40">Perfil</span>
-                {unreadCount > 0 && (
-                  <span className="text-[9px] font-bold text-accent">{unreadCount} nova{unreadCount !== 1 ? 's' : ''}</span>
-                )}
+                <span className="text-[9px] text-sidebar-foreground/40">Cadastro</span>
+                <span className={`text-[9px] font-bold ${onbPublishable ? 'text-emerald-400' : 'text-accent'}`}>
+                  {onbPercent}%{onbPublishable ? ' • pronto' : ''}
+                </span>
               </div>
               <div className="h-1 rounded-full bg-sidebar-border/50 overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-accent"
+                  className={`h-full rounded-full ${onbPublishable ? 'bg-emerald-500' : 'bg-accent'}`}
                   initial={{ width: 0 }}
-                  animate={{ width: '60%' }}
-                  transition={{ delay: 0.5, duration: 0.8, ease: 'easeOut' }}
+                  animate={{ width: `${onbPercent}%` }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
                 />
               </div>
             </div>
