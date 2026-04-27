@@ -12,6 +12,7 @@ import { useSettingValue } from '@/hooks/useSiteSettings';
 import TopLoadingBar from '@/components/ui/TopLoadingBar';
 import Logo from '@/components/Logo';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
