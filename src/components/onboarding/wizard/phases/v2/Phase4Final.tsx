@@ -188,7 +188,7 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
             </div>
           )}
 
-          <div>
+          <div ref={focusDoc.ref as any} className={`rounded-md ${focusDoc.highlightClass}`}>
             <Label className="text-xs">{data.kind === 'pj' ? 'CNPJ' : 'CPF'}</Label>
             <CpfCnpjInput
               value={data.document}
