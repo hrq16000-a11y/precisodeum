@@ -76,6 +76,25 @@ export const UNIFIED_PHASE_ORDER: UnifiedPhase[] = [
   'done',
 ];
 
+export const PROVIDER_WIZARD_PHASE_ORDER: UnifiedPhase[] = [
+  'triage_identity',
+  'triage_who',
+  'triage_pro_kind',
+  'triage_pro_location',
+  'triage_celebration',
+  'main_service',
+  'main_service_details',
+  'main_photos',
+  'main_celebration',
+  'main_document',
+  'main_avatar',
+  'main_extras_a',
+  'main_extras_b',
+  'main_more_services',
+  'main_portfolio_albums',
+  'done',
+];
+
 /** Quantidade de fases visíveis (exclui 'done'). */
 export const UNIFIED_VISIBLE_PHASES = UNIFIED_PHASE_ORDER.length - 1;
 
