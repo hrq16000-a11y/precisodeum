@@ -23,6 +23,7 @@ export interface OnboardingProfileData {
   city: string;
   state: string;                // UF normalizada (2 letras maiúsculas)
   avatar_url: string | null;
+  years_experience: number | null;
   neighborhood: string;         // opcional, Fase 4
   bio: string;                  // opcional, Fase 4
   instagram_url: string;        // opcional, Fase 4
