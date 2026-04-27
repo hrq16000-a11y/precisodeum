@@ -80,7 +80,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
           className="flex-1"
         >
           {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          Continuar <ArrowRight className="h-4 w-4 ml-1" />
+          Salvar e continuar <ArrowRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
     </div>
@@ -317,7 +317,7 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
       <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className="flex-1">Pular</Button>
       <Button type="button" onClick={onContinue} disabled={saving} className="flex-1">
         {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-        Continuar <ArrowRight className="h-4 w-4 ml-1" />
+        Salvar e continuar <ArrowRight className="h-4 w-4 ml-1" />
       </Button>
     </div>
   </div>

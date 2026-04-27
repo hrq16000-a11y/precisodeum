@@ -50,6 +50,7 @@ import {
   readOnboardingV2Draft,
   clearOnboardingV2Draft,
 } from './useOnboardingV2Draft';
+import { flushOnboardingV2Draft, flushLocalDraft } from './flushDraft';
 import {
   useOnboardingV2RemoteDraft,
   fetchRemoteDraft,
@@ -146,6 +147,24 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   useOnboardingV2Draft(state);
   // Auto-save remoto com debounce (cross-device)
   useOnboardingV2RemoteDraft(state, user?.id);
+
+  // Flush imediato (local + remoto) ao TROCAR DE FASE — garante que
+  // "Salvar e continuar" persista antes de qualquer fechamento de aba,
+  // sem esperar pelos debounces de 600ms / 1500ms.
+  useEffect(() => {
+    if (state.phase === 'phase1_action' || state.phase === 'done') return;
+    flushOnboardingV2Draft(state, user?.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.phase, user?.id]);
+
+  // Flush ao desmontar / antes de fechar a aba
+  useEffect(() => {
+    const onBeforeUnload = () => {
+      try { flushLocalDraft(state); } catch { /* noop */ }
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [state]);
 
   // Aviso de "rascunho restaurado" do LOCAL (mesmo dispositivo)
   useEffect(() => {
