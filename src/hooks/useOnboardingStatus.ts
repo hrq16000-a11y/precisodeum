@@ -342,6 +342,15 @@ export function useOnboardingStatus(): OnboardingStatus {
   };
 }
 
+/**
+ * notifyOnboardingProgressChanged — chame após salvar algo no Wizard
+ * (serviço, foto, perfil) para forçar refresh imediato do checklist
+ * em qualquer página que use `useOnboardingStatus`.
+ */
+export function notifyOnboardingProgressChanged() {
+  try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
+}
+
 // Helper só para evitar lint "createElement não usado" caso o consumidor não use.
 void createElement;
 void Link;
