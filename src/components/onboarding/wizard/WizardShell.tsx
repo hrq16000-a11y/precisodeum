@@ -37,6 +37,7 @@ import {
   wizardReducer,
   type UnifiedPhase,
 } from './wizardReducer';
+import type { BetState } from './phases/bet/types';
 
 type Stage = 'triage' | 'service-and-profile';
 
@@ -58,7 +59,7 @@ export default function WizardShell() {
     });
   }, [state.phase, stage]);
 
-  const handleTriageDone = useCallback(() => {
+  const handleTriageDone = useCallback((triageState: BetState) => {
     appendWizardResetDebugLog({
       source: 'wizard-shell-handoff',
       route: '/cadastro-inicial',
@@ -67,7 +68,25 @@ export default function WizardShell() {
       reason: 'internal-handoff-triage-to-service',
       meta: { stage: 'service-and-profile', unified: true },
     });
-    dispatch({ type: 'GO_TO_PHASE', phase: 'main_action' });
+    dispatch({
+      type: 'HYDRATE',
+      state: {
+        phase: 'main_service',
+        triage: triageState,
+        profile: {
+          profile_type: 'provider',
+          kind: triageState.pro_kind || 'pf',
+          full_name: triageState.full_name,
+          whatsapp: triageState.whatsapp,
+          document: triageState.document,
+          city: triageState.city,
+          state: triageState.state,
+        },
+        service: {
+          cities_served: triageState.city ? [triageState.city] : [],
+        },
+      },
+    });
   }, []);
 
   const handleTriagePhaseChange = useCallback((betPhase: string) => {
@@ -126,6 +145,12 @@ export default function WizardShell() {
           key={`main-${backSignal}`}
           internalHandoffFromTriage
           initialPhase={mapUnifiedToMainPhase(state.phase)}
+          seedState={{
+            profile: state.profile,
+            service: state.service,
+            providerId: state.providerId,
+            firstServiceId: state.firstServiceId,
+          }}
           onPhaseChange={handleMainPhaseChange}
         />
       )}
