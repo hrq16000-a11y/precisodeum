@@ -57,7 +57,7 @@ describe('Onboarding V3 — fluxo unificado', () => {
   });
 
   it('PhaseCelebration (Fase 2) sugere instalar o app via InstallAppCard', () => {
-    const phase3 = read('src/components/onboarding/onboardingV2/Phase3Celebration.tsx');
+    const phase3 = read('src/components/onboarding/wizard/phases/v2/Phase3Celebration.tsx');
     expect(phase3).toContain('InstallAppCard');
     expect(phase3).toContain('wizard-phase3-celebration');
   });
@@ -71,28 +71,28 @@ describe('Onboarding V3 — fluxo unificado', () => {
   });
 
   it('CTA "Cadastrar meu 1º serviço" do V3 navega ao motor V2 com source dedicada', () => {
-    const bet = read('src/components/onboarding/betMode/BetModeShell.tsx');
+    const bet = read('src/components/onboarding/wizard/phases/bet/BetModeShell.tsx');
     expect(bet).toContain("'/onboarding-v2?source=bet-first-service'");
     // Não pode haver navegação ativa para a rota legada de triagem.
     expect(bet).not.toMatch(/navigate\(['"]\/triagem/);
   });
 
   it('Motor V2 bloqueia regressão de fase e mostra "Já preenchido" para campos do V3', () => {
-    const shell = read('src/components/onboarding/onboardingV2/OnboardingV2Shell.tsx');
+    const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     expect(shell).toContain('resolveOnboardingV2SeedState');
     expect(shell).toContain('onboarding-v2-phase-regression-blocked');
     expect(shell).toContain('Já preenchido:');
   });
 
   it('Pular o 1º serviço mantém o usuário dentro do wizard (não navega para o dashboard)', () => {
-    const shell = read('src/components/onboarding/onboardingV2/OnboardingV2Shell.tsx');
+    const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     expect(shell).toContain("source: 'onboarding-v2-skip-first-service'");
     expect(shell).toContain("nextRoute: 'phase4_document'");
     expect(shell).not.toContain("navigate('/dashboard/servicos')");
   });
 
   it('Persistência do 1º serviço usa exclusivamente create_service_atomic', () => {
-    const shell = read('src/components/onboarding/onboardingV2/OnboardingV2Shell.tsx');
+    const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     const services = read('src/pages/DashboardServicesPage.tsx');
     expect(shell).toContain('create_service_atomic');
     expect(services).toContain('create_service_atomic');
@@ -101,7 +101,7 @@ describe('Onboarding V3 — fluxo unificado', () => {
   });
 
   it('Profissional finaliza marcando onboarding_completed=true mesmo sem serviço (anti-loop)', () => {
-    const shell = read('src/components/onboarding/onboardingV2/OnboardingV2Shell.tsx');
+    const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     expect(shell).toMatch(/onboarding_step:\s*5,\s*onboarding_completed:\s*true/);
   });
 

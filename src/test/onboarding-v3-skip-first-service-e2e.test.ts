@@ -29,13 +29,13 @@ const read = (p: string) => fs.readFileSync(p, 'utf8');
 
 describe('Skip 1º serviço — E2E unificado', () => {
   it('Phase2Service.skip aciona continueWithoutFirstService (não navega ao dashboard)', () => {
-    const shell = read('src/components/onboarding/onboardingV2/OnboardingV2Shell.tsx');
+    const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     expect(shell).toMatch(/onSkip=\{\(\)\s*=>\s*\{[\s\S]*?continueWithoutFirstService\(\)/);
     expect(shell).not.toMatch(/onSkip=\{\(\)\s*=>\s*navigate\(['"]\/dashboard/);
   });
 
   it('continueWithoutFirstService loga nextRoute=phase4_document e despacha GO_TO', () => {
-    const shell = read('src/components/onboarding/onboardingV2/OnboardingV2Shell.tsx');
+    const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     expect(shell).toContain("source: 'onboarding-v2-skip-first-service'");
     expect(shell).toContain("nextRoute: 'phase4_document'");
     expect(shell).toMatch(/dispatch\(\{\s*type:\s*'GO_TO',\s*phase:\s*'phase4_document'\s*\}\)/);
