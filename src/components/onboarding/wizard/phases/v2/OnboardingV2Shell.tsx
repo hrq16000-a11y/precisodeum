@@ -491,9 +491,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       if (patch.tax_id) {
         await supabase.from('profiles').update({ tax_id: patch.tax_id }).eq('id', user.id);
       }
-      if (Object.prototype.hasOwnProperty.call(patch, 'years_experience')) {
-        await supabase.from('profiles').update({ years_experience: patch.years_experience }).eq('id', user.id);
-      }
       return true;
     } catch (e: any) {
       toast.error('Não consegui salvar este passo agora. ' + (e?.message || ''));
