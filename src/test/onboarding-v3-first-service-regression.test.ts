@@ -22,4 +22,12 @@ describe('V3 first service continuity', () => {
     expect(phase).toContain('disabled={!!locks?.whatsapp}');
     expect(phase).toContain('disabled={!!locks?.city}');
   });
+
+  it('keeps the user inside onboarding when skipping the first service', () => {
+    const shell = read('src/components/onboarding/onboardingV2/OnboardingV2Shell.tsx');
+    expect(shell).toContain("source: 'onboarding-v2-skip-first-service'");
+    expect(shell).toContain("nextRoute: 'phase4_document'");
+    expect(shell).toContain("track('skip', { exit: 'phase4_document' })");
+    expect(shell).not.toContain("navigate('/dashboard/servicos')");
+  });
 });
