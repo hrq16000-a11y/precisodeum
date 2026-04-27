@@ -24,3 +24,5 @@ export { default as Step16_Document } from './Step16_Document';
 export { default as Step17_Avatar } from './Step17_Avatar';
 export { default as Step18_ExtrasA } from './Step18_ExtrasA';
 export { default as Step19_ExtrasB } from './Step19_ExtrasB';
+export { default as Step20_MoreServices } from './Step20_MoreServices';
+export { default as Step21_PortfolioAlbums } from './Step21_PortfolioAlbums';
