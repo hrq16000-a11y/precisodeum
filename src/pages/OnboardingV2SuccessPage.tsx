@@ -80,10 +80,11 @@ const OnboardingV2SuccessPage = () => {
       try {
         const { data: prof } = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('full_name, user_ref')
           .eq('id', user.id)
           .maybeSingle();
         if (alive && prof?.full_name) setProfileName(prof.full_name);
+        if (alive && (prof as any)?.user_ref) setUserRef((prof as any).user_ref);
 
         const { data: prov } = await supabase
           .from('providers')
