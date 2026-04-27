@@ -255,7 +255,10 @@ interface ExtrasAProps {
   saving: boolean;
 }
 
-export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: ExtrasAProps) => (
+export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: ExtrasAProps) => {
+  const focusBio = useFocusFieldFromReview('bio');
+  const focusNeighborhood = useFocusFieldFromReview('neighborhood');
+  return (
   <div className="space-y-5">
     <header className="text-center space-y-1">
       <h1 className="font-display text-2xl font-bold text-foreground">Quase lá — falta só ajustar seu perfil.</h1>
@@ -282,6 +285,8 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
       <div>
         <Label className="text-xs">Bairro <span className="text-muted-foreground">(opcional)</span></Label>
         <Input
+          ref={focusNeighborhood.ref}
+          className={focusNeighborhood.highlightClass}
           value={data.neighborhood}
           onChange={(e) => onChange({ neighborhood: e.target.value })}
           placeholder="Ex: Centro"
@@ -291,6 +296,8 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
       <div>
         <Label className="text-xs">Bio curta <span className="text-muted-foreground">(opcional)</span></Label>
         <Textarea
+          ref={focusBio.ref}
+          className={focusBio.highlightClass}
           value={data.bio}
           onChange={(e) => onChange({ bio: e.target.value.slice(0, 280) })}
           placeholder="Em uma frase, o que te diferencia."
@@ -309,7 +316,8 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
       </Button>
     </div>
   </div>
-);
+  );
+};
 
 /* ───── 4.3 Redes sociais ───── */
 
