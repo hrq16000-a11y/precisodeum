@@ -348,42 +348,48 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: Extr
   const focusInsta = useFocusFieldFromReview('instagram_url');
   const focusFb = useFocusFieldFromReview('facebook_url');
   return (
-  <div className="space-y-5">
-    <header className="text-center space-y-1">
-      <h1 className="font-display text-2xl font-bold text-foreground">Suas redes (opcional)</h1>
-      <p className="text-sm text-muted-foreground">Mostre seu trabalho onde já existe.</p>
-    </header>
+    <motion.div {...wizardEnter} className={ws.container}>
+      <header className={ws.headerWrap}>
+        <h1 className={ws.title}>Suas redes (opcional)</h1>
+        <p className={ws.subtitle}>Mostre seu trabalho onde já existe.</p>
+      </header>
 
-    <div className="space-y-4">
-      <div>
-        <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Instagram className="h-3 w-3 text-primary" /> Instagram</span>
-        <Input
-          ref={focusInsta.ref}
-          className={focusInsta.highlightClass}
-          value={data.instagram_url}
-          onChange={(e) => onChange({ instagram_url: e.target.value })}
-          placeholder="@seuusuario ou link"
-        />
+      <div className={ws.card}>
+        <label className="block">
+          <span className={ws.fieldLabel}>
+            <Instagram className="h-3.5 w-3.5" /> Instagram
+          </span>
+          <Input
+            ref={focusInsta.ref}
+            className={focusInsta.highlightClass}
+            value={data.instagram_url}
+            onChange={(e) => onChange({ instagram_url: e.target.value })}
+            placeholder="@seuusuario ou link"
+          />
+        </label>
+        <label className="block">
+          <span className={ws.fieldLabel}>
+            <Facebook className="h-3.5 w-3.5" /> Facebook
+          </span>
+          <Input
+            ref={focusFb.ref}
+            className={focusFb.highlightClass}
+            value={data.facebook_url}
+            onChange={(e) => onChange({ facebook_url: e.target.value })}
+            placeholder="Link da sua página"
+          />
+        </label>
       </div>
-      <div>
-        <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Facebook className="h-3 w-3 text-primary" /> Facebook</span>
-        <Input
-          ref={focusFb.ref}
-          className={focusFb.highlightClass}
-          value={data.facebook_url}
-          onChange={(e) => onChange({ facebook_url: e.target.value })}
-          placeholder="Link da sua página"
-        />
-      </div>
-    </div>
 
-    <div className="flex gap-2 pt-2">
-      <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className="flex-1">Finalizar sem redes</Button>
-      <Button type="button" onClick={onFinish} disabled={saving} className="flex-1">
-        {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-        Finalizar
-      </Button>
-    </div>
-  </div>
+      <div className="flex flex-col gap-2 pt-1">
+        <Button type="button" size="lg" onClick={onFinish} disabled={saving} className={ws.cta}>
+          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Finalizar <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+        <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
+          Finalizar sem redes
+        </Button>
+      </div>
+    </motion.div>
   );
 };
