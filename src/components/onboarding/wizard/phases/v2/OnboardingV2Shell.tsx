@@ -116,6 +116,18 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       phase: draft.phase || seedState?.phase || seeded.phase,
     };
   });
+
+  // Wrappers que registram quais campos o usuário tocou nesta sessão
+  // (usado pelo Review para merge não-destrutivo).
+  const patchProfile = (patch: Partial<typeof state.profile>) => {
+    markPatchTouched('profile', patch);
+    dispatch({ type: 'PATCH_PROFILE', patch });
+  };
+  const patchService = (patch: Partial<typeof state.service>) => {
+    markPatchTouched('service', patch);
+    dispatch({ type: 'PATCH_SERVICE', patch });
+  };
+
   const [saving, setSaving] = useState(false);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
   const [remoteDraft, setRemoteDraft] = useState<null | {
