@@ -311,38 +311,41 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main content */}
       <main data-dashboard-main="true" className="flex-1 pt-14 lg:ml-60 lg:pt-0">
-        {/* Profile status strip for providers with incomplete profiles */}
-        {!isClient && !isRH && profile && (() => {
-          const items = [
-            !!profile?.full_name?.trim(),
-            !!profile?.phone?.trim(),
-            !!profile?.avatar_url,
-          ];
-          const pct = Math.round((items.filter(Boolean).length / items.length) * 100);
-          if (pct >= 100) return null;
-          return (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-3 px-4 py-2 border-b border-accent/20 bg-accent/5"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-semibold text-accent">{pct}% completo</span>
-                  <div className="flex-1 h-1.5 rounded-full bg-border/50 overflow-hidden max-w-[120px]">
-                    <motion.div
-                      className="h-full rounded-full bg-accent"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ delay: 0.3, duration: 0.6 }}
-                    />
-                  </div>
+        {/* Banner de progresso real do onboarding (providers) */}
+        {isProvider && !onbStatus.loading && onbPercent < 100 && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex items-center gap-3 px-4 py-2 border-b ${onbPublishable ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-accent/20 bg-accent/5'}`}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-semibold ${onbPublishable ? 'text-emerald-600 dark:text-emerald-400' : 'text-accent'}`}>
+                  {onbPercent}% {onbPublishable ? '• pronto para publicar' : 'completo'}
+                </span>
+                <div className="flex-1 h-1.5 rounded-full bg-border/50 overflow-hidden max-w-[140px]">
+                  <motion.div
+                    className={`h-full rounded-full ${onbPublishable ? 'bg-emerald-500' : 'bg-accent'}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${onbPercent}%` }}
+                    transition={{ delay: 0.2, duration: 0.6 }}
+                  />
                 </div>
+                {onbStatus.missingRequired.length > 0 && (
+                  <span className="hidden sm:inline text-[10px] text-muted-foreground truncate">
+                    Falta: {onbStatus.missingRequired.map(i => i.label).join(', ')}
+                  </span>
+                )}
               </div>
-              <Link to="/dashboard/perfil" className="text-[10px] font-medium text-accent flex items-center gap-0.5 hover:underline shrink-0">
-                Completar <ChevronRight className="h-3 w-3" />
-              </Link>
-            </motion.div>
+            </div>
+            <Link
+              to="/dashboard/status"
+              className={`text-[10px] font-medium flex items-center gap-0.5 hover:underline shrink-0 ${onbPublishable ? 'text-emerald-600 dark:text-emerald-400' : 'text-accent'}`}
+            >
+              {onbPublishable ? 'Revisar e publicar' : 'Ver checklist'} <ChevronRight className="h-3 w-3" />
+            </Link>
+          </motion.div>
+        )}
           );
         })()}
         <AnimatePresence mode="wait">
