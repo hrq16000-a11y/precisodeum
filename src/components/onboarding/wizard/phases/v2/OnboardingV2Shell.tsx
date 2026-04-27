@@ -41,6 +41,8 @@ import { Phase2Service, Phase2Details } from './Phase2Service';
 import { Phase2Photos } from './Phase2Photos';
 import { Phase3Celebration } from './Phase3Celebration';
 import { Phase4Document, Phase4Avatar, Phase4ExtrasA, Phase4ExtrasB } from './Phase4Final';
+import { Phase4Review } from './Phase4Review';
+import { nullifyEmpty } from './optionalPatch';
 import {
   useOnboardingV2Draft,
   readOnboardingV2Draft,
@@ -293,6 +295,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           break;
         case 'phase4_extras_b':
           dispatch({ type: 'GO_TO', phase: 'phase4_extras_a' });
+          break;
+        case 'phase4_review':
+          dispatch({ type: 'GO_TO', phase: 'phase4_extras_b' });
           break;
       }
     };
@@ -741,11 +746,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onContinue={async () => {
               track('submit');
-              await persistPatch({
+              await persistPatch(nullifyEmpty({
                 years_experience: state.profile.years_experience,
                 neighborhood: state.profile.neighborhood,
                 description: state.profile.bio,
-              });
+              }));
               track('next');
               dispatch({ type: 'NEXT' });
             }}
@@ -760,11 +765,25 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onFinish={async () => {
               track('submit');
-              await persistPatch({
+              await persistPatch(nullifyEmpty({
                 instagram_url: state.profile.instagram_url,
                 facebook_url: state.profile.facebook_url,
-              });
+              }));
               track('next');
+              dispatch({ type: 'NEXT' });
+            }}
+          />
+        );
+      case 'phase4_review':
+        return (
+          <Phase4Review
+            profile={state.profile}
+            service={state.service}
+            saving={saving}
+            onEdit={(phase) => { track('back', { from: 'review', to: phase }); dispatch({ type: 'GO_TO', phase }); }}
+            onConfirm={() => {
+              // SEM novos upserts — apenas transição. Persistência já foi feita patch-a-patch.
+              track('submit', { from: 'review' });
               dispatch({ type: 'NEXT' });
             }}
           />

@@ -28,6 +28,7 @@ const PHASE_ORDER: OnboardingPhase[] = [
   'phase4_avatar',
   'phase4_extras_a',
   'phase4_extras_b',
+  'phase4_review',
   'done',
 ];
 
