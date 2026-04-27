@@ -186,6 +186,7 @@ const SponsorMetricsPage = lazy(() => import("./pages/sponsor/SponsorMetricsPage
 const SponsorContractsPage = lazy(() => import("./pages/sponsor/SponsorContractsPage"));
 const SponsorNotificationsPage = lazy(() => import("./pages/sponsor/SponsorNotificationsPage"));
 const SponsorDataPage = lazy(() => import("./pages/sponsor/SponsorDataPage"));
+const SponsorSubscriptionPage = lazy(() => import("./pages/sponsor/SponsorSubscriptionPage"));
 
 // Minimal page transition — no heavy loader, pages render instantly
 const CurtainReveal = reactLazy(() => importWithRetry(() => import("./components/CurtainReveal")));
