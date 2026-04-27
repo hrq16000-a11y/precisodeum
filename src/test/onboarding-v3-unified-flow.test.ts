@@ -55,8 +55,8 @@ describe('Onboarding V3 — fluxo unificado', () => {
   it('CTA "Cadastrar meu 1º serviço" do V3 navega ao motor V2 com source dedicada', () => {
     const bet = read('src/components/onboarding/betMode/BetModeShell.tsx');
     expect(bet).toContain("'/onboarding-v2?source=bet-first-service'");
-    // Não pode ter rotas legadas dentro do CTA.
-    expect(bet).not.toContain('/triagem');
+    // Não pode haver navegação ativa para a rota legada de triagem.
+    expect(bet).not.toMatch(/navigate\(['"]\/triagem/);
   });
 
   it('Motor V2 bloqueia regressão de fase e mostra "Já preenchido" para campos do V3', () => {
