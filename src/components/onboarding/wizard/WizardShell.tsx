@@ -32,6 +32,8 @@ import {
   initialWizardState,
   mapMainPhaseToUnified,
   mapTriagePhaseToUnified,
+  mapUnifiedToMainPhase,
+  mapUnifiedToTriagePhase,
   wizardReducer,
   type UnifiedPhase,
 } from './wizardReducer';
@@ -115,6 +117,7 @@ export default function WizardShell() {
       {stage === 'triage' ? (
         <TriageOrchestrator
           key={`triage-${backSignal}`}
+          initialPhase={mapUnifiedToTriagePhase(state.phase)}
           onInternalHandoff={handleTriageDone}
           onPhaseChange={handleTriagePhaseChange}
         />
@@ -122,6 +125,7 @@ export default function WizardShell() {
         <MainOrchestrator
           key={`main-${backSignal}`}
           internalHandoffFromTriage
+          initialPhase={mapUnifiedToMainPhase(state.phase)}
           onPhaseChange={handleMainPhaseChange}
         />
       )}
