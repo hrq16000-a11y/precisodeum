@@ -654,6 +654,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         .update({ onboarding_step: 5, onboarding_completed: true })
         .eq('id', user.id);
 
+      // Notifica o checklist do dashboard pra atualizar imediatamente
+      try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
+
       return true;
     } catch (e: any) {
       toast.error('Erro ao publicar serviço: ' + (e?.message || 'tente novamente'));
@@ -675,6 +678,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       if (patch.tax_id) {
         await supabase.from('profiles').update({ tax_id: patch.tax_id }).eq('id', user.id);
       }
+      try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
       return true;
     } catch (e: any) {
       toast.error('Não consegui salvar este passo agora. ' + (e?.message || ''));
