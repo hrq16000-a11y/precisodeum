@@ -44,29 +44,29 @@ interface SectionProps {
 }
 
 const Section = ({ config, onEdit, children }: SectionProps) => (
-  <div className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm">
-    <div className="mb-2 flex items-center justify-between">
-      <h3 className="text-sm font-semibold text-foreground">{config.label}</h3>
+  <div className="rounded-xl border border-border bg-card/60 p-2.5 backdrop-blur-sm">
+    <div className="mb-1.5 flex items-center justify-between gap-2">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{config.label}</h3>
       <button
         type="button"
         onClick={() => {
           if (config.focusField) setFocusFieldForNextPhase(config.focusField);
           onEdit(config.phase, config.focusField);
         }}
-        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10"
         aria-label={`Editar ${config.label}`}
       >
         <Pencil className="h-3 w-3" /> Editar
       </button>
     </div>
-    <div className="space-y-1.5 text-sm text-foreground">{children}</div>
+    <div className="space-y-1 text-xs text-foreground">{children}</div>
   </div>
 );
 
 const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="flex items-start justify-between gap-3">
-    <span className="text-xs text-muted-foreground">{label}</span>
-    <span className="text-right text-sm font-medium text-foreground">
+    <span className="text-[11px] text-muted-foreground shrink-0">{label}</span>
+    <span className="text-right text-xs font-medium text-foreground break-words">
       {value || <span className="text-muted-foreground italic">não informado</span>}
     </span>
   </div>
@@ -87,13 +87,13 @@ export const Phase4Review = ({ profile, service, saving, onEdit, onConfirm }: Ph
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="text-center">
-        <div className="mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/15">
-          <Sparkles className="h-5 w-5 text-primary" />
+        <div className="mx-auto mb-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/15">
+          <Sparkles className="h-4 w-4 text-primary" />
         </div>
-        <h2 className="text-xl font-bold text-foreground">Revise antes de publicar</h2>
-        <p className="text-sm text-muted-foreground">Tudo certo? Você pode editar qualquer seção.</p>
+        <h2 className="text-base font-bold text-foreground">Revise antes de publicar</h2>
+        <p className="text-[11px] text-muted-foreground">Tudo certo? Você pode editar qualquer seção.</p>
       </div>
 
       {blocked && (
