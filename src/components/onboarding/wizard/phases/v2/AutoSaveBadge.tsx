@@ -3,7 +3,7 @@
  * salva automaticamente. Some após 4s de inatividade do estado.
  */
 import { useEffect, useState } from 'react';
-import { CloudCheck as CloudCheckMissing, Cloud, Check, Loader2 } from 'lucide-react';
+import { Cloud, Check, Loader2 } from 'lucide-react';
 
 interface AutoSaveBadgeProps {
   /** Qualquer dependência cuja mudança signifique "novo dado para salvar". */
@@ -25,7 +25,7 @@ export const AutoSaveBadge = ({ signal, savingMs = 700 }: AutoSaveBadgeProps) =>
   if (state === 'idle') {
     return (
       <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70">
-        <CloudCheck className="h-3 w-3" /> Auto-save ativo
+        <Cloud className="h-3 w-3" /> Auto-save ativo
       </span>
     );
   }
@@ -38,7 +38,7 @@ export const AutoSaveBadge = ({ signal, savingMs = 700 }: AutoSaveBadgeProps) =>
   }
   return (
     <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600">
-      <CloudCheck className="h-3 w-3" /> Salvo
+      <Check className="h-3 w-3" /> Salvo
     </span>
   );
 };
