@@ -52,6 +52,27 @@ export async function findExistingFirstService(
 }
 
 /**
+ * fetchExistingFirstService — retorna o registro completo do 1º serviço
+ * ativo do provider (mais antigo), para hidratar o Wizard em modo revisão.
+ */
+export async function fetchExistingFirstService(providerId: string): Promise<any | null> {
+  if (!providerId) return null;
+  try {
+    const { data } = await supabase
+      .from('services')
+      .select('id, service_name, description, category_id, category_ids, service_area, address, working_hours, starting_price')
+      .eq('provider_id', providerId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    return data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * findExistingProvider — verifica se o usuário já tem provider criado
  * (mesmo que o estado local tenha perdido o ID).
  */
