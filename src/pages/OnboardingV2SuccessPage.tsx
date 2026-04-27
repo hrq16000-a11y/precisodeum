@@ -133,6 +133,30 @@ const OnboardingV2SuccessPage = () => {
 
   const isOnline = provider?.status === 'active';
 
+  // Link de afiliado: quem se cadastra por aqui credita pontos via user_ref.
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://precisodeum.com.br';
+  const affiliateLink = userRef ? `${origin}/login?ref=${encodeURIComponent(userRef)}` : '';
+  const shareMessage = affiliateLink
+    ? `Acabei de criar meu perfil no Preciso de Um! Cadastre-se pelo meu link: ${affiliateLink}`
+    : '';
+
+  const handleCopy = async () => {
+    if (!affiliateLink) return;
+    try {
+      await navigator.clipboard.writeText(affiliateLink);
+      setCopied(true);
+      toast.success('Link copiado! Compartilhe e ganhe pontos a cada cadastro.');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Não foi possível copiar.');
+    }
+  };
+
+  const handleWhatsApp = () => {
+    if (!shareMessage) return;
+    window.open(whatsappLink('', shareMessage), '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5 px-4 py-8 sm:py-12">
       <div className="mx-auto max-w-2xl space-y-6">
