@@ -3,18 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Briefcase, Image as ImageIcon, User, X, ArrowRight, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { useAuth } from '@/hooks/useAuth';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 
 /**
- * EngagementLoop — orchestrates the "infinite engagement circuit".
+ * EngagementLoop — orquestra o "circuito de engajamento infinito".
  *
- * Reads the centralized `get_profile_completeness` RPC and surfaces the next
- * highest-impact action so the user is never left wondering what to do next.
+ * Lê o hook centralizado `useOnboardingStatus` (mesma fonte da
+ * `DashboardOnboardingStatusPage`) e expõe a próxima ação de maior
+ * impacto, garantindo que % e itens nunca divirjam entre componentes.
  *
- * Sequence: 1º Serviço → 2º–5º Serviço → 1º Álbum → Bio Completa → Foto de Perfil.
- * When the circuit is complete (all five milestones), it shows a celebratory state.
+ * Sequência: 1º Serviço → 2º–5º Serviço → 1º Álbum → Bio Completa → Foto.
  */
 const TARGET_SERVICES = 5;
 const TARGET_ALBUMS = 1;
@@ -30,7 +30,7 @@ interface NextAction {
 }
 
 interface EngagementLoopProps {
-  /** Override fresh do dashboard — evita divergência com a RPC cacheada. */
+  /** Override fresh do dashboard — evita divergência com cache. */
   servicesCount?: number;
   portfolioAlbumsCount?: number;
   /** Override fresh do `checklistStats(items).pct` calculado no DashboardPage. */
@@ -40,18 +40,22 @@ interface EngagementLoopProps {
 const EngagementLoop = ({ servicesCount: servicesOverride, portfolioAlbumsCount: albumsOverride, unifiedPct }: EngagementLoopProps = {}) => {
   const navigate = useNavigate();
   const { profile, provider, user } = useAuth();
-  const { data } = useProfileCompleteness();
+  const status = useOnboardingStatus();
   const [dismissed, setDismissed] = useState(false);
 
+  // Counters derivados do hook unificado (com possibilidade de override fresh).
+  const services = servicesOverride ?? status.items.find(i => i.key === 'service')?.done ? (servicesOverride ?? 1) : 0;
+  // Para preservar a contagem real (não só boolean), usamos o override quando vier
+  // e fallback para 1/0 baseado no checklist (que só sabe se tem >=1).
+  const servicesCount = servicesOverride ?? (status.items.find(i => i.key === 'service')?.done ? 1 : 0);
+  const albumsCount = albumsOverride ?? (status.items.find(i => i.key === 'portfolio')?.done ? 1 : 0);
+
   const next = useMemo<NextAction | null>(() => {
-    if (!data || !provider) return null;
-    // Override fresh sempre tem prioridade sobre RPC cacheada (evita divergência visual).
-    const services = servicesOverride ?? data.counts.services;
-    const albums = albumsOverride ?? data.counts.albums;
+    if (status.loading || !provider) return null;
     const hasBio = (provider?.description ?? '').trim().length >= 30;
     const hasAvatar = !!profile?.avatar_url || !!provider?.photo_url;
 
-    if (services === 0) {
+    if (servicesCount === 0) {
       return {
         key: 'first-service',
         icon: Briefcase,
@@ -62,18 +66,18 @@ const EngagementLoop = ({ servicesCount: servicesOverride, portfolioAlbumsCount:
         tone: 'primary',
       };
     }
-    if (services < TARGET_SERVICES) {
+    if (servicesCount < TARGET_SERVICES) {
       return {
         key: 'more-services',
         icon: Sparkles,
-        title: `Você tem ${services} ${services === 1 ? 'serviço' : 'serviços'}. Que tal mais um?`,
-        description: `Faltam ${TARGET_SERVICES - services} para completar o circuito recomendado e dobrar seu destaque.`,
+        title: `Você tem ${servicesCount} ${servicesCount === 1 ? 'serviço' : 'serviços'}. Que tal mais um?`,
+        description: `Faltam ${TARGET_SERVICES - servicesCount} para completar o circuito recomendado e dobrar seu destaque.`,
         cta: 'Adicionar serviço',
         to: '/dashboard/servicos',
         tone: 'accent',
       };
     }
-    if (albums < TARGET_ALBUMS) {
+    if (albumsCount < TARGET_ALBUMS) {
       return {
         key: 'first-album',
         icon: ImageIcon,
@@ -107,21 +111,21 @@ const EngagementLoop = ({ servicesCount: servicesOverride, portfolioAlbumsCount:
       };
     }
     return null;
-  }, [data, profile, provider, servicesOverride, albumsOverride]);
+  }, [status.loading, profile, provider, servicesCount, albumsCount]);
 
   // Sempre que houver pct unificado vindo do dashboard, ele tem prioridade.
-  const pct = unifiedPct ?? data?.percentage ?? 0;
+  const pct = unifiedPct ?? status.percent ?? 0;
   const circuitComplete = !next && pct >= 90;
 
-  // Dopamine bomb 💎 — fires confetti + "Ebá!" sound EXACTLY once when user first crosses 90%.
+  // Dopamine bomb 💎 — confete + "Ebá!" UMA vez quando cruza 90%.
   useEffect(() => {
-    if (!data || !user?.id) return;
+    if (status.loading || !user?.id) return;
     if (pct < 90) return;
     celebrate({ intensity: 'big', id: CELEBRATION_IDS.levelUp('diamond', user.id) });
-  }, [pct, user?.id, data]);
+  }, [pct, user?.id, status.loading]);
 
   if (dismissed) return null;
-  if (!data) return null;
+  if (status.loading) return null;
 
   if (circuitComplete) {
     return (
