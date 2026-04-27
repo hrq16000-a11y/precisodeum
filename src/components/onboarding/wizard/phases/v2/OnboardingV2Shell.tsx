@@ -52,7 +52,7 @@ import {
   clearOnboardingV2Draft,
 } from './useOnboardingV2Draft';
 import { flushOnboardingV2Draft, flushLocalDraft } from './flushDraft';
-import { findExistingFirstService, findExistingProvider } from './findExistingRecords';
+import { findExistingFirstService, findExistingProvider, fetchExistingFirstService } from './findExistingRecords';
 import {
   useOnboardingV2RemoteDraft,
   fetchRemoteDraft,
@@ -280,6 +280,86 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
     dispatch({ type: 'HYDRATE', state: resolved });
   }, [profile, provider, internalHandoffFromTriage]);
+
+  // ── HIDRATAÇÃO EM MODO REVISÃO ─────────────────────────────────────────────
+  // Se o usuário já tem provider e/ou serviço cadastrado mas o estado local
+  // está vazio (ex.: voltou ao Wizard depois de fechar o navegador, ou o draft
+  // expirou), busca os dados reais no banco para que a UI mostre uma REVISÃO
+  // do que existe — em vez de criar do zero e duplicar registros.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!user?.id) return;
+
+      // 1) Resgata providerId se ausente
+      let pid = state.providerId;
+      if (!pid) {
+        pid = await findExistingProvider(user.id);
+        if (pid && !cancelled) {
+          dispatch({ type: 'HYDRATE', state: { providerId: pid } });
+        }
+      }
+      if (!pid || cancelled) return;
+
+      // 2) Se já temos firstServiceId, nada a fazer
+      if (state.firstServiceId) return;
+
+      // 3) Busca o 1º serviço existente e hidrata estado de forma não-destrutiva
+      const svc = await fetchExistingFirstService(pid);
+      if (!svc || cancelled) return;
+
+      dispatch({ type: 'SET_FIRST_SERVICE_ID', id: svc.id });
+
+      const existingService = state.service || ({} as any);
+      const merged: any = {
+        service_name: existingService.service_name || svc.service_name || '',
+        description: existingService.description || svc.description || '',
+        category_ids:
+          existingService.category_ids?.length
+            ? existingService.category_ids
+            : Array.isArray(svc.category_ids) && svc.category_ids.length
+              ? svc.category_ids
+              : svc.category_id
+                ? [svc.category_id]
+                : [],
+        cities_served:
+          existingService.cities_served?.length
+            ? existingService.cities_served
+            : svc.address
+              ? [svc.address]
+              : svc.service_area
+                ? [svc.service_area]
+                : [],
+        starting_price_brl:
+          existingService.starting_price_brl != null
+            ? existingService.starting_price_brl
+            : typeof svc.starting_price === 'number'
+              ? svc.starting_price
+              : null,
+        working_days: existingService.working_days || [],
+        working_hours: existingService.working_hours || svc.working_hours || '',
+      };
+
+      dispatch({ type: 'HYDRATE', state: { service: merged } });
+
+      if (svc.category_id && !state.profile.primary_category_id) {
+        dispatch({ type: 'PATCH_PROFILE', patch: { primary_category_id: svc.category_id } });
+      }
+
+      appendWizardResetDebugLog({
+        source: 'onboarding-v2-hydrate-existing-service',
+        route: `${location.pathname}${location.search}`,
+        phase: state.phase,
+        nextRoute: null,
+        reason: 'review-mode-existing-records',
+        meta: { providerId: pid, serviceId: svc.id },
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, state.providerId, state.firstServiceId]);
 
   // Telemetria: dispara 'enter' a cada troca de fase
   useEffect(() => {
