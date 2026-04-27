@@ -298,12 +298,10 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     onboardingStep < 5
   );
 
-  // Wizard unificado (Fase A): /cadastro-inicial é a porta única.
-  // /cadastro-bet e /onboarding-v2 permanecem como redirects compat\u00edveis.
+  // Wizard unificado: /cadastro-inicial é a porta ÚNICA. /cadastro-bet,
+  // /onboarding-v2 e /triagem viram redirects (mantidos no Routes).
   const isOnboardingRoute =
     location.pathname === '/cadastro-inicial' ||
-    location.pathname === '/cadastro-bet' ||
-    location.pathname === '/onboarding-v2' ||
     location.pathname === '/onboarding-v2/sucesso';
   if (mustCompleteOnboarding && !isOnboardingRoute) {
     appendWizardResetDebugLog({
