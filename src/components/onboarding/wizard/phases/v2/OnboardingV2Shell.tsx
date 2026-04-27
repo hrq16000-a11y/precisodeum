@@ -734,27 +734,19 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, onPhaseCh
   };
 
   // Progresso: a celebração já é "100%" sensorial, então tudo a partir dela conta como completo.
+  // A barra de progresso GLOBAL agora vive no WizardShell. Mantemos apenas
+  // o cálculo interno por compat (testes), mas não renderizamos mais a barra
+  // local — evita duplicidade visual quando aberto via /cadastro-inicial.
   const isCelebrationOrLater =
     state.phase === 'phase3_celebration' ||
     state.phase === 'phase4_document' ||
     state.phase === 'phase4_extras_a' ||
     state.phase === 'phase4_extras_b' ||
     state.phase === 'done';
-  const progress = isCelebrationOrLater
-    ? 100
-    : Math.min(95, ((phaseIndex(state.phase) + 1) / VISIBLE_PHASES_COUNT) * 100);
+  void isCelebrationOrLater;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Barra de progresso fixa no topo */}
-      <div className="sticky top-0 z-50 h-1 w-full bg-muted">
-        <motion.div
-          className="h-full bg-gradient-to-r from-accent to-primary"
-          animate={{ width: `${progress}%` }}
-          transition={{ type: 'spring', stiffness: 120, damping: 22 }}
-        />
-      </div>
-
       {/* Aviso "rascunho restaurado" — diferencia local x remoto */}
       <AnimatePresence>
         {draftRestored && (
