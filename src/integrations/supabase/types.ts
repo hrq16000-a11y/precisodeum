@@ -4522,6 +4522,88 @@ export type Database = {
           },
         ]
       }
+      sponsor_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          external_reference: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_method: string
+          period_end: string | null
+          period_start: string | null
+          plan_id: string | null
+          receipt_url: string | null
+          sponsor_id: string
+          status: string
+          subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          external_reference?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string
+          period_end?: string | null
+          period_start?: string | null
+          plan_id?: string | null
+          receipt_url?: string | null
+          sponsor_id: string
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          external_reference?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string
+          period_end?: string | null
+          period_start?: string | null
+          plan_id?: string | null
+          receipt_url?: string | null
+          sponsor_id?: string
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_payments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_payments_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsor_plans: {
         Row: {
           active: boolean | null
@@ -4656,12 +4738,15 @@ export type Database = {
         Row: {
           amount_paid: number | null
           billing_cycle: string
+          cancel_at_period_end: boolean
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
           id: string
           notes: string | null
           payment_method: string | null
+          pending_change_at: string | null
+          pending_plan_id: string | null
           plan_id: string
           sponsor_id: string
           status: string
@@ -4670,12 +4755,15 @@ export type Database = {
         Insert: {
           amount_paid?: number | null
           billing_cycle?: string
+          cancel_at_period_end?: boolean
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
           notes?: string | null
           payment_method?: string | null
+          pending_change_at?: string | null
+          pending_plan_id?: string | null
           plan_id: string
           sponsor_id: string
           status?: string
@@ -4684,18 +4772,28 @@ export type Database = {
         Update: {
           amount_paid?: number | null
           billing_cycle?: string
+          cancel_at_period_end?: boolean
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
           notes?: string | null
           payment_method?: string | null
+          pending_change_at?: string | null
+          pending_plan_id?: string | null
           plan_id?: string
           sponsor_id?: string
           status?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sponsor_subscriptions_pending_plan_id_fkey"
+            columns: ["pending_plan_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_plans"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sponsor_subscriptions_plan_id_fkey"
             columns: ["plan_id"]
@@ -6560,6 +6658,7 @@ export type Database = {
         }[]
       }
       get_sponsor_docs_status: { Args: { _lead_id: string }; Returns: Json }
+      get_sponsor_usage: { Args: { _sponsor_id: string }; Returns: Json }
       get_staff_permissions: { Args: { _user_id: string }; Returns: Json }
       get_user_maturity_tier: { Args: { _user_id?: string }; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
@@ -6595,6 +6694,10 @@ export type Database = {
       }
       is_caller_admin: { Args: never; Returns: boolean }
       is_sponsor: { Args: { _user_id: string }; Returns: boolean }
+      is_sponsor_member: {
+        Args: { _sponsor_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_top_professional: { Args: { _user_id: string }; Returns: boolean }
       log_provider_public_event:
         | {
@@ -6782,6 +6885,10 @@ export type Database = {
         }[]
       }
       set_profile_tax_id: { Args: { _tax_id: string }; Returns: undefined }
+      sponsor_can_create_campaign: {
+        Args: { _sponsor_id: string }
+        Returns: boolean
+      }
       sponsor_has_active_plan: {
         Args: { _sponsor_id: string }
         Returns: boolean

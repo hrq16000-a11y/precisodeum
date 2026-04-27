@@ -234,7 +234,7 @@ const AdminSponsorsPage = () => {
   const { data: subscriptions = [] } = useQuery({
     queryKey: ['admin-sponsor-subscriptions'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsor_subscriptions').select('*, sponsor_plans(name)').order('created_at', { ascending: false });
+      const { data } = await supabase.from('sponsor_subscriptions').select('*, sponsor_plans!sponsor_subscriptions_plan_id_fkey(name)').order('created_at', { ascending: false });
       return (data || []) as any[];
     },
   });

@@ -80,7 +80,7 @@ export function useSponsorAuth(redirectIfNot = true) {
 
       const { data: sub } = await supabase
         .from('sponsor_subscriptions')
-        .select('*, sponsor_plans(id, name, slug, features)')
+        .select('*, sponsor_plans!sponsor_subscriptions_plan_id_fkey(id, name, slug, features)')
         .eq('sponsor_id', (contact as any).sponsor_id)
         .in('status', ['active', 'trialing'])
         .order('current_period_end', { ascending: false, nullsFirst: false })

@@ -186,6 +186,7 @@ const SponsorMetricsPage = lazy(() => import("./pages/sponsor/SponsorMetricsPage
 const SponsorContractsPage = lazy(() => import("./pages/sponsor/SponsorContractsPage"));
 const SponsorNotificationsPage = lazy(() => import("./pages/sponsor/SponsorNotificationsPage"));
 const SponsorDataPage = lazy(() => import("./pages/sponsor/SponsorDataPage"));
+const SponsorSubscriptionPage = lazy(() => import("./pages/sponsor/SponsorSubscriptionPage"));
 
 // Minimal page transition — no heavy loader, pages render instantly
 const CurtainReveal = reactLazy(() => importWithRetry(() => import("./components/CurtainReveal")));
@@ -506,6 +507,7 @@ const App = () => {
                 <Route path="/sponsor-panel/notificacoes" element={<SponsorProtectedRoute><SponsorNotificationsPage /></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/dados" element={<SponsorProtectedRoute><SponsorDataPage /></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/pagina" element={<SponsorProtectedRoute><SponsorFeatureGate><SponsorPublicProfilePage /></SponsorFeatureGate></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/assinatura" element={<SponsorProtectedRoute><SponsorSubscriptionPage /></SponsorProtectedRoute>} />
                 <Route path="/p/:slug" element={<InstitutionalPage />} />
                 <Route path="/error/404" element={<ErrorPage code={404} />} />
                 <Route path="*" element={<NotFound />} />
