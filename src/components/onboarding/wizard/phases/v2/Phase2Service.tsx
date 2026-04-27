@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import CityAutocomplete from '@/components/CityAutocomplete';
 import { supabase } from '@/integrations/supabase/client';
 import { suggestServiceDescriptionVariants } from '@/lib/serviceDescriptionSuggester';
 import { sanitizeSlug } from '@/lib/slugify';
@@ -288,25 +289,22 @@ const formatBRL = (n: number | null): string => {
 export const Phase2Details = ({
   service, profile, onChangeService, onChangeProfile, onSubmit, onBack, onSkip, saving,
 }: DetailsProps) => {
-  const [cityDraft, setCityDraft] = useState('');
   const [priceText, setPriceText] = useState(service.starting_price_brl != null ? String(service.starting_price_brl) : '');
 
   // Pré-popula com cidade do perfil
   useEffect(() => {
     if (!service.cities_served.length && profile.city) {
-      const tag = profile.state ? `${profile.city} - ${profile.state}` : profile.city;
-      onChangeService({ cities_served: [tag] });
+      onChangeService({ cities_served: [profile.city] });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const addCity = (raw?: string) => {
-    const v = (raw ?? cityDraft).trim();
+  const addCity = (city: string) => {
+    const v = city.trim();
     if (!v) return;
     if (service.cities_served.includes(v)) return;
     if (service.cities_served.length >= 5) return;
     onChangeService({ cities_served: [...service.cities_served, v] });
-    setCityDraft('');
   };
   const removeCity = (v: string) => {
     onChangeService({ cities_served: service.cities_served.filter(c => c !== v) });
@@ -338,17 +336,23 @@ export const Phase2Details = ({
           <MapPin className="h-3 w-3" /> Cidades atendidas <span className="text-muted-foreground">(até 5)</span>
         </Label>
         <div className="flex gap-2">
-          <Input
-            value={cityDraft}
-            onChange={(e) => setCityDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCity(); } }}
-            placeholder="Ex: Curitiba - PR"
-            disabled={service.cities_served.length >= 5}
-          />
-          <Button type="button" variant="outline" onClick={() => addCity()} disabled={service.cities_served.length >= 5 || !cityDraft.trim()}>
+          <div className="flex-1">
+            <CityAutocomplete
+              value={{ city: '', state: profile.state }}
+              onChange={(next) => addCity(next.city)}
+              placeholder={profile.state ? 'Ex: Curitiba' : 'Defina sua UF antes'}
+              stateFilter={profile.state}
+              disabled={service.cities_served.length >= 5 || !profile.state}
+              statusText={profile.state ? `Selecione cidades de ${profile.state}` : 'A UF do perfil define as cidades exibidas'}
+            />
+          </div>
+          <Button type="button" variant="outline" disabled>
             <Plus className="h-4 w-4" />
           </Button>
         </div>
+        {!profile.state && (
+          <p className="mt-1 text-[11px] text-muted-foreground">Escolha seu estado na etapa anterior para limitar as cidades automaticamente.</p>
+        )}
         {service.cities_served.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {service.cities_served.map(c => (

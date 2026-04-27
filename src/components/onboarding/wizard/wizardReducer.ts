@@ -143,6 +143,38 @@ export function mapMainPhaseToUnified(v2Phase: string): UnifiedPhase {
   }
 }
 
+export function mapUnifiedToTriagePhase(phase: UnifiedPhase): import('./phases/bet/types').BetPhase {
+  switch (phase) {
+    case 'triage_identity': return 'identity';
+    case 'triage_who': return 'who';
+    case 'triage_client_city': return 'client_city';
+    case 'triage_pro_kind': return 'pro_kind';
+    case 'triage_pro_document': return 'pro_document';
+    case 'triage_pro_location': return 'pro_location';
+    case 'triage_celebration': return 'celebration';
+    default: return 'identity';
+  }
+}
+
+export function mapUnifiedToMainPhase(phase: UnifiedPhase): OnboardingPhase {
+  switch (phase) {
+    case 'main_action': return 'phase1_action';
+    case 'main_kind': return 'phase1_kind';
+    case 'main_location': return 'phase1_location';
+    case 'main_contact': return 'phase1_contact';
+    case 'main_service': return 'phase2_service';
+    case 'main_service_details': return 'phase2_details';
+    case 'main_photos': return 'phase2_photos';
+    case 'main_celebration': return 'phase3_celebration';
+    case 'main_document': return 'phase4_document';
+    case 'main_avatar': return 'phase4_avatar';
+    case 'main_extras_a': return 'phase4_extras_a';
+    case 'main_extras_b': return 'phase4_extras_b';
+    case 'done': return 'done';
+    default: return 'phase1_action';
+  }
+}
+
 export const UNIFIED_PHASE_LABELS: Record<UnifiedPhase, string> = {
   triage_identity: 'Identificação',
   triage_who: 'Quem é você',

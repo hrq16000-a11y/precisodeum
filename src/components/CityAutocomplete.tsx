@@ -28,6 +28,9 @@ interface CityAutocompleteProps {
   onChange: (next: { city: string; state: string }) => void;
   placeholder?: string;
   statusText?: string;
+  /** Quando informado, restringe os resultados a uma UF específica. */
+  stateFilter?: string;
+  disabled?: boolean;
   /** Callback fired whenever the popover closes (selection, click outside, Esc). */
   onClose?: () => void;
 }
@@ -36,12 +39,30 @@ interface CityAutocompleteProps {
  * Autocomplete controlado, conectado à tabela `cities` (5.5k municípios IBGE).
  * Não permite texto livre — garante integridade dos filtros geográficos.
  */
-const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...', statusText, onClose }: CityAutocompleteProps) => {
+const CityAutocomplete = ({
+  value,
+  onChange,
+  placeholder = 'Buscar cidade...',
+  statusText,
+  stateFilter,
+  disabled = false,
+  onClose,
+}: CityAutocompleteProps) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<CityRow[]>([]);
   const [loading, setLoading] = useState(false);
   const debouncedQuery = useDebounce(query, 200);
+  const normalizedStateFilter = safeUF(stateFilter);
+
+  const applyStateFilter = (rows: CityRow[]) => {
+    if (!normalizedStateFilter) return rows;
+    return rows.filter((row) => {
+      const rawUf = (row.state_uf || row.state || '').toString().trim().toUpperCase();
+      const uf = isUF(rawUf) ? rawUf : '';
+      return uf === normalizedStateFilter;
+    });
+  };
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
@@ -74,14 +95,14 @@ const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...', s
             .order('name', { ascending: true })
             .limit(20);
           if (cancelled) return;
-          setResults((fb.data as CityRow[]) || []);
+          setResults(applyStateFilter((fb.data as CityRow[]) || []));
         } else {
-          setResults((data as CityRow[]) || []);
+          setResults(applyStateFilter((data as CityRow[]) || []));
         }
         setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [debouncedQuery]);
+  }, [debouncedQuery, normalizedStateFilter]);
 
   const display = useMemo(() => {
     if (!value.city) return placeholder;
@@ -96,6 +117,7 @@ const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...', s
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          disabled={disabled}
           className={cn(
             'h-auto min-h-11 w-full justify-between py-3 font-normal',
             !value.city && 'text-muted-foreground'
@@ -119,6 +141,11 @@ const CityAutocomplete = ({ value, onChange, placeholder = 'Buscar cidade...', s
             {!loading && statusText && (
               <div className="border-b border-border bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground">
                 {statusText}
+              </div>
+            )}
+            {!loading && normalizedStateFilter && (
+              <div className="border-b border-border bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground">
+                Exibindo apenas cidades de <span className="font-medium text-foreground">{normalizedStateFilter}</span>
               </div>
             )}
             {loading && (

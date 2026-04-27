@@ -19,6 +19,8 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useAuth } from '@/hooks/useAuth';
+import CityAutocomplete from '@/components/CityAutocomplete';
+import UFSelect, { BR_UFS } from '@/components/admin/UFSelect';
 import type { OnboardingCoreField, OnboardingProfileData, ProfileTypeChoice } from './types';
 
 /* ───── 1.1 Atuação ───── */
@@ -149,6 +151,7 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
   const { user } = useAuth();
   const [requestingGps, setRequestingGps] = useState(false);
   const { requestPreciseLocation } = useGeoCity();
+  const selectedStateName = BR_UFS.find((uf) => uf.uf === data.state)?.name;
 
   // Avatar fallback: usa Google avatar do auth, se houver.
   const socialAvatar = (user?.user_metadata as any)?.avatar_url || (user?.user_metadata as any)?.picture || null;
@@ -202,27 +205,35 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
         {data.city ? `${data.city}${data.state ? ' • ' + data.state : ''} — atualizar` : 'Usar minha localização'}
       </Button>
 
-      <div className="grid grid-cols-3 gap-2">
-        <div className="col-span-2">
-          <Label className="text-xs">Cidade</Label>
-          <Input
-            value={data.city}
-            onChange={(e) => onChange({ city: e.target.value })}
-            placeholder="Sua cidade"
-            disabled={!!locks?.city}
-          />
-          {locks?.city && <p className="mt-1 text-[11px] text-emerald-600">Já preenchido</p>}
-        </div>
+      <div className="space-y-3">
         <div>
-          <Label className="text-xs">UF</Label>
-          <Input
+          <Label className="text-xs">Estado</Label>
+          <UFSelect
             value={data.state}
-            onChange={(e) => onChange({ state: e.target.value.toUpperCase().slice(0, 2) })}
-            maxLength={2}
-            placeholder="UF"
-            disabled={!!locks?.state}
+            onChange={(uf) => {
+              const nextUf = (uf || '').toUpperCase();
+              onChange({ state: nextUf, city: nextUf === data.state ? data.city : '' });
+            }}
+            placeholder="Selecione o estado"
+            className="w-full"
           />
           {locks?.state && <p className="mt-1 text-[11px] text-emerald-600">Já preenchido</p>}
+        </div>
+
+        <div>
+          <Label className="text-xs">Cidade</Label>
+          <CityAutocomplete
+            value={{ city: data.city, state: data.state }}
+            onChange={(next) => onChange({ city: next.city, state: next.state })}
+            placeholder={data.state ? 'Selecione sua cidade' : 'Escolha o estado primeiro'}
+            stateFilter={data.state}
+            disabled={!data.state || !!locks?.city}
+            statusText={selectedStateName ? `Mostrando cidades de ${selectedStateName}` : 'Selecione a UF para limitar as cidades'}
+          />
+          {!data.state && (
+            <p className="mt-1 text-[11px] text-muted-foreground">Escolha a UF primeiro para limitar a busca da cidade.</p>
+          )}
+          {locks?.city && <p className="mt-1 text-[11px] text-emerald-600">Já preenchido</p>}
         </div>
       </div>
 
