@@ -2,8 +2,8 @@
  * WizardShell — fachada única do onboarding (Fusão V3 + V2 — Fase B).
  *
  * Encapsula o handoff Triagem (ex-V3) → Criação de Serviço & Perfil (ex-V2)
- * sob um único componente, sem trocar de URL. O contrato anterior baseado em
- * `?source=bet-first-service` foi REMOVIDO — o stage agora é controlado 100%
+ * sob um único componente, sem trocar de URL. O contrato anterior baseado
+ * em query string foi REMOVIDO — o stage agora é controlado 100%
  * internamente, em memória.
  *
  * Steps vivem em `wizard/phases/bet/` (triagem) e `wizard/phases/v2/`
