@@ -11,6 +11,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import TopLoadingBar from '@/components/ui/TopLoadingBar';
 import Logo from '@/components/Logo';
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 
 const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
@@ -31,6 +32,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [pendingLeads, setPendingLeads] = useState(0);
   const [incompleteAlert, setIncompleteAlert] = useState<{ daysLeft: number } | null>(null);
   const daysLimit = Number(useSettingValue('incomplete_profile_days_limit')) || 60;
+  const isProvider = !!profile && profile.profile_type !== 'client' && profile.profile_type !== 'rh';
+  const onbStatus = useOnboardingStatus();
+  const onbPercent = isProvider ? onbStatus.percent : 0;
+  const onbPublishable = isProvider && onbStatus.publishable;
 
   useEffect(() => {
     if (!user) return;
@@ -88,7 +93,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const menuItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: hasProfilePermission('dashboard'), badge: 0 },
     { label: 'Meu Perfil', icon: User, path: '/dashboard/perfil', show: hasProfilePermission('profile'), badge: 0 },
-    { label: 'Status do Cadastro', icon: ClipboardCheck, path: '/dashboard/status', show: !isClient && !isRH, badge: 0 },
+    { label: 'Status do Cadastro', icon: ClipboardCheck, path: '/dashboard/status', show: !isClient && !isRH, badge: 0, percent: isProvider ? onbPercent : undefined },
     { label: 'Meus Serviços', icon: Briefcase, path: '/dashboard/servicos', show: !isClient && !isRH && hasProfilePermission('services'), badge: 0 },
     { label: 'Portfólio', icon: Camera, path: '/dashboard/portfolio', show: !isClient && !isRH && hasProfilePermission('services'), badge: 0 },
     { label: 'Minha Página', icon: Layout, path: '/dashboard/minha-pagina', show: !isClient && !isRH && hasProfilePermission('my_page'), badge: 0 },
@@ -183,21 +188,21 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               </p>
             </div>
           </div>
-          {/* Mini progress bar for profile completeness (providers only) */}
-          {!isClient && !isRH && (
+          {/* Mini progress bar — usa progresso real do onboarding (providers) */}
+          {isProvider && (
             <div className="mt-2">
               <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[9px] text-sidebar-foreground/40">Perfil</span>
-                {unreadCount > 0 && (
-                  <span className="text-[9px] font-bold text-accent">{unreadCount} nova{unreadCount !== 1 ? 's' : ''}</span>
-                )}
+                <span className="text-[9px] text-sidebar-foreground/40">Cadastro</span>
+                <span className={`text-[9px] font-bold ${onbPublishable ? 'text-emerald-400' : 'text-accent'}`}>
+                  {onbPercent}%{onbPublishable ? ' • pronto' : ''}
+                </span>
               </div>
               <div className="h-1 rounded-full bg-sidebar-border/50 overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-accent"
+                  className={`h-full rounded-full ${onbPublishable ? 'bg-emerald-500' : 'bg-accent'}`}
                   initial={{ width: 0 }}
-                  animate={{ width: '60%' }}
-                  transition={{ delay: 0.5, duration: 0.8, ease: 'easeOut' }}
+                  animate={{ width: `${onbPercent}%` }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
                 />
               </div>
             </div>
@@ -234,6 +239,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     <item.icon className={`h-4 w-4 ${active ? 'text-accent' : 'group-hover:text-sidebar-foreground'}`} />
                   </motion.div>
                   <span className="flex-1">{item.label}</span>
+                  {typeof item.percent === 'number' && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      title={`${item.percent}% do cadastro completo`}
+                      className={`flex h-5 min-w-[34px] items-center justify-center rounded-full px-1.5 text-[9px] font-bold shadow-sm ${item.percent >= 100 ? 'bg-emerald-500 text-white' : item.percent >= 60 ? 'bg-accent text-accent-foreground' : 'bg-amber-500 text-white'}`}
+                    >
+                      {item.percent}%
+                    </motion.span>
+                  )}
                   {item.badge > 0 && (
                     <motion.span
                       initial={{ scale: 0 }}
@@ -296,40 +311,41 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main content */}
       <main data-dashboard-main="true" className="flex-1 pt-14 lg:ml-60 lg:pt-0">
-        {/* Profile status strip for providers with incomplete profiles */}
-        {!isClient && !isRH && profile && (() => {
-          const items = [
-            !!profile?.full_name?.trim(),
-            !!profile?.phone?.trim(),
-            !!profile?.avatar_url,
-          ];
-          const pct = Math.round((items.filter(Boolean).length / items.length) * 100);
-          if (pct >= 100) return null;
-          return (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-3 px-4 py-2 border-b border-accent/20 bg-accent/5"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-semibold text-accent">{pct}% completo</span>
-                  <div className="flex-1 h-1.5 rounded-full bg-border/50 overflow-hidden max-w-[120px]">
-                    <motion.div
-                      className="h-full rounded-full bg-accent"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ delay: 0.3, duration: 0.6 }}
-                    />
-                  </div>
+        {/* Banner de progresso real do onboarding (providers) */}
+        {isProvider && !onbStatus.loading && onbPercent < 100 && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex items-center gap-3 px-4 py-2 border-b ${onbPublishable ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-accent/20 bg-accent/5'}`}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-semibold ${onbPublishable ? 'text-emerald-600 dark:text-emerald-400' : 'text-accent'}`}>
+                  {onbPercent}% {onbPublishable ? '• pronto para publicar' : 'completo'}
+                </span>
+                <div className="flex-1 h-1.5 rounded-full bg-border/50 overflow-hidden max-w-[140px]">
+                  <motion.div
+                    className={`h-full rounded-full ${onbPublishable ? 'bg-emerald-500' : 'bg-accent'}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${onbPercent}%` }}
+                    transition={{ delay: 0.2, duration: 0.6 }}
+                  />
                 </div>
+                {onbStatus.missingRequired.length > 0 && (
+                  <span className="hidden sm:inline text-[10px] text-muted-foreground truncate">
+                    Falta: {onbStatus.missingRequired.map(i => i.label).join(', ')}
+                  </span>
+                )}
               </div>
-              <Link to="/dashboard/perfil" className="text-[10px] font-medium text-accent flex items-center gap-0.5 hover:underline shrink-0">
-                Completar <ChevronRight className="h-3 w-3" />
-              </Link>
-            </motion.div>
-          );
-        })()}
+            </div>
+            <Link
+              to="/dashboard/status"
+              className={`text-[10px] font-medium flex items-center gap-0.5 hover:underline shrink-0 ${onbPublishable ? 'text-emerald-600 dark:text-emerald-400' : 'text-accent'}`}
+            >
+              {onbPublishable ? 'Revisar e publicar' : 'Ver checklist'} <ChevronRight className="h-3 w-3" />
+            </Link>
+          </motion.div>
+        )}
         <AnimatePresence mode="wait">
           <motion.div
             className="p-4 pb-20 sm:p-6 sm:pb-6"
