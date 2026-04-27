@@ -161,6 +161,8 @@ export const Phase2Service = ({
           <Label className="text-xs">Categoria *</Label>
           <div className="relative">
             <Input
+              ref={focusCategory.ref as any}
+              className={focusCategory.highlightClass}
               value={search || selectedName}
               onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
               onFocus={() => setOpen(true)}
