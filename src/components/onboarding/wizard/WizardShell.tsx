@@ -130,9 +130,21 @@ export default function WizardShell() {
     window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: state.phase } }));
   }, [state.phase]);
 
+  // Pontos derivados da posição global (cada fase concluída ≈ 280 pts), só para o HUD
+  // de fora da triagem. Dentro da triagem, o BetModeShell já renderiza seu próprio HUD
+  // com pontos reais somados pelas ações.
+  const phaseIdx = unifiedPhaseIndex(state.phase);
+  const hudPoints = Math.max(0, phaseIdx * 280);
+  const hudProgress = Math.min(1, (phaseIdx + 1) / UNIFIED_VISIBLE_PHASES);
+  const hudLabel = UNIFIED_PHASE_LABELS[state.phase] ?? '';
+  const showGlobalHud = stage !== 'triage' && stage !== 'done';
+
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
       <WizardProgressBar phase={state.phase} />
+      {showGlobalHud && (
+        <PointsHud points={hudPoints} phaseLabel={hudLabel} progress={hudProgress} />
+      )}
       {showGlobalBack && (
         <div className="mx-auto mt-2 flex w-full max-w-md justify-start px-4">
           <button
@@ -152,15 +164,19 @@ export default function WizardShell() {
           onPhaseChange={handleTriagePhaseChange}
         />
       ) : stage === 'extras-services' ? (
-        <Step20_MoreServices
-          onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
-          onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
-        />
+        <div className="mx-auto w-full max-w-md px-4 py-6">
+          <Step20_MoreServices
+            onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
+            onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
+          />
+        </div>
       ) : stage === 'extras-portfolio' ? (
-        <Step21_PortfolioAlbums
-          onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
-          onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
-        />
+        <div className="mx-auto w-full max-w-md px-4 py-6">
+          <Step21_PortfolioAlbums
+            onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
+            onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
+          />
+        </div>
       ) : stage === 'done' ? (
         <div className="mx-auto w-full max-w-md px-4 py-8 text-center">
           <h2 className="text-xl font-semibold">Cadastro concluído!</h2>
@@ -169,18 +185,20 @@ export default function WizardShell() {
           </p>
         </div>
       ) : (
-        <MainOrchestrator
-          internalHandoffFromTriage
-          seedState={{
-            phase: 'phase2_service',
-            profile: state.profile,
-            service: state.service,
-            providerId: state.providerId,
-            firstServiceId: state.firstServiceId,
-          }}
-          onPhaseChange={handleMainPhaseChange}
-        />
+        <div className="mx-auto w-full max-w-md px-4 py-6">
+          <MainOrchestrator
+            internalHandoffFromTriage
+            seedState={{
+              phase: 'phase2_service',
+              profile: state.profile,
+              service: state.service,
+              providerId: state.providerId,
+              firstServiceId: state.firstServiceId,
+            }}
+            onPhaseChange={handleMainPhaseChange}
+          />
+        </div>
       )}
-    </>
+    </div>
   );
 }
