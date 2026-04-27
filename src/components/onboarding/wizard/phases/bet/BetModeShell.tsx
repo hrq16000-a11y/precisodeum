@@ -75,7 +75,7 @@ interface BetModeShellProps {
    * Como /cadastro-bet e /onboarding-v2 deixaram de existir como rotas,
    * é o único caminho válido pós-triagem para profissionais.
    */
-  onInternalHandoff?: () => void;
+  onInternalHandoff?: (state: BetState) => void;
   /**
    * Reporta a fase interna corrente para o WizardShell exibir a barra
    * de progresso global (Consolidação Fase 1).
@@ -249,7 +249,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       },
     });
     if (onInternalHandoff) {
-      onInternalHandoff();
+      onInternalHandoff(state);
     } else {
       // Fallback (não deve ocorrer no fluxo unificado): mantém o usuário na
       // mesma rota e força um reload — impede loop em rotas legadas.
