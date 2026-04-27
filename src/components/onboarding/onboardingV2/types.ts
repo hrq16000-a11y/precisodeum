@@ -33,7 +33,7 @@ export interface OnboardingProfileData {
   working_hours: string;
 }
 
-export type OnboardingCoreField = 'full_name' | 'whatsapp' | 'city' | 'state';
+export type OnboardingCoreField = 'full_name' | 'whatsapp' | 'city' | 'state' | 'document';
 
 export interface OnboardingFirstServiceData {
   service_name: string;          // herdado da categoria escolhida (auto)

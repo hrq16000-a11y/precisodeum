@@ -13,6 +13,7 @@ export type OnboardingCoreLocks = {
   whatsapp: boolean;
   city: boolean;
   state: boolean;
+  document: boolean;
 };
 
 function normalizePhone(value: unknown): string {
@@ -38,12 +39,16 @@ export function buildOnboardingCoreLocks({ profile, provider }: BootstrapInput):
   const whatsapp = normalizePhone(profile?.whatsapp || provider?.whatsapp || provider?.phone || '');
   const city = String(provider?.city || profile?.city || '').trim();
   const state = String(provider?.state || profile?.state || '').trim();
+  const documentDigits = String(
+    profile?.tax_id || provider?.cpf || provider?.cnpj || ''
+  ).replace(/\D/g, '');
 
   return {
     full_name: full_name.length >= 4,
     whatsapp: whatsapp.length >= 10,
     city: city.length > 0,
     state: state.length === 2,
+    document: documentDigits.length === 11 || documentDigits.length === 14,
   };
 }
 
