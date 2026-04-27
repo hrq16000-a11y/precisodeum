@@ -30,6 +30,7 @@ interface CityAutocompleteProps {
   statusText?: string;
   /** Quando informado, restringe os resultados a uma UF específica. */
   stateFilter?: string;
+  disabled?: boolean;
   /** Callback fired whenever the popover closes (selection, click outside, Esc). */
   onClose?: () => void;
 }
@@ -44,6 +45,7 @@ const CityAutocomplete = ({
   placeholder = 'Buscar cidade...',
   statusText,
   stateFilter,
+  disabled = false,
   onClose,
 }: CityAutocompleteProps) => {
   const [open, setOpen] = useState(false);
@@ -115,6 +117,7 @@ const CityAutocomplete = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          disabled={disabled}
           className={cn(
             'h-auto min-h-11 w-full justify-between py-3 font-normal',
             !value.city && 'text-muted-foreground'
