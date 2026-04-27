@@ -74,10 +74,10 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
     if (!userId) return;
     let alive = true;
     (async () => {
-      const [{ data: prof }, { data: prov }] = await Promise.all([
-        supabase.from('profiles').select('user_ref').eq('user_id', userId).maybeSingle(),
-        supabase.from('providers').select('id, slug').eq('user_id', userId).maybeSingle(),
-      ]);
+      const profRes: any = await (supabase as any).from('profiles').select('user_ref').eq('user_id', userId).maybeSingle();
+      const provRes: any = await (supabase as any).from('providers').select('id, slug').eq('user_id', userId).maybeSingle();
+      const prof = profRes?.data;
+      const prov = provRes?.data;
       if (!alive) return;
       if (prof?.user_ref) setUserRef(prof.user_ref);
       if (prov?.slug) setProviderSlug(prov.slug);
