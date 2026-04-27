@@ -22,6 +22,8 @@ interface DraftEnvelope {
   profile: OnboardingState['profile'];
   service: OnboardingState['service'];
   phase: OnboardingState['phase'];
+  providerId: OnboardingState['providerId'];
+  firstServiceId: OnboardingState['firstServiceId'];
 }
 
 export function readOnboardingV2Draft(): Partial<OnboardingState> | null {
@@ -39,6 +41,8 @@ export function readOnboardingV2Draft(): Partial<OnboardingState> | null {
       profile: parsed.profile,
       service: parsed.service,
       phase: parsed.phase,
+      providerId: parsed.providerId ?? null,
+      firstServiceId: parsed.firstServiceId ?? null,
     };
   } catch {
     return null;
@@ -71,6 +75,8 @@ export function useOnboardingV2Draft(state: OnboardingState) {
           profile: state.profile,
           service: state.service,
           phase: state.phase,
+          providerId: state.providerId,
+          firstServiceId: state.firstServiceId,
         };
         localStorage.setItem(DRAFT_KEY, JSON.stringify(envelope));
         broadcastDraftChange('local-write');
@@ -81,5 +87,5 @@ export function useOnboardingV2Draft(state: OnboardingState) {
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
-  }, [state.profile, state.service, state.phase]);
+  }, [state.profile, state.service, state.phase, state.providerId, state.firstServiceId]);
 }

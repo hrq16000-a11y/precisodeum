@@ -16,7 +16,12 @@ import type { OnboardingState } from './types';
 const REMOTE_DEBOUNCE_MS = 1500;
 
 export async function fetchRemoteDraft(userId: string): Promise<{
-  payload: { profile: OnboardingState['profile']; service: OnboardingState['service'] };
+  payload: {
+    profile: OnboardingState['profile'];
+    service: OnboardingState['service'];
+    providerId?: OnboardingState['providerId'];
+    firstServiceId?: OnboardingState['firstServiceId'];
+  };
   phase: OnboardingState['phase'];
   updated_at: string;
 } | null> {
@@ -53,7 +58,12 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
       try {
         await supabase.from('onboarding_v2_drafts' as any).upsert({
           user_id: userId,
-          payload: { profile: state.profile, service: state.service },
+          payload: {
+            profile: state.profile,
+            service: state.service,
+            providerId: state.providerId,
+            firstServiceId: state.firstServiceId,
+          },
           phase: state.phase,
         } as any, { onConflict: 'user_id' });
       } catch {
@@ -64,5 +74,5 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
-  }, [state.profile, state.service, state.phase, userId]);
+  }, [state.profile, state.service, state.phase, state.providerId, state.firstServiceId, userId]);
 }

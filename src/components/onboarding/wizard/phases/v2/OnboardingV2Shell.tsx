@@ -134,7 +134,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   const [saving, setSaving] = useState(false);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
   const [remoteDraft, setRemoteDraft] = useState<null | {
-    payload: { profile: any; service: any };
+    payload: { profile: any; service: any; providerId?: string | null; firstServiceId?: string | null };
     phase: any;
     updated_at: string;
   }>(null);
@@ -204,6 +204,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         state: {
           profile: remoteDraft.payload.profile,
           service: remoteDraft.payload.service,
+          providerId: remoteDraft.payload.providerId ?? null,
+          firstServiceId: remoteDraft.payload.firstServiceId ?? null,
           phase: remoteDraft.phase as any,
         },
       });
@@ -305,7 +307,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       if (state.firstServiceId) return;
 
       // 3) Busca o 1º serviço existente e hidrata estado de forma não-destrutiva
-      const svc = await fetchExistingFirstService(pid);
+      const svc = await fetchExistingFirstService(pid, state.profile.primary_category_id);
       if (!svc || cancelled) return;
 
       dispatch({ type: 'SET_FIRST_SERVICE_ID', id: svc.id });
@@ -317,8 +319,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         category_ids:
           existingService.category_ids?.length
             ? existingService.category_ids
-            : Array.isArray(svc.category_ids) && svc.category_ids.length
-              ? svc.category_ids
               : svc.category_id
                 ? [svc.category_id]
                 : [],
@@ -333,8 +333,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         starting_price_brl:
           existingService.starting_price_brl != null
             ? existingService.starting_price_brl
-            : typeof svc.starting_price === 'number'
-              ? svc.starting_price
+            : typeof svc.price === 'string' && svc.price.trim()
+              ? parseFloat(String(svc.price).replace(/[^\d,.]/g, '').replace(',', '.')) || null
               : null,
         working_days: existingService.working_days || [],
         working_hours: existingService.working_hours || svc.working_hours || '',
