@@ -13,7 +13,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, X, Loader2, Plus, MapPin, Sparkles, Check, AlertCircle, Wand2 } from 'lucide-react';
+import { ChevronDown, X, Loader2, Plus, MapPin, Sparkles, Check, AlertCircle, Wand2, ArrowRight, Tag, FileText, DollarSign, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -149,20 +149,31 @@ export const Phase2Service = ({
   };
 
   return (
-    <div className="space-y-5">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="mx-auto w-full max-w-md space-y-5 px-4 py-6"
+    >
       <button onClick={onBack} className="text-xs text-muted-foreground hover:text-foreground">← Voltar</button>
-      <header className="text-center space-y-1">
-        <h1 className="font-display text-2xl font-bold text-foreground">Qual serviço você quer cadastrar?</h1>
-        <p className="text-sm text-muted-foreground">Em 30 segundos seu primeiro serviço já está no mapa.</p>
+      <header className="space-y-2 text-center">
+        <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground">
+          Qual serviço você quer cadastrar?
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Em 30 segundos seu primeiro serviço já está no mapa.
+        </p>
       </header>
 
-      <div className="space-y-4">
-        <div>
-          <Label className="text-xs">Categoria *</Label>
+      <div className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-card">
+        <label className="block">
+          <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            <Tag className="h-3.5 w-3.5" /> Categoria
+          </span>
           <div className="relative">
             <Input
               ref={focusCategory.ref as any}
-              className={focusCategory.highlightClass}
+              className={`h-11 ${focusCategory.highlightClass}`}
               value={search || selectedName}
               onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
               onFocus={() => setOpen(true)}
@@ -171,7 +182,7 @@ export const Phase2Service = ({
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           </div>
           {open && filtered.length > 0 && (
-            <div className="mt-1 max-h-56 overflow-auto rounded-md border border-border bg-popover shadow-lg">
+            <div className="mt-1 max-h-56 overflow-auto rounded-lg border border-border bg-popover shadow-lg">
               {filtered.map((c) => (
                 <button
                   key={c.id}
@@ -191,11 +202,13 @@ export const Phase2Service = ({
               O título do serviço deve ser igual à categoria escolhida. Reselecione a categoria para corrigir.
             </p>
           )}
-        </div>
+        </label>
 
         <div>
           <div className="flex items-center justify-between gap-2">
-            <Label className="text-xs">Descrição do serviço *</Label>
+            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <FileText className="h-3.5 w-3.5" /> Descrição do serviço
+            </span>
             <button
               type="button"
               onClick={handleSuggest}
@@ -236,11 +249,15 @@ export const Phase2Service = ({
             placeholder="Conte rapidamente o que você faz, diferenciais e experiência. Ex: Atendo emergências 24h, +10 anos de experiência em redes residenciais e comerciais."
             maxLength={400}
             rows={4}
-            className="mt-2 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+            className={`mt-2 flex w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:ring-2 resize-none ${
+              service.description.trim().length >= 10
+                ? 'border-emerald-500 ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] focus:border-emerald-500 focus:ring-emerald-300/50'
+                : 'border-input focus:border-amber-400 focus:ring-amber-300/40'
+            }`}
           />
           <div className="mt-1 flex items-center justify-between gap-2">
             <p className="text-[10px] text-muted-foreground">
-              {service.description.length}/400 — mínimo 10 caracteres. O título do anúncio será <span className="font-medium text-foreground">{selectedName || 'a categoria escolhida'}</span>.
+              {service.description.length}/400 — mínimo 10 caracteres.
             </p>
             {savedHint && (
               <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600">
@@ -248,21 +265,29 @@ export const Phase2Service = ({
               </span>
             )}
           </div>
-          <p className="mt-1 text-[10px] text-muted-foreground/80">
-            Dica: clique em <span className="font-medium">Gerar 3 sugestões</span> e troque entre as variações até encontrar a que mais combina com você.
-          </p>
         </div>
 
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
           Você poderá adicionar até 5 fotos no próximo passo.
         </p>
       </div>
 
-      <div className="flex gap-2 pt-2">
-        <Button type="button" variant="ghost" onClick={onSkip} className="flex-1">Pular por enquanto</Button>
-        <Button type="button" onClick={handleAdvance} disabled={!canAdvance} className="flex-1">Salvar e continuar</Button>
+      <div className="flex flex-col gap-2 pt-1">
+        <Button
+          type="button"
+          size="lg"
+          onClick={handleAdvance}
+          disabled={!canAdvance}
+          className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50 disabled:shadow-none"
+        >
+          Salvar e continuar
+          <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" />
+        </Button>
+        <Button type="button" variant="ghost" onClick={onSkip} className="w-full text-muted-foreground">
+          Pular por enquanto
+        </Button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -342,18 +367,28 @@ export const Phase2Details = ({
   };
 
   return (
-    <div className="space-y-5">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="mx-auto w-full max-w-md space-y-5 px-4 py-6"
+    >
       <button onClick={onBack} className="text-xs text-muted-foreground hover:text-foreground">← Voltar</button>
-      <header className="text-center space-y-1">
-        <h1 className="font-display text-2xl font-bold text-foreground">Para quem e por quanto?</h1>
+      <header className="space-y-2 text-center">
+        <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground">
+          Para quem e por quanto?
+        </h1>
         <p className="text-sm text-muted-foreground">Tudo opcional — você pode refinar depois.</p>
       </header>
 
       {/* Cidades atendidas */}
-      <div ref={focusCities.ref as any} className={`rounded-md ${focusCities.highlightClass}`}>
-        <Label className="text-xs flex items-center gap-1">
-          <MapPin className="h-3 w-3" /> Cidades atendidas <span className="text-muted-foreground">(até 5)</span>
-        </Label>
+      <div
+        ref={focusCities.ref as any}
+        className={`space-y-3 rounded-2xl border border-border bg-card p-4 shadow-card ${focusCities.highlightClass}`}
+      >
+        <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <MapPin className="h-3.5 w-3.5" /> Cidades atendidas <span className="font-normal normal-case text-muted-foreground/70">(até 5)</span>
+        </span>
         <div className="flex gap-2">
           <div className="flex-1">
             <CityAutocomplete
@@ -365,15 +400,15 @@ export const Phase2Details = ({
               statusText={profile.state ? `Selecione cidades de ${profile.state}` : 'A UF do perfil define as cidades exibidas'}
             />
           </div>
-          <Button type="button" variant="outline" disabled>
+          <Button type="button" variant="outline" disabled className="h-11 w-11 p-0">
             <Plus className="h-4 w-4" />
           </Button>
         </div>
         {!profile.state && (
-          <p className="mt-1 text-[11px] text-muted-foreground">Escolha seu estado na etapa anterior para limitar as cidades automaticamente.</p>
+          <p className="text-[11px] text-muted-foreground">Escolha seu estado na etapa anterior para limitar as cidades automaticamente.</p>
         )}
         {service.cities_served.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {service.cities_served.map(c => (
               <Badge key={c} variant="secondary" className="gap-1">
                 {c}
@@ -386,42 +421,47 @@ export const Phase2Details = ({
         )}
       </div>
 
-      {/* Valores (a partir de) — NUNCA "Orçamento" */}
-      <div>
-        <Label className="text-xs">Valores (a partir de)</Label>
+      {/* Valores (a partir de) */}
+      <div className="space-y-2 rounded-2xl border border-border bg-card p-4 shadow-card">
+        <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <DollarSign className="h-3.5 w-3.5" /> Valores (a partir de)
+        </span>
         <Input
           value={priceText}
           onChange={(e) => onPriceChange(e.target.value)}
           inputMode="decimal"
           placeholder="Ex: 120,00"
+          className="h-11"
         />
         {service.starting_price_brl != null && (
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Será exibido como <span className="font-medium text-foreground">{formatBRL(service.starting_price_brl)}</span>
           </p>
         )}
-        <p className="mt-1 text-[10px] text-muted-foreground">Foco em valorizar sua mão de obra — nada de leilão.</p>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">Foco em valorizar sua mão de obra — nada de leilão.</p>
       </div>
 
       {/* Horários */}
-      <div>
-        <Label className="text-xs">Horários de atendimento</Label>
-        <div className="mt-1 flex flex-wrap gap-1.5">
+      <div className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-card">
+        <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <Clock className="h-3.5 w-3.5" /> Horários de atendimento
+        </span>
+        <div className="flex flex-wrap gap-1.5">
           {HOUR_PRESETS.map(h => (
             <motion.button
               key={h}
               type="button"
               onClick={() => setHours(h)}
               whileTap={{ scale: 0.95 }}
-              className={`rounded-full border px-3 py-1.5 text-xs transition ${customHours === h ? 'border-accent bg-accent/15 font-medium' : 'border-border hover:border-accent/50'}`}
+              className={`rounded-full border px-3 py-1.5 text-xs transition ${customHours === h ? 'border-emerald-500 bg-emerald-500/10 font-medium text-foreground' : 'border-border hover:border-accent/50'}`}
             >
               {h}
             </motion.button>
           ))}
         </div>
-        <div className="mt-3">
-          <Label className="text-xs">Dias de atendimento</Label>
-          <div className="mt-1 flex flex-wrap gap-1.5">
+        <div>
+          <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Dias de atendimento</span>
+          <div className="flex flex-wrap gap-1.5">
             {WEEKDAY_OPTIONS.map((day) => {
               const active = service.working_days.includes(day);
               return (
@@ -430,7 +470,7 @@ export const Phase2Details = ({
                   type="button"
                   onClick={() => toggleDay(day)}
                   whileTap={{ scale: 0.95 }}
-                  className={`rounded-full border px-3 py-1.5 text-xs transition ${active ? 'border-accent bg-accent/15 font-medium' : 'border-border hover:border-accent/50'}`}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition ${active ? 'border-emerald-500 bg-emerald-500/10 font-medium text-foreground' : 'border-border hover:border-accent/50'}`}
                 >
                   {day}
                 </motion.button>
@@ -439,25 +479,34 @@ export const Phase2Details = ({
           </div>
         </div>
         <Input
-          className="mt-2"
           value={customHours}
           onChange={(e) => setHours(e.target.value)}
           placeholder="Ou descreva no seu jeito"
+          className="h-11"
         />
         {(service.working_days.length > 0 || customHours.trim()) && (
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Será exibido como <span className="font-medium text-foreground">{buildWorkingHoursSummary(customHours, service.working_days)}</span>
           </p>
         )}
       </div>
 
-      <div className="flex gap-2 pt-2">
-        <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className="flex-1">Pular por enquanto</Button>
-        <Button type="button" onClick={onSubmit} disabled={saving} className="flex-1">
-          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+      <div className="flex flex-col gap-2 pt-1">
+        <Button
+          type="button"
+          size="lg"
+          onClick={onSubmit}
+          disabled={saving}
+          className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50 disabled:shadow-none"
+        >
+          {saving && <Loader2 className="h-5 w-5 mr-2 animate-spin" />}
           Publicar serviço
+          {!saving && <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" />}
+        </Button>
+        <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className="w-full text-muted-foreground">
+          Pular por enquanto
         </Button>
       </div>
-    </div>
+    </motion.div>
   );
 };
