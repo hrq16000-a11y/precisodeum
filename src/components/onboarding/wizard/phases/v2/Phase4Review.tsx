@@ -76,6 +76,15 @@ export const Phase4Review = ({ profile, service, saving, onEdit, onConfirm }: Ph
   const docFormatted = fmtDoc(profile.kind, profile.document);
   const cities = service.cities_served?.join(', ');
   const days = service.working_days?.join(', ');
+  const errors = validateReviewData(profile, service);
+  const blocked = errors.length > 0;
+
+  const goToError = (section: string) => {
+    const cfg = REVIEW_SECTIONS[section];
+    if (!cfg) return;
+    if (cfg.focusField) setFocusFieldForNextPhase(cfg.focusField);
+    onEdit(cfg.phase, cfg.focusField);
+  };
 
   return (
     <div className="space-y-4">
@@ -86,6 +95,32 @@ export const Phase4Review = ({ profile, service, saving, onEdit, onConfirm }: Ph
         <h2 className="text-xl font-bold text-foreground">Revise antes de publicar</h2>
         <p className="text-sm text-muted-foreground">Tudo certo? Você pode editar qualquer seção.</p>
       </div>
+
+      {blocked && (
+        <div
+          role="alert"
+          className="rounded-2xl border border-destructive/40 bg-destructive/5 p-3 space-y-2"
+        >
+          <div className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-4 w-4" aria-hidden />
+            <p className="text-sm font-semibold">Corrija antes de publicar</p>
+          </div>
+          <ul className="space-y-1.5">
+            {errors.map((err, i) => (
+              <li key={i} className="flex items-start justify-between gap-2 text-xs">
+                <span className="text-foreground/90">{err.message}</span>
+                <button
+                  type="button"
+                  onClick={() => goToError(err.section)}
+                  className="shrink-0 inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-medium text-primary hover:bg-primary/10"
+                >
+                  <Pencil className="h-3 w-3" /> Corrigir
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <Section config={REVIEW_SECTIONS.identity} onEdit={onEdit}>
         <Row label="Nome" value={profile.full_name} />
@@ -135,11 +170,14 @@ export const Phase4Review = ({ profile, service, saving, onEdit, onConfirm }: Ph
       <div className="sticky bottom-0 -mx-4 mt-2 border-t border-border bg-background/95 px-4 pt-3 pb-1 backdrop-blur-md">
         <Button
           onClick={onConfirm}
-          disabled={saving}
-          className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+          disabled={saving || blocked}
+          className="w-full"
           size="lg"
+          aria-disabled={saving || blocked}
+          title={blocked ? 'Corrija os campos destacados acima' : undefined}
         >
-          {saving ? 'Publicando...' : 'Confirmar e Publicar'}
+          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          {saving ? 'Publicando...' : blocked ? 'Corrija para publicar' : 'Confirmar e Publicar'}
         </Button>
       </div>
     </div>
