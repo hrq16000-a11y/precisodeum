@@ -380,14 +380,13 @@ const App = () => {
                 <Route path="/espacos-patrocinio" element={<SponsorSlotsPage />} />
                 <Route path="/contrato-patrocinio" element={<SponsorContractPage />} />
                 <Route path="/vaga/:slug" element={<JobDetailPage />} />
-                {/* Wizard unificado (Fase A) — porta única /cadastro-inicial. */}
+                {/* Wizard unificado — porta ÚNICA /cadastro-inicial. Rotas legadas viram redirect 301. */}
+                <Route path="/cadastro-inicial" element={<CadastroInicialPage />} />
                 <Route path="/triagem" element={<Navigate to="/cadastro-inicial" replace />} />
                 <Route path="/triagem/preview" element={<Navigate to="/cadastro-inicial" replace />} />
-                <Route path="/cadastro-inicial" element={<CadastroInicialPage />} />
-                {/* Compat: rotas legadas continuam funcionando, mas a porta oficial é /cadastro-inicial. */}
-                <Route path="/onboarding-v2" element={<OnboardingV2Page />} />
+                <Route path="/cadastro-bet" element={<Navigate to="/cadastro-inicial" replace />} />
+                <Route path="/onboarding-v2" element={<Navigate to="/cadastro-inicial" replace />} />
                 <Route path="/onboarding-v2/sucesso" element={<ProtectedRoute><OnboardingV2SuccessPage /></ProtectedRoute>} />
-                <Route path="/cadastro-bet" element={<CadastroBetPage />} />
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                 <Route path="/dashboard/perfil" element={<ProtectedRoute><ErrorGuard componentName="DashboardProfilePage"><DashboardProfilePage /></ErrorGuard></ProtectedRoute>} />
                 <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><ErrorGuard componentName="DashboardServicesPage"><DashboardServicesPage /></ErrorGuard></ProtectedRoute>} />
