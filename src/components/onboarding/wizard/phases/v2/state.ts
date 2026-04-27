@@ -54,6 +54,7 @@ export const initialOnboardingState: OnboardingState = {
     category_ids: [],
     cities_served: [],
     starting_price_brl: null,
+    working_days: [],
     working_hours: '',
   },
   phase: 'phase1_action',
