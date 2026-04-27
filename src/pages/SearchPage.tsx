@@ -302,6 +302,25 @@ const SearchPage = () => {
   const paginatedNearby = filteredNearby;
   const paginatedOutOfState = showOutOfState ? filteredOutOfState : [];
 
+  // Sub-agrupamento por bairro dentro do bloco "local" — só aplica
+  // quando há GPS, ordenação 'nearest' e diversidade de bairros (>=2).
+  const localGroupedByNeighborhood = useMemo(() => {
+    if (!userLat || !userLon || sortBy !== 'nearest') return null;
+    const groups = new Map<string, DbProvider[]>();
+    for (const p of paginatedLocal) {
+      const key = (p.neighborhood || '').trim() || 'Outros';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(p);
+    }
+    if (groups.size < 2) return null;
+    // Ordena bairros pela menor distância do primeiro card (já vem ordenado por distância).
+    return Array.from(groups.entries()).sort((a, b) => {
+      const da = a[1][0]?.distanceKm ?? Number.MAX_VALUE;
+      const db = b[1][0]?.distanceKm ?? Number.MAX_VALUE;
+      return da - db;
+    });
+  }, [paginatedLocal, userLat, userLon, sortBy]);
+
   // Quick suggestion chips
   const suggestionChips = useMemo(() => {
     return geoCategories.slice(0, 8).map(c => ({
