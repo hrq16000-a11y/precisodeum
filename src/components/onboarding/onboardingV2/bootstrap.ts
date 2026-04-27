@@ -124,7 +124,7 @@ export function buildOnboardingV2BootstrapState({ profile, provider }: Bootstrap
       kind: inferKind(profile, provider),
       full_name,
       whatsapp,
-      document: '',
+      document: String(profile?.tax_id || provider?.cpf || provider?.cnpj || '').replace(/\D/g, ''),
       city,
       state,
       avatar_url: profile?.avatar_url ?? null,
