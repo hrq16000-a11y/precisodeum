@@ -239,7 +239,7 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
 
       <div className="flex gap-2 pt-2">
         <Button type="button" variant="ghost" onClick={onSkip} className="flex-1">Pular por enquanto</Button>
-        <Button type="button" onClick={onNext} className="flex-1">Continuar</Button>
+        <Button type="button" onClick={onNext} className="flex-1">Salvar e continuar</Button>
       </div>
     </div>
   );
@@ -365,7 +365,7 @@ export const Phase1Contact = ({
         className="w-full"
       >
         {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-        Continuar
+        Salvar e continuar
       </Button>
       <p className="text-center text-[10px] text-muted-foreground">
         Este passo não pode ser pulado — precisamos disso para te chamar de volta.
