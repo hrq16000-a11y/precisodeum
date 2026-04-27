@@ -70,9 +70,10 @@ const ACCOUNT_TYPE_ID_PJ = '4e322d19-c999-4563-ac63-45ccefd78736'; // Empresa / 
 
 interface BetModeShellProps {
   /**
-   * Callback opcional usado pelo WizardShell unificado para fazer o handoff
-   * V3 → V2 sem trocar de URL. Quando fornecido, substitui o
-   * `navigate('/onboarding-v2?source=bet-first-service')` legado.
+   * Callback do WizardShell unificado para o handoff Triagem →
+   * Criação de Serviço & Perfil, em memória (sem trocar de URL).
+   * Como /cadastro-bet e /onboarding-v2 deixaram de existir como rotas,
+   * é o único caminho válido pós-triagem para profissionais.
    */
   onInternalHandoff?: () => void;
 }
@@ -225,8 +226,8 @@ export default function BetModeShell({ onInternalHandoff }: BetModeShellProps = 
     }
     appendWizardResetDebugLog({
       source: 'bet-celebration-cta',
-      route: onInternalHandoff ? '/cadastro-inicial' : '/cadastro-bet',
-      nextRoute: onInternalHandoff ? '/cadastro-inicial' : '/onboarding-v2?source=bet-first-service',
+      route: '/cadastro-inicial',
+      nextRoute: '/cadastro-inicial',
       phase: state.phase,
       reason: 'provider-clicked-first-service',
       meta: {
@@ -234,13 +235,15 @@ export default function BetModeShell({ onInternalHandoff }: BetModeShellProps = 
         state: state.state,
         hasName: state.full_name.trim().length > 0,
         hasWhatsapp: state.whatsapp.replace(/\D/g, '').length >= 10,
-        unified: !!onInternalHandoff,
+        unified: true,
       },
     });
     if (onInternalHandoff) {
       onInternalHandoff();
     } else {
-      navigate('/onboarding-v2?source=bet-first-service', { replace: true });
+      // Fallback (não deve ocorrer no fluxo unificado): mantém o usuário na
+      // mesma rota e força um reload — impede loop em rotas legadas.
+      navigate('/cadastro-inicial', { replace: true });
     }
   }
 
