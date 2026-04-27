@@ -296,6 +296,7 @@ export const Phase2Details = ({
 }: DetailsProps) => {
   const [priceText, setPriceText] = useState(service.starting_price_brl != null ? String(service.starting_price_brl) : '');
   const [customHours, setCustomHours] = useState(service.working_hours);
+  const focusCities = useFocusFieldFromReview('cities_served');
 
   // Pré-popula com cidade do perfil
   useEffect(() => {
