@@ -428,9 +428,23 @@ export const OnboardingV2Shell = () => {
 
   /* ───── Render por fase ───── */
 
-  const finishWizard = () => {
+  const finishWizard = async () => {
     clearOnboardingV2Draft();
     if (user?.id) void clearRemoteDraft(user.id);
+
+    if (user?.id && !state.firstServiceId) {
+      const { error } = await supabase.from('profiles')
+        .update({ onboarding_step: 5, onboarding_completed: true })
+        .eq('id', user.id);
+
+      if (error) {
+        toast.error('Não consegui concluir seu perfil agora. ' + (error.message || 'Tente de novo.'));
+        return;
+      }
+
+      await refetchProfile?.();
+    }
+
     toast.success('Perfil completo! Bem-vindo.');
     navigate('/onboarding-v2/sucesso');
   };
@@ -453,12 +467,6 @@ export const OnboardingV2Shell = () => {
 
     setSaving(true);
     try {
-      const { error } = await supabase.from('profiles')
-        .update({ onboarding_step: 5, onboarding_completed: true })
-        .eq('id', user.id);
-      if (error) throw error;
-
-      await refetchProfile?.();
       dispatch({ type: 'GO_TO', phase: 'phase4_document' });
     } catch (e: any) {
       track('error', { reason: 'skip_first_service_failed', message: e?.message || null });
@@ -551,7 +559,7 @@ export const OnboardingV2Shell = () => {
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_contact' }); }}
             onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
             onSkip={() => {
-              track('skip', { exit: 'dashboard_servicos' });
+              track('skip', { exit: 'phase4_document' });
               toast.info('Tudo certo. Vamos continuar seu perfil e você cadastra o serviço depois.');
               void continueWithoutFirstService();
             }}
