@@ -12,6 +12,7 @@ import { useSettingValue } from '@/hooks/useSiteSettings';
 import TopLoadingBar from '@/components/ui/TopLoadingBar';
 import Logo from '@/components/Logo';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
@@ -239,16 +240,72 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     <item.icon className={`h-4 w-4 ${active ? 'text-accent' : 'group-hover:text-sidebar-foreground'}`} />
                   </motion.div>
                   <span className="flex-1">{item.label}</span>
-                  {typeof item.percent === 'number' && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      title={`${item.percent}% do cadastro completo`}
-                      className={`flex h-5 min-w-[34px] items-center justify-center rounded-full px-1.5 text-[9px] font-bold shadow-sm ${item.percent >= 100 ? 'bg-emerald-500 text-white' : item.percent >= 60 ? 'bg-accent text-accent-foreground' : 'bg-amber-500 text-white'}`}
-                    >
-                      {item.percent}%
-                    </motion.span>
-                  )}
+                  {typeof item.percent === 'number' && (() => {
+                    const missingReq = onbStatus.missingRequired;
+                    const missingOpt = onbStatus.optionalItems.filter(i => !i.done);
+                    const remaining = 100 - item.percent;
+                    const badgeColor = item.percent >= 100
+                      ? 'bg-emerald-500 text-white'
+                      : item.percent >= 60
+                        ? 'bg-accent text-accent-foreground'
+                        : 'bg-amber-500 text-white';
+                    return (
+                      <TooltipProvider delayDuration={150}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <motion.span
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className={`flex h-5 min-w-[34px] items-center justify-center rounded-full px-1.5 text-[9px] font-bold shadow-sm cursor-help ${badgeColor}`}
+                            >
+                              {item.percent}%
+                            </motion.span>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[260px] p-3 text-xs">
+                            <p className="font-bold mb-1">
+                              {item.percent >= 100
+                                ? 'Cadastro 100% completo'
+                                : `Faltam ${remaining}% para 100%`}
+                            </p>
+                            {missingReq.length > 0 && (
+                              <div className="mb-2">
+                                <p className="text-[10px] font-semibold uppercase text-amber-600 dark:text-amber-400 mb-1">
+                                  Obrigatórios ({missingReq.length})
+                                </p>
+                                <ul className="space-y-0.5">
+                                  {missingReq.map(i => (
+                                    <li key={i.key} className="text-foreground">• {i.label}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {missingOpt.length > 0 && (
+                              <div>
+                                <p className="text-[10px] font-semibold uppercase text-muted-foreground mb-1">
+                                  Opcionais ({missingOpt.length})
+                                </p>
+                                <ul className="space-y-0.5">
+                                  {missingOpt.slice(0, 5).map(i => (
+                                    <li key={i.key} className="text-muted-foreground">• {i.label}</li>
+                                  ))}
+                                  {missingOpt.length > 5 && (
+                                    <li className="text-muted-foreground italic">
+                                      + {missingOpt.length - 5} outros
+                                    </li>
+                                  )}
+                                </ul>
+                              </div>
+                            )}
+                            {missingReq.length === 0 && missingOpt.length === 0 && (
+                              <p className="text-emerald-600 dark:text-emerald-400">
+                                Tudo pronto! Seu perfil está no topo.
+                              </p>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })()}
                   {item.badge > 0 && (
                     <motion.span
                       initial={{ scale: 0 }}
