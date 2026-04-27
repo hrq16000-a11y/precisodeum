@@ -315,12 +315,36 @@ const OnboardingV2SuccessPage = () => {
                   </p>
                 </div>
               </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-medium text-muted-foreground">
+                    Personalize sua mensagem antes de enviar
+                  </label>
+                  {shareMessage !== defaultMessage && (
+                    <button
+                      type="button"
+                      onClick={resetMessage}
+                      className="text-[10px] text-primary hover:underline"
+                    >
+                      restaurar padrão
+                    </button>
+                  )}
+                </div>
+                <Textarea
+                  value={shareMessage}
+                  onChange={(e) => setShareMessage(e.target.value.slice(0, 600))}
+                  rows={3}
+                  placeholder={defaultMessage}
+                  className="text-xs resize-none"
+                />
+                <p className="text-right text-[10px] text-muted-foreground">{shareMessage.length}/600</p>
+              </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <Button onClick={handleWhatsApp} size="sm" className="w-full">
                   <Share2 className="h-4 w-4 mr-2" /> Compartilhar no WhatsApp
                 </Button>
                 <Button onClick={handleCopy} size="sm" variant="outline" className="w-full">
-                  {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                  {copied ? <Check className="h-4 w-4 mr-2 text-emerald-600" /> : <Copy className="h-4 w-4 mr-2" />}
                   {copied ? 'Copiado!' : 'Copiar link'}
                 </Button>
               </div>
