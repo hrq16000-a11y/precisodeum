@@ -13,12 +13,13 @@ import { CheckCircle2, Pencil, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { OnboardingProfileData, OnboardingFirstServiceData, OnboardingPhase } from './types';
+import { setFocusFieldForNextPhase } from './useFocusFieldFromReview';
 
 interface Phase4ReviewProps {
   profile: OnboardingProfileData;
   service: OnboardingFirstServiceData;
   saving?: boolean;
-  onEdit: (phase: OnboardingPhase) => void;
+  onEdit: (phase: OnboardingPhase, focusField?: string) => void;
   onConfirm: () => void;
 }
 
