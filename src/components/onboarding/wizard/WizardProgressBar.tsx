@@ -17,16 +17,19 @@ import {
 
 interface WizardProgressBarProps {
   phase: UnifiedPhase;
+  phaseOrder?: UnifiedPhase[];
   /** Quando true, força 100% (usado em telas de celebração final). */
   forceComplete?: boolean;
 }
 
-export function WizardProgressBar({ phase, forceComplete = false }: WizardProgressBarProps) {
-  const idx = unifiedPhaseIndex(phase);
-  const raw = ((idx + 1) / UNIFIED_VISIBLE_PHASES) * 100;
+export function WizardProgressBar({ phase, phaseOrder, forceComplete = false }: WizardProgressBarProps) {
+  const activeOrder = phaseOrder && phaseOrder.length > 0 ? phaseOrder : undefined;
+  const idx = activeOrder ? Math.max(0, activeOrder.indexOf(phase)) : unifiedPhaseIndex(phase);
+  const total = activeOrder ? Math.max(1, activeOrder.length - 1) : UNIFIED_VISIBLE_PHASES;
+  const raw = ((idx + 1) / total) * 100;
   const pct = forceComplete || phase === 'done' ? 100 : Math.min(100, Math.max(2, raw));
   const label = UNIFIED_PHASE_LABELS[phase] ?? '';
-  const stepNumber = Math.min(idx + 1, UNIFIED_VISIBLE_PHASES);
+  const stepNumber = Math.min(idx + 1, total);
 
   return (
     <div
@@ -35,7 +38,7 @@ export function WizardProgressBar({ phase, forceComplete = false }: WizardProgre
       aria-valuenow={Math.round(pct)}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-label={`Etapa ${stepNumber} de ${UNIFIED_VISIBLE_PHASES} — ${label}`}
+      aria-label={`Etapa ${stepNumber} de ${total} — ${label}`}
     >
       <div className="h-1 w-full bg-muted">
         <motion.div
@@ -46,7 +49,7 @@ export function WizardProgressBar({ phase, forceComplete = false }: WizardProgre
       </div>
       <div className="mx-auto flex max-w-md items-center justify-between px-4 py-1.5 text-[11px] text-muted-foreground">
         <span className="font-medium text-foreground">
-          Etapa {stepNumber} de {UNIFIED_VISIBLE_PHASES}
+          Etapa {stepNumber} de {total}
         </span>
         <span className="truncate pl-3">{label}</span>
       </div>
