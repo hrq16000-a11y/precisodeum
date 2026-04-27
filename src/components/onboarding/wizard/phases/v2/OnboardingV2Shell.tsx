@@ -77,6 +77,8 @@ interface OnboardingV2ShellProps {
    * que não existe mais agora que o handoff é interno (sem trocar de URL).
    */
   internalHandoffFromTriage?: boolean;
+  /** Seed inicial vindo do WizardShell para evitar re-perguntar dados já capturados. */
+  seedState?: Partial<import('./types').OnboardingState>;
   /**
    * Reporta a fase interna corrente para o WizardShell exibir a barra
    * de progresso global (Consolidação Fase 1).
@@ -84,19 +86,25 @@ interface OnboardingV2ShellProps {
   onPhaseChange?: (phase: import('./types').OnboardingPhase) => void;
 }
 
-export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, onPhaseChange }: OnboardingV2ShellProps = {}) => {
+export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState, onPhaseChange }: OnboardingV2ShellProps = {}) => {
   const { user, profile, provider, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // Restaura draft local ao montar (se existir e não estiver expirado)
   const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState, (init) => {
     const draft = readOnboardingV2Draft();
-    if (!draft) return init;
-    return {
+    const seeded = {
       ...init,
-      profile: { ...init.profile, ...(draft.profile || {}) },
-      service: { ...init.service, ...(draft.service || {}) },
-      phase: draft.phase || init.phase,
+      ...seedState,
+      profile: { ...init.profile, ...(seedState?.profile || {}) },
+      service: { ...init.service, ...(seedState?.service || {}) },
+    };
+    if (!draft) return seeded;
+    return {
+      ...seeded,
+      profile: { ...seeded.profile, ...(draft.profile || {}) },
+      service: { ...seeded.service, ...(draft.service || {}) },
+      phase: draft.phase || seedState?.phase || seeded.phase,
     };
   });
   const [saving, setSaving] = useState(false);
@@ -242,6 +250,48 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, onPhaseCh
   useEffect(() => {
     onPhaseChange?.(state.phase);
   }, [state.phase, onPhaseChange]);
+
+  useEffect(() => {
+    const goBack = () => {
+      switch (state.phase) {
+        case 'phase1_kind':
+          dispatch({ type: 'GO_TO', phase: 'phase1_action' });
+          break;
+        case 'phase1_location':
+          dispatch({ type: 'GO_TO', phase: 'phase1_kind' });
+          break;
+        case 'phase1_contact':
+          dispatch({ type: 'GO_TO', phase: 'phase1_location' });
+          break;
+        case 'phase2_service':
+          dispatch({ type: 'GO_TO', phase: 'phase1_contact' });
+          break;
+        case 'phase2_details':
+          dispatch({ type: 'GO_TO', phase: 'phase2_service' });
+          break;
+        case 'phase2_photos':
+          dispatch({ type: 'GO_TO', phase: 'phase2_details' });
+          break;
+        case 'phase3_celebration':
+          dispatch({ type: 'GO_TO', phase: 'phase2_photos' });
+          break;
+        case 'phase4_document':
+          dispatch({ type: 'GO_TO', phase: 'phase3_celebration' });
+          break;
+        case 'phase4_avatar':
+          dispatch({ type: 'GO_TO', phase: 'phase4_document' });
+          break;
+        case 'phase4_extras_a':
+          dispatch({ type: 'GO_TO', phase: 'phase4_avatar' });
+          break;
+        case 'phase4_extras_b':
+          dispatch({ type: 'GO_TO', phase: 'phase4_extras_a' });
+          break;
+      }
+    };
+    window.addEventListener('wizard:request-back', goBack as EventListener);
+    return () => window.removeEventListener('wizard:request-back', goBack as EventListener);
+  }, [state.phase]);
 
   /* ───── Persistência: cria/atualiza provider ao fim da Fase 1 ───── */
   const persistPhase1 = async () => {
