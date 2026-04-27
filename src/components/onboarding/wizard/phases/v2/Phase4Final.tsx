@@ -329,7 +329,10 @@ interface ExtrasBProps {
   saving: boolean;
 }
 
-export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: ExtrasBProps) => (
+export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: ExtrasBProps) => {
+  const focusInsta = useFocusFieldFromReview('instagram_url');
+  const focusFb = useFocusFieldFromReview('facebook_url');
+  return (
   <div className="space-y-5">
     <header className="text-center space-y-1">
       <h1 className="font-display text-2xl font-bold text-foreground">Suas redes (opcional)</h1>
@@ -338,16 +341,20 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: Extr
 
     <div className="space-y-4">
       <div>
-        <Label className="text-xs flex items-center gap-1"><Instagram className="h-3 w-3" /> Instagram</Label>
+        <Label className="text-xs flex items-center gap-1"><Instagram className="h-3 w-3 text-primary" /> Instagram</Label>
         <Input
+          ref={focusInsta.ref}
+          className={focusInsta.highlightClass}
           value={data.instagram_url}
           onChange={(e) => onChange({ instagram_url: e.target.value })}
           placeholder="@seuusuario ou link"
         />
       </div>
       <div>
-        <Label className="text-xs flex items-center gap-1"><Facebook className="h-3 w-3" /> Facebook</Label>
+        <Label className="text-xs flex items-center gap-1"><Facebook className="h-3 w-3 text-primary" /> Facebook</Label>
         <Input
+          ref={focusFb.ref}
+          className={focusFb.highlightClass}
           value={data.facebook_url}
           onChange={(e) => onChange({ facebook_url: e.target.value })}
           placeholder="Link da sua página"
@@ -363,4 +370,5 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: Extr
       </Button>
     </div>
   </div>
-);
+  );
+};
