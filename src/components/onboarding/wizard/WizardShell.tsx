@@ -139,11 +139,12 @@ export default function WizardShell() {
     window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: state.phase } }));
   }, [state.phase]);
 
-  // Pontos derivados da posição global (cada fase concluída ≈ 280 pts), só para o HUD
-  // de fora da triagem. Dentro da triagem, o BetModeShell já renderiza seu próprio HUD
-  // com pontos reais somados pelas ações.
+  // Pontos REAIS lidos de profiles.engagement_points (atualizados pelos triggers
+  // de banco a cada ação concluída). Fora da triagem usamos o valor do banco;
+  // dentro da triagem o BetModeShell já renderiza seu próprio HUD com pontos
+  // somados localmente em tempo real.
   const phaseIdx = unifiedPhaseIndex(state.phase);
-  const hudPoints = Math.max(0, phaseIdx * 280);
+  const hudPoints = realPoints;
   const hudProgress = Math.min(1, (phaseIdx + 1) / UNIFIED_VISIBLE_PHASES);
   const hudLabel = UNIFIED_PHASE_LABELS[state.phase] ?? '';
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
