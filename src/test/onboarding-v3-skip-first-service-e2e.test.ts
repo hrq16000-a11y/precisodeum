@@ -69,7 +69,7 @@ describe('Skip 1º serviço — E2E unificado', () => {
       profile: { ...initialOnboardingState.profile, ...(bootstrap!.profile as any) },
       service: initialOnboardingState.service,
     };
-    const resolved = resolveOnboardingV2SeedState({ draft, bootstrap, source: 'bet-first-service' });
+    const resolved = resolveOnboardingV2SeedState({ draft, bootstrap, forceFromBootstrap: true });
     // Não pode regredir para phase2/phase1.
     expect(phaseIndex(resolved.phase as any)).toBeGreaterThanOrEqual(phaseIndex('phase4_document'));
   });
@@ -87,14 +87,14 @@ describe('Skip 1º serviço — E2E unificado', () => {
   });
 
   it('Phase4Document respeita prop locked e mostra "Já preenchido"', () => {
-    const file = read('src/components/onboarding/onboardingV2/Phase4Final.tsx');
+    const file = read('src/components/onboarding/wizard/phases/v2/Phase4Final.tsx');
     expect(file).toContain('locked?: boolean');
     expect(file).toContain('disabled={!!locked}');
     expect(file).toContain('Já preenchido — não pode ser alterado aqui.');
   });
 
   it('Shell passa locked=coreLocks.document para Phase4Document e não re-grava se já travado', () => {
-    const shell = read('src/components/onboarding/onboardingV2/OnboardingV2Shell.tsx');
+    const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     expect(shell).toContain('locked={!!coreLocks.document}');
     expect(shell).toMatch(/if \(!coreLocks\.document\)\s*\{\s*await persistPatch/);
   });
