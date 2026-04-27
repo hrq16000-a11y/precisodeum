@@ -12,7 +12,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Sparkles, ExternalLink, ArrowRight, Briefcase, MapPin, Camera,
-  ImageIcon, ShieldCheck, CheckCircle2, Circle,
+  ImageIcon, ShieldCheck, CheckCircle2, Circle, Share2, Copy, Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,6 +21,9 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
+import { toast } from 'sonner';
+import { whatsappLink } from '@/lib/whatsapp';
+import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
 
 interface ProviderSummary {
   id: string;
@@ -52,6 +55,8 @@ const OnboardingV2SuccessPage = () => {
   const [hasPhotos, setHasPhotos] = useState(false);
   const [hasPortfolio, setHasPortfolio] = useState(false);
   const [profileName, setProfileName] = useState('');
+  const [userRef, setUserRef] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Celebra uma única vez por usuário
   useEffect(() => {
@@ -75,10 +80,11 @@ const OnboardingV2SuccessPage = () => {
       try {
         const { data: prof } = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('full_name, user_ref')
           .eq('id', user.id)
           .maybeSingle();
         if (alive && prof?.full_name) setProfileName(prof.full_name);
+        if (alive && (prof as any)?.user_ref) setUserRef((prof as any).user_ref);
 
         const { data: prov } = await supabase
           .from('providers')
@@ -126,6 +132,30 @@ const OnboardingV2SuccessPage = () => {
   ];
 
   const isOnline = provider?.status === 'active';
+
+  // Link de afiliado: quem se cadastra por aqui credita pontos via user_ref.
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://precisodeum.com.br';
+  const affiliateLink = userRef ? `${origin}/login?ref=${encodeURIComponent(userRef)}` : '';
+  const shareMessage = affiliateLink
+    ? `Acabei de criar meu perfil no Preciso de Um! Cadastre-se pelo meu link: ${affiliateLink}`
+    : '';
+
+  const handleCopy = async () => {
+    if (!affiliateLink) return;
+    try {
+      await navigator.clipboard.writeText(affiliateLink);
+      setCopied(true);
+      toast.success('Link copiado! Compartilhe e ganhe pontos a cada cadastro.');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Não foi possível copiar.');
+    }
+  };
+
+  const handleWhatsApp = () => {
+    if (!shareMessage) return;
+    window.open(whatsappLink('', shareMessage), '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5 px-4 py-8 sm:py-12">
@@ -260,6 +290,35 @@ const OnboardingV2SuccessPage = () => {
             </Button>
           )}
         </div>
+
+        {/* Compartilhar perfil + link de afiliado */}
+        {affiliateLink && (
+          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10">
+            <CardContent className="p-4 sm:p-5 space-y-3">
+              <div className="flex items-start gap-2">
+                <Share2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <h2 className="font-display text-base font-bold text-foreground">Compartilhe e ganhe pontos</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Cada pessoa que se cadastrar pelo seu link te credita pontos no ranking.
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button onClick={handleWhatsApp} size="sm" className="w-full">
+                  <Share2 className="h-4 w-4 mr-2" /> Compartilhar no WhatsApp
+                </Button>
+                <Button onClick={handleCopy} size="sm" variant="outline" className="w-full">
+                  {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                  {copied ? 'Copiado!' : 'Copiar link'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Instalar app (PWA) */}
+        <InstallAppCard source="onboarding-v2-success" />
 
         {/* Próximos passos opcionais */}
         {!loading && (!hasPhotos || !hasPortfolio) && (

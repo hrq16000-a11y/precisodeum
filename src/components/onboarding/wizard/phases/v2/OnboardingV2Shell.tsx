@@ -260,6 +260,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     onPhaseChange?.(state.phase);
   }, [state.phase, onPhaseChange]);
 
+  // Re-hidrata estado pelo draft local ao entrar no Review (garante dados frescos).
+  useEffect(() => {
+    if (state.phase !== 'phase4_review') return;
+    const draft = readOnboardingV2Draft();
+    if (!draft) return;
+    dispatch({
+      type: 'HYDRATE',
+      state: {
+        profile: { ...state.profile, ...(draft.profile || {}) },
+        service: { ...state.service, ...(draft.service || {}) },
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.phase]);
+
   useEffect(() => {
     const goBack = () => {
       switch (state.phase) {
