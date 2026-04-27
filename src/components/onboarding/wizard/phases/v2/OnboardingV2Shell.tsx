@@ -305,23 +305,24 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!user?.id) return;
+      if (!user?.id && !state.userRef) return;
 
-      // 1) Resgata providerId se ausente
+      // 1) Resgata providerId se ausente — tenta por user_id e por user_ref
       let pid = state.providerId;
       if (!pid) {
-        pid = await findExistingProvider(user.id);
+        pid = await findExistingProvider(user?.id ?? null, state.userRef ?? null);
         if (pid && !cancelled) {
           dispatch({ type: 'HYDRATE', state: { providerId: pid } });
         }
       }
-      if (!pid || cancelled) return;
+      if (cancelled) return;
 
       // 2) Se já temos firstServiceId, nada a fazer
       if (state.firstServiceId) return;
 
-      // 3) Busca o 1º serviço existente e hidrata estado de forma não-destrutiva
-      const svc = await fetchExistingFirstService(pid, state.profile.primary_category_id);
+      // 3) Busca o melhor serviço existente (pelo provider OU pelo user_ref)
+      //    para hidratar o Wizard em modo revisão sem duplicar registros.
+      const svc = await fetchExistingFirstService(pid, state.userRef ?? null, state.profile.primary_category_id);
       if (!svc || cancelled) return;
 
       dispatch({ type: 'SET_FIRST_SERVICE_ID', id: svc.id });
@@ -373,7 +374,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, state.providerId, state.firstServiceId]);
+  }, [user?.id, state.userRef, state.providerId, state.firstServiceId]);
 
   // Telemetria: dispara 'enter' a cada troca de fase
   useEffect(() => {
