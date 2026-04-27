@@ -66,7 +66,7 @@ export function resolveOnboardingV2SeedState({
   /**
    * Quando `true`, força o bootstrap a "puxar" o draft para a fase de criação
    * do 1º serviço (saída natural após a triagem unificada). Substitui o antigo
-   * `source === 'bet-first-service'`, agora que o handoff é interno.
+   * o antigo gatilho legado por query string, agora que o handoff é interno.
    *
    * Anti-regressão: se o draft já está em phase4_* / done, NUNCA voltamos.
    */

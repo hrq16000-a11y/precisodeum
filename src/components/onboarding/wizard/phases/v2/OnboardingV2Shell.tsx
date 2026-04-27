@@ -73,7 +73,7 @@ function slugify(input: string): string {
 interface OnboardingV2ShellProps {
   /**
    * Marca verdade quando o V2 Shell é aberto logo após a triagem (V3) dentro
-   * do WizardShell unificado. Substitui o antigo `?source=bet-first-service`,
+   * do WizardShell unificado. Substitui o antigo gatilho via query string,
    * que não existe mais agora que o handoff é interno (sem trocar de URL).
    */
   internalHandoffFromTriage?: boolean;
