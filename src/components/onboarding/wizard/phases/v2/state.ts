@@ -41,6 +41,7 @@ export const initialOnboardingState: OnboardingState = {
     city: '',
     state: '',
     avatar_url: null,
+    years_experience: null,
     neighborhood: '',
     bio: '',
     instagram_url: '',

@@ -122,6 +122,9 @@ export function buildOnboardingV2BootstrapState({ profile, provider }: Bootstrap
   const facebook_url = String(provider?.facebook_url || profile?.facebook_url || '').trim();
   const working_hours = String(provider?.working_hours || '').trim();
   const primary_category_id = provider?.category_id || profile?.primary_category_id || null;
+  const years_experience = typeof provider?.years_experience === 'number'
+    ? provider.years_experience
+    : null;
 
   const hasReusableBasics = !!(full_name || whatsapp || city || state || provider?.id);
   if (!hasReusableBasics) return null;
@@ -138,6 +141,7 @@ export function buildOnboardingV2BootstrapState({ profile, provider }: Bootstrap
       city,
       state,
       avatar_url: profile?.avatar_url ?? null,
+      years_experience,
       neighborhood,
       bio,
       instagram_url,
