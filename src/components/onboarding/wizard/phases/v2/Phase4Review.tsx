@@ -38,17 +38,21 @@ function fmtDoc(kind: string, doc: string) {
 interface SectionProps {
   title: string;
   editPhase: OnboardingPhase;
-  onEdit: (p: OnboardingPhase) => void;
+  focusField?: string;
+  onEdit: (p: OnboardingPhase, focusField?: string) => void;
   children: React.ReactNode;
 }
 
-const Section = ({ title, editPhase, onEdit, children }: SectionProps) => (
+const Section = ({ title, editPhase, focusField, onEdit, children }: SectionProps) => (
   <div className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm">
     <div className="mb-2 flex items-center justify-between">
       <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       <button
         type="button"
-        onClick={() => onEdit(editPhase)}
+        onClick={() => {
+          if (focusField) setFocusFieldForNextPhase(focusField);
+          onEdit(editPhase, focusField);
+        }}
         className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10"
       >
         <Pencil className="h-3 w-3" /> Editar
