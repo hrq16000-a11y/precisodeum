@@ -142,7 +142,7 @@ export function mapMainPhaseToUnified(v2Phase: string): UnifiedPhase {
     case 'phase4_avatar': return 'main_avatar';
     case 'phase4_extras_a': return 'main_extras_a';
     case 'phase4_extras_b': return 'main_extras_b';
-    case 'done': return 'done';
+    case 'done': return 'main_more_services';
     default: return 'main_action';
   }
 }
