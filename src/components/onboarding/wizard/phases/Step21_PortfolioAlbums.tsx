@@ -74,18 +74,24 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
     if (!user?.id || !providerId || !name.trim()) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from('portfolio_albums').insert({
-        user_id: user.id,
-        provider_id: providerId,
-        name: name.trim(),
-        description: desc.trim(),
-      });
+      const { data: created, error } = await supabase
+        .from('portfolio_albums')
+        .insert({
+          user_id: user.id,
+          provider_id: providerId,
+          name: name.trim(),
+          description: desc.trim(),
+        })
+        .select('id')
+        .single();
       if (error) throw error;
       setName('');
       setDesc('');
       setCreating(false);
       await refresh();
-      toast.success('Álbum criado');
+      // Auto-expande o álbum recém-criado para o usuário já enviar fotos
+      if (created?.id) setExpandedAlbumId(created.id);
+      toast.success('Álbum criado — agora envie suas fotos');
     } catch (e: any) {
       toast.error('Não foi possível criar o álbum', { description: e?.message });
     } finally {
