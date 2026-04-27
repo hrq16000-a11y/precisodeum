@@ -239,6 +239,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     <item.icon className={`h-4 w-4 ${active ? 'text-accent' : 'group-hover:text-sidebar-foreground'}`} />
                   </motion.div>
                   <span className="flex-1">{item.label}</span>
+                  {typeof item.percent === 'number' && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      title={`${item.percent}% do cadastro completo`}
+                      className={`flex h-5 min-w-[34px] items-center justify-center rounded-full px-1.5 text-[9px] font-bold shadow-sm ${item.percent >= 100 ? 'bg-emerald-500 text-white' : item.percent >= 60 ? 'bg-accent text-accent-foreground' : 'bg-amber-500 text-white'}`}
+                    >
+                      {item.percent}%
+                    </motion.span>
+                  )}
                   {item.badge > 0 && (
                     <motion.span
                       initial={{ scale: 0 }}
