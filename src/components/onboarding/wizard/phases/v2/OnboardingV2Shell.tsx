@@ -42,6 +42,7 @@ import { Phase2Photos } from './Phase2Photos';
 import { Phase3Celebration } from './Phase3Celebration';
 import { Phase4Document, Phase4Avatar, Phase4ExtrasA, Phase4ExtrasB } from './Phase4Final';
 import { Phase4Review } from './Phase4Review';
+import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
 import { mergePreservingTouched, markPatchTouched, clearSessionTouched } from './sessionTouched';
 import { subscribeDraftChange } from './crossTabSync';
@@ -924,6 +925,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       </AnimatePresence>
 
       <BetCardShell animated={false}>
+        {state.phase !== 'phase1_action' && state.phase !== 'done' && (
+          <div className="mb-2 flex items-center justify-end">
+            <AutoSaveBadge signal={state.profile} />
+          </div>
+        )}
         {pendingCoreFields.length < 5 && (
           <div className="mb-4 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">Já preenchido:</span>{' '}
