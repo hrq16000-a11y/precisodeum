@@ -52,7 +52,7 @@ const provider: DbProvider = {
   phone: '',
   whatsapp: '41999999999',
   yearsExperience: 3,
-  plan: 'premium',
+  
   slug: 'maria-silva',
   featured: true,
   servicesCount: 1,

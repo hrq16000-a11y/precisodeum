@@ -157,12 +157,12 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
   const rating = p.rating ?? 0;
   const reviewCount = p.reviewCount ?? 0;
 
-  const isDestaque = p.plan === 'premium' && (
-    hasOwnPhoto ||
-    (p.servicesCount || 0) >= 1 ||
-    (p.portfolioAlbumCount || 0) > 0 ||
-    !!(p as any).description
-  );
+  // Destaque agora é puramente meritocrático (plataforma 100% gratuita —
+  // ver mem://projeto/modelo-de-negocio-gratuito-e-meritocratico).
+  // Critério: perfil completo (foto + ao menos 1 serviço OU portfólio + descrição).
+  const isDestaque = hasOwnPhoto &&
+    !!(p as any).description &&
+    ((p.servicesCount || 0) >= 1 || (p.portfolioAlbumCount || 0) > 0);
 
   return (
     <div

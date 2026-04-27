@@ -104,7 +104,6 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
           phone: p.phone || '',
           whatsapp: p.whatsapp || p.phone || '',
           yearsExperience: p.years_experience || 0,
-          plan: p.plan || 'free',
           slug: p.slug || p.id,
           featured: p.featured || false,
           servicesCount: p.services_count || 0,

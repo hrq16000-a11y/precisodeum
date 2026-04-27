@@ -6,16 +6,10 @@ verify_jwt = false
 [functions.import-rss]
 verify_jwt = false
 
-[functions.batch-optimize-images]
-verify_jwt = false
-
 [functions.push-notifications]
 verify_jwt = false
 
 [functions.storage-backup]
-verify_jwt = false
-
-[functions.migrate-portfolio-albums]
 verify_jwt = false
 
 [functions.import-jobs-rss]

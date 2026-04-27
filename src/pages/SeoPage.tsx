@@ -103,7 +103,7 @@ const SeoPage = () => {
         rating: Number(p.rating_avg) || 0, reviewCount: p.review_count || 0,
         photo: p.photo_url || '', description: p.description,
         phone: p.phone, whatsapp: p.whatsapp,
-        yearsExperience: p.years_experience, plan: p.plan,
+        yearsExperience: p.years_experience,
         slug: p.slug || p.id, featured: p.featured,
         servicesCount: p.services_count || 0,
         portfolioAlbumCount: p.portfolio_album_count || 0,

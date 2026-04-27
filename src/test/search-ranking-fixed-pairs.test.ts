@@ -21,7 +21,7 @@ const baseProvider = (overrides: Partial<DbProvider>): DbProvider => ({
   phone: '',
   whatsapp: '41999999999',
   yearsExperience: 4,
-  plan: 'premium',
+  
   slug: 'maria-silva',
   featured: true,
   servicesCount: 2,
