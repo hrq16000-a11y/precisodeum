@@ -257,11 +257,27 @@ interface ExtrasAProps {
 export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: ExtrasAProps) => (
   <div className="space-y-5">
     <header className="text-center space-y-1">
-      <h1 className="font-display text-2xl font-bold text-foreground">Quase lá — só mais 2 coisas.</h1>
+      <h1 className="font-display text-2xl font-bold text-foreground">Quase lá — falta só ajustar seu perfil.</h1>
       <p className="text-sm text-muted-foreground">Ajuda quem busca por você na sua região.</p>
     </header>
 
     <div className="space-y-4">
+      <div>
+        <Label className="text-xs">Tempo de experiência</Label>
+        <Input
+          type="number"
+          min={0}
+          max={60}
+          inputMode="numeric"
+          value={data.years_experience ?? ''}
+          onChange={(e) => {
+            const value = e.target.value;
+            onChange({ years_experience: value === '' ? null : Math.max(0, Number(value)) });
+          }}
+          placeholder="Ex: 5 anos"
+        />
+      </div>
+
       <div>
         <Label className="text-xs">Bairro <span className="text-muted-foreground">(opcional)</span></Label>
         <Input
