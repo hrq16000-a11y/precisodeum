@@ -186,13 +186,18 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
             <Label className="text-xs">{data.kind === 'pj' ? 'CNPJ' : 'CPF'}</Label>
             <CpfCnpjInput
               value={data.document}
-              onChange={(digitsOnly) => onChange({ document: digitsOnly })}
+              onChange={(digitsOnly) => { if (!locked) onChange({ document: digitsOnly }); }}
               mode={data.kind === 'pj' ? 'cnpj' : 'cpf'}
               placeholder={data.kind === 'pj' ? '00.000.000/0000-00' : '000.000.000-00'}
+              disabled={!!locked}
             />
-            <p className="mt-1 text-[10px] text-muted-foreground">
-              Usado apenas para validar seu perfil. Nunca exibido publicamente.
-            </p>
+            {locked ? (
+              <p className="mt-1 text-[11px] text-emerald-600">Já preenchido — não pode ser alterado aqui.</p>
+            ) : (
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Usado apenas para validar seu perfil. Nunca exibido publicamente.
+              </p>
+            )}
           </div>
 
           <div className="flex gap-2 pt-2">
