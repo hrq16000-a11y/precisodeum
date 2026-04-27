@@ -602,20 +602,51 @@ const SearchPage = () => {
           <div className="mb-3 space-y-2">
             {/* Sort chips — horizontal scroll */}
             <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
-              {SORT_CHIPS.map(chip => (
-                <button
-                  key={chip.value}
-                  onClick={() => { setSortBy(chip.value); setPage(1); }}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                    sortBy === chip.value
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-                >
-                  {chip.label}
-                </button>
-              ))}
+              {SORT_CHIPS.map(chip => {
+                const ChipIcon = chip.icon;
+                const isActive = sortBy === chip.value;
+                return (
+                  <button
+                    key={chip.value}
+                    onClick={() => { setSortBy(chip.value); setPage(1); }}
+                    className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    <ChipIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                    {chip.label}
+                  </button>
+                );
+              })}
             </div>
+            {/* Radius chips — só fazem sentido com GPS */}
+            {userLat != null && userLon != null && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+                <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                  <Compass className="h-3 w-3" strokeWidth={1.75} />
+                  Raio:
+                </span>
+                {RADIUS_CHIPS.map(r => {
+                  const isActive = radiusKm === r.km;
+                  return (
+                    <button
+                      key={r.km}
+                      onClick={() => { setRadius(r.km); setPage(1); }}
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                        isActive
+                          ? 'bg-accent text-accent-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                      aria-pressed={isActive}
+                    >
+                      {r.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             {/* Filter + Route buttons */}
             <div className="flex gap-2">
               <Button
