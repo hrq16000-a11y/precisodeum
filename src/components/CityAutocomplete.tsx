@@ -30,6 +30,8 @@ interface CityAutocompleteProps {
   statusText?: string;
   /** Quando informado, restringe os resultados a uma UF específica. */
   stateFilter?: string;
+  /** Quando informado, prioriza (sem filtrar) cidades da UF — útil com GPS. */
+  preferredUF?: string;
   disabled?: boolean;
   /** Callback fired whenever the popover closes (selection, click outside, Esc). */
   onClose?: () => void;
