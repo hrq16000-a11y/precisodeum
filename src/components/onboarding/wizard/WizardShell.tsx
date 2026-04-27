@@ -9,8 +9,8 @@
  * a Fase B moverá tudo para `wizard/steps/` e remover\u00e1 essas pastas.
  */
 import { useState, useCallback } from 'react';
-import BetModeShell from '@/components/onboarding/betMode/BetModeShell';
-import OnboardingV2Shell from '@/components/onboarding/onboardingV2/OnboardingV2Shell';
+import BetModeShell from '@/components/onboarding/wizard/phases/bet/BetModeShell';
+import OnboardingV2Shell from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 
 type Stage = 'triage' | 'service-and-profile';

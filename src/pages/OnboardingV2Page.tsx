@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import OnboardingV2Shell from '@/components/onboarding/onboardingV2/OnboardingV2Shell';
+import OnboardingV2Shell from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
 
 /**
  * Página /onboarding-v2 — fluxo refatorado em 4 fases (Progressive Disclosure).

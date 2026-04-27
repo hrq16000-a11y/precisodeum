@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import BetModeShell from '@/components/onboarding/betMode/BetModeShell';
+import BetModeShell from '@/components/onboarding/wizard/phases/bet/BetModeShell';
 
 /**
  * /cadastro-bet — Cadastro V3 "Bet Mode".

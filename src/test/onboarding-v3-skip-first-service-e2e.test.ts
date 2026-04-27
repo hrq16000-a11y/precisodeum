@@ -18,12 +18,12 @@ import {
   initialOnboardingState,
   onboardingReducer,
   phaseIndex,
-} from '@/components/onboarding/onboardingV2/state';
+} from '@/components/onboarding/wizard/phases/v2/state';
 import {
   buildOnboardingCoreLocks,
   buildOnboardingV2BootstrapState,
   resolveOnboardingV2SeedState,
-} from '@/components/onboarding/onboardingV2/bootstrap';
+} from '@/components/onboarding/wizard/phases/v2/bootstrap';
 
 const read = (p: string) => fs.readFileSync(p, 'utf8');
 
