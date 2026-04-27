@@ -220,20 +220,18 @@ export default function WizardShell() {
           <InstallAppCard source="wizard-unified-done" />
         </div>
       ) : (
-        <div className="mx-auto w-full max-w-md px-4 py-6">
-          <MainOrchestrator
-            internalHandoffFromTriage
-            deferCompletionToParent
-            seedState={{
-              phase: 'phase2_service',
-              profile: state.profile,
-              service: state.service,
-              providerId: state.providerId,
-              firstServiceId: state.firstServiceId,
-            }}
-            onPhaseChange={handleMainPhaseChange}
-          />
-        </div>
+        <MainOrchestrator
+          internalHandoffFromTriage
+          deferCompletionToParent
+          seedState={{
+            phase: 'phase2_service',
+            profile: state.profile,
+            service: state.service,
+            providerId: state.providerId,
+            firstServiceId: state.firstServiceId,
+          }}
+          onPhaseChange={handleMainPhaseChange}
+        />
       )}
     </div>
   );
