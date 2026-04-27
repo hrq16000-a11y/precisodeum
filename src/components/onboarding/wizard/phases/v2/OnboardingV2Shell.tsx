@@ -134,7 +134,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   const [saving, setSaving] = useState(false);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
   const [remoteDraft, setRemoteDraft] = useState<null | {
-    payload: { profile: any; service: any };
+    payload: { profile: any; service: any; providerId?: string | null; firstServiceId?: string | null };
     phase: any;
     updated_at: string;
   }>(null);
@@ -204,6 +204,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         state: {
           profile: remoteDraft.payload.profile,
           service: remoteDraft.payload.service,
+          providerId: remoteDraft.payload.providerId ?? null,
+          firstServiceId: remoteDraft.payload.firstServiceId ?? null,
           phase: remoteDraft.phase as any,
         },
       });
@@ -332,8 +334,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           existingService.starting_price_brl != null
             ? existingService.starting_price_brl
             : typeof svc.price === 'string' && svc.price.trim()
-              ? Number(String(svc.price).replace(/[^
-\d,.]/g, '').replace(',', '.')) || null
+              ? parseFloat(String(svc.price).replace(/[^\d,.]/g, '').replace(',', '.')) || null
               : null,
         working_days: existingService.working_days || [],
         working_hours: existingService.working_hours || svc.working_hours || '',
