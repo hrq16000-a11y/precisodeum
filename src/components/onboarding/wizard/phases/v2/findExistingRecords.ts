@@ -1,0 +1,72 @@
+/**
+ * findExistingService — anti-duplicação.
+ *
+ * Antes de criar um novo serviço via RPC, verifica se o provider já tem
+ * um serviço ativo dessa mesma categoria. Se tiver, retorna o ID existente
+ * para reuso — evita duplicar registros e estouro de capacidade do plano.
+ *
+ * Estratégia:
+ *  1. Match exato por (provider_id, category_id) ativo.
+ *  2. Fallback: match por nome normalizado (provider_id, lower(service_name)).
+ */
+import { supabase } from '@/integrations/supabase/client';
+
+export async function findExistingFirstService(
+  providerId: string,
+  categoryId: string,
+  serviceName: string,
+): Promise<string | null> {
+  if (!providerId) return null;
+
+  try {
+    // 1) Match por categoria principal
+    if (categoryId) {
+      const { data: byCategory } = await supabase
+        .from('services')
+        .select('id, deleted_at')
+        .eq('provider_id', providerId)
+        .eq('category_id', categoryId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true })
+        .limit(1);
+      if (byCategory && byCategory[0]?.id) return byCategory[0].id;
+    }
+
+    // 2) Match por nome normalizado
+    const normalizedName = (serviceName || '').trim();
+    if (normalizedName) {
+      const { data: byName } = await supabase
+        .from('services')
+        .select('id, deleted_at')
+        .eq('provider_id', providerId)
+        .ilike('service_name', normalizedName)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true })
+        .limit(1);
+      if (byName && byName[0]?.id) return byName[0].id;
+    }
+  } catch {
+    /* fail-soft: se falhar, seguimos para criação normal */
+  }
+  return null;
+}
+
+/**
+ * findExistingProvider — verifica se o usuário já tem provider criado
+ * (mesmo que o estado local tenha perdido o ID).
+ */
+export async function findExistingProvider(userId: string): Promise<string | null> {
+  if (!userId) return null;
+  try {
+    const { data } = await supabase
+      .from('providers')
+      .select('id')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: true })
+      .limit(1);
+    return data?.[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
