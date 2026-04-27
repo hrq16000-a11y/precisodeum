@@ -9,12 +9,13 @@
  * Cada seção tem botão "Editar" que despacha GO_TO para a fase correspondente.
  */
 
-import { CheckCircle2, Pencil, Sparkles } from 'lucide-react';
+import { CheckCircle2, Pencil, Sparkles, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { OnboardingProfileData, OnboardingFirstServiceData, OnboardingPhase } from './types';
 import { setFocusFieldForNextPhase } from './useFocusFieldFromReview';
 import { REVIEW_SECTIONS, type ReviewSectionConfig } from './reviewSectionMap';
+import { validateReviewData } from './validateReviewData';
 
 interface Phase4ReviewProps {
   profile: OnboardingProfileData;
