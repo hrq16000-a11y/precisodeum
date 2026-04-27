@@ -11,6 +11,30 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 
+interface ExistingServiceRecord {
+  id: string;
+  service_name: string | null;
+  description: string | null;
+  category_id: string | null;
+  service_area: string | null;
+  address: string | null;
+  working_hours: string | null;
+  price: string | null;
+  created_at?: string | null;
+}
+
+function scoreExistingService(service: ExistingServiceRecord, preferredCategoryId?: string | null) {
+  let score = 0;
+  if (service.category_id) score += 4;
+  if ((service.description || '').trim().length >= 10) score += 4;
+  if ((service.service_area || '').trim()) score += 2;
+  if ((service.working_hours || '').trim()) score += 1;
+  if ((service.address || '').trim()) score += 1;
+  if ((service.service_name || '').trim().length >= 3) score += 1;
+  if (preferredCategoryId && service.category_id === preferredCategoryId) score += 6;
+  return score;
+}
+
 export async function findExistingFirstService(
   providerId: string,
   categoryId: string,
@@ -55,18 +79,32 @@ export async function findExistingFirstService(
  * fetchExistingFirstService — retorna o registro completo do 1º serviço
  * ativo do provider (mais antigo), para hidratar o Wizard em modo revisão.
  */
-export async function fetchExistingFirstService(providerId: string): Promise<any | null> {
+export async function fetchExistingFirstService(
+  providerId: string,
+  preferredCategoryId?: string | null,
+): Promise<ExistingServiceRecord | null> {
   if (!providerId) return null;
   try {
     const { data } = await supabase
       .from('services')
-      .select('id, service_name, description, category_id, category_ids, service_area, address, working_hours, starting_price')
+      .select('id, service_name, description, category_id, service_area, address, working_hours, price, created_at')
       .eq('provider_id', providerId)
       .is('deleted_at', null)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    return data ?? null;
+      .order('created_at', { ascending: false })
+      .limit(12);
+
+    const rows = ((data as ExistingServiceRecord[] | null) ?? []).slice();
+    if (!rows.length) return null;
+
+    rows.sort((a, b) => {
+      const scoreDiff = scoreExistingService(b, preferredCategoryId) - scoreExistingService(a, preferredCategoryId);
+      if (scoreDiff !== 0) return scoreDiff;
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return bTime - aTime;
+    });
+
+    return rows[0] ?? null;
   } catch {
     return null;
   }
