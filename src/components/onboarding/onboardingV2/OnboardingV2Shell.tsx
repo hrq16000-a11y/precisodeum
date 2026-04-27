@@ -617,13 +617,16 @@ export const OnboardingV2Shell = () => {
         return (
           <Phase4Document
             data={state.profile}
+            locked={!!coreLocks.document}
             onChange={(patch) => dispatch({ type: 'PATCH_PROFILE', patch })}
             saving={saving}
             userId={user?.id}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onContinue={async () => {
               track('submit');
-              await persistPatch({ tax_id: state.profile.document });
+              if (!coreLocks.document) {
+                await persistPatch({ tax_id: state.profile.document });
+              }
               track('next');
               dispatch({ type: 'NEXT' });
             }}
