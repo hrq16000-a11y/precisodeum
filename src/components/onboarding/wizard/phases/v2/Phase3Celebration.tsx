@@ -1,28 +1,27 @@
 /**
- * Phase3 — Tela de Sucesso (O Êxtase) + Checklist final + Próximos passos.
+ * Phase3 — Tela de Sucesso (compacta + acionável).
  *
- * Esta tela faz três trabalhos numa só:
- *  1. CELEBRAR (confete + som + placar correndo).
- *  2. CONFIRMAR — checklist do que ficou pronto (perfil + 1º serviço).
- *  3. APONTAR PRÓXIMO PASSO — botões diretos para portfólio, ver página
- *     pública, ou continuar a coleta opcional (CPF/bairro/redes).
- *
- * Substitui a necessidade de uma "página de sucesso" separada — o resumo
- * fica no próprio fluxo, mantendo o usuário em contexto.
+ * Mudanças (abr/2026):
+ *  - Layout enxuto: CTAs principais visíveis sem scroll.
+ *  - Substitui URL pública por: Compartilhar WhatsApp + Copiar link de afiliado
+ *    (usa profiles.user_ref para creditar pontos a quem indicou).
+ *  - Convite para instalar o app destacado logo após o placar.
+ *  - Checklist e "próximos passos" colapsados em "Detalhes" para diminuir altura.
  */
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Sparkles, MapPin, Briefcase, ArrowRight, ExternalLink,
-  CheckCircle2, Camera, Image as ImageIcon, ShieldCheck, Circle, Copy, Check,
+  CheckCircle2, Camera, Image as ImageIcon, ShieldCheck, Circle,
+  Copy, Check, Share2, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';
-import { sanitizeSlug } from '@/lib/slugify';
+import { whatsappLink } from '@/lib/whatsapp';
 
 interface Phase3Props {
   serviceName: string;
@@ -36,11 +35,9 @@ interface ChecklistRow {
   key: string;
   label: string;
   done: boolean;
-  /** Verdadeiro = item estrutural (ficou pronto agora); falso = sugestão. */
   required: boolean;
 }
 
-/** Counter animation: rola números rápido até o alvo. */
 function useTickerNumber(target: number, durationMs = 1100): number {
   const [n, setN] = useState(0);
   useEffect(() => {
@@ -59,7 +56,6 @@ function useTickerNumber(target: number, durationMs = 1100): number {
 }
 
 export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue }: Phase3Props) => {
-  // Dispara confetti + som apenas uma vez
   useEffect(() => {
     celebrate({
       intensity: 'big',
@@ -68,33 +64,24 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
   }, [userId]);
 
   const [providerSlug, setProviderSlug] = useState<string | null>(null);
-  const [categorySlug, setCategorySlug] = useState<string | null>(null);
+  const [userRef, setUserRef] = useState<string | null>(null);
   const [hasPhotos, setHasPhotos] = useState(false);
   const [hasPortfolio, setHasPortfolio] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
     let alive = true;
     (async () => {
-      const { data: prov } = await supabase
-        .from('providers')
-        .select('id, slug, category_id')
-        .eq('user_id', userId)
-        .maybeSingle();
-      if (!alive || !prov) return;
-      if (prov.slug) setProviderSlug(prov.slug);
-
-      if (prov.category_id) {
-        const { data: cat } = await (supabase as any)
-          .from('categories')
-          .select('slug, name')
-          .eq('id', prov.category_id)
-          .maybeSingle();
-        if (alive && cat) {
-          setCategorySlug(cat.slug || sanitizeSlug(cat.name || ''));
-        }
-      }
+      const profRes: any = await (supabase as any).from('profiles').select('user_ref').eq('user_id', userId).maybeSingle();
+      const provRes: any = await (supabase as any).from('providers').select('id, slug').eq('user_id', userId).maybeSingle();
+      const prof = profRes?.data;
+      const prov = provRes?.data;
+      if (!alive) return;
+      if (prof?.user_ref) setUserRef(prof.user_ref);
+      if (prov?.slug) setProviderSlug(prov.slug);
+      if (!prov?.id) return;
 
       const photoRes: any = await (supabase as any)
         .from('media')
@@ -112,84 +99,129 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
     return () => { alive = false; };
   }, [userId]);
 
-  // URL pública de SEO: categoria + cidade (cidade vai como query — a CategoryPage filtra).
-  const cityParam = city ? `?cidade=${encodeURIComponent(sanitizeSlug(city))}` : '';
-  const publicCategoryPath = categorySlug ? `/categoria/${categorySlug}${cityParam}` : null;
-  const publicCategoryUrl = publicCategoryPath
-    ? `${typeof window !== 'undefined' ? window.location.origin : ''}${publicCategoryPath}`
-    : null;
+  // Link de afiliado: quem entra por aqui credita pontos ao usuário (via user_ref).
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://precisodeum.com.br';
+  const affiliateLink = userRef ? `${origin}/login?ref=${encodeURIComponent(userRef)}` : '';
+  const shareMessage = affiliateLink
+    ? `Acabei de criar meu perfil no Preciso de Um! Cadastre-se pelo meu link e receba clientes mais rápido: ${affiliateLink}`
+    : '';
 
-  const handleCopyUrl = async () => {
-    if (!publicCategoryUrl) return;
+  const handleCopy = async () => {
+    if (!affiliateLink) return;
     try {
-      await navigator.clipboard.writeText(publicCategoryUrl);
+      await navigator.clipboard.writeText(affiliateLink);
       setCopied(true);
-      toast.success('Link copiado!');
+      toast.success('Link copiado! Compartilhe e ganhe pontos a cada cadastro.');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error('Não foi possível copiar. Selecione o link manualmente.');
+      toast.error('Não foi possível copiar.');
     }
   };
 
-  // Placar fictício mas plausível
+  const handleWhatsApp = () => {
+    if (!shareMessage) return;
+    window.open(whatsappLink('', shareMessage), '_blank', 'noopener,noreferrer');
+  };
+
   const reach = useTickerNumber(1280, 1300);
   const score = useTickerNumber(73, 1100);
-  const time = useTickerNumber(94, 900);
+  const visibility = useTickerNumber(94, 900);
 
   const checklist: ChecklistRow[] = [
-    { key: 'profile', label: 'Perfil básico criado',         done: true,         required: true },
-    { key: 'service', label: '1º serviço publicado',         done: !!serviceName, required: true },
-    { key: 'location', label: 'Cidade e estado definidos',   done: !!(city && state), required: true },
-    { key: 'photos',  label: 'Fotos no serviço',             done: hasPhotos,    required: false },
-    { key: 'portfolio', label: 'Álbum de portfólio',         done: hasPortfolio, required: false },
+    { key: 'profile', label: 'Perfil básico criado', done: true, required: true },
+    { key: 'service', label: '1º serviço publicado', done: !!serviceName, required: true },
+    { key: 'location', label: 'Cidade e estado definidos', done: !!(city && state), required: true },
+    { key: 'photos', label: 'Fotos no serviço', done: hasPhotos, required: false },
+    { key: 'portfolio', label: 'Álbum de portfólio', done: hasPortfolio, required: false },
   ];
-  const allRequiredDone = checklist.filter(c => c.required).every(c => c.done);
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4 }}
-      className="space-y-6"
+      className="space-y-4"
     >
-      {/* Topo — celebração */}
-      <div className="text-center space-y-3">
+      {/* Topo — celebração compacta */}
+      <div className="text-center space-y-2">
         <motion.div
           initial={{ scale: 0.6, rotate: -12 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 220, damping: 14 }}
-          className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent to-primary text-primary-foreground shadow-2xl"
+          className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-accent to-primary text-primary-foreground shadow-xl"
         >
-          <Sparkles className="h-10 w-10" />
+          <Sparkles className="h-7 w-7" />
         </motion.div>
-        <div className="space-y-1">
-          <h1 className="font-display text-3xl font-bold text-foreground">Sucesso!</h1>
-          <p className="text-sm text-muted-foreground">
-            Seu primeiro serviço já está no PrecisodeumProfissional.com.br.
-          </p>
-          <p className="font-display text-base font-semibold text-foreground">
-            Você está apto para receber clientes.
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Sucesso!</h1>
+          <p className="text-xs text-muted-foreground">
+            Seu perfil já está no ar.{' '}
+            <span className="font-semibold text-foreground">Você está apto a receber clientes.</span>
           </p>
         </div>
       </div>
 
-      {/* Placar */}
-      <div className="grid grid-cols-3 gap-2 rounded-2xl border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-primary/5 p-4">
+      {/* Placar compacto */}
+      <div className="grid grid-cols-3 gap-2 rounded-2xl border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-primary/5 p-3">
         <div className="text-center">
-          <p className="font-display text-2xl font-bold tabular-nums text-foreground">{reach.toLocaleString('pt-BR')}</p>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">alcance/mês*</p>
+          <p className="font-display text-lg font-bold tabular-nums text-foreground">{reach.toLocaleString('pt-BR')}</p>
+          <p className="text-[9px] uppercase tracking-wider text-muted-foreground">alcance/mês*</p>
         </div>
         <div className="text-center">
-          <p className="font-display text-2xl font-bold tabular-nums text-foreground">{score}</p>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">score perfil</p>
+          <p className="font-display text-lg font-bold tabular-nums text-foreground">{score}</p>
+          <p className="text-[9px] uppercase tracking-wider text-muted-foreground">score perfil</p>
         </div>
         <div className="text-center">
-          <p className="font-display text-2xl font-bold tabular-nums text-foreground">{time}%</p>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">visibilidade</p>
+          <p className="font-display text-lg font-bold tabular-nums text-foreground">{visibility}%</p>
+          <p className="text-[9px] uppercase tracking-wider text-muted-foreground">visibilidade</p>
         </div>
       </div>
 
-      {/* Resumo do perfil/serviço */}
+      {/* CTAs principais — visíveis SEM scroll */}
+      <div className="space-y-2">
+        <Button
+          type="button"
+          size="lg"
+          onClick={onContinue}
+          className="w-full hover:opacity-95 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          Continuar para os opcionais <ArrowRight className="h-4 w-4 ml-2" />
+        </Button>
+
+        {affiliateLink && (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={handleWhatsApp}
+              className="w-full bg-emerald-500/5 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/10"
+            >
+              <Share2 className="h-4 w-4 mr-2" /> WhatsApp
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={handleCopy}
+              className="w-full"
+            >
+              {copied ? <Check className="h-4 w-4 mr-2 text-emerald-600" /> : <Copy className="h-4 w-4 mr-2" />}
+              {copied ? 'Copiado' : 'Copiar link'}
+            </Button>
+          </div>
+        )}
+        {affiliateLink && (
+          <p className="text-center text-[11px] text-muted-foreground">
+            Cada cadastro pelo seu link te dá <span className="font-semibold text-foreground">pontos no ranking</span>.
+          </p>
+        )}
+      </div>
+
+      {/* Instalar app — com destaque */}
+      <InstallAppCard source="wizard-phase3-celebration" />
+
+      {/* Resumo simples */}
       <div className="rounded-xl border border-border bg-card p-3 text-sm space-y-1.5">
         <div className="flex items-center gap-2">
           <Briefcase className="h-4 w-4 text-primary shrink-0" />
@@ -203,122 +235,73 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
         )}
       </div>
 
-      {/* Preview da URL pública SEO (categoria + cidade) */}
-      {publicCategoryUrl && (
-        <div className="rounded-xl border border-accent/30 bg-accent/5 p-3 space-y-2">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Sua página pública (SEO)
-          </p>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 truncate rounded bg-background px-2 py-1.5 text-[11px] text-foreground border border-border">
-              {publicCategoryUrl}
-            </code>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={handleCopyUrl}
-              className="h-8 px-2 shrink-0"
-              aria-label="Copiar link público"
-            >
-              {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+      {/* Detalhes (colapsado) */}
+      <button
+        type="button"
+        onClick={() => setShowDetails((v) => !v)}
+        className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:bg-muted"
+      >
+        <span>Detalhes & próximos passos</span>
+        {showDetails ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+      </button>
+
+      {showDetails && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="space-y-3"
+        >
+          <ul className="space-y-1.5 rounded-xl border border-border bg-card p-3">
+            {checklist.map((item) => (
+              <li key={item.key} className="flex items-center gap-2 text-sm">
+                {item.done
+                  ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  : <Circle className="h-4 w-4 text-muted-foreground shrink-0" />}
+                <span className={item.done ? 'text-foreground' : 'text-muted-foreground'}>
+                  {item.label}
+                </span>
+                {!item.required && !item.done && (
+                  <span className="ml-auto text-[10px] text-muted-foreground">opcional</span>
+                )}
+              </li>
+            ))}
+          </ul>
+
+          <div className="grid gap-2">
+            {!hasPhotos && (
+              <Button asChild type="button" variant="outline" size="sm" className="justify-start">
+                <a href="/dashboard/servicos" className="flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Adicionar fotos no seu serviço</span>
+                </a>
+              </Button>
+            )}
+            {!hasPortfolio && (
+              <Button asChild type="button" variant="outline" size="sm" className="justify-start">
+                <a href="/dashboard/portfolio" className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Criar seu 1º álbum de portfólio</span>
+                </a>
+              </Button>
+            )}
+            <Button asChild type="button" variant="outline" size="sm" className="justify-start">
+              <a href="/dashboard" className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                <span className="text-sm">Ir para o Dashboard</span>
+              </a>
             </Button>
+            {providerSlug && (
+              <Button asChild type="button" variant="outline" size="sm" className="justify-start">
+                <a href={`/profissional/${providerSlug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                  <ExternalLink className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Ver minha página pública</span>
+                </a>
+              </Button>
+            )}
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            Este link conecta o seu serviço aos clientes que buscam por <span className="font-medium text-foreground">{serviceName || 'esta categoria'}</span>{city ? ` em ${city}` : ''}.
-          </p>
-        </div>
+        </motion.div>
       )}
 
-
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Confirme o que já ficou pronto
-        </p>
-        <ul className="space-y-1.5 rounded-xl border border-border bg-card p-3">
-          {checklist.map((item) => (
-            <li key={item.key} className="flex items-center gap-2 text-sm">
-              {item.done
-                ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                : <Circle className="h-4 w-4 text-muted-foreground shrink-0" />}
-              <span className={item.done ? 'text-foreground' : 'text-muted-foreground'}>
-                {item.label}
-              </span>
-              {!item.required && !item.done && (
-                <span className="ml-auto text-[10px] text-muted-foreground">opcional</span>
-              )}
-            </li>
-          ))}
-        </ul>
-        {!allRequiredDone && (
-          <p className="text-[11px] text-amber-600">
-            Algum item essencial ainda está pendente. Você pode completar no Dashboard depois.
-          </p>
-        )}
-      </div>
-
-      {/* Convite para instalar o app — Fase 2 concluída. */}
-      <InstallAppCard source="wizard-phase3-celebration" />
-
-      {/* Próximos passos */}
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Próximos passos
-        </p>
-        <div className="grid gap-2">
-          {!hasPhotos && (
-            <Button asChild type="button" variant="outline" size="sm" className="justify-start hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-primary">
-              <a href="/dashboard/servicos" className="flex items-center gap-2">
-                <Camera className="h-4 w-4 text-primary" />
-                <span className="text-sm">Adicionar fotos no seu serviço</span>
-              </a>
-            </Button>
-          )}
-          {!hasPortfolio && (
-            <Button asChild type="button" variant="outline" size="sm" className="justify-start hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-primary">
-              <a href="/dashboard/portfolio" className="flex items-center gap-2">
-                <ImageIcon className="h-4 w-4 text-primary" />
-                <span className="text-sm">Criar seu 1º álbum de portfólio</span>
-              </a>
-            </Button>
-          )}
-          <Button asChild type="button" variant="outline" size="sm" className="justify-start hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-primary">
-            <a href="/dashboard" className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              <span className="text-sm">Ir para o Dashboard</span>
-            </a>
-          </Button>
-        </div>
-      </div>
-
-      {/* CTAs principais */}
-      <div className="space-y-2">
-        <Button
-          type="button"
-          size="lg"
-          onClick={onContinue}
-          className="w-full hover:opacity-95 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          Continuar para os opcionais <ArrowRight className="h-4 w-4 ml-2" />
-        </Button>
-        {providerSlug && (
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            asChild
-            className="w-full hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <a
-              href={`/profissional/${providerSlug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Ver minha página pública <ExternalLink className="h-4 w-4 ml-2" />
-            </a>
-          </Button>
-        )}
-      </div>
       <p className="text-center text-[10px] text-muted-foreground">
         *estimativa com base na sua categoria + região
       </p>
