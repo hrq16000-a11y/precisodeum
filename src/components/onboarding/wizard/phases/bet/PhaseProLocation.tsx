@@ -5,6 +5,7 @@ import { ArrowRight, MapPin } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
 import { fieldWin } from '@/lib/betDopamine';
+import { useGeoCity } from '@/hooks/useGeoCity';
 import { BET_POINTS, type BetState } from './types';
 
 interface Props {
