@@ -30,6 +30,8 @@ interface CityAutocompleteProps {
   statusText?: string;
   /** Quando informado, restringe os resultados a uma UF específica. */
   stateFilter?: string;
+  /** Quando informado, prioriza (sem filtrar) cidades da UF — útil com GPS. */
+  preferredUF?: string;
   disabled?: boolean;
   /** Callback fired whenever the popover closes (selection, click outside, Esc). */
   onClose?: () => void;
@@ -45,6 +47,7 @@ const CityAutocomplete = ({
   placeholder = 'Buscar cidade...',
   statusText,
   stateFilter,
+  preferredUF,
   disabled = false,
   onClose,
 }: CityAutocompleteProps) => {
@@ -54,6 +57,7 @@ const CityAutocomplete = ({
   const [loading, setLoading] = useState(false);
   const debouncedQuery = useDebounce(query, 200);
   const normalizedStateFilter = safeUF(stateFilter);
+  const normalizedPreferredUF = safeUF(preferredUF);
 
   const applyStateFilter = (rows: CityRow[]) => {
     if (!normalizedStateFilter) return rows;
@@ -80,29 +84,54 @@ const CityAutocomplete = ({
       return;
     }
     setLoading(true);
-    // Busca insensível a acentos via RPC (ex.: "sao jos" encontra "São José...").
-    supabase
-      .rpc('search_cities', { term })
-      .then(async ({ data, error }) => {
-        if (cancelled) return;
-        if (error || !data) {
-          // Fallback: busca padrão por prefixo (ainda sensível a acentos),
-          // garantindo que o componente nunca quebre se a RPC falhar.
-          const fb = await supabase
-            .from('cities')
-            .select('id,name,state,state_uf')
-            .ilike('name', `${term}%`)
-            .order('name', { ascending: true })
-            .limit(20);
-          if (cancelled) return;
-          setResults(applyStateFilter((fb.data as CityRow[]) || []));
-        } else {
-          setResults(applyStateFilter((data as CityRow[]) || []));
-        }
-        setLoading(false);
+
+    const sortByPreferred = (rows: CityRow[]) => {
+      if (!normalizedPreferredUF) return rows;
+      return [...rows].sort((a, b) => {
+        const ua = (a.state_uf || a.state || '').toUpperCase();
+        const ub = (b.state_uf || b.state || '').toUpperCase();
+        const pa = ua === normalizedPreferredUF ? 0 : 1;
+        const pb = ub === normalizedPreferredUF ? 0 : 1;
+        if (pa !== pb) return pa - pb;
+        return a.name.localeCompare(b.name, 'pt-BR');
       });
+    };
+
+    // Tenta RPC priorizada (mostra primeiro UF do GPS); fallback para search_cities → ilike.
+    (async () => {
+      // 1) RPC priorizada
+      const prio = await supabase.rpc('search_cities_prioritized', {
+        term,
+        preferred_uf: normalizedPreferredUF || null,
+      });
+      if (cancelled) return;
+      if (!prio.error && prio.data) {
+        setResults(applyStateFilter(sortByPreferred((prio.data as CityRow[]) || [])));
+        setLoading(false);
+        return;
+      }
+      // 2) RPC clássica
+      const classic = await supabase.rpc('search_cities', { term });
+      if (cancelled) return;
+      if (!classic.error && classic.data) {
+        setResults(applyStateFilter(sortByPreferred((classic.data as CityRow[]) || [])));
+        setLoading(false);
+        return;
+      }
+      // 3) Fallback ILIKE
+      const fb = await supabase
+        .from('cities')
+        .select('id,name,state,state_uf')
+        .ilike('name', `${term}%`)
+        .order('name', { ascending: true })
+        .limit(20);
+      if (cancelled) return;
+      setResults(applyStateFilter(sortByPreferred((fb.data as CityRow[]) || [])));
+      setLoading(false);
+    })();
+
     return () => { cancelled = true; };
-  }, [debouncedQuery, normalizedStateFilter]);
+  }, [debouncedQuery, normalizedStateFilter, normalizedPreferredUF]);
 
   const display = useMemo(() => {
     if (!value.city) return placeholder;

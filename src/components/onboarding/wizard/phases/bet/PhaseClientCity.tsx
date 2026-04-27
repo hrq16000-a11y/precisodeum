@@ -5,6 +5,7 @@ import { ArrowRight, MapPin, Zap } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
 import { fieldWin } from '@/lib/betDopamine';
+import { useGeoCity } from '@/hooks/useGeoCity';
 import { BET_POINTS, type BetState } from './types';
 
 interface Props {
@@ -17,6 +18,8 @@ interface Props {
 export default function PhaseClientCity({ state, patch, finish, addPoints }: Props) {
   const [awarded, setAwarded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const geo = useGeoCity();
+  const preferredUF = state.state || geo.state || '';
 
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
@@ -73,6 +76,8 @@ export default function PhaseClientCity({ state, patch, finish, addPoints }: Pro
             value={{ city: state.city, state: state.state }}
             onChange={handleCity}
             placeholder="Digite sua cidade"
+            preferredUF={preferredUF}
+            statusText={preferredUF ? `Mostrando primeiro cidades de ${preferredUF}` : undefined}
           />
         </div>
       </div>

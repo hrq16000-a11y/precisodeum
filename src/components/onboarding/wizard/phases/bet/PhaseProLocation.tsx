@@ -5,6 +5,7 @@ import { ArrowRight, MapPin } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
 import { fieldWin } from '@/lib/betDopamine';
+import { useGeoCity } from '@/hooks/useGeoCity';
 import { BET_POINTS, type BetState } from './types';
 
 interface Props {
@@ -17,6 +18,8 @@ interface Props {
 export default function PhaseProLocation({ state, patch, finish, addPoints }: Props) {
   const [awarded, setAwarded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const geo = useGeoCity();
+  const preferredUF = state.state || geo.state || '';
 
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
@@ -62,7 +65,13 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
           )}
         </span>
         <div className={`rounded-lg transition ${awarded ? 'ring-2 ring-emerald-300/60 shadow-[0_0_14px_rgba(16,185,129,0.35)]' : ''}`}>
-          <CityAutocomplete value={{ city: state.city, state: state.state }} onChange={handleCity} placeholder="Digite sua cidade" />
+          <CityAutocomplete
+            value={{ city: state.city, state: state.state }}
+            onChange={handleCity}
+            placeholder="Digite sua cidade"
+            preferredUF={preferredUF}
+            statusText={preferredUF ? `Mostrando primeiro cidades de ${preferredUF}` : undefined}
+          />
         </div>
       </div>
 
