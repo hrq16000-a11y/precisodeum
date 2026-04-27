@@ -32,6 +32,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [pendingLeads, setPendingLeads] = useState(0);
   const [incompleteAlert, setIncompleteAlert] = useState<{ daysLeft: number } | null>(null);
   const daysLimit = Number(useSettingValue('incomplete_profile_days_limit')) || 60;
+  const isProvider = !!profile && profile.profile_type !== 'client' && profile.profile_type !== 'rh';
+  const onbStatus = useOnboardingStatus();
+  const onbPercent = isProvider ? onbStatus.percent : 0;
+  const onbPublishable = isProvider && onbStatus.publishable;
 
   useEffect(() => {
     if (!user) return;
