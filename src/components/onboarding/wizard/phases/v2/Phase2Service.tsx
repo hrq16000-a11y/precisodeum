@@ -500,7 +500,7 @@ export const Phase2Details = ({
           className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50 disabled:shadow-none"
         >
           {saving && <Loader2 className="h-5 w-5 mr-2 animate-spin" />}
-          Publicar serviço
+          Salvar e continuar
           {!saving && <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" />}
         </Button>
         <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className="w-full text-muted-foreground">

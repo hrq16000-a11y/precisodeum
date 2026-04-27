@@ -236,6 +236,19 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
             <p className="mt-1 text-[11px] text-muted-foreground">Escolha a UF primeiro para limitar a busca da cidade.</p>
           )}
         </label>
+
+        <label className="block">
+          <span className={ws.fieldLabel}>
+            <MapPin className="h-3.5 w-3.5" /> Bairro <span className="font-normal normal-case text-muted-foreground">(opcional)</span>
+          </span>
+          <input
+            type="text"
+            value={data.neighborhood}
+            onChange={(e) => onChange({ neighborhood: e.target.value })}
+            placeholder="Ex: Centro, Vila Mariana..."
+            className="flex h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
+          />
+        </label>
       </div>
 
       <div className="flex flex-col gap-2 pt-1">

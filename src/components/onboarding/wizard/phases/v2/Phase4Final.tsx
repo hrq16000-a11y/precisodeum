@@ -291,18 +291,7 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
           />
         </label>
 
-        <label className="block">
-          <span className={ws.fieldLabel}>
-            <MapPin className="h-3.5 w-3.5" /> Bairro <span className="text-muted-foreground">(opcional)</span>
-          </span>
-          <Input
-            ref={focusNeighborhood.ref}
-            className={focusNeighborhood.highlightClass}
-            value={data.neighborhood}
-            onChange={(e) => onChange({ neighborhood: e.target.value })}
-            placeholder="Ex: Centro"
-          />
-        </label>
+        {/* Bairro foi movido para a tela de localização (Fase 1). */}
 
         <label className="block">
           <span className={ws.fieldLabel}>
@@ -384,10 +373,10 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: Extr
       <div className="flex flex-col gap-2 pt-1">
         <Button type="button" size="lg" onClick={onFinish} disabled={saving} className={ws.cta}>
           {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          Finalizar <ArrowRight className="ml-2 h-5 w-5" />
+          Salvar e revisar <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
         <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
-          Finalizar sem redes
+          Pular redes e revisar
         </Button>
       </div>
     </motion.div>
