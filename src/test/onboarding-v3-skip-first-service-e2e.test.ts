@@ -42,12 +42,10 @@ describe('Skip 1º serviço — E2E unificado', () => {
   });
 
   it('reducer pula direto de phase2_service para phase4_document sem regredir', () => {
-    let s = { ...initialOnboardingState, phase: 'phase2_service' as const };
+    let s = onboardingReducer(initialOnboardingState, { type: 'GO_TO', phase: 'phase2_service' });
     s = onboardingReducer(s, { type: 'GO_TO', phase: 'phase4_document' });
     expect(s.phase).toBe('phase4_document');
-    // não pode estar antes de phase4_document
     expect(phaseIndex(s.phase)).toBeGreaterThanOrEqual(phaseIndex('phase4_document'));
-    // e nunca volta para perguntas antigas do V3
     expect(['phase1_action', 'phase1_kind', 'phase1_location', 'phase1_contact'])
       .not.toContain(s.phase);
   });
