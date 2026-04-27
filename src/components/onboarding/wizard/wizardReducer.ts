@@ -263,6 +263,7 @@ export const initialWizardState: WizardState = {
     city: '',
     state: '',
     avatar_url: null,
+    years_experience: null,
     neighborhood: '',
     bio: '',
     instagram_url: '',

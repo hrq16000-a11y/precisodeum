@@ -22,11 +22,14 @@
  * patches incrementais, drafts local + remote) permanece encapsulada lá.
  */
 import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import TriageOrchestrator from '@/components/onboarding/wizard/phases/bet/BetModeShell';
 import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
 import Step20_MoreServices from '@/components/onboarding/wizard/phases/Step20_MoreServices';
 import Step21_PortfolioAlbums from '@/components/onboarding/wizard/phases/Step21_PortfolioAlbums';
+import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
+import { Button } from '@/components/ui/button';
 import PointsHud from '@/components/onboarding/wizard/phases/bet/PointsHud';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { WizardProgressBar } from './WizardProgressBar';
@@ -180,16 +183,31 @@ export default function WizardShell() {
           />
         </div>
       ) : stage === 'done' ? (
-        <div className="mx-auto w-full max-w-md px-4 py-8 text-center">
-          <h2 className="text-xl font-semibold">Cadastro concluído!</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Seu perfil está pronto. Você já pode acessar o painel para gerenciar seus serviços, portfólio e leads.
-          </p>
+        <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-8">
+          <div className="rounded-[28px] border border-border/60 bg-gradient-to-b from-card/95 via-background to-amber-50/20 p-6 text-center shadow-[0_24px_80px_-36px_hsl(var(--foreground)/0.3)]">
+            <h2 className="text-xl font-semibold text-foreground">Tudo pronto.</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Seu perfil base foi concluído. Agora você pode ir para o dashboard, continuar com seus serviços ou abrir seu portfólio.
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <Button asChild className="w-full">
+                <Link to="/dashboard">Ir para o dashboard</Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/dashboard/servicos">Continuar cadastrando serviços</Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/dashboard/portfolio">Abrir portfólio</Link>
+              </Button>
+            </div>
+          </div>
+          <InstallAppCard source="wizard-unified-done" />
         </div>
       ) : (
         <div className="mx-auto w-full max-w-md px-4 py-6">
           <MainOrchestrator
             internalHandoffFromTriage
+            deferCompletionToParent
             seedState={{
               phase: 'phase2_service',
               profile: state.profile,
