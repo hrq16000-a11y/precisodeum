@@ -22,7 +22,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Helmet } from 'react-helmet-async';
+
 
 interface ChecklistItem {
   key: string;
@@ -44,6 +44,10 @@ const DashboardOnboardingStatusPage = () => {
   const { user, profile, provider } = useAuth();
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState<Counts>({ servicesActive: 0, photos: 0, albums: 0 });
+
+  useEffect(() => {
+    document.title = 'Status do cadastro | Preciso de Um';
+  }, []);
 
   useEffect(() => {
     let alive = true;
