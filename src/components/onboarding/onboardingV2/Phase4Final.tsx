@@ -91,6 +91,8 @@ interface DocumentProps {
   onSkip: () => void;
   saving: boolean;
   userId?: string;
+  /** Lock vindo do V3: se já preenchido, não pode reabrir/alterar aqui. */
+  locked?: boolean;
 }
 
 function isValidDoc(digits: string, kind: 'pf' | 'pj'): boolean {
@@ -98,10 +100,18 @@ function isValidDoc(digits: string, kind: 'pf' | 'pj'): boolean {
   return kind === 'pj' ? d.length === 14 : d.length === 11;
 }
 
-export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, userId }: DocumentProps) => {
+export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, userId, locked }: DocumentProps) => {
   const [verified, setVerified] = useState(false);
   const [providerStatus, setProviderStatus] = useState<string | null>(null);
   const valid = isValidDoc(data.document, data.kind);
+
+  // Auto-avança quando o documento já foi capturado no V3 (não re-perguntar).
+  useEffect(() => {
+    if (locked && valid) {
+      const t = setTimeout(() => onContinue(), 250);
+      return () => clearTimeout(t);
+    }
+  }, [locked, valid, onContinue]);
 
   // Realtime: ouve mudanças no provider para refletir status "online" assim que o backend confirma.
   useEffect(() => {
