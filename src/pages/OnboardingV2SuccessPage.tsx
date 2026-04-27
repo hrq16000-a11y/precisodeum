@@ -55,6 +55,8 @@ const OnboardingV2SuccessPage = () => {
   const [hasPhotos, setHasPhotos] = useState(false);
   const [hasPortfolio, setHasPortfolio] = useState(false);
   const [profileName, setProfileName] = useState('');
+  const [userRef, setUserRef] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Celebra uma única vez por usuário
   useEffect(() => {
