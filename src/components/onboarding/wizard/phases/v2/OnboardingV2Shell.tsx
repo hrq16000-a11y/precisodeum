@@ -60,6 +60,7 @@ import {
   resolveOnboardingV2SeedState,
 } from './bootstrap';
 import { buildWorkingHoursSummary } from './workingHours';
+import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
 
 function slugify(input: string): string {
   return (input || '')
@@ -790,7 +791,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   void isCelebrationOrLater;
 
   return (
-    <div className="min-h-screen rounded-[28px] border border-border/60 bg-gradient-to-b from-card/95 via-background to-amber-50/20 shadow-[0_24px_80px_-36px_hsl(var(--foreground)/0.3)]">
+    <BetCardShell className="min-h-[70vh] px-0 py-0" animated={false}>
       {/* Aviso "rascunho restaurado" — diferencia local x remoto */}
       <AnimatePresence>
         {draftRestored && (
@@ -860,7 +861,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         onContinue={handleRemoteContinue}
         onDiscard={handleRemoteDiscard}
       />
-    </div>
+    </BetCardShell>
   );
 };
 
