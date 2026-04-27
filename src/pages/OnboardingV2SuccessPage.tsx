@@ -136,9 +136,16 @@ const OnboardingV2SuccessPage = () => {
   // Link de afiliado: quem se cadastra por aqui credita pontos via user_ref.
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://precisodeum.com.br';
   const affiliateLink = userRef ? `${origin}/login?ref=${encodeURIComponent(userRef)}` : '';
-  const shareMessage = affiliateLink
+  const defaultMessage = affiliateLink
     ? `Acabei de criar meu perfil no Preciso de Um! Cadastre-se pelo meu link: ${affiliateLink}`
     : '';
+  const [shareMessage, setShareMessage] = useState(defaultMessage);
+
+  // Hidrata o textarea quando o link chegar (e mantém edição do usuário).
+  useEffect(() => {
+    if (defaultMessage && !shareMessage) setShareMessage(defaultMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultMessage]);
 
   const handleCopy = async () => {
     if (!affiliateLink) return;
@@ -153,9 +160,12 @@ const OnboardingV2SuccessPage = () => {
   };
 
   const handleWhatsApp = () => {
-    if (!shareMessage) return;
-    window.open(whatsappLink('', shareMessage), '_blank', 'noopener,noreferrer');
+    const msg = (shareMessage || defaultMessage).trim();
+    if (!msg) return;
+    window.open(whatsappLink('', msg), '_blank', 'noopener,noreferrer');
   };
+
+  const resetMessage = () => setShareMessage(defaultMessage);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5 px-4 py-8 sm:py-12">
