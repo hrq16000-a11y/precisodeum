@@ -209,7 +209,7 @@ const DashboardOnboardingStatusPage = () => {
       label: 'CPF ou CNPJ',
       description: 'Aumenta a credibilidade e desbloqueia recursos.',
       icon: ShieldCheck,
-      done: !!(provider?.cpf || provider?.cnpj || (profile as any)?.tax_id),
+      done: isValidCpf((provider as any)?.cpf) || isValidCpf((profile as any)?.tax_id) || isValidCnpj((provider as any)?.cnpj) || isValidCnpj((profile as any)?.tax_id),
       required: false,
       cta: { label: 'Editar perfil', to: '/dashboard/perfil' },
     },
