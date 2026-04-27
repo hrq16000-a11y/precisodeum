@@ -15,7 +15,7 @@ const sponsorMenu: { label: string; icon: any; path: string; permKey?: SponsorPe
   { label: 'Métricas', icon: BarChart3, path: '/sponsor-panel/metricas', permKey: 'metricas', requiresActivePlan: true },
   { label: 'Contratos', icon: FileText, path: '/sponsor-panel/contratos', permKey: 'contratos' },
   { label: 'Notificações', icon: Bell, path: '/sponsor-panel/notificacoes', permKey: 'notificacoes' },
-  { label: 'Planos e Assinatura', icon: CreditCard, path: '/espacos-patrocinio' },
+  { label: 'Assinatura e Pagamentos', icon: CreditCard, path: '/sponsor-panel/assinatura' },
   { label: 'Meus Dados', icon: Settings, path: '/sponsor-panel/dados', permKey: 'dados' },
 ];
 
