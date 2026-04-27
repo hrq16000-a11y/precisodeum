@@ -9,7 +9,7 @@ interface SponsorProtectedRouteProps {
 
 /**
  * Protects /sponsor-panel/* routes.
- * Hard gate: usuário autenticado sem profile_type volta para /triagem.
+ * Hard gate: usuário autenticado sem profile_type volta para /cadastro-bet (V3).
  * Depois disso, só entra quem é sponsor/admin via regra já existente.
  */
 const SponsorProtectedRoute = ({ children }: SponsorProtectedRouteProps) => {

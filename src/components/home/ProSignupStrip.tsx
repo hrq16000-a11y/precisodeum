@@ -40,7 +40,7 @@ export default function ProSignupStrip() {
           </div>
 
           <Link
-            to="/signup?next=/onboarding-v2"
+            to="/signup?next=/cadastro-bet"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 hover:shadow-md"
           >
             Anunciar meu serviço <ArrowRight className="h-4 w-4" />

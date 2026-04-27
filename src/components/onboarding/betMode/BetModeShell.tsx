@@ -2,7 +2,7 @@
  * Bet Mode Shell — orquestra as fases do cadastro V3 "Bet Mode".
  *
  * Filosofia:
- *  - Isolado de V1 (/triagem) e V2 (/onboarding-v2) — NÃO os toca.
+ *  - Porta única do cadastro: V1 (/triagem) e o flag de A/B foram removidos.
  *  - Salva direto em profiles (e providers para PJ/PF profissional).
  *  - Cliente: fast-pass, marca onboarding_completed=true e redireciona ao ?next=.
  *  - Profissional: completa identificação básica e segue no fluxo único para

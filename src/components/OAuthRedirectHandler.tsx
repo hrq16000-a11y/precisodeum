@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 /**
- * After OAuth login (Google), o fluxo sempre passa por /triagem.
- * A própria triagem decide a saída final se o profile_type já existir.
+ * After OAuth login (Google), o fluxo sempre passa por /cadastro-bet (V3).
+ * O próprio gate decide a saída final se o onboarding já estiver completo.
  */
 const OAuthRedirectHandler = () => {
   const { user, profile, loading } = useAuth();
@@ -17,7 +17,7 @@ const OAuthRedirectHandler = () => {
     if (!user) return;
     if (!profile) return;
 
-    // Só redireciona para /triagem se o onboarding NÃO está completo.
+    // Só redireciona para /cadastro-bet se o onboarding NÃO está completo.
     // Logins recorrentes (Google OAuth com profile já completo) devem ir
     // direto ao destino normal — o OnboardingGate já cuida do resto.
     const onboardingStep = Number(profile?.onboarding_step ?? 0);
