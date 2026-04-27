@@ -121,6 +121,15 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
     goto(intent === 'client' ? 'client_city' : 'pro_kind');
   }
 
+  /**
+   * Após escolher PF/PJ, pular direto para cidade base.
+   * O CPF/CNPJ é coletado APÓS o 1º serviço estar criado (Phase4Document),
+   * conforme reordenação do fluxo linear (cadastro completo só depois do serviço).
+   */
+  function afterProKind() {
+    goto('pro_location');
+  }
+
   /** Soma incremento de pontos ganhos NESTA sessão ao saldo do banco. */
   async function addSessionPointsToProfile() {
     try {
@@ -274,11 +283,9 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         <PhaseClientCity state={state} patch={patch} finish={finishClient} addPoints={addPoints} />
       )}
       {state.phase === 'pro_kind' && (
-        <PhaseProKind state={state} patch={patch} next={() => goto('pro_document')} addPoints={addPoints} />
+        <PhaseProKind state={state} patch={patch} next={afterProKind} addPoints={addPoints} />
       )}
-      {state.phase === 'pro_document' && (
-        <PhaseProDocument state={state} patch={patch} next={() => goto('pro_location')} addPoints={addPoints} />
-      )}
+      {/* pro_document removido da triagem — CPF/CNPJ é coletado em main_document, após o 1º serviço */}
       {state.phase === 'pro_location' && (
         <PhaseProLocation state={state} patch={patch} finish={finishPro} addPoints={addPoints} />
       )}
