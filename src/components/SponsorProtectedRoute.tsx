@@ -26,7 +26,7 @@ const SponsorProtectedRoute = ({ children }: SponsorProtectedRouteProps) => {
     }
 
     if (profile && !profile.profile_type) {
-      navigate('/cadastro-bet', { replace: true });
+      navigate('/cadastro-inicial', { replace: true });
       return;
     }
 

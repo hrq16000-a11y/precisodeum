@@ -35,7 +35,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (authLoading || !user) return;
-    navigate('/cadastro-bet', { replace: true, state: from ? { from } : undefined });
+    navigate('/cadastro-inicial', { replace: true, state: from ? { from } : undefined });
   }, [user, authLoading, from, navigate]);
 
   useSeoHead({ title: 'Entrar', description: 'Acesse a plataforma Preciso de um.', noindex: true });
@@ -66,7 +66,7 @@ const LoginPage = () => {
       const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/cadastro-bet` },
+        options: { emailRedirectTo: `${window.location.origin}/cadastro-inicial` },
       });
       setLoading(false);
       if (signUpError) {

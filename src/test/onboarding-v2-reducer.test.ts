@@ -17,7 +17,7 @@ import {
   onboardingReducer,
   phaseIndex,
   VISIBLE_PHASES_COUNT,
-} from '@/components/onboarding/onboardingV2/state';
+} from '@/components/onboarding/wizard/phases/v2/state';
 
 describe('onboardingV2 reducer', () => {
   it('NEXT avança fase a fase até done', () => {

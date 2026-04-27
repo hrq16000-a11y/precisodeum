@@ -59,44 +59,48 @@ export function getPendingOnboardingCoreFields(locks: OnboardingCoreLocks): Arra
 export function resolveOnboardingV2SeedState({
   draft,
   bootstrap,
-  source,
+  forceFromBootstrap = false,
 }: {
   draft: DraftLike;
   bootstrap: DraftLike;
-  source?: string | null;
+  /**
+   * Quando `true`, força o bootstrap a "puxar" o draft para a fase de criação
+   * do 1º serviço (saída natural após a triagem unificada). Substitui o antigo
+   * o antigo gatilho legado por query string, agora que o handoff é interno.
+   *
+   * Anti-regressão: se o draft já está em phase4_* / done, NUNCA voltamos.
+   */
+  forceFromBootstrap?: boolean;
 }): Partial<OnboardingState> {
   const draftPhase = draft?.phase ? phaseIndex(draft.phase) : -1;
   const bootstrapPhase = bootstrap?.phase ? phaseIndex(bootstrap.phase) : -1;
-  // "bet-first-service" só FORÇA o bootstrap se o draft ainda não passou da
-  // criação do 1º serviço. Se o draft já está em phase4_*/done (ex.: usuário
-  // pulou o serviço e chegou no upsell de documento), NUNCA regredimos.
-  const forceBootstrapFromBet =
-    source === 'bet-first-service' &&
+  const shouldForce =
+    forceFromBootstrap &&
     bootstrapPhase >= phaseIndex('phase2_service') &&
     draftPhase < phaseIndex('phase4_document');
 
-  const phase = forceBootstrapFromBet
+  const phase = shouldForce
     ? bootstrap?.phase
     : draftPhase >= bootstrapPhase
       ? draft?.phase ?? bootstrap?.phase
       : bootstrap?.phase ?? draft?.phase;
 
   return {
-    ...(forceBootstrapFromBet ? draft : bootstrap),
-    ...(forceBootstrapFromBet ? bootstrap : draft),
+    ...(shouldForce ? draft : bootstrap),
+    ...(shouldForce ? bootstrap : draft),
     profile: {
       ...initialOnboardingState.profile,
       ...(bootstrap?.profile || {}),
       ...(draft?.profile || {}),
-      ...(forceBootstrapFromBet ? (bootstrap?.profile || {}) : {}),
+      ...(shouldForce ? (bootstrap?.profile || {}) : {}),
     },
     service: {
       ...initialOnboardingState.service,
       ...(bootstrap?.service || {}),
       ...(draft?.service || {}),
-      ...(forceBootstrapFromBet ? (bootstrap?.service || {}) : {}),
+      ...(shouldForce ? (bootstrap?.service || {}) : {}),
     },
-    providerId: forceBootstrapFromBet
+    providerId: shouldForce
       ? bootstrap?.providerId ?? draft?.providerId ?? null
       : draft?.providerId ?? bootstrap?.providerId ?? null,
     firstServiceId: draft?.firstServiceId ?? bootstrap?.firstServiceId ?? null,

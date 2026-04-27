@@ -18,7 +18,7 @@
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -70,12 +70,19 @@ function slugify(input: string): string {
     .slice(0, 50);
 }
 
-export const OnboardingV2Shell = () => {
+interface OnboardingV2ShellProps {
+  /**
+   * Marca verdade quando o V2 Shell é aberto logo após a triagem (V3) dentro
+   * do WizardShell unificado. Substitui o antigo gatilho via query string,
+   * que não existe mais agora que o handoff é interno (sem trocar de URL).
+   */
+  internalHandoffFromTriage?: boolean;
+}
+
+export const OnboardingV2Shell = ({ internalHandoffFromTriage = false }: OnboardingV2ShellProps = {}) => {
   const { user, profile, provider, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const source = searchParams.get('source');
   // Restaura draft local ao montar (se existir e não estiver expirado)
   const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState, (init) => {
     const draft = readOnboardingV2Draft();
@@ -183,7 +190,11 @@ export const OnboardingV2Shell = () => {
       profile: state.profile,
       service: state.service,
     };
-    const resolved = resolveOnboardingV2SeedState({ draft: draftSnapshot, bootstrap, source });
+    const resolved = resolveOnboardingV2SeedState({
+      draft: draftSnapshot,
+      bootstrap,
+      forceFromBootstrap: internalHandoffFromTriage,
+    });
 
     const currentPhase = state.phase || 'phase1_action';
     const nextPhase = resolved.phase || currentPhase;
@@ -196,7 +207,7 @@ export const OnboardingV2Shell = () => {
         phase: currentPhase,
         nextRoute: null,
         reason: 'bootstrap-attempted-older-phase',
-        meta: { currentPhase, nextPhase, source, pendingCoreFields },
+        meta: { currentPhase, nextPhase, internalHandoffFromTriage, pendingCoreFields },
       });
       return;
     }
@@ -207,11 +218,11 @@ export const OnboardingV2Shell = () => {
       phase: nextPhase,
       nextRoute: null,
       reason: 'hydrate-from-profile-provider',
-      meta: { source, pendingCoreFields, providerId: resolved.providerId ?? null },
+      meta: { internalHandoffFromTriage, pendingCoreFields, providerId: resolved.providerId ?? null },
     });
 
     dispatch({ type: 'HYDRATE', state: resolved });
-  }, [profile, provider, source]);
+  }, [profile, provider, internalHandoffFromTriage]);
 
   // Telemetria: dispara 'enter' a cada troca de fase
   useEffect(() => {
@@ -460,7 +471,7 @@ export const OnboardingV2Shell = () => {
       reason: 'continue-profile-without-first-service',
       meta: {
         providerId: state.providerId,
-        source,
+        internalHandoffFromTriage,
         pendingCoreFields,
       },
     });

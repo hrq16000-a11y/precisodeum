@@ -9,7 +9,7 @@ describe('Onboarding hard gate regression guard', () => {
     const route = read('src/components/ProtectedRoute.tsx');
     expect(app).toContain('onboarding_completed !== true');
     expect(app).toContain('onboardingStep < 5');
-    expect(app).toContain('/cadastro-bet');
+    expect(app).toContain('/cadastro-inicial');
     expect(route).toContain('The onboarding redirect');
   });
 
