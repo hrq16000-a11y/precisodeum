@@ -227,6 +227,7 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
             onChange={(next) => onChange({ city: next.city, state: next.state })}
             placeholder={data.state ? 'Selecione sua cidade' : 'Escolha o estado primeiro'}
             stateFilter={data.state}
+            disabled={!data.state || !!locks?.city}
             statusText={selectedStateName ? `Mostrando cidades de ${selectedStateName}` : 'Selecione a UF para limitar as cidades'}
           />
           {!data.state && (
