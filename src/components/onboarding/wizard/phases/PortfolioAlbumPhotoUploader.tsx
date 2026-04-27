@@ -151,7 +151,7 @@ export default function PortfolioAlbumPhotoUploader({
 
   const handleRemove = async (photo: AlbumPhoto) => {
     try {
-      await supabase.from('portfolio_photos' as any).delete().eq('id', photo.id);
+      await (supabase as any).from('portfolio_photos').delete().eq('id', photo.id);
       if (photo.storage_path) {
         await supabase.storage.from('portfolio').remove([photo.storage_path]);
       }
