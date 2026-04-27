@@ -25,7 +25,7 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List, Circle, Zap, ArrowRight, RefreshCcw } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List, Circle, Zap, ArrowRight, RefreshCcw, Star, Compass, Award, Trophy, GraduationCap } from 'lucide-react';
 import { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchModal';
 const RouteSearchModal = lazy(() => import('@/components/RouteSearchModal'));
 import { calculateDistanceKm } from '@/lib/geoDistance';
@@ -50,12 +50,21 @@ const ITEMS_PER_PAGE = 12;
 
 type SortOption = 'relevance' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
 
-const SORT_CHIPS: { value: SortOption; label: string }[] = [
-  { value: 'relevance', label: 'Relevância' },
-  { value: 'nearest', label: '📍 Mais Perto' },
-  { value: 'rating', label: '⭐ Avaliação' },
-  { value: 'reviews', label: 'Avaliações' },
-  { value: 'experience', label: 'Experiência' },
+const SORT_CHIPS: { value: SortOption; label: string; icon: typeof Star }[] = [
+  { value: 'relevance', label: 'Relevância', icon: Trophy },
+  { value: 'nearest', label: 'Mais perto', icon: Compass },
+  { value: 'rating', label: 'Avaliação', icon: Star },
+  { value: 'reviews', label: 'Avaliações', icon: Award },
+  { value: 'experience', label: 'Experiência', icon: GraduationCap },
+];
+
+/** Raios disponíveis (km) para o seletor de proximidade. */
+const RADIUS_CHIPS: { km: number; label: string }[] = [
+  { km: 5, label: '5 km' },
+  { km: 10, label: '10 km' },
+  { km: 25, label: '25 km' },
+  { km: 50, label: '50 km' },
+  { km: 100, label: '100 km' },
 ];
 
 const SearchPage = () => {
