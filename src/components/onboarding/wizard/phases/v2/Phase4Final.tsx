@@ -163,25 +163,22 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
   return (
     <AnimatePresence mode="wait">
       {!verified ? (
-        <motion.div
-          key="doc"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96 }}
-          className="space-y-5"
-        >
-          <header className="text-center space-y-1">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-              <ShieldCheck className="h-7 w-7 text-primary" />
+        <motion.div key="doc" {...wizardEnter} className={ws.container}>
+          <header className={ws.headerWrap}>
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 text-white shadow-[0_0_24px_rgba(251,146,60,0.45)]">
+              <ShieldCheck className="h-7 w-7" />
             </div>
-            <h1 className="font-display text-2xl font-bold text-foreground">Quer ficar ONLINE agora?</h1>
-            <p className="text-sm text-muted-foreground">
+            <div className={ws.chip}>
+              <ShieldCheck className="h-3 w-3" /> Verificação
+            </div>
+            <h1 className={ws.title}>Quer ficar ONLINE agora?</h1>
+            <p className={ws.subtitle}>
               Adicione seu {data.kind === 'pj' ? 'CNPJ' : 'CPF'} para receber chamados diretos no WhatsApp.
             </p>
           </header>
 
           {userId && (
-            <div className="rounded-lg border border-border bg-muted/30 p-3">
+            <div className="rounded-2xl border border-border bg-muted/30 p-3">
               <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">
                 Status atual da sua verificação
               </p>
@@ -189,31 +186,35 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
             </div>
           )}
 
-          <div ref={focusDoc.ref as any} className={`rounded-md ${focusDoc.highlightClass}`}>
-            <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{data.kind === 'pj' ? 'CNPJ' : 'CPF'}</span>
-            <CpfCnpjInput
-              value={data.document}
-              onChange={(digitsOnly) => { if (!locked) onChange({ document: digitsOnly }); }}
-              mode={data.kind === 'pj' ? 'cnpj' : 'cpf'}
-              placeholder={data.kind === 'pj' ? '00.000.000/0000-00' : '000.000.000-00'}
-              disabled={!!locked}
-            />
-            {locked ? (
-              <p className="mt-1 text-[11px] text-emerald-600">Já preenchido — não pode ser alterado aqui.</p>
-            ) : (
-              <p className="mt-1 text-[10px] text-muted-foreground">
-                Usado apenas para validar seu perfil. Nunca exibido publicamente.
-              </p>
-            )}
+          <div ref={focusDoc.ref as any} className={`${ws.card} ${focusDoc.highlightClass}`}>
+            <label className="block">
+              <span className={ws.fieldLabel}>
+                <FileText className="h-3.5 w-3.5" /> {data.kind === 'pj' ? 'CNPJ' : 'CPF'}
+              </span>
+              <CpfCnpjInput
+                value={data.document}
+                onChange={(digitsOnly) => { if (!locked) onChange({ document: digitsOnly }); }}
+                mode={data.kind === 'pj' ? 'cnpj' : 'cpf'}
+                placeholder={data.kind === 'pj' ? '00.000.000/0000-00' : '000.000.000-00'}
+                disabled={!!locked}
+              />
+              {locked ? (
+                <p className="mt-1 text-[11px] text-emerald-600">Já preenchido — não pode ser alterado aqui.</p>
+              ) : (
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Usado apenas para validar seu perfil. Nunca exibido publicamente.
+                </p>
+              )}
+            </label>
           </div>
 
-          <div className="flex gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className="flex-1">
-              Agora não
-            </Button>
-            <Button type="button" onClick={handleVerify} disabled={!valid || saving} className="flex-1">
+          <div className="flex flex-col gap-2 pt-1">
+            <Button type="button" size="lg" onClick={handleVerify} disabled={!valid || saving} className={ws.cta}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Ficar ONLINE
+              Ficar ONLINE <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
+              Agora não
             </Button>
           </div>
         </motion.div>
