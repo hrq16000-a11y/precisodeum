@@ -156,10 +156,6 @@ const DashboardOnboardingStatusPage = () => {
 
   return (
     <DashboardLayout>
-      <Helmet>
-        <title>Status do cadastro | Preciso de Um</title>
-        <meta name="description" content="Acompanhe o progresso do seu cadastro e veja o que falta para publicar seu serviço." />
-      </Helmet>
 
       <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6">
         <header className="space-y-1.5">

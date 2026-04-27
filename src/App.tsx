@@ -50,6 +50,7 @@ const JobDetailPage = lazy(() => import("./pages/JobDetailPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const DashboardProfilePage = lazy(() => import("./pages/DashboardProfilePage"));
 const DashboardServicesPage = lazy(() => import("./pages/DashboardServicesPage"));
+const DashboardOnboardingStatusPage = lazy(() => import("./pages/DashboardOnboardingStatusPage"));
 const DashboardReviewsPage = lazy(() => import("./pages/DashboardReviewsPage"));
 const DashboardLeadsPage = lazy(() => import("./pages/DashboardLeadsPage"));
 const DashboardLeadDetailPage = lazy(() => import("./pages/DashboardLeadDetailPage"));
