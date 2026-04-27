@@ -73,7 +73,7 @@ const SearchPage = () => {
   const isMobile = useIsMobile();
   const query = searchParams.get('q') || '';
   const cityParam = searchParams.get('cidade') || '';
-  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, requestPreciseLocation, geoFailed, source: geoSource, lastKnownAt, dismissGeoFailure } = useGeoCity();
+  const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, setRadius, requestPreciseLocation, geoFailed, source: geoSource, lastKnownAt, dismissGeoFailure } = useGeoCity();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('categoria') || '');
   const [selectedCity, setSelectedCity] = useState(cityParam);
   const [selectedState, setSelectedState] = useState(searchParams.get('uf') || '');
@@ -83,7 +83,10 @@ const SearchPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [featuredFilter, setFeaturedFilter] = useState('all');
   const [minRating, setMinRating] = useState(0);
-  const [sortBy, setSortBy] = useState<SortOption>('relevance');
+  // Default sort: 'nearest' quando há GPS preciso, senão 'relevance'.
+  // O usuário pode sobrescrever via ?ordem=... ou pelos chips.
+  const initialSort = (searchParams.get('ordem') as SortOption) || (userLat && userLon ? 'nearest' : 'relevance');
+  const [sortBy, setSortBy] = useState<SortOption>(initialSort);
   const [showFilters, setShowFilters] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [onlineOnly, setOnlineOnly] = useState(false);
