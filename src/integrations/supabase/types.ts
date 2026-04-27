@@ -6768,6 +6768,16 @@ export type Database = {
           state_uf: string
         }[]
       }
+      search_cities_prioritized: {
+        Args: { preferred_uf?: string; term: string }
+        Returns: {
+          id: string
+          name: string
+          priority: number
+          state: string
+          state_uf: string
+        }[]
+      }
       set_profile_tax_id: { Args: { _tax_id: string }; Returns: undefined }
       sponsor_has_active_plan: {
         Args: { _sponsor_id: string }
