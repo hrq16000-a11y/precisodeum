@@ -67,7 +67,13 @@ export function resolveOnboardingV2SeedState({
 }): Partial<OnboardingState> {
   const draftPhase = draft?.phase ? phaseIndex(draft.phase) : -1;
   const bootstrapPhase = bootstrap?.phase ? phaseIndex(bootstrap.phase) : -1;
-  const forceBootstrapFromBet = source === 'bet-first-service' && bootstrapPhase >= phaseIndex('phase2_service');
+  // "bet-first-service" só FORÇA o bootstrap se o draft ainda não passou da
+  // criação do 1º serviço. Se o draft já está em phase4_*/done (ex.: usuário
+  // pulou o serviço e chegou no upsell de documento), NUNCA regredimos.
+  const forceBootstrapFromBet =
+    source === 'bet-first-service' &&
+    bootstrapPhase >= phaseIndex('phase2_service') &&
+    draftPhase < phaseIndex('phase4_document');
 
   const phase = forceBootstrapFromBet
     ? bootstrap?.phase
