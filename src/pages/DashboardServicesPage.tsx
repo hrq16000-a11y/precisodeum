@@ -394,10 +394,20 @@ const DashboardServicesPage = () => {
       // Bloqueia digitação livre — só aceita seleção do autocomplete (IBGE).
       errors.service_area = 'Selecione uma cidade da lista (não digite manualmente)';
     }
+    // Linter anti-leilão: bloqueia termos proibidos antes de enviar ao backend
+    const forbiddenHits = lintServiceDescription(form.description);
+    if (forbiddenHits.length > 0) {
+      errors.description = `Linguagem de leilão detectada: "${forbiddenHits[0].term}". Substitua por uma frase de valorização técnica.`;
+    }
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+    // Coerência radius=city: trava service_area = provider.city
+    let finalArea = cleanedArea;
+    if (serviceRadius === 'city' && provider?.city) {
+      finalArea = provider.city;
+    }
     // Garante que vai para o banco já normalizado (trigger do DB também valida).
-    if (cleanedArea !== form.service_area) {
-      setForm((prev) => ({ ...prev, service_area: cleanedArea }));
+    if (finalArea !== form.service_area) {
+      setForm((prev) => ({ ...prev, service_area: finalArea }));
     }
     setFormErrors({});
     setIsSubmitting(true);
