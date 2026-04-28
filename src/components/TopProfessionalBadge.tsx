@@ -8,12 +8,14 @@ interface Props {
 }
 
 /**
- * Selo "Profissional Top" — exibido quando:
- *  - Tier do profissional é >= 'ativo' (useMaturityTier)
- *  - Missões `verify_name` e `verify_whatsapp` estão concluídas
+ * Selo "Profissional Top" — exibido quando `providers.is_verified = true`.
  *
- * O cálculo definitivo é feito no backend pela RPC `is_top_professional(user_id)`,
- * que pode ser invocada por visitantes anônimos para mostrar o selo no perfil público.
+ * Critérios objetivos (recomputados por trigger ao alterar perfil ou serviços):
+ *   - Perfil mínimo: foto + descrição (>=30) + 1 serviço cadastrado
+ *   - Contato/Geo:   WhatsApp válido + cidade + GPS (lat/lng)
+ *
+ * Override admin: admin pode marcar/desmarcar manualmente via
+ * RPC `admin_set_provider_verified` (registra autor + motivo no audit_log).
  */
 const TopProfessionalBadge = ({ size = 'sm', showLabel = false, className = '' }: Props) => {
   const iconSize =
