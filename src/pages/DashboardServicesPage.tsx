@@ -1012,8 +1012,7 @@ const DashboardServicesPage = () => {
                 description={form.description}
                 hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
                 cityValidated={isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES)}
-                hasPrice={!!form.price?.trim()}
-                hasCategory={selectedCategoryIds.length > 0}
+                categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
               />
             </div>
 
@@ -1332,8 +1331,7 @@ const DashboardServicesPage = () => {
                   description={form.description}
                   hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
                   cityValidated={isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES)}
-                  hasPrice={!!form.price?.trim()}
-                  hasCategory={selectedCategoryIds.length > 0}
+                  categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
                 />
 
                 {/* Disclaimer fixo de não-intermediação */}
@@ -1476,8 +1474,7 @@ const DashboardServicesPage = () => {
                       description={form.description}
                       hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
                       cityValidated={cityValidated}
-                      hasPrice={!!form.price?.trim()}
-                      hasCategory={selectedCategoryIds.length > 0}
+                      categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
                     />
                   </div>
                 </div>
