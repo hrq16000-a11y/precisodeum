@@ -27,6 +27,12 @@ import { lintServiceDescription, sanitizePastedCity, rewriteWithQuality, compute
 import { CheckCircle2, AlertTriangle, Sparkles, Award } from 'lucide-react';
 import AdQualityScore from '@/components/dashboard/AdQualityScore';
 import WizardLegalDisclaimer from '@/components/dashboard/WizardLegalDisclaimer';
+import GeoPermissionStep from '@/components/dashboard/GeoPermissionStep';
+import {
+  loadServiceWizardDraft,
+  clearServiceWizardDraft,
+  useServiceWizardDraftAutosave,
+} from '@/hooks/useServiceWizardDraft';
 
 // Heavy editor sub-components — only loaded when the edit Dialog opens
 const SmartCategoryPicker = lazy(() => import('@/components/SmartCategoryPicker'));
