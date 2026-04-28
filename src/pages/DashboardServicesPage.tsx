@@ -23,7 +23,14 @@ import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
 import { formatServiceArea, stripLegacyAreaPrefixes, isCatalogedCity } from '@/lib/serviceAreaFormat';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import { handleImageError } from '@/lib/imageResolver';
-import { lintServiceDescription, sanitizePastedCity, rewriteWithQuality, computeAdScore } from '@/lib/serviceQualityLinter';
+import {
+  lintServiceDescription,
+  sanitizePastedCity,
+  rewriteWithQuality,
+  computeAdScore,
+  shouldBlockByLeilao,
+  LEILAO_BLOCK_THRESHOLD,
+} from '@/lib/serviceQualityLinter';
 import { CheckCircle2, AlertTriangle, Sparkles, Award } from 'lucide-react';
 import AdQualityScore from '@/components/dashboard/AdQualityScore';
 import WizardLegalDisclaimer from '@/components/dashboard/WizardLegalDisclaimer';
