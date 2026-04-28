@@ -793,12 +793,17 @@ const DashboardServicesPage = () => {
             </div>
           );
         })}
-        {/* Próximo slot disponível — CTA para criar mais um serviço */}
+        {/* Próximo slot disponível — CTA claro com explicação de limites */}
         {(() => {
           const SERVICES_CAP = Math.min(5, limits?.max_services ?? 5);
           const used = services.length;
           if (used === 0 || used >= SERVICES_CAP) return null;
           const nextSlotNumber = used + 1;
+          const remaining = SERVICES_CAP - used;
+          const subline =
+            limits?.max_services && limits.max_services <= 5
+              ? `Você tem ${remaining} ${remaining === 1 ? 'vaga restante' : 'vagas restantes'} no seu plano (${SERVICES_CAP} no total). Cada serviço extra aumenta seu alcance no Google e nas buscas internas.`
+              : 'Adicionar mais um serviço amplia seu alcance no Google e nas buscas internas. Você pode pausar ou editar a qualquer momento.';
           return (
             <button
               type="button"
@@ -810,10 +815,10 @@ const DashboardServicesPage = () => {
                 <Plus className="h-5 w-5" />
               </div>
               <p className="text-xs font-bold uppercase tracking-wider text-accent">
-                {nextSlotNumber}º slot disponível
+                {nextSlotNumber}º slot disponível — adicionar serviço
               </p>
-              <p className="text-[11px] text-muted-foreground leading-snug max-w-[200px]">
-                Cadastre mais um serviço e ganhe mais destaque no Google.
+              <p className="text-[11px] text-muted-foreground leading-snug max-w-[220px]">
+                {subline}
               </p>
             </button>
           );
