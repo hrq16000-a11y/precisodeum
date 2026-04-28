@@ -49,7 +49,8 @@ export function calculateAuditedDistanceKm(
   const providerCity = provider.city || '';
   const userCityStr = userCity || '';
   const baseAudit: DistanceAudit = {
-    distanceKm: Infinity,
+    // Use NaN sentinel internally; UI must check Number.isFinite before rendering.
+    distanceKm: Number.NaN,
     source: 'unavailable',
     suspicious: false,
     rawDirectKm: null,
