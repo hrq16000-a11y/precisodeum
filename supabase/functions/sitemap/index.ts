@@ -128,67 +128,7 @@ ${entries}
     }
   }
 
-  // ─── Quality gates ───
-  // Apenas prestadores/cidades/categorias com serviços "elegíveis SEO" entram no sitemap.
-  // Critérios (heurística alinhada ao linter front-end / Padrão Ouro):
-  //   1. Descrição com >= MIN_DESCRIPTION_LEN caracteres
-  //   2. Descrição NÃO contém termos proibidos (forbidden_service_terms)
-  //   3. service_area NÃO vazio (cidade validada pelo trigger enforce_service_city_coherence)
-  //   4. Provider aprovado (status='approved')
-  // Esses critérios reduzem indexação de listagens fracas e seguem
-  // o memo "service_quality_min_score" (default 60).
-  const MIN_DESCRIPTION_LEN = 80;
-
-  // Carrega termos proibidos uma vez (poucos registros)
-  const { data: forbiddenRows } = await supabase
-    .from('forbidden_service_terms')
-    .select('term');
-  const forbiddenTerms: string[] = (forbiddenRows || [])
-    .map((r: any) => String(r.term || '').toLowerCase().trim())
-    .filter(Boolean);
-
-  const isCleanDescription = (desc: string | null | undefined): boolean => {
-    if (!desc || desc.length < MIN_DESCRIPTION_LEN) return false;
-    const norm = desc.toLowerCase();
-    return !forbiddenTerms.some(t => t && norm.includes(t));
-  };
-
-  // Pré-busca a base de serviços elegíveis (usada por providers/cities/categories/seo).
-  // Limite alto mas finito para não estourar memória da edge.
-  const { data: eligibleServices } = await supabase
-    .from('services')
-    .select('id, provider_id, description, service_area, category_id, providers!inner(id, slug, city, status, updated_at)')
-    .is('deleted_at', null)
-    .not('service_area', 'is', null)
-    .neq('service_area', '')
-    .eq('providers.status', 'approved')
-    .range(0, 19999);
-
-  type EligibleSvc = {
-    id: string; provider_id: string; description: string | null;
-    service_area: string | null; category_id: string | null;
-    providers: { id: string; slug: string | null; city: string | null; status: string; updated_at: string };
-  };
-  const eligible: EligibleSvc[] = (eligibleServices || []).filter((s: any) =>
-    isCleanDescription(s.description) &&
-    s.providers?.slug &&
-    // Coerência city ↔ service_area (case-insensitive)
-    s.providers?.city && s.service_area &&
-    String(s.service_area).trim().toLowerCase() === String(s.providers.city).trim().toLowerCase()
-  ) as EligibleSvc[];
-
-  const eligibleProviderSlugs = new Set<string>();
-  const eligibleProvidersByDate = new Map<string, string>();
-  const eligibleCityNames = new Set<string>();
-  const eligibleCategoryIds = new Set<string>();
-  for (const s of eligible) {
-    if (s.providers.slug) {
-      eligibleProviderSlugs.add(s.providers.slug);
-      eligibleProvidersByDate.set(s.providers.slug, s.providers.updated_at);
-    }
-    if (s.providers.city) eligibleCityNames.add(s.providers.city.trim().toLowerCase());
-    if (s.category_id) eligibleCategoryIds.add(s.category_id);
-  }
+  // (eligibility computado acima — reutilizado pelos blocos providers/cities/seo)
 
   if (type === 'providers') {
     const { data } = await supabase
