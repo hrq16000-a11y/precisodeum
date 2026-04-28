@@ -20,6 +20,7 @@ import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
+import { formatServiceArea } from '@/lib/serviceAreaFormat';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import { handleImageError } from '@/lib/imageResolver';
 
