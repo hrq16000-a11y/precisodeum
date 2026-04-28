@@ -23,6 +23,9 @@ import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
 import { formatServiceArea, stripLegacyAreaPrefixes, isCatalogedCity } from '@/lib/serviceAreaFormat';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import { handleImageError } from '@/lib/imageResolver';
+import { lintServiceDescription, sanitizePastedCity } from '@/lib/serviceQualityLinter';
+import AdQualityScore from '@/components/dashboard/AdQualityScore';
+import WizardLegalDisclaimer from '@/components/dashboard/WizardLegalDisclaimer';
 
 // Heavy editor sub-components — only loaded when the edit Dialog opens
 const SmartCategoryPicker = lazy(() => import('@/components/SmartCategoryPicker'));
