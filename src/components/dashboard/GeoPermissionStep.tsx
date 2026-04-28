@@ -18,17 +18,18 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { toast } from 'sonner';
 
 interface Props {
+  catalog: ReadonlyArray<{ value: string; label?: string; state?: string }>;
   onConfirm: (city: string, state: string | null) => void;
   onSkipToManual: () => void;
 }
 
-export default function GeoPermissionStep({ onConfirm, onSkipToManual }: Props) {
+export default function GeoPermissionStep({ catalog, onConfirm, onSkipToManual }: Props) {
   const geo = useGeoCity();
   const [requesting, setRequesting] = useState(false);
 
   const detectedCity = geo.city || null;
   const detectedState = geo.state || null;
-  const cataloged = detectedCity ? isCatalogedCity(detectedCity, detectedState || undefined) : false;
+  const cataloged = detectedCity ? isCatalogedCity(detectedCity, catalog) : false;
   const sourceLabel =
     geo.source === 'gps' ? 'GPS preciso'
     : geo.source === 'ip' ? 'localização aproximada por IP'
