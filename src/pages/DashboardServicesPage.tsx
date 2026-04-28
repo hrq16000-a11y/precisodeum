@@ -20,6 +20,7 @@ import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
+import { formatServiceArea } from '@/lib/serviceAreaFormat';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import { handleImageError } from '@/lib/imageResolver';
 
@@ -742,11 +743,14 @@ const DashboardServicesPage = () => {
                 </div>
                 {s.description && <p className="text-xs text-muted-foreground line-clamp-1">{s.description}</p>}
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                  {s.service_area && (
-                    <span className="flex items-center gap-0.5" title="Cidades atendidas">
-                      <MapPin className="h-3 w-3" /> {s.service_area}
-                    </span>
-                  )}
+                  {(() => {
+                    const area = formatServiceArea(s.service_area, s.service_radius, provider?.city);
+                    return area ? (
+                      <span className="flex items-center gap-0.5" title="Área de atendimento">
+                        <MapPin className="h-3 w-3" /> {area}
+                      </span>
+                    ) : null;
+                  })()}
                   <span className="flex items-center gap-0.5"><Eye className="h-3 w-3" /> {s.view_count ?? 0} views</span>
                 </div>
                 <div className="flex items-center justify-between gap-2 pt-1">
@@ -779,13 +783,30 @@ const DashboardServicesPage = () => {
             </div>
           );
         })}
-        {/* Progressive unlock — show 1 locked "next slot" if user is below cap and has at least 1 service */}
+        {/* Próximo slot disponível — CTA para criar mais um serviço */}
         {(() => {
           const SERVICES_CAP = Math.min(5, limits?.max_services ?? 5);
           const used = services.length;
           if (used === 0 || used >= SERVICES_CAP) return null;
           const nextSlotNumber = used + 1;
-          return <LockedSlotCard label={`${nextSlotNumber}º slot — bloqueado`} />;
+          return (
+            <button
+              type="button"
+              onClick={() => { resetForm(); setShowDialog(true); }}
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-accent/40 bg-accent/5 p-5 text-center transition-colors hover:border-accent hover:bg-accent/10 min-h-[200px]"
+              aria-label={`Cadastrar ${nextSlotNumber}º serviço`}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/15 text-accent">
+                <Plus className="h-5 w-5" />
+              </div>
+              <p className="text-xs font-bold uppercase tracking-wider text-accent">
+                {nextSlotNumber}º slot disponível
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-snug max-w-[200px]">
+                Cadastre mais um serviço e ganhe mais destaque no Google.
+              </p>
+            </button>
+          );
         })()}
       </div>
 
