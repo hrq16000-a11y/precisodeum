@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Crown, Clock, Circle, ArrowRight, Trophy, Sparkles, Zap, Rocket } from 'lucide-react';
 import { usePrefetchProvider, usePrefetchHandlers } from '@/hooks/usePrefetch';
@@ -123,8 +124,8 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     ? rawDistanceKm
     : null;
   // Telemetria one-shot por card: registra quando recebemos coords inválidas.
-  const distanceMissingReportedRef = React.useRef(false);
-  React.useEffect(() => {
+  const distanceMissingReportedRef = useRef(false);
+  useEffect(() => {
     if (distanceMissingReportedRef.current) return;
     const hasAuditOrField = provider._distanceAudit !== undefined || provider.distanceKm !== undefined;
     if (!hasAuditOrField) return; // contexto sem GPS nem audit — não conta como erro
