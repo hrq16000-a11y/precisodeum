@@ -231,20 +231,15 @@ const CityPage = () => {
     );
   }
 
-  if (!data) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <div className="container flex flex-1 items-center justify-center py-20">
-          <div className="text-center">
-            <h1 className="font-display text-4xl font-bold text-foreground">Cidade não encontrada</h1>
-            <p className="mt-2 text-muted-foreground">A cidade que você procura não está cadastrada.</p>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
+  // Redirect 301-equivalente para o slug canônico (ex.: /cidade/picarras → /cidade/balneario-picarras-sc)
+  if (data && (data as any).redirectTo) {
+    return <Navigate to={`/cidade/${(data as any).redirectTo}`} replace />;
   }
+
+  if (!data) {
+    return <Navigate to="/error/404" replace state={{ from: `/cidade/${slug}` }} />;
+  }
+
 
   const title = `Profissionais em ${formatCityState(city!.name, city!.state) || city!.name}`;
   const description = `Encontre os melhores profissionais em ${formatCityState(city!.name, city!.state, ', ') || city!.name}. Compare avaliações e entre em contato.`;
