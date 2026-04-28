@@ -156,19 +156,25 @@ export default function ProfileLocationChecklist({ provider }: Props) {
       {!allDone && (
         <div className="mt-4 flex flex-col sm:flex-row gap-2">
           <Button asChild size="sm" className="flex-1">
-            <Link to="/dashboard/perfil">
+            <Link to="/dashboard/localizacao-guiada">
               Completar localização
               <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
           </Button>
-          {!hasCoords && (
-            <Button asChild variant="outline" size="sm" className="flex-1">
-              <Link to="/dashboard/perfil?focus=geo">
-                <Navigation className="mr-1 h-4 w-4" />
-                Confirmar GPS
-              </Link>
-            </Button>
-          )}
+          <Button asChild variant="outline" size="sm" className="flex-1">
+            <Link to="/dashboard/auditoria-bairro">
+              Como o selo é calculado
+            </Link>
+          </Button>
+        </div>
+      )}
+      {allDone && (
+        <div className="mt-4">
+          <Button asChild variant="outline" size="sm" className="w-full">
+            <Link to="/dashboard/auditoria-bairro">
+              Ver critérios do selo
+            </Link>
+          </Button>
         </div>
       )}
     </Card>
