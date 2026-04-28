@@ -5,10 +5,16 @@ const cache = new Map<string, { value: boolean; ts: number }>();
 const TTL = 5 * 60 * 1000;
 
 /**
- * Consulta a RPC `is_top_professional` para saber se o profissional cumpre os
- * critérios do selo "Profissional Top" (tier >= ativo + missões verify_name/verify_whatsapp).
+ * Indica se o profissional cumpre os critérios objetivos do selo "Profissional Top".
  *
- * Funciona para visitantes anônimos — usado nos cards de busca e no perfil público.
+ * Fonte canônica: `providers.is_verified` — recomputado por trigger ao alterar:
+ *   - foto, descrição (>=30), >=1 serviço ativo (não excluído)
+ *   - WhatsApp válido (10–11 dígitos locais ou 12–13 com DDI 55)
+ *   - cidade preenchida + lat/lng (GPS)
+ *
+ * Override admin: quando `verified_manual=true`, a recomputação automática
+ * preserva a decisão do admin (set/unset) — registrada com autor + motivo.
+ *
  * Cache local por 5 min para evitar requests repetidos.
  */
 export function useTopProfessional(userId?: string | null) {
@@ -28,11 +34,13 @@ export function useTopProfessional(userId?: string | null) {
     let active = true;
     (async () => {
       try {
-        const { data, error } = await supabase.rpc('is_top_professional' as any, {
-          _user_id: userId,
-        });
+        const { data, error } = await supabase
+          .from('providers')
+          .select('is_verified')
+          .eq('user_id', userId)
+          .maybeSingle();
         if (!active) return;
-        const v = !!data && !error;
+        const v = !!data?.is_verified && !error;
         cache.set(userId, { value: v, ts: Date.now() });
         setIsTop(v);
       } catch {
@@ -45,4 +53,16 @@ export function useTopProfessional(userId?: string | null) {
   }, [userId]);
 
   return isTop;
+}
+
+/**
+ * Limpa o cache local — útil após uma ação de admin (set/unset manual)
+ * para que o próximo render reflita imediatamente.
+ */
+export function invalidateTopProfessionalCache(userId?: string | null) {
+  if (!userId) {
+    cache.clear();
+    return;
+  }
+  cache.delete(userId);
 }
