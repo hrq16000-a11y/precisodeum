@@ -7,8 +7,32 @@ import {
   lintServiceDescription,
   computeAdScore,
   sanitizePastedCity,
+  rewriteWithQuality,
   FORBIDDEN_TERMS,
 } from '@/lib/serviceQualityLinter';
+
+describe('rewriteWithQuality — botão "Reescrever com qualidade"', () => {
+  it('substitui um único termo proibido por sugestão técnica', () => {
+    const out = rewriteWithQuality('Faço serviço barato.');
+    expect(out.toLowerCase()).not.toMatch(/barato/);
+    expect(out).toMatch(/custo-benefício/i);
+  });
+
+  it('substitui múltiplos termos em uma única passagem', () => {
+    const out = rewriteWithQuality('Trabalho barato com desconto e leilão de orçamento.');
+    expect(lintServiceDescription(out).length).toBe(0);
+  });
+
+  it('retorna string vazia para entrada vazia', () => {
+    expect(rewriteWithQuality('')).toBe('');
+  });
+
+  it('mantém texto que não contém termos proibidos', () => {
+    const original = 'Atendimento técnico especializado em refrigeração comercial.';
+    expect(rewriteWithQuality(original)).toBe(original);
+  });
+});
+
 
 describe('lintServiceDescription — termos proibidos (anti-leilão)', () => {
   it('detecta "barato" e sugere valorização', () => {
