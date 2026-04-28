@@ -885,22 +885,35 @@ const DashboardServicesPage = () => {
 
             {/* Wizard Step Indicator */}
             <div className="flex items-center justify-center gap-2 -mt-1">
-              {[1, 2, 3].map((n) => (
+              {[1, 2, 3, 4].map((n) => (
                 <div key={n} className="flex items-center gap-2">
                   <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                     formStep === n ? 'bg-accent text-accent-foreground' : formStep > n ? 'bg-accent/30 text-accent' : 'bg-muted text-muted-foreground'
                   }`}>
                     {formStep > n ? '✓' : n}
                   </div>
-                  {n < 3 && <div className={`h-0.5 w-8 ${formStep > n ? 'bg-accent/40' : 'bg-muted'}`} />}
+                  {n < 4 && <div className={`h-0.5 w-6 ${formStep > n ? 'bg-accent/40' : 'bg-muted'}`} />}
                 </div>
               ))}
             </div>
             <p className="text-center text-xs text-muted-foreground -mt-2">
-              {formStep === 1 && 'Etapa 1 de 3 · Informações Básicas'}
-              {formStep === 2 && 'Etapa 2 de 3 · Localização & Atendimento'}
-              {formStep === 3 && 'Etapa 3 de 3 · Contato & Mídia'}
+              {formStep === 1 && 'Etapa 1 de 4 · Informações Básicas'}
+              {formStep === 2 && 'Etapa 2 de 4 · Localização & Atendimento'}
+              {formStep === 3 && 'Etapa 3 de 4 · Contato & Mídia'}
+              {formStep === 4 && 'Etapa 4 de 4 · Revisão Final'}
             </p>
+
+            {/* Barra de progresso global de qualidade — sempre visível durante o wizard */}
+            <div className="rounded-lg border border-border bg-card/50 p-2">
+              <AdQualityScore
+                description={form.description}
+                hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
+                cityValidated={isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES)}
+                hasPrice={!!form.price?.trim()}
+                hasCategory={selectedCategoryIds.length > 0}
+              />
+            </div>
+
 
             {/* ── Section 1: Informações Básicas ── */}
             {formStep === 1 && (
