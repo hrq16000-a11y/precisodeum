@@ -45,9 +45,19 @@ describe('formatServiceArea', () => {
     expect(formatServiceArea('Toda Curitiba')).toBe('Curitiba');
     expect(formatServiceArea('São José dos Pinhais')).toBe('São José dos Pinhais');
   });
-  it('retorna string vazia para entradas vazias/nulas', () => {
-    expect(formatServiceArea(null)).toBe('');
-    expect(formatServiceArea('   ')).toBe('');
+  it('retorna estado seguro "Atualize sua cidade" quando não há cidade do provider nem texto válido', () => {
+    expect(formatServiceArea(null)).toBe('Atualize sua cidade');
+    expect(formatServiceArea('   ')).toBe('Atualize sua cidade');
+    expect(formatServiceArea(null, null, null)).toBe('Atualize sua cidade');
+  });
+  it('NUNCA produz "Toda Curitiba" mesmo com dados legados + provider sem cidade', () => {
+    // Cenário do bug: dados legados "Toda Curitiba" + provider.city ausente
+    const out = formatServiceArea('Toda Curitiba', null, null);
+    expect(out).not.toMatch(/^toda /i);
+    expect(out).toBe('Curitiba');
+  });
+  it('prioriza provider.city sobre service_area sujo', () => {
+    expect(formatServiceArea('Toda Curitiba', null, 'Curitiba')).toBe('Curitiba');
   });
 });
 

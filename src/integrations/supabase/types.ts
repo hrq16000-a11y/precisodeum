@@ -6480,21 +6480,44 @@ export type Database = {
           policy_count: number
         }[]
       }
-      admin_list_service_area_corrections: {
-        Args: { _limit?: number; _offset?: number }
-        Returns: {
-          created_at: string
-          id: string
-          new_value: string
-          previous_value: string
-          provider_id: string
-          provider_name: string
-          reason: string
-          service_id: string
-          service_name: string
-          source: string
-        }[]
-      }
+      admin_list_service_area_corrections:
+        | {
+            Args: { _limit?: number; _offset?: number }
+            Returns: {
+              created_at: string
+              id: string
+              new_value: string
+              previous_value: string
+              provider_id: string
+              provider_name: string
+              reason: string
+              service_id: string
+              service_name: string
+              source: string
+            }[]
+          }
+        | {
+            Args: {
+              p_city?: string
+              p_from?: string
+              p_limit?: number
+              p_provider_id?: string
+              p_to?: string
+            }
+            Returns: {
+              corrected_by: string
+              corrector_name: string
+              created_at: string
+              id: string
+              new_value: string
+              previous_value: string
+              provider_id: string
+              provider_name: string
+              reason: string
+              service_id: string
+              source: string
+            }[]
+          }
       admin_log_impersonation_end: {
         Args: { _session_id: string }
         Returns: undefined
@@ -6608,6 +6631,15 @@ export type Database = {
         }[]
       }
       admin_suspicious_summary: { Args: { _limit?: number }; Returns: Json }
+      admin_sync_provider_city_with_services: {
+        Args: { p_dry_run?: boolean }
+        Returns: {
+          after_value: string
+          before_value: string
+          provider_id: string
+          service_id: string
+        }[]
+      }
       admin_system_health: { Args: { _limit?: number }; Returns: Json }
       admin_system_health_full: { Args: never; Returns: Json }
       audit_user_ref_full: {

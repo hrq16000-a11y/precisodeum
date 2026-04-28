@@ -35,12 +35,20 @@ export function formatServiceArea(
   const radiusLabel = radius ? RADIUS_LABEL[radius] : null;
   const city = (providerCity ?? '').trim() || cleanedArea;
 
-  if (radiusLabel && city) return `${radiusLabel} — ${city}`;
+  // Estado seguro: sem cidade do provider e sem cidade limpa válida.
+  // Evita renderizar texto composto inseguro como "Toda Curitiba".
+  const hasProviderCity = !!(providerCity ?? '').trim();
+
+  if (radiusLabel && hasProviderCity) return `${radiusLabel} — ${(providerCity ?? '').trim()}`;
+  if (radiusLabel && cleanedArea) return `${radiusLabel} — ${cleanedArea}`;
   if (radiusLabel) return radiusLabel;
+  if (hasProviderCity) return (providerCity ?? '').trim();
   if (cleanedArea) return cleanedArea;
-  if (city) return city;
-  return '';
+  return SAFE_EMPTY_STATE;
 }
+
+/** Rótulo seguro quando não há cidade confirmada do provider. */
+export const SAFE_EMPTY_STATE = 'Atualize sua cidade';
 
 /**
  * Verifica se o valor `service_area` corresponde exatamente a uma cidade
