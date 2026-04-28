@@ -208,6 +208,51 @@ const AdminServiceAreaCorrectionsPage = () => {
         </div>
       </Card>
 
+      {/* Histórico de execuções do job */}
+      <Card className="mt-4 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold text-foreground">Execuções do job</h2>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Diário às 03:00 · TZ <span className="font-mono">{tz}</span> (cron 06:00 UTC)
+          </p>
+        </div>
+        {runs.length === 0 ? (
+          <p className="mt-2 text-xs text-muted-foreground">Nenhuma execução registrada ainda.</p>
+        ) : (
+          <div className="mt-2 max-h-64 overflow-auto divide-y divide-border">
+            {runs.map((run) => (
+              <div key={run.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-xs">
+                <div className="flex items-center gap-2">
+                  {run.status === 'completed' ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                  ) : run.status === 'failed' ? (
+                    <XCircle className="h-3.5 w-3.5 text-red-600" />
+                  ) : (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  )}
+                  <span className="font-medium text-foreground">
+                    {new Date(run.started_at).toLocaleString('pt-BR')}
+                  </span>
+                  <Badge variant="outline" className="text-[10px]">{run.triggered_by}</Badge>
+                  {run.dry_run && <Badge variant="secondary" className="text-[10px]">dry-run</Badge>}
+                </div>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <span>{run.affected_count} divergência(s)</span>
+                  {run.error_message && (
+                    <span className="max-w-[280px] truncate text-red-600" title={run.error_message}>
+                      {run.error_message}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
       <p className="mt-3 text-xs text-muted-foreground">
         <strong className="font-semibold text-foreground">{rows.length}</strong> correção(ões) encontradas
       </p>
