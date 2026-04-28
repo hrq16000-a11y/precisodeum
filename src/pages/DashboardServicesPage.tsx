@@ -1231,6 +1231,16 @@ const DashboardServicesPage = () => {
                   )}
                 </div>
 
+                {/* Sugestão 1-clique para expandir o raio para a Região Metropolitana */}
+                <MetroExpandSuggestion
+                  selectedCity={form.service_area}
+                  serviceRadius={serviceRadius}
+                  onExpandToMetro={() => {
+                    setServiceRadius('metro');
+                    toast.success('Raio expandido para Região Metropolitana', { duration: 3000 });
+                  }}
+                />
+
                 {/* Service Radius */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Raio de Atendimento</label>
