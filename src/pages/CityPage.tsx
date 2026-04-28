@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { normalize } from '@/lib/normalize';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -54,13 +54,34 @@ const CityPage = () => {
   const { data, isLoading } = useQuery({
     queryKey: ['city-page', slug],
     queryFn: async () => {
-      const { data: city } = await supabase
+      // 1) Match exato pelo slug fornecido na URL
+      let { data: city } = await supabase
         .from('cities')
         .select('*')
         .eq('slug', slug)
         .maybeSingle();
 
+      // 2) Fallback: tenta resolver via RPC fuzzy (ex.: "picarras" → "balneario-picarras-sc")
+      if (!city) {
+        const { data: resolved } = await supabase
+          .rpc('resolve_city_slug' as any, { _input: slug });
+        const match = Array.isArray(resolved) && resolved.length > 0 ? resolved[0] as any : null;
+        if (match?.slug && match.slug !== slug) {
+          // Sinaliza para o componente fazer redirect ao slug canônico
+          return { redirectTo: match.slug as string };
+        }
+        if (match?.slug) {
+          const { data: byCanonical } = await supabase
+            .from('cities')
+            .select('*')
+            .eq('slug', match.slug)
+            .maybeSingle();
+          city = byCanonical;
+        }
+      }
+
       if (!city) return null;
+
 
       const { data: provs } = await supabase
         .from('providers')
@@ -193,6 +214,49 @@ const CityPage = () => {
   }, [city, providers, slug]);
   useJsonLd(cityAuthorityLd);
 
+  // BreadcrumbList — ajuda o Google a montar o caminho navegacional nos resultados
+  const cityBreadcrumbLd = useMemo(() => city ? ({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
+      { '@type': 'ListItem', position: 2, name: 'Cidades', item: `${SITE_BASE_URL}/cidades` },
+      { '@type': 'ListItem', position: 3, name: city.name, item: `${SITE_BASE_URL}/cidade/${slug}` },
+    ],
+  }) : null, [city, slug]);
+  useJsonLd(cityBreadcrumbLd);
+
+  // ItemList dos top 10 profissionais — habilita rich snippet de listagem/carrossel
+  const cityItemListLd = useMemo(() => {
+    if (!city || providers.length === 0) return null;
+    const top = providers.slice(0, 10);
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: `Profissionais em ${city.name}`,
+      numberOfItems: top.length,
+      itemListElement: top.map((p: any, idx: number) => ({
+        '@type': 'ListItem',
+        position: idx + 1,
+        url: `${SITE_BASE_URL}/profissional/${p.slug}`,
+        name: p.businessName || p.name || 'Profissional',
+      })),
+    };
+  }, [city, providers]);
+  useJsonLd(cityItemListLd);
+
+  // CollectionPage envelope — sinaliza ao Google que é página de coleção indexável
+  const cityCollectionLd = useMemo(() => city ? ({
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `Profissionais em ${formatCityState(city.name, city.state) || city.name}`,
+    url: `${SITE_BASE_URL}/cidade/${slug}`,
+    isPartOf: { '@type': 'WebSite', url: SITE_BASE_URL, name: 'Preciso de um' },
+    about: { '@type': 'City', name: city.name, containedInPlace: { '@type': 'AdministrativeArea', name: city.state } },
+  }) : null, [city, slug]);
+  useJsonLd(cityCollectionLd);
+
+
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   if (isLoading) {
@@ -210,20 +274,15 @@ const CityPage = () => {
     );
   }
 
-  if (!data) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <div className="container flex flex-1 items-center justify-center py-20">
-          <div className="text-center">
-            <h1 className="font-display text-4xl font-bold text-foreground">Cidade não encontrada</h1>
-            <p className="mt-2 text-muted-foreground">A cidade que você procura não está cadastrada.</p>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
+  // Redirect 301-equivalente para o slug canônico (ex.: /cidade/picarras → /cidade/balneario-picarras-sc)
+  if (data && (data as any).redirectTo) {
+    return <Navigate to={`/cidade/${(data as any).redirectTo}`} replace />;
   }
+
+  if (!data) {
+    return <Navigate to="/error/404" replace state={{ from: `/cidade/${slug}` }} />;
+  }
+
 
   const title = `Profissionais em ${formatCityState(city!.name, city!.state) || city!.name}`;
   const description = `Encontre os melhores profissionais em ${formatCityState(city!.name, city!.state, ', ') || city!.name}. Compare avaliações e entre em contato.`;

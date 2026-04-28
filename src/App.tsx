@@ -512,6 +512,9 @@ const App = () => {
                 <Route path="/sponsor-panel/assinatura" element={<SponsorProtectedRoute><SponsorSubscriptionPage /></SponsorProtectedRoute>} />
                 <Route path="/p/:slug" element={<InstitutionalPage />} />
                 <Route path="/error/404" element={<ErrorPage code={404} />} />
+                <Route path="/error/500" element={<ErrorPage code={500} />} />
+                <Route path="/500" element={<ErrorPage code={500} />} />
+                <Route path="/404" element={<ErrorPage code={404} />} />
                 <Route path="*" element={<NotFound />} />
                 </Routes>
               </OnboardingGate>

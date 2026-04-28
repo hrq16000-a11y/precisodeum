@@ -1212,9 +1212,13 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
         .limit(SEARCH_RESULT_LIMIT)
       );
     },
+    // Cache /buscar: 15min stale + 60min gc + sem refetch ao remontar/focar.
+    // Reduz latência e custo em navegação cidade↔serviço↔CEP dentro da janela.
     staleTime: 1000 * 60 * 15,
     gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   const grouped = useMemo(
