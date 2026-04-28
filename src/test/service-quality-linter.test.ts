@@ -70,28 +70,32 @@ describe('lintServiceDescription — termos proibidos (anti-leilão)', () => {
 });
 
 describe('computeAdScore — score 0-100 do anúncio Padrão Ouro', () => {
-  it('anúncio vazio = 0%', () => {
+  it('anúncio vazio = 0% (não conta o critério "sem proibidos" se não houver descrição)', () => {
     const r = computeAdScore({
       description: '',
       hasOriginalPhoto: false,
       cityValidated: false,
-      hasPrice: false,
-      hasCategory: false,
     });
-    expect(r.score).toBe(0);
+    // Sem descrição não há proibidos → noForbidden=true → soma 10
+    expect(r.score).toBe(10);
     expect(r.isPadrãoOuro).toBe(false);
   });
 
   it('anúncio completo = 100% e Padrão Ouro', () => {
+    const technicalDesc = (
+      'Profissional especializado em manutenção e instalação de quadros elétricos residenciais ' +
+      'e comerciais. Trabalho com fiação, disjuntores, tomadas, aterramento e tubulação. ' +
+      'Atendimento técnico transparente, com vistoria detalhada antes de cada projeto.'
+    ).padEnd(320, ' ');
     const r = computeAdScore({
-      description: 'a'.repeat(220),
+      description: technicalDesc,
       hasOriginalPhoto: true,
       cityValidated: true,
-      hasPrice: true,
-      hasCategory: true,
+      categorySlugs: ['eletricista'],
     });
     expect(r.score).toBe(100);
     expect(r.isPadrãoOuro).toBe(true);
+    expect(r.matchedKeywords.length).toBeGreaterThan(0);
   });
 
   it('descrição curta NÃO atinge Padrão Ouro mesmo com tudo', () => {
@@ -99,22 +103,44 @@ describe('computeAdScore — score 0-100 do anúncio Padrão Ouro', () => {
       description: 'curto',
       hasOriginalPhoto: true,
       cityValidated: true,
-      hasPrice: true,
-      hasCategory: true,
+      categorySlugs: ['eletricista'],
     });
     expect(r.score).toBeLessThan(100);
     expect(r.isPadrãoOuro).toBe(false);
   });
 
-  it('soma exata por critério', () => {
+  it('soma exata: foto(25) + cidade(20) + sem-proibidos(10) = 55 quando descrição vazia', () => {
     const r = computeAdScore({
       description: '',
-      hasOriginalPhoto: true, // 25
-      cityValidated: true, // 20
-      hasPrice: false,
-      hasCategory: true, // 15
+      hasOriginalPhoto: true,
+      cityValidated: true,
     });
-    expect(r.score).toBe(25 + 20 + 15);
+    expect(r.score).toBe(25 + 20 + 10);
+  });
+
+  it('descrição com termo proibido NÃO pontua o critério "sem proibidos"', () => {
+    const r = computeAdScore({
+      description: 'Faço serviço barato e bom',
+      hasOriginalPhoto: false,
+      cityValidated: false,
+    });
+    expect(r.score).toBe(0);
+    expect(r.forbiddenHits.length).toBeGreaterThan(0);
+  });
+});
+
+describe('shouldBlockByLeilao — bloqueio só acima de 3 hits', () => {
+  it('1 hit → não bloqueia (apenas alerta)', async () => {
+    const { shouldBlockByLeilao } = await import('@/lib/serviceQualityLinter');
+    expect(shouldBlockByLeilao(lintServiceDescription('orçamento'))).toBe(false);
+  });
+  it('3 hits → não bloqueia (limite tolerado)', async () => {
+    const { shouldBlockByLeilao } = await import('@/lib/serviceQualityLinter');
+    expect(shouldBlockByLeilao(lintServiceDescription('barato desconto promoção'))).toBe(false);
+  });
+  it('4 hits → bloqueia', async () => {
+    const { shouldBlockByLeilao } = await import('@/lib/serviceQualityLinter');
+    expect(shouldBlockByLeilao(lintServiceDescription('barato desconto promoção leilão e orçamento'))).toBe(true);
   });
 });
 
