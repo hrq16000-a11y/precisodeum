@@ -626,12 +626,37 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           resolvedCategoryName,
         );
         if (reusedId) {
-          // Mesmo reusando, force-aligna nome e category_id ao canônico —
-          // a invariante vale para serviços recém-criados E reaproveitados.
-          await supabase
-            .from('services')
-            .update({ service_name: resolvedCategoryName, category_id: categoryId })
-            .eq('id', reusedId);
+          // Mesmo reusando, force-aligna nome + category_id no service E
+          // primary_category_id no provider — TUDO numa única transação
+          // via RPC `realign_first_service` (SECURITY DEFINER, dono-only).
+          const { data: realignData, error: realignErr } = await (supabase as any).rpc(
+            'realign_first_service',
+            {
+              _service_id: reusedId,
+              _provider_id: state.providerId,
+              _category_id: categoryId,
+            },
+          );
+          if (realignErr || !realignData?.success) {
+            console.warn('[onboardingV2] realign_first_service falhou:', realignErr || realignData);
+            void trackOnboardingEvent({
+              phase: state.phase,
+              event: 'error',
+              userId: user?.id,
+              meta: {
+                reason: 'realign_first_service_failed',
+                error: realignErr?.message || realignData?.error || 'unknown',
+                serviceId: reusedId,
+                providerId: state.providerId,
+                categoryId,
+              },
+            });
+            // Fallback defensivo: tenta UPDATE direto (mantém comportamento legado)
+            await supabase
+              .from('services')
+              .update({ service_name: resolvedCategoryName, category_id: categoryId })
+              .eq('id', reusedId);
+          }
           resolvedServiceId = reusedId;
           dispatch({ type: 'SET_FIRST_SERVICE_ID', id: reusedId });
         } else {
