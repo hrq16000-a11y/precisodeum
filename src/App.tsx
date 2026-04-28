@@ -51,6 +51,8 @@ const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const DashboardProfilePage = lazy(() => import("./pages/DashboardProfilePage"));
 const DashboardServicesPage = lazy(() => import("./pages/DashboardServicesPage"));
 const DashboardOnboardingStatusPage = lazy(() => import("./pages/DashboardOnboardingStatusPage"));
+const DashboardBadgeAuditPage = lazy(() => import("./pages/DashboardBadgeAuditPage"));
+const DashboardLocationGuidedPage = lazy(() => import("./pages/DashboardLocationGuidedPage"));
 const DashboardReviewsPage = lazy(() => import("./pages/DashboardReviewsPage"));
 const DashboardLeadsPage = lazy(() => import("./pages/DashboardLeadsPage"));
 const DashboardLeadDetailPage = lazy(() => import("./pages/DashboardLeadDetailPage"));
@@ -406,6 +408,8 @@ const App = () => {
                 <Route path="/dashboard/indicacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReferralsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/ranking" element={<ProtectedRoute allowedTypes={['provider']}><DashboardRankingPage /></ProtectedRoute>} />
                 <Route path="/dashboard/sugestoes-identidade" element={<ProtectedRoute><DashboardIdentitySuggestionsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/auditoria-bairro" element={<ProtectedRoute allowedTypes={['provider']}><DashboardBadgeAuditPage /></ProtectedRoute>} />
+                <Route path="/dashboard/localizacao-guiada" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLocationGuidedPage /></ProtectedRoute>} />
                 <Route path="/dashboard/chat" element={<ProtectedRoute><DashboardChatPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/admin/prestadores" element={<AdminProvidersPage />} />

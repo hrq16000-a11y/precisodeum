@@ -4,21 +4,26 @@
  * Lista todos os providers cujo bairro foi preenchido automaticamente
  * como "Centro" pelo trigger `fill_provider_neighborhood_default`.
  *
- * Permite ao admin revisar caso a caso e contatar o profissional para
- * preencher o bairro real, melhorando a precisão do badge "Atende no
- * seu bairro".
- *
- * Fonte: RPC admin_list_default_neighborhood_providers (SECURITY DEFINER
- * com guard has_role('admin')).
+ * Modo de correção em lote:
+ *  - Selecionar múltiplos providers
+ *  - Aplicar novo bairro com justificativa obrigatória (≥5 chars)
+ *  - RPC admin_bulk_fix_provider_neighborhood registra auditoria
+ *    em provider_neighborhood_corrections (admin, antes/depois, motivo, data).
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
-import { MapPin, RefreshCw, AlertTriangle, ExternalLink } from 'lucide-react';
+import { MapPin, RefreshCw, AlertTriangle, ExternalLink, Wand2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Row {
@@ -40,9 +45,15 @@ export default function AdminDefaultNeighborhoodPage() {
   const [loading, setLoading] = useState(false);
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkNeighborhood, setBulkNeighborhood] = useState('');
+  const [bulkReason, setBulkReason] = useState('');
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
+    setSelected(new Set());
     try {
       const { data, error } = await supabase.rpc('admin_list_default_neighborhood_providers', {
         _city: city || null,
@@ -72,6 +83,51 @@ export default function AdminDefaultNeighborhoodPage() {
     } catch { return '—'; }
   };
 
+  const allChecked = rows.length > 0 && selected.size === rows.length;
+  const indeterminate = selected.size > 0 && !allChecked;
+
+  const toggleAll = () => {
+    if (allChecked) setSelected(new Set());
+    else setSelected(new Set(rows.map((r) => r.id)));
+  };
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const canBulkSave = useMemo(
+    () => selected.size > 0 && bulkNeighborhood.trim().length >= 2 && bulkReason.trim().length >= 5,
+    [selected, bulkNeighborhood, bulkReason],
+  );
+
+  const handleBulkSave = async () => {
+    if (!canBulkSave) return;
+    setBulkSaving(true);
+    try {
+      const { data, error } = await supabase.rpc('admin_bulk_fix_provider_neighborhood', {
+        _provider_ids: Array.from(selected) as any,
+        _new_neighborhood: bulkNeighborhood.trim(),
+        _reason: bulkReason.trim(),
+      });
+      if (error) throw error;
+      const res = (data || {}) as { updated?: number; errors?: number };
+      toast.success(`${res.updated || 0} provider(s) atualizado(s)`, {
+        description: res.errors ? `${res.errors} falharam — verifique permissões.` : 'Auditoria registrada.',
+      });
+      setBulkOpen(false);
+      setBulkNeighborhood('');
+      setBulkReason('');
+      await load();
+    } catch (e: any) {
+      toast.error('Erro ao aplicar correção', { description: e?.message || 'Tente novamente.' });
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-4">
       <header>
@@ -80,8 +136,8 @@ export default function AdminDefaultNeighborhoodPage() {
           Providers com bairro padrão "Centro"
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Cadastros onde o sistema preencheu o bairro automaticamente porque o profissional
-          não informou. Revise e contate quando necessário para melhorar a precisão geográfica.
+          Cadastros onde o sistema preencheu o bairro automaticamente. Selecione vários e aplique
+          correção em lote — toda alteração fica registrada com autor, antes/depois, motivo e data.
         </p>
       </header>
 
@@ -105,10 +161,32 @@ export default function AdminDefaultNeighborhoodPage() {
         </div>
       </Card>
 
+      {/* Barra de ação em lote */}
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2">
+        <div className="text-xs text-muted-foreground">
+          <strong className="text-foreground">{selected.size}</strong> selecionado(s) de {rows.length}
+        </div>
+        <Button
+          size="sm"
+          disabled={selected.size === 0}
+          onClick={() => setBulkOpen(true)}
+          className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white hover:opacity-95"
+        >
+          <Wand2 className="mr-1.5 h-4 w-4" /> Corrigir em lote ({selected.size})
+        </Button>
+      </div>
+
       <Card className="p-0 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase">
             <tr>
+              <th className="p-3 w-10">
+                <Checkbox
+                  checked={allChecked || (indeterminate ? 'indeterminate' as any : false)}
+                  onCheckedChange={toggleAll}
+                  aria-label="Selecionar todos"
+                />
+              </th>
               <th className="p-3">Profissional</th>
               <th className="p-3">Cidade / UF</th>
               <th className="p-3">Bairro</th>
@@ -121,13 +199,20 @@ export default function AdminDefaultNeighborhoodPage() {
           <tbody>
             {rows.length === 0 && !loading && (
               <tr>
-                <td colSpan={7} className="p-6 text-center text-muted-foreground">
+                <td colSpan={8} className="p-6 text-center text-muted-foreground">
                   Nenhum cadastro com bairro padrão automático encontrado.
                 </td>
               </tr>
             )}
             {rows.map((r) => (
               <tr key={r.id} className="border-t hover:bg-muted/30">
+                <td className="p-3">
+                  <Checkbox
+                    checked={selected.has(r.id)}
+                    onCheckedChange={() => toggleOne(r.id)}
+                    aria-label={`Selecionar ${r.full_name || r.id}`}
+                  />
+                </td>
                 <td className="p-3 font-medium">{r.full_name || '—'}</td>
                 <td className="p-3">
                   {r.city || '—'} {r.state ? `/ ${r.state}` : ''}
@@ -170,6 +255,52 @@ export default function AdminDefaultNeighborhoodPage() {
           Total exibido: {rows.length}. Limite máximo: 500.
         </p>
       )}
+
+      {/* Dialog de correção em lote */}
+      <Dialog open={bulkOpen} onOpenChange={(o) => { if (!bulkSaving) setBulkOpen(o); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Corrigir bairro de {selected.size} provider(s)</DialogTitle>
+            <DialogDescription>
+              O novo bairro será aplicado a todos os selecionados. Cada alteração fica registrada
+              com autor (você), bairro anterior, novo bairro, motivo e data.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="bulk-n">Novo bairro</Label>
+              <Input
+                id="bulk-n"
+                value={bulkNeighborhood}
+                onChange={(e) => setBulkNeighborhood(e.target.value)}
+                placeholder="Ex: Centro Histórico, Boa Vista..."
+                disabled={bulkSaving}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="bulk-r">Justificativa (mín. 5 caracteres)</Label>
+              <Textarea
+                id="bulk-r"
+                value={bulkReason}
+                onChange={(e) => setBulkReason(e.target.value)}
+                placeholder="Ex: Confirmado por contato telefônico — bairro real é Boa Vista."
+                rows={3}
+                disabled={bulkSaving}
+              />
+              <p className="text-[11px] text-muted-foreground">{bulkReason.trim().length}/5 mínimos</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" disabled={bulkSaving} onClick={() => setBulkOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleBulkSave} disabled={!canBulkSave || bulkSaving}>
+              {bulkSaving ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Wand2 className="mr-1.5 h-4 w-4" />}
+              Aplicar a {selected.size} provider(s)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

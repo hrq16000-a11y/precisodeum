@@ -41,6 +41,7 @@ import OurStoryBanner from '@/components/OurStoryBanner';
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 import FirstLeadChecklist from '@/components/dashboard/FirstLeadChecklist';
 import ProfileLocationChecklist from '@/components/dashboard/ProfileLocationChecklist';
+import IncompleteLocationAlert from '@/components/dashboard/IncompleteLocationAlert';
 import SmartNextStepCTA from '@/components/dashboard/SmartNextStepCTA';
 import OnboardingCompletionTracker from '@/components/dashboard/OnboardingCompletionTracker';
 import LeadFollowupWidget from '@/components/dashboard/LeadFollowupWidget';
@@ -696,18 +697,21 @@ const DashboardPage = () => {
           );
         }
         return (
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <DismissibleWidget widgetKey="first_lead_checklist">
-              <FirstLeadChecklist
-                servicesCount={servicesCount ?? 0}
-                portfolioAlbumsCount={portfolioAlbumCount}
-              />
-            </DismissibleWidget>
-            <DismissibleWidget widgetKey="profile_location_checklist">
-              <ProfileLocationChecklist provider={provider as any} />
-            </DismissibleWidget>
-            <CommunityVerifiedStatus />
-          </div>
+          <>
+            <IncompleteLocationAlert provider={provider as any} />
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <DismissibleWidget widgetKey="first_lead_checklist">
+                <FirstLeadChecklist
+                  servicesCount={servicesCount ?? 0}
+                  portfolioAlbumsCount={portfolioAlbumCount}
+                />
+              </DismissibleWidget>
+              <DismissibleWidget widgetKey="profile_location_checklist">
+                <ProfileLocationChecklist provider={provider as any} />
+              </DismissibleWidget>
+              <CommunityVerifiedStatus />
+            </div>
+          </>
         );
       })()}
 

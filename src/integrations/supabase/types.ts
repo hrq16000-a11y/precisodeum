@@ -3183,6 +3183,75 @@ export type Database = {
           },
         ]
       }
+      provider_neighborhood_corrections: {
+        Row: {
+          admin_id: string
+          created_at: string
+          id: string
+          new_neighborhood: string
+          previous_neighborhood: string | null
+          previous_source: string | null
+          provider_id: string
+          reason: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          id?: string
+          new_neighborhood: string
+          previous_neighborhood?: string | null
+          previous_source?: string | null
+          provider_id: string
+          reason: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          id?: string
+          new_neighborhood?: string
+          previous_neighborhood?: string | null
+          previous_source?: string | null
+          provider_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_neighborhood_corrections_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_neighborhood_corrections_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "provider_neighborhood_corrections_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_neighborhood_corrections_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_neighborhood_corrections_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
+          },
+        ]
+      }
       provider_page_settings: {
         Row: {
           accent_color: string | null
@@ -6236,6 +6305,14 @@ export type Database = {
         Returns: undefined
       }
       admin_ban_suspicious: { Args: { _user_ids: string[] }; Returns: number }
+      admin_bulk_fix_provider_neighborhood: {
+        Args: {
+          _new_neighborhood: string
+          _provider_ids: string[]
+          _reason: string
+        }
+        Returns: Json
+      }
       admin_capture_rls_snapshot: {
         Args: never
         Returns: {
@@ -6291,6 +6368,14 @@ export type Database = {
           target_email: string
           target_user_id: string
         }[]
+      }
+      admin_fix_provider_neighborhood: {
+        Args: {
+          _new_neighborhood: string
+          _provider_id: string
+          _reason: string
+        }
+        Returns: Json
       }
       admin_get_level_distribution: {
         Args: never
