@@ -6520,6 +6520,26 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_list_kill_switch_blocks: {
+        Args: {
+          p_from?: string
+          p_limit?: number
+          p_provider_id?: string
+          p_to?: string
+        }
+        Returns: {
+          attempt_payload: Json
+          created_at: string
+          id: string
+          new_value: string
+          previous_value: string
+          provider_id: string
+          provider_name: string
+          reason: string
+          service_id: string
+          source: string
+        }[]
+      }
       admin_list_orphan_profiles: {
         Args: never
         Returns: {
@@ -6694,6 +6714,10 @@ export type Database = {
       }
       admin_reopen_sponsor_checklist: {
         Args: { _lead_id: string; _pending_items?: string[]; _reason: string }
+        Returns: Json
+      }
+      admin_reprocess_kill_switch_block: {
+        Args: { p_correction_id: string }
         Returns: Json
       }
       admin_review_sponsor_docs: {
