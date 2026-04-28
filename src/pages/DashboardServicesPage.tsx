@@ -448,6 +448,18 @@ const DashboardServicesPage = () => {
     setFormErrors({});
     setIsSubmitting(true);
 
+    // Captura snapshot do score ANTES de qualquer manipulação final — usado
+    // para auditar a evolução do anúncio (initial_score → final_score).
+    const selectedSlugsForScore = selectedCategoryIds
+      .map((id) => categories.find((c: any) => c.id === id)?.slug)
+      .filter(Boolean) as string[];
+    const initialScoreSnapshot = computeAdScore({
+      description: form.description,
+      hasOriginalPhoto: !!newServicePhoto || (!!editId && !!serviceImages[editId]),
+      cityValidated: isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES),
+      categorySlugs: selectedSlugsForScore,
+    }).score;
+
     trackAction('service_save_start', editId ? 'Editando serviço' : 'Criando serviço');
 
     try {
