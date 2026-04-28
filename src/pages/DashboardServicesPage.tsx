@@ -992,6 +992,13 @@ const DashboardServicesPage = () => {
                         setShowCityDropdown(true);
                         if (e.target.value.length < 2) setForm(prev => ({ ...prev, service_area: '' }));
                       }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pasted = e.clipboardData.getData('text');
+                        const sanitized = sanitizePastedCity(pasted);
+                        setCitySearch(sanitized);
+                        setShowCityDropdown(true);
+                      }}
                       onFocus={() => { if (citySearch.length >= 2) setShowCityDropdown(true); }}
                       placeholder="Digite o nome da cidade..."
                       className={`w-full rounded-lg border bg-background pl-9 pr-8 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none ${formErrors.service_area ? 'border-destructive' : 'border-input'}`}
@@ -1002,8 +1009,28 @@ const DashboardServicesPage = () => {
                       </button>
                     )}
                   </div>
+                  {/* Chip de geo-confirmação 1-clique */}
+                  {!form.service_area && geo.city && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const match = ALL_CITIES.find(
+                          c => c.value.toLowerCase() === (geo.city || '').toLowerCase()
+                            && (!geo.state || c.state === geo.state)
+                        );
+                        if (match) {
+                          selectCity(match);
+                          setGeoDetected(true);
+                        }
+                      }}
+                      className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent hover:bg-accent/20 transition"
+                    >
+                      <MapPin className="h-3 w-3" />
+                      Vimos que você está em {geo.city}{geo.state ? `/${geo.state}` : ''}. Confirmar?
+                    </button>
+                  )}
                   {geoDetected && form.service_area && (
-                    <p className="text-[11px] text-accent mt-0.5 flex items-center gap-1">📍 Localização detectada</p>
+                    <p className="text-[11px] text-accent mt-0.5 flex items-center gap-1"><MapPin className="h-3 w-3" />Localização confirmada</p>
                   )}
                   {formErrors.service_area && <p className="text-xs text-destructive mt-1">{formErrors.service_area}</p>}
                   {showCityDropdown && filteredCities.length > 0 && (
