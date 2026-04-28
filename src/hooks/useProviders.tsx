@@ -244,14 +244,21 @@ const sortFeaturedProviders = (providers: DbProvider[], options: FeaturedProvide
   const { latitude, longitude, categorySlug, sortBy = 'proximity', userCity } = options as FeaturedProvidersOptions & { userCity?: string };
   const userCityNorm = (userCity || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+  // Fallback: sem GPS → tenta usar centro da cidade do usuário como origem.
+  const fallbackUserCoords = (!Number.isFinite(latitude) || !Number.isFinite(longitude)) && userCity
+    ? getCityCoords(userCity)
+    : null;
+  const effectiveLat = Number.isFinite(latitude) ? latitude : fallbackUserCoords?.lat ?? null;
+  const effectiveLon = Number.isFinite(longitude) ? longitude : fallbackUserCoords?.lon ?? null;
+
   const withDistance = providers.map((provider) => {
-    if (hasCoordinates(latitude, longitude)) {
-      const audit = calculateAuditedDistanceKm(latitude ?? null, longitude ?? null, provider, userCity);
-      return {
-        ...provider,
-        distanceKm: Number.isFinite(audit.distanceKm) ? Math.round(audit.distanceKm * 10) / 10 : undefined,
-        _distanceAudit: audit,
-      };
+    if (hasCoordinates(effectiveLat, effectiveLon)) {
+      const audit = calculateAuditedDistanceKm(effectiveLat ?? null, effectiveLon ?? null, provider, userCity);
+      // Normaliza não-finito → undefined (UI mostra "indisponível", sort empurra pro fim).
+      const dKm = Number.isFinite(audit.distanceKm)
+        ? Math.round(audit.distanceKm * 10) / 10
+        : undefined;
+      return { ...provider, distanceKm: dKm, _distanceAudit: audit };
     }
     return provider;
   });
