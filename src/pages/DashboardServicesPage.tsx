@@ -237,6 +237,19 @@ const DashboardServicesPage = () => {
     if (!loading && !user) navigate('/login');
   }, [loading, user, navigate]);
 
+  // Persistência de rascunho — apenas para criação (não em edição) e quando o dialog está aberto.
+  const draftEnabled = showDialog && !editId;
+  useServiceWizardDraftAutosave(user?.id, draftEnabled, {
+    form,
+    selectedCategoryIds,
+    citySearch,
+    serviceRadius,
+    isEmergency,
+    seoTags,
+    geoDetected,
+    formStep,
+  });
+
   useEffect(() => {
     supabase.from('categories').select('*').order('name').then(({ data }) => {
       if (data) setCategories(data);
