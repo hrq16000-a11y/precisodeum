@@ -214,6 +214,49 @@ const CityPage = () => {
   }, [city, providers, slug]);
   useJsonLd(cityAuthorityLd);
 
+  // BreadcrumbList — ajuda o Google a montar o caminho navegacional nos resultados
+  const cityBreadcrumbLd = useMemo(() => city ? ({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
+      { '@type': 'ListItem', position: 2, name: 'Cidades', item: `${SITE_BASE_URL}/cidades` },
+      { '@type': 'ListItem', position: 3, name: city.name, item: `${SITE_BASE_URL}/cidade/${slug}` },
+    ],
+  }) : null, [city, slug]);
+  useJsonLd(cityBreadcrumbLd);
+
+  // ItemList dos top 10 profissionais — habilita rich snippet de listagem/carrossel
+  const cityItemListLd = useMemo(() => {
+    if (!city || providers.length === 0) return null;
+    const top = providers.slice(0, 10);
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: `Profissionais em ${city.name}`,
+      numberOfItems: top.length,
+      itemListElement: top.map((p: any, idx: number) => ({
+        '@type': 'ListItem',
+        position: idx + 1,
+        url: `${SITE_BASE_URL}/profissional/${p.slug}`,
+        name: p.businessName || p.name || 'Profissional',
+      })),
+    };
+  }, [city, providers]);
+  useJsonLd(cityItemListLd);
+
+  // CollectionPage envelope — sinaliza ao Google que é página de coleção indexável
+  const cityCollectionLd = useMemo(() => city ? ({
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `Profissionais em ${formatCityState(city.name, city.state) || city.name}`,
+    url: `${SITE_BASE_URL}/cidade/${slug}`,
+    isPartOf: { '@type': 'WebSite', url: SITE_BASE_URL, name: 'Preciso de um' },
+    about: { '@type': 'City', name: city.name, containedInPlace: { '@type': 'AdministrativeArea', name: city.state } },
+  }) : null, [city, slug]);
+  useJsonLd(cityCollectionLd);
+
+
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   if (isLoading) {
