@@ -97,6 +97,32 @@ const CategoryPage = () => {
   const totalDisplay = localProviders.length + nearbyProviders.length + (showOutOfState ? outOfStateProviders.length : 0);
   const categorySocialImage = nearestProvider?.photo || allProviders.find((provider) => provider.photo)?.photo;
 
+  // ── Filtro de qualidade SEO: só providers com cidade validada (catálogo IBGE)
+  // e descrição/about sem termos de leilão. Score mínimo configurável via
+  // site_settings.service_quality_min_score (default 60).
+  const minScoreSetting = useSettingValue('service_quality_min_score');
+  const minScore = useMemo(() => {
+    const raw = minScoreSetting;
+    const n = typeof raw === 'number' ? raw : parseInt(String(raw ?? '60'), 10);
+    return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 60;
+  }, [minScoreSetting]);
+
+  const seoEligibleProviders = useMemo(() => {
+    return allProviders.filter((p: any) => {
+      if (!p?.city) return false;
+      if (!isKnownCity(normalize(p.city))) return false;
+      const about = String(p.about || p.description || '');
+      if (about && lintServiceDescription(about).length > 0) return false;
+      // Score heurístico: cidade válida=40, foto=20, sobre 80+ chars=20, telefone=10, business_name=10
+      let score = 40;
+      if (p.photo) score += 20;
+      if (about.trim().length >= 80) score += 20;
+      if (p.whatsapp || p.phone) score += 10;
+      if (p.businessName || p.business_name) score += 10;
+      return score >= minScore;
+    });
+  }, [allProviders, minScore]);
+
   const cityForSeo = geoCity ? geoCity.trim() : '';
   const dynamicTitle = category
     ? (cityForSeo
