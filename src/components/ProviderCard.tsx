@@ -154,19 +154,9 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
         Super Perto!
       </motion.span>
     );
-  } else if (!suspiciousDistance && trustedDistanceKm != null && trustedDistanceKm < 5) {
-    badges.push(
-      <motion.span
-        key="seu-bairro"
-        animate={{ scale: [1, 1.04, 1] }}
-        transition={{ duration: 2.4, repeat: Infinity }}
-        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
-      >
-        <MapPin className="h-2.5 w-2.5" />
-        Atende no seu bairro
-      </motion.span>
-    );
   }
+  // Nota: o destaque "Atende agora no seu bairro" (<5km) é renderizado abaixo no header,
+  // com animação pulse — mais informativo. Evitamos duplicar o badge aqui.
   if ((provider as any).response_time) {
     badges.push(
       <span key="response" className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
