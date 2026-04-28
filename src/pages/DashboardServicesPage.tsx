@@ -182,7 +182,7 @@ const DashboardServicesPage = () => {
   const [wizardStep, setWizardStep] = useState<'form' | 'photos'>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Sub-step inside the 'form' wizard for NEW services (1=Básico, 2=Localização, 3=Contato). Editing skips this and shows everything.
-  const [formStep, setFormStep] = useState<1 | 2 | 3>(1);
+  const [formStep, setFormStep] = useState<1 | 2 | 3 | 4>(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({});
