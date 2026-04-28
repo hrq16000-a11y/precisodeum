@@ -980,6 +980,30 @@ export type Database = {
         }
         Relationships: []
       }
+      forbidden_service_terms: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          suggestion: string | null
+          term: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          suggestion?: string | null
+          term: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          suggestion?: string | null
+          term?: string
+        }
+        Relationships: []
+      }
       gamification_levels: {
         Row: {
           active: boolean
@@ -4114,6 +4138,8 @@ export type Database = {
       }
       service_area_corrections: {
         Row: {
+          attempt_payload: Json | null
+          blocked: boolean
           corrected_by: string | null
           created_at: string
           id: string
@@ -4125,6 +4151,8 @@ export type Database = {
           source: string
         }
         Insert: {
+          attempt_payload?: Json | null
+          blocked?: boolean
           corrected_by?: string | null
           created_at?: string
           id?: string
@@ -4136,6 +4164,8 @@ export type Database = {
           source?: string
         }
         Update: {
+          attempt_payload?: Json | null
+          blocked?: boolean
           corrected_by?: string | null
           created_at?: string
           id?: string
@@ -7394,6 +7424,11 @@ export type Database = {
           state: string
           state_uf: string
         }[]
+      }
+      service_area_is_in_catalog: { Args: { p_city: string }; Returns: boolean }
+      service_description_first_forbidden_term: {
+        Args: { p_text: string }
+        Returns: string
       }
       set_profile_tax_id: { Args: { _tax_id: string }; Returns: undefined }
       set_provider_geo_source: {
