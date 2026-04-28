@@ -34,6 +34,7 @@ import {
 import { CheckCircle2, AlertTriangle, Sparkles, Award } from 'lucide-react';
 import AdQualityScore from '@/components/dashboard/AdQualityScore';
 import WizardLegalDisclaimer from '@/components/dashboard/WizardLegalDisclaimer';
+import MetroExpandSuggestion from '@/components/dashboard/MetroExpandSuggestion';
 import GeoPermissionStep from '@/components/dashboard/GeoPermissionStep';
 import {
   loadServiceWizardDraft,
