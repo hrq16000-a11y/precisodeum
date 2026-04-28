@@ -23,10 +23,18 @@ import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
 import { formatServiceArea, stripLegacyAreaPrefixes, isCatalogedCity } from '@/lib/serviceAreaFormat';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import { handleImageError } from '@/lib/imageResolver';
-import { lintServiceDescription, sanitizePastedCity, rewriteWithQuality, computeAdScore } from '@/lib/serviceQualityLinter';
+import {
+  lintServiceDescription,
+  sanitizePastedCity,
+  rewriteWithQuality,
+  computeAdScore,
+  shouldBlockByLeilao,
+  LEILAO_BLOCK_THRESHOLD,
+} from '@/lib/serviceQualityLinter';
 import { CheckCircle2, AlertTriangle, Sparkles, Award } from 'lucide-react';
 import AdQualityScore from '@/components/dashboard/AdQualityScore';
 import WizardLegalDisclaimer from '@/components/dashboard/WizardLegalDisclaimer';
+import MetroExpandSuggestion from '@/components/dashboard/MetroExpandSuggestion';
 import GeoPermissionStep from '@/components/dashboard/GeoPermissionStep';
 import {
   loadServiceWizardDraft,
@@ -414,10 +422,18 @@ const DashboardServicesPage = () => {
       // Bloqueia digitação livre — só aceita seleção do autocomplete (IBGE).
       errors.service_area = 'Selecione uma cidade da lista (não digite manualmente)';
     }
-    // Linter anti-leilão: bloqueia termos proibidos antes de enviar ao backend
+    // Linter anti-leilão: avisa para qualquer hit, mas só BLOQUEIA o save
+    // quando a descrição contém mais que LEILAO_BLOCK_THRESHOLD termos.
+    // Esta regra dá margem educativa para o prestador antes de barrar.
     const forbiddenHits = lintServiceDescription(form.description);
-    if (forbiddenHits.length > 0) {
-      errors.description = `Linguagem de leilão detectada: "${forbiddenHits[0].term}". Substitua por uma frase de valorização técnica.`;
+    if (shouldBlockByLeilao(forbiddenHits)) {
+      errors.description = `Foram detectados ${forbiddenHits.length} termos de leilão (limite: ${LEILAO_BLOCK_THRESHOLD}). Use o botão "Reescrever com qualidade" ou substitua manualmente.`;
+    } else if (forbiddenHits.length > 0) {
+      // Apenas exibe alerta no toast — não bloqueia o save
+      toast.warning(`Atenção: ${forbiddenHits.length} termo(s) de leilão na descrição`, {
+        description: `Sugestão para "${forbiddenHits[0].term}": ${forbiddenHits[0].suggestion}`,
+        duration: 5000,
+      });
     }
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
     // Coerência radius=city: trava service_area = provider.city
@@ -431,6 +447,18 @@ const DashboardServicesPage = () => {
     }
     setFormErrors({});
     setIsSubmitting(true);
+
+    // Captura snapshot do score ANTES de qualquer manipulação final — usado
+    // para auditar a evolução do anúncio (initial_score → final_score).
+    const selectedSlugsForScore = selectedCategoryIds
+      .map((id) => categories.find((c: any) => c.id === id)?.slug)
+      .filter(Boolean) as string[];
+    const initialScoreSnapshot = computeAdScore({
+      description: form.description,
+      hasOriginalPhoto: !!newServicePhoto || (!!editId && !!serviceImages[editId]),
+      cityValidated: isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES),
+      categorySlugs: selectedSlugsForScore,
+    }).score;
 
     trackAction('service_save_start', editId ? 'Editando serviço' : 'Criando serviço');
 
@@ -519,12 +547,25 @@ const DashboardServicesPage = () => {
           description: form.description,
           hasOriginalPhoto: !!newServicePhoto,
           cityValidated: isCatalogedCity(stripLegacyAreaPrefixes(finalArea), ALL_CITIES),
-          hasPrice: !!form.price?.trim(),
-          hasCategory: selectedCategoryIds.length > 0,
+          categorySlugs: selectedSlugsForScore,
         });
+        // Auditoria de evolução do score (initial → final). Fail-soft.
+        try {
+          await (supabase.from as any)('service_quality_log').insert({
+            service_id: serviceId,
+            provider_id: providerId,
+            user_id: user?.id,
+            initial_score: initialScoreSnapshot,
+            final_score: finalScore.score,
+            forbidden_hits: finalScore.forbiddenHits.map((h) => h.term),
+            category_keywords_hit: finalScore.matchedKeywords,
+            description_length: form.description.trim().length,
+            reason: 'publish',
+          });
+        } catch { /* fail-soft: auditoria não bloqueia publicação */ }
         if (finalScore.isPadrãoOuro) {
           celebrate({ intensity: 'big', id: `padrao-ouro-${serviceId}` });
-          toast.success('🏆 Anúncio Padrão Ouro publicado!', {
+          toast.success('Anúncio Padrão Ouro publicado!', {
             description: '+25 pontos extras de engajamento creditados.',
             duration: 6000,
           });
@@ -971,8 +1012,7 @@ const DashboardServicesPage = () => {
                 description={form.description}
                 hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
                 cityValidated={isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES)}
-                hasPrice={!!form.price?.trim()}
-                hasCategory={selectedCategoryIds.length > 0}
+                categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
               />
             </div>
 
@@ -1191,6 +1231,16 @@ const DashboardServicesPage = () => {
                   )}
                 </div>
 
+                {/* Sugestão 1-clique para expandir o raio para a Região Metropolitana */}
+                <MetroExpandSuggestion
+                  selectedCity={form.service_area}
+                  serviceRadius={serviceRadius}
+                  onExpandToMetro={() => {
+                    setServiceRadius('metro');
+                    toast.success('Raio expandido para Região Metropolitana', { duration: 3000 });
+                  }}
+                />
+
                 {/* Service Radius */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Raio de Atendimento</label>
@@ -1291,8 +1341,7 @@ const DashboardServicesPage = () => {
                   description={form.description}
                   hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
                   cityValidated={isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES)}
-                  hasPrice={!!form.price?.trim()}
-                  hasCategory={selectedCategoryIds.length > 0}
+                  categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
                 />
 
                 {/* Disclaimer fixo de não-intermediação */}
@@ -1435,8 +1484,7 @@ const DashboardServicesPage = () => {
                       description={form.description}
                       hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
                       cityValidated={cityValidated}
-                      hasPrice={!!form.price?.trim()}
-                      hasCategory={selectedCategoryIds.length > 0}
+                      categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
                     />
                   </div>
                 </div>

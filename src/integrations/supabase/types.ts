@@ -4299,6 +4299,48 @@ export type Database = {
           },
         ]
       }
+      service_quality_log: {
+        Row: {
+          category_keywords_hit: string[] | null
+          created_at: string
+          description_length: number | null
+          final_score: number
+          forbidden_hits: string[] | null
+          id: string
+          initial_score: number | null
+          provider_id: string | null
+          reason: string | null
+          service_id: string
+          user_id: string | null
+        }
+        Insert: {
+          category_keywords_hit?: string[] | null
+          created_at?: string
+          description_length?: number | null
+          final_score: number
+          forbidden_hits?: string[] | null
+          id?: string
+          initial_score?: number | null
+          provider_id?: string | null
+          reason?: string | null
+          service_id: string
+          user_id?: string | null
+        }
+        Update: {
+          category_keywords_hit?: string[] | null
+          created_at?: string
+          description_length?: number | null
+          final_score?: number
+          forbidden_hits?: string[] | null
+          id?: string
+          initial_score?: number | null
+          provider_id?: string | null
+          reason?: string | null
+          service_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           address: string
