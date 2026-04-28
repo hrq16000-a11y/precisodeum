@@ -3231,6 +3231,7 @@ export type Database = {
           geog: unknown
           ibge_code: string | null
           id: string
+          is_verified: boolean
           last_response_calc_at: string | null
           latitude: number | null
           lead_followup_hours: number
@@ -3258,6 +3259,11 @@ export type Database = {
           updated_at: string
           user_id: string
           user_ref: string | null
+          verified_at: string | null
+          verified_by: string | null
+          verified_criteria: Json
+          verified_manual: boolean
+          verified_reason: string | null
           website: string | null
           whatsapp: string
           working_hours: string | null
@@ -3283,6 +3289,7 @@ export type Database = {
           geog?: unknown
           ibge_code?: string | null
           id?: string
+          is_verified?: boolean
           last_response_calc_at?: string | null
           latitude?: number | null
           lead_followup_hours?: number
@@ -3310,6 +3317,11 @@ export type Database = {
           updated_at?: string
           user_id: string
           user_ref?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          verified_criteria?: Json
+          verified_manual?: boolean
+          verified_reason?: string | null
           website?: string | null
           whatsapp?: string
           working_hours?: string | null
@@ -3335,6 +3347,7 @@ export type Database = {
           geog?: unknown
           ibge_code?: string | null
           id?: string
+          is_verified?: boolean
           last_response_calc_at?: string | null
           latitude?: number | null
           lead_followup_hours?: number
@@ -3362,6 +3375,11 @@ export type Database = {
           updated_at?: string
           user_id?: string
           user_ref?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          verified_criteria?: Json
+          verified_manual?: boolean
+          verified_reason?: string | null
           website?: string | null
           whatsapp?: string
           working_hours?: string | null
@@ -6291,6 +6309,10 @@ export type Database = {
         Args: { _profile_id: string; _tax_id: string }
         Returns: undefined
       }
+      admin_set_provider_verified: {
+        Args: { _provider_id: string; _reason: string; _verified: boolean }
+        Returns: Json
+      }
       admin_set_staff_permission: {
         Args: {
           _enabled: boolean
@@ -6810,6 +6832,10 @@ export type Database = {
       recalculate_engagement_points: {
         Args: { target_user_id: string }
         Returns: number
+      }
+      recompute_provider_verified: {
+        Args: { _provider_id: string }
+        Returns: Json
       }
       refresh_featured_providers_mv: { Args: never; Returns: undefined }
       register_click_lead: {

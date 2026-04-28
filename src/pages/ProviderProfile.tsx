@@ -15,6 +15,7 @@ import ReviewSummary from '@/components/ReviewSummary';
 import ProfileBadge from '@/components/ProfileBadge';
 import ConversionTags from '@/components/ConversionTags';
 import TopProfessionalBadge from '@/components/TopProfessionalBadge';
+import TopProfessionalCriteriaCard from '@/components/TopProfessionalCriteriaCard';
 import PublicActivityBadges from '@/components/PublicActivityBadges';
 import { useTopProfessional } from '@/hooks/useTopProfessional';
 
@@ -1575,6 +1576,9 @@ const ProviderProfile = () => {
                   {/* Badge "Prestador"/"Empresa" removido — a categoria já comunica o papel.
                       Ver pedido do produto: manter apenas a categoria abaixo do nome. */}
                 </div>
+
+                {/* Seção "Por que é Profissional Top" — critérios cumpridos (visível só quando is_verified=true) */}
+                {provider.id && <TopProfessionalCriteriaCard providerId={provider.id} />}
 
                 {/* ── PROMINENT LEVEL BADGE (Metallic Design) — hidden for admins and generic "Usuário" level ── */}
                 {provider.levelInfo && !(provider.accTypeInfo?.name || '').toLowerCase().includes('admin') && !['usuário', 'usuario', 'user'].includes((provider.levelInfo.name || '').toLowerCase()) && (
