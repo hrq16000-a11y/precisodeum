@@ -3027,6 +3027,105 @@ export type Database = {
           },
         ]
       }
+      provider_geo_audit: {
+        Row: {
+          actor_user_id: string | null
+          city: string | null
+          created_at: string
+          error_message: string | null
+          event_type: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          neighborhood: string | null
+          payload: Json
+          provider_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source: string
+          state: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          city?: string | null
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          neighborhood?: string | null
+          payload?: Json
+          provider_id: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source: string
+          state?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          city?: string | null
+          created_at?: string
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          neighborhood?: string | null
+          payload?: Json
+          provider_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string
+          state?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_geo_audit_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_geo_audit_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "provider_geo_audit_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_geo_audit_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_geo_audit_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
+          },
+        ]
+      }
       provider_impressions: {
         Row: {
           date: string
@@ -3228,6 +3327,10 @@ export type Database = {
           deleted_at: string | null
           description: string
           featured: boolean
+          geo_source: string
+          geo_source_confidence: number | null
+          geo_source_notes: Json
+          geo_source_updated_at: string | null
           geog: unknown
           ibge_code: string | null
           id: string
@@ -3286,6 +3389,10 @@ export type Database = {
           deleted_at?: string | null
           description?: string
           featured?: boolean
+          geo_source?: string
+          geo_source_confidence?: number | null
+          geo_source_notes?: Json
+          geo_source_updated_at?: string | null
           geog?: unknown
           ibge_code?: string | null
           id?: string
@@ -3344,6 +3451,10 @@ export type Database = {
           deleted_at?: string | null
           description?: string
           featured?: boolean
+          geo_source?: string
+          geo_source_confidence?: number | null
+          geo_source_notes?: Json
+          geo_source_updated_at?: string | null
           geog?: unknown
           ibge_code?: string | null
           id?: string
@@ -6722,6 +6833,38 @@ export type Database = {
         Returns: boolean
       }
       is_top_professional: { Args: { _user_id: string }; Returns: boolean }
+      list_provider_geo_fallbacks: {
+        Args: { _limit?: number; _status?: string }
+        Returns: {
+          audit_id: string
+          city: string
+          created_at: string
+          error_message: string
+          event_type: string
+          latitude: number
+          longitude: number
+          neighborhood: string
+          payload: Json
+          provider_id: string
+          provider_name: string
+          reviewed_at: string
+          source: string
+          state: string
+          status: string
+        }[]
+      }
+      log_provider_geo_issue: {
+        Args: {
+          _actor_user_id?: string
+          _error_message?: string
+          _event_type: string
+          _payload?: Json
+          _provider_id: string
+          _source?: string
+          _status?: string
+        }
+        Returns: undefined
+      }
       log_provider_public_event:
         | {
             Args: {
@@ -6775,6 +6918,42 @@ export type Database = {
         Returns: undefined
       }
       mark_lead_as_concluded: { Args: { _lead_id: string }; Returns: Json }
+      mark_provider_geo_reviewed: {
+        Args: {
+          _audit_id: string
+          _provider_lat?: number
+          _provider_lng?: number
+          _review_notes?: string
+          _source?: string
+          _status: string
+        }
+        Returns: {
+          actor_user_id: string | null
+          city: string | null
+          created_at: string
+          error_message: string | null
+          event_type: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          neighborhood: string | null
+          payload: Json
+          provider_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source: string
+          state: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "provider_geo_audit"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       nearby_providers: {
         Args: {
           _category_slug?: string
@@ -6815,6 +6994,15 @@ export type Database = {
         }[]
       }
       normalize_uf: { Args: { _input: string }; Returns: string }
+      notify_admins_geo_alert: {
+        Args: {
+          _link?: string
+          _message: string
+          _title: string
+          _type?: string
+        }
+        Returns: undefined
+      }
       process_daily_stats: { Args: never; Returns: number }
       process_lead_followup_reminders: { Args: never; Returns: Json }
       publish_my_provider: { Args: never; Returns: Json }
@@ -6931,6 +7119,19 @@ export type Database = {
         }[]
       }
       set_profile_tax_id: { Args: { _tax_id: string }; Returns: undefined }
+      set_provider_geo_source: {
+        Args: {
+          _actor_user_id?: string
+          _confidence?: number
+          _error_message?: string
+          _event_type?: string
+          _payload?: Json
+          _provider_id: string
+          _source: string
+          _status?: string
+        }
+        Returns: undefined
+      }
       sponsor_can_create_campaign: {
         Args: { _sponsor_id: string }
         Returns: boolean
