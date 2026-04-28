@@ -6851,6 +6851,16 @@ export type Database = {
         Args: { _lead_id: string; _next_at: string; _note?: string }
         Returns: undefined
       }
+      resolve_city_slug: {
+        Args: { _input: string }
+        Returns: {
+          matched_exact: boolean
+          name: string
+          slug: string
+          state: string
+          state_uf: string
+        }[]
+      }
       resolve_identity_suggestion: {
         Args: { _action: string; _suggestion_id: string }
         Returns: Json
