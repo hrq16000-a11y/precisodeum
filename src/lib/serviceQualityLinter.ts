@@ -41,6 +41,24 @@ export function lintServiceDescription(text: string): ForbiddenTermHit[] {
   return hits.sort((a, b) => a.index - b.index);
 }
 
+/**
+ * Reescreve a descrição substituindo TODOS os termos proibidos pelas
+ * sugestões técnicas correspondentes (1 clique = anúncio limpo).
+ */
+export function rewriteWithQuality(text: string): string {
+  if (!text) return '';
+  let next = text;
+  for (const [term, suggestion] of Object.entries(FORBIDDEN_TERMS)) {
+    const re = new RegExp(`\\b${term}\\b`, 'gi');
+    if (re.test(next)) {
+      // Remove o termo e acrescenta a sugestão (uma vez por termo)
+      next = next.replace(re, '').replace(/\s{2,}/g, ' ').trim();
+      next = `${next} ${suggestion}`.trim();
+    }
+  }
+  return next.replace(/\s{2,}/g, ' ').trim();
+}
+
 /** Score 0–100 do anúncio. */
 export interface AdScoreInput {
   description: string;

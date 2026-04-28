@@ -72,6 +72,7 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const AdminProvidersPage = lazy(() => import("./pages/AdminProvidersPage"));
 const AdminDefaultNeighborhoodPage = lazy(() => import("./pages/admin/AdminDefaultNeighborhoodPage"));
 const AdminServiceAreaCorrectionsPage = lazy(() => import("./pages/admin/AdminServiceAreaCorrectionsPage"));
+const AdminKillSwitchBlocksPage = lazy(() => import("./pages/admin/AdminKillSwitchBlocksPage"));
 const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
@@ -416,6 +417,7 @@ const App = () => {
                 <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
                 <Route path="/admin/bairro-default" element={<ProtectedRoute><AdminDefaultNeighborhoodPage /></ProtectedRoute>} />
                 <Route path="/admin/service-area-corrections" element={<ProtectedRoute><AdminServiceAreaCorrectionsPage /></ProtectedRoute>} />
+                <Route path="/admin/kill-switch-blocks" element={<ProtectedRoute><AdminKillSwitchBlocksPage /></ProtectedRoute>} />
                 <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
                 <Route path="/admin/usuarios" element={<AdminUsersPage />} />
                 <Route path="/admin/crm-usuarios" element={<AdminUsersCrmPage />} />

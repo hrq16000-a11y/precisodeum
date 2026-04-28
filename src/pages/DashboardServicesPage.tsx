@@ -23,7 +23,8 @@ import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
 import { formatServiceArea, stripLegacyAreaPrefixes, isCatalogedCity } from '@/lib/serviceAreaFormat';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import { handleImageError } from '@/lib/imageResolver';
-import { lintServiceDescription, sanitizePastedCity } from '@/lib/serviceQualityLinter';
+import { lintServiceDescription, sanitizePastedCity, rewriteWithQuality, computeAdScore } from '@/lib/serviceQualityLinter';
+import { CheckCircle2, AlertTriangle, Sparkles, Award } from 'lucide-react';
 import AdQualityScore from '@/components/dashboard/AdQualityScore';
 import WizardLegalDisclaimer from '@/components/dashboard/WizardLegalDisclaimer';
 
@@ -181,7 +182,7 @@ const DashboardServicesPage = () => {
   const [wizardStep, setWizardStep] = useState<'form' | 'photos'>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Sub-step inside the 'form' wizard for NEW services (1=Básico, 2=Localização, 3=Contato). Editing skips this and shows everything.
-  const [formStep, setFormStep] = useState<1 | 2 | 3>(1);
+  const [formStep, setFormStep] = useState<1 | 2 | 3 | 4>(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({});
@@ -495,6 +496,20 @@ const DashboardServicesPage = () => {
         const SERVICES_CAP = 5;
         const unlockedNext = newCount < SERVICES_CAP;
         celebrate({ intensity: 'mini', id: CELEBRATION_IDS.serviceSlot(serviceId!) });
+        const finalScore = computeAdScore({
+          description: form.description,
+          hasOriginalPhoto: !!newServicePhoto,
+          cityValidated: isCatalogedCity(stripLegacyAreaPrefixes(finalArea), ALL_CITIES),
+          hasPrice: !!form.price?.trim(),
+          hasCategory: selectedCategoryIds.length > 0,
+        });
+        if (finalScore.isPadrãoOuro) {
+          celebrate({ intensity: 'big', id: `padrao-ouro-${serviceId}` });
+          toast.success('🏆 Anúncio Padrão Ouro publicado!', {
+            description: '+25 pontos extras de engajamento creditados.',
+            duration: 6000,
+          });
+        }
         toast.success('🎉 Você ganhou um novo slot!', {
           description: unlockedNext
             ? `Seu ${newCount + 1}º espaço na vitrine já está liberado. Continue subindo!`
@@ -884,22 +899,35 @@ const DashboardServicesPage = () => {
 
             {/* Wizard Step Indicator */}
             <div className="flex items-center justify-center gap-2 -mt-1">
-              {[1, 2, 3].map((n) => (
+              {[1, 2, 3, 4].map((n) => (
                 <div key={n} className="flex items-center gap-2">
                   <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                     formStep === n ? 'bg-accent text-accent-foreground' : formStep > n ? 'bg-accent/30 text-accent' : 'bg-muted text-muted-foreground'
                   }`}>
                     {formStep > n ? '✓' : n}
                   </div>
-                  {n < 3 && <div className={`h-0.5 w-8 ${formStep > n ? 'bg-accent/40' : 'bg-muted'}`} />}
+                  {n < 4 && <div className={`h-0.5 w-6 ${formStep > n ? 'bg-accent/40' : 'bg-muted'}`} />}
                 </div>
               ))}
             </div>
             <p className="text-center text-xs text-muted-foreground -mt-2">
-              {formStep === 1 && 'Etapa 1 de 3 · Informações Básicas'}
-              {formStep === 2 && 'Etapa 2 de 3 · Localização & Atendimento'}
-              {formStep === 3 && 'Etapa 3 de 3 · Contato & Mídia'}
+              {formStep === 1 && 'Etapa 1 de 4 · Informações Básicas'}
+              {formStep === 2 && 'Etapa 2 de 4 · Localização & Atendimento'}
+              {formStep === 3 && 'Etapa 3 de 4 · Contato & Mídia'}
+              {formStep === 4 && 'Etapa 4 de 4 · Revisão Final'}
             </p>
+
+            {/* Barra de progresso global de qualidade — sempre visível durante o wizard */}
+            <div className="rounded-lg border border-border bg-card/50 p-2">
+              <AdQualityScore
+                description={form.description}
+                hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
+                cityValidated={isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES)}
+                hasPrice={!!form.price?.trim()}
+                hasCategory={selectedCategoryIds.length > 0}
+              />
+            </div>
+
 
             {/* ── Section 1: Informações Básicas ── */}
             {formStep === 1 && (
@@ -942,29 +970,48 @@ const DashboardServicesPage = () => {
                     placeholder="Descreva seu serviço, diferenciais e o que está incluso no valor..."
                     className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none ${formErrors.description ? 'border-destructive' : 'border-input'}`}
                   />
-                  {/* Linter anti-leilão: sugestão de valorização técnica */}
+                  {/* Linter anti-leilão: sugestão + botão "Reescrever com qualidade" */}
                   {(() => {
                     const hits = lintServiceDescription(form.description);
                     if (hits.length === 0) return null;
-                    const hit = hits[0];
                     return (
                       <div className="mt-1.5 rounded-lg border border-destructive/30 bg-destructive/5 p-2 space-y-1.5">
-                        <p className="text-[11px] text-destructive font-medium">
-                          Termo "{hit.term}" desvaloriza seu serviço. Sugestão:
+                        <p className="text-[11px] text-destructive font-medium flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {hits.length === 1
+                            ? `Termo "${hits[0].term}" desvaloriza seu serviço.`
+                            : `${hits.length} termos de leilão detectados (${hits.map(h => `"${h.term}"`).join(', ')}).`}
                         </p>
-                        <p className="text-[11px] text-foreground italic">"{hit.suggestion}"</p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const replaced = form.description.replace(new RegExp(`\\b${hit.term}\\b`, 'i'), '');
-                            const next = `${replaced.trim()} ${hit.suggestion}`.trim();
-                            setForm(prev => ({ ...prev, description: next }));
-                            setFormErrors(prev => ({ ...prev, description: '' }));
-                          }}
-                          className="text-[11px] font-semibold text-accent hover:underline"
-                        >
-                          Aplicar sugestão
-                        </button>
+                        <div className="flex gap-2 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = rewriteWithQuality(form.description);
+                              setForm(prev => ({ ...prev, description: next }));
+                              setFormErrors(prev => ({ ...prev, description: '' }));
+                              toast.success('Descrição reescrita com qualidade técnica!', {
+                                description: `${hits.length} termo(s) substituído(s) por linguagem profissional.`,
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 rounded-full bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 text-[11px] font-semibold transition-colors"
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            Reescrever com qualidade
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const hit = hits[0];
+                              const replaced = form.description.replace(new RegExp(`\\b${hit.term}\\b`, 'i'), '');
+                              const next = `${replaced.trim()} ${hit.suggestion}`.trim();
+                              setForm(prev => ({ ...prev, description: next }));
+                              setFormErrors(prev => ({ ...prev, description: '' }));
+                            }}
+                            className="text-[11px] font-semibold text-accent hover:underline"
+                          >
+                            Aplicar só "{hits[0].term}"
+                          </button>
+                        </div>
                       </div>
                     );
                   })()}
@@ -1232,6 +1279,102 @@ const DashboardServicesPage = () => {
               </div>
             </div>
             )}
+
+            {/* ── Section 4: Revisão Final (Clean) ── */}
+            {formStep === 4 && (() => {
+              const cleanedArea = stripLegacyAreaPrefixes(form.service_area);
+              const cityValidated = isCatalogedCity(cleanedArea, ALL_CITIES);
+              const radiusLabel =
+                serviceRadius === 'local' ? 'Atendimento no local' :
+                serviceRadius === 'metro' ? 'Região Metropolitana' :
+                'Toda a cidade';
+              const divergence = serviceRadius === 'city' && provider?.city && cleanedArea && cleanedArea.toLowerCase() !== provider.city.toLowerCase();
+              const score = computeAdScore({
+                description: form.description,
+                hasOriginalPhoto: !!newServicePhoto || (!!editId && !!serviceImages[editId]),
+                cityValidated,
+                hasPrice: !!form.price?.trim(),
+                hasCategory: selectedCategoryIds.length > 0,
+              });
+              return (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Revisão Final
+                  </h3>
+                  <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-md bg-muted/40 p-2.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Título</p>
+                        <p className="font-medium text-foreground truncate">{form.service_name || '—'}</p>
+                      </div>
+                      <div className="rounded-md bg-muted/40 p-2.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Categoria</p>
+                        <p className="font-medium text-foreground truncate">
+                          {categories.find((c: any) => selectedCategoryIds.includes(c.id))?.name || '—'}
+                        </p>
+                      </div>
+                      <div className="rounded-md bg-muted/40 p-2.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Cidade</p>
+                        <p className="font-medium text-foreground truncate flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-accent" />
+                          {cleanedArea || '—'}
+                          {cityValidated && <CheckCircle2 className="h-3 w-3 text-emerald-600" />}
+                        </p>
+                      </div>
+                      <div className="rounded-md bg-muted/40 p-2.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Service area</p>
+                        <p className="font-medium text-foreground truncate">
+                          {formatServiceArea(cleanedArea, serviceRadius, provider?.city)}
+                        </p>
+                      </div>
+                      <div className="rounded-md bg-muted/40 p-2.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Raio</p>
+                        <p className="font-medium text-foreground truncate">{radiusLabel}</p>
+                      </div>
+                      <div className="rounded-md bg-muted/40 p-2.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Cidade do perfil</p>
+                        <p className="font-medium text-foreground truncate">{provider?.city || '—'}</p>
+                      </div>
+                    </div>
+
+                    {/* Kill-switch: divergência city ↔ service_area com radius=city */}
+                    {divergence && (
+                      <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                        <div className="flex-1 text-xs text-foreground space-y-1">
+                          <p className="font-semibold text-destructive">Divergência detectada</p>
+                          <p>
+                            Você selecionou raio <strong>"Toda a cidade"</strong>, mas a cidade do serviço (<strong>{cleanedArea}</strong>) não coincide com a do seu perfil (<strong>{provider?.city}</strong>).
+                          </p>
+                          <p className="text-muted-foreground">Volte à etapa 2 para ajustar — não é possível publicar com essa inconsistência.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recompensa: Padrão Ouro */}
+                    {score.isPadrãoOuro && (
+                      <div className="rounded-lg border border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 p-3 flex items-center gap-2">
+                        <Award className="h-5 w-5 text-amber-500" />
+                        <div className="flex-1 text-xs">
+                          <p className="font-bold text-amber-700 dark:text-amber-300">Anúncio Padrão Ouro!</p>
+                          <p className="text-muted-foreground">+25 pontos extras de engajamento ao publicar.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Score breakdown final */}
+                    <AdQualityScore
+                      description={form.description}
+                      hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
+                      cityValidated={cityValidated}
+                      hasPrice={!!form.price?.trim()}
+                      hasCategory={selectedCategoryIds.length > 0}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="h-2" />
             </>)}
           </div>
@@ -1249,14 +1392,13 @@ const DashboardServicesPage = () => {
             ) : (
               <>
                 <Button variant="outline" className="flex-1 h-11" onClick={() => {
-                  if (formStep > 1) setFormStep((formStep - 1) as 1 | 2 | 3);
+                  if (formStep > 1) setFormStep((formStep - 1) as 1 | 2 | 3 | 4);
                   else { resetForm(); setShowDialog(false); }
                 }}>
                   {formStep > 1 ? '← Voltar' : 'Cancelar'}
                 </Button>
-                {formStep < 3 ? (
+                {formStep < 4 ? (
                   <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={() => {
-                    // Validate per step before advancing
                     if (formStep === 1 && !form.service_name.trim()) {
                       setFormErrors({ service_name: 'Título é obrigatório' });
                       toast.error('Informe o título do serviço');
@@ -1267,16 +1409,42 @@ const DashboardServicesPage = () => {
                       toast.error('Informe a cidade de atendimento');
                       return;
                     }
+                    if (formStep === 3) {
+                      // Bloqueia avanço se existirem termos proibidos pendentes
+                      const hits = lintServiceDescription(form.description);
+                      if (hits.length > 0) {
+                        toast.error('Termos de leilão detectados', {
+                          description: 'Use "Reescrever com qualidade" antes de avançar para a revisão.',
+                        });
+                        return;
+                      }
+                    }
                     setFormErrors({});
-                    setFormStep((formStep + 1) as 1 | 2 | 3);
+                    setFormStep((formStep + 1) as 1 | 2 | 3 | 4);
                   }}>
-                    Avançar →
+                    {formStep === 3 ? 'Revisar →' : 'Avançar →'}
                   </Button>
-                ) : (
-                  <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={handleSave} disabled={isSubmitting}>
-                    {isSubmitting ? '⏳ Salvando...' : `📢 ${editId ? 'Salvar' : 'Publicar'}`}
-                  </Button>
-                )}
+                ) : (() => {
+                  const cleanedArea = stripLegacyAreaPrefixes(form.service_area);
+                  const divergence = serviceRadius === 'city' && provider?.city && cleanedArea && cleanedArea.toLowerCase() !== provider.city.toLowerCase();
+                  return (
+                    <Button
+                      variant="accent"
+                      className="flex-1 h-11 font-semibold"
+                      onClick={() => {
+                        if (divergence) {
+                          toast.error('Resolva a divergência cidade × raio antes de publicar.');
+                          return;
+                        }
+                        handleSave();
+                      }}
+                      disabled={isSubmitting || !!divergence}
+                      title={divergence ? 'Divergência entre cidade do serviço e raio "Toda a cidade"' : ''}
+                    >
+                      {isSubmitting ? '⏳ Salvando...' : `📢 ${editId ? 'Salvar' : 'Publicar'}`}
+                    </Button>
+                  );
+                })()}
               </>
             )}
           </div>

@@ -23,6 +23,10 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { getSeoAuthorityData } from '@/lib/seoAuthority';
 import CategorySeoBlock from '@/components/CategorySeoBlock';
+import { isKnownCity } from '@/lib/citiesIndex';
+import { normalize } from '@/lib/normalize';
+import { lintServiceDescription } from '@/lib/serviceQualityLinter';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 
 const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) =>
   calculateDistanceKm({ latitude: lat1, longitude: lon1 }, { latitude: lat2, longitude: lon2 });
@@ -93,16 +97,43 @@ const CategoryPage = () => {
   const totalDisplay = localProviders.length + nearbyProviders.length + (showOutOfState ? outOfStateProviders.length : 0);
   const categorySocialImage = nearestProvider?.photo || allProviders.find((provider) => provider.photo)?.photo;
 
+  // ── Filtro de qualidade SEO: só providers com cidade validada (catálogo IBGE)
+  // e descrição/about sem termos de leilão. Score mínimo configurável via
+  // site_settings.service_quality_min_score (default 60).
+  const minScoreSetting = useSettingValue('service_quality_min_score');
+  const minScore = useMemo(() => {
+    const raw = minScoreSetting;
+    const n = typeof raw === 'number' ? raw : parseInt(String(raw ?? '60'), 10);
+    return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 60;
+  }, [minScoreSetting]);
+
+  const seoEligibleProviders = useMemo(() => {
+    return allProviders.filter((p: any) => {
+      if (!p?.city) return false;
+      if (!isKnownCity(normalize(p.city))) return false;
+      const about = String(p.about || p.description || '');
+      if (about && lintServiceDescription(about).length > 0) return false;
+      // Score heurístico: cidade válida=40, foto=20, sobre 80+ chars=20, telefone=10, business_name=10
+      let score = 40;
+      if (p.photo) score += 20;
+      if (about.trim().length >= 80) score += 20;
+      if (p.whatsapp || p.phone) score += 10;
+      if (p.businessName || p.business_name) score += 10;
+      return score >= minScore;
+    });
+  }, [allProviders, minScore]);
+
   const cityForSeo = geoCity ? geoCity.trim() : '';
   const dynamicTitle = category
     ? (cityForSeo
         ? `${category.name} em ${cityForSeo} - Profissionais Verificados | Preciso de Um`
         : `${category.name} no Brasil - Profissionais Verificados | Preciso de Um`)
     : 'Categoria';
+  const seoCount = seoEligibleProviders.length || allProviders.length;
   const dynamicDescription = category
     ? (cityForSeo
-        ? `Os melhores profissionais de ${category.name} em ${cityForSeo}. ${allProviders.length} prestadores verificados, avaliados pela comunidade. Orçamento grátis pelo WhatsApp.`
-        : `Encontre os melhores profissionais verificados de ${category.name} no Brasil. ${allProviders.length} prestadores cadastrados com avaliações reais.`)
+        ? `Os melhores profissionais de ${category.name} em ${cityForSeo}. ${seoCount} prestadores com cidade validada e perfil completo. Orçamento grátis pelo WhatsApp.`
+        : `Encontre os melhores profissionais de ${category.name} no Brasil. ${seoCount} prestadores com perfil completo e cidade validada.`)
     : 'Encontre profissionais por categoria.';
 
   useSeoHead({
@@ -123,11 +154,19 @@ const CategoryPage = () => {
     ],
   }) : null, [category]);
 
+  // Helper: filtra os providers já rankeados pelo critério SEO de qualidade
+  const eligibleIds = useMemo(() => new Set(seoEligibleProviders.map((p: any) => p.id)), [seoEligibleProviders]);
+  const filteredForSeo = useMemo(() => {
+    const merged = [...localProviders, ...nearbyProviders];
+    const filtered = merged.filter((p: any) => eligibleIds.has(p.id));
+    // Fallback: se o filtro zerar, mantém os top 10 originais para não quebrar Rich Results
+    return (filtered.length > 0 ? filtered : merged).slice(0, 10);
+  }, [localProviders, nearbyProviders, eligibleIds]);
+
   // Service schema with ItemList of providers and aggregate ratings (Rich Snippets)
   const serviceLd = useMemo(() => {
     if (!category) return null;
-    const topProviders = [...localProviders, ...nearbyProviders].slice(0, 10);
-    const { aggregateRating } = getSeoAuthorityData(topProviders);
+    const { aggregateRating } = getSeoAuthorityData(filteredForSeo);
     const aggregate = aggregateRating ? { aggregateRating } : {};
     return {
       '@context': 'https://schema.org',
@@ -143,23 +182,22 @@ const CategoryPage = () => {
       url: `${SITE_BASE_URL}/categoria/${category.slug}`,
       ...aggregate,
     };
-  }, [category, localProviders, nearbyProviders, cityForSeo]);
+  }, [category, filteredForSeo, cityForSeo]);
 
   const itemListLd = useMemo(() => {
     if (!category) return null;
-    const topProviders = [...localProviders, ...nearbyProviders].slice(0, 10);
-    if (topProviders.length === 0) return null;
+    if (filteredForSeo.length === 0) return null;
     return {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
-      itemListElement: topProviders.map((p, idx) => ({
+      itemListElement: filteredForSeo.map((p, idx) => ({
         '@type': 'ListItem',
         position: idx + 1,
         url: `${SITE_BASE_URL}/profissional/${p.slug}`,
         name: p.businessName || p.name || 'Profissional',
       })),
     };
-  }, [category, localProviders, nearbyProviders]);
+  }, [category, filteredForSeo]);
 
   // CollectionPage envelope — sinaliza ao Google que esta é uma página de coleção
   const collectionLd = useMemo(() => category ? ({
