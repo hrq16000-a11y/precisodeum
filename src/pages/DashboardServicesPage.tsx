@@ -384,8 +384,18 @@ const DashboardServicesPage = () => {
     }
     const errors: Record<string, string> = {};
     if (!form.service_name.trim()) errors.service_name = 'Título é obrigatório';
-    if (!form.service_area.trim()) errors.service_area = 'Cidade é obrigatória';
+    const cleanedArea = stripLegacyAreaPrefixes(form.service_area);
+    if (!cleanedArea) {
+      errors.service_area = 'Cidade é obrigatória';
+    } else if (!isCatalogedCity(cleanedArea, ALL_CITIES)) {
+      // Bloqueia digitação livre — só aceita seleção do autocomplete (IBGE).
+      errors.service_area = 'Selecione uma cidade da lista (não digite manualmente)';
+    }
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+    // Garante que vai para o banco já normalizado (trigger do DB também valida).
+    if (cleanedArea !== form.service_area) {
+      setForm((prev) => ({ ...prev, service_area: cleanedArea }));
+    }
     setFormErrors({});
     setIsSubmitting(true);
 
