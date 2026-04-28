@@ -504,7 +504,7 @@ const DashboardServicesPage = () => {
           hasCategory: selectedCategoryIds.length > 0,
         });
         if (finalScore.isPadrãoOuro) {
-          celebrate({ intensity: 'full', id: `padrao-ouro-${serviceId}` });
+          celebrate({ intensity: 'big', id: `padrao-ouro-${serviceId}` });
           toast.success('🏆 Anúncio Padrão Ouro publicado!', {
             description: '+25 pontos extras de engajamento creditados.',
             duration: 6000,
