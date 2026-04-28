@@ -25,7 +25,20 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
-import { normalizeProviderPayload } from '@/lib/providerPayload';
+import { normalizeProviderPayload, detectForbiddenAddressKeys } from '@/lib/providerPayload';
+import { toast as _addrToast } from 'sonner';
+
+let _addressWarnedOnceBet = false;
+function warnIfForbiddenAddressBet(payload: Record<string, unknown>) {
+  const found = detectForbiddenAddressKeys(payload);
+  if (found.length > 0 && !_addressWarnedOnceBet) {
+    _addressWarnedOnceBet = true;
+    _addrToast.warning('Campos de endereço ignorados', {
+      description: `Os campos ${found.join(', ')} não são salvos — usamos só cidade, estado e bairro.`,
+      duration: 6000,
+    });
+  }
+}
 import { useSeoHead } from '@/hooks/useSeoHead';
 
 import PointsHud from './PointsHud';

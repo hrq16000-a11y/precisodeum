@@ -28,7 +28,21 @@ import { CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
-import { normalizeProviderPayload } from '@/lib/providerPayload';
+import { normalizeProviderPayload, detectForbiddenAddressKeys } from '@/lib/providerPayload';
+import { toast } from 'sonner';
+
+// Aviso única vez por sessão para evitar spam
+let _addressWarnedOnce = false;
+function warnIfForbiddenAddress(payload: Record<string, unknown>) {
+  const found = detectForbiddenAddressKeys(payload);
+  if (found.length > 0 && !_addressWarnedOnce) {
+    _addressWarnedOnce = true;
+    toast.warning('Campos de endereço ignorados', {
+      description: `Os campos ${found.join(', ')} não são salvos — usamos só cidade, estado e bairro. Seu cadastro foi salvo normalmente.`,
+      duration: 6000,
+    });
+  }
+}
 import { useWizardDuplicateCheck } from '@/hooks/useWizardDuplicateCheck';
 import {
   initialOnboardingState,
