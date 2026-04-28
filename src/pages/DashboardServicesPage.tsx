@@ -782,13 +782,30 @@ const DashboardServicesPage = () => {
             </div>
           );
         })}
-        {/* Progressive unlock — show 1 locked "next slot" if user is below cap and has at least 1 service */}
+        {/* Próximo slot disponível — CTA para criar mais um serviço */}
         {(() => {
           const SERVICES_CAP = Math.min(5, limits?.max_services ?? 5);
           const used = services.length;
           if (used === 0 || used >= SERVICES_CAP) return null;
           const nextSlotNumber = used + 1;
-          return <LockedSlotCard label={`${nextSlotNumber}º slot — bloqueado`} />;
+          return (
+            <button
+              type="button"
+              onClick={openCreate}
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-accent/40 bg-accent/5 p-5 text-center transition-colors hover:border-accent hover:bg-accent/10 min-h-[200px]"
+              aria-label={`Cadastrar ${nextSlotNumber}º serviço`}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/15 text-accent">
+                <Plus className="h-5 w-5" />
+              </div>
+              <p className="text-xs font-bold uppercase tracking-wider text-accent">
+                {nextSlotNumber}º slot disponível
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-snug max-w-[200px]">
+                Cadastre mais um serviço e ganhe mais destaque no Google.
+              </p>
+            </button>
+          );
         })()}
       </div>
 
