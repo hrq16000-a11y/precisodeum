@@ -796,6 +796,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     if (!user || !state.providerId) return true;
     setSaving(true);
     try {
+      warnIfForbiddenAddress(patch);
       const safe = normalizeProviderPayload(patch);
       const { error } = await supabase.from('providers').update(safe as any).eq('id', state.providerId);
       if (error) throw error;
