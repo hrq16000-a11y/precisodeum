@@ -1265,6 +1265,102 @@ const DashboardServicesPage = () => {
               </div>
             </div>
             )}
+
+            {/* ── Section 4: Revisão Final (Clean) ── */}
+            {formStep === 4 && (() => {
+              const cleanedArea = stripLegacyAreaPrefixes(form.service_area);
+              const cityValidated = isCatalogedCity(cleanedArea, ALL_CITIES);
+              const radiusLabel =
+                serviceRadius === 'local' ? 'Atendimento no local' :
+                serviceRadius === 'metro' ? 'Região Metropolitana' :
+                'Toda a cidade';
+              const divergence = serviceRadius === 'city' && provider?.city && cleanedArea && cleanedArea.toLowerCase() !== provider.city.toLowerCase();
+              const score = computeAdScore({
+                description: form.description,
+                hasOriginalPhoto: !!newServicePhoto || (!!editId && !!serviceImages[editId]),
+                cityValidated,
+                hasPrice: !!form.price?.trim(),
+                hasCategory: selectedCategoryIds.length > 0,
+              });
+              return (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Revisão Final
+                  </h3>
+                  <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-md bg-muted/40 p-2.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Título</p>
+                        <p className="font-medium text-foreground truncate">{form.service_name || '—'}</p>
+                      </div>
+                      <div className="rounded-md bg-muted/40 p-2.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Categoria</p>
+                        <p className="font-medium text-foreground truncate">
+                          {categories.find((c: any) => selectedCategoryIds.includes(c.id))?.name || '—'}
+                        </p>
+                      </div>
+                      <div className="rounded-md bg-muted/40 p-2.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Cidade</p>
+                        <p className="font-medium text-foreground truncate flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-accent" />
+                          {cleanedArea || '—'}
+                          {cityValidated && <CheckCircle2 className="h-3 w-3 text-emerald-600" />}
+                        </p>
+                      </div>
+                      <div className="rounded-md bg-muted/40 p-2.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Service area</p>
+                        <p className="font-medium text-foreground truncate">
+                          {formatServiceArea(cleanedArea, serviceRadius, provider?.city)}
+                        </p>
+                      </div>
+                      <div className="rounded-md bg-muted/40 p-2.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Raio</p>
+                        <p className="font-medium text-foreground truncate">{radiusLabel}</p>
+                      </div>
+                      <div className="rounded-md bg-muted/40 p-2.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Cidade do perfil</p>
+                        <p className="font-medium text-foreground truncate">{provider?.city || '—'}</p>
+                      </div>
+                    </div>
+
+                    {/* Kill-switch: divergência city ↔ service_area com radius=city */}
+                    {divergence && (
+                      <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                        <div className="flex-1 text-xs text-foreground space-y-1">
+                          <p className="font-semibold text-destructive">Divergência detectada</p>
+                          <p>
+                            Você selecionou raio <strong>"Toda a cidade"</strong>, mas a cidade do serviço (<strong>{cleanedArea}</strong>) não coincide com a do seu perfil (<strong>{provider?.city}</strong>).
+                          </p>
+                          <p className="text-muted-foreground">Volte à etapa 2 para ajustar — não é possível publicar com essa inconsistência.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recompensa: Padrão Ouro */}
+                    {score.isPadrãoOuro && (
+                      <div className="rounded-lg border border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 p-3 flex items-center gap-2">
+                        <Award className="h-5 w-5 text-amber-500" />
+                        <div className="flex-1 text-xs">
+                          <p className="font-bold text-amber-700 dark:text-amber-300">Anúncio Padrão Ouro!</p>
+                          <p className="text-muted-foreground">+25 pontos extras de engajamento ao publicar.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Score breakdown final */}
+                    <AdQualityScore
+                      description={form.description}
+                      hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
+                      cityValidated={cityValidated}
+                      hasPrice={!!form.price?.trim()}
+                      hasCategory={selectedCategoryIds.length > 0}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="h-2" />
             </>)}
           </div>
