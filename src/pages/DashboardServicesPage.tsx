@@ -742,11 +742,14 @@ const DashboardServicesPage = () => {
                 </div>
                 {s.description && <p className="text-xs text-muted-foreground line-clamp-1">{s.description}</p>}
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                  {s.service_area && (
-                    <span className="flex items-center gap-0.5" title="Cidades atendidas">
-                      <MapPin className="h-3 w-3" /> {s.service_area}
-                    </span>
-                  )}
+                  {(() => {
+                    const area = formatServiceArea(s.service_area, s.service_radius, provider?.city);
+                    return area ? (
+                      <span className="flex items-center gap-0.5" title="Área de atendimento">
+                        <MapPin className="h-3 w-3" /> {area}
+                      </span>
+                    ) : null;
+                  })()}
                   <span className="flex items-center gap-0.5"><Eye className="h-3 w-3" /> {s.view_count ?? 0} views</span>
                 </div>
                 <div className="flex items-center justify-between gap-2 pt-1">
