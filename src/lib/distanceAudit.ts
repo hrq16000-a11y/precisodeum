@@ -49,6 +49,8 @@ export function calculateAuditedDistanceKm(
   const providerCity = provider.city || '';
   const userCityStr = userCity || '';
   const baseAudit: DistanceAudit = {
+    // Infinity = sentinel para "sem distância" (usado em ranking/sort).
+    // UI DEVE checar Number.isFinite antes de renderizar.
     distanceKm: Infinity,
     source: 'unavailable',
     suspicious: false,

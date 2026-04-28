@@ -117,7 +117,11 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     );
   }
   const suspiciousDistance = !!provider._distanceAudit?.suspicious;
-  const trustedDistanceKm = provider._distanceAudit?.distanceKm ?? provider.distanceKm;
+  const rawDistanceKm = provider._distanceAudit?.distanceKm ?? provider.distanceKm;
+  // Guard contra Infinity/NaN: distância só vale se for número finito > 0.
+  const trustedDistanceKm = (typeof rawDistanceKm === 'number' && Number.isFinite(rawDistanceKm) && rawDistanceKm >= 0)
+    ? rawDistanceKm
+    : null;
 
   if (!suspiciousDistance && trustedDistanceKm != null && trustedDistanceKm < 2) {
     badges.push(
