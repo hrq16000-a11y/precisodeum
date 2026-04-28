@@ -1101,6 +1101,26 @@ const DashboardServicesPage = () => {
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <MapPinned className="h-3.5 w-3.5" /> Localização & Atendimento
               </h3>
+              {/* Passo de permissão de localização (GPS → IP fallback → manual) */}
+              {!form.service_area && (
+                <GeoPermissionStep
+                  catalog={ALL_CITIES}
+                  onConfirm={(city, state) => {
+                    const match = ALL_CITIES.find(
+                      c => c.value.toLowerCase() === city.toLowerCase()
+                        && (!state || c.state === state)
+                    );
+                    if (match) { selectCity(match); setGeoDetected(true); }
+                  }}
+                  onSkipToManual={() => {
+                    // foca o input de cidade
+                    setTimeout(() => {
+                      const el = cityRef.current?.querySelector('input') as HTMLInputElement | null;
+                      el?.focus();
+                    }, 50);
+                  }}
+                />
+              )}
               <div className="rounded-lg border border-border bg-card p-3 space-y-3">
                 {/* City autocomplete */}
                 <div ref={cityRef} className="relative">
