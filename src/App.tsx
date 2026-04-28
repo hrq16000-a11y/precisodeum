@@ -68,6 +68,7 @@ const DashboardRankingPage = lazy(() => import("./pages/DashboardRankingPage"));
 const DashboardIdentitySuggestionsPage = lazy(() => import("./pages/DashboardIdentitySuggestionsPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const AdminProvidersPage = lazy(() => import("./pages/AdminProvidersPage"));
+const AdminDefaultNeighborhoodPage = lazy(() => import("./pages/admin/AdminDefaultNeighborhoodPage"));
 const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
@@ -408,6 +409,7 @@ const App = () => {
                 <Route path="/dashboard/chat" element={<ProtectedRoute><DashboardChatPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
+                <Route path="/admin/bairro-default" element={<ProtectedRoute><AdminDefaultNeighborhoodPage /></ProtectedRoute>} />
                 <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
                 <Route path="/admin/usuarios" element={<AdminUsersPage />} />
                 <Route path="/admin/crm-usuarios" element={<AdminUsersCrmPage />} />
