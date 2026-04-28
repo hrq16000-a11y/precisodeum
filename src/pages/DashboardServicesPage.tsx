@@ -537,6 +537,8 @@ const DashboardServicesPage = () => {
         });
         setEditId(serviceId!);
         setWizardStep('photos');
+        // Serviço publicado — limpa o rascunho local.
+        clearServiceWizardDraft(user?.id);
         // Trigger "hand-holding" next-step prompt after a short delay
         setTimeout(() => setShowNextStepPrompt(true), 1200);
       }
