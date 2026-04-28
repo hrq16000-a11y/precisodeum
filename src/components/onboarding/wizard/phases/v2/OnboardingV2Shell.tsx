@@ -727,19 +727,30 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               userId: user?.id,
               meta: { reason: 'first_service_invariant_drift', ...drift },
             });
-            // Auto-heal: força os valores corretos.
-            const fixSvc = supabase
-              .from('services')
-              .update({ service_name: resolvedCategoryName, category_id: categoryId })
-              .eq('id', sid);
-            const fixProv = supabase
-              .from('providers')
-              .update({ category_id: categoryId })
-              .eq('id', state.providerId);
-            const [r1, r2] = await Promise.all([fixSvc, fixProv]);
-            if (r1.error || r2.error) {
-              toast.error('Não foi possível alinhar a categoria do serviço. Tente novamente.');
-              return false;
+            // Auto-heal: aplica realinhamento atômico via RPC.
+            const { data: healData, error: healErr } = await (supabase as any).rpc(
+              'realign_first_service',
+              {
+                _service_id: sid,
+                _provider_id: state.providerId,
+                _category_id: categoryId,
+              },
+            );
+            if (healErr || !healData?.success) {
+              // Fallback: 2 UPDATEs separados (não atômico, mas tenta resolver)
+              const fixSvc = supabase
+                .from('services')
+                .update({ service_name: resolvedCategoryName, category_id: categoryId })
+                .eq('id', sid);
+              const fixProv = supabase
+                .from('providers')
+                .update({ category_id: categoryId })
+                .eq('id', state.providerId);
+              const [r1, r2] = await Promise.all([fixSvc, fixProv]);
+              if (r1.error || r2.error) {
+                toast.error('Não foi possível alinhar a categoria do serviço. Tente novamente.');
+                return false;
+              }
             }
           }
         }
