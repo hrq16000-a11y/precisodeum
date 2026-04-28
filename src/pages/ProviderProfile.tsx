@@ -1026,8 +1026,28 @@ const ProviderProfile = () => {
     };
   }, [provider, name, category, avatarUrl, slug, effectiveWhatsApp, services, pageSettings.instagram_url, pageSettings.facebook_url, pageSettings.youtube_url, pageSettings.tiktok_url]);
 
+  // Person schema — habilita rich snippets quando alguém busca pelo nome do profissional
+  const personLd = useMemo(() => provider ? ({
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name,
+    url: `${SITE_BASE_URL}/profissional/${slug}`,
+    ...(avatarUrl ? { image: avatarUrl } : {}),
+    jobTitle: category || 'Profissional',
+    ...(provider.city ? {
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: provider.city,
+        addressRegion: provider.state,
+        addressCountry: 'BR',
+      },
+    } : {}),
+    worksFor: { '@type': 'Organization', name: 'Preciso de um', url: SITE_BASE_URL },
+  }) : null, [provider, name, slug, avatarUrl, category]);
+
   useJsonLd(breadcrumbLd);
   useJsonLd(localBusinessLd);
+  useJsonLd(personLd);
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
