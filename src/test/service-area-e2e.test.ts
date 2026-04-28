@@ -45,8 +45,9 @@ describe('E2E "Meus Serviços" — rótulos sempre vêm do helper', () => {
   it('NENHUM payload legado produz "Toda <Cidade>" cru na UI', () => {
     legacyRows.forEach((row, idx) => {
       const label = formatServiceArea(row.service_area, row.service_radius, row.provider_city);
-      expect(label, `linha ${idx}: "${label}"`).not.toMatch(/^toda\s+\w/i);
-      expect(label, `linha ${idx}: "${label}"`).not.toMatch(/^em\s+toda\s+/i);
+      // "Toda Curitiba" cru é proibido. "Toda a cidade — Curitiba" (rótulo controlado) é permitido.
+      const isLegacyDirty = /^toda\s+(?!a\s+cidade)\w/i.test(label) || /^em\s+toda\s+/i.test(label);
+      expect(isLegacyDirty, `linha ${idx} vazou texto legado cru: "${label}"`).toBe(false);
     });
   });
 
