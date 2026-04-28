@@ -60,16 +60,70 @@ ${entries}
     urls += entry(siteUrl, '/cookies', today, 'yearly', '0.2');
   }
 
+  // ─── Quality gates (precomputado para todos os tipos que dependem) ───
+  // Critérios alinhados ao linter / Padrão Ouro:
+  //   1. Descrição com >= MIN_DESCRIPTION_LEN
+  //   2. Sem termos proibidos
+  //   3. service_area = provider.city (kill-switch)
+  //   4. Provider aprovado
+  const MIN_DESCRIPTION_LEN = 80;
+  const NEEDS_ELIGIBILITY = ['providers', 'cities', 'categories', 'especialidades', 'seo'].includes(type || '');
+
+  type EligibleSvc = {
+    id: string; provider_id: string; description: string | null;
+    service_area: string | null; category_id: string | null;
+    providers: { id: string; slug: string | null; city: string | null; status: string; updated_at: string };
+  };
+  const eligible: EligibleSvc[] = [];
+  const eligibleProviderSlugs = new Set<string>();
+  const eligibleCityNames = new Set<string>();
+  const eligibleCategoryIds = new Set<string>();
+
+  if (NEEDS_ELIGIBILITY) {
+    const { data: forbiddenRows } = await supabase
+      .from('forbidden_service_terms')
+      .select('term');
+    const forbiddenTerms: string[] = (forbiddenRows || [])
+      .map((r: any) => String(r.term || '').toLowerCase().trim())
+      .filter(Boolean);
+    const isCleanDescription = (desc: string | null | undefined): boolean => {
+      if (!desc || desc.length < MIN_DESCRIPTION_LEN) return false;
+      const norm = desc.toLowerCase();
+      return !forbiddenTerms.some(t => t && norm.includes(t));
+    };
+    const { data: eligibleServices } = await supabase
+      .from('services')
+      .select('id, provider_id, description, service_area, category_id, providers!inner(id, slug, city, status, updated_at)')
+      .is('deleted_at', null)
+      .not('service_area', 'is', null)
+      .neq('service_area', '')
+      .eq('providers.status', 'approved')
+      .range(0, 19999);
+    for (const s of (eligibleServices || []) as any[]) {
+      if (!isCleanDescription(s.description)) continue;
+      if (!s.providers?.slug) continue;
+      const pCity = (s.providers.city || '').trim().toLowerCase();
+      const sArea = String(s.service_area || '').trim().toLowerCase();
+      if (!pCity || !sArea || pCity !== sArea) continue;
+      eligible.push(s as EligibleSvc);
+      eligibleProviderSlugs.add(s.providers.slug);
+      eligibleCityNames.add(pCity);
+      if (s.category_id) eligibleCategoryIds.add(s.category_id);
+    }
+  }
+
   if (type === 'categories') {
-    const { data } = await supabase.from('categories').select('slug, created_at').is('deleted_at', null).range(0, 49999);
+    const { data } = await supabase.from('categories').select('id, slug, created_at').is('deleted_at', null).range(0, 49999);
     for (const cat of data || []) {
+      if (!eligibleCategoryIds.has(cat.id)) continue; // gate
       urls += entry(siteUrl, `/categoria/${cat.slug}`, fmtDate(cat.created_at), 'daily', '0.9');
     }
   }
 
   if (type === 'especialidades') {
-    const { data } = await supabase.from('categories').select('slug, created_at').is('deleted_at', null).range(0, 49999);
+    const { data } = await supabase.from('categories').select('id, slug, created_at').is('deleted_at', null).range(0, 49999);
     for (const cat of data || []) {
+      if (!eligibleCategoryIds.has(cat.id)) continue; // gate
       urls += entry(siteUrl, `/especialidades/${cat.slug}`, fmtDate(cat.created_at), 'weekly', '0.85');
     }
   }
